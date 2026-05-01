@@ -27,6 +27,7 @@ data/newsponza
 data/emeraldsquare
 data/forest
 CMakeSettings.json
+CMakeUserPresets.json
 .vscode/settings.json
 xcode
 bin
@@ -50,3 +51,14 @@ data/pirates
 data/meadow
 .vscode
 data/elven
+data/dungeon
+data/namaqualand
+data/quarry
+data/hiddenalley
+data/kingdom
+data/swamp
+data/japan
+data/synty
+data/generated
+data/cliff
+data/enchanted_day

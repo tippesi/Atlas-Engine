@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "atlas-engine",
-  "version-string": "0.2.0",
+  "version-string": "0.2.1",
   "port-version": 0,
-  "builtin-baseline": "821100d967e1737d96414a308e3f7cbe0d1abf18",
+  "builtin-baseline": "d3a1e8c161275780ebf2eebd8c6b70d9fabc0a19",
   "homepage": "https://github.com/tippesi/Atlas-Engine",
   "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
   "dependencies": [
@@ -38,25 +38,34 @@
     "gtest",
     "joltphysics",
     "imguizmo",
+    "implot",
     "lua",
     "sol2"
   ],
   "overrides": [
+    {
+      "name": "stb",
+      "version": "2024-07-29#1"
+    },
     {
       "name": "glm",
       "version": "0.9.8.0"
     },
     {
       "name": "assimp",
-      "version": "5.4.2#0"
+      "version": "6.0.2#0"
     },
     {
       "name": "spirv-tools",
-      "version": "1.3.280.0"
+      "version": "1.4.328.0#0"
+    },
+    {
+      "name": "spirv-headers",
+      "version": "1.4.328.0#0"
     },
     {
       "name": "spirv-reflect",
-      "version": "1.3.280.0#1"
+      "version": "1.4.328.0#0"
     },
     {
       "name": "glslang",
@@ -68,7 +77,15 @@
     },
     {
       "name": "imgui",
-      "version": "1.90.7#1"
+      "version": "1.91.9#0"
+    },
+    {
+      "name": "imguizmo",
+      "version": "2024-05-29#1"
+    },
+    {
+      "name": "implot",
+      "version": "0.16#0"
     },
     {
       "name": "vulkan-memory-allocator",
@@ -76,23 +93,23 @@
     },
     {
       "name": "volk",
-      "version": "1.3.280.0#0"
+      "version": "1.4.328.0#0"
     },
     {
       "name": "vulkan-headers",
-      "version": "1.3.280.0#0"
+      "version": "1.4.328.0#0"
     },
     {
       "name": "joltphysics",
-      "version": "5.0.0#1"
+      "version": "5.5.0#0"
     },
     {
       "name": "lua",
-      "version": "5.4.6"
+      "version": "5.4.8"
     },
     {
       "name": "sol2",
-      "version": "3.3.1#0"
+      "version": "3.5.0#0"
     }
   ]
 }

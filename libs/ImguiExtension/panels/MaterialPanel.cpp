@@ -11,6 +11,10 @@ namespace Atlas::ImguiExtension {
         auto widthAfterImage = availableWidth - padding - ImGui::GetTextLineHeight();
 
         auto renderWithImagePreview = [&](ResourceHandle<Texture::Texture2D>& texture, std::function<void(void)> element) {
+
+            // If this will not be loaded it will return 0, so we can still use it
+            ImGui::PushID(texture.GetID());
+            
             if (texture.IsLoaded()) {
                 UIElements::TexturePreview(wrapper, &texture);
                 ImGui::SameLine();
@@ -20,23 +24,27 @@ namespace Atlas::ImguiExtension {
                 if (textureSelector.has_value()) {
                     texture = textureSelector.value()(texture);
                     ImGui::PopItemWidth();
-                }
+                }                
             }
             else {
                 if (textureSelector.has_value())
-                    textureSelector.value()(texture);
+                    texture = textureSelector.value()(texture);
             }
             element();
             if (texture.IsLoaded() && !textureSelector.has_value())
                 ImGui::PopItemWidth();
             ImGui::Separator();
+            ImGui::PopID();
         };
         
         renderWithImagePreview(material->baseColorMap, [&]() {
             ImGui::ColorEdit3("Base color", glm::value_ptr(material->baseColor));
         });
-        ImGui::ColorEdit3("Emissive color", glm::value_ptr(material->emissiveColor));
-        ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
+        
+        renderWithImagePreview(material->emissiveMap, [&]() {
+            ImGui::ColorEdit3("Emissive color", glm::value_ptr(material->emissiveColor));
+            ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
+            });        
         ImGui::Separator();
 
         ImGui::Text("Opacity");
@@ -73,7 +81,12 @@ namespace Atlas::ImguiExtension {
 
         ImGui::ColorEdit3("Transmissive color", glm::value_ptr(material->transmissiveColor));
 
+        ImGui::DragFloat2("UV animation", glm::value_ptr(material->uvAnimation), 0.01f, -1.0f, 1.0f);
+        ImGui::DragFloat("UV tiling", &material->tiling, 0.01f, 0.01f, 100.0f);
+
         ImGui::Checkbox("Two sided", &material->twoSided);
+
+        
 
         ImGui::PopID();
 

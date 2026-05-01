@@ -1,6 +1,8 @@
 layout (local_size_x = 8, local_size_y = 8) in;
 
-#ifdef IRRADIANCE
+#if defined(IRRADIANCE)
+layout (set = 3, binding = 0, rgb10_a2) uniform image2DArray image;
+#elif defined(RADIANCE)
 layout (set = 3, binding = 0, rgb10_a2) uniform image2DArray image;
 #else
 layout (set = 3, binding = 0, rg16f) uniform image2DArray image;

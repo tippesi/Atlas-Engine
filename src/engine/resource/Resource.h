@@ -8,10 +8,8 @@
 #include "../jobsystem/JobSystem.h"
 
 #include <vector>
-#include <mutex>
 #include <atomic>
 #include <functional>
-#include <future>
 
 #define RESOURCE_RETENTION_FRAME_COUNT 30
 
@@ -58,10 +56,14 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const ResourceLoadException& exception) {
+            catch (const ResourceLoadException exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
+            }
+            catch (const std::exception exception) {
+                errorOnLoad = true;
+                exceptionOnLoad = exception;
             }
             catch(...) {
                 errorOnLoad = true;
@@ -77,12 +79,16 @@ namespace Atlas {
                 data = loaderFunction(path, std::forward<Args>(args)...);
                 isLoaded = true;
             }
-            catch (const std::exception& exception) {
+            catch (const ResourceLoadException exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch(...) {
+            catch(const std::exception exception) {
+                errorOnLoad = true;
+                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+            }
+            catch (...) {
                 errorOnLoad = true;
                 exceptionOnLoad = std::runtime_error("Unknown issue occurred");
             }
@@ -111,7 +117,11 @@ namespace Atlas {
         }
 
         void Swap(Ref<T>& newData) {
+
             data.swap(newData);
+            // When an error on the previous data load and we replace the data, we need to set this flag
+            isLoaded = true;
+
         }
 
         std::string GetFileName() const {
@@ -136,8 +146,7 @@ namespace Atlas {
         Ref<T> data;
 
         std::atomic_bool isLoaded = false;
-        JobGroup jobGroup;
-        std::shared_future<void> future;
+        JobGroup jobGroup{ "Load resource", JobPriority::Low};
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };
@@ -148,7 +157,21 @@ namespace Atlas {
     public:
         ResourceHandle() = default;
 
-        ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
+        ResourceHandle(const Ref<T>& data) : isGenerated(true) {
+            
+            Hash hash;
+            HashCombine(hash, static_cast<void*>(data.get()));
+            
+            auto path = "generated/" + std::to_string(hash);
+            resource = CreateRef<Resource<T>>(path, ResourceOrigin::User, data);
+
+        }
+
+        ResourceHandle(const Ref<Resource<T>>& resource) : resource(resource) {}
+
+        inline bool IsGenerated() const {
+            return isGenerated;
+        }
 
         inline bool IsValid() const {
             return resource != nullptr;
@@ -160,8 +183,8 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (IsValid()) {
-                while (!resource->isLoaded)
-                    JobSystem::Wait(resource->jobGroup);                
+                while (!resource->isLoaded && !resource->errorOnLoad)
+                    JobSystem::Wait(resource->jobGroup);
             }
         }
 
@@ -205,6 +228,7 @@ namespace Atlas {
 
     private:
         Ref<Resource<T>> resource = nullptr;
+        bool isGenerated = false;
 
     };
 

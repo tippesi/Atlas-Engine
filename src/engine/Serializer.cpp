@@ -10,6 +10,8 @@
 #include "loader/MeshLoader.h"
 #include "loader/MaterialLoader.h"
 
+#include "tools/TerrainTool.h"
+
 #include <map>
 
 namespace Atlas {
@@ -24,22 +26,27 @@ namespace Atlas {
                 return;
             }
 
+            JobGroup saveDependenciesGroup{ "Save scene dependencies", JobPriority::Medium };
+            if (saveDependencies) {
+                JobSystem::Execute(saveDependenciesGroup, [&](JobData&) {
+                    SaveDependencies(scene);
+                    });
+            }
+
             json j;
             Scene::SceneToJson(j, scene.get());
 
             if (binaryJson) {
-                auto data = json::to_bjdata(j);
+                auto data = json::to_msgpack(j);
                 fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
             }
             else {
                 fileStream << (formatJson ? j.dump(2) : j.dump());
             }
 
-            if (saveDependencies) {
-                SaveDependencies(scene);
-            }
-
             fileStream.close();
+
+            JobSystem::Wait(saveDependenciesGroup);
 
         }
 
@@ -57,12 +64,12 @@ namespace Atlas {
             json j;
             if (binaryJson) {
                 auto data = Loader::AssetLoader::GetFileContent(fileStream);
-                j = json::from_bjdata(data);
+                j = std::move(json::from_msgpack(data));
             }
             else {
                 std::string serialized((std::istreambuf_iterator<char>(fileStream)),
                     std::istreambuf_iterator<char>());
-                j = json::parse(serialized);
+                j = std::move(json::parse(serialized));
             }
             
             fileStream.close();
@@ -121,7 +128,7 @@ namespace Atlas {
 
             auto entity = scene->CreateEntity();
 
-            Scene::EntityFromJson(j, entity, scene.get());
+            Scene::EntityFromJson(j, entity, scene.get(), false);
 
             auto rigidBody = entity.TryGetComponent<RigidBodyComponent>();
             if (rigidBody)
@@ -147,36 +154,41 @@ namespace Atlas {
                 return mesh0->data.GetVertexCount() > mesh1->data.GetVertexCount();
             });
 
-            if (multithreaded) {
-                JobGroup group{ JobPriority::Medium };
+            JobGroup group{ "Serialize scene dependencies", JobPriority::Medium};
+            if (multithreaded) {                
                 JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), 
                     [&](JobData& data) {
                         auto& mesh = meshes[data.idx];
 
-                        if (!mesh.IsLoaded()) return;
+                        if (!mesh.IsLoaded() || mesh.IsGenerated()) return;
 
                         Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
                     });
+            }
 
-                JobSystem::Wait(group);
+            if (scene->terrain.IsLoaded() && !scene->terrain.IsGenerated()) {
+                // Make sure everything is there before saving
+                Tools::TerrainTool::LoadMissingCells(scene->terrain.Get(), scene->terrain.GetResource()->path);
+                Loader::TerrainLoader::SaveTerrain(scene->terrain.Get(), scene->terrain.GetResource()->path);
             }
 
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
-                if (!multithreaded)
+                if (!multithreaded && !mesh.IsGenerated())
                     Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
 
                 for (const auto& material : mesh->data.materials)
                     materials[material.GetID()] = material;
             }
 
+            JobSystem::Wait(group);
+
             for (const auto& [_, material] : materials) {
-                if (!material.IsLoaded()) continue;
+                if (!material.IsLoaded() || material.IsGenerated()) continue;
 
                 Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
             }
-
         }
 
 }

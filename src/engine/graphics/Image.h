@@ -11,6 +11,7 @@ namespace Atlas {
 
         class GraphicsDevice;
         class MemoryManager;
+        class MemoryTransferManager;
 
         enum class ImageDomain {
             Device = 0,
@@ -43,7 +44,9 @@ namespace Atlas {
 
             void* data = nullptr;
 
-            bool dedicatedMemory = false;
+            VmaPool* dedicatedMemoryPool = nullptr;
+
+            MemoryTransferManager* transferManager = nullptr;
         };
 
         struct ImageAllocation {
@@ -60,9 +63,9 @@ namespace Atlas {
 
             void SetData(void* data, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ,
                 uint32_t width, uint32_t height, uint32_t depth, uint32_t layerOffset = 0,
-                uint32_t layerCount = 1);
+                uint32_t layerCount = 1, MemoryTransferManager* transferManager = nullptr);
 
-            void GenerateMipMaps();
+            void GenerateMipMaps(MemoryTransferManager* transferManager = nullptr);
 
             VkImageType GetImageType() const;
 

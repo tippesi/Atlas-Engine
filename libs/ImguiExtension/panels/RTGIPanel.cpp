@@ -21,12 +21,14 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Use DDGI as secondary bounce", &rtgi->ddgi);
         ImGui::Checkbox("Opacity check", &rtgi->opacityCheck);
         // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
-        ImGui::SliderFloat("Radiance limit", &rtgi->radianceLimit, 0.0f, 10.0f);
+        ImGui::DragFloat("Radiance limit", &rtgi->radianceLimit, 0.1f, 0.0f, 1000.0f);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip("Limits the amount of incoming radiance. Is internally scale by the camera exposure.");
         }
         ImGui::SliderFloat("Bias", &rtgi->bias, 0.0f, 1.0f);
-        ImGui::SliderInt("Texture level##Reflection", &rtgi->textureLevel, 0, 10);
+        ImGui::SliderInt("Texture level##RTGI", &rtgi->textureLevel, 0, 10);
+        ImGui::SliderInt("Sample count##RTGI", &rtgi->sampleCount, 1, 10);
+        ImGui::SliderInt("Light sample count##RTGI", &rtgi->lightSampleCount, 1, 10);
         ImGui::Text("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &rtgi->spatialFilterStrength, 0.0f, 10.0f);
         ImGui::SliderFloat("Temporal weight", &rtgi->temporalWeight, 0.0f, 1.0f);

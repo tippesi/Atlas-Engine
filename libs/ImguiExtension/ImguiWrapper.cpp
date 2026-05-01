@@ -2,7 +2,9 @@
 
 #include "ImguiWrapper.h"
 
+#ifndef AE_OS_APPLE_MOBILE
 #define VK_NO_PROTOTYPES
+#endif
 #include <SDL2/SDL_mouse.h>
 #include <graphics/Instance.h>
 #include <ImguiVulkan.h>
@@ -10,6 +12,8 @@
 namespace Atlas::ImguiExtension {
 
     void ImguiWrapper::Load(Atlas::Window *window) {
+
+        ImPlot::CreateContext();
 
         // Setup back-end capabilities flags
         ImGuiIO &io = ImGui::GetIO();
@@ -64,6 +68,8 @@ namespace Atlas::ImguiExtension {
 
         // Unsubscribe from all events
         ImGui_ImplVulkan_Shutdown();
+
+        ImPlot::DestroyContext();
 
         pool.reset();
 
@@ -185,7 +191,7 @@ namespace Atlas::ImguiExtension {
 
     }
 
-    VkDescriptorSet ImguiWrapper::GetTextureDescriptorSet(const Atlas::Texture::Texture* texture,
+    ImTextureID ImguiWrapper::GetTextureId(const Atlas::Texture::Texture* texture,
         VkImageLayout layout) {
 
         if (!imageViewToDescriptorSetMap.contains(texture->image->view)) {
@@ -199,7 +205,7 @@ namespace Atlas::ImguiExtension {
         auto &handle = imageViewToDescriptorSetMap[texture->image->view];
         handle.lastAccess = 0;
 
-        return handle.set;
+        return (unsigned long long)handle.set;
 
     }
 

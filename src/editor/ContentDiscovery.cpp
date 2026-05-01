@@ -5,25 +5,33 @@
 #include "Log.h"
 
 #include <filesystem>
+#include <algorithm>
 
 namespace Atlas::Editor {
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::content = CreateRef<DiscoveredContent>();
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::nextContent = CreateRef<DiscoveredContent>();
-	JobGroup ContentDiscovery::contentDiscoveryJob;
+	JobGroup ContentDiscovery::contentDiscoveryJob { "Content discovery" };
 
+	std::atomic_bool ContentDiscovery::execute = false;
 	const float ContentDiscovery::discoverFrequency = 3.0f;
 	float ContentDiscovery::lastDiscoveryTime = -ContentDiscovery::discoverFrequency;
 
+	void ContentDiscovery::Execute() {
+
+		execute = true;
+
+	}
+
 	const Ref<ContentDirectory> ContentDiscovery::GetContent() {
 
-		return content->rootDirectory;
+		return content ? content->rootDirectory : nullptr;
 
 	}
 
 	std::vector<Content> ContentDiscovery::GetContent(const ContentType type) {
 
-		if (!content->contentTypeToContentMap.contains(type))
+		if (!content || !content->contentTypeToContentMap.contains(type))
 			return {};
 
 		return content->contentTypeToContentMap.at(type);
@@ -31,6 +39,9 @@ namespace Atlas::Editor {
 	}
 
 	std::vector<Content> ContentDiscovery::GetAllContent() {
+
+		if (!content)
+			return {};
 
 		std::vector<Content> files;
 		for (const auto& [type, typeFiles] : content->contentTypeToContentMap) {
@@ -43,7 +54,7 @@ namespace Atlas::Editor {
 
 	const Ref<ContentDirectory> ContentDiscovery::GetDirectory(const std::string& path) {
 
-		if (!content->contentDirectories.contains(path))
+		if (!content || !content->contentDirectories.contains(path))
 			return {};
 
 		return content->contentDirectories.at(path);
@@ -52,36 +63,36 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::Update() {
 
-		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency;
+		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency || !content
+			|| content->contentDirectories.empty() || execute;
 
 		if (contentDiscoveryJob.HasFinished() && canRediscover) {
-			// Might be that it took longer than the timeout time
-			content = nextContent;
+			// Swap here to not immediately release the memory of content (causes stutter due to freeing memory)		
+			std::swap(content, nextContent);
+
 			lastDiscoveryTime = Clock::Get();
 			JobSystem::Execute(contentDiscoveryJob, [&](JobData&) {
+				// Now release the swapped memory here in the job async
+				nextContent.reset();
+
 				nextContent = PerformContentDiscovery();
 			});
+
 			return;
 		}
-			
-		if (!contentDiscoveryJob.HasFinished())
-			return;
-
-		content = nextContent;
-
 	}
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::PerformContentDiscovery() {
 
-		auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+		auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
 		auto rootDirectory = CreateRef<ContentDirectory>({
-			.path = assetDirectory
+			.path = dataDirectory
 		});
 		auto result = CreateRef<DiscoveredContent>({
 			.rootDirectory = rootDirectory,
 		});
-		result->contentDirectories[assetDirectory] = rootDirectory;
+		result->contentDirectories[dataDirectory] = rootDirectory;
 
 		DiscoverDirectory(rootDirectory, result);
 
@@ -91,21 +102,29 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::DiscoverDirectory(const Ref<ContentDirectory>& directory, const Ref<DiscoveredContent>& result) {
 
-		auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+		auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
 		for (const auto& dirEntry : std::filesystem::directory_iterator(directory->path)) {
 			auto path = Common::Path::Normalize(dirEntry.path().string());
-			auto assetPath = Common::Path::GetRelative(assetDirectory, path);
+			auto assetPath = Common::Path::GetRelative(dataDirectory, path);
 			if (assetPath.starts_with('/'))
 				assetPath.erase(assetPath.begin());
+			assetPath = Common::Path::Normalize(assetPath);
 
 			if (dirEntry.is_directory()) {
+				auto dirname = Common::Path::GetFileName(dirEntry.path().string());
+				std::transform(dirname.begin(), dirname.end(), dirname.begin(), ::tolower);
+
 				auto childDirectory = CreateRef<ContentDirectory>({
+						.name = dirname,
 						.path = dirEntry.path(),
 						.assetPath = assetPath
 					});
 				directory->directories.push_back(childDirectory);
-				result->contentDirectories[childDirectory->path.string()] = childDirectory;
+
+				auto childPath = childDirectory->path.string();
+				std::replace(childPath.begin(), childPath.end(), '\\', '/');
+				result->contentDirectories[childPath] = childDirectory;
 				DiscoverDirectory(childDirectory, result);
 				continue;
 			}
@@ -120,7 +139,7 @@ namespace Atlas::Editor {
 			auto contentType = Content::contentTypeMapping.at(fileType);
 			directory->files.emplace_back(Content {
 				.name = filename,
-				.path = dirEntry.path().string(),
+				.path = path,
 				.assetPath = assetPath,
 				.type = contentType,
 			});
@@ -131,13 +150,13 @@ namespace Atlas::Editor {
 		// Sort for directories to be ordered alphabetically
 		std::sort(directory->directories.begin(), directory->directories.end(),
 			[](const Ref<ContentDirectory>& dir0, const Ref<ContentDirectory>& dir1) {
-				return dir0->path < dir1->path;
+				return dir0->name < dir1->name;
 			});
 
 		// Sort for files to be ordered alphabetically
 		std::sort(directory->files.begin(), directory->files.end(),
 			[](const Content& file0, const Content& file1) {
-				return file0.path < file1.path;
+				return file0.name < file1.name;
 			});
 
 	}

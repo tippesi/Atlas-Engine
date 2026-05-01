@@ -7,6 +7,8 @@
 #include "Sharpen.h"
 #include "FilmGrain.h"
 #include "TAA.h"
+#include "Bloom.h"
+#include "Exposure.h"
 
 namespace Atlas {
 
@@ -31,6 +33,8 @@ namespace Atlas {
             ChromaticAberration chromaticAberration;
             FilmGrain filmGrain;
             Sharpen sharpen;
+            Bloom bloom;
+            AutoExposure autoExposure;
 
         };
 

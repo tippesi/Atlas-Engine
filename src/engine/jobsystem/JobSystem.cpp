@@ -10,6 +10,9 @@
 #include <pthread.h>
 #endif
 
+// Use this macro to make the job system single threaded
+// #define JOBS_SINGLE_THREADED
+
 namespace Atlas {
 
     PriorityPool JobSystem::priorityPools[static_cast<int>(JobPriority::Count)];
@@ -28,7 +31,7 @@ namespace Atlas {
         // Need to set our own main thread priority, otherwise we will loose when in contention with other threads
 #ifdef AE_OS_WINDOWS
         auto threadHandle = GetCurrentThread();
-        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST) > 0;
+        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_TIME_CRITICAL) > 0;
 #endif
 #if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
         auto maxPriority = sched_get_priority_max(SCHED_RR);
@@ -53,33 +56,50 @@ namespace Atlas {
 
     void JobSystem::Execute(JobGroup& group, std::function<void(JobData&)> func, void* userData) {
 
-        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
-        group.counter.fetch_add(1);
-
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
-            .function = func,
-            .userData = userData
+            .function = std::move(func),
+            .userData = userData,
+            .name = group.name
         };
 
+#ifdef JOBS_SINGLE_THREADED
+        auto jobData = job.GetJobData();
+        job.function(jobData);
+        return;
+#endif
+
+        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+        group.counter.fetch_add(1);
+
         auto& worker = priorityPool.GetNextWorker();
-        worker.queue.Push(job);
-        worker.semaphore.release();
+        worker.queue.Push(std::move(job));
+        worker.signal.Notify();
 
     }
 
     void JobSystem::ExecuteMultiple(JobGroup& group, int32_t count, std::function<void(JobData&)> func, void* userData) {
 
-        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
-        group.counter += count;
-
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
-            .function = func,
-            .userData = userData
+            .function = std::move(func),
+            .userData = userData,
+            .name = group.name
         };
+
+#ifdef JOBS_SINGLE_THREADED
+        for (size_t i = 0; i < count; i++) {
+            job.idx = int32_t(i);
+            auto jobData = job.GetJobData();
+            job.function(jobData);
+        }
+        return;
+#endif
+
+        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+        group.counter += count;
 
         if (count <= priorityPool.workerCount) {
             for (int32_t i = 0; i < count; i++) {
@@ -87,7 +107,7 @@ namespace Atlas {
 
                 job.idx = i;
                 worker.queue.Push(job);
-                worker.semaphore.release();
+                worker.signal.Notify();
             }
             return;
         }
@@ -105,12 +125,12 @@ namespace Atlas {
 
             for (int32_t j = 0; j < jobsToPush; j++) {
                 job.idx = totalCount++;
-                jobs.push_back(job);
+                jobs.emplace_back(job);
             }
 
             auto& worker = priorityPool.GetNextWorker();
             worker.queue.PushMultiple(jobs);
-            worker.semaphore.release();
+            worker.signal.Notify();
             jobs.clear();
 
             remainingJobs -= jobsToPush;
@@ -118,14 +138,94 @@ namespace Atlas {
 
     }
 
-    void JobSystem::Wait(JobGroup& group) {
+    void JobSystem::ExecuteMultiple(JobGroup& group, ivec3 count, std::function<void(JobData&, ivec3)> func, 
+        int32_t batchSize, void* userData) {
 
-        if (!group.HasFinished()) {
-            auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+        int32_t totalSize = count.x * count.y * count.z;
+        group.userCounter = 0;
 
+        std::atomic_int32_t counter = 0;
+        auto workerCount = JobSystem::GetWorkerCount(group.priority);
+        JobSystem::ExecuteMultiple(group, workerCount, [&group,
+            batchSize, totalSize, count, func, &counter](JobData& jobData) {
+            int32_t idx = counter.fetch_add(batchSize);
+            while (idx < totalSize) {
+                int32_t index = idx;
+
+                int32_t z = index / (count.x * count.y);
+                index -= (count.x * count.y * z);
+
+                int32_t y = index / count.x;
+                int32_t x = index % count.x;
+
+                func(jobData, ivec3(x, y, z));
+
+                idx++;
+
+                if (idx % batchSize == 0) {
+                    idx = counter.fetch_add(batchSize);
+                }
+            }
+            });
+
+        JobSystem::Wait(group);
+
+    }
+
+    void JobSystem::ParallelFor(JobGroup& group, int32_t count, int32_t jobCount, 
+        std::function<void(JobData&, int32_t)> func, void* userData) {
+
+        if (!count || !jobCount)
+            return;
+
+        int32_t iterationsPerJob = count / jobCount;
+        if (count < jobCount || jobCount == 1) {
+            jobCount = 1;
+            iterationsPerJob = count;
+        }
+        else {
+            iterationsPerJob = count % jobCount == 0 ? iterationsPerJob : iterationsPerJob + 1;
+        }
+
+        JobSystem::ExecuteMultiple(group, jobCount, [iterationsPerJob, count, func = std::move(func)]
+            (JobData& data) mutable {
+
+            int32_t offset = data.idx * iterationsPerJob;
+            for (int32_t i = offset; i < iterationsPerJob + offset && i < count; i++) {
+                func(data, i);
+            }
+            }, userData);
+
+    }
+
+    void JobSystem::Wait(JobSignal& signal, JobPriority priority) {
+
+#ifdef JOBS_SINGLE_THREADED
+        return;
+#endif
+
+        auto& priorityPool = priorityPools[static_cast<int>(priority)];        
+
+        while (!signal.TryAquire()) {
             auto& worker = priorityPool.GetNextWorker();
             priorityPool.Work(worker.workerId);
         }
+
+    }
+
+    void JobSystem::Wait(JobGroup& group) {
+
+#ifdef JOBS_SINGLE_THREADED
+        return;
+#endif
+
+        if (group.HasFinished())
+            return;
+
+        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+
+        auto& worker = priorityPool.GetNextWorker();
+        priorityPool.Work(worker.workerId);
 
         while (!group.HasFinished())
             std::this_thread::yield();
@@ -152,7 +252,36 @@ namespace Atlas {
 
     void JobSystem::WaitAll() {
 
+        bool jobsFound = true;
+        while (jobsFound) {
+            jobsFound = false;
 
+            // Check if any pool has work and help pools that still have work
+            for (auto& priorityPool : priorityPools) {
+                bool poolHasWork = false, poolIsWorking = false;
+
+                for (auto& worker : priorityPool.GetAllWorkers()) {
+                    poolHasWork |= !worker.queue.Empty();
+                    poolIsWorking |= !worker.idling;
+                }
+
+                // Help pool
+                if (poolHasWork) {
+                    const auto& worker = priorityPool.GetNextWorker();
+                    priorityPool.Work(worker.workerId);                    
+                }
+
+                if (poolHasWork || poolIsWorking)
+                    jobsFound = true;
+            }
+        }
+
+    }
+
+    int32_t JobSystem::GetWorkerCount(const JobPriority priority) {
+
+        const auto& priorityPool = priorityPools[static_cast<int>(priority)];
+        return priorityPool.workerCount;
 
     }
 

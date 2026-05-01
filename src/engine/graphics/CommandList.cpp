@@ -176,7 +176,7 @@ namespace Atlas {
             rpInfo.renderArea.extent = frameBuffer->extent;
             rpInfo.framebuffer = frameBuffer->frameBuffer;
 
-            std::vector<VkClearValue> clearValues;
+            clearValues.clear();
             for (auto& attachment : renderPass->colorAttachments) {
                 if (!attachment.isValid) continue;
                 if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -350,7 +350,7 @@ namespace Atlas {
 
         void CommandList::ClearAttachments() {
 
-            std::vector<VkClearAttachment> clearAttachments;
+            clearAttachments.clear();
             VkClearRect clearRect = {};
             if (swapChainInUse) {
                 VkClearAttachment colorClear = {}, depthClear = {};
@@ -481,19 +481,24 @@ namespace Atlas {
             AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                 "Only uniform buffers support dynamic bindings");
 
-            if (descriptorBindingData.buffers[set][binding].first == buffer.get())
+            auto [boundBuffer, boundOffset] = descriptorBindingData.buffers[set][binding];
+            if (boundBuffer == buffer.get() && boundOffset == uint32_t(offset))
                 return;
 
+            bool changed = boundBuffer != buffer.get();
+
             descriptorBindingData.ResetBinding(set, binding);
+
+            // Only indicate a change if the buffer changed, not just the offset
+            descriptorBindingData.changed[set] |= changed;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), uint32_t(offset) };
             descriptorBindingData.maxBufferBinding[set] = std::max(descriptorBindingData.maxBufferBinding[set], binding);
-            descriptorBindingData.changed[set] = true;
 
         }
 
-        void CommandList::BindBuffers(const std::vector<Ref<Buffer>> &buffers, uint32_t set, uint32_t binding) {
+        void CommandList::BindBuffers(const std::span<Ref<Buffer>> buffers, uint32_t set, uint32_t binding) {
 
             AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
@@ -501,7 +506,8 @@ namespace Atlas {
             if (!buffers.size()) return;
 
             std::vector<Buffer*> buffersPtr;
-            for (auto& buffer : buffers) {
+            buffersPtr.reserve(buffers.size());
+            for (const auto& buffer : buffers) {
                 AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
                 AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT &&
                        "Only storage buffers support array bindings");
@@ -553,7 +559,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
-            descriptorBindingData.maxTLASBinding[set] = std::max(descriptorBindingData.maxTLASBinding[set], binding);
+            descriptorBindingData.maxBufferBinding[set] = std::max(descriptorBindingData.maxBufferBinding[set], binding);
 
         }
 
@@ -592,7 +598,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding) {
+        void CommandList::BindSampledImages(const std::span<Ref<Image>> images, uint32_t set, uint32_t binding) {
 
             AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
@@ -600,6 +606,7 @@ namespace Atlas {
             if (!images.size()) return;
 
             std::vector<Image*> imagesPtr;
+            imagesPtr.reserve(images.size());
             for (const auto& image : images) imagesPtr.push_back(image.get());
 
             descriptorBindingData.ResetBinding(set, binding);
@@ -743,8 +750,8 @@ namespace Atlas {
 
         }
 
-        void CommandList::PipelineBarrier(std::vector<ImageBarrier>& imageBarriers,
-            std::vector<BufferBarrier>& bufferBarriers, VkPipelineStageFlags srcStageMask,
+        void CommandList::PipelineBarrier(std::span<ImageBarrier> imageBarriers,
+            std::span<BufferBarrier> bufferBarriers, VkPipelineStageFlags srcStageMask,
             VkPipelineStageFlags dstStageMask) {
 
             // Not so sure about the cost of these vector allocations on the heap

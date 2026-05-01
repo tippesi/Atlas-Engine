@@ -64,7 +64,7 @@ namespace Atlas::Editor::UI {
                 auto scene = DataCreator::CreateScene(name, minSize, maxSize, octreeDepth);
 
                 bool alreadyExisted;
-                Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);
+                Atlas::ResourceManager<Scene::Scene>::AddResource("scenes/" + name + ".aescene", scene, alreadyExisted);
 
                 if (alreadyExisted) {
                     Log::Warning("Scene couldn't be created due to scene with same name existing already");
@@ -137,7 +137,7 @@ namespace Atlas::Editor::UI {
                         scene->name = name;
 
                         bool alreadyExisted;
-                        Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);
+                        Atlas::ResourceManager<Scene::Scene>::AddResource("scenes/" + name + ".aescene", scene, alreadyExisted);
 
                         if (alreadyExisted) {
                             Log::Warning("Scene couldn't be created due to scene with same name existing already");
@@ -174,7 +174,7 @@ namespace Atlas::Editor::UI {
             ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
         }
         else {
-            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(1.0f, 1.0f, 1.0f, 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(1.0f, 1.0f, 1.0f, 0.8f));
             ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         }
         ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 2.0f);

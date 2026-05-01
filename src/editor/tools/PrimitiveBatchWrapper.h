@@ -12,15 +12,20 @@ namespace Atlas::Editor {
     public:
         PrimitiveBatchWrapper();
 
-        void RenderLineAABB(Volume::AABB aabb, vec3 color);
+        void RenderLine(vec3 p0, vec3 p1, vec3 color, bool depthTest);
 
-        void RenderLineFrustum(Volume::Frustum frustum, vec3 color);
+        void RenderLineAABB(Volume::AABB aabb, vec3 color, bool depthTest);
 
-        void RenderLineSphere(vec3 point, float radius, vec3 color);
+        void RenderLineFrustum(Volume::Frustum frustum, vec3 color, bool depthTest);
 
-        void RenderLineRectangle(const Volume::Rectangle& rect, vec3 color);
+        void RenderLineSphere(vec3 point, float radius, vec3 color, bool depthTest);
 
-        Ref<Renderer::PrimitiveBatch> primitiveBatch;
+        void RenderLineRectangle(const Volume::Rectangle& rect, vec3 color, bool depthTest);
+
+        void Clear();
+
+        Ref<Renderer::PrimitiveBatch> primitiveBatchNoDepthTest;
+        Ref<Renderer::PrimitiveBatch> primitiveBatchDepthTest;
 
     };
 

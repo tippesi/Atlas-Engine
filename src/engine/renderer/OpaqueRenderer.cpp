@@ -18,25 +18,29 @@ namespace Atlas {
         void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
             RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
 
+            bool bindlessTextures = device->support.bindless;
+
             Graphics::Profiler::BeginQuery("Opaque geometry");
 
-            auto mainPass = renderList->GetMainPass();
+            auto mainPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
             if (!mainPass)
                 return;
+
+            auto sceneState = &scene->renderState;
 
             commandList->BindBuffer(mainPass->currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(mainPass->lastMatricesBuffer, 1, 2);
             commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
 
             // Bind wind map
-            scene->wind.noiseMap.Bind(commandList, 3, 7);
+            scene->wind.noiseMap.Bind(commandList, 3, 8);
 
             int32_t subDataCount = 0;
             // Retrieve all possible materials;
             for (const auto& [meshId, instances] : mainPass->meshToInstancesMap) {
                 if (!instances.count) continue;
 
-                auto& mesh = mainPass->meshIdToMeshMap[meshId];
+                auto& mesh = renderList->meshIdToMeshMap[meshId];
                 for (auto& subData : mesh->data.subData) {
                     if (!subData.material.IsLoaded())
                         continue;
@@ -88,22 +92,24 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-#if !defined(AE_BINDLESS) || defined(AE_OS_MACOS)
-                if (material->HasBaseColorMap())
-                    material->baseColorMap->Bind(commandList, 3, 0);
-                if (material->HasOpacityMap())
-                    material->opacityMap->Bind(commandList, 3, 1);
-                if (material->HasNormalMap())
-                    material->normalMap->Bind(commandList, 3, 2);
-                if (material->HasRoughnessMap())
-                    material->roughnessMap->Bind(commandList, 3, 3);
-                if (material->HasMetalnessMap())
-                    material->metalnessMap->Bind(commandList, 3, 4);
-                if (material->HasAoMap())
-                    material->aoMap->Bind(commandList, 3, 5);
-                if (material->HasDisplacementMap())
-                    material->displacementMap->Bind(commandList, 3, 6);
-#endif
+                if (!bindlessTextures) {
+                    if (material->HasBaseColorMap())
+                        material->baseColorMap->Bind(commandList, 3, 0);
+                    if (material->HasOpacityMap())
+                        material->opacityMap->Bind(commandList, 3, 1);
+                    if (material->HasNormalMap())
+                        material->normalMap->Bind(commandList, 3, 2);
+                    if (material->HasRoughnessMap())
+                        material->roughnessMap->Bind(commandList, 3, 3);
+                    if (material->HasMetalnessMap())
+                        material->metalnessMap->Bind(commandList, 3, 4);
+                    if (material->HasAoMap())
+                        material->aoMap->Bind(commandList, 3, 5);
+                    if (material->HasDisplacementMap())
+                        material->displacementMap->Bind(commandList, 3, 6);
+                    if (material->HasEmissiveMap())
+                        material->emissiveMap->Bind(commandList, 3, 7);
+                }
 
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
@@ -116,13 +122,17 @@ namespace Atlas {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .baseColorTextureIdx = material->HasBaseColorMap() ? scene->textureToBindlessIdx[material->baseColorMap.Get()] : 0,
-                    .opacityTextureIdx = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap.Get()] : 0,
-                    .normalTextureIdx = material->HasNormalMap() ? scene->textureToBindlessIdx[material->normalMap.Get()] : 0,
-                    .roughnessTextureIdx = material->HasRoughnessMap() ? scene->textureToBindlessIdx[material->roughnessMap.Get()] : 0,
-                    .metalnessTextureIdx = material->HasMetalnessMap() ? scene->textureToBindlessIdx[material->metalnessMap.Get()] : 0,
-                    .aoTextureIdx = material->HasAoMap() ? scene->textureToBindlessIdx[material->aoMap.Get()] : 0,
-                    .heightTextureIdx = material->HasDisplacementMap() ? scene->textureToBindlessIdx[material->displacementMap.Get()] : 0,
+                    .uvAnimationX = material->uvAnimation.x,
+                    .uvAnimationY = material->uvAnimation.y,
+                    .uvTiling = material->tiling,
+                    .baseColorTextureIdx = material->HasBaseColorMap() ? sceneState->textureToBindlessIdx[material->baseColorMap.Get()] : 0,
+                    .opacityTextureIdx = material->HasOpacityMap() ? sceneState->textureToBindlessIdx[material->opacityMap.Get()] : 0,
+                    .normalTextureIdx = material->HasNormalMap() ? sceneState->textureToBindlessIdx[material->normalMap.Get()] : 0,
+                    .roughnessTextureIdx = material->HasRoughnessMap() ? sceneState->textureToBindlessIdx[material->roughnessMap.Get()] : 0,
+                    .metalnessTextureIdx = material->HasMetalnessMap() ? sceneState->textureToBindlessIdx[material->metalnessMap.Get()] : 0,
+                    .aoTextureIdx = material->HasAoMap() ? sceneState->textureToBindlessIdx[material->aoMap.Get()] : 0,
+                    .heightTextureIdx = material->HasDisplacementMap() ? sceneState->textureToBindlessIdx[material->displacementMap.Get()] : 0,
+                    .emissiveTextureIdx = material->HasEmissiveMap() ? sceneState->textureToBindlessIdx[material->emissiveMap.Get()] : 0,
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
@@ -181,9 +191,15 @@ namespace Atlas {
             if (material->HasDisplacementMap() && hasTangents && hasTexCoords) {
                 macros.push_back("HEIGHT_MAP");
             }
+            if (material->HasEmissiveMap() && hasTexCoords) {
+                macros.push_back("EMISSIVE_MAP");
+            }
             // This is a check if we have any maps at all (no macros, no maps)
-            if (macros.size()) {
+            if (hasTexCoords) {
                 macros.push_back("TEX_COORDS");
+            }
+            if (hasTangents) {
+                macros.push_back("TANGENTS");
             }
             if (glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");
@@ -192,9 +208,9 @@ namespace Atlas {
                 macros.push_back("VERTEX_COLORS");
             }
 
-#if defined(AE_BINDLESS) && !defined(AE_OS_MACOS)
-            macros.push_back("BINDLESS_TEXTURES");
-#endif
+            if (device->support.bindless) {
+                macros.push_back("BINDLESS_TEXTURES");
+            }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

@@ -13,16 +13,16 @@ namespace Atlas {
 
         struct ShadowView {
 
-            float nearDistance;
-            float farDistance;
+            float nearDistance = 0.0f;
+            float farDistance = 100.0f;
 
-            mat4 viewMatrix;
-            mat4 projectionMatrix;
+            mat4 viewMatrix = mat4(1.0f);
+            mat4 projectionMatrix = mat4(1.0f);
 
-            mat4 frustumMatrix;
-            mat4 terrainFrustumMatrix;
+            mat4 frustumMatrix = mat4(1.0f);
+            mat4 terrainFrustumMatrix = mat4(1.0f);
 
-            vec4 orthoSize;
+            vec4 orthoSize = vec4(1.0f);
 
         };
 
@@ -50,13 +50,13 @@ namespace Atlas {
 
             float cascadeBlendDistance = 2.5f;
 
-            int32_t resolution;
+            int32_t resolution = 1024;
 
             std::vector<ShadowView> views;
-            int32_t viewCount;
+            int32_t viewCount = 1;
 
-            Texture::Texture2DArray maps;
-            Texture::Cubemap cubemap;
+            Ref<Texture::Texture2DArray> maps;
+            Ref<Texture::Cubemap> cubemap;
 
             bool isCascaded = false;
             bool followMainCamera = false;

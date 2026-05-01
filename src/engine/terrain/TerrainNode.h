@@ -15,11 +15,11 @@ namespace Atlas {
         public:
             TerrainNode(vec2 location, float height, float sideLength, int32_t LoD, int32_t LoDCount,
                 int32_t LoDMultiplier, ivec2 parentIndex, ivec2 relativeIndex,
-                TerrainStorage* storage, TerrainStorageCell* cell);
+                const Ref<TerrainStorage>& storage, TerrainStorageCell* cell);
 
             ~TerrainNode();
 
-            void Update(const CameraComponent& camera, std::vector<float>& LoDDistances,
+            void Update(vec3 translation, const CameraComponent& camera, std::vector<float>& LoDDistances,
                 std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage);
 
             void CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage);
@@ -38,6 +38,10 @@ namespace Atlas {
         private:
             void CreateChildren();
 
+            void ClearChildren(bool rootClear);
+
+            bool AreChildrenClearable();
+
             ivec2 index;
 
             int32_t LoD;
@@ -49,7 +53,7 @@ namespace Atlas {
 
             std::vector<TerrainNode> children;
 
-            TerrainStorage* storage;
+            Ref<TerrainStorage> storage = nullptr;
 
         };
 

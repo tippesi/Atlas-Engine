@@ -18,10 +18,11 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Shadows");
 
+            std::swap(prevLightMap, lightMap);
             lightMap.clear();
 
             Ref<RenderList::Pass> shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
-            while (!renderList->doneProcessingShadows || shadowPass != nullptr) {
+            while (!scene->renderState.fillShadowRenderPassesJob.HasFinished() || shadowPass != nullptr) {
                 if (!shadowPass) {
                     // We might need to wait for the next pass to be processed and culled
                     std::this_thread::yield();
@@ -29,7 +30,7 @@ namespace Atlas {
                     continue;
                 }
 
-                ProcessPass(target, scene, commandList, shadowPass);
+                ProcessPass(target, scene, commandList, renderList, shadowPass);
 
                 shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
             }
@@ -38,7 +39,7 @@ namespace Atlas {
             // another push to the queue has been happening. So check again here
             shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
             if (shadowPass != nullptr) {
-                ProcessPass(target, scene, commandList, shadowPass);
+                ProcessPass(target, scene, commandList, renderList, shadowPass);
             }
 
             // Need to also keep track of non processed layer (e.g. long range layers)
@@ -58,18 +59,20 @@ namespace Atlas {
 
         }
 
-        void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, Ref<RenderList::Pass> shadowPass) {
+        void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
+            RenderList* renderList, Ref<RenderList::Pass> shadowPass) {
+
+            bool bindlessTextures = device->support.bindless;
+
+            Graphics::Profiler::BeginQuery("Entity pass " + std::to_string(shadowPass->lightEntity) + " layer " + std::to_string(shadowPass->layer));
 
             auto lightEntity = shadowPass->lightEntity;
             auto& light = lightEntity.GetComponent<LightComponent>();
             if (!light.shadow || !light.shadow->update)
                 return;
 
-            Ref<Graphics::FrameBuffer> frameBuffer = nullptr;
-            if (lightMap.contains(lightEntity))
-                frameBuffer = lightMap[lightEntity];
-            else
-                frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+            auto sceneState = &scene->renderState;
+            auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
 
             lightMap[lightEntity] = frameBuffer;
 
@@ -107,7 +110,7 @@ namespace Atlas {
             for (auto& [meshId, instances] : shadowPass->meshToInstancesMap) {
                 if (!instances.count) continue;
 
-                auto& mesh = shadowPass->meshIdToMeshMap[meshId];
+                auto& mesh = renderList->meshIdToMeshMap[meshId];
                 for (auto& subData : mesh->data.subData) {
                     if (!subData.material.IsLoaded())
                         continue;
@@ -159,10 +162,8 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-#if !defined(AE_BINDLESS) || defined(AE_OS_MACOS)
-                if (material->HasOpacityMap())
+                if (!bindlessTextures && material->HasOpacityMap())
                     commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
-#endif
 
                 auto pushConstants = PushConstants{
                     .lightSpaceMatrix = lightSpaceMatrix,
@@ -171,7 +172,7 @@ namespace Atlas {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .textureID = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap.Get()] : 0
+                    .textureID = material->HasOpacityMap() ? sceneState->textureToBindlessIdx[material->opacityMap.Get()] : 0
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
@@ -183,10 +184,12 @@ namespace Atlas {
 
             }
 
-            impostorRenderer.Render(frameBuffer, commandList,
+            impostorRenderer.Render(frameBuffer, commandList, renderList,
                 shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
             commandList->EndRenderPass();
+
+            Graphics::Profiler::EndQuery();
 
         }
 
@@ -195,19 +198,22 @@ namespace Atlas {
             auto& light = entity.GetComponent<LightComponent>();
             auto& shadow = light.shadow;
             
-            /*
-            if (lightMap.contains(entity)) {
-                auto frameBuffer = lightMap[entity];
-                if (frameBuffer->extent.width == shadow->resolution ||
-                    frameBuffer->extent.height == shadow->resolution) {
-                    return frameBuffer;
+            if (prevLightMap.contains(entity)) {
+                auto frameBuffer = prevLightMap[entity];
+                // The image for a light entity might change
+                if (light.shadow->useCubemap && frameBuffer->GetDepthImage() == light.shadow->cubemap->image ||
+                    !light.shadow->useCubemap && frameBuffer->GetDepthImage() == light.shadow->maps->image) {
+                    // Also check if the resolution stayed the same
+                    if (frameBuffer->extent.width == shadow->resolution ||
+                        frameBuffer->extent.height == shadow->resolution) {
+                        return frameBuffer;
+                    }
                 }
             }
-            */
 
             Graphics::RenderPassDepthAttachment attachment = {
-                .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
-                               shadow->maps.format,
+                .imageFormat = shadow->useCubemap ? shadow->cubemap->format :
+                               shadow->maps->format,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                 .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -219,9 +225,10 @@ namespace Atlas {
 
             Graphics::FrameBufferDesc frameBufferDesc = {
                 .renderPass = renderPass,
-                .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
+                .depthAttachment = { shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image, 0, true},
                 .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
             };
+
             return device->CreateFrameBuffer(frameBufferDesc);
 
         }
@@ -251,9 +258,9 @@ namespace Atlas {
                 macros.push_back("OPACITY_MAP");
             }
 
-#if defined(AE_BINDLESS) && !defined(AE_OS_MACOS)
-            macros.push_back("BINDLESS_TEXTURES");
-#endif
+            if (device->support.bindless) {
+                macros.push_back("BINDLESS_TEXTURES");
+            }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

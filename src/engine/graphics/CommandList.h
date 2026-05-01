@@ -15,7 +15,9 @@
 #include "../common/Ref.h"
 
 #include <atomic>
+#include <array>
 #include <vector>
+#include <span>
 
 namespace Atlas {
 
@@ -89,7 +91,7 @@ namespace Atlas {
 
             void BindBufferOffset(const Ref<Buffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
 
-            void BindBuffers(const std::vector<Ref<Buffer>>& buffers, uint32_t set, uint32_t binding);
+            void BindBuffers(const std::span<Ref<Buffer>> buffers, uint32_t set, uint32_t binding);
 
             void BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding);
 
@@ -99,7 +101,7 @@ namespace Atlas {
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
-            void BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding);
+            void BindSampledImages(const std::span<Ref<Image>> images, uint32_t set, uint32_t binding);
 
             void BindSampler(const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
@@ -135,7 +137,7 @@ namespace Atlas {
             void PipelineBarrier(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            void PipelineBarrier(std::vector<ImageBarrier>& imageBarriers, std::vector<BufferBarrier>& bufferBarriers,
+            void PipelineBarrier(std::span<ImageBarrier> imageBarriers, std::span<BufferBarrier> bufferBarriers,
                 VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -325,6 +327,10 @@ namespace Atlas {
             std::atomic_bool wasSwapChainAccessed = false;
 
             std::vector<Semaphore> semaphores;
+
+            // Resources that are used each frame where we don't want allocate memory each time
+            std::vector<VkClearValue> clearValues;
+            std::vector<VkClearAttachment> clearAttachments;
 
         };
 

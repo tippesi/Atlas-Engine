@@ -5,6 +5,9 @@
 #include "BLAS.h"
 #include "TLAS.h"
 #include "QueryPool.h"
+#include "CommandList.h"
+
+#include <span>
 
 namespace Atlas {
 
@@ -23,18 +26,21 @@ namespace Atlas {
             ASBuilder() = default;
 
             BLASDesc GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer,
-                size_t vertexCount, size_t vertexSize, size_t indexSize, std::vector<ASGeometryRegion> regions);
+                size_t vertexCount, size_t vertexSize, size_t indexSize, std::span<ASGeometryRegion> regions);
 
-            void BuildBLAS(std::vector<Ref<BLAS>>& blases);
+            int32_t BuildBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList = nullptr);
             
-            Ref<Buffer> BuildTLAS(Ref<TLAS>& tlas, std::vector<VkAccelerationStructureInstanceKHR>& instances);
+            Buffer* BuildTLAS(Ref<TLAS>& tlas, std::span<VkAccelerationStructureInstanceKHR> instances, CommandList* commandList = nullptr);
 
         private:
-            void BuildBLASBatch(const std::vector<uint32_t>& batchIndices,
-                std::vector<Ref<BLAS>>& blases, Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool);
+            void BuildBLASBatch(const std::span<uint32_t>& batchIndices, std::span<Ref<BLAS>>& blases, 
+                Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool, CommandList* commandList);
 
-            void CompactBLASBatch(const std::vector<uint32_t>& batchIndices,
-                std::vector<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool);
+            void CompactBLASBatch(const std::span<uint32_t>& batchIndices,
+                std::span<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool, CommandList* commandList);
+
+            Ref<Graphics::Buffer> scratchBuffer = nullptr;
+            Ref<Graphics::MultiBuffer> instanceBuffer = nullptr;
 
         };
 

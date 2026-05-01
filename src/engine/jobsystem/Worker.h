@@ -2,10 +2,10 @@
 
 #include "../System.h"
 
+#include "Signal.h"
 #include "ThreadSafeJobQueue.h"
 
 #include <thread>
-#include <semaphore>
 
 namespace Atlas {
 
@@ -22,6 +22,8 @@ namespace Atlas {
 
         inline void Work() {
 
+            idling = false;
+
             while(true) {
                 auto job = queue.Pop();
                 if (job == std::nullopt)
@@ -30,13 +32,18 @@ namespace Atlas {
                 RunJob(job.value());
             }
 
+            idling = true;
+
         }
 
         int32_t workerId;
         JobPriority priority;
 
         std::thread thread;
-        std::binary_semaphore semaphore{0};
+        std::atomic_bool quit = false;
+        std::atomic_bool idling = true;
+
+        Signal signal;
         ThreadSafeJobQueue queue;
 
     private:
@@ -44,6 +51,7 @@ namespace Atlas {
 
             JobData data = {
                 .idx = job.idx,
+                .workerIdx = workerId,
                 .userData = job.userData
             };
 

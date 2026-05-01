@@ -2,11 +2,17 @@
 #include "StructureChainBuilder.h"
 #include "../Log.h"
 
-#include <volk.h>
 #include <set>
 #include <iterator>
-#include <vulkan/vulkan.h>
+#ifdef AE_OS_APPLE_MOBILE
+#include <vulkan/vulkan_ios.h>
+#else
 #include <vulkan/vulkan_macos.h>
+#endif
+
+#if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
+#include <stacktrace>
+#endif
 
 namespace Atlas {
 
@@ -17,15 +23,18 @@ namespace Atlas {
         Instance::Instance(const InstanceDesc& desc) :  name(desc.instanceName), 
             validationLayersEnabled(desc.enableValidationLayers), validationLayerSeverity(desc.validationLayerSeverity) {
 
+#ifndef AE_OS_APPLE_MOBILE
+            // Volk is not needed on iPadOS and iOS, MoltenVK is bundled there
             VK_CHECK(volkInitialize());
+#endif
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
             appInfo.pApplicationName = name.c_str();
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "Atlas Engine";
-            appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 0);
-            appInfo.apiVersion = VK_API_VERSION_1_2;
+            appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 1);
+            appInfo.apiVersion = VK_API_VERSION_1_3;
 
             LoadSupportedLayersAndExtensions();
 
@@ -50,7 +59,7 @@ namespace Atlas {
                 requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             }
 #endif
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
             if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
                 requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
             }
@@ -65,7 +74,7 @@ namespace Atlas {
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             createInfo.pApplicationInfo = &appInfo;
             createInfo.enabledLayerCount = 0;
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
             if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
                 createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
             }
@@ -92,8 +101,9 @@ namespace Atlas {
 
 #ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-                validationFeatures.enabledValidationFeatureCount = std::size(enables);
-                validationFeatures.pEnabledValidationFeatures = enables;
+                // This doesn't seem to work anymore with newer VulkanSDKs on Nvidia hardware
+                //validationFeatures.enabledValidationFeatureCount = std::size(enables);
+                //validationFeatures.pEnabledValidationFeatures = enables;
 
                 structureChainBuilder.Append(validationFeatures);                
 #endif
@@ -104,7 +114,9 @@ namespace Atlas {
 
             VK_CHECK_MESSAGE(vkCreateInstance(&createInfo, nullptr, &instance), "Error creating instance");
 
+#ifndef AE_OS_APPLE_MOBILE
             volkLoadInstance(instance);
+#endif
 
             RegisterDebugCallback();
             isComplete = true;
@@ -169,7 +181,7 @@ namespace Atlas {
         void Instance::LoadSupportedLayersAndExtensions() {
 
             if (vkEnumerateInstanceExtensionProperties == nullptr)
-                Log::Warning("Stuff not loaded");
+                Log::Warning("Vulkan functions not loaded");
 
             unsigned int extensionCount = 0;
             bool success = vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) == VK_SUCCESS;
@@ -257,8 +269,8 @@ namespace Atlas {
 
             createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
             createInfo.pfnUserCallback = DebugCallback;
             createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
             return createInfo;
@@ -314,6 +326,10 @@ namespace Atlas {
                 case Log::Type::TYPE_WARNING: Log::Warning(pCallbackData->pMessage, logSeverity); break;
                 case Log::Type::TYPE_ERROR: Log::Error(pCallbackData->pMessage, logSeverity); break;
             }
+
+#if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
+            output.append("\nStack trace:\n" + std::to_string(std::stacktrace::current()));
+#endif
 
 #ifndef AE_BUILDTYPE_RELEASE
             if (logSeverity == Log::Severity::SEVERITY_HIGH)

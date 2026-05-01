@@ -17,6 +17,7 @@ namespace Atlas {
 
         enum class Wrapping {
             Repeat = 0,
+            MirroredRepeat,
             ClampToEdge,
             ClampToWhite,
             ClampToBlack
@@ -45,7 +46,8 @@ namespace Atlas {
               * @param filtering The filtering of the texture.
               */
             Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
-                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
+                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest,
+                bool dedicatedMemory = false);
 
             /**
              * Binds the image and sampler of the texture to the specified binding point
@@ -68,25 +70,25 @@ namespace Atlas {
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<uint8_t>& data);
+            void SetData(std::vector<uint8_t>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<uint16_t>& data);
+            void SetData(std::vector<uint16_t>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<float16>& data);
+            void SetData(std::vector<float16>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<float>& data);
+            void SetData(std::vector<float>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Retrieves the data of the texture from the GPU.
@@ -106,7 +108,7 @@ namespace Atlas {
             /**
              *
              */
-            void GenerateMipmap();
+            void GenerateMipmap(const Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Release all shared texture resources
@@ -124,6 +126,9 @@ namespace Atlas {
             Wrapping wrapping = Wrapping::Repeat;
             Filtering filtering = Filtering::Nearest;
 
+            bool dedicatedMemory = false;
+            bool usedForRenderTarget = false;
+
             VkFormat format = {};
 
         protected:
@@ -131,7 +136,8 @@ namespace Atlas {
                 int32_t width, int32_t height, int32_t depth);
 
             void Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height,
-                int32_t depth, Filtering filtering, Wrapping wrapping, bool dedicatedMemory = false);
+                int32_t depth, Filtering filtering, Wrapping wrapping,
+                bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             void RecreateSampler(Filtering filtering, Wrapping wrapping);
 
@@ -153,7 +159,7 @@ namespace Atlas {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             VkOffset3D offset = {};
-            VkExtent3D extent = { uint32_t(width), uint32_t(height), uint32_t(depth) };
+            VkExtent3D extent = { uint32_t(width), uint32_t(height), 1 };
             device->memoryManager->transferManager->RetrieveImageData(data.data(), image.get(), offset,
                 extent, layerOffset, 1, true);
 

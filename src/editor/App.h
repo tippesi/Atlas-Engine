@@ -34,9 +34,13 @@ namespace Atlas::Editor {
         virtual void Render(float deltaTime) final;
 
     private:
+        void RenderSceneMaximized();
+        
         void SetupMainDockspace(ImGuiID dsID);
 
         void SubscribeToResourceEvents();
+
+        void SetDefaultWindowResolution();
 
         Input::MouseHandler mouseHandler;
         Input::KeyboardHandler keyboardHandler;
@@ -46,17 +50,17 @@ namespace Atlas::Editor {
         UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
         UI::GeometryBrushWindow geometryBrushWindow = UI::GeometryBrushWindow(false);
 
+        ImguiExtension::PerformanceGraphPanel performanceGraphPanel;
+
         std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
         std::vector<Ref<UI::SceneWindow>> sceneWindows;
 
         size_t activeSceneIdx = 0;
 
-        JobGroup bvhBuilderGroup;
-        JobGroup fileImportGroup;
-
         ImGuiID upperDockNodeID;
 
         bool resetDockspaceLayout = false;
+        bool playingMaximized = false;
 
     };
 

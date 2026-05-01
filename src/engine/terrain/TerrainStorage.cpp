@@ -10,7 +10,7 @@ namespace Atlas {
             LoDCount(LoDCount), materialResolution(materialResolution), materialCount(materialCount) {
 
             cells.resize(LoDCount);
-            LoDSideLengths = new int32_t[LoDCount];
+            LoDSideLengths.resize(LoDCount);
 
             baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
@@ -74,7 +74,7 @@ namespace Atlas {
 
         }
 
-        void TerrainStorage::WriteMaterial(int32_t slot, Ref<Material> material) {
+        void TerrainStorage::WriteMaterial(int32_t slot, ResourceHandle<Material> material) {
 
             materials[slot] = material;
 
@@ -120,15 +120,75 @@ namespace Atlas {
 
         }
 
-        void TerrainStorage::RemoveMaterial(int32_t slot, Ref<Material> material) {
+        void TerrainStorage::RemoveMaterial(int32_t slot, ResourceHandle<Material> material) {
 
-            materials[slot] = nullptr;
+            materials[slot].Reset();
 
         }
 
-        std::vector<Ref<Material>> TerrainStorage::GetMaterials() {
+        std::vector<ResourceHandle<Material>> TerrainStorage::GetMaterials() {
 
             return materials;
+
+        }
+
+        void TerrainStorage::PushUnusedCellsToQueue() {
+
+            std::lock_guard lock(unusedCellQueueMutex);
+
+            unusedCellQueue.insert(unusedCells.begin(), unusedCells.end());
+            unusedCells.clear();
+
+        }
+
+        std::vector<TerrainStorageCell*> TerrainStorage::GetUnusedCellsQueue() {
+
+            std::lock_guard lock(unusedCellQueueMutex);
+
+            auto wantedCells = std::vector<TerrainStorageCell*>{ unusedCellQueue.begin(), unusedCellQueue.end() };
+            unusedCellQueue.clear();
+
+            return wantedCells;
+
+        }
+
+        void TerrainStorage::PushRequestedCellsToQueue() {
+
+            std::lock_guard lock(cellQueueMutex);
+
+            requestedCellQueue.insert(requestedCells.begin(), requestedCells.end());
+            requestedCells.clear();
+
+        }
+
+        std::vector<TerrainStorageCell*> TerrainStorage::GetRequestedCellsQueue() {
+
+            std::lock_guard lock(cellQueueMutex);
+
+            auto wantedCells = std::vector<TerrainStorageCell*>{ requestedCellQueue.begin(), requestedCellQueue.end() };
+            requestedCellQueue.clear();
+
+            return wantedCells;
+
+        }
+
+        void TerrainStorage::PushRequestedBvhCellsToQueue() {
+
+            std::lock_guard lock(bvhCellQueueMutex);
+
+            requestedBvhCellQueue.insert(requestedBvhCells.begin(), requestedBvhCells.end());
+            requestedBvhCells.clear();
+
+        }
+
+        std::vector<TerrainStorageCell*> TerrainStorage::GetRequestedBvhCellsQueue() {
+
+            std::lock_guard lock(bvhCellQueueMutex);
+
+            auto wantedCells = std::vector<TerrainStorageCell*>{ requestedBvhCellQueue.begin(), requestedBvhCellQueue.end() };
+            requestedBvhCellQueue.clear();
+
+            return wantedCells;
 
         }
 

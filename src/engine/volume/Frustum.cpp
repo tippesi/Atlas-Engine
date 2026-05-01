@@ -4,7 +4,7 @@ namespace Atlas {
 
     namespace Volume {
 
-        Frustum::Frustum(const std::vector<vec3>& corners) {
+        Frustum::Frustum(const std::array<vec3, 8>& corners) {
 
             Resize(corners);
 
@@ -16,15 +16,15 @@ namespace Atlas {
 
         }
 
-        void Frustum::Resize(const std::vector<vec3>& corners) {
+        void Frustum::Resize(const std::array<vec3, 8>& corners) {
 
             this->corners = corners;
-            planes[NEAR_PLANE] = Plane(corners[4], corners[5], corners[7]);
-            planes[FAR_PLANE] = Plane(corners[1], corners[0], corners[2]);
-            planes[TOP_PLANE] = Plane(corners[5], corners[4], corners[0]);
-            planes[BOTTOM_PLANE] = Plane(corners[6], corners[7], corners[3]);
-            planes[RIGHT_PLANE] = Plane(corners[7], corners[5], corners[3]);
-            planes[LEFT_PLANE] = Plane(corners[4], corners[6], corners[2]);
+            planes[NEAR_PLANE] = Plane(corners[0], corners[1], corners[2]);
+            planes[FAR_PLANE] = Plane(corners[5], corners[4], corners[7]);
+            planes[TOP_PLANE] = Plane(corners[4], corners[0], corners[6]);
+            planes[BOTTOM_PLANE] = Plane(corners[1], corners[5], corners[3]);
+            planes[RIGHT_PLANE] = Plane(corners[4], corners[5], corners[0]);
+            planes[LEFT_PLANE] = Plane(corners[2], corners[3], corners[6]);
 
         }
 
@@ -80,6 +80,7 @@ namespace Atlas {
         std::vector<vec4> Frustum::GetPlanes() const {
 
             std::vector<vec4> planes;
+            planes.reserve(6);
 
             for (uint8_t i = 0; i < 6; i++) {
                 planes.push_back(vec4(this->planes[i].normal,
@@ -90,13 +91,18 @@ namespace Atlas {
 
         }
 
-        std::vector<vec3> Frustum::GetCorners() const {
+        std::array<vec3, 8> Frustum::GetCorners() const {
 
             return corners;
 
         }
 
         void Frustum::CalculateCorners(const mat4& matrix) {
+
+            const mat4 clipMatrix = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f, 1.0f);
 
             // Somehow far and near points are reversed
             vec3 vectors[8] = {
@@ -110,12 +116,11 @@ namespace Atlas {
                 vec3(1.0f, -1.0f, 1.0f)
             };
 
-            corners.clear();
-            auto inverseMatrix = glm::inverse(matrix);
+            auto inverseMatrix = glm::inverse(glm::inverse(clipMatrix) * matrix);
 
             for (uint8_t i = 0; i < 8; i++) {
                 auto homogenous = inverseMatrix * vec4(vectors[i], 1.0f);
-                corners.push_back(vec3(homogenous) / homogenous.w);
+                corners[i] = vec3(homogenous) / homogenous.w;
             }
 
         }

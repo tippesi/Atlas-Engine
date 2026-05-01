@@ -31,11 +31,11 @@ namespace Atlas {
 
             void Remove(T data, AABB aabb);
 
-            void QueryAABB(std::vector<T>& data, AABB aabb);
+            void QueryAABB(std::vector<T>& data, const AABB& aabb);
 
-            void QueryRay(std::vector<T>& data, Ray ray);
+            void QueryRay(std::vector<T>& data, const Ray& ray);
 
-            void QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum);
+            void QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, const Frustum& frustum);
 
             void GetData(std::vector<T>& data) const;
 
@@ -124,7 +124,7 @@ namespace Atlas {
         }
 
         template <class T>
-        void Octree<T>::QueryAABB(std::vector<T>& data, AABB aabb) {
+        void Octree<T>::QueryAABB(std::vector<T>& data, const AABB &aabb) {
 
             auto scaled = this->aabb.Scale(relaxFactor);
 
@@ -146,7 +146,7 @@ namespace Atlas {
         }
 
         template <class T>
-        void Octree<T>::QueryRay(std::vector<T>& data, Ray ray) {
+        void Octree<T>::QueryRay(std::vector<T>& data, const Ray& ray) {
 
             auto scaled = this->aabb.Scale(relaxFactor);
 
@@ -161,16 +161,15 @@ namespace Atlas {
         }
 
         template <class T>
-        void Octree<T>::QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum) {
+        void Octree<T>::QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, const Frustum& frustum) {
 
             auto scaled = this->aabb.Scale(relaxFactor);
-
             if (!frustum.Intersects(scaled))
                 return;
 
             // Check if frustum encloses this octree node
             // In that case we can add all data and children data
-            if (frustum.IsInside(scaled)) {
+            if (frustum.IsInside(aabb)) {
                 GetData(insideData);
                 return;
             }

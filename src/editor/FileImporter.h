@@ -15,6 +15,7 @@
 
 #include "loader/ModelImporter.h"
 #include "loader/MaterialLoader.h"
+#include "loader/TerrainLoader.h"
 #include "loader/MeshLoader.h"
 
 #include "Content.h"
@@ -77,7 +78,7 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Serializer::DeserializeScene, false);
+                ResourceOrigin::User, Serializer::DeserializeScene, true);
         }
         else if constexpr (std::is_same_v<T, Scripting::Script>) {
             handle = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
@@ -96,6 +97,11 @@ namespace Atlas::Editor {
             // No support internally for async loading, load syncho. for now
             handle = ResourceManager<Texture::Cubemap>::GetOrLoadResourceAsync(filename,
                 ResourceOrigin::User);
+        }
+        else if constexpr (std::is_same_v<T, Terrain::Terrain>) {
+            // No support internally for async loading, load syncho. for now
+            handle = ResourceManager<Terrain::Terrain>::GetOrLoadResourceWithLoaderAsync(filename,
+                ResourceOrigin::User, Loader::TerrainLoader::LoadTerrain, true);
         }
 
         return handle;
@@ -139,6 +145,9 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Texture::Cubemap>) {
             return type == ContentType::EnvironmentTexture;
+        }
+        else if constexpr (std::is_same_v<T, Terrain::Terrain>) {
+            return type == ContentType::Terrain;
         }
         else {
             return false;

@@ -33,7 +33,7 @@ namespace Atlas {
             auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
             auto builder = new BVHBuilder(aabb, 0, refs.size(), minOverlap, 256);
 
-            JobGroup group { JobPriority::Low };
+            JobGroup group { "Build blas structure", JobPriority::Low};
             builder->Build(refs, data, group, parallelBuild);
             JobSystem::Wait(group);
 
@@ -55,7 +55,7 @@ namespace Atlas {
 
         }
 
-        BVH::BVH(const std::vector<AABB>& aabbs, bool parallelBuild) {
+        BVH::BVH(const std::vector<AABB>& aabbs, bool parallelBuild) {            
 
             refs.resize(aabbs.size());
             for (size_t i = 0; i < refs.size(); i++) {
@@ -63,15 +63,50 @@ namespace Atlas {
                 refs[i].aabb = aabbs[i];
             }
 
+            /*
+            // This can be faster when it is purely used for terrain BLASES
+            for (size_t j = 0; j < 0; j++) {
+                float avgLongestAxis = 0.0f;
+
+                for (size_t i = 0; i < refs.size(); i++) {
+                    auto size = refs[i].aabb.GetSize();
+                    auto maxAxis = size.x > size.y ?
+                        (size.x > size.z ? 0 : 2) :
+                        (size.y > size.z ? 1 : 2);
+
+                    avgLongestAxis +=  size[maxAxis];
+                }
+
+                auto refCount = refs.size();
+                avgLongestAxis /= float(refCount);
+
+                for (size_t i = 0; i < refs.size(); i++) {
+                    auto size = refs[i].aabb.GetSize();
+                    auto maxAxis = size.x > size.y ?
+                        (size.x > size.z ? 0 : 2) :
+                        (size.y > size.z ? 1 : 2);
+
+                    if (size[maxAxis] * 0.01f > avgLongestAxis) {
+                        auto ref = refs[i];
+
+                        refs[i].aabb.max[maxAxis] = refs[i].aabb.min[maxAxis] + size[maxAxis] * 0.5f;
+                        ref.aabb.min[maxAxis] = refs[i].aabb.max[maxAxis];
+
+                        refs.push_back(ref);
+                    }
+                }
+            }
+            */
+
             // Calculate initial aabb of root
             AABB aabb(glm::vec3(std::numeric_limits<float>::max()),
                 glm::vec3(-std::numeric_limits<float>::max()));
             for (auto& ref : refs)
                 aabb.Grow(aabbs[ref.idx]);
 
-            auto builder = new BVHBuilder(aabb, 0, refs.size(), 64);
+            auto builder = new BVHBuilder(aabb, 0, refs.size(), 128);
 
-            JobGroup group { JobPriority::Medium };
+            JobGroup group { "Build tlas structure", JobPriority::Medium};
             builder->Build(refs, group, parallelBuild);
             JobSystem::Wait(group);
 
@@ -307,7 +342,7 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 6 && parallelBuild) {
+            if (depth <= 8 && parallelBuild) {
                 auto leftRefSize = leftRefs.size(), rightRefSize = rightRefs.size();
                 auto leftLambda = [=, &jobGroup, leftRefs = std::move(leftRefs)](JobData&) {
                     auto refs = std::move(leftRefs);
@@ -320,11 +355,9 @@ namespace Atlas {
                     rightChild = new BVHBuilder(split.rightAABB, depth + 1, refs.size(), binCount);
                     rightChild->Build(refs, jobGroup, parallelBuild);
                 };
-
-                if (leftRefSize > 0)
-                    JobSystem::Execute(jobGroup, leftLambda);
-                if (rightRefSize > 0)
-                    JobSystem::Execute(jobGroup, rightLambda);
+                
+                JobSystem::Execute(jobGroup, leftLambda);
+                JobSystem::Execute(jobGroup, rightLambda);
             }   
             else {
                 if (leftRefs.size()) {
@@ -343,7 +376,7 @@ namespace Atlas {
         void BVHBuilder::Build(std::vector<Ref>& refs, JobGroup& jobGroup, bool parallelBuild) {
 
             // Create leaf node
-            if (refs.size() == 1) {
+            if ((refs.size() == 1 || depth >= 24) && depth > 0) {
                 CreateLeaf(refs);
                 return;
             }
@@ -372,7 +405,7 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 6 && parallelBuild) {
+            if (depth <= 8 && parallelBuild) {
                 auto leftRefSize = leftRefs.size(), rightRefSize = rightRefs.size();
                 auto leftLambda = [=, &jobGroup, leftRefs = std::move(leftRefs)](JobData&) {
                     auto refs = std::move(leftRefs);
@@ -386,10 +419,8 @@ namespace Atlas {
                     rightChild->Build(refs, jobGroup, parallelBuild);
                 };
 
-                if (leftRefSize > 0)
-                    JobSystem::Execute(jobGroup, leftLambda);
-                if (rightRefSize > 0)
-                    JobSystem::Execute(jobGroup, rightLambda);
+                JobSystem::Execute(jobGroup, leftLambda);
+                JobSystem::Execute(jobGroup, rightLambda);
             }   
             else {
                 if (leftRefs.size()) {
@@ -416,6 +447,9 @@ namespace Atlas {
                 refs[refs.size() - 1].endOfNode = true;
             }
             else {
+                if (!leftChild || !rightChild)
+                    return;
+
                 const auto nodeIdx = nodes.size();
                 nodes.push_back(BVHNode());
 
@@ -444,7 +478,7 @@ namespace Atlas {
         BVHBuilder::Split BVHBuilder::FindObjectSplit(std::vector<Ref>& refs) {
 
             Split split;
-            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
+            const auto depthBinCount = std::max(binCount / (depth + 1), 8u);
 
             std::vector<Bin> bins(depthBinCount);
             std::vector<AABB> rightAABBs(bins.size());
@@ -530,7 +564,7 @@ namespace Atlas {
         void BVHBuilder::PerformObjectSplit(std::vector<Ref>& refs, std::vector<Ref>& rightRefs,
             std::vector<Ref>& leftRefs, Split& split) {
 
-            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
+            const auto depthBinCount = std::max(binCount / (depth + 1), 8u);
 
             auto start = aabb.min[split.axis];
             auto stop = aabb.max[split.axis];

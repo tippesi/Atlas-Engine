@@ -3,35 +3,13 @@
 
 namespace Atlas::Lighting {
 
-    void to_json(json& j, const AO& p) {
-        j = json {
-            {"sampleCount", p.sampleCount},
-            {"radius", p.radius},
-            {"strength", p.strength},
-            {"enable", p.enable},
-            {"rt", p.rt},
-            {"opacityCheck", p.opacityCheck},
-            {"halfResolution", p.halfResolution},
-        };
-    }
-
-    void from_json(const json& j, AO& p) {
-        p = AO(j["sampleCount"].get<int32_t>());
-        j.at("radius").get_to(p.radius);
-        j.at("strength").get_to(p.strength);
-        j.at("enable").get_to(p.enable);
-        j.at("rt").get_to(p.rt);
-        j.at("opacityCheck").get_to(p.opacityCheck);
-        try_get_json(j, "halfResolution", p.halfResolution);
-    }
-
     void to_json(json& j, const EnvironmentProbe& p) {
         j = json {
             {"resolution", p.GetCubemap().width},
             {"position", p.GetPosition()}
         };
 
-        if (p.cubemap.IsValid()) {
+        if (p.cubemap.IsValid() && !p.cubemap.IsGenerated()) {
             j["cubemapPath"] = p.cubemap.GetResource()->path;
         }
     }
@@ -51,6 +29,7 @@ namespace Atlas::Lighting {
         j = json {
             {"height", p.height},
             {"rayleighScatteringCoeff", p.rayleighScatteringCoeff},
+            {"groundAlbedo", p.groundAlbedo},
             {"mieScatteringCoeff", p.mieScatteringCoeff},
             {"rayleighHeightScale", p.rayleighHeightScale},
             {"mieHeightScale", p.mieHeightScale},
@@ -63,6 +42,7 @@ namespace Atlas::Lighting {
             j["probeResolution"].get<int32_t>());
 
         try_get_json(j, "rayleighScatteringCoeff", p.rayleighScatteringCoeff);
+        try_get_json(j, "groundAlbedo", p.groundAlbedo);
         try_get_json(j, "mieScatteringCoeff", p.mieScatteringCoeff);
         try_get_json(j, "rayleighHeightScale", p.rayleighHeightScale);
         try_get_json(j, "mieHeightScale", p.mieHeightScale);
@@ -80,6 +60,7 @@ namespace Atlas::Lighting {
             {"heightFalloff", p.heightFalloff},
             {"scatteringAnisotropy", p.scatteringAnisotropy},
             {"rayMarching", p.rayMarching},
+            {"localLights", p.localLights},
             {"rayMarchStepCount", p.rayMarchStepCount},
             {"volumetricIntensity", p.volumetricIntensity},
         };
@@ -98,6 +79,8 @@ namespace Atlas::Lighting {
         j.at("rayMarching").get_to(p.rayMarching);
         j.at("rayMarchStepCount").get_to(p.rayMarchStepCount);
         j.at("volumetricIntensity").get_to(p.volumetricIntensity);
+
+        try_get_json(j, "localLights", p.localLights);
     }
 
     void to_json(json& j, const IrradianceVolume& p) {
@@ -120,12 +103,18 @@ namespace Atlas::Lighting {
             {"opacityCheck", p.opacityCheck},
             {"scroll", p.scroll},
             {"splitCorrection", p.splitCorrection},
+            {"visibility", p.visibility},
+            {"radiance", p.radiance},
+            {"lowerResRadiance", p.lowerResRadiance},
         };
     }
 
     void from_json(const json& j, IrradianceVolume& p) {
+        bool lowerResRadiance = false;
+        try_get_json(j, "lowerResRadiance", lowerResRadiance);
+
         p = IrradianceVolume(j["aabb"].get<Volume::AABB>(), j["probeCount"].get<ivec3>(), 
-            j["cascadeCount"].get<int32_t>(), j["lowerResMoments"].get<bool>());
+            j["cascadeCount"].get<int32_t>(), j["lowerResMoments"].get<bool>(), lowerResRadiance);
         j.at("enable").get_to(p.enable);
         j.at("rayCount").get_to(p.rayCount);
         j.at("rayCountInactive").get_to(p.rayCountInactive);
@@ -140,6 +129,11 @@ namespace Atlas::Lighting {
         j.at("opacityCheck").get_to(p.opacityCheck);
         j.at("scroll").get_to(p.scroll);
         j.at("splitCorrection").get_to(p.splitCorrection);
+
+        try_get_json(j, "radiance", p.radiance);
+        try_get_json(j, "visibility", p.visibility);
+
+        p.SetRayCount(p.rayCount, p.rayCountInactive);
     }
 
     void to_json(json& j, const Reflection& p) {
@@ -154,11 +148,15 @@ namespace Atlas::Lighting {
             {"currentClipFactor", p.currentClipFactor},
             {"enable", p.enable},
             {"rt", p.rt},
+            {"ssr", p.ssr},
             {"ddgi", p.ddgi},
             {"useShadowMap", p.useShadowMap},
             {"useNormalMaps", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
-            {"halfResolution", p.halfResolution}
+            {"halfResolution", p.halfResolution},
+            {"upsampleBeforeFiltering", p.upsampleBeforeFiltering},
+            {"lightSampleCount", p.lightSampleCount},
+            {"sampleCount", p.sampleCount},
         };
     }
 
@@ -176,8 +174,12 @@ namespace Atlas::Lighting {
         j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("useNormalMaps").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
+        try_get_json(j, "ssr", p.ssr);
+        try_get_json(j, "upsampleBeforeFiltering", p.upsampleBeforeFiltering);
         try_get_json(j, "halfResolution", p.halfResolution);
         try_get_json(j, "roughnessCutoff", p.roughnessCutoff);
+        try_get_json(j, "lightSampleCount", p.lightSampleCount);
+        try_get_json(j, "sampleCount", p.sampleCount);
     }
 
     void to_json(json& j, const RTGI& p) {
@@ -194,7 +196,9 @@ namespace Atlas::Lighting {
             {"useShadowMap", p.useShadowMap},
             {"useNormalMap", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
-            {"halfResolution", p.halfResolution}
+            {"halfResolution", p.halfResolution},
+            {"lightSampleCount", p.lightSampleCount},
+            {"sampleCount", p.sampleCount},
         };
     }
 
@@ -212,6 +216,8 @@ namespace Atlas::Lighting {
         j.at("useNormalMap").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "halfResolution", p.halfResolution);
+        try_get_json(j, "lightSampleCount", p.lightSampleCount);
+        try_get_json(j, "sampleCount", p.sampleCount);
     }
 
     void to_json(json& j, const ShadowView& p) {
@@ -306,8 +312,10 @@ namespace Atlas::Lighting {
         j = json {
             {"sampleCount", p.sampleCount},
             {"maxLength", p.maxLength},
+            {"minLengthWorldSpace", p.minLengthWorldSpace},
             {"thickness", p.thickness},
             {"enable", p.enable},
+            {"traceWorldSpace", p.traceWorldSpace},
         };
     }
 
@@ -316,6 +324,9 @@ namespace Atlas::Lighting {
         j.at("maxLength").get_to(p.maxLength);
         j.at("thickness").get_to(p.thickness);
         j.at("enable").get_to(p.enable);
+
+        try_get_json(j, "minLengthWorldSpace", p.minLengthWorldSpace);
+        try_get_json(j, "traceWorldSpace", p.traceWorldSpace);
     }
 
     void to_json(json& j, const VolumetricClouds::Scattering& p) {

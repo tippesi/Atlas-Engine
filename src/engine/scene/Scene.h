@@ -12,7 +12,6 @@
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/RTGI.h"
 #include "../lighting/SSGI.h"
-#include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
@@ -21,6 +20,7 @@
 #include "../mesh/Mesh.h"
 
 #include "SceneIterator.h"
+#include "SceneRenderState.h"
 #include "SpacePartitioning.h"
 #include "Subset.h"
 #include "Wind.h"
@@ -46,7 +46,8 @@ namespace Atlas {
             MeshComponentBit = (1 << 0),
             RigidBodyComponentBit = (1 << 1),
             TextComponentBit = (1 << 2),
-            AllComponentsBit = (1 << 3) - 1
+            TerrainComponentBit = (1 << 3),
+            AllComponentsBit = (1 << 4) - 1
         } SceneQueryComponentBits;
 
         class Scene : public SpacePartitioning {
@@ -58,12 +59,13 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5), renderState(this)
+                { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
             explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
-                name(name) { RegisterSubscribers(); }
+                name(name), renderState(this) { RegisterSubscribers(); }
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : SpacePartitioning(this, min, max, depth), name(name) { RegisterSubscribers(); }
+                : SpacePartitioning(this, min, max, depth), name(name), renderState(this) { RegisterSubscribers(); }
 
             ~Scene();
 
@@ -72,7 +74,8 @@ namespace Atlas {
             template<typename T, typename ...Args>
             T CreatePrefab(Args&&... args);
 
-            void DestroyEntity(Entity entity, bool removeRecursively = true);
+            void DestroyEntity(Entity entity, bool removeRecursively = true, 
+                bool parentDeleted = false);
 
             Entity DuplicateEntity(Entity entity);
 
@@ -85,21 +88,29 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
+            template<typename Comp>
+            size_t GetComponentCount();
+
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
-            void Timestep(float deltaTime);
-
-            void Update();
+            void Update(float deltaTime);
 
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
-            std::vector<Ref<Material>> GetMaterials();
+            std::vector<ResourceHandle<Material>> GetMaterials();
 
             CameraComponent& GetMainCamera();
 
             bool HasMainCamera() const;
 
+            LightComponent& GetMainLight();
+
+            bool HasMainLight() const;
+
             Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
+                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
+
+            std::vector<Entity> QueryAABB(const Volume::AABB& aabb, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
             void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
@@ -125,12 +136,13 @@ namespace Atlas {
             static Ref<Scene> Restore(const std::vector<uint8_t>& serialized);
 
             std::string name;
-
-            Ref<Ocean::Ocean> ocean = nullptr;
-            Ref<Terrain::Terrain> terrain = nullptr;
+            
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
-            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;            
+            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
+
+            Ref<Ocean::Ocean> ocean = nullptr;
+            ResourceHandle<Terrain::Terrain> terrain;       
 
             Wind wind;
             Lighting::Sky sky;
@@ -138,17 +150,19 @@ namespace Atlas {
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
             Ref<Lighting::RTGI> rtgi = nullptr;
             Ref<Lighting::SSGI> ssgi = nullptr;
-            Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
             Ref<Lighting::SSS> sss = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
-            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
-            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+            SceneRenderState renderState;
+            ECS::EntityManager entityManager = ECS::EntityManager(this);
 
         private:
-            void UpdateBindlessIndexMaps();
-
+            struct ThreadContext {
+                std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
+                std::vector<ECS::Entity> changedMeshes;
+            }threadContexts[8];
+            
             Entity ToSceneEntity(ECS::Entity entity);
 
             void RegisterSubscribers();
@@ -164,15 +178,18 @@ namespace Atlas {
             void UnregisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource);
 
             template<class T>
-            void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);
+            void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);           
 
-            ECS::EntityManager entityManager = ECS::EntityManager(this);
+            void FindChangedTransforms(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+
+            void FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
 
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
             Entity mainCameraEntity;
+            Entity mainLightEntity;
             float deltaTime = 1.0f;
 
             bool firstTimestep = true;
@@ -180,14 +197,14 @@ namespace Atlas {
             bool rtDataValid = false;
             bool vegetationChanged = false;
 
-            Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
+            std::vector<std::pair<ECS::Entity, int32_t>> changedTransformSet;
+            std::vector<ECS::Entity> changedMeshSet;
 
-            JobGroup rayTracingWorldUpdateJob { JobPriority::High };
-            JobGroup bindlessMeshMapUpdateJob { JobPriority::High };
-            JobGroup bindlessTextureMapUpdateJob { JobPriority::High };
+            Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
             friend Entity;
             friend SpacePartitioning;
+            friend SceneRenderState;
             friend RayTracing::RayTracingWorld;
             friend HierarchyComponent;
             friend MeshComponent;
@@ -217,6 +234,13 @@ namespace Atlas {
         Subset<Comp...> Scene::GetSubset() {
 
             return Subset<Comp...>(entityManager.GetSubset<Comp...>(), &entityManager);
+
+        }
+
+        template<typename Comp>
+        size_t Scene::GetComponentCount() {
+
+            return entityManager.GetCount<Comp>();
 
         }
 

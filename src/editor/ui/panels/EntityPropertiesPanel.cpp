@@ -1,5 +1,7 @@
 #include "EntityPropertiesPanel.h"
 
+#include "Notifications.h"
+
 namespace Atlas::Editor::UI {
 
     void EntityPropertiesPanel::Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties) {
@@ -11,6 +13,11 @@ namespace Atlas::Editor::UI {
         auto nameComponent = entity.TryGetComponent<NameComponent>();
         if (nameComponent) {
             nameComponentPanel.Render(scene, entity, *nameComponent);
+        }
+
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+        if (hierarchyComponent) {
+            hierarchyComponentPanel.Render(scene, entity, *hierarchyComponent);
         }
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
@@ -88,6 +95,12 @@ namespace Atlas::Editor::UI {
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
             }
+
+            if (entity.HasComponent<SplineComponent>()) {
+                auto& comp = entity.GetComponent<SplineComponent>();
+                RenderComponentPanel("Spline component", scene,
+                    entity, splineComponentPanel, comp);
+            }
         }
 
         // Add components
@@ -102,6 +115,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
                 if (!entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Add mesh component"))
                     entity.AddComponent<MeshComponent>();
+                if (!entity.HasComponent<LightComponent>() && ImGui::MenuItem("Add light component"))
+                    entity.AddComponent<LightComponent>(LightType::PointLight);
                 if (!entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Add audio component"))
                     entity.AddComponent<AudioComponent>();
                 if (!entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Add audio volume component"))
@@ -112,6 +127,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TextComponent>();
 				if (!entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Add lua script component"))
                     entity.AddComponent<LuaScriptComponent>();
+                if (!entity.HasComponent<SplineComponent>() && ImGui::MenuItem("Add spline component"))
+                    entity.AddComponent<SplineComponent>();
 
                 // Just make the player component addable if there is a transform component
                 if (entity.HasComponent<TransformComponent>() &&
@@ -157,6 +174,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<TransformComponent>();
                 if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Remove mesh component"))
                     entity.RemoveComponent<MeshComponent>();
+                if (entity.HasComponent<LightComponent>() && ImGui::MenuItem("Remove light component"))
+                    entity.RemoveComponent<LightComponent>();
                 if (entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Remove audio component"))
                     entity.RemoveComponent<AudioComponent>();
                 if (entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Remove audio volume component"))
@@ -167,6 +186,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<TextComponent>();
                 if (entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Remove lua script component"))
                     entity.RemoveComponent<LuaScriptComponent>();
+                if (entity.HasComponent<SplineComponent>() && ImGui::MenuItem("Remove spline component"))
+                    entity.RemoveComponent<SplineComponent>();
                 if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Remove player component")) 
                     entity.RemoveComponent<PlayerComponent>();
                 if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Remove rigid body component")) 
@@ -174,6 +195,28 @@ namespace Atlas::Editor::UI {
 
                 ImGui::EndPopup();
             }
+        }
+
+        // Paste components
+        if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+            if (ImGui::MenuItem("Paste")) {
+                if (HandleComponentPaste<TransformComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<MeshComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<LightComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<AudioComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<AudioVolumeComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<CameraComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<TextComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<LuaScriptComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<SplineComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<PlayerComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<RigidBodyComponent>(scene, entity)) {}
+                else {
+                    Notifications::Push({"Invalid type to paste as a component."});
+                }
+            }
+
+            ImGui::EndPopup();
         }
 
     }

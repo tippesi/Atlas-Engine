@@ -6,10 +6,12 @@
 
 #include <vector>
 #include <shared_mutex>
+#include <atomic>
 
 namespace Atlas::Editor {
 
 	struct ContentDirectory {
+		std::string name;
 		std::filesystem::path path;
 		std::string assetPath;
 
@@ -21,6 +23,8 @@ namespace Atlas::Editor {
 
 	public:
 		static void Shutdown() { JobSystem::Wait(contentDiscoveryJob); }
+
+		static void Execute();
 
 		static const Ref<ContentDirectory> GetContent();
 
@@ -47,6 +51,7 @@ namespace Atlas::Editor {
 		static Ref<DiscoveredContent> nextContent;
 		static JobGroup contentDiscoveryJob;
 
+		static std::atomic_bool execute;
 		static const float discoverFrequency;
 		static float lastDiscoveryTime;
 

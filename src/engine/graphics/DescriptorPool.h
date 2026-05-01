@@ -49,8 +49,11 @@ namespace Atlas {
 
             VkDescriptorPool InitPool(const DescriptorSetSize& size);
 
+            bool PoolFits(const DescriptorSetSize& poolSize, const DescriptorSetSize& requestedSize) const;
+
             GraphicsDevice* device;
             std::vector<VkDescriptorPool> pools;
+            std::vector<DescriptorSetSize> poolSizes;
             std::unordered_map<Ref<DescriptorSetLayout>, LayoutAllocations> layoutAllocationsMap;
 
             uint32_t poolIdx = 0;

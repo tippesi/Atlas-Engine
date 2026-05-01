@@ -52,7 +52,14 @@ namespace Atlas::Editor::UI
             case LuaScriptComponent::PropertyType::String:
                 ImGui::InputText(name.c_str(), &property.stringValue);
                 break;
+            case LuaScriptComponent::PropertyType::Vec2:
+                ImGui::DragFloat2(name.c_str(), glm::value_ptr(property.vec2Value));
+                break;
+            case LuaScriptComponent::PropertyType::Vec3:
+                ImGui::DragFloat3(name.c_str(), glm::value_ptr(property.vec3Value));
+                break;
             case LuaScriptComponent::PropertyType::Undefined:
+            default:
                 break;
             }
         }

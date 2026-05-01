@@ -2,6 +2,7 @@
 
 #include "Window.h"
 
+#include "../../tools/Guizmo.h"
 #include "../panels/SceneHierarchyPanel.h"
 #include "../panels/ViewportPanel.h"
 #include "../panels/ScenePropertiesPanel.h"
@@ -38,6 +39,8 @@ namespace Atlas::Editor::UI {
 
         void SaveScene();
 
+        void ApplyBrush();
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel scenePropertiesPanel;
@@ -46,33 +49,35 @@ namespace Atlas::Editor::UI {
 
         Scene::Entity cameraEntity;
 
-        bool snappingEnabled = false;
-        float translationSnap = 0.1f;
-        float rotationSnap = 1.0f;
-        float scaleSnap = 0.01f;
+        Guizmo guizmo;
 
         float cameraMovementSpeed = 7.0f;
         float cameraRotationSpeed = 1.5f;
 
-        float resolutionScale = 0.75f;
-
-        // Imguizmo translate mode
-        int32_t guizmoMode = 7;
-        bool needGuizmoEnabled = false;
+        float resolutionScale = 0.75f;       
 
         bool depthTestBoundingVolumes = false;
 
         bool hasMainCamera = false;
         bool hasPlayer = false;
         bool isPlaying = false;
+        bool playMaximized = false;
+        bool perfOverlayMaximized = false;
         bool isActiveWindow = false;
         bool lockSelection = false;
+        bool brushActive = false;
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);
 
+        void PerformEntitySelection();
+
+        mat4 GetGlobalMatrix(Scene::Entity entity);
+
         std::vector<uint8_t> sceneState;
         std::vector<uint8_t> cameraState;
+
+        float terrainFlattenHeight = Terrain::Terrain::invalidHeight;
 
     };
 

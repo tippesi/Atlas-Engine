@@ -33,9 +33,9 @@ namespace Atlas {
 
         void RemoveMacro(const std::string& macro);
 
-        bool HasMacro(const std::string& macro);
+        bool HasMacro(const char* macro);
 
-        bool ManageMacro(const std::string& macro, bool enable);
+        bool ManageMacro(const char* macro, bool enable);
 
         bool IsValid() const;
 

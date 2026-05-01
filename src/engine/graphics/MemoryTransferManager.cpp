@@ -13,8 +13,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager *memManager)
-            : device(device), memoryManager(memManager) {
+        MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager* memoryManager)
+            : device(device), memoryManager(memoryManager) {
 
 
 
@@ -22,14 +22,43 @@ namespace Atlas {
 
         MemoryTransferManager::~MemoryTransferManager() {
 
-            
+            AE_ASSERT(commandList == nullptr && "Transfer was probably not completed before deallocation of the manager");
+
+        }
+
+        void MemoryTransferManager::BeginMultiTransfer() {
+
+            commandList = device->GetCommandList(GraphicsQueue, true);
+            commandList->BeginCommands();
+
+        }
+
+        void MemoryTransferManager::EndMultiTransfer() {
+
+            commandList->EndCommands();
+            device->FlushCommandList(commandList);
+
+            for (auto& stagingBuffer : allocations)
+                DestroyStagingBuffer(stagingBuffer);
+
+            allocations.clear();
+            commandList = nullptr;
 
         }
 
         void MemoryTransferManager::UploadBufferData(void *data, Buffer* destinationBuffer,
             VkBufferCopy bufferCopyDesc) {
 
-            auto commandList = device->GetCommandList(TransferQueue, true);
+            bool inTransfer = commandList != nullptr;
+            CommandList* localCommandList = nullptr;
+
+            if (!inTransfer) {
+                localCommandList = device->GetCommandList(TransferQueue, true);
+                localCommandList->BeginCommands();
+            }
+            else {
+                localCommandList = commandList;
+            }
 
             VmaAllocator allocator = memoryManager->allocator;
 
@@ -38,59 +67,79 @@ namespace Atlas {
             void* destination;
             vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
             std::memcpy(destination, data, bufferCopyDesc.size);
-            vmaUnmapMemory(allocator, stagingAllocation.allocation);
+            vmaFlushAllocation(allocator, stagingAllocation.allocation, 0, bufferCopyDesc.size);
+            vmaUnmapMemory(allocator, stagingAllocation.allocation);            
 
-            commandList->BeginCommands();
-
-            vkCmdCopyBuffer(commandList->commandBuffer, stagingAllocation.buffer,
+            vkCmdCopyBuffer(localCommandList->commandBuffer, stagingAllocation.buffer,
                 destinationBuffer->buffer, 1, &bufferCopyDesc);
 
-            commandList->EndCommands();
-
-            device->FlushCommandList(commandList);
-            DestroyStagingBuffer(stagingAllocation);
+            if (!inTransfer) {
+                localCommandList->EndCommands();
+                device->FlushCommandList(localCommandList);
+                DestroyStagingBuffer(stagingAllocation);
+            }
+            else {
+                allocations.push_back(stagingAllocation);
+            }
 
         }
 
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent,
             uint32_t layerOffset, uint32_t layerCount) {
 
+            bool inTransfer = commandList != nullptr;
+            CommandList* localCommandList = nullptr;
+
             // Need graphics queue for mip generation
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            if (!inTransfer) {
+                localCommandList = device->GetCommandList(GraphicsQueue, true);
+                localCommandList->BeginCommands();
+            }
+            else {
+                localCommandList = commandList;
+            }
+
             VmaAllocator allocator = memoryManager->allocator;
 
-            commandList->BeginCommands();
-
             auto formatSize = GetFormatSize(image->format);
-            auto pixelCount = image->width * image->height * image->depth;
-            auto stagingAllocation = CreateStagingBuffer(pixelCount * formatSize);
+            auto pixelCount = size_t(extent.width) * size_t(extent.height) *
+                size_t(extent.depth) * size_t(layerCount);
+            auto stagingAllocationSize = pixelCount * formatSize;
+            auto stagingAllocation = CreateStagingBuffer(stagingAllocationSize);
 
             void* destination;
             vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
-            std::memcpy(destination, data, pixelCount * formatSize);
+            std::memcpy(destination, data, stagingAllocationSize);
+            vmaFlushAllocation(allocator, stagingAllocation.allocation, 0, stagingAllocationSize);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
 
             auto mipLevels = image->mipLevels;
+            auto oldLayout = image->layout;
+            auto oldAccessMask = image->accessMask;
+            bool initializeWholeImage = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED;
+            bool transitionWholeImage = initializeWholeImage || mipLevels > 1;
 
             VkImageSubresourceRange range = {};
-            range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            range.aspectMask = image->aspectFlags;
             range.baseMipLevel = 0;
             range.levelCount = mipLevels;
-            range.baseArrayLayer = 0;
-            range.layerCount = image->layers;
+            range.baseArrayLayer = transitionWholeImage ? 0 : layerOffset;
+            range.layerCount = transitionWholeImage ? image->layers : layerCount;
 
             VkImageMemoryBarrier imageBarrier = {};
             // Create first barrier to transition image
             {
                 imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.oldLayout = oldLayout;
                 imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 imageBarrier.image = image->image;
                 imageBarrier.subresourceRange = range;
-                imageBarrier.srcAccessMask = 0;
+                imageBarrier.srcAccessMask = initializeWholeImage ? 0 : oldAccessMask;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
@@ -100,23 +149,23 @@ namespace Atlas {
                 copyRegion.bufferOffset = 0;
                 copyRegion.bufferRowLength = 0;
                 copyRegion.bufferImageHeight = 0;
-                copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copyRegion.imageSubresource.aspectMask = image->aspectFlags;
                 copyRegion.imageSubresource.mipLevel = 0;
                 copyRegion.imageSubresource.baseArrayLayer = layerOffset;
                 copyRegion.imageSubresource.layerCount = layerCount;
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
 
-                vkCmdCopyBufferToImage(commandList->commandBuffer, stagingAllocation.buffer, image->image,
+                vkCmdCopyBufferToImage(localCommandList->commandBuffer, stagingAllocation.buffer, image->image,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
             }
 
-            // Transition image again to make it shader readable
+            // Transition image again to make it usable
             {
                 auto newLayout = mipLevels > 1 ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL :
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    (initializeWholeImage ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : oldLayout);
                 auto dstAccessMask = mipLevels > 1 ? VK_ACCESS_TRANSFER_READ_BIT :
-                    VK_ACCESS_SHADER_READ_BIT;
+                    (initializeWholeImage ? VK_ACCESS_SHADER_READ_BIT : oldAccessMask);
                 auto dstStageMask = mipLevels > 1 ? VK_PIPELINE_STAGE_TRANSFER_BIT :
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
@@ -125,18 +174,22 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 imageBarrier.dstAccessMask = dstAccessMask;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
                 image->layout = newLayout;
                 image->accessMask = dstAccessMask;
             }
 
-            if (mipLevels > 1) GenerateMipMaps(image, commandList->commandBuffer);
+            if (mipLevels > 1) GenerateMipMaps(image, localCommandList->commandBuffer);
 
-            commandList->EndCommands();
-
-            device->FlushCommandList(commandList);
-            DestroyStagingBuffer(stagingAllocation);
+            if (!inTransfer) {
+                localCommandList->EndCommands();
+                device->FlushCommandList(localCommandList);
+                DestroyStagingBuffer(stagingAllocation);
+            }
+            else {
+                allocations.push_back(stagingAllocation);
+            }
 
         }
 
@@ -145,36 +198,44 @@ namespace Atlas {
 
             if (block) device->WaitForIdle();
 
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            auto localCommandList = device->GetCommandList(GraphicsQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
-            commandList->BeginCommands();
+            localCommandList->BeginCommands();
 
             auto formatSize = GetFormatSize(image->format);
-            auto pixelCount = image->width * image->height * image->depth;
-            auto stagingAllocation = CreateStagingBuffer(pixelCount * formatSize);
+            auto pixelCount = size_t(extent.width) * size_t(extent.height) *
+                size_t(extent.depth) * size_t(layerCount);
+            auto stagingAllocationSize = pixelCount * formatSize;
+            auto stagingAllocation = CreateStagingBuffer(stagingAllocationSize);
 
-            auto mipLevels = image->mipLevels;
+            auto oldLayout = image->layout;
+            auto oldAccessMask = image->accessMask;
+
+            AE_ASSERT(oldLayout != VK_IMAGE_LAYOUT_UNDEFINED &&
+                "Image data can't be retrieved from an undefined image layout");
 
             VkImageSubresourceRange range = {};
-            range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            range.aspectMask = image->aspectFlags;
             range.baseMipLevel = 0;
-            range.levelCount = mipLevels;
-            range.baseArrayLayer = 0;
-            range.layerCount = image->layers;
+            range.levelCount = 1;
+            range.baseArrayLayer = layerOffset;
+            range.layerCount = layerCount;
 
             VkImageMemoryBarrier imageBarrier = {};
             // Create first barrier to transition image
             {
                 imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.oldLayout = oldLayout;
                 imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
                 imageBarrier.image = image->image;
                 imageBarrier.subresourceRange = range;
-                imageBarrier.srcAccessMask = 0;
+                imageBarrier.srcAccessMask = oldAccessMask;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
@@ -184,32 +245,26 @@ namespace Atlas {
                 copyRegion.bufferOffset = 0;
                 copyRegion.bufferRowLength = 0;
                 copyRegion.bufferImageHeight = 0;
-                copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copyRegion.imageSubresource.aspectMask = image->aspectFlags;
                 copyRegion.imageSubresource.mipLevel = 0;
                 copyRegion.imageSubresource.baseArrayLayer = layerOffset;
                 copyRegion.imageSubresource.layerCount = layerCount;
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
 
-                vkCmdCopyImageToBuffer(commandList->commandBuffer, image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                vkCmdCopyImageToBuffer(localCommandList->commandBuffer, image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     stagingAllocation.buffer, 1, &copyRegion);
             }
 
-            // Transition image again to make it shader readable
+            // Transition image back to its previous layout
             {
-                auto newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                auto dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                auto dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
                 imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                imageBarrier.newLayout = newLayout;
+                imageBarrier.newLayout = oldLayout;
                 imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                imageBarrier.dstAccessMask = dstAccessMask;
+                imageBarrier.dstAccessMask = oldAccessMask;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
-                image->layout = newLayout;
-                image->accessMask = dstAccessMask;
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
             // Buffer barrier so we can map it afterwards
@@ -217,20 +272,20 @@ namespace Atlas {
                 VkBufferMemoryBarrier bufferBarrier = Initializers::InitBufferMemoryBarrier(stagingAllocation.buffer,
                     VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT);
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr, 1, &bufferBarrier, 0, nullptr);
             }
 
-            commandList->EndCommands();
+            localCommandList->EndCommands();
 
-            device->FlushCommandList(commandList);
+            device->FlushCommandList(localCommandList);
             device->WaitForIdle();
 
             void* src;
+            vmaInvalidateAllocation(allocator, stagingAllocation.allocation, 0, stagingAllocationSize);
             vmaMapMemory(allocator, stagingAllocation.allocation, &src);
-            std::memcpy(data, src, pixelCount * formatSize);
+            std::memcpy(data, src, stagingAllocationSize);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
-
             
             DestroyStagingBuffer(stagingAllocation);
 
@@ -239,16 +294,16 @@ namespace Atlas {
         void MemoryTransferManager::GenerateMipMaps(Image *image) {
 
             // Need graphics queue for mip generation
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            auto localCommandList = device->GetCommandList(GraphicsQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
-            commandList->BeginCommands();
+            localCommandList->BeginCommands();
 
             AE_ASSERT(false && "Needs to be implemented if needed");
 
-            commandList->EndCommands();
+            localCommandList->EndCommands();
 
-            device->FlushCommandList(commandList);
+            device->FlushCommandList(localCommandList);
             device->WaitForIdle();
 
         }
@@ -260,7 +315,7 @@ namespace Atlas {
             imageBarrier.image = image->image;
             imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBarrier.subresourceRange.aspectMask = image->aspectFlags;
             imageBarrier.subresourceRange.baseArrayLayer = 0;
             imageBarrier.subresourceRange.layerCount = image->layers;
             imageBarrier.subresourceRange.levelCount = 1;
@@ -268,6 +323,21 @@ namespace Atlas {
             auto mipWidth = int32_t(image->width);
             auto mipHeight = int32_t(image->height);
             auto mipDepth = int32_t(image->depth);
+
+            // Transition to useful layout if not done already
+            if (image->layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+                imageBarrier.subresourceRange.baseMipLevel = 0;
+                imageBarrier.subresourceRange.levelCount = image->mipLevels;
+                imageBarrier.oldLayout = image->layout;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                imageBarrier.srcAccessMask = image->accessMask;
+                imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+
+                imageBarrier.subresourceRange.levelCount = 1;
+            }
 
             for (uint32_t i = 1; i < image->mipLevels; i++) {
                 imageBarrier.subresourceRange.baseMipLevel = i - 1;
@@ -282,7 +352,7 @@ namespace Atlas {
                 VkImageBlit blit = {};
                 blit.srcOffsets[0] = { 0, 0, 0 };
                 blit.srcOffsets[1] = { mipWidth, mipHeight, mipDepth };
-                blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.srcSubresource.aspectMask = image->aspectFlags;
                 blit.srcSubresource.mipLevel = i - 1;
                 blit.srcSubresource.baseArrayLayer = 0;
                 blit.srcSubresource.layerCount = image->layers;
@@ -290,7 +360,7 @@ namespace Atlas {
                 blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1,
                                        mipHeight > 1 ? mipHeight / 2 : 1,
                                        mipDepth > 1 ? mipDepth / 2 : 1 };
-                blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.dstSubresource.aspectMask = image->aspectFlags;
                 blit.dstSubresource.mipLevel = i;
                 blit.dstSubresource.baseArrayLayer = 0;
                 blit.dstSubresource.layerCount = image->layers;

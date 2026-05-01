@@ -40,7 +40,9 @@ namespace Atlas {
             PipelineConfig verticalBlurPipelineConfig;
 
             Buffer::UniformBuffer ssUniformBuffer;
-            Buffer::UniformBuffer blurWeightsUniformBuffer;
+            Buffer::Buffer blurWeightsUniformBuffer;
+
+            const int32_t filterSize = 3;
 
         };
 

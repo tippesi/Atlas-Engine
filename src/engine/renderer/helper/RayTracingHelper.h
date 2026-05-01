@@ -43,6 +43,7 @@ namespace Atlas {
 
                 void UpdateLights(Ref<Scene::Scene> scene, bool useEmissivesAsLights = false);
 
+                bool stochasticLightSelection = false;
 
             private:
                 struct alignas(16) PushConstants {

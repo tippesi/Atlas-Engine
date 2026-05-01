@@ -16,18 +16,12 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
-            void TraceAndUpdateProbes(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void TraceAndUpdateProbes(const Ref<RenderTarget>& renderTarget, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
-            void DebugProbes(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
+            void DebugProbes(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList,
                 std::unordered_map<void*, uint16_t>& materialMap);
-
-            // Used for debugging
-            Ref<Material> probeDebugMaterial;
-            Ref<Material> probeDebugActiveMaterial;
-            Ref<Material> probeDebugInactiveMaterial;
-            Ref<Material> probeDebugOffsetMaterial;
 
         private:
             struct alignas(16) RayGenUniforms {
@@ -63,9 +57,11 @@ namespace Atlas {
 
             PipelineConfig probeStatePipelineConfig;
             PipelineConfig probeIrradianceUpdatePipelineConfig;
+            PipelineConfig probeRadianceUpdatePipelineConfig;
             PipelineConfig probeMomentsUpdatePipelineConfig;
 
             PipelineConfig irradianceCopyEdgePipelineConfig;
+            PipelineConfig radianceCopyEdgePipelineConfig;
             PipelineConfig momentsCopyEdgePipelineConfig;
 
             Ref<Graphics::Sampler> shadowSampler;

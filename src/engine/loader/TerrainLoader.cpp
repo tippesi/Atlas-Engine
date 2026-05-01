@@ -1,6 +1,7 @@
 #include "TerrainLoader.h"
 #include "AssetLoader.h"
 #include "MaterialLoader.h"
+#include "resource/ResourceManager.h"
 #include "../Log.h"
 
 #include "../common/Path.h"
@@ -9,7 +10,7 @@ namespace Atlas {
 
     namespace Loader {
 
-        void TerrainLoader::SaveTerrain(Ref<Terrain::Terrain> terrain, std::string filename) {
+        void TerrainLoader::SaveTerrain(Ref<Terrain::Terrain> terrain, const std::string& filename) {
 
             auto fileStream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
 
@@ -18,12 +19,12 @@ namespace Atlas {
                 return;
             }
 
-            auto materials = terrain->storage.GetMaterials();
+            auto materials = terrain->storage->GetMaterials();
 
             // There don't have to be all materials
             int32_t count = 0;
             for (auto material : materials)
-                if (material)
+                if (material.IsValid())
                     count++;
 
             // Write file header in ASCII
@@ -36,6 +37,9 @@ namespace Atlas {
             header.append(std::to_string(terrain->patchSizeFactor) + " ");
             header.append(std::to_string(terrain->resolution) + " ");
             header.append(std::to_string(terrain->heightScale) + " ");
+            header.append(std::to_string(terrain->translation.x) + " ");
+            header.append(std::to_string(terrain->translation.y) + " ");
+            header.append(std::to_string(terrain->translation.z) + " ");
             header.append(std::to_string(terrain->bakeResolution) + "\n");
 
             fileStream << header;
@@ -57,16 +61,14 @@ namespace Atlas {
 
             // Write all material paths and store the materials
             auto terrainDir = Common::Path::GetDirectory(filename);
-            auto materialDir = terrainDir + "/material";
-
-            AssetLoader::MakeDirectory(materialDir);
 
             count = 0;
             for (auto& material : materials) {
-                if (material) {
-                    auto filename = materialDir + "/" + material->name + ".aematerial";
-                    MaterialLoader::SaveMaterial(material, filename);
-                    body.append(std::to_string(count) + " material/" + material->name + ".aematerial" + "\n");
+                if (material.IsValid()) {
+                    body.append(std::to_string(count) + " " + material.GetResource()->path + "\n");
+                }
+                if (material.IsLoaded()) {
+                    MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
                 }
                 count++;
             }
@@ -76,29 +78,29 @@ namespace Atlas {
             // Iterate over all LoD level
             for (int32_t i = 0; i < terrain->LoDCount; i++) {
 
-                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage.GetCellCount(i));
+                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage->GetCellCount(i));
 
                 auto isLeaf = i == terrain->LoDCount - 1;
 
                 for (int32_t x = 0; x < cellSideCount; x++) {
                     for (int32_t y = 0; y < cellSideCount; y++) {
 
-                        auto cell = terrain->storage.GetCell(x, y, i);
+                        auto cell = terrain->storage->GetCell(x, y, i);
 
                         if (isLeaf) {
                             // fileStream.write((char*)cell->materialIndices, sizeof(cell->materialIndices));
                         }
 
                         // Here we assume that all cells are present
-                        auto heightData = cell->heightField.GetData<uint16_t>();
+                        auto heightData = cell->heightField->GetData<uint16_t>();
 
                         fileStream.write(reinterpret_cast<char*>(heightData.data()), heightData.size() * 2);
 
-                        auto data = cell->normalMap.GetData<uint8_t>();
+                        auto data = cell->normalMap->GetData<uint8_t>();
 
                         fileStream.write(reinterpret_cast<char*>(data.data()), data.size());
 
-                        data = cell->splatMap.GetData<uint8_t>();
+                        data = cell->splatMap->GetData<uint8_t>();
 
                         fileStream.write(reinterpret_cast<char*>(data.data()), data.size());
 
@@ -111,24 +113,22 @@ namespace Atlas {
 
         }
 
-        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(std::string filename) {
+        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(const std::string& filename, bool loadNodes) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in);
 
             if (!fileStream.is_open()) {
-                Log::Error("Couldn't read terrain file " + filename);
-                return nullptr;
+                throw ResourceLoadException(filename, "Couldn't read terrain file " + filename);
             }
 
             std::string header, line;
-
             std::getline(fileStream, header);
 
             if (header.compare(0, 4, "AET ") != 0) {
-                Log::Error("File isn't a terrain file " + filename);
-                return nullptr;
+                throw ResourceLoadException(filename, "File isn't a terrain file " + filename);
             }
 
+            vec3 translation;
             size_t offset = 4;
             auto materialCount = ReadInt(" ", header, offset);
             auto rootNodeSideCount = ReadInt(" ", header, offset);
@@ -136,6 +136,9 @@ namespace Atlas {
             auto patchSizeFactor = ReadInt(" ", header, offset);
             auto resolution = ReadFloat(" ", header, offset);
             auto heightScale = ReadFloat(" ", header, offset);
+            translation.x = ReadFloat(" ", header, offset);
+            translation.y = ReadFloat(" ", header, offset);
+            translation.z = ReadFloat(" ", header, offset);
             auto bakeResolution = ReadInt("\r\n", header, offset);
 
             std::getline(fileStream, line);
@@ -150,6 +153,7 @@ namespace Atlas {
             auto terrain = std::make_shared<Terrain::Terrain>(rootNodeSideCount, LoDCount,
                 patchSizeFactor, resolution, heightScale);
 
+            terrain->translation = translation;
             terrain->SetTessellationFunction(tessFactor, tessSlope, tessShift, tessMaxLevel);
             terrain->SetDisplacementDistance(displacementDistance);
 
@@ -169,7 +173,7 @@ namespace Atlas {
 
             auto terrainDir = Common::Path::GetDirectory(filename);
 
-            terrain->storage.BeginMaterialWrite();
+            terrain->storage->BeginMaterialWrite();
 
             for (int32_t i = 0; i < materialCount; i++) {
                 std::getline(fileStream, line);
@@ -178,40 +182,63 @@ namespace Atlas {
                 auto slot = ReadInt(" ", line, offset);
 
                 auto pos = line.find_last_of("\r\n");
-                auto materialPath = terrainDir + "/" + line.substr(offset, pos - offset);
-                auto material = MaterialLoader::LoadMaterial(materialPath);
+                auto materialPath = line.substr(offset, pos - offset);
 
-                if (material)
-                    terrain->storage.WriteMaterial(slot, material);
+                auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(materialPath,
+                    ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+
+                if (material.IsLoaded())
+                    terrain->storage->WriteMaterial(slot, material);
             }
 
-            terrain->storage.EndMaterialWrite();
+            terrain->storage->EndMaterialWrite();
 
             fileStream.close();
 
             terrain->filename = filename;
 
+            // Return early here, work is done
+            if (!loadNodes)
+                return terrain;
+
+            std::vector<Terrain::TerrainStorageCell*> cells;
+
+            for (int32_t depth = 0; depth < terrain->LoDCount; depth++) {
+                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage->GetCellCount(depth));
+
+                for (int32_t x = 0; x < cellSideCount; x++) {
+                    for (int32_t y = 0; y < cellSideCount; y++) {
+
+                        Terrain::TerrainStorageCell* cell = terrain->storage->GetCell(x, y, depth);
+                        cells.push_back(cell);                        
+
+                    }
+                }
+            }
+
+            Atlas::Loader::TerrainLoader::LoadStorageCells(terrain, cells, filename);            
+
             return terrain;
 
         }
 
-        void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, Terrain::TerrainStorageCell* cell,
-                std::string filename, bool initWithHeightData) {
+        void TerrainLoader::LoadStorageCells(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cells,
+                const std::string& filename) {
+
+            if (cells.empty())
+                return;
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!fileStream.is_open()) {
-                Log::Error("Couldn't read terrain file " + filename);
-                return;
+                throw ResourceLoadException(filename, "Couldn't read terrain file " + filename);
             }
 
             std::string header, body;
-
             std::getline(fileStream, header);
 
             if (header.compare(0, 4, "AET ") != 0) {
-                Log::Error("File isn't a terrain file " + filename);
-                return;
+                throw ResourceLoadException(filename, "File isn't a terrain file " + filename);
             }
 
             auto position = header.find_first_of(' ', 4);
@@ -221,66 +248,145 @@ namespace Atlas {
             for (int32_t i = 0; i < materialCount + 2; i++)
                 std::getline(fileStream, body);
 
-            auto isLeaf = cell->LoD == terrain->LoDCount - 1;
+            auto basePosition = fileStream.tellg();
+            fileStream.seekg(0, std::ios::end);
+            auto fileEndPosition = fileStream.tellg();
+            fileStream.seekg(basePosition);
+
             auto tileResolution = 8 * terrain->patchSizeFactor + 1;
 
             // Height map + splat map
-            auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;
-
-            auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
-            auto tileSideCount = (int64_t)sqrtf((float)terrain->storage.GetCellCount(0));
+            auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;            
             auto normalDataResolution = int64_t(0);
+            auto baseOffset = std::streamoff(basePosition);
+            auto fileEndOffset = std::streamoff(fileEndPosition);
 
-            auto currPos = int64_t(0);
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            Graphics::MemoryTransferManager transferManager(device, device->memoryManager);
 
-            // Different resolutions for each LoD
-            for (int32_t i = 0; i <= cell->LoD; i++) {
-                auto sizeFactor = int64_t(glm::min(downsample, 
-                    terrain->bakeResolution / (tileResolution - 1)));
-                normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
-                auto nodeSize = nodeDataCount + normalDataResolution
-                    * normalDataResolution * 3;
+            const size_t batchCount = 8;
+            transferManager.BeginMultiTransfer();
 
-                if (cell->LoD == i) {
-                    currPos += (cell->x * tileSideCount + cell->y) * nodeSize;
-                    break;
+            for (size_t i = 0; i < cells.size(); i++) {
+                if (i % batchCount == 0 && i > 0) {
+                    // Close old batch, create new one
+                    transferManager.EndMultiTransfer();
+                    transferManager.BeginMultiTransfer();
+                }
+
+                auto cell = cells[i];
+
+                auto currPos = int64_t(0);
+                auto nodeSize = int64_t(0);
+
+                auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
+                auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
+
+                // Different resolutions for each LoD
+                for (int32_t j = 0; j <= cell->LoD; j++) {
+                    auto sizeFactor = int64_t(glm::min(downsample,
+                        terrain->bakeResolution / (tileResolution - 1)));
+                    normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
+                    nodeSize = nodeDataCount + normalDataResolution
+                        * normalDataResolution * 4;
+
+                    if (cell->LoD == j) {
+                        currPos += (cell->x * tileSideCount + cell->y) * nodeSize;
+                        break;
+                    }
+
+                    currPos += tileSideCount * tileSideCount * nodeSize;
+
+                    downsample /= 2;
+                    tileSideCount *= 2;
+                }
+
+                cell->storage = terrain->storage.get();
+
+                auto cellDataOffset = baseOffset + std::streamoff(currPos);
+                if (cellDataOffset < baseOffset || cellDataOffset + std::streamoff(nodeSize) > fileEndOffset) {
+                    throw ResourceLoadException(filename, "Terrain file is truncated or corrupted: " + filename);
+                }
+
+                fileStream.seekg(cellDataOffset);
+                if (!fileStream.good()) {
+                    throw ResourceLoadException(filename, "Couldn't seek terrain file " + filename);
+                }
+
+                auto cellDataEndOffset = cellDataOffset + std::streamoff(nodeSize);
+                auto readDataOffset = cellDataOffset;
+
+                std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
+                auto heightDataSize = std::streamsize(heightFieldData.size() * sizeof(uint16_t));
+                ValidateReadBounds(filename, readDataOffset, heightDataSize, cellDataEndOffset, fileEndOffset);
+                auto& heightRet = fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightDataSize);
+                if (!heightRet || heightRet.gcount() != heightDataSize) {
+                    throw ResourceLoadException(filename, "Couldn't read terrain height data from " + filename);
+                }
+                readDataOffset += std::streamoff(heightDataSize);
+                cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
+                    VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                cell->heightField->SetData(heightFieldData, &transferManager);
+
+                Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
+                auto normalDataSize = std::streamsize(image.GetData().size());
+                ValidateReadBounds(filename, readDataOffset, normalDataSize, cellDataEndOffset, fileEndOffset);
+                auto& normalRet = fileStream.read(reinterpret_cast<char*>(image.GetData().data()), normalDataSize);
+                if (!normalRet || normalRet.gcount() != normalDataSize) {
+                    throw ResourceLoadException(filename, "Couldn't read terrain normal data from " + filename);
+                }
+                readDataOffset += std::streamoff(normalDataSize);
+                cell->normalData = image.GetData();
+
+                cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
+                    VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
+                cell->normalMap->SetData(image.GetData(), &transferManager);
+
+                std::vector<uint8_t> splatMapData(heightFieldData.size());
+                auto splatDataSize = std::streamsize(splatMapData.size());
+                ValidateReadBounds(filename, readDataOffset, splatDataSize, cellDataEndOffset, fileEndOffset);
+                auto& splatRet = fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatDataSize);
+                if (!splatRet || splatRet.gcount() != splatDataSize) {
+                    throw ResourceLoadException(filename, "Couldn't read terrain splat data from " + filename);
+                }
+                readDataOffset += std::streamoff(splatDataSize);
+                cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
+                    VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                cell->splatMap->SetData(splatMapData, &transferManager);
+                cell->materialIdxData = splatMapData;
+
+                cell->heightData.resize(tileResolution * tileResolution);
+                for (uint32_t j = 0; j < uint32_t(cell->heightData.size()); j++) {
+                    if (heightFieldData[j] != 65535) {
+                        cell->heightData[j] = (float)heightFieldData[j] / 65534.0f;
+                    }
+                    else {
+                        cell->heightData[j] = FLT_MAX;
+                    }
                 }
                 
-                currPos += tileSideCount * tileSideCount * nodeSize;
-
-                downsample /= 2;
-                tileSideCount *= 2;
+                cell->isLoaded = true;
+                cell->loadRequested = false;
             }
 
-            fileStream.seekg(currPos, std::ios_base::cur);
-
-            std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
-            fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightFieldData.size() * 2);
-            cell->heightField = Texture::Texture2D(tileResolution, tileResolution,
-                VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-            cell->heightField.SetData(heightFieldData);
-
-            Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 3);
-            fileStream.read(reinterpret_cast<char*>(image.GetData().data()), image.GetData().size());
-            image.ExpandToChannelCount(4, 255);
-            cell->normalMap = Texture::Texture2D(normalDataResolution, normalDataResolution,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-            cell->normalMap.SetData(image.GetData());
-
-            std::vector<uint8_t> splatMapData(heightFieldData.size());
-            fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatMapData.size());
-            cell->splatMap = Texture::Texture2D(tileResolution, tileResolution,
-                VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-            cell->splatMap.SetData(splatMapData);
-            
-            if (initWithHeightData) {
-                cell->heightData.resize(tileResolution * tileResolution);
-
-                for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
-                    cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
-            }
+            transferManager.EndMultiTransfer();
 
             fileStream.close();
+
+        }
+
+        void TerrainLoader::ValidateReadBounds(const std::string& filename, std::streamoff readDataOffset,
+                std::streamsize readSize, std::streamoff cellDataEndOffset, std::streamoff fileEndOffset) {
+
+            if (readSize < 0) {
+                throw ResourceLoadException(filename, "Terrain file is truncated or corrupted: " + filename);
+            }
+
+            auto readEndOffset = readDataOffset + std::streamoff(readSize);
+            if (readEndOffset < readDataOffset || readEndOffset > cellDataEndOffset ||
+                    readEndOffset > fileEndOffset) {
+                throw ResourceLoadException(filename, "Terrain file is truncated or corrupted: " + filename);
+            }
 
         }
 

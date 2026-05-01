@@ -3,6 +3,7 @@
 #include "FileImporter.h"
 
 #include "common/SerializationHelper.h"
+#include "tools/ToolSerializer.h"
 #include "scene/SceneSerializer.h"
 
 #include "Log.h"
@@ -12,6 +13,7 @@ namespace Atlas::Editor {
 
     const std::string Serialization::configPath = ".config/";
     const std::string Serialization::configFilename = configPath + "config.json";
+    const std::string Serialization::contentBrowserWindowFilename = configPath + "contentBrowserWindowConfig.json";
 
     void Serialization::SerializeConfig() {
 
@@ -26,11 +28,6 @@ namespace Atlas::Editor {
             { "pathTrace", config->pathTrace },
             { "vsync", config->vsync },
             { "scenes", scenePaths }
-        };
-
-        j["contentBrowserSettings"] = {
-            { "searchRecursively", config->contentBrowserSettings.searchRecursively },
-            { "filterRecursively", config->contentBrowserSettings.filterRecursively },
         };
 
         TryWriteToFile(configFilename, to_string(j));
@@ -59,12 +56,6 @@ namespace Atlas::Editor {
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
 
-        if (j.contains("contentBrowserSettings")) {
-            auto s = j["contentBrowserSettings"];
-            s.at("searchRecursively").get_to(config->contentBrowserSettings.searchRecursively);
-            s.at("filterRecursively").get_to(config->contentBrowserSettings.filterRecursively);
-        }
-
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)
             FileImporter::ImportFile(scenePath);
@@ -82,13 +73,18 @@ namespace Atlas::Editor {
 
         json j = {
             { "resolutionScale", sceneWindow->resolutionScale },
-            { "snappingEnabled", sceneWindow->snappingEnabled },
-            { "translationSnap", sceneWindow->translationSnap },
-            { "rotationSnap", sceneWindow->rotationSnap },
-            { "scaleSnap", sceneWindow->scaleSnap },
+            { "snappingEnabled", sceneWindow->guizmo.snappingEnabled },
+            { "translationSnap", sceneWindow->guizmo.translationSnap },
+            { "rotationSnap", sceneWindow->guizmo.rotationSnap },
+            { "scaleSnap", sceneWindow->guizmo.scaleSnap },
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
             { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
+            { "playMaximized", sceneWindow->playMaximized },
+            { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
+            { "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator },
+            { "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator },
+            { "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter },
             { "camera", camera }
         };
 
@@ -117,23 +113,57 @@ namespace Atlas::Editor {
         json camera;
 
         try_get_json(j, "resolutionScale", sceneWindow->resolutionScale);
-        try_get_json(j, "snappingEnabled", sceneWindow->snappingEnabled);
-        try_get_json(j, "translationSnap", sceneWindow->translationSnap);
-        try_get_json(j, "rotationSnap", sceneWindow->rotationSnap);
-        try_get_json(j, "scaleSnap", sceneWindow->scaleSnap);
+        try_get_json(j, "snappingEnabled", sceneWindow->guizmo.snappingEnabled);
+        try_get_json(j, "translationSnap", sceneWindow->guizmo.translationSnap);
+        try_get_json(j, "rotationSnap", sceneWindow->guizmo.rotationSnap);
+        try_get_json(j, "scaleSnap", sceneWindow->guizmo.scaleSnap);
         try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
         try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
+        try_get_json(j, "playMaximized", sceneWindow->playMaximized);
+        try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);
         try_get_json(j, "camera", camera);
+        try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
+        try_get_json(j, "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator);
+        try_get_json(j, "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
-        Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get());
+        Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), false);
 
         // When closing the application while playing the entity is saved in the wrong state
         sceneWindow->cameraEntity.GetComponent<CameraComponent>().isMain = true;
 
         return sceneWindow;
 
+    }
+
+    void Serialization::SerializeContentBrowserWindow(const UI::ContentBrowserWindow& contentBrowserWindow) {
+
+        json j = {
+            { "filterRecursively", contentBrowserWindow.filterRecursively },
+            { "searchRecursively", contentBrowserWindow.searchRecursively },
+            { "contentFilter", contentBrowserWindow.contentFilter },
+        };
+
+        TryWriteToFile(contentBrowserWindowFilename, to_string(j));
+
+    }
+
+    void Serialization::DeserializeContentBrowserWindow(UI::ContentBrowserWindow& contentBrowserWindow) {
+
+        auto serialized = TryReadFromFile(contentBrowserWindowFilename);
+
+        if (serialized.empty())
+            return;
+
+        json j = json::parse(serialized);
+
+        if (j.contains("filterRecursively"))
+            j.at("filterRecursively").get_to(contentBrowserWindow.filterRecursively);
+        if (j.contains("searchRecursively"))
+            j.at("searchRecursively").get_to(contentBrowserWindow.searchRecursively);
+        if (j.contains("contentFilter"))
+            j.at("contentFilter").get_to(contentBrowserWindow.contentFilter);
     }
 
     void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {

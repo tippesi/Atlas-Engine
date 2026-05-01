@@ -33,6 +33,7 @@ namespace Atlas {
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
                 VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
                 VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+                VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
                 VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
 #ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
@@ -40,7 +41,7 @@ namespace Atlas {
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
                 , VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 #endif
             };
@@ -434,7 +435,7 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(queue.queue, 1, &submit, cmd->fence))
             queue.Unlock();
 
-            VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 9999999999));
+            VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 30000000000));
             VK_CHECK(vkResetFences(device, 1, &cmd->fence));
 
             // Is submitted now and must be unlocked
@@ -463,7 +464,12 @@ namespace Atlas {
 
             // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
             // Refrain from using complete frame async for now
-            JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
+            if (!CheckForWindowResize()) {
+                JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
+            }
+            else {
+                SubmitFrame();
+            }
 
         }
 
@@ -517,7 +523,7 @@ namespace Atlas {
                     //for (auto cmd : frameData->submittedCommandLists)
                     //    semaphores.push_back(cmd->semaphore);
                     if (frame->submittedCommandLists.size()) {
-                        semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
+                        semaphores.push_back(swapChain->GetPresentationSemaphore());
                     }
                     else {
                         semaphores.push_back(frame->semaphore);
@@ -654,8 +660,13 @@ namespace Atlas {
                     nextQueue = FindAndLockQueue(QueueType::PresentationQueue);
                 }
 
-                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue, nextQueue);
-                previousSemaphore = submission->cmd->GetSemaphore(nextQueue.queue);
+                auto signalSemaphore = nextSubmission == nullptr && swapChain->isComplete ?
+                    swapChain->GetPresentationSemaphore() :
+                    submission->cmd->GetSemaphore(nextQueue.queue);
+
+                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue,
+                    signalSemaphore);
+                previousSemaphore = signalSemaphore;
 
                 if (nextQueue.ref != queue.ref) {
                     queue.Unlock();
@@ -675,7 +686,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-            VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue) {
+            VkSemaphore previousFrameSemaphore, const QueueRef& queue, VkSemaphore signalSemaphore) {
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
@@ -684,7 +695,7 @@ namespace Atlas {
             std::vector<VkPipelineStageFlags> waitStages = { submission->waitStage };
 
             std::vector<VkSemaphore> waitSemaphores;
-            std::vector<VkSemaphore> submitSemaphores = { cmd->GetSemaphore(nextQueue.queue) };
+            std::vector<VkSemaphore> submitSemaphores = { signalSemaphore };
 
             // Leave out any dependencies if the swap chain isn't complete
             if (swapChain->isComplete) {
@@ -764,7 +775,7 @@ namespace Atlas {
             vkGetPhysicalDeviceFeatures(device, &physicalDeviceFeatures);
 
             // This property has to outweigh any other
-            if (physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 score += 10000;
             }
 
@@ -979,10 +990,13 @@ namespace Atlas {
             availableFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             availableFeatures12 = {};
             availableFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            availableFeatures13 = {};
+            availableFeatures13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
             // Point to the next features
             availableFeatures.pNext = &availableFeatures11;
             availableFeatures11.pNext = &availableFeatures12;
+            availableFeatures12.pNext = &availableFeatures13;
 
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
@@ -991,8 +1005,12 @@ namespace Atlas {
 
         void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
 
+            VkPhysicalDeviceProperties basicDeviceProperties = {};
+            vkGetPhysicalDeviceProperties(device, &basicDeviceProperties);
+
             StructureChainBuilder propertiesBuilder(deviceProperties);
 
+            driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
             subgroupSizeControlProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
@@ -1000,10 +1018,14 @@ namespace Atlas {
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
             deviceProperties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
             deviceProperties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
+            deviceProperties13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
 
             propertiesBuilder.Append(deviceProperties11);
             propertiesBuilder.Append(deviceProperties12);
+            propertiesBuilder.Append(deviceProperties13);
 
+            if (supportedExtensions.contains(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME))
+                propertiesBuilder.Append(driverProperties);
             if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
                 propertiesBuilder.Append(rayTracingPipelineProperties);
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
@@ -1011,7 +1033,7 @@ namespace Atlas {
             if (supportedExtensions.contains(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME))
                 propertiesBuilder.Append(subgroupSizeControlProperties);
 
-            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
+            vkGetPhysicalDeviceProperties2(device, &deviceProperties);
 
         }
 
@@ -1046,12 +1068,14 @@ namespace Atlas {
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
+            VkPhysicalDeviceVulkan13Features features13 = {};
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
             features.features.tessellationShader = availableFeatures.features.tessellationShader;
-            features.features.multiDrawIndirect = availableFeatures.features.tessellationShader;
+            features.features.multiDrawIndirect = availableFeatures.features.multiDrawIndirect;
             features.features.depthBounds = availableFeatures.features.depthBounds;
             features.features.wideLines = availableFeatures.features.wideLines;
             features.features.samplerAnisotropy = availableFeatures.features.samplerAnisotropy;
@@ -1064,6 +1088,11 @@ namespace Atlas {
             features.features.shaderInt64 = availableFeatures.features.shaderInt64;
             features.features.shaderInt16 = availableFeatures.features.shaderInt16;
             features.features.independentBlend = availableFeatures.features.independentBlend;
+
+            features11.storageBuffer16BitAccess = availableFeatures11.storageBuffer16BitAccess;
+            features11.storagePushConstant16 = availableFeatures11.storagePushConstant16;
+            features11.storageInputOutput16 = availableFeatures11.storageInputOutput16;
+            features11.uniformAndStorageBuffer16BitAccess = availableFeatures11.uniformAndStorageBuffer16BitAccess;
 
             features12.descriptorIndexing = availableFeatures12.descriptorIndexing;
             features12.shaderUniformBufferArrayNonUniformIndexing = availableFeatures12.shaderUniformBufferArrayNonUniformIndexing;
@@ -1080,6 +1109,10 @@ namespace Atlas {
             features12.bufferDeviceAddress = availableFeatures12.bufferDeviceAddress;
             features12.shaderFloat16 = availableFeatures12.shaderFloat16;
 
+            features13.synchronization2 = availableFeatures13.synchronization2;
+            features13.dynamicRendering = availableFeatures13.dynamicRendering;
+            features13.maintenance4 = availableFeatures13.maintenance4;
+
             // Check for ray tracing extension support
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
                 supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
@@ -1087,6 +1120,7 @@ namespace Atlas {
                 supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
 
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
+                accelerationStructureFeature.descriptorBindingAccelerationStructureUpdateAfterBind = VK_TRUE;
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
                 rayQueryFeature.rayQuery = VK_TRUE;
 
@@ -1162,6 +1196,7 @@ namespace Atlas {
             featureBuilder.Append(features);
             featureBuilder.Append(features11);
             featureBuilder.Append(features12);
+            featureBuilder.Append(features13);
 
             VK_CHECK_MESSAGE(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Error creating graphics device")
 

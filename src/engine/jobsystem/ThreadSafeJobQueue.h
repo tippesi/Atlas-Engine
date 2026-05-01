@@ -14,7 +14,11 @@ namespace Atlas {
     public:
         ThreadSafeJobQueue() = default;
 
+        bool Empty();
+
         void Push(const Job& job);
+
+        void Push(Job&& job);
         
         void PushMultiple(const std::vector<Job>& jobs);
         

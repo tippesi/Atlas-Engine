@@ -3,6 +3,7 @@
 #include "Log.h"
 #include "loader/AssetLoader.h"
 
+#include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <spirv-tools/optimizer.hpp>
 
@@ -77,7 +78,6 @@ namespace Atlas {
             auto glslCode = shaderFile.GetGlslCode(macros);
             const char* shaderStrings[] = { glslCode.data() };
             shader.setStrings(shaderStrings, 1);
-            shader.getIntermediate()->addSourceText(glslCode.data(), glslCode.size());
 
             if (!shader.parse(&Resources, 100, false, messages)) {
                 LogError(shaderFile, macros, shader);
@@ -104,7 +104,7 @@ namespace Atlas {
             // Optimization strips debug info
             if (!includeDebugInfo) {
                 spvtools::Optimizer opt(SPV_ENV_VULKAN_1_2);
-                opt.RegisterPerformancePasses();
+                opt.RegisterPerformancePasses(false);
 
                 std::vector<uint32_t> optimizedBinary;
                 if (opt.Run(spirvBinary.data(), spirvBinary.size(), &optimizedBinary)) {

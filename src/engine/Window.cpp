@@ -81,6 +81,7 @@ namespace Atlas {
 
     void Window::SetIcon(Texture::Texture2D *icon) {
 
+#ifndef AE_OS_APPLE_MOBILE
         auto data = icon->GetData<uint8_t>();
 
         SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(data.data(), icon->width, icon->height, icon->channels * 8,
@@ -90,6 +91,7 @@ namespace Atlas {
         SDL_SetWindowIcon(sdlWindow, surface);
 
         SDL_FreeSurface(surface);
+#endif
 
     }
 
@@ -119,11 +121,19 @@ namespace Atlas {
 
     int32_t Window::GetWidth() {
 
+        if (sdlWindow != nullptr) {
+            SDL_GetWindowSize(sdlWindow, &width, &height);
+        }
+
         return width;
 
     }
 
     int32_t Window::GetHeight() {
+
+        if (sdlWindow != nullptr) {
+            SDL_GetWindowSize(sdlWindow, &width, &height);
+        }
 
         return height;
 
@@ -133,7 +143,7 @@ namespace Atlas {
 
         ivec2 size;
 
-        SDL_GL_GetDrawableSize(sdlWindow, &size.x, &size.y);
+        SDL_Vulkan_GetDrawableSize(sdlWindow, &size.x, &size.y);
 
         return size;
 
@@ -162,14 +172,14 @@ namespace Atlas {
     void Window::Maximize() {
 
         SDL_MaximizeWindow(sdlWindow);
-        SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
+        SDL_GetWindowSize(sdlWindow, &width, &height);
 
     }
 
     void Window::Minimize() {
 
         SDL_MinimizeWindow(sdlWindow);
-        SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
+        SDL_GetWindowSize(sdlWindow, &width, &height);
 
     }
 
@@ -218,7 +228,7 @@ namespace Atlas {
             hasFocus = false;
         }
 
-        if (event.type == AE_WINDOWEVENT_RESIZED) {
+        if (event.type == AE_WINDOWEVENT_RESIZED || event.type == AE_WINDOWEVENT_SIZE_CHANGED) {
             width = event.data.x;
             height = event.data.y;
         }

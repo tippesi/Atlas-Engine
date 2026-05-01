@@ -42,10 +42,12 @@ namespace Atlas::Editor {
                 { IconType::Settings, Texture::Texture2D("editor/icons/settings.png") },
                 { IconType::Font, Texture::Texture2D("editor/icons/font.png") },
                 { IconType::ArrowUp, Texture::Texture2D("editor/icons/arrowUp.png") },
+                { IconType::ArrowDown, Texture::Texture2D("editor/icons/arrowDown.png") },
                 { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft.png") },
                 { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight.png") },
                 { IconType::Prefab, Texture::Texture2D("editor/icons/prefab.png") },
-                { IconType::Eye, Texture::Texture2D("editor/icons/eye.png") },
+                { IconType::Visibility, Texture::Texture2D("editor/icons/visibility.png") },
+                { IconType::VisibilityOff, Texture::Texture2D("editor/icons/visibility_off.png") },
                 { IconType::Move, Texture::Texture2D("editor/icons/move.png") },
                 { IconType::Scale, Texture::Texture2D("editor/icons/scale.png") },
                 { IconType::Rotate, Texture::Texture2D("editor/icons/rotate.png") },
@@ -54,7 +56,8 @@ namespace Atlas::Editor {
                 { IconType::Material, Texture::Texture2D("editor/icons/material.png") },
                 { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource.png") },
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
-                { IconType::Delete, Texture::Texture2D("editor/icons/delete.png") },
+                { IconType::Trash, Texture::Texture2D("editor/icons/delete.png") },
+                { IconType::Filter, Texture::Texture2D("editor/icons/filter.png") },
             };
         }
         else {
@@ -72,10 +75,12 @@ namespace Atlas::Editor {
                 { IconType::Settings, Texture::Texture2D("editor/icons/settings_light.png") },
                 { IconType::Font, Texture::Texture2D("editor/icons/font_light.png") },
                 { IconType::ArrowUp, Texture::Texture2D("editor/icons/arrowUp_light.png") },
+                { IconType::ArrowDown, Texture::Texture2D("editor/icons/arrowDown_light.png") },
                 { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft_light.png") },
                 { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight_light.png") },
                 { IconType::Prefab, Texture::Texture2D("editor/icons/prefab_light.png") },
-                { IconType::Eye, Texture::Texture2D("editor/icons/eye_light.png") }, 
+                { IconType::Visibility, Texture::Texture2D("editor/icons/visibility_light.png") }, 
+                { IconType::VisibilityOff, Texture::Texture2D("editor/icons/visibility_off_light.png") }, 
                 { IconType::Move, Texture::Texture2D("editor/icons/move_light.png") },
                 { IconType::Scale, Texture::Texture2D("editor/icons/scale_light.png") },
                 { IconType::Rotate, Texture::Texture2D("editor/icons/rotate_light.png") },
@@ -84,7 +89,8 @@ namespace Atlas::Editor {
                 { IconType::Material, Texture::Texture2D("editor/icons/material_light.png") },
                 { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource_light.png") },
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment_light.png") },
-                { IconType::Delete, Texture::Texture2D("editor/icons/delete_light.png") },
+                { IconType::Trash, Texture::Texture2D("editor/icons/delete_light.png") },
+                { IconType::Filter, Texture::Texture2D("editor/icons/filter_light.png") },
             };
         }
 

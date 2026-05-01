@@ -86,7 +86,6 @@ namespace Atlas {
             Buffer::UniformBuffer uniformBuffer;
             Buffer::UniformBuffer depthUniformBuffer;
             Buffer::UniformBuffer lightUniformBuffer;
-            Buffer::UniformBuffer cloudShadowUniformBuffer;
 
             Ref<Graphics::Sampler> nearestSampler;
             Ref<Graphics::Sampler> shadowSampler;

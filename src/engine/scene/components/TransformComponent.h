@@ -28,8 +28,11 @@ namespace Atlas {
                 TransformComponent() = default;
                 TransformComponent(Scene* scene, Entity entity) : entity(entity) {}
                 TransformComponent(Scene* scene, Entity entity, const TransformComponent& that);
+
                 explicit TransformComponent(Scene* scene, Entity entity, 
-                    mat4 matrix, bool isStatic = true) : matrix(matrix), isStatic(isStatic), entity(entity) {}
+                    mat4 matrix, bool isStatic = true) : isStatic(isStatic), entity(entity) {
+                    Set(matrix);
+                }
 
                 void Set(const glm::mat4& matrix);
 
@@ -54,13 +57,14 @@ namespace Atlas {
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
 
             protected:
-                void Update(const TransformComponent& parentTransform, bool parentChanged);
+                void Update(const glm::mat4& parentMatrix, bool parentChanged);
 
                 Entity entity;
 
                 bool changed = true;
                 bool updated = false;
                 bool wasStatic = true;
+                bool initialized = false;
 
             };
 

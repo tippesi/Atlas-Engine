@@ -28,10 +28,6 @@ namespace Atlas::Editor {
 
         mainHierarchy.AddChild(directionalLightEntity);
 
-        scene->ao = CreateRef<Lighting::AO>(16);
-        scene->ao->rt = true;
-        // Use SSGI by default
-        scene->ao->enable = false;
         scene->reflection = CreateRef<Lighting::Reflection>();
 
         scene->fog = CreateRef<Lighting::Fog>();
@@ -48,7 +44,7 @@ namespace Atlas::Editor {
 
         scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15), 4);
         scene->irradianceVolume->rayCount = 32;
-        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(100.0f)));
+        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(200.0f)));
         scene->irradianceVolume->scroll = true;
 
         scene->sss = CreateRef<Lighting::SSS>();
@@ -56,9 +52,9 @@ namespace Atlas::Editor {
         scene->ssgi = CreateRef<Lighting::SSGI>();
         scene->rtgi = CreateRef<Lighting::RTGI>();
 
-        scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
+        scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>(512, 128, 32);
         scene->sky.clouds->minHeight = 1400.0f;
-        scene->sky.clouds->maxHeight = 1700.0f;
+        scene->sky.clouds->maxHeight = 2800.0f;
         scene->sky.clouds->castShadow = false;
 
         scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
@@ -90,11 +86,7 @@ namespace Atlas::Editor {
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
-
-        scene->ao = CreateRef<Lighting::AO>(16);
-        scene->ao->rt = true;
-        // Use SSGI by default
-        scene->ao->enable = false;
+        
         scene->reflection = CreateRef<Lighting::Reflection>();
 
         scene->fog = CreateRef<Lighting::Fog>();
@@ -111,7 +103,7 @@ namespace Atlas::Editor {
 
         scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15), 4);
         scene->irradianceVolume->rayCount = 32;
-        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(100.0f)));
+        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(200.0f)));
         scene->irradianceVolume->scroll = true;
 
         scene->sss = CreateRef<Lighting::SSS>();
@@ -119,9 +111,9 @@ namespace Atlas::Editor {
         scene->ssgi = CreateRef<Lighting::SSGI>();
         scene->rtgi = CreateRef<Lighting::RTGI>();
 
-        scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
+        scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>(512, 128, 32);
         scene->sky.clouds->minHeight = 1400.0f;
-        scene->sky.clouds->maxHeight = 1700.0f;
+        scene->sky.clouds->maxHeight = 2800.0f;
         scene->sky.clouds->castShadow = false;
 
         scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
@@ -130,7 +122,7 @@ namespace Atlas::Editor {
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
         scene->postProcessing.fsr2 = true;
 
-        scene->Timestep(1.0f);
+        scene->Update(1.0f);
 
         min = glm::vec3(std::numeric_limits<float>::max());
         max = glm::vec3(-std::numeric_limits<float>::max());

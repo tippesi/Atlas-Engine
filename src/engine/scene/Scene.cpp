@@ -23,11 +23,11 @@ namespace Atlas {
 
         }
 
-        void Scene::DestroyEntity(Entity entity, bool removeRecursively) {
+        void Scene::DestroyEntity(Entity entity, bool removeRecursively, bool parentDeleted) {
 
             auto parentEntity = GetParentEntity(entity);
 
-            if (parentEntity.IsValid()) {
+            if (!parentDeleted && parentEntity.IsValid()) {
                 auto& hierarchyComponent = parentEntity.GetComponent<HierarchyComponent>();
                 hierarchyComponent.RemoveChild(entity);
             }
@@ -37,7 +37,7 @@ namespace Atlas {
                 if (hierarchyComponent) {
                     auto children = hierarchyComponent->GetChildren();
                     for (auto childEntity : children) {
-                        DestroyEntity(childEntity, removeRecursively);
+                        DestroyEntity(childEntity, removeRecursively, true);
                     }
                 }
             }
@@ -88,7 +88,7 @@ namespace Atlas {
 
         }
 
-        void Scene::Timestep(float deltaTime) {
+        void Scene::Update(float deltaTime) {
 
             this->deltaTime = deltaTime;
 
@@ -97,14 +97,10 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
-#ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
-#endif
-
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
                 // Work with a copy here
-                auto luaScriptComponents = entityManager.GetComponents<LuaScriptComponent>();
+                auto luaScriptComponents = entityManager.GetAll<LuaScriptComponent>();
                 for (auto& luaScriptComponent : luaScriptComponents) {
                     luaScriptComponent.Update(luaScriptManager, deltaTime);
 
@@ -116,40 +112,94 @@ namespace Atlas {
 
             TransformComponent rootTransform = {};
 
-            auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+            auto& hierarchyComponentPool = entityManager.GetPool<HierarchyComponent>();
+            auto& cameraComponentPool = entityManager.GetPool<CameraComponent>();
+            auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
+
+            JobGroup terrainOceanJobGroup{ "Terrain and ocean update", JobPriority::High};
+
+            // Do these updates before anything else (doesn't have newest camera position, but that doesn't matter too much
+            if (HasMainCamera()) {
+                auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
+
+                if (terrain.IsLoaded()) {
+                    JobSystem::Execute(terrainOceanJobGroup, [&](JobData&) {
+                        terrain->Update(mainCamera);
+                        });
+                }
+
+                if (ocean) {
+                    JobSystem::Execute(terrainOceanJobGroup, [&](JobData&) {
+                        ocean->Update(mainCamera, deltaTime);
+                        });
+                }
+            }
+
+            // Kick of all the jobs while we find the changed transforms
+            FindChangedTransforms([&]() {
+                JobSystem::WaitSpin(terrainOceanJobGroup);
+
+                // Can only update after scripts were runxx
+                renderState.NewFrame();
+                if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
+                    renderState.UpdateBlasBindlessData();
+                    renderState.UpdateTextureBindlessData();
+                    renderState.UpdateOtherTextureBindlessData();
+                }
+                renderState.PrepareMaterials();
+
+                });
+
+            JobGroup jobGroup{ "Scene update", JobPriority::High};
+
+            // Start the hierarchy update as early as possible in the frame (we need to move this further down if we need terrain info in the future)
             // Update hierarchy and their entities
-            for (auto entity : hierarchyTransformSubset) {
-                const auto& [hierarchyComponent, transformComponent] = hierarchyTransformSubset.Get(entity);
+            for (const auto& [entity, level] : changedTransformSet) {
+                if (level < 0)
+                    break;
 
-                if (hierarchyComponent.root) {
-                    auto parentChanged = transformComponent.changed;
-                    transformComponent.Update(rootTransform, false);
-                    hierarchyComponent.Update(transformComponent, parentChanged);
+                auto& hierarchyComponent = hierarchyComponentPool.Get(entity);
+                if (hierarchyComponent.updated)
+                    continue;
+
+                glm::mat4 parentMatrix(1.0f);
+                auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
+                if (parentEntity.IsValid()) {
+                    const auto& parentHierarchyComponent = hierarchyComponentPool.Get(parentEntity);
+                    parentMatrix = parentHierarchyComponent.globalMatrix;
                 }
+                
+                auto& transformComponent = transformComponentPool.Get(entity);
+                transformComponent.Update(parentMatrix, true);
+                hierarchyComponent.Update(jobGroup, transformComponent, true,
+                    transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+
+                JobSystem::Wait(jobGroup);
             }
 
-            // Update hierarchy components which are not part of a root hierarchy that also has a transform component
-            // This might be the case if there is an entity that has just a hierarchy without a tranform for, e.g. grouping entities
-            for (auto entity : hierarchyTransformSubset) {
-                const auto& [hierarchyComponent, transformComponent] = hierarchyTransformSubset.Get(entity);
+            JobSystem::ParallelFor(jobGroup, int32_t(changedTransformSet.size()), 8, [&](JobData&, int32_t idx) {
+                const auto& [entity, level] = changedTransformSet[idx];
+                if (level >= 0)
+                    return;
 
-                if (!hierarchyComponent.updated) {
-                    auto parentChanged = transformComponent.changed;
-                    transformComponent.Update(rootTransform, false);
-                    hierarchyComponent.Update(transformComponent, parentChanged);
+                auto& transformComponent = transformComponentPool.Get(entity);
+                if (transformComponent.updated)
+                    return;
+
+                glm::mat4 parentMatrix(1.0f);
+                auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
+                if (parentEntity.IsValid()) {
+                    const auto& hierarchyComponent = hierarchyComponentPool.Get(parentEntity);
+                    parentMatrix = hierarchyComponent.globalMatrix;
                 }
-            }
 
-            auto transformSubset = entityManager.GetSubset<TransformComponent>();
+                transformComponent.Update(parentMatrix, true);
+                });
 
-            // Update all other transforms not affected by the hierarchy (entities don't need to be in hierarchy)
-            for (auto entity : transformSubset) {
-                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
-
-                if (!transformComponent.updated) {
-                    transformComponent.Update(rootTransform, false);
-                }
-            }
+            JobSystem::Wait(jobGroup);
 
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
@@ -173,6 +223,12 @@ namespace Atlas {
                     }
 
                     playerComponent.Update(deltaTime);
+
+                    auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
+                    if (hierarchyComponent) {
+                        hierarchyComponent->Update(transformComponent, true,
+                            transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+                    }
                 }
 
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
@@ -193,6 +249,7 @@ namespace Atlas {
 
                 // This part only needs to be executed if the simulation is running
                 if (!physicsWorld->pauseSimulation) {
+
                     physicsWorld->Update(deltaTime);
 
                     for (auto entity : rigidBodySubset) {
@@ -237,22 +294,73 @@ namespace Atlas {
                         transformComponent.globalMatrix = playerComponent.GetMatrix();
                         transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
                     }
+
+                    // Now we need to update all the hiearchies
+                    auto rigidBodyHierarchySubset = entityManager.GetSubset<RigidBodyComponent, HierarchyComponent, TransformComponent>();
+                    for (auto entity : rigidBodyHierarchySubset) {
+                        auto& hierarchyComponent = hierarchyComponentPool.Get(entity);
+
+                        hierarchyComponent.updated = false;
+                    }
+
+                    for (auto entity : rigidBodyHierarchySubset) {
+                        const auto& [rigidBodyComponent, hierarchyComponent, transformComponent] = rigidBodyHierarchySubset.Get(entity);
+
+                        if (!hierarchyComponent.updated) {
+                            auto parentChanged = transformComponent.changed;
+                            hierarchyComponent.Update(transformComponent, parentChanged,
+                                transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+                        }
+                    }
+
+                    // Now we need to update all the hiearchies
+                    auto playerHierarchySubset = entityManager.GetSubset<PlayerComponent, HierarchyComponent, TransformComponent>();
+                    for (auto entity : playerHierarchySubset) {
+                        auto& hierarchyComponent = hierarchyComponentPool.Get(entity);
+
+                        hierarchyComponent.updated = false;
+                    }
+
+                    for (auto entity : playerHierarchySubset) {
+                        const auto& [playerComponent, hierarchyComponent, transformComponent] = playerHierarchySubset.Get(entity);
+
+                        if (!hierarchyComponent.updated) {
+                            auto parentChanged = transformComponent.changed;
+                            hierarchyComponent.Update(transformComponent, parentChanged,
+                                transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+                        }
+                    }
                 }
             }
 
-            // Do the space partitioning update here (ofc also update AABBs)
-            auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
-            for (auto entity : meshSubset) {
-                auto& meshComponent = entityManager.Get<MeshComponent>(entity);
-                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
-                if (!meshComponent.mesh.IsLoaded()) {
-                    // We can't update the transform yet
-                    transformComponent.updated = false;
-                    continue;
-                }
+            // Do camera update while we find changed meshes
+            FindChangedMeshes([&]() {
+                // Don't do anything in parallel here, we don't expect to have many cameras
+                mainCameraEntity = Entity();
+                auto cameraSubset = entityManager.GetSubset<CameraComponent>();
+                // Attempt to find a main camera
+                for (auto entity : cameraSubset) {
+                    auto& camera = cameraSubset.Get(entity);
 
-                if (!transformComponent.changed && meshComponent.inserted)
-                    continue;
+                    mat4 transformMatrix = mat4(1.0f);
+                    auto transform = entityManager.TryGet<TransformComponent>(entity);
+                    if (transform) {
+                        camera.parentTransform = transform->globalMatrix;
+                        transformMatrix = transform->globalMatrix;
+                    }
+
+                    camera.Update(transformMatrix);
+
+                    if (camera.isMain && !mainCameraEntity.IsValid()) {
+                        mainCameraEntity = { entity, &entityManager };
+                    }
+                }
+                });
+
+            // Do the space partitioning update here (ofc also update AABBs)
+            for (auto entity : changedMeshSet) {
+                auto& meshComponent = meshComponentPool.Get(entity);
+                auto& transformComponent = transformComponentPool.Get(entity);
 
                 if (meshComponent.inserted)
                     SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
@@ -263,55 +371,99 @@ namespace Atlas {
                 meshComponent.inserted = true;
             }
 
+            renderState.FillMainRenderPass();
+
+            JobGroup lightJobGroup{ "Lights update", JobPriority::High };
+            auto& lightComponentPool = entityManager.GetPool<LightComponent>();
+            JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto& lightComponent = lightComponentPool.GetByIndex(idx);
+                auto entity = lightComponentPool[idx];
+
+                // This will lead to threading issues if there are several main lights (which there shouldn't be!)
+                if (lightComponent.isMain && lightComponent.type == LightType::DirectionalLight)
+                    mainLightEntity = Entity(entity, &entityManager);
+
+                auto transformComponent = transformComponentPool.TryGet(entity);
+
+                lightComponent.Update(transformComponent);
+
+                if (mainCameraEntity.IsValid()) {
+                    auto& mainCamera = GetMainCamera();
+                    lightComponent.Update(mainCamera);
+
+                    renderState.FillShadowRenderPass(Entity(entity, &entityManager));
+                }
+                });
+
+            JobSystem::Wait(lightJobGroup);
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            if (device->support.bindless) {
+                auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
+                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
+                    // Check if any rt effects are running (pathtracing checked by rayTracingWorld->includeObjectHistory)
+                    auto rtUpdateNeeded = (irradianceVolume && irradianceVolume->enable) ||
+                        (reflection && reflection->enable && reflection->rt) ||
+                        (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
+                        (rtgi && rtgi->enable);
+                    // Need to wait before updating graphic resources
+                    Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
+                    if (rayTracingWorld && rtUpdateNeeded) {
+                        rayTracingWorld->scene = this;
+                        // Don't update triangle lights for now (second argument)
+                        rayTracingWorld->Update(rayTracingSubset, false);
+                    }
+                    rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+                });
+            }
+
+            if (HasMainCamera()) {
+                auto& mainCamera = GetMainCamera();
+
+                auto& audioComponentPool = entityManager.GetPool<AudioComponent>();
+                JobSystem::ParallelFor(jobGroup, int32_t(audioComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                    auto entity = audioComponentPool[idx];
+                    auto& audioComponent = audioComponentPool.GetByIndex(idx);
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+
+                    if (!transformComponent)
+                        return;
+
+                    audioComponent.Update(deltaTime, *transformComponent, mainCamera.GetLocation(),
+                        mainCamera.GetLastLocation(), mainCamera.right);
+                    });
+
+                auto& audioVolumeComponentPool = entityManager.GetPool<AudioVolumeComponent>();
+                JobSystem::ParallelFor(jobGroup, int32_t(audioVolumeComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                    auto entity = audioVolumeComponentPool[idx];
+                    auto& audioComponent = audioVolumeComponentPool.GetByIndex(idx);
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+
+                    if (!transformComponent)
+                        return;
+
+                    audioComponent.Update(*transformComponent, mainCamera.GetLocation());
+                    });
+            }
+
             // After everything we need to reset transform component changed and prepare the updated for next frame
-            for (auto entity : transformSubset) {
-                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
+                auto& transformComponent = transformComponentPool.GetByIndex(idx);
 
                 if (transformComponent.updated) {
                     transformComponent.changed = false;
                     transformComponent.updated = false;
                 }
-            }
+                });
 
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                auto& lightComponent = lightSubset.Get(entity);
-
-                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
-
-                lightComponent.Update(transformComponent);
-            }
-
-#ifdef AE_BINDLESS
-            auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-            JobSystem::Execute(rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
-                // Need to wait before updating graphic resources
-                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
-                if (rayTracingWorld) {
-                    rayTracingWorld->scene = this;
-                    // Don't update triangle lights for now (second argument)
-                    rayTracingWorld->Update(rayTracingSubset, false);
-                }
-                rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-                });          
-#endif
-
-            // We also need to reset the hierarchy components as well
-            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
-            for (auto entity : hierarchySubset) {
-                auto& hierarchyComponent = hierarchySubset.Get(entity);
+            // After everything we need to reset transform component changed and prepare the updated for next frame
+            JobSystem::ParallelFor(jobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
 
                 hierarchyComponent.updated = false;
-            }
+                });
 
-            // Everything below assumes that entities themselves have a transform
-            // Without it they won't be transformed when they are in a hierarchy
-            auto cameraSubset = entityManager.GetSubset<CameraComponent, TransformComponent>();
-            for (auto entity : cameraSubset) {
-                const auto& [cameraComponent, transformComponent] = cameraSubset.Get(entity);
-
-                cameraComponent.parentTransform = transformComponent.globalMatrix;
-            }
+            renderState.CullAndSortLights();
 
             auto textSubset = entityManager.GetSubset<TextComponent, TransformComponent>();
             for (auto entity : textSubset) {
@@ -322,67 +474,7 @@ namespace Atlas {
 
             firstTimestep = false;
 
-        }
-
-        void Scene::Update() {
-
-            mainCameraEntity = Entity();
-
-            auto cameraSubset = entityManager.GetSubset<CameraComponent>();
-
-            // Attempt to find a main camera
-            for (auto entity : cameraSubset) {
-                auto& camera = cameraSubset.Get(entity);
-
-                mat4 transformMatrix = mat4(1.0f);
-                auto transform = entityManager.TryGet<TransformComponent>(entity);
-                if (transform) {
-                    transformMatrix = transform->globalMatrix;
-                }
-
-                camera.Update(transformMatrix);
-
-                if (camera.isMain && !mainCameraEntity.IsValid()) {
-                    mainCameraEntity = { entity, &entityManager };
-                }
-            }
-
-            AE_ASSERT(mainCameraEntity.IsValid() && "Couldn't find main camera component");
-
-            if (!mainCameraEntity.IsValid())
-                return;
-
-            auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
-
-            auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
-            for (auto entity : audioSubset) {
-                const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
-
-                audioComponent.Update(deltaTime, transformComponent, mainCamera.GetLocation(),
-                    mainCamera.GetLastLocation(), mainCamera.right);
-            }
-
-            auto audioVolumeSubset = entityManager.GetSubset<AudioVolumeComponent, TransformComponent>();
-            for (auto entity : audioVolumeSubset) {
-                const auto& [audioComponent, transformComponent] = audioVolumeSubset.Get(entity);
-
-                audioComponent.Update(transformComponent, mainCamera.GetLocation());
-            }
-
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                auto& lightComponent = lightSubset.Get(entity);
-
-                lightComponent.Update(mainCamera);
-            }
-
-            if (terrain) {
-                terrain->Update(mainCamera);
-            }
-
-            if (ocean) {
-                ocean->Update(mainCamera, deltaTime);
-            }
+            JobSystem::Wait(jobGroup);
 
         }
 
@@ -400,17 +492,21 @@ namespace Atlas {
 
         }
 
-        std::vector<Ref<Material>> Scene::GetMaterials() {
+        std::vector<ResourceHandle<Material>> Scene::GetMaterials() {
 
-            std::vector<Ref<Material>> materials;
+            std::vector<ResourceHandle<Material>> materials;
 
-            if (terrain) {
-                auto terrainMaterials = terrain->storage.GetMaterials();
+            // We could update the material usage bits in a separate method where we might not need 
+            // any atomic operations. 
+            if (terrain.IsLoaded()) {
+                auto terrainMaterials = terrain->storage->GetMaterials();
+                materials.reserve(terrainMaterials.size());
 
                 for (const auto& material : terrainMaterials) {
-                    if (!material)
+                    if (!material.IsLoaded())
                         continue;
 
+                    material->usage |= MaterialUsageBits::TerrainBit;
                     materials.push_back(material);
                 }
 
@@ -422,6 +518,8 @@ namespace Atlas {
                 meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
             }
 
+            materials.reserve(materials.size() + meshes.size());
+
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
                     continue;
@@ -429,7 +527,8 @@ namespace Atlas {
                     if (!material.IsLoaded())
                         continue;
 
-                    materials.push_back(material.Get());
+                    material->usage |= MaterialUsageBits::MeshBit;
+                    materials.push_back(material);
                 }
             }
 
@@ -446,6 +545,18 @@ namespace Atlas {
         bool Scene::HasMainCamera() const {
 
             return mainCameraEntity.IsValid() && mainCameraEntity.HasComponent<CameraComponent>();
+
+        }
+
+        LightComponent& Scene::GetMainLight() {
+
+            return mainLightEntity.GetComponent<LightComponent>();
+
+        }
+
+        bool Scene::HasMainLight() const {
+
+            return mainLightEntity.IsValid() && mainLightEntity.HasComponent<LightComponent>();
 
         }
 
@@ -488,12 +599,14 @@ namespace Atlas {
                             result.valid = true;
                             result.data = { entity, &entityManager };
                             result.hitDistance = dist;
+                            result.normal = vec3(0.0f);
                         }
 
                         // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
                         if (!result.valid) {
                             result.valid = true;
                             result.data = { entity, &entityManager };
+                            result.normal = vec3(0.0f);
                         }
                     }
                 }
@@ -512,12 +625,53 @@ namespace Atlas {
                         result.valid = true;
                         result.data = { entity, &entityManager };
                         result.hitDistance = dist;
+                        result.normal = vec3(0.0f);
+                    }
+                }
+            }
 
+            if (queryComponents & SceneQueryComponentBits::TerrainComponentBit && terrain.IsLoaded()) {
+
+                vec3 hitPosition;
+                vec3 hitNormal;
+                float hitDistance;
+                if (terrain->IntersectRay(ray, hitPosition, hitNormal, hitDistance)) {
+
+                    if (hitDistance < result.hitDistance) {
+                        result.data = Entity();
+                        result.valid = true;
+                        result.hitDistance = hitDistance;
+                        result.normal = hitNormal;
                     }
                 }
             }
 
             return result;
+
+        }
+
+        std::vector<Entity> Scene::QueryAABB(const Volume::AABB& aabb, SceneQueryComponents queryComponents) {
+
+            std::set<Entity> entities;
+
+            if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
+
+                auto queried = SpacePartitioning::QueryAABB(aabb);
+                auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
+                for (auto entity : queried) {
+                    auto meshComponent = entity.TryGetComponent<MeshComponent>();
+
+                    bool validEntity = false;
+                    if (meshComponent && meshComponent->aabb.Intersects(aabb))
+                        validEntity = true;
+
+                    if (validEntity)
+                        entities.insert(entity);
+                }
+
+            }
+
+            return { entities.begin(), entities.end() };
 
         }
 
@@ -528,27 +682,76 @@ namespace Atlas {
 
             auto cameraPos = mainCameraEntity.GetComponent<CameraComponent>().GetLocation();
 
-            // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
-            auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
-            for (auto& entity : subset) {
-                auto& comp = subset.Get<MeshComponent>(entity);
+            bool mainPass = pass->type == RenderList::RenderPassType::Main;
 
-                if (!comp.mesh.IsLoaded())
-                    continue;
-
+            auto isDistCulled = [&](const MeshComponent& comp) -> bool {
                 auto diff = comp.aabb.GetCenter() - cameraPos;
 
                 float dist2 = glm::dot(diff, diff);
-                float cullingDist = pass->type == RenderList::RenderPassType::Main ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
+                float cullingDist = mainPass ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
                 float cullingDist2 = cullingDist * cullingDist;
 
-                if (comp.dontCull || comp.visible && dist2 < cullingDist2 && frustum.Intersects(comp.aabb))
-                    pass->Add(entity, comp);
+                return dist2 > cullingDist2;
+                };
+
+            // For the main pass we use the "dumb" method of just iterating over all the data, since we expect most things to
+            // be visible and are exploiting the cache coherency in the meantime
+            if (mainPass) {
+                
+                JobGroup jobGroup{ "Main pass culling", JobPriority::High};
+                auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+                JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
+                    auto& comp = meshComponentPool.GetByIndex(idx);
+                    auto entity = meshComponentPool[idx];
+
+                    if (!comp.mesh.IsLoaded())
+                        return;
+
+                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
+                        pass->Add(data.idx, entity, comp);
+                    });
+
+                JobSystem::Wait(jobGroup);
+                pass->Finalize();
+
+            }
+            else {
+                std::vector<Entity> entities;
+                std::vector<Entity> insideEntities;
+                renderableMovableEntityOctree.QueryFrustum(entities, insideEntities, frustum);
+
+                auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+
+                for (auto& entity : entities) {
+                    auto& comp = meshComponentPool.Get(entity);
+                    if (!comp.mesh.IsLoaded())
+                        continue;
+
+                    if (!comp.mesh->castShadow)
+                        continue;
+
+                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
+                        pass->Add(entity, comp);
+                }
+
+                for (auto& entity : insideEntities) {
+                    auto& comp = meshComponentPool.Get(entity);
+                    if (!comp.mesh.IsLoaded())
+                        continue;
+
+                    if (!comp.mesh->castShadow)
+                        continue;
+
+                    if (comp.dontCull || comp.visible && !isDistCulled(comp))
+                        pass->Add(entity, comp);
+                }
             }
 
         }
 
         void Scene::ClearRTStructures() {
+
+            WaitForAsyncWorkCompletion();
 
             rtDataValid = false;
             if (rayTracingWorld != nullptr)
@@ -568,9 +771,7 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            JobSystem::Wait(bindlessMeshMapUpdateJob);
-            JobSystem::Wait(bindlessTextureMapUpdateJob);
-            JobSystem::Wait(rayTracingWorldUpdateJob);
+            renderState.WaitForAsyncWorkCompletion();
 
         }
 
@@ -615,81 +816,6 @@ namespace Atlas {
         SceneIterator Scene::end() {
 
             return { &entityManager, entityManager.end() };
-
-        }
-
-        void Scene::UpdateBindlessIndexMaps() {            
-
-            JobSystem::Execute(bindlessMeshMapUpdateJob, [&](JobData&) {
-                auto meshes = GetMeshes();
-                meshIdToBindlessIdx.clear();
-
-                uint32_t bufferIdx = 0;
-                for (const auto& mesh : meshes) {
-                    if (!mesh.IsLoaded()) continue;
-
-                    // Not all meshes might have a bvh
-                    if (!mesh->IsBVHBuilt())
-                        continue;
-
-                    meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
-                }
-                });
-
-            JobSystem::Execute(bindlessTextureMapUpdateJob, [&](JobData&) {
-                auto meshes = GetMeshes();
-                textureToBindlessIdx.clear();
-
-                std::set<Ref<Material>> materials;
-                std::set<Ref<Texture::Texture2D>> textures;
-
-                uint32_t textureIdx = 0;
-                for (const auto& mesh : meshes) {
-                    if (!mesh.IsLoaded()) continue;
-
-                    for (auto& material : mesh->data.materials)
-                        if (material.IsLoaded())
-                            materials.insert(material.Get());
-                }
-
-                for (const auto& material : materials) {
-                    if (material->HasBaseColorMap())
-                        textures.insert(material->baseColorMap.Get());
-                    if (material->HasOpacityMap())
-                        textures.insert(material->opacityMap.Get());
-                    if (material->HasNormalMap())
-                        textures.insert(material->normalMap.Get());
-                    if (material->HasRoughnessMap())
-                        textures.insert(material->roughnessMap.Get());
-                    if (material->HasMetalnessMap())
-                        textures.insert(material->metalnessMap.Get());
-                    if (material->HasAoMap())
-                        textures.insert(material->aoMap.Get());
-                    if (material->HasDisplacementMap())
-                        textures.insert(material->displacementMap.Get());
-                }
-
-                for (const auto& texture : textures) {
-
-                    textureToBindlessIdx[texture] = textureIdx++;
-
-                }
-                });
-
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                const auto& lightComponent = lightSubset.Get(entity);
-
-                if (!lightComponent.shadow)
-                    continue;
-
-                if (lightComponent.shadow->useCubemap) {
-
-                }
-                else {
-
-                }
-            }
 
         }
 
@@ -836,8 +962,10 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<LightComponent>();
                 auto& comp = dstEntity.AddComponent<LightComponent>(otherComp);
                 // Need to create a new shadow, since right now the memory is shared between components
-                comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
-                comp.shadow->SetResolution(comp.shadow->resolution);
+                if (otherComp.shadow) {
+                    comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
+                    comp.shadow->SetResolution(comp.shadow->resolution);
+                }
                 comp.isMain = false;
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {
@@ -886,18 +1014,107 @@ namespace Atlas {
 
         }
 
+        void Scene::FindChangedTransforms(std::optional<std::function<void(void)>> waitFunction) {
+
+            JobGroup jobGroup{ "Find changed transforms", JobPriority::High};
+
+            auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+            auto& hierarchyComponentPool = entityManager.GetPool<HierarchyComponent>();
+
+            changedTransformSet.clear();
+            for (auto& context : threadContexts) {
+                context.changedTransforms.clear();
+            }
+
+            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
+                auto& transformComponent = transformComponentPool.GetByIndex(idx);
+                if (!transformComponent.changed)
+                    return;
+
+                auto entity = transformComponentPool[idx];
+                auto hierarchy = hierarchyComponentPool.TryGet(entity);
+
+                int32_t level = hierarchy ? hierarchy->level : -1;
+
+                threadContexts[data.idx].changedTransforms.push_back({ entity, level });
+                });
+
+            if (waitFunction.has_value())
+                waitFunction.value()();
+
+            JobSystem::Wait(jobGroup);
+
+            for (const auto& context : threadContexts) {
+                changedTransformSet.insert(changedTransformSet.end(), context.changedTransforms.begin(), context.changedTransforms.end());
+            }
+
+            std::sort(changedTransformSet.begin(), changedTransformSet.end(),
+                [&](const auto& entity0, const auto& entity1) {
+                    if (entity0.second == -1)
+                        return false;
+
+                    if (entity1.second == -1)
+                        return true;
+
+                    return entity0.second < entity1.second;
+                });
+
+        }
+
+        void Scene::FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction) {
+
+            JobGroup jobGroup{ "Find changed meshes", JobPriority::High};
+
+            changedMeshSet.clear();
+            for (auto& context : threadContexts) {
+                context.changedMeshes.clear();
+            }
+
+            auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+            auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+
+            JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
+                auto entity = meshComponentPool[idx];
+                auto transformComponent = transformComponentPool.TryGet(entity);
+                if (!transformComponent)
+                    return;
+
+                auto& meshComponent = meshComponentPool.GetByIndex(idx);
+                if (!meshComponent.mesh.IsLoaded()) {
+                    // We can't update the transform yet
+                    transformComponent->updated = false;
+                    return;
+                }
+
+                if (!transformComponent->changed && meshComponent.inserted)
+                    return;
+
+                threadContexts[data.idx].changedMeshes.push_back(entity);
+                });
+
+            if (waitFunction.has_value())
+                waitFunction.value()();
+
+            JobSystem::Wait(jobGroup);
+
+            for (const auto& context : threadContexts) {
+                changedMeshSet.insert(changedMeshSet.end(), context.changedMeshes.begin(), context.changedMeshes.end());
+            }
+
+        }
+
         std::vector<uint8_t> Scene::Backup(const Ref<Scene>& scene) {
 
             json j;
             SceneToJson(j, scene.get());
 
-            return json::to_bjdata(j);
+            return json::to_msgpack(j);
 
         }
 
         Ref<Scene> Scene::Restore(const std::vector<uint8_t>& serialized) {
 
-            json j = json::from_bjdata(serialized);
+            json j = json::from_msgpack(serialized);
 
             Ref<Scene> scene;
             SceneFromJson(j, scene);

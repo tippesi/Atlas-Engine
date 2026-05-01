@@ -7,6 +7,7 @@
 #include "EntityPropertiesPanel.h"
 #include "SceneStatisticsPanel.h"
 #include "ResourceSelectionPanel.h"
+#include "TerrainPanel.h"
 #include "ImguiExtension/Panels.h"
 
 #include <type_traits>
@@ -33,6 +34,10 @@ namespace Atlas::Editor::UI {
                     RenderHeading("Entity");
                     entityPropertiesPanel.Render(scene, t);
                 }
+            }
+            else if constexpr (std::is_same_v<T, ResourceHandle<Terrain::Terrain>>) {
+                RenderHeading("Terrain");
+                terrainPanel.Render(t, scene);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Fog>>) {
                 RenderHeading("Fog");
@@ -75,16 +80,40 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
-                postProcessingPanel.Render(t);
+                postProcessingPanel.Render(t, 
+                    [&](ResourceHandle<Texture::Texture2D> handle) {
+                        return textureSelectionPanel.Render(handle);
+                    });
             }
             else if constexpr (std::is_same_v<T, Ref<Scene::Scene>>) {
                 RenderHeading("Scene statistics");
                 sceneStatisticsPanel.Render(t);
             }
 
+            cubemapSelectionPanel.Reset();
+            textureSelectionPanel.Reset();
+
             ImGui::End();
 
         }
+       
+        EntityPropertiesPanel entityPropertiesPanel;
+        SceneStatisticsPanel sceneStatisticsPanel;
+
+        ResourceSelectionPanel<Texture::Cubemap> cubemapSelectionPanel;
+        ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
+
+        TerrainPanel terrainPanel;
+        ImguiExtension::FogPanel fogPanel;
+        ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
+        ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
+        ImguiExtension::ReflectionPanel reflectionPanel;
+        ImguiExtension::SSGIPanel ssgiPanel;
+        ImguiExtension::RTGIPanel rtgiPanel;
+        ImguiExtension::SSSPanel sssPanel;
+        ImguiExtension::WindPanel windPanel;
+        ImguiExtension::SkyPanel skyPanel;
+        ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     private:
         void RenderHeading(const std::string& heading) {
@@ -98,22 +127,6 @@ namespace Atlas::Editor::UI {
             ImGui::Separator();
 
         }
-
-        EntityPropertiesPanel entityPropertiesPanel;
-        SceneStatisticsPanel sceneStatisticsPanel;
-
-        ResourceSelectionPanel<Texture::Cubemap> cubemapSelectionPanel;
-
-        ImguiExtension::FogPanel fogPanel;
-        ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
-        ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
-        ImguiExtension::ReflectionPanel reflectionPanel;
-        ImguiExtension::SSGIPanel ssgiPanel;
-        ImguiExtension::RTGIPanel rtgiPanel;
-        ImguiExtension::SSSPanel sssPanel;
-        ImguiExtension::WindPanel windPanel;
-        ImguiExtension::SkyPanel skyPanel;
-        ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     };
 

@@ -4,17 +4,19 @@ namespace Atlas {
 
     namespace Texture {
 
-        Texture2D::Texture2D(int32_t width, int32_t height, VkFormat format, Wrapping wrapping, Filtering filtering) {
+        Texture2D::Texture2D(int32_t width, int32_t height, VkFormat format, Wrapping wrapping, Filtering filtering,
+            bool dedicatedMemory, bool usedForRenderTarget) {
 
             this->format = format;
 
-            Reallocate(Graphics::ImageType::Image2D, width, height, 1, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, width, height, 1, filtering, wrapping, dedicatedMemory, usedForRenderTarget);
             RecreateSampler(filtering, wrapping);
 
         }
 
         Texture2D::Texture2D(const std::string& filename, bool colorSpaceConversion,
-            Wrapping wrapping, Filtering filtering, int32_t forceChannels) {
+            Wrapping wrapping, Filtering filtering, int32_t forceChannels,
+            bool dedicatedMemory, bool usedForRenderTarget) {
 
             auto image = Loader::ImageLoader::LoadImage<uint8_t>(filename,
                 colorSpaceConversion, forceChannels);
@@ -38,7 +40,8 @@ namespace Atlas {
 
             if (width != this->width || height != this->height) {
 
-                Reallocate(Graphics::ImageType::Image2D, width, height, 1, filtering, wrapping);
+                Reallocate(Graphics::ImageType::Image2D, width, height, 1, 
+                    filtering, wrapping, dedicatedMemory, usedForRenderTarget);
 
             }
 

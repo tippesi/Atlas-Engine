@@ -96,7 +96,7 @@ namespace Atlas::Scene::Components {
                 return;
 
             // and then get or update the properties from the script
-            GetOrUpdatePropertiesFromScript();
+            GetOrUpdatePropertiesFromScript(scriptWasModifiedInLastUpdate);
 
             environmentNeedsInitialization = false;
         }
@@ -225,6 +225,15 @@ namespace Atlas::Scene::Components {
             else if (typeValue == "boolean") {
                 scriptProperty.type = PropertyType::Boolean;
             }
+            else if (typeValue == "vec2") {
+                scriptProperty.type = PropertyType::Vec2;
+            }
+            else if (typeValue == "vec3") {
+                scriptProperty.type = PropertyType::Vec3;
+            }
+            else if (typeValue == "vec4") {
+                scriptProperty.type = PropertyType::Vec4;
+            }
             else {
                 continue; // unknown type
             }
@@ -254,6 +263,21 @@ namespace Atlas::Scene::Components {
                     continue;
                 scriptProperty.booleanValue = value.get<bool>();
                 break;
+            case PropertyType::Vec2:
+                if (!value.is<vec2>())
+                    continue;
+                scriptProperty.vec2Value = value.get<vec2>();
+                break;
+            case PropertyType::Vec3:
+                if (!value.is<vec3>())
+                    continue;
+                scriptProperty.vec3Value = value.get<vec3>();
+                break;
+            case PropertyType::Vec4:
+                if (!value.is<vec4>())
+                    continue;
+                scriptProperty.vec3Value = value.get<vec4>();
+                break;
             case PropertyType::Undefined:
                 break;
             }
@@ -264,7 +288,7 @@ namespace Atlas::Scene::Components {
         return foundProperties;
     }
 
-    void LuaScriptComponent::GetOrUpdatePropertiesFromScript() {
+    void LuaScriptComponent::GetOrUpdatePropertiesFromScript(bool update) {
 
         // obtain the new properties from the script
         auto newProperties = GetPropertiesFromScript();
@@ -275,7 +299,7 @@ namespace Atlas::Scene::Components {
                 continue;
 
             const auto& existingProperty = properties[name];
-            if (!existingProperty.wasChanged)
+            if (!existingProperty.wasChanged && !update)
                 continue;
 
             // Only update if there was a server side change of the script properties
@@ -290,19 +314,38 @@ namespace Atlas::Scene::Components {
         AE_ASSERT(scriptEnvironment.has_value());
         auto& state = scriptEnvironment.value();
 
+        sol::optional<sol::table> scriptPropertyTable = state["ScriptProperties"];
+        if (!scriptPropertyTable.has_value()) {
+            return;
+        }
+
         for (const auto& [propertyName, property] : properties) {
+            sol::optional<sol::table> propertyTable = scriptPropertyTable.value()[propertyName];
+            if (!propertyTable.has_value()) {
+                continue;
+            }
+
             switch (property.type) {
             case PropertyType::String:
-                state["ScriptProperties"][propertyName]["value"] = property.stringValue;
+                propertyTable.value()["value"] = property.stringValue;
                 break;
             case PropertyType::Double:
-                state["ScriptProperties"][propertyName]["value"] = property.doubleValue;
+                propertyTable.value()["value"] = property.doubleValue;
                 break;
             case PropertyType::Integer:
-                state["ScriptProperties"][propertyName]["value"] = property.integerValue;
+                propertyTable.value()["value"] = property.integerValue;
                 break;
             case PropertyType::Boolean:
-                state["ScriptProperties"][propertyName]["value"] = property.booleanValue;
+                propertyTable.value()["value"] = property.booleanValue;
+                break;
+            case PropertyType::Vec2:
+                propertyTable.value()["value"] = property.vec2Value;
+                break;
+            case PropertyType::Vec3:
+                propertyTable.value()["value"] = property.vec3Value;
+                break;
+            case PropertyType::Vec4:
+                propertyTable.value()["value"] = property.vec4Value;
                 break;
             case PropertyType::Undefined:
                 break;

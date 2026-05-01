@@ -1,86 +1,110 @@
 #include "AtmosphereRenderer.h"
 #include "helper/GeometryHelper.h"
-
-#include "../Clock.h"
+#include "../common/ColorConverter.h"
 
 namespace Atlas {
 
     namespace Renderer {
 
-        void AtmosphereRenderer::Init(Graphics::GraphicsDevice *device) {
+        void AtmosphereRenderer::Init(Graphics::GraphicsDevice* device) {
 
-            defaultPipelineConfig = PipelineConfig("atmosphere.csh");
-            cubeMapPipelineConfig = PipelineConfig("atmosphere.csh", {"ENVIRONMENT_PROBE"});
+            this->device = device;
 
-            // 2 elements of size for default rendering plus one cube map
-            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms), 2);
+            defaultPipelineConfig = PipelineConfig("atmosphere/atmosphere.csh");
+            cubeMapPipelineConfig = PipelineConfig("atmosphere/atmosphere.csh", { "ENVIRONMENT_PROBE" });
+            transmittancePipelineConfig = PipelineConfig("atmosphere/transmittance.csh");
+            multipleScatteringPipelineConfig = PipelineConfig("atmosphere/multipleScattering.csh");
+            skyViewPipelineConfig = PipelineConfig("atmosphere/skyView.csh");
+
+            uniformBuffer = Buffer::UniformBuffer(sizeof(RenderUniforms), 2);
+            transmittanceUniformBuffer = Buffer::UniformBuffer(sizeof(AtmosphereParameters));
+            multipleScatteringUniformBuffer = Buffer::UniformBuffer(sizeof(MultipleScatteringUniforms));
+            skyViewUniformBuffer = Buffer::UniformBuffer(sizeof(SkyViewUniforms));
             probeMatricesBuffer = Buffer::UniformBuffer(sizeof(mat4) * 6);
 
         }
 
-        void AtmosphereRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        void AtmosphereRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+            Graphics::CommandList* commandList) {
 
             auto atmosphere = scene->sky.atmosphere;
 
             auto mainLightEntity = GetMainLightEntity(scene);
-            if (!mainLightEntity.IsValid() || !atmosphere) return;
-
-            Graphics::Profiler::BeginQuery("Atmosphere");
-
-            auto pipeline = PipelineManager::GetPipeline(defaultPipelineConfig);
-            commandList->BindPipeline(pipeline);
+            if (!mainLightEntity.IsValid() || !atmosphere)
+                return;
 
             auto& camera = scene->GetMainCamera();
             auto& light = mainLightEntity.GetComponent<LightComponent>();
+            vec3 cameraLocation = camera.GetLocation();
+            vec3 sunDirection = GetSunDirection(light);
+            vec3 sunRadiance = GetSunRadiance(light);
+            auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->sky);
 
-            auto location = camera.GetLocation();
+            Graphics::Profiler::BeginQuery("Atmosphere");
+
+            if (atmosphere->needsUpdate || HasMissingLuts(*atmosphere, true)) {
+                MultipleScatteringUniforms multipleScatteringUniforms {
+                    .sunRadiance = vec4(sunRadiance, 0.0f),
+                    .atmosphere = atmosphereParameters
+                };
+
+                SkyViewUniforms skyViewUniforms {
+                    .cameraLocation = vec4(cameraLocation, 1.0f),
+                    .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
+                    .sunDirection = vec4(sunDirection, 0.0f),
+                    .sunRadiance = vec4(sunRadiance, 0.0f),
+                    .atmosphere = atmosphereParameters
+                };
+
+                UpdateTransmittanceLut(atmosphereParameters, atmosphere.get(), commandList);
+                UpdateMultipleScatteringLut(multipleScatteringUniforms, atmosphere.get(), commandList);
+                UpdateSkyViewLut(skyViewUniforms, atmosphere.get(), commandList);
+                atmosphere->needsUpdate = false;
+            }
+
+            auto pipeline = PipelineManager::GetPipeline(defaultPipelineConfig);
+            commandList->BindPipeline(pipeline);
 
             auto rtData = target->GetData(FULL_RES);
             auto velocityTexture = rtData->velocityTexture;
             auto depthTexture = rtData->depthTexture;
 
-            Uniforms uniforms {
+            RenderUniforms uniforms {
                 .ivMatrix = camera.invViewMatrix,
                 .ipMatrix = camera.invProjectionMatrix,
-                .cameraLocation = vec4(location, 1.0f),
+                .cameraLocation = vec4(cameraLocation, 1.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
-                .sunDirection = vec4(light.transformedProperties.directional.direction, 0.0f),
-                .rayleighScatteringCoeff = vec4(atmosphere->rayleighScatteringCoeff, 0.0f),
-                .mieScatteringCoeff = atmosphere->mieScatteringCoeff,
-                .rayleighHeightScale = atmosphere->rayleighHeightScale,
-                .mieHeightScale = atmosphere->mieHeightScale,
-                .sunIntensity = light.intensity,
-                .planetRadius = scene->sky.planetRadius,
-                .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
+                .sunDirection = vec4(sunDirection, 0.0f),
+                .sunRadiance = vec4(sunRadiance, 0.0f),
+                .atmosphere = atmosphereParameters
             };
             uniformBuffer.SetData(&uniforms, 0);
 
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-            std::vector<Graphics::ImageBarrier> imageBarriers = {
-                {target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                {velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+            Graphics::ImageBarrier preImageBarriers[] = {
+                { target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT },
+                { velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT },
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            commandList->PipelineBarrier(preImageBarriers, {});
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(velocityTexture->image, 3, 1);
-
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
             commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(0), 3, 3);
+            commandList->BindImage(atmosphere->skyViewLutTexture.image,
+                atmosphere->skyViewLutTexture.sampler, 3, 4);
+            commandList->BindImage(atmosphere->transmittanceLutTexture.image,
+                atmosphere->transmittanceLutTexture.sampler, 3, 5);
 
             auto resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
-            auto groupCount = resolution / 8;
-
-            groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-            groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+            auto groupCount = GetGroupCount(resolution);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-            imageBarriers = {
-                {target->lightingTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {velocityTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            Graphics::ImageBarrier postImageBarriers[] = {
+                { target->lightingTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT },
+                { velocityTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT },
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
             Graphics::Profiler::EndQuery();
@@ -99,45 +123,56 @@ namespace Atlas {
                 return;
             }
 
+            const auto& light = mainLightEntity.GetComponent<LightComponent>();
+            vec3 sunDirection = GetSunDirection(light);
+            vec3 sunRadiance = GetSunRadiance(light);
+            auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->sky);
+
+            MultipleScatteringUniforms multipleScatteringUniforms {
+                .sunRadiance = vec4(sunRadiance, 0.0f),
+                .atmosphere = atmosphereParameters
+            };
+
             Graphics::Profiler::BeginQuery("Atmosphere environment probe");
+
+            if (atmosphere->needsUpdate || HasMissingLuts(*atmosphere, false)) {
+                UpdateTransmittanceLut(atmosphereParameters, atmosphere.get(), commandList);
+                UpdateMultipleScatteringLut(multipleScatteringUniforms, atmosphere.get(), commandList);
+            }
 
             auto pipeline = PipelineManager::GetPipeline(cubeMapPipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            commandList->ImageMemoryBarrier(probe->generatedCubemap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
-
-            auto& light = mainLightEntity.GetComponent<LightComponent>();
+            commandList->ImageMemoryBarrier(probe->generatedCubemap.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
             std::vector<mat4> matrices = probe->viewMatrices;
-            for (auto& matrix : matrices) matrix = glm::inverse(matrix);
+            for (auto& matrix : matrices)
+                matrix = glm::inverse(matrix);
 
-            Uniforms uniforms {
+            RenderUniforms uniforms {
                 .ipMatrix = glm::inverse(probe->projectionMatrix),
                 .cameraLocation = vec4(probe->GetPosition(), 1.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
-                .sunDirection = vec4(light.transformedProperties.directional.direction, 0.0f),
-                .rayleighScatteringCoeff = vec4(atmosphere->rayleighScatteringCoeff, 0.0f),
-                .mieScatteringCoeff = atmosphere->mieScatteringCoeff,
-                .rayleighHeightScale = atmosphere->rayleighHeightScale,
-                .mieHeightScale = atmosphere->mieHeightScale,
-                .sunIntensity = light.intensity,
-                .planetRadius = scene->sky.planetRadius,
-                .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
+                .sunDirection = vec4(sunDirection, 0.0f),
+                .sunRadiance = vec4(sunRadiance, 0.0f),
+                .atmosphere = atmosphereParameters
             };
             uniformBuffer.SetData(&uniforms, 1);
             probeMatricesBuffer.SetData(matrices.data(), 0);
 
             commandList->BindImage(probe->generatedCubemap.image, 3, 0);
             commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(1), 3, 3);
-            commandList->BindBuffer(probeMatricesBuffer.Get(), 3, 4);
+            commandList->BindImage(atmosphere->transmittanceLutTexture.image,
+                atmosphere->transmittanceLutTexture.sampler, 3, 4);
+            commandList->BindImage(atmosphere->multipleScatteringLutTexture.image,
+                atmosphere->multipleScatteringLutTexture.sampler, 3, 5);
+            commandList->BindBufferOffset(probeMatricesBuffer.Get(), 0, 3, 6);
 
             Graphics::Profiler::BeginQuery("Render probe faces");
 
             auto resolution = ivec2(probe->GetCubemap().width, probe->GetCubemap().height);
-            auto groupCount = resolution / 8;
-
-            groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-            groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+            auto groupCount = GetGroupCount(resolution);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
@@ -147,7 +182,6 @@ namespace Atlas {
                 VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-            // The cube map generating automatically transforms the image layout to read-only optimal
             commandList->GenerateMipMaps(probe->generatedCubemap.image);
 
             Graphics::Profiler::EndQuery();
@@ -155,6 +189,169 @@ namespace Atlas {
 
         }
 
+        void AtmosphereRenderer::UpdateTransmittanceLut(AtmosphereParameters atmosphereParameters,
+            Lighting::Atmosphere* atmosphere, Graphics::CommandList* commandList) {
+
+            EnsureLutTexture(atmosphere->transmittanceLutTexture, transmittanceLutResolution);
+
+            Graphics::Profiler::BeginQuery("Atmosphere transmittance");
+
+            auto pipeline = PipelineManager::GetPipeline(transmittancePipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            transmittanceUniformBuffer.SetData(&atmosphereParameters, 0);
+
+            commandList->ImageMemoryBarrier(atmosphere->transmittanceLutTexture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->BindImage(atmosphere->transmittanceLutTexture.image, 3, 0);
+            commandList->BindBufferOffset(transmittanceUniformBuffer.Get(),
+                transmittanceUniformBuffer.GetAlignedOffset(0), 3, 1);
+
+            auto resolution = ivec2(atmosphere->transmittanceLutTexture.width,
+                atmosphere->transmittanceLutTexture.height);
+            auto groupCount = GetGroupCount(resolution);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            commandList->ImageMemoryBarrier(atmosphere->transmittanceLutTexture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        void AtmosphereRenderer::UpdateMultipleScatteringLut(
+            const MultipleScatteringUniforms& uniforms, Lighting::Atmosphere* atmosphere,
+            Graphics::CommandList* commandList) {
+
+            EnsureLutTexture(atmosphere->multipleScatteringLutTexture, multipleScatteringLutResolution);
+
+            Graphics::Profiler::BeginQuery("Atmosphere multiple scattering");
+
+            auto pipeline = PipelineManager::GetPipeline(multipleScatteringPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            auto uploadUniforms = uniforms;
+            multipleScatteringUniformBuffer.SetData(&uploadUniforms, 0);
+
+            commandList->ImageMemoryBarrier(atmosphere->multipleScatteringLutTexture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->BindImage(atmosphere->multipleScatteringLutTexture.image, 3, 0);
+            commandList->BindImage(atmosphere->transmittanceLutTexture.image,
+                atmosphere->transmittanceLutTexture.sampler, 3, 1);
+            commandList->BindBufferOffset(multipleScatteringUniformBuffer.Get(),
+                multipleScatteringUniformBuffer.GetAlignedOffset(0), 3, 2);
+
+            auto resolution = ivec2(atmosphere->multipleScatteringLutTexture.width,
+                atmosphere->multipleScatteringLutTexture.height);
+            auto groupCount = GetGroupCount(resolution);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            commandList->ImageMemoryBarrier(atmosphere->multipleScatteringLutTexture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        void AtmosphereRenderer::UpdateSkyViewLut(const SkyViewUniforms& uniforms,
+            Lighting::Atmosphere* atmosphere, Graphics::CommandList* commandList) {
+
+            EnsureLutTexture(atmosphere->skyViewLutTexture, skyViewLutResolution);
+
+            Graphics::Profiler::BeginQuery("Atmosphere sky view");
+
+            auto pipeline = PipelineManager::GetPipeline(skyViewPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            auto uploadUniforms = uniforms;
+            skyViewUniformBuffer.SetData(&uploadUniforms, 0);
+
+            commandList->ImageMemoryBarrier(atmosphere->skyViewLutTexture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->BindImage(atmosphere->skyViewLutTexture.image, 3, 0);
+            commandList->BindImage(atmosphere->transmittanceLutTexture.image,
+                atmosphere->transmittanceLutTexture.sampler, 3, 1);
+            commandList->BindImage(atmosphere->multipleScatteringLutTexture.image,
+                atmosphere->multipleScatteringLutTexture.sampler, 3, 2);
+            commandList->BindBufferOffset(skyViewUniformBuffer.Get(),
+                skyViewUniformBuffer.GetAlignedOffset(0), 3, 3);
+
+            auto resolution = ivec2(atmosphere->skyViewLutTexture.width,
+                atmosphere->skyViewLutTexture.height);
+            auto groupCount = GetGroupCount(resolution);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            commandList->ImageMemoryBarrier(atmosphere->skyViewLutTexture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        AtmosphereRenderer::AtmosphereParameters AtmosphereRenderer::GetAtmosphereParameters(
+            const Lighting::Atmosphere& atmosphere, const Lighting::Sky& sky) {
+
+            return {
+                .rayleighScatteringCoeff = vec4(atmosphere.rayleighScatteringCoeff, 0.0f),
+                .groundAlbedo = vec4(atmosphere.groundAlbedo, 0.0f),
+                .mieScatteringCoeff = atmosphere.mieScatteringCoeff,
+                .rayleighHeightScale = atmosphere.rayleighHeightScale,
+                .mieHeightScale = atmosphere.mieHeightScale,
+                .surfaceHeightOffset = -(sky.planetCenter.y + sky.planetRadius),
+                .planetRadius = sky.planetRadius,
+                .atmosphereRadius = sky.planetRadius + atmosphere.height
+            };
+
+        }
+
+        vec3 AtmosphereRenderer::GetSunDirection(const LightComponent& light) {
+
+            return normalize(-light.transformedProperties.directional.direction);
+
+        }
+
+        vec3 AtmosphereRenderer::GetSunRadiance(const LightComponent& light) {
+
+            return Common::ColorConverter::ConvertSRGBToLinear(light.color) * light.intensity;
+
+        }
+
+        ivec2 AtmosphereRenderer::GetGroupCount(ivec2 resolution) {
+
+            auto groupCount = resolution / groupSize;
+
+            groupCount.x += ((groupCount.x * groupSize == resolution.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * groupSize == resolution.y) ? 0 : 1);
+
+            return groupCount;
+
+        }
+
+        bool AtmosphereRenderer::HasMissingLuts(const Lighting::Atmosphere& atmosphere,
+            bool includeSkyView) {
+
+            return !atmosphere.transmittanceLutTexture.IsValid() ||
+                !atmosphere.multipleScatteringLutTexture.IsValid() ||
+                (includeSkyView && !atmosphere.skyViewLutTexture.IsValid());
+
+        }
+
+        void AtmosphereRenderer::EnsureLutTexture(Texture::Texture2D& texture, ivec2 resolution) {
+
+            if (texture.IsValid())
+                return;
+
+            texture = Texture::Texture2D(resolution.x, resolution.y,
+                VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge,
+                Texture::Filtering::Linear);
+
+        }
 
     }
 

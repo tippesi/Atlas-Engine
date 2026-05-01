@@ -24,16 +24,16 @@ namespace Atlas {
         public:
             InternalIrradianceVolume() = default;
 
-            InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
+            InternalIrradianceVolume(ivec2 irrRes, ivec2 radRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
 
             void SetRayCount(uint32_t rayCount, uint32_t rayCountInactive);
 
             void SwapTextures();
 
-            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>
                 GetCurrentProbes() const;
 
-            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>
                 GetLastProbes() const;
 
             std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
@@ -42,7 +42,7 @@ namespace Atlas {
             std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
                 GetLastProbeBuffers() const;
 
-            void ClearProbes(ivec2 irrRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
+            void ClearProbes(ivec2 irrRes, ivec2 radRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
 
             void ResetProbeOffsets();
 
@@ -55,13 +55,21 @@ namespace Atlas {
             Buffer::Buffer probeStateBuffer;
             Buffer::Buffer historyProbeStateBuffer;
 
+            // Used for debugging
+            Ref<Material> probeDebugMaterial;
+            Ref<Material> probeDebugActiveMaterial;
+            Ref<Material> probeDebugInactiveMaterial;
+            Ref<Material> probeDebugOffsetMaterial;
+
         private:
             void FillRayBuffers();
 
             Texture::Texture2DArray irradianceArray0;
+            Texture::Texture2DArray radianceArray0;
             Texture::Texture2DArray momentsArray0;
 
             Texture::Texture2DArray irradianceArray1;
+            Texture::Texture2DArray radianceArray1;
             Texture::Texture2DArray momentsArray1;
 
             int32_t swapIdx = 0;
@@ -73,7 +81,8 @@ namespace Atlas {
         public:
             IrradianceVolume() = default;
 
-            IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount = 1, bool lowerResMoments = true);
+            IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount = 1, 
+                bool lowerResMoments = true, bool lowerResRadiance = true);
 
             ivec3 GetIrradianceArrayOffset(ivec3 probeIndex, int32_t cascadeIndex);
 
@@ -91,6 +100,10 @@ namespace Atlas {
 
             void ResetProbeOffsets();
 
+            void SetMomentsResolution(bool lowerResMoments);
+
+            void SetRadianceResolution(bool lowerResRadiance);
+
             struct Cascade {
                 Volume::AABB aabb;
                 vec3 size;
@@ -105,7 +118,7 @@ namespace Atlas {
             int32_t cascadeCount;
 
             uint32_t rayCount = 128;
-            uint32_t rayCountInactive = 32;
+            uint32_t rayCountInactive = 16;
 
             float hysteresis = 0.98f;
             float bias = 0.3f;
@@ -124,8 +137,10 @@ namespace Atlas {
             bool optimizeProbes = true;
             bool useShadowMap = false;
             bool lowerResMoments = false;
+            bool lowerResRadiance = true;
             bool opacityCheck = false;
             bool visibility = true;
+            bool radiance = true;
             bool scroll = false;
 
             InternalIrradianceVolume internal;
@@ -135,6 +150,7 @@ namespace Atlas {
             friend Renderer::MainRenderer;
 
             int32_t irrRes = 6;
+            int32_t radRes = 30;
             int32_t momRes = 14;
 
         };

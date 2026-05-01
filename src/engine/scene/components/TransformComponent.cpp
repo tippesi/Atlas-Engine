@@ -33,6 +33,11 @@ namespace Atlas {
 				changed = true;
                 updated = false;
 
+                if (!initialized) {
+                    globalMatrix = matrix;
+                    initialized = true;
+                }
+
 			}
 
 			void TransformComponent::ReconstructLocalMatrix(const Entity& parentEntity) {
@@ -49,7 +54,7 @@ namespace Atlas {
 
 			}
 
-			void TransformComponent::Update(const TransformComponent& parentTransform, bool parentChanged) {
+			void TransformComponent::Update(const glm::mat4& parentMatrix, bool parentChanged) {
 
 				lastGlobalMatrix = globalMatrix;
                 wasStatic = isStatic;
@@ -58,10 +63,15 @@ namespace Atlas {
 
 				if (changed) {
 
-					globalMatrix = parentTransform.globalMatrix * matrix;
+					globalMatrix = parentMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));
 
                     updated = true;
+
+                    if (!initialized) {
+                        lastGlobalMatrix = globalMatrix;
+                        initialized = true;
+                    }
 
 				}
 

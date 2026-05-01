@@ -1,7 +1,9 @@
 #include <globals.hsh>
+#include <common/stencil.hsh>
 
 layout(location=0) out vec3 colorFS;
 layout(location=1) out vec2 velocityFS;
+layout(location=2) out uint stencil;
 
 layout(location=0) in vec3 colorVS;
 layout(location=1) in vec3 ndcCurrentVS;
@@ -18,5 +20,9 @@ void main() {
     ndcC -= globalData.jitterCurrent;
 
     velocityFS = (ndcL - ndcC) * 0.5;
+
+    StencilFeatures features = CreateStencilFeatures();
+    features.responsivePixel = true;
+    stencil = EncodeStencilFeatures(features);
 
 }

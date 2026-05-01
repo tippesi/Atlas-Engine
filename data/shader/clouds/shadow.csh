@@ -1,5 +1,5 @@
 #include <../globals.hsh>
-#include <../structures>
+#include <../structures.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/random.hsh>
@@ -14,7 +14,7 @@ layout (local_size_x = 8, local_size_y = 4) in;
 
 layout(set = 3, binding = 0, rg16f) writeonly uniform image2D volumetricCloudShadowImage;
 
-layout(std140, set = 3, binding = 8) uniform UniformBuffer {
+layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     mat4 ivMatrix;
     mat4 ipMatrix;
 
@@ -43,7 +43,7 @@ void main() {
 
 vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
 
-    vec3 rayDirection = uniforms.lightDirection.xyz;
+    vec3 rayDirection = normalize(uniforms.lightDirection.xyz);
     vec3 rayOrigin = vec3(uniforms.ivMatrix * vec4(minDepthPos, 1.0));
 
     float inDist, outDist;
@@ -58,7 +58,7 @@ vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
 
     float maxDepth = abs(maxDepthPos.z - minDepthPos.z);
 
-    float depth = maxDepth;
+    float depth = 0.0;
     float extinction = 1.0;
     vec3 rayPos = rayOrigin + rayDirection * rayStart;
 
@@ -77,12 +77,12 @@ vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
             extinction *= exp(-extinctionCoefficient * stepLength);
 
             float currentDepth = rayStart + float(i) * stepLength;
-            depth = mix(depth, currentDepth, pow(extinction, 4.0));
+            depth = mix(depth, currentDepth, pow(extinction, 1.0));
         }
 
         rayPos += stepVector;
     }
 
-    return vec2(extinction < 1.0 ? depth : maxDepth, extinction);
+    return vec2(extinction < 1.0 ? depth : maxDepth, saturate(extinction));
 
 }

@@ -23,23 +23,35 @@ namespace Atlas {
                 float radianceLimit;
                 uint32_t frameSeed;
                 float bias;
+                int32_t sampleCount;
+                int32_t lightSampleCount;
                 int32_t textureLevel;
                 float roughnessCutoff;
                 int32_t halfRes;
-                ivec2 resolution;                
+                ivec2 resolution;
+                uint32_t frameCount;
+                int32_t padding1;
                 Shadow shadow;
             };
 
+            struct alignas(16) UpscalingConstants {
+                uint32_t frameCount;
+            };
+
             struct alignas(16) TemporalConstants {
+                vec4 cameraLocationLast;
                 float temporalWeight;
                 float historyClipMax;
                 float currentClipFactor;
+                float roughnessCutoff;
                 int32_t resetHistory;
+                uint32_t frameCount;
             };
 
             struct alignas(16) AtrousConstants {
                 int32_t stepSize;
                 float strength;
+                float roughnessCutoff;
             };
 
             Helper::RayTracingHelper helper;
@@ -47,6 +59,7 @@ namespace Atlas {
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
 
+            PipelineConfig ssrPipelineConfig;
             PipelineConfig rtrPipelineConfig;
             PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;

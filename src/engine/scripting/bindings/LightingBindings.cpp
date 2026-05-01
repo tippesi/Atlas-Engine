@@ -1,7 +1,6 @@
 #include "LightingBindings.h"
 
 #include "lighting/Shadow.h"
-#include "lighting/AO.h"
 #include "lighting/SSGI.h"
 #include "lighting/EnvironmentProbe.h"
 #include "lighting/SSS.h"
@@ -55,7 +54,13 @@ namespace Atlas::Scripting::Bindings {
             );
 
         ns->new_usertype<Lighting::Atmosphere>("Atmosphere",
-            "height", &Lighting::Atmosphere::height
+            "height", &Lighting::Atmosphere::height,
+            "rayleighScatteringCoeff", &Lighting::Atmosphere::rayleighScatteringCoeff,
+            "groundAlbedo", &Lighting::Atmosphere::groundAlbedo,
+            "mieScatteringCoeff", &Lighting::Atmosphere::mieScatteringCoeff,
+            "rayleighHeightScale", &Lighting::Atmosphere::rayleighHeightScale,
+            "mieHeightScale", &Lighting::Atmosphere::mieHeightScale,
+            "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 
         ns->new_usertype<Lighting::SSS>("SSS",
@@ -125,6 +130,37 @@ namespace Atlas::Scripting::Bindings {
             "atmosphere", &Lighting::Sky::atmosphere,
             "probe", &Lighting::Sky::probe
         );
+
+        ns->new_usertype<Lighting::ShadowView>("ShadowView",
+            "nearDistance", &Lighting::ShadowView::nearDistance,
+            "farDistance", &Lighting::ShadowView::farDistance,
+            "viewMatrix", &Lighting::ShadowView::viewMatrix,
+            "projectionMatrix", &Lighting::ShadowView::projectionMatrix,
+            "frustumMatrix", &Lighting::ShadowView::frustumMatrix,
+            "terrainFrustumMatrix", &Lighting::ShadowView::terrainFrustumMatrix,
+            "orthoSize", &Lighting::ShadowView::orthoSize
+        );
+
+        ns->new_usertype<Lighting::Shadow>("Shadow",
+            "SetResolution", &Lighting::Shadow::SetResolution,
+            "Update", &Lighting::Shadow::Update,
+            "center", &Lighting::Shadow::center,
+            "distance", &Lighting::Shadow::distance,
+            "longRangeDistance", &Lighting::Shadow::longRangeDistance,
+            "bias", &Lighting::Shadow::bias,
+            "splitCorrection", &Lighting::Shadow::splitCorrection,
+            "edgeSoftness", &Lighting::Shadow::edgeSoftness,
+            "cascadeBlendDistance", &Lighting::Shadow::cascadeBlendDistance,
+            "resolution", &Lighting::Shadow::resolution,
+            "views", &Lighting::Shadow::views,
+            "viewCount", &Lighting::Shadow::viewCount,
+            "isCascaded", &Lighting::Shadow::isCascaded,
+            "followMainCamera", &Lighting::Shadow::followMainCamera,
+            "useCubemap", &Lighting::Shadow::useCubemap,
+            "allowTerrain", &Lighting::Shadow::allowTerrain,
+            "longRange", &Lighting::Shadow::longRange,
+            "update", &Lighting::Shadow::update
+            );
 
     }
 

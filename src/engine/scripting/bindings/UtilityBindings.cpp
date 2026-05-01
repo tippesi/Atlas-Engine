@@ -72,13 +72,13 @@ namespace Atlas::Scripting::Bindings {
             );
 
         auto resizeFrustumOverload = sol::overload(
-            [](Volume::Frustum& frustum, const std::vector<vec3>& corners) { frustum.Resize(corners); },
+            [](Volume::Frustum& frustum, const std::array<vec3, 8>& corners) { frustum.Resize(corners); },
             [](Volume::Frustum& frustum, const mat4& matrix) { frustum.Resize(matrix); }
         );
 
         ns->new_usertype<Volume::Frustum>("Frustum",
             sol::call_constructor,
-            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::vector<vec3>&), Volume::Frustum(glm::mat4)>(),
+            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::array<vec3, 8>&), Volume::Frustum(glm::mat4)>(),
             "Resize", resizeFrustumOverload,
             "Intersects", &Volume::Frustum::Intersects,
             "IsInside", &Volume::Frustum::IsInside,

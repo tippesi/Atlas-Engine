@@ -8,6 +8,7 @@
 #include "../loader/ShaderLoader.h"
 #include "../loader/AssetLoader.h"
 
+#define SPIRV_REFLECT_USE_SYSTEM_SPIRV_H
 #include <spirv_reflect.h>
 #include <cassert>
 #include <unordered_map>
@@ -67,6 +68,10 @@ namespace Atlas {
 
             if (device->support.bindless) {
                 macros.push_back("AE_BINDLESS");
+            }
+
+            if (device->support.shaderFloat16) {
+                macros.push_back("AE_HALF_FLOAT");
             }
 
 #ifdef AE_OS_MACOS
@@ -423,8 +428,7 @@ namespace Atlas {
                     binding.binding.size = descriptorBinding->block.size;
                     binding.binding.arrayElement = 0;
                     binding.binding.stageFlags = VK_SHADER_STAGE_ALL;
-                    binding.binding.bindless = descriptorBinding->array.dims_count == 1 &&
-                        descriptorBinding->array.dims[0] == 1 && device->support.bindless;
+                    binding.binding.bindless = device->support.bindless;
 
                     binding.binding.descriptorType =
                         binding.binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?

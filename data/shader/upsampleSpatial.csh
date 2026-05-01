@@ -65,7 +65,7 @@ void main() {
         pixel.y > imageSize(textureOut).y)
         return;
 
-    vec2 uv = (vec2(pixel) + vec2(0.5)) / vec2(imageSize(textureOut));
+    vec2 uv = (vec2(pixel)) / vec2(imageSize(textureOut));
 
     vec4 color = SampleCatmullRom(uv);
 

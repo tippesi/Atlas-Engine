@@ -1,5 +1,7 @@
 #include "TerrainRenderer.h"
 
+#include "../common/NoiseGenerator.h"
+
 namespace Atlas {
 
     namespace Renderer {
@@ -10,12 +12,21 @@ namespace Atlas {
             auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
             terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 128, 1);
+
+            Common::Image<float> noiseImage(512, 512, 1);
+            std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
+            Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
+
+            noiseTexture = Texture::Texture2D(512, 512,
+                VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+            auto data = noiseImage.ConvertData<float16>();
+            noiseTexture.SetData(data);
         }
 
         void TerrainRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
-            if (!scene->terrain)
+            if (!scene->terrain.IsLoaded())
                 return;
 
             Graphics::Profiler::BeginQuery("Terrain");
@@ -55,13 +66,14 @@ namespace Atlas {
                 }
             }
 
-            auto materials = terrain->storage.GetMaterials();
+            auto materials = terrain->storage->GetMaterials();
 
             std::vector<TerrainMaterial> terrainMaterials(128);
 
             for (size_t i = 0; i < materials.size(); i++) {
-                if (materials[i]) {
-                    terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].get()];
+                if (materials[i].IsLoaded()) {
+                    terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].Get().get()];
+                    terrainMaterials[i].baseColor = vec4(materials[i]->baseColor, 1.0);
                     terrainMaterials[i].roughness = materials[i]->roughness;
                     terrainMaterials[i].metalness = materials[i]->metalness;
                     terrainMaterials[i].ao = materials[i]->ao;
@@ -69,18 +81,19 @@ namespace Atlas {
                     terrainMaterials[i].normalScale = materials[i]->normalScale;
                     terrainMaterials[i].tiling = materials[i]->tiling;
                 }
-
             }
 
             terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, 1);
 
-            terrain->storage.baseColorMaps.Bind(commandList, 3, 3);
-            terrain->storage.roughnessMaps.Bind(commandList, 3, 4);
-            terrain->storage.aoMaps.Bind(commandList, 3, 5);
-            terrain->storage.normalMaps.Bind(commandList, 3, 6);
-            terrain->storage.displacementMaps.Bind(commandList, 3, 7);
+            terrain->storage->baseColorMaps.Bind(commandList, 3, 3);
+            terrain->storage->roughnessMaps.Bind(commandList, 3, 4);
+            terrain->storage->aoMaps.Bind(commandList, 3, 5);
+            terrain->storage->normalMaps.Bind(commandList, 3, 6);
+            terrain->storage->displacementMaps.Bind(commandList, 3, 7);
 
             Uniforms uniforms = {
+                .translation = vec4(terrain->translation, 1.0f),
+
                 .heightScale = terrain->heightScale,
                 .displacementDistance = terrain->displacementDistance,
 
@@ -99,23 +112,25 @@ namespace Atlas {
             terrainMaterialBuffer.Bind(commandList, 3, 8);
             uniformBuffer.Bind(commandList, 3, 9);
 
+            noiseTexture.Bind(commandList, 3, 10);
+
             for (uint8_t i = 0; i < 3; i++) {
 
                 std::vector<Terrain::TerrainNode*> nodes;
 
                 PipelineConfig config;
                 switch (i) {
-                case 0: config = GeneratePipelineConfig(target, terrain, true, true);
+                case 0: config = GeneratePipelineConfig(target, terrain.Get(), true, true);
                     terrain->vertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Detail with displacement");
                     nodes = detailDisplacementNodes;
                     break;
-                case 1: config = GeneratePipelineConfig(target, terrain, false, true);
+                case 1: config = GeneratePipelineConfig(target, terrain.Get(), false, true);
                     terrain->distanceVertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Detail");
                     nodes = detailNodes;
                     break;
-                case 2: config = GeneratePipelineConfig(target, terrain, false, false);
+                case 2: config = GeneratePipelineConfig(target, terrain.Get(), false, false);
                     terrain->distanceVertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Distance");
                     nodes = distanceNodes;
@@ -128,9 +143,9 @@ namespace Atlas {
 
                 for (auto node : nodes) {
 
-                    node->cell->heightField.Bind(commandList, 3, 0);
-                    node->cell->normalMap.Bind(commandList, 3, 1);
-                    node->cell->splatMap.Bind(commandList, 3, 2);
+                    node->cell->heightField->Bind(commandList, 3, 0);
+                    node->cell->normalMap->Bind(commandList, 3, 1);
+                    node->cell->splatMap->Bind(commandList, 3, 2);
 
                     auto tileScale = terrain->resolution * powf(2.0f,
                         (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);
@@ -139,7 +154,7 @@ namespace Atlas {
                         .nodeSideLength = node->sideLength,
                         .tileScale = tileScale,
                         .patchSize = float(terrain->patchSizeFactor),
-                        .normalTexelSize = 1.0f / float(node->cell->normalMap.width),
+                        .normalTexelSize = 1.0f / float(node->cell->normalMap->width),
 
                         .leftLoD = node->leftLoDStitch,
                         .topLoD = node->topLoDStitch,

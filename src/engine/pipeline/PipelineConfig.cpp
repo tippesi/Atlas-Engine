@@ -67,14 +67,14 @@ namespace Atlas {
 
     }
 
-    bool PipelineConfig::HasMacro(const std::string& macro) {
+    bool PipelineConfig::HasMacro(const char* macro) {
 
         return std::any_of(macros.begin(), macros.end(),
-            [macro](const auto& value) { return value == macro; });
+            [macro](const auto& value) { return std::strcmp(value.c_str(), macro) == 0; });
 
     }
 
-    bool PipelineConfig::ManageMacro(const std::string& macro, bool enable) {
+    bool PipelineConfig::ManageMacro(const char* macro, bool enable) {
 
         bool hasMacro = HasMacro(macro);
         if (enable && !hasMacro) {

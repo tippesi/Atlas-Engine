@@ -22,6 +22,9 @@ namespace Atlas::Editor::UI {
         auto meshes = scene->GetMeshes();
         auto materials = scene->GetMaterials();
 
+        auto lightCount = scene->GetComponentCount<LightComponent>();
+        auto meshInstanceCount = scene->GetComponentCount<MeshComponent>();
+
         ImGui::SeparatorText("Dimensions");
         ImGui::Text("Min: %.2f, %.2f, %.2f", min.x, min.y, min.z);
         ImGui::Text("Max: %.2f, %.2f, %.2f", max.x, max.y, max.z);
@@ -31,6 +34,9 @@ namespace Atlas::Editor::UI {
         ImGui::Text("Entity count: %d", int32_t(scene->GetEntityCount()));
         ImGui::Text("Mesh count: %d", int32_t(meshes.size()));
         ImGui::Text("Material count: %d", int32_t(materials.size()));
+        ImGui::Text("Light count: %d", int32_t(lightCount));
+        ImGui::Text("Mesh instance count: %d", int32_t(meshInstanceCount));
+        ImGui::Text("Physics body count: %d", scene->physicsWorld->GetBodyCount());
 
     }
 

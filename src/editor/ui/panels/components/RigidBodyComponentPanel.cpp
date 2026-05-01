@@ -7,7 +7,14 @@ namespace Atlas::Editor::UI {
     bool RigidBodyComponentPanel::Render(const Ref<Scene::Scene>& scene,
         Scene::Entity entity, RigidBodyComponent &rigidBodyComponent) {
 
+        if (!entity.HasComponent<TransformComponent>())
+            ImGui::Text("Rigid body component needs a transform component to work properly");
+
         auto creationSettings = rigidBodyComponent.GetBodyCreationSettings();
+        if (!creationSettings.shape) {
+            ImGui::Text("Couldn't get body creation settings or shape");
+            return false;
+        }
 
         ImGui::Text("Shape");
 
@@ -23,6 +30,8 @@ namespace Atlas::Editor::UI {
         if (scene->physicsWorld->pauseSimulation)
             rigidBodyComponent.creationSettings = CreateRef(creationSettings);
 
+        meshSelectionPanel.Reset();
+
         return false;
 
     }
@@ -31,6 +40,11 @@ namespace Atlas::Editor::UI {
         Physics::BodyCreationSettings& creationSettings) {
 
         auto& shape = creationSettings.shape;
+
+        if (shape->type == Physics::ShapeType::HeightField) {
+            ImGui::Text("Body uses a height field shape");
+            return;
+        }
 
         const char* typeItems[] = { "Mesh", "Sphere", "Bounding box" };
         int currentItem = static_cast<int>(shape->type);
@@ -118,7 +132,7 @@ namespace Atlas::Editor::UI {
 
         if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }) || shapeTypeChanged)
             shape->TryCreate();
-        else
+        else if (shape->type != Physics::ShapeType::HeightField)
             shape->Scale(*scale);
 
     }

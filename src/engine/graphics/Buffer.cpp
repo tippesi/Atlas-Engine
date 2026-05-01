@@ -28,7 +28,7 @@ namespace Atlas {
             }
 
             if (desc.priority == 1.0f)
-                allocationCreateInfo.pool = memoryManager->hightPriorityBufferPool;
+                allocationCreateInfo.pool = memoryManager->highPriorityMemoryPool;
 
             if (desc.dedicatedMemory)
                 allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
@@ -42,7 +42,7 @@ namespace Atlas {
                     &allocationCreateInfo, alignment, &buffer, &allocation, nullptr))
             }
 
-            if (desc.data) SetData(desc.data, 0, desc.size);
+            if (desc.data) SetData(desc.data, 0, desc.dataSize > 0 ? desc.dataSize : desc.size, desc.transferManager);
 
         }
 
@@ -52,16 +52,19 @@ namespace Atlas {
 
         }
 
-        void Buffer::SetData(void *data, size_t offset, size_t length) {
+        void Buffer::SetData(void *data, size_t offset, size_t length, MemoryTransferManager* transferManager) {
+
+            if (!transferManager)
+                transferManager = memoryManager->transferManager;
 
             // Upload data through staging buffer for device local memory
             if (domain == BufferDomain::Device) {
                 VkBufferCopy bufferCopy = {};
                 bufferCopy.srcOffset = 0;
-                bufferCopy.dstOffset = 0;
+                bufferCopy.dstOffset = offset;
                 bufferCopy.size = length;
 
-                memoryManager->transferManager->UploadBufferData(data, this, bufferCopy);
+                transferManager->UploadBufferData(data, this, bufferCopy);
             }
             else {
                 // If there isn't a valid mapping yet start and complete it in this call
@@ -70,6 +73,7 @@ namespace Atlas {
 
                 void* offsetAddress = static_cast<uint8_t*>(mappedData) + offset;
                 std::memcpy(offsetAddress, data, length);
+                vmaFlushAllocation(memoryManager->allocator, allocation, offset, length);
 
                 if (needsMapping) Unmap();
             }

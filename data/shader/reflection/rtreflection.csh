@@ -20,10 +20,11 @@
 
 #include <../ddgi/ddgi.hsh>
 #include <../shadow.hsh>
+#include <../clouds/shadow.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
-layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D rtrImage;
+layout (set = 3, binding = 0, rgba16f) uniform image2D rtrImage;
 
 layout(set = 3, binding = 1) uniform sampler2D normalTexture;
 layout(set = 3, binding = 2) uniform sampler2D depthTexture;
@@ -35,26 +36,53 @@ layout(set = 3, binding = 6) uniform sampler2DArrayShadow cascadeMaps;
 layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
 
-const ivec2 offsets[4] = ivec2[4](
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 9) uniform sampler2D cloudMap;
+#endif
+
+#ifdef AUTO_EXPOSURE
+layout(set = 3, binding = 11) uniform sampler2D exposureTexture;
+#endif
+
+layout(set = 1, binding = 11) uniform samplerCube specularProbe;
+
+const ivec2 offsets[9] = ivec2[9](
+    ivec2(-1, -1),
+    ivec2(0, -1),
+    ivec2(1, -1),
+    ivec2(-1, 0),
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(-1, 1),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
+
+const ivec2 pixelOffsets[4] = ivec2[4](
     ivec2(0, 0),
     ivec2(1, 0),
     ivec2(0, 1),
     ivec2(1, 1)
 );
 
-layout(std140, set = 3, binding = 9) uniform UniformBuffer {
+
+layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     float radianceLimit;
     uint frameSeed;
     float bias;
+    int sampleCount;
+    int lightSampleCount;
     int textureLevel;
     float roughnessCutoff;
     int halfRes;
     ivec2 resolution;
+    uint frameCount;
+    int padding1;
     Shadow shadow;
 } uniforms;
 
-vec3 EvaluateHit(inout Ray ray);
-vec3 EvaluateDirectLight(inout Surface surface);
+vec3 EvaluateHit(inout Ray ray, float rand);
+vec3 EvaluateDirectLight(inout Surface surface, inout float seed);
 float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
@@ -65,104 +93,150 @@ void main() {
         int(gl_GlobalInvocationID.y) < resolution.y) {
 
         ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-        
-        vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
+
+#ifdef SSR
+        vec4 reflection = imageLoad(rtrImage, pixel);
+#else
+        vec4 reflection = vec4(0.0);
+#endif
 
         // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
-        ivec2 offset = offsets[offsetIdx];
+#ifdef UPSCALE
+        ivec2 offset = pixelOffsets[globalData.frameCount % 4];
+#else
+        ivec2 offset = ivec2(0);
+#endif
 
-        float depth = texelFetch(depthTexture, pixel, 0).r;
-
+        ivec2 highResPixel;
         vec2 recontructTexCoord;
-        if (uniforms.halfRes > 0)
+        if (uniforms.halfRes > 0) {            
+#ifdef UPSCALE
             recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
-        else
-            recontructTexCoord = (vec2(pixel) + 0.5) / (vec2(resolution));
+            highResPixel = 2 * pixel + offset;
+#else
+            recontructTexCoord = (vec2(pixel) + 0.5) / vec2(resolution);
+            highResPixel = pixel;
+#endif
+        }
+        else {
+            recontructTexCoord = (vec2(pixel) + 0.5) / vec2(resolution);
+            highResPixel = pixel;
+        }
+
+        float depth = texelFetch(depthTexture, highResPixel, 0).r;
             
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
-        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
+        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * 
+            vec4(DecodeNormal(texelFetch(normalTexture, highResPixel, 0).rg), 0.0)));
 
-        int sampleIdx = int(uniforms.frameSeed);
-        vec2 blueNoiseVec = vec2(
-            SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
-            SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
-            );
-
-        uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+        uint materialIdx = texelFetch(materialIdxTexture, highResPixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
 
-        float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
-        material.roughness *= material.roughnessMap ? roughness : 1.0;
+        float roughness = texelFetch(roughnessMetallicAoTexture, highResPixel, 0).r;
+        material.roughness *= material.roughnessMap || material.terrain ? roughness : 1.0;
 
-        vec3 reflection = vec3(0.0);
+        float hitDistance = reflection.a;
 
-        if (material.roughness <= 1.0 && depth < 1.0) {
-
-            float alpha = sqr(material.roughness);
+        if (material.roughness <= 1.0 && depth < 1.0 && reflection.a == 0.0) {
 
             vec3 V = normalize(-viewVec);
             vec3 N = worldNorm;
 
-            Surface surface = CreateSurface(V, N, vec3(1.0), material);
+            vec3 R = normalize(reflect(-V, N));
+            float mipLevel = material.roughness * float(4 - 1);
+            vec3 prefilteredSpecular = textureLod(specularProbe, R, 0.0).rgb;
 
-            Ray ray;
-            blueNoiseVec.y *= (1.0 - uniforms.bias);
+            const int sampleCount = uniforms.sampleCount;
 
-            float pdf = 1.0;
-            BRDFSample brdfSample;
-            if (material.roughness > 0.01) {
-                ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
-                    ray.direction, pdf);
-            }
-            else {
-                ray.direction = normalize(reflect(-V, N));
-            }
+            for (int i = 0; i < sampleCount; i++) {
+#ifdef UPSCALE
+                int sampleIdx = int(uniforms.frameSeed / 4) * sampleCount + i;
+#else
+                int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
+#endif
+                vec3 blueNoiseVec = vec3(
+                    SampleBlueNoise(highResPixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+                    SampleBlueNoise(highResPixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
+                    SampleBlueNoise(highResPixel, sampleIdx, 2, scramblingRankingTexture, sobolSequenceTexture)
+                    );
 
-            bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
-                !isnan(ray.direction.z) || dot(N, ray.direction) >= 0.0;
+                float alpha = sqr(max(0.0, material.roughness));
 
-            if (isRayValid) {
-                // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
-                float viewOffset = max(1.0, length(viewPos)) * 0.1;
-                ray.origin = worldPos + ray.direction * EPSILON * 0.1 * viewOffset + worldNorm * EPSILON * viewOffset * 0.1;
+                Ray ray;
+                ray.ID = i;
+                blueNoiseVec.y *= (1.0 - uniforms.bias);
 
-                ray.hitID = -1;
-                ray.hitDistance = 0.0;
-
-                vec3 radiance = vec3(0.0);
-
-                if (material.roughness <= uniforms.roughnessCutoff) {
-    #ifdef OPACITY_CHECK
-                    HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
-    #else
-                    HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
-    #endif
-
-                    radiance = EvaluateHit(ray);
+                float pdf = 1.0;
+                BRDFSample brdfSample;
+                if (material.roughness >= 0.0) {
+                    ImportanceSampleGGXVNDF(blueNoiseVec.xy, N, V, alpha,
+                        ray.direction, pdf);
                 }
                 else {
-    #ifdef DDGI
-                    radiance = GetLocalIrradiance(worldPos, V, N).rgb;
-                    radiance = IsInsideVolume(worldPos) ? radiance : vec3(0.0);
-    #endif
+                    ray.direction = R;
                 }
 
-                float radianceMax = max(max(max(radiance.r, 
-                    max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
-                reflection = radiance * (uniforms.radianceLimit / radianceMax);
+                Surface surface = CreateSurface(V, N, ray.direction, material);
+
+                bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
+                    !isnan(ray.direction.z) || dot(N, ray.direction) >= 0.0;
+
+                if (isRayValid) {
+                    // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
+                    float viewOffset = max(1.0, 2.0 * length(viewPos));
+                    ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
+
+                    ray.hitID = -1;
+                    ray.hitDistance = 0.0;
+
+                    vec3 radiance = vec3(0.0);
+
+                    if (material.roughness < uniforms.roughnessCutoff) {
+#ifdef OPACITY_CHECK
+                        HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
+#else
+                        HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
+#endif
+                        hitDistance = ray.hitDistance;
+                        radiance = EvaluateHit(ray, blueNoiseVec.z);
+                    }
+                    else {
+                        vec4 probeIrradiance, probeRadiance;
+                        GetLocalProbeLighting(worldPos, V, N, ray.direction, N, blueNoiseVec.z, 
+                            prefilteredSpecular, prefilteredSpecular, probeIrradiance, probeRadiance);
+#if defined(RADIANCE_VOLUME)
+                        radiance = probeRadiance.rgb;
+#elif defined(IRRADIANCE_VOLUME)
+                        radiance = IsInsideVolume(worldPos) ? probeIrradiance.rgb : vec3(0.0);
+#endif
+                        hitDistance = 1.0;
+                    }
+
+#ifdef AUTO_EXPOSURE
+                    float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+#else
+                    float radianceLimit = uniforms.radianceLimit;
+#endif
+
+                    float radianceMax = max(max(max(radiance.r, 
+                        max(radiance.g, radiance.b)), radianceLimit), 1e-12);
+                    reflection.rgb += radiance * (radianceLimit / radianceMax);
+                }
             }
+
+            reflection.rgb /= float(sampleCount);
 
         }
 
-        imageStore(rtrImage, pixel, vec4(reflection, 1.0));
+        imageStore(rtrImage, pixel, vec4(reflection.rgb, hitDistance));
     }
 
 }
 
-vec3 EvaluateHit(inout Ray ray) {
+vec3 EvaluateHit(inout Ray ray, float rand) {
 
     vec3 radiance = vec3(0.0);
     
@@ -178,39 +252,48 @@ vec3 EvaluateHit(inout Ray ray) {
 
     bool backfaceHit;
     Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
+
+    // Evaluate indirect lighting
+#ifdef IRRADIANCE_VOLUME
+    // Trick: Offset on secondary bounce towards camera, avoids light leaking (introducing innacuracies ofc)
+    vec3 V = normalize(globalData.cameraLocation.xyz - surface.P);
+    vec4 probeIrradiance, probeRadiance;
+    GetLocalProbeLighting(surface.P, V, surface.N, surface.N, surface.geometryNormal, rand, 
+        vec3(0.0), vec3(0.0), probeIrradiance, probeRadiance);
+    // Approximate indirect specular for ray by using the irradiance grid
+    // This enables metallic materials to have some kind of secondary reflection
+    float ddgiDistanceDamp = min(1.0, sqr(distance(surface.P, ray.origin)));
+    surface.NdotV = saturate(dot(surface.N, surface.V));
+    vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * probeIrradiance.rgb +
+        EvaluateIndirectSpecularBRDF(surface) * probeRadiance.rgb;
+    radiance += IsInsideVolume(surface.P) ? indirect * ddgiDistanceDamp * ddgiData.volumeStrength: vec3(0.0);
+#endif
     
     radiance += surface.material.emissiveColor;
 
+    float curSeed = float(uniforms.frameSeed) / 255.0 + float(ray.ID) * float(uniforms.sampleCount);
     // Evaluate direct light
-    radiance += EvaluateDirectLight(surface);
-
-    // Evaluate indirect lighting
-#ifdef DDGI
-    vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
-    // Approximate indirect specular for ray by using the irradiance grid
-    // This enables metallic materials to have some kind of secondary reflection
-    vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * irradiance +
-        EvaluateIndirectSpecularBRDF(surface) * irradiance;
-    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength : vec3(0.0);
-#endif
+    for (int i = 0; i < uniforms.lightSampleCount; i++) {
+        radiance += (EvaluateDirectLight(surface, curSeed) / float(uniforms.lightSampleCount));
+        curSeed += 1.0 / float(uniforms.lightSampleCount);
+    }
 
     return radiance;
 
 }
 
-vec3 EvaluateDirectLight(inout Surface surface) {
+vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
 
     if (GetLightCount() == 0)
         return vec3(0.0);
-
-    float curSeed = float(uniforms.frameSeed) / 255.0;
-    float raySeed = float(gl_GlobalInvocationID.x);
+    
+    float raySeed = float(gl_GlobalInvocationID.x * uniforms.resolution.y + gl_GlobalInvocationID.y);
 
     float lightPdf;
-    Light light = GetLight(surface, raySeed, curSeed, lightPdf);
+    Light light = GetLight(surface, raySeed, seed, lightPdf);
 
     float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
+    SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
 
     // Evaluate the BRDF
     vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
@@ -224,7 +307,17 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     radiance *= CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
         surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
-    radiance *= CheckVisibility(surface, lightDistance);
+    if (light.castShadow)
+        radiance *= CheckVisibility(surface, lightDistance);
+#endif
+
+#ifdef CLOUD_SHADOWS
+    if (light.type == uint(DIRECTIONAL_LIGHT)) {
+        vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
+        float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
+
+        radiance *= cloudShadowFactor;
+    }
 #endif
     
     return reflectance * radiance * surface.NdotL / lightPdf;

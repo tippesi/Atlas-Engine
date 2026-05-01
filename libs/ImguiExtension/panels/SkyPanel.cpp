@@ -28,10 +28,13 @@ namespace Atlas::ImguiExtension {
 
             ImGui::Separator();
             ImGui::Text("Atmosphere");
-            ImGui::DragFloat3("Rayleigh scattering coefficient", glm::value_ptr(atmosphere->rayleighScatteringCoeff), 0.1f, 0.0f, 10e10f);
-            ImGui::DragFloat("Mie scattering coefficient", &atmosphere->mieScatteringCoeff, 1.0f, 0.0f, 10e10f);
-            ImGui::DragFloat("Rayleigh height scale", &atmosphere->rayleighHeightScale, 100.0f, 0.0f, 10e10f);
-            ImGui::DragFloat("Mie height scale", &atmosphere->mieHeightScale, 100.0f, 0.0f, 10e10f);
+            bool atmosphereChanged = false;
+            atmosphereChanged |= ImGui::DragFloat3("Rayleigh scattering coefficient", glm::value_ptr(atmosphere->rayleighScatteringCoeff), 0.1f, 0.0f, 10e10f);
+            atmosphereChanged |= ImGui::ColorEdit3("Ground albedo", glm::value_ptr(atmosphere->groundAlbedo));
+            atmosphereChanged |= ImGui::DragFloat("Mie scattering coefficient", &atmosphere->mieScatteringCoeff, 1.0f, 0.0f, 10e10f);
+            atmosphereChanged |= ImGui::DragFloat("Rayleigh height scale", &atmosphere->rayleighHeightScale, 100.0f, 0.0f, 10e10f);
+            atmosphereChanged |= ImGui::DragFloat("Mie height scale", &atmosphere->mieHeightScale, 100.0f, 0.0f, 10e10f);
+            atmosphere->needsUpdate |= atmosphereChanged;
 
             atmosphere->rayleighScatteringCoeff /= 1e6f;
             atmosphere->mieScatteringCoeff /= 1e6f;

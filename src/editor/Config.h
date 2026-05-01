@@ -4,11 +4,6 @@
 
 namespace Atlas::Editor {
 
-	struct ContentBrowserSettings {
-        bool searchRecursively = true;
-        bool filterRecursively = false;
-    };
-
 	class Config {
 
 	public:
@@ -16,9 +11,7 @@ namespace Atlas::Editor {
 		bool pathTrace = false;
 		bool vsync = true;
 
-		ContentBrowserSettings contentBrowserSettings;
-
-        std::vector<ResourceHandle<Scene::Scene>> openedScenes;
+		std::vector<ResourceHandle<Scene::Scene>> openedScenes;
 
 	};
 

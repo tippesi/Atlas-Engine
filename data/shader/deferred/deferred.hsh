@@ -7,28 +7,32 @@ layout(set = 1, binding = 3) uniform sampler2D baseColorTexture;
 layout(set = 1, binding = 4) uniform sampler2D normalTexture;
 layout(set = 1, binding = 5) uniform sampler2D geometryNormalTexture;
 layout(set = 1, binding = 6) uniform sampler2D roughnessMetalnessAoTexture;
-layout(set = 1, binding = 7) uniform usampler2D materialIdxTexture;
-layout(set = 1, binding = 8) uniform sampler2D depthTexture;
-layout(set = 1, binding = 9) uniform sampler2D volumetricTexture;
+layout(set = 1, binding = 7) uniform sampler2D emissiveTexture;
+layout(set = 1, binding = 8) uniform usampler2D materialIdxTexture;
+layout(set = 1, binding = 9) uniform sampler2D depthTexture;
+layout(set = 1, binding = 10) uniform sampler2D volumetricTexture;
 
-layout(set = 1, binding = 10) uniform samplerCube specularProbe;
-layout(set = 1, binding = 11) uniform samplerCube diffuseProbe;
+layout(set = 1, binding = 11) uniform samplerCube specularProbe;
+layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
 Material GetMaterial(vec2 texCoord) {
     uint materialIdx = textureLod(materialIdxTexture, texCoord, 0).r;
     Material material = UnpackMaterial(materialIdx);
 
-    if (material.baseColorMap || material.vertexColors) {
+    if (material.baseColorMap || material.vertexColors || material.terrain) {
         material.baseColor *= textureLod(baseColorTexture, texCoord, 0).rgb;
     }
-    if (material.roughnessMap) {
+    if (material.roughnessMap || material.terrain) {
         material.roughness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).r;
     }
-    if (material.metalnessMap) {
+    if (material.metalnessMap || material.terrain) {
         material.metalness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).g;
     }
-    if (material.aoMap) {
+    if (material.aoMap || material.terrain) {
         material.ao *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).b;
+    }
+    if (material.emissiveMap) {
+        material.emissiveColor *= textureLod(emissiveTexture, texCoord, 0).rgb;
     }
     return material;
 }
