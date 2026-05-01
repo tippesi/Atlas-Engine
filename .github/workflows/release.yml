@@ -15,7 +15,7 @@ env:
 
 jobs:
   windows-build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Build on Windows
     # Run both builds in parallel and don't cancel if one fails
     strategy:
