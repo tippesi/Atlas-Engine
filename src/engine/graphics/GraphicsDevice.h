@@ -187,6 +187,7 @@ namespace Atlas {
             VkPhysicalDeviceVulkan11Properties deviceProperties11 = {};
             VkPhysicalDeviceVulkan12Properties deviceProperties12 = {};
             VkPhysicalDeviceVulkan13Properties deviceProperties13 = {};
+            VkPhysicalDeviceDriverProperties driverProperties = {};
             VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
             VkPhysicalDeviceSubgroupSizeControlProperties subgroupSizeControlProperties = {};

@@ -33,6 +33,7 @@ namespace Atlas {
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
                 VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
                 VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+                VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
                 VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
 #ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
@@ -1004,8 +1005,12 @@ namespace Atlas {
 
         void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
 
+            VkPhysicalDeviceProperties basicDeviceProperties = {};
+            vkGetPhysicalDeviceProperties(device, &basicDeviceProperties);
+
             StructureChainBuilder propertiesBuilder(deviceProperties);
 
+            driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
             subgroupSizeControlProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
@@ -1019,6 +1024,8 @@ namespace Atlas {
             propertiesBuilder.Append(deviceProperties12);
             propertiesBuilder.Append(deviceProperties13);
 
+            if (supportedExtensions.contains(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME))
+                propertiesBuilder.Append(driverProperties);
             if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
                 propertiesBuilder.Append(rayTracingPipelineProperties);
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
@@ -1026,7 +1033,7 @@ namespace Atlas {
             if (supportedExtensions.contains(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME))
                 propertiesBuilder.Append(subgroupSizeControlProperties);
 
-            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
+            vkGetPhysicalDeviceProperties2(device, &deviceProperties);
 
         }
 
