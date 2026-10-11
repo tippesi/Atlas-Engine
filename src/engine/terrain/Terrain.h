@@ -4,7 +4,8 @@
 #include "TerrainNode.h"
 #include "TerrainStorage.h"
 
-#include "buffer/VertexArray.h"
+#include "../buffer/VertexArray.h"
+#include "../volume/Ray.h"
 
 #include <vector>
 
@@ -140,7 +141,9 @@ namespace Atlas {
              */
             Common::Image<float> GetHeightField(int32_t LoD);
 
-            TerrainStorage storage;
+            bool IntersectRay(const Volume::Ray& ray, vec3& hitPosition, vec3& hitNormal, float& hitDistance);
+
+            Ref<TerrainStorage> storage = nullptr;
 
             Texture::Texture2D shoreLine;
 
@@ -171,12 +174,15 @@ namespace Atlas {
             Buffer::VertexArray vertexArray;
             Buffer::VertexArray distanceVertexArray;
             std::vector<TerrainNode*> renderList;
+            std::vector<TerrainNode*> leafList;
 
             Common::Image<uint8_t> LoDImage;
 
             std::string filename;
 
             bool wireframe = false;
+
+            static const inline float invalidHeight = -1e20f;
 
         private:
             void SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation);
@@ -187,6 +193,13 @@ namespace Atlas {
 
             float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
 
+            bool BinarySearch(const Volume::Ray& ray, float start,
+                float finish, int count, vec3& hitPosition, vec3& hitNormal);
+
+            bool IntersectionInRange(const Volume::Ray& ray, float start, float finish);
+
+            bool IsUnderground(vec3 position);
+
             int32_t rootNodeCount;
 
             std::vector<vec2> vertices;
@@ -194,7 +207,6 @@ namespace Atlas {
 
             std::vector<float> LoDDistances;
             std::vector<TerrainNode> rootNodes;
-            std::vector<TerrainNode*> leafList;
 
         };
 

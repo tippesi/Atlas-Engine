@@ -77,7 +77,7 @@ void LoadGroupSharedData() {
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         sharedGiAo[i] = FetchTexel(texel);
-        sharedDepth[i] = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+        sharedDepth[i] = texelFetch(depthTexture, texel, 0).r;
     }
 
     barrier();
@@ -139,7 +139,9 @@ void ComputeVarianceMinMax(out vec4 mean, out vec4 std) {
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float linearDepth = depth;
+
+     float depthPhi = 64.0 * abs(ConvertDepthToViewSpaceDepth(linearDepth));
 
     float totalWeight = 0.0;
 
@@ -152,9 +154,7 @@ void ComputeVarianceMinMax(out vec4 mean, out vec4 std) {
 
             vec4 sampleAll = vec4(sampleGi, sampleAo);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
-
-            float depthPhi = max(1.0, abs(0.025 * linearDepth));
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) * depthPhi));
         
             m1 += sampleAll * weight;
             m2 += sampleAll * sampleAll * weight;
@@ -184,8 +184,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = 16.0 / abs(linearDepth);
+    float linearDepth = depth;
+    float depthPhi = 64.0 * abs(ConvertDepthToViewSpaceDepth(linearDepth));
 
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
@@ -199,7 +199,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        float historyLinearDepth = historyDepth;
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
@@ -216,7 +216,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     }
 
     for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        ivec2 offsetPixel = ivec2(historyPixel + 0.5) + offsets[i];
         float confidence = 1.0;
 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
@@ -225,7 +225,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        float historyLinearDepth = historyDepth;
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
@@ -248,6 +248,14 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
 
 }
 
+float EdgeFadeOut(vec2 screenPos, float fadeDist) {
+
+    screenPos = abs(screenPos * 2.0 - 1.0);
+    vec2 fadeOut = (screenPos - 1.0 + fadeDist) / fadeDist;
+    return saturate(1.0 - max(fadeOut.x, fadeOut.y));
+
+}
+
 void main() {
 
     LoadGroupSharedData();
@@ -265,7 +273,7 @@ void main() {
     vec4 historyNeighbourhoodMin = mean - historyClipFactor * std;
     vec4 historyNeighbourhoodMax = mean + historyClipFactor * std;
 
-    const float currentClipFactor = 2.0;
+    const float currentClipFactor = 1.0;
     vec4 currentNeighbourhoodMin = mean - currentClipFactor * std;
     vec4 currentNeighbourhoodMax = mean + currentClipFactor * std;
 
@@ -273,6 +281,7 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
+    
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
 
     bool valid = true;
@@ -286,13 +295,16 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin.rgb, currentNeighbourhoodMax.rgb);
     // Only clamp AO for now, since this leaves visible streaks
-    historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
+    //historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
 
-    float factor = 0.95;
+    // At the edge we have invalid information we want to get rid of
+    historyLength = mix(min(historyLength, 8.0), historyLength, EdgeFadeOut(uv, 0.05));
+    float factor = 31.0 / 32.0;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
-
+    
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
+    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
 
     if (factor == 0.0 || !valid) {
         historyLength = 0.0;

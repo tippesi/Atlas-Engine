@@ -7,41 +7,79 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
+#include <algorithm>
+
 namespace Atlas::Editor::UI {
 
     class ResourceSelectionPopup : public Popup {
 
     public:
+        // Idea: This whole class could be changed to a content selection popup, such that it would work with
+        // the content browser content as well
+        typedef enum ResourceOriginBits {
+            ResourceManagerBit = (1 << 0),
+            ContentBrowserBit = (1 << 1)
+        }ResourceOriginBits;
+
+        typedef int32_t ResourceOrigin;
+
         ResourceSelectionPopup() : Popup("ResourceSelectionPopup") {}
 
         template<class T>
-        ResourceHandle<T> Render(std::vector<ResourceHandle<T>> resources) {
+        ResourceHandle<T> Render(std::vector<ResourceHandle<T>> resources, ImVec2 size = ImVec2(-FLT_MAX, 260.0f)) {
 
             ResourceHandle<T> handle;
 
-            ImGui::SetNextWindowSize(ImVec2(-FLT_MAX, 200.0f));
+            // A negative width means automatic, which is a width that fits typical file names
+            if (size.x < 0.0f)
+                size.x = ImGui::GetFontSize() * 24.0f;
+            ImGui::SetNextWindowSize(size);
 
             if (ImGui::BeginPopup(GetNameID())) {
 
-                ImGui::InputTextWithHint("Search", "Type to search for loaded resource", &resourceSearch);
-
-                ImGui::BeginChild("Resource list");
+                if (wasJustOpened) {
+                    ImGui::SetKeyboardFocusHere();
+                }
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                bool confirmFirst = ImGui::InputTextWithHint("##Search", "Search loaded resources...",
+                    &resourceSearch, ImGuiInputTextFlags_EnterReturnsTrue);
 
                 resources = ApplySearchAndSortFiltering(resources);
 
-                for (size_t i = 0; i < resources.size(); i++) {
-                    bool isSelected = false;
-                    const auto& resource = resources[i].GetResource();
+                ImGui::TextDisabled("%d %s", int32_t(resources.size()), resources.size() == 1 ? "resource" : "resources");
 
-                    auto itemName = resource->GetFileName();
+                ImGui::BeginChild("Resource list", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
 
-                    ImGui::Selectable(itemName.c_str(), &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
+                if (resources.empty())
+                    ImGui::TextDisabled("%s", resourceSearch.empty() ? "No resources of this type are loaded" :
+                        "No resources match the search");
 
-                    if (isSelected)
-                        handle = resources[i];
+                // Pressing enter in the search field picks the first match
+                if (confirmFirst && !resources.empty())
+                    handle = resources.front();
+
+                ImGuiListClipper clipper;
+                clipper.Begin(int32_t(resources.size()));
+                while (clipper.Step()) {
+                    for (int32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                        bool isSelected = false;
+                        const auto& resource = resources[i].GetResource();
+
+                        auto itemName = resource->GetFileName();
+
+                        ImGui::PushID(i);
+                        ImGui::Selectable(itemName.c_str(), &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
+                        ImGui::SetItemTooltip("%s", resource->path.c_str());
+                        ImGui::PopID();
+
+                        if (isSelected)
+                            handle = resources[i];
+                    }
                 }
 
                 ImGui::EndChild();
+
+                wasJustOpened = false;
 
                 if (handle.IsValid())
                     ImGui::CloseCurrentPopup();
@@ -53,6 +91,8 @@ namespace Atlas::Editor::UI {
             return handle;
 
         }
+
+        static inline ResourceOrigin resourceOrigin = ResourceOriginBits::ResourceManagerBit;
 
     private:
         template<class T>

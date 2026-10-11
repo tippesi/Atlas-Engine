@@ -13,7 +13,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+        void ImpostorRenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList, RenderList* renderList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
@@ -27,33 +27,33 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            for (auto& item : mainPass->meshToInstancesMap) {
+            for (const auto& item : mainPass->meshToInstancesMap) {
 
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto mesh = mainPass->meshIdToMeshMap[meshId];
-
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
                     continue;
+
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
 
-                mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
-                mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
-                mesh->impostor->normalTexture.Bind(commandList, 3, 2);
-                mesh->impostor->depthTexture.Bind(commandList, 3, 3);
+                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
+                mesh->impostor->roughnessMetalnessAoTexture->Bind(commandList, 3, 1);
+                mesh->impostor->normalTexture->Bind(commandList, 3, 2);
+                mesh->impostor->depthTexture->Bind(commandList, 3, 3);
 
                 // Base 0 is used by the materials
                 mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
                 mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
 
                 PushConstants constants = {
-                    .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
+                    .materialIdx = uint32_t(materialMap[mesh->impostor.Get().get()]),
                 };
                 commandList->PushConstants("constants", &constants);
 
@@ -102,28 +102,26 @@ namespace Atlas {
 
             {
                 // Transfer all framebuffer images including all mips into same layout/access as end of render pass
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
 
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                imageBarriers = {
-                    {impostor->baseColorTexture.image,            layout, access},
-                    {impostor->normalTexture.image,               layout, access},
-                    {impostor->roughnessMetalnessAoTexture.image, layout, access},
-                    {impostor->depthTexture.image, layout, access},
+                Graphics::ImageBarrier imageBarriers[] = {
+                    {impostor->baseColorTexture->image,            layout, access},
+                    {impostor->normalTexture->image,               layout, access},
+                    {impostor->roughnessMetalnessAoTexture->image, layout, access},
+                    {impostor->depthTexture->image, layout, access},
                     {frameBuffer->GetDepthImage(), layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(imageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
 
             for (size_t i = 0; i < viewMatrices.size(); i++) {
 
-                frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture.image, i, 0);
-                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture.image, i, 1);
-                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture.image, i, 2);
-                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture.image, i, 3);
+                frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture->image, i, 0);
+                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture->image, i, 1);
+                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture->image, i, 2);
+                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture->image, i, 3);
                 frameBuffer->Refresh();
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
@@ -154,7 +152,7 @@ namespace Atlas {
 
                     auto pushConstants = PushConstants {
                         .vMatrix = viewMatrices[i],
-                        .baseColor = vec4(material->baseColor, 1.0f),
+                        .baseColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 1.0f),
                         .roughness = material->roughness,
                         .metalness = material->metalness,
                         .ao = material->ao,
@@ -175,38 +173,37 @@ namespace Atlas {
             }
 
             {
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-                imageBarriers = {
-                    {impostor->baseColorTexture.image, layout, access},
-                    {impostor->normalTexture.image, layout, access},
-                    {impostor->roughnessMetalnessAoTexture.image, layout, access},
-                    {impostor->depthTexture.image, layout, access},
+                Graphics::ImageBarrier preImageBarriers[] = {
+                    {impostor->baseColorTexture->image, layout, access},
+                    {impostor->normalTexture->image, layout, access},
+                    {impostor->roughnessMetalnessAoTexture->image, layout, access},
+                    {impostor->depthTexture->image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(preImageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-                commandList->GenerateMipMaps(impostor->baseColorTexture.image);
-                commandList->GenerateMipMaps(impostor->normalTexture.image);
-                commandList->GenerateMipMaps(impostor->roughnessMetalnessAoTexture.image);
-                commandList->GenerateMipMaps(impostor->depthTexture.image);
+                commandList->GenerateMipMaps(impostor->baseColorTexture->image);
+                commandList->GenerateMipMaps(impostor->normalTexture->image);
+                commandList->GenerateMipMaps(impostor->roughnessMetalnessAoTexture->image);
+                commandList->GenerateMipMaps(impostor->depthTexture->image);
 
-                imageBarriers = {
-                    {impostor->baseColorTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {impostor->normalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {impostor->roughnessMetalnessAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {impostor->depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                Graphics::ImageBarrier postImageBarriers[] = {
+                    {impostor->baseColorTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->normalTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->roughnessMetalnessAoTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->depthTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(postImageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
 
             commandList->EndCommands();
 
             graphicsDevice->FlushCommandList(commandList);
+
+            impostor->isGenerated = true;
 
         }
 
@@ -253,10 +250,10 @@ namespace Atlas {
             auto frameBufferDesc = Graphics::FrameBufferDesc{
                 .renderPass = renderPass,
                 .colorAttachments = {
-                    {impostor->baseColorTexture.image, 0, true},
-                    {impostor->normalTexture.image, 0, true},
-                    {impostor->roughnessMetalnessAoTexture.image, 0, true},
-                    {impostor->depthTexture.image, 0, true}
+                    {impostor->baseColorTexture->image, 0, true},
+                    {impostor->normalTexture->image, 0, true},
+                    {impostor->roughnessMetalnessAoTexture->image, 0, true},
+                    {impostor->depthTexture->image, 0, true}
                 },
                 .depthAttachment = {depthImage, 0, true},
                 .extent = {uint32_t(impostor->resolution), uint32_t(impostor->resolution)}
@@ -265,7 +262,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer,
+        PipelineConfig ImpostorRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
             bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {
@@ -288,8 +285,8 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh *mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+        PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(const Mesh::MeshSubData *subData,
+            Mesh::Mesh *mesh, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             auto material = subData->material;
 

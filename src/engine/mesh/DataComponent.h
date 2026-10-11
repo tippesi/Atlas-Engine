@@ -160,6 +160,18 @@ namespace Atlas {
              *
              * @return
              */
+            typename std::vector<T>::iterator begin();
+
+            /**
+             *
+             * @return
+             */
+            typename std::vector<T>::iterator end();
+
+            /**
+             *
+             * @return
+             */
             typename std::vector<T>::const_iterator begin() const;
 
             /**
@@ -413,6 +425,20 @@ namespace Atlas {
         const T& DataComponent<T>::operator[](std::size_t idx) const {
 
             return data[idx];
+
+        }
+
+        template<class T>
+        typename std::vector<T>::iterator DataComponent<T>::begin() {
+
+            return data.begin();
+
+        }
+
+        template<class T>
+        typename std::vector<T>::iterator DataComponent<T>::end() {
+
+            return data.end();
 
         }
 

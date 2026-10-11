@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm.hpp>
+#include <glm/glm.hpp>
 
 #include <glm/gtc/constants.hpp>
 
@@ -19,6 +19,15 @@ namespace Helper {
         constexpr inline T Sqr(T t) {
 
             return t * t;
+
+        }
+
+        // Zero-length vectors have no direction.
+        template<typename T>
+        inline T NormalizeOrZero(T direction) {
+
+            auto length = glm::length(direction);
+            return length > 0.0f ? direction / length : T(0.0f);
 
         }
 

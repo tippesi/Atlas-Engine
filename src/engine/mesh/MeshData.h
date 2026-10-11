@@ -2,7 +2,7 @@
 
 #include "../System.h"
 #include "../volume/AABB.h"
-#include "raytracing/RTStructures.h"
+#include "raytracing/BLAS.h"
 #include "resource/Resource.h"
 #include "DataComponent.h"
 #include "Material.h"
@@ -32,6 +32,9 @@ namespace Atlas {
 
             PipelineConfig mainConfig;
             PipelineConfig shadowConfig;
+            // Used for instances with reversed winding
+            PipelineConfig mainReversedWindingConfig;
+            PipelineConfig shadowReversedWindingConfig;
         
         };
 
@@ -85,13 +88,7 @@ namespace Atlas {
             /**
              * Builds a blas from the data
              */
-            void BuildBVH(bool parallelBuild);
-
-            /**
-             *
-             * @return
-             */
-            bool IsBVHBuilt();
+            void BuildBVHData(std::vector<RayTracing::BLAS::Triangle>& triangles);
 
             std::string name;
 
@@ -116,10 +113,6 @@ namespace Atlas {
 
             int32_t indexCount = 0;
             int32_t vertexCount = 0;
-
-            std::vector<GPUTriangle> gpuTriangles;
-            std::vector<GPUBVHTriangle> gpuBvhTriangles;
-            std::vector<GPUBVHNode> gpuBvhNodes;
 
         };
 

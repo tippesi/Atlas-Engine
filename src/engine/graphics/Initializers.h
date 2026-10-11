@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef AE_OS_APPLE_MOBILE
+#include <vulkan/vulkan.h>
+#else
 #include <volk.h>
+#endif
 
 namespace Atlas {
 

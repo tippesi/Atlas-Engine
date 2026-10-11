@@ -23,26 +23,8 @@ namespace Atlas {
 
             src = GetAbsolute(src);
             dest = GetAbsolute(dest);
-
-            // Find the first character that doesn't match
-            size_t count = 0;
-            size_t max = dest.find_last_of("/\\");
-
-            while (count <= max && src[count] == dest[count])
-                count++;
-
-            if (!count)
-                return dest;
-
-            dest = dest.substr(count + 1, dest.size());
-
-            for (size_t i = count; i < src.size(); i++)
-                if (src[i] == '/' || src[i] == '\\')
-                    result.append("../");
-
-            result.append(dest);
-
-            return result;
+            
+            return std::filesystem::relative(dest, src).string();
 
         }
 
@@ -129,6 +111,10 @@ namespace Atlas {
                 }
                 path = parentPath.substr(0, parentBackPosition) + childPath;
             }
+            
+            // Check for length > 1 since we might have just the filesystem root on Linux based OSes
+            if (path.ends_with('/') && path.length() > 1)
+                path.pop_back();
 
             return path;
 

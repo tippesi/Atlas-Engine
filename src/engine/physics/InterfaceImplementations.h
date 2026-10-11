@@ -13,10 +13,14 @@ namespace Atlas {
 
         using BodyID = JPH::BodyID;
 
+        // Values are persisted in scenes, append new layers at the end
         enum Layers : JPH::ObjectLayer {
             Static = 0,
+            // Simulated (dynamic) bodies
             Movable = 1,
-            NumLayers = 2
+            // Bodies moved by the application (scripts, animations), pushing movable bodies but never pushed back
+            Kinematic = 2,
+            NumLayers = 3
         };
 
         // Class that determines if two object layers can collide
@@ -28,6 +32,8 @@ namespace Atlas {
                         return inObject2 == Layers::Movable; // Non moving only collides with moving
                     case Layers::Movable:
                         return true; // Moving collides with everything
+                    case Layers::Kinematic:
+                        return inObject2 == Layers::Movable; // Kinematic bodies are only interesting for simulated bodies
                     default:
                         JPH_ASSERT(false);
                         return false;
@@ -54,6 +60,8 @@ namespace Atlas {
                 // Create a mapping table from object to broad phase layer
                 mObjectToBroadPhase[Layers::Static] = BroadPhaseLayers::Static;
                 mObjectToBroadPhase[Layers::Movable] = BroadPhaseLayers::Movable;
+                // Kinematic bodies move every frame, so keep them out of the static tree
+                mObjectToBroadPhase[Layers::Kinematic] = BroadPhaseLayers::Movable;
             }
 
             virtual uint32_t GetNumBroadPhaseLayers() const override {
@@ -89,6 +97,8 @@ namespace Atlas {
                         return inLayer2 == BroadPhaseLayers::Movable;
                     case Layers::Movable:
                         return true;
+                    case Layers::Kinematic:
+                        return inLayer2 == BroadPhaseLayers::Movable;
                     default:
                         JPH_ASSERT(false);
                         return false;

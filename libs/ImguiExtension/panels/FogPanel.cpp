@@ -20,9 +20,10 @@ namespace Atlas::ImguiExtension {
             "%.4f", ImGuiSliderFlags_Logarithmic);
         ImGui::SliderFloat("Scattering anisotropy", &fog->scatteringAnisotropy, -1.0f, 1.0f,
             "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::Text("Volumetric");
+        ImGui::SeparatorText("Volumetric");
         ImGui::Checkbox("Raymarching", &fog->rayMarching);
-        ImGui::SliderInt("Raymarch step count", &fog->rayMarchStepCount, 1, 32);
+        ImGui::Checkbox("Local lights", &fog->localLights);
+        ImGui::DragInt("Raymarch step count", &fog->rayMarchStepCount, 1, 128);
         ImGui::SliderFloat("Intensity", &fog->volumetricIntensity, 0.0f, 1.0f);
 
         ImGui::PopID();

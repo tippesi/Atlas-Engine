@@ -39,7 +39,11 @@
 //#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 
 // Vulkan includes
+#ifdef AE_OS_APPLE_MOBILE
+#include <vulkan/vulkan.h>
+#else
 #include <volk.h>
+#endif
 
 // Initialization data, for ImGui_ImplVulkan_Init()
 // [Please zero-clear before use!]

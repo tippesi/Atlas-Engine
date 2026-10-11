@@ -10,7 +10,7 @@ using json = nlohmann::json;
 namespace Atlas {
 
     template<class T>
-    void try_get_json(json j, const char* name, T& t) {
+    void try_get_json(const json& j, const char* name, T& t) {
 
         if (j.contains(name)) {
             j.at(name).get_to(t);
@@ -19,13 +19,46 @@ namespace Atlas {
     }
 
     template<class T>
-    void try_get_json(json j, const char* name, T& t, const T def) {
+    void try_get_json(const json& j, const char* name, T& t, const T def) {
 
         if (j.contains(name)) {
             j.at(name).get_to(t);
         }
         else {
             t = def;
+        }
+
+    }
+
+    template<class T>
+    void try_get_binary_json(const json& j, const char* name, std::vector<T>& data, bool binary = true) {
+
+        std::vector<uint8_t> binaryData;
+        if (binary)
+            binaryData = j[name].get_binary();
+        else
+            j.at(name).get_to(binaryData);
+        if (!binaryData.empty()) {
+            data.resize(binaryData.size() / sizeof(T));
+            std::memcpy(data.data(), binaryData.data(), binaryData.size());
+        }
+
+    }
+
+    template<class T>
+    void set_binary_json(json& j, const char* name, const std::vector<T>& data, bool binary = true) {
+
+        std::vector<uint8_t> binaryData;
+        if (!data.empty()) {
+            binaryData.resize(data.size() * sizeof(T));
+            std::memcpy(binaryData.data(), data.data(), binaryData.size());
+        }
+
+        if (binary) {
+            j[name] = json::binary_t(binaryData);
+        }
+        else {
+            j[name] = binaryData;
         }
 
     }

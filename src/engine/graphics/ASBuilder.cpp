@@ -7,7 +7,7 @@ namespace Atlas {
     namespace Graphics {
 
         BLASDesc ASBuilder::GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer,
-            size_t vertexCount, size_t vertexSize, size_t indexSize, std::vector<ASGeometryRegion> regions) {
+            size_t vertexCount, size_t vertexSize, size_t indexSize, std::span<ASGeometryRegion> regions) {
 
             VkDeviceAddress vertexAddress = vertexBuffer->GetDeviceAddress();
             VkDeviceAddress indexAddress  = indexBuffer->GetDeviceAddress();
@@ -18,14 +18,14 @@ namespace Atlas {
             trianglesData.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
             trianglesData.vertexData.deviceAddress = vertexAddress;
             trianglesData.vertexStride = vertexSize;
-            trianglesData.maxVertex = vertexCount;
+            trianglesData.maxVertex = vertexCount - 1;
             // Index data
             trianglesData.indexType = indexSize == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
             trianglesData.indexData.deviceAddress = indexAddress;
 
             BLASDesc desc;
 
-            for (auto& region : regions) {
+            for (const auto& region : regions) {
                 VkAccelerationStructureGeometryKHR geometry = {};
                 geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
                 geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -49,7 +49,7 @@ namespace Atlas {
 
         }
 
-        void ASBuilder::BuildBLAS(std::vector<Ref<BLAS>> &blases) {
+        int32_t ASBuilder::BuildBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
@@ -70,7 +70,9 @@ namespace Atlas {
             auto scratchBuffer = device->CreateBuffer(scratchBufferDesc);
 
             Ref<QueryPool> queryPool = nullptr;
-            if (compactionCount == blases.size()) {
+            // Only on a direct submission we can actually afford to wait for the queries, otherwise we can't
+            // afford the compaction if the BVH build is in frame
+            if (compactionCount == blases.size() && !commandList) {
                 auto queryPoolDesc = QueryPoolDesc{
                     .queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR,
                     .queryCount = uint32_t(compactionCount)
@@ -82,6 +84,7 @@ namespace Atlas {
             size_t batchSizeLimit = 256000000;
 
             std::vector<uint32_t> batchIndices;
+            batchIndices.reserve(blases.size());
             for (size_t i = 0; i < blases.size(); i++) {
 
                 batchIndices.push_back(uint32_t(i));
@@ -93,29 +96,43 @@ namespace Atlas {
                         queryPool->Reset();
                     }
 
-                    BuildBLASBatch(batchIndices, blases, scratchBuffer, queryPool);
+                    BuildBLASBatch(batchIndices, blases, scratchBuffer, queryPool, commandList);
 
                     if (queryPool) {
-                        CompactBLASBatch(batchIndices, blases, queryPool);
+                        CompactBLASBatch(batchIndices, blases, queryPool, commandList);
                     }
 
                     batchIndices.clear();
                     batchSize = 0;
 
+                    for (size_t j = 0; j <= i; j++) {
+                        blases[j]->isBuilt = true;
+                    }
+
+                    // With one commandlist it only makes sense to create one batch per frame
+                    if (commandList) {
+                        return int32_t(i + 1);
+                    }
+
                 }
 
             }
 
+            return int32_t(blases.size());
+
         }
 
-        Ref<Buffer> ASBuilder::BuildTLAS(Ref<Atlas::Graphics::TLAS> &tlas,
-            std::vector<VkAccelerationStructureInstanceKHR> &instances) {
+        Buffer* ASBuilder::BuildTLAS(Ref<Atlas::Graphics::TLAS>& tlas,
+            std::span<VkAccelerationStructureInstanceKHR> instances, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
-            auto commandList = device->GetCommandList(GraphicsQueue);
+            bool immediateSubmission = commandList == nullptr;
+            if (!commandList) {
+                commandList = device->GetCommandList(GraphicsQueue);
 
-            commandList->BeginCommands();
+                commandList->BeginCommands();
+            }
 
             BufferDesc desc = {
                 .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
@@ -124,9 +141,12 @@ namespace Atlas {
                 .data = instances.data(),
                 .size = sizeof(VkAccelerationStructureInstanceKHR) * instances.size(),
             };
-            auto instanceBuffer = device->CreateBuffer(desc);
+            if (!instanceBuffer || instanceBuffer->size < desc.size)
+                instanceBuffer = device->CreateMultiBuffer(desc);
+            else
+                instanceBuffer->SetData(instances.data(), 0, desc.size);
 
-            tlas->Allocate(instanceBuffer->GetDeviceAddress(), uint32_t(instances.size()), false);
+            tlas->Allocate(instanceBuffer->GetCurrent()->GetDeviceAddress(), uint32_t(instances.size()), false);
 
             commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
@@ -146,22 +166,27 @@ namespace Atlas {
 
             commandList->BuildTLAS(tlas, buildInfo);
 
-            commandList->EndCommands();
+            if (immediateSubmission) {
+                commandList->EndCommands();
 
-            device->SubmitCommandList(commandList);
+                device->SubmitCommandList(commandList);
+            }
 
-            return instanceBuffer;
+            return instanceBuffer->GetCurrent();
 
         }
 
-        void ASBuilder::BuildBLASBatch(const std::vector<uint32_t> &batchIndices,
-            std::vector<Ref<BLAS>> &blases, Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool) {
+        void ASBuilder::BuildBLASBatch(const std::span<uint32_t> &batchIndices, std::span<Ref<BLAS>> &blases, 
+            Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            bool immediateSubmission = commandList == nullptr;
+            if (!commandList) {
+                commandList = device->GetCommandList(GraphicsQueue, true);
 
-            commandList->BeginCommands();
+                commandList->BeginCommands();
+            }
 
             VkDeviceAddress scratchAddress = scratchBuffer->GetDeviceAddress();
 
@@ -178,7 +203,7 @@ namespace Atlas {
                 commandList->BuildBLAS(blas, buildInfo);
 
                 commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
-                    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
                     VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                     VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
 
@@ -189,20 +214,25 @@ namespace Atlas {
                 }
             }
 
-            commandList->EndCommands();
+            if (immediateSubmission) {
+                commandList->EndCommands();
 
-            device->FlushCommandList(commandList);
+                device->FlushCommandList(commandList);
+            }
 
         }
 
-        void ASBuilder::CompactBLASBatch(const std::vector<uint32_t>& batchIndices,
-            std::vector<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool) {
+        void ASBuilder::CompactBLASBatch(const std::span<uint32_t>& batchIndices,
+            std::span<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            bool immediateSubmission = commandList == nullptr;
+            if (!commandList) {
+                commandList = device->GetCommandList(GraphicsQueue, true);
 
-            commandList->BeginCommands();
+                commandList->BeginCommands();
+            }
 
             std::vector<size_t> compactSizes(batchIndices.size());
             queryPool->GetResult(0, uint32_t(batchIndices.size()), batchIndices.size() * sizeof(size_t),
@@ -239,9 +269,16 @@ namespace Atlas {
 
             }
 
-            commandList->EndCommands();
+            commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
 
-            device->FlushCommandList(commandList);
+            if (immediateSubmission) {
+                commandList->EndCommands();
+
+                device->FlushCommandList(commandList);
+            }
 
         }
 

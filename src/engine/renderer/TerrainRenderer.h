@@ -20,7 +20,9 @@ namespace Atlas {
         private:
             void GetUniforms();
 
-            struct TerrainMaterial {
+            struct alignas(16) TerrainMaterial {
+                vec4 baseColor;
+
                 uint32_t idx;
                 
                 float roughness;
@@ -36,6 +38,7 @@ namespace Atlas {
             struct alignas(16) Uniforms {
 
                 vec4 frustumPlanes[6];
+                vec4 translation;
 
                 float heightScale;
                 float displacementDistance;
@@ -68,6 +71,8 @@ namespace Atlas {
 
             Buffer::UniformBuffer uniformBuffer;
             Buffer::Buffer terrainMaterialBuffer;
+
+            Texture::Texture2D noiseTexture;
 
             PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target,
                 Ref<Terrain::Terrain>& terrain, bool detailConfig,

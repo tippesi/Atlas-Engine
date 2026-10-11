@@ -1,4 +1,5 @@
 #include "SceneBindings.h"
+#include "MemberBindings.h"
 
 #include "scene/Scene.h"
 #include "scene/components/LuaScriptComponent.h"
@@ -6,6 +7,12 @@
 namespace Atlas::Scripting::Bindings {
 
     void GenerateSceneBindings(sol::table* ns) {
+
+        ns->new_usertype<Scene::Wind>("Wind",
+            "direction", &Scene::Wind::direction,
+            "speed", &Scene::Wind::speed,
+            "noiseMap", &Scene::Wind::noiseMap
+            );
 
         ns->new_usertype<Scene::Scene>("Scene",
             "CreateEntity", &Scene::Scene::CreateEntity,
@@ -21,18 +28,10 @@ namespace Atlas::Scripting::Bindings {
             "sky", &Scene::Scene::sky,
             "fog", &Scene::Scene::fog,
             "irradianceVolume", &Scene::Scene::irradianceVolume,
-            "ao", &Scene::Scene::ao,
             "reflection", &Scene::Scene::reflection,
             "sss", &Scene::Scene::sss,
             "ssgi", &Scene::Scene::ssgi,
-            "sky", &Scene::Scene::sky,
             "postProcessing", &Scene::Scene::postProcessing
-            );
-
-        ns->new_usertype<Scene::Wind>("Wind",
-            "direction", &Scene::Wind::direction,
-            "speed", &Scene::Wind::speed,
-            "noiseMap", &Scene::Wind::noiseMap
             );
 
     }
@@ -41,6 +40,8 @@ namespace Atlas::Scripting::Bindings {
 
         auto entityType = ns->new_usertype<Scene::Entity>("Entity",
             "IsValid", &Scene::Entity::IsValid,
+            "GetID", &Scene::Entity::GetID,
+            "GetVersion", &Scene::Entity::GetVersion,
             // Add components
             "AddAudioComponent", &Scene::Entity::AddComponent<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
             "AddAudioVolumeComponent", &Scene::Entity::AddComponent<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
@@ -54,6 +55,7 @@ namespace Atlas::Scripting::Bindings {
             "AddTextComponent", &Scene::Entity::AddComponent<TextComponent, ResourceHandle<Font>&, std::string>,
             "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent, glm::mat4&, bool>,
             "AddLuaScriptComponent", &Scene::Entity::AddComponent<LuaScriptComponent, ResourceHandle<Script>&>,
+            "AddSplineComponent", &Scene::Entity::AddComponent<SplineComponent>,
 
             // Remove components
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
@@ -68,6 +70,7 @@ namespace Atlas::Scripting::Bindings {
             "RemoveTextComponent", &Scene::Entity::RemoveComponent<TextComponent>,
             "RemoveTransformComponent", &Scene::Entity::RemoveComponent<TransformComponent>,
             "RemoveLuaScriptComponent", &Scene::Entity::RemoveComponent<LuaScriptComponent>,
+            "RemoveSplineComponent", &Scene::Entity::RemoveComponent<SplineComponent>,
 
             // Get components
             "GetAudioComponent", &Scene::Entity::TryGetComponent<AudioComponent>,
@@ -81,7 +84,8 @@ namespace Atlas::Scripting::Bindings {
             "GetRigidBodyComponent", &Scene::Entity::TryGetComponent<RigidBodyComponent>,
             "GetTextComponent", &Scene::Entity::TryGetComponent<TextComponent>,
             "GetTransformComponent", &Scene::Entity::TryGetComponent<TransformComponent>,
-            "GetLuaScriptComponent", &Scene::Entity::TryGetComponent<LuaScriptComponent>
+            "GetLuaScriptComponent", &Scene::Entity::TryGetComponent<LuaScriptComponent>,
+            "GetSplineComponent", &Scene::Entity::TryGetComponent<SplineComponent>
         );
 
     }
@@ -152,21 +156,46 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<PointLightProperties>("PointLightProperties",
             "position", &PointLightProperties::position,
-            "radius", &PointLightProperties::radius,
-            "attenuation", &PointLightProperties::attenuation
+            "radius", &PointLightProperties::radius
+        );
+
+        ns->new_usertype<SpotLightProperties>("SpotLightProperties",
+            "position", &SpotLightProperties::position,
+            "direction", &SpotLightProperties::direction,
+            "radius", &SpotLightProperties::radius,
+            "outerConeAngle", &SpotLightProperties::outerConeAngle,
+            "innerConeAngle", &SpotLightProperties::innerConeAngle
         );
 
         ns->new_usertype<TypeProperties>("TypeProperties",
             "directional", &TypeProperties::directional,
-            "point", &TypeProperties::point
+            "point", &TypeProperties::point,
+            "spot", &TypeProperties::spot
         );
 
-        // TODO: Extend this
+        ns->new_enum<LightType>("LightType", {
+           { "DirectionalLight", LightType::DirectionalLight },
+           { "PointLight", LightType::PointLight },
+           { "SpotLight", LightType::SpotLight }
+           });
+
+        ns->new_enum<LightMobility>("LightMobility", {
+          { "StationaryLight", LightMobility::StationaryLight },
+          { "MovableLight", LightMobility::MovableLight }
+          });
+
         ns->new_usertype<LightComponent>("LightComponent",
+            "AddPointShadow", &LightComponent::AddPointShadow,
+            "AddSpotShadow", &LightComponent::AddSpotShadow,
+            "IsVisible", &LightComponent::IsVisible,
+            "type", &LightComponent::type,
+            "mobility", &LightComponent::mobility,
             "color", &LightComponent::color,
             "intensity", &LightComponent::intensity,
+            "volumetricIntensity", &LightComponent::volumetricIntensity,
             "properties", &LightComponent::properties,
             "transformedProperties", &LightComponent::transformedProperties,
+            "shadow", &LightComponent::shadow,
             "isMain", &LightComponent::isMain,
             "volumetric", &LightComponent::volumetric
         );
@@ -188,14 +217,15 @@ namespace Atlas::Scripting::Bindings {
             "Decompose", &TransformComponent::Decompose,
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
-            //"Compose", &TransformComponent::Compose,
             "matrix", &TransformComponent::matrix,
-            "globalMatrix", &TransformComponent::globalMatrix
+            "globalMatrix", &TransformComponent::globalMatrix,
+            "isStatic", &TransformComponent::isStatic
         );
 
         ns->new_usertype<RigidBodyComponent>("RigidBodyComponent",
             "IsValid", &RigidBodyComponent::IsValid,
             "SetMatrix", &RigidBodyComponent::SetMatrix,
+            "MoveKinematic", &RigidBodyComponent::MoveKinematic,
             "GetMatrix", &RigidBodyComponent::GetMatrix,
             "SetMotionQuality", &RigidBodyComponent::SetMotionQuality,
             "GetMotionQuality", &RigidBodyComponent::GetMotionQuality,
@@ -258,6 +288,45 @@ namespace Atlas::Scripting::Bindings {
             "GetPropertyBool", &LuaScriptComponent::GetPropertyValue<bool>,
             "permanentExecution", &LuaScriptComponent::permanentExecution,
             "script", &LuaScriptComponent::script
+        );
+
+        ns->new_enum<SplineType>("SplineType", {
+            { "Linear", SplineType::Linear },
+            { "CatmullRom", SplineType::CatmullRom },
+            { "Hermite", SplineType::Hermite }
+            });
+
+        ns->new_enum<SplineBakeMode>("SplineBakeMode", {
+            { "NoBake", SplineBakeMode::NoBake },
+            { "EqualSpacingBake", SplineBakeMode::EqualSpacingBake },
+            { "DistanceSpacingBake", SplineBakeMode::DistanceSpacingBake }
+            });
+
+        ns->new_usertype<SplineControlPoint>("SplineControlPoint",
+            sol::call_constructor,
+            sol::constructors<SplineControlPoint(), SplineControlPoint(glm::mat4, float)>(),
+            "transform", DependentMember<&SplineControlPoint::transform>(),
+            "tangent", DependentMember<&SplineControlPoint::tangent>(),
+            "time", &SplineControlPoint::time
+            );
+
+        ns->new_usertype<SplinePoint>("SplinePoint",
+            "position", DependentMember<&SplinePoint::position>(),
+            "rotation", DependentMember<&SplinePoint::rotation>(),
+            "scale", DependentMember<&SplinePoint::scale>(),
+            "tangent", DependentMember<&SplinePoint::tangent>(),
+            "time", &SplinePoint::time
+        );
+
+        ns->new_usertype<SplineComponent>("SplineComponent",
+            "AddControlPoint", &SplineComponent::AddControlPoint,
+            "ClearControlPoints", &SplineComponent::ClearControlPoints,
+            "GetControlPoint", &SplineComponent::GetControlPoint,
+            "GetControlPointCount", &SplineComponent::GetControlPointCount,
+            "Bake", &SplineComponent::Bake,
+            "GetInterpolated", &SplineComponent::GetInterpolated,
+            "type", &SplineComponent::type,
+            "bakeMode", &SplineComponent::bakeMode
         );
 
     }

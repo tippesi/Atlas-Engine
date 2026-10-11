@@ -30,39 +30,42 @@ namespace Atlas {
                 float outerRadius;
                 float distanceLimit;
 
-                float heightStretch;
-
                 float coverageScale;
                 float shapeScale;
+                float verticalShapeScale;
                 float detailScale;
-                float coverageSpeed;
-                float shapeSpeed;
-                float detailSpeed;
                 float detailStrength;
+                float densityMultiplier;
+
+                float coverage;
+                float cloudType;
+                float bottomType;
+                float heightVariation;
+                float anvilBias;
+                float shapeErosion;
 
                 float extinctionFactor;
                 float scatteringFactor;
-
                 float eccentricityFirstPhase;
                 float eccentricitySecondPhase;
                 float phaseAlpha;
-
-                float densityMultiplier;
 
                 float time;
                 uint32_t frameSeed;
 
                 int32_t sampleCount;
                 int32_t occlusionSampleCount;
-
-                float darkEdgeDirect;
-                float darkEdgeDetail;
+                int32_t padding0;
+                int32_t padding1;
+                int32_t padding2;
 
                 vec4 extinctionCoefficients;
                 vec4 planetCenter;
+                // xy: wind velocity, zw: offset of the weather map
+                vec4 windAndCoverageOffset;
             };
 
-            struct alignas(16) CloudTemporalPushConstants {
+            struct CloudTemporalPushConstants {
                 int32_t resetHistory;
                 int32_t downsampled2x;
             };
@@ -75,10 +78,10 @@ namespace Atlas {
             };
 
             void GenerateShapeTexture(Graphics::CommandList* commandList,
-                Texture::Texture3D* texture, float baseScale);
+                Texture::Texture3D* texture, float seed);
             
             void GenerateDetailTexture(Graphics::CommandList* commandList,
-                Texture::Texture3D* texture, float baseScale);
+                Texture::Texture3D* texture, float seed);
 
             CloudUniforms GetUniformStructure(Ref<Scene::Scene> scene,
                 Scene::Entity mainLightEntity);

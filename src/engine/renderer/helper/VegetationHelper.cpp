@@ -40,9 +40,6 @@ namespace Atlas {
                     uint32_t binCount;
                 };
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-
                 Graphics::Profiler::BeginQuery("Culling");
 
                 auto meshes = vegetation.GetMeshes();
@@ -93,9 +90,8 @@ namespace Atlas {
                         commandList->Dispatch(groupCount, 1, 1);
                     }
 
-                    bufferBarriers.clear();
-                    bufferBarriers.push_back({ binCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    Graphics::BufferBarrier bufferBarriers[] = {{ binCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT }};
+                    commandList->PipelineBarrier({}, bufferBarriers);
                 }
 
                 Graphics::Profiler::EndAndBeginQuery("Compute bin offsets");
@@ -114,16 +110,17 @@ namespace Atlas {
 
                     commandList->Dispatch(groupCount, 1, 1);
 
-                    bufferBarriers.clear();
-                    bufferBarriers.push_back({binOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
-                    bufferBarriers.push_back({binCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
-                    bufferBarriers.push_back({instanceCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT});
+                    meshBufferBarriers.clear();
+                    meshBufferBarriers.push_back({ binOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                    meshBufferBarriers.push_back({ binCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                    meshBufferBarriers.push_back({ instanceCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT });
                     for (auto mesh : meshes) {
                         auto buffers = vegetation.GetBuffers(mesh);
-                        bufferBarriers.push_back({buffers->culledInstanceData.Get(),
+                        meshBufferBarriers.push_back({buffers->culledInstanceData.Get(),
                             VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                     }
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+                    commandList->PipelineBarrier({}, meshBufferBarriers);
                 }
 
                 Graphics::Profiler::EndAndBeginQuery("Sort by bins");
@@ -192,13 +189,14 @@ namespace Atlas {
                 commandList->BufferMemoryBarrier(indirectDrawCallBuffer.Get(), VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
 
-                bufferBarriers.clear();
+                meshBufferBarriers.clear();
+
                 for (auto mesh : meshes) {
                     auto buffers = vegetation.GetBuffers(mesh);
-                    bufferBarriers.push_back({buffers->binnedInstanceData.Get(),
+                    meshBufferBarriers.push_back({buffers->binnedInstanceData.Get(),
                         VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                 }
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                commandList->PipelineBarrier({}, meshBufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 
                 Graphics::Profiler::EndQuery();
@@ -276,22 +274,22 @@ namespace Atlas {
 
             void VegetationHelper::ResetCounterBuffers(Graphics::CommandList* commandList) {
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-
-                bufferBarriers.push_back({binCounterBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
-                bufferBarriers.push_back({instanceCounterBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                Graphics::BufferBarrier preBufferBarriers[] = {
+                    {binCounterBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT},
+                    {instanceCounterBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT}                
+                };
+                commandList->PipelineBarrier({}, preBufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 uint32_t zero = 0;
                 commandList->FillBuffer(binCounterBuffer.Get(), &zero);
                 commandList->FillBuffer(instanceCounterBuffer.Get(), &zero);
 
-                bufferBarriers.clear();
-                bufferBarriers.push_back({binCounterBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
-                bufferBarriers.push_back({instanceCounterBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                Graphics::BufferBarrier postBufferBarriers[] = {
+                    {binCounterBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT},
+                    {instanceCounterBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT}
+                };
+                commandList->PipelineBarrier({}, postBufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             }

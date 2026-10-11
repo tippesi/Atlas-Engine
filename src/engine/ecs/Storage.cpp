@@ -1,5 +1,7 @@
 #include "Storage.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
     namespace ECS {

@@ -19,16 +19,22 @@ namespace Atlas::Editor::UI {
             audioComponent.ChangeResource(handle);
         }
 
-        ImGui::DragFloat("Volume", &audioComponent.volume, 0.005f, 0.0f, 1.0f);
-        ImGui::DragFloat("Cutoff", &audioComponent.cutoff, 0.001f, 0.0001f, 0.2f);
-        ImGui::DragFloat("Falloff factor", &audioComponent.falloffFactor, 0.05f, 0.0f, 100.0f);
-        ImGui::DragFloat("Falloff power", &audioComponent.falloffPower, 1.0f, 0.0f, 100.0f);
+        ImGui::SeparatorText("Playback");
 
+        ImGui::SliderFloat("Volume", &audioComponent.volume, 0.0f, 1.0f);
         ImGui::Checkbox("Play permanently", &audioComponent.permanentPlay);
 
         if (audioComponent.stream && audioComponent.stream->IsValid()) {
             ImGui::Checkbox("Loop stream", &audioComponent.stream->loop);
         }
+
+        ImGui::SeparatorText("Attenuation");
+
+        ImGui::DragFloat("Cutoff", &audioComponent.cutoff, 0.001f, 0.0001f, 0.2f);
+        ImGui::DragFloat("Falloff factor", &audioComponent.falloffFactor, 0.05f, 0.0f, 100.0f);
+        ImGui::DragFloat("Falloff power", &audioComponent.falloffPower, 1.0f, 0.0f, 100.0f);
+
+        audioSelectionPanel.Reset();
 
         return resourceChanged;
 

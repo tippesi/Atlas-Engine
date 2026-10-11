@@ -4,10 +4,18 @@
 #include "../Log.h"
 
 #define VK_ENABLE_BETA_EXTENSIONS
+#ifdef AE_OS_APPLE_MOBILE
+#include <vulkan/vulkan.h>
+#else
 #include <volk.h>
+#endif
 
 #include <string>
 #include <cassert>
+
+#if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
+#include <stacktrace>
+#endif
 
 #define FRAME_DATA_COUNT 2
 #define DESCRIPTOR_POOL_SIZE 1024u
@@ -16,25 +24,35 @@
 #define MAX_COLOR_ATTACHMENTS 8
 #define MAX_VERTEX_BUFFER_BINDINGS 16
 
+#if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
+#define AE_LOG_STACKTRACE() { \
+    Atlas::Log::Message("Stack trace:\n" + std::to_string(std::stacktrace::current())); \
+}
+#else
+#define AE_LOG_STACKTRACE() {}
+#endif
+
 #define VK_CHECK(x) {                                                               \
-                VkResult err = x;                                                   \
-                if (err)                                                            \
-                {                                                                   \
-                    Atlas::Log::Error("Detected Vulkan error: " +                   \
-                        Atlas::Graphics::VkResultToString(err));                    \
-                    AE_ASSERT(err == VK_SUCCESS);                                      \
-                }                                                                   \
-            }
+    VkResult err = x;                                                               \
+    if (err)                                                                        \
+    {                                                                               \
+        Atlas::Log::Error("Detected Vulkan error: " +                               \
+            Atlas::Graphics::VkResultToString(err));                                \
+        AE_LOG_STACKTRACE();                                                        \
+        AE_ASSERT(err == VK_SUCCESS);                                               \
+    }                                                                               \
+}
 
 #define VK_CHECK_MESSAGE(x,y) {                                                     \
-                VkResult err = x;                                                   \
-                if (err)                                                            \
-                {                                                                   \
-                    Atlas::Log::Error("Detected Vulkan error: " +                   \
-                        Atlas::Graphics::VkResultToString(err));                    \
-                    AE_ASSERT(err == VK_SUCCESS && y);                                 \
-                }                                                                   \
-            }
+    VkResult err = x;                                                               \
+    if (err)                                                                        \
+    {                                                                               \
+        Atlas::Log::Error("Detected Vulkan error: " +                               \
+            Atlas::Graphics::VkResultToString(err));                                \
+        AE_LOG_STACKTRACE();                                                        \
+        AE_ASSERT(err == VK_SUCCESS && (y));                                        \
+    }                                                                               \
+}
 
 namespace Atlas {
 

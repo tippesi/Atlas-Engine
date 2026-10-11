@@ -4,6 +4,9 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+// Implot
+#include <implot.h>
+
 // Atlas engine includes
 #include <Window.h>
 #include <graphics/DescriptorPool.h>
@@ -25,7 +28,7 @@ namespace Atlas::ImguiExtension {
 
         void RecreateImGuiResources();
 
-        VkDescriptorSet GetTextureDescriptorSet(const Atlas::Texture::Texture* texture,
+        ImTextureID GetTextureId(const Atlas::Texture::Texture* texture,
             VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     private:

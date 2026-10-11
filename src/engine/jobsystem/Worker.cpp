@@ -5,10 +5,15 @@
 #include "Windows.h"
 #endif
 
-#if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
+#ifdef AE_OS_MACOS
 #include <pthread.h>
 #endif
 
+#ifdef AE_OS_LINUX
+#include <algorithm>
+#include <cerrno>
+#include <sys/resource.h>
+#endif
 
 namespace Atlas {
 
@@ -25,32 +30,42 @@ namespace Atlas {
 
     void Worker::Start(std::function<void(Worker&)> function) {
 
-        thread = std::thread([this, function] { function(*this); });
-
-        bool success = true;
+        thread = std::thread([this, function] {
+            // The priority is set before the first job runs. All priorities stay in the normal
+            // scheduling range, such that system threads (e.g. audio) are never starved
+            bool success = true;
 #ifdef AE_OS_WINDOWS
-        HANDLE threadHandle = static_cast<HANDLE>(thread.native_handle());
-        switch (priority) {
-            case JobPriority::High: success &= SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST); break;
-            case JobPriority::Low: success &= SetThreadPriority(threadHandle, THREAD_PRIORITY_LOWEST); break;
-            default: break;
-        }       
+            auto threadHandle = GetCurrentThread();
+            switch (priority) {
+                case JobPriority::High: success = SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST) > 0; break;
+                case JobPriority::Low: success = SetThreadPriority(threadHandle, THREAD_PRIORITY_LOWEST) > 0; break;
+                default: success = SetThreadPriority(threadHandle, THREAD_PRIORITY_NORMAL) > 0; break;
+            }
+            std::wstring threadName = L"Worker " + std::to_wstring(workerId) + L" priority " + std::to_wstring(static_cast<int>(priority));
+            SetThreadDescription(threadHandle, threadName.c_str());
 #endif
-#if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
-        auto minPriority = sched_get_priority_min(SCHED_RR);
-        auto maxPriority = sched_get_priority_max(SCHED_RR);
+#ifdef AE_OS_MACOS
+            switch (priority) {
+                case JobPriority::High: success = pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0) == 0; break;
+                case JobPriority::Low: success = pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0) == 0; break;
+                default: success = pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0) == 0; break;
+            }
+#endif
+#ifdef AE_OS_LINUX
+            // Linux nice values are per thread. Only lower worker priorities so no privileges are needed.
+            const int niceOffset = priority == JobPriority::High ? 0 : priority == JobPriority::Low ? 10 : 5;
+            errno = 0;
+            const int inheritedNice = getpriority(PRIO_PROCESS, 0);
+            if (errno != 0)
+                success = false;
+            else if (niceOffset > 0)
+                success &= setpriority(PRIO_PROCESS, 0, std::min(19, inheritedNice + niceOffset)) == 0;
+#endif
+            if (!success)
+                Log::Warning("Couldn't set thread priority");
 
-        sched_param params = {};
-        
-        switch (priority) {
-            case JobPriority::High: params.sched_priority = maxPriority; break;
-            case JobPriority::Low: params.sched_priority = minPriority; break;
-            default: params.sched_priority = (maxPriority + minPriority) / 2; break;
-        }
-        success = pthread_setschedparam(thread.native_handle(), SCHED_RR, &params) == 0;
-#endif
-        if (!success)
-            Log::Warning("Couldn't set thread priority");
+            function(*this);
+        });
 
     }
 

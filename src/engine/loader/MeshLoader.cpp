@@ -1,4 +1,7 @@
 #include "MeshLoader.h"
+#include "AssetLoader.h"
+#include "AssetReferences.h"
+#include "ImpostorLoader.h"
 #include "mesh/MeshSerializer.h"
 
 namespace Atlas::Loader {
@@ -28,6 +31,8 @@ namespace Atlas::Loader {
             j = json::parse(serialized);
         }
 
+        AssetReferences::ResolveReferences(j, AssetReferences::Type::Mesh, filename);
+
         auto mesh = CreateRef<Mesh::Mesh>();
         from_json(j, *mesh);
 
@@ -48,6 +53,7 @@ namespace Atlas::Loader {
 
         json j;
         to_json(j, *mesh);
+        AssetReferences::MakeReferences(j, AssetReferences::Type::Mesh, filename);
         
         if (binaryJson) {
             auto data = json::to_msgpack(j);
@@ -58,6 +64,10 @@ namespace Atlas::Loader {
         }
 
         fileStream.close();
+
+        if (mesh->impostor.IsLoaded()) {
+            ImpostorLoader::SaveImpostor(mesh->impostor.Get(), mesh->impostor.GetResource()->path, binaryJson);
+        }
 
     }
 

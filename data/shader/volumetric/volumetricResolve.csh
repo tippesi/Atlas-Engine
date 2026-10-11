@@ -20,6 +20,8 @@ layout(set = 3, binding = 3) uniform sampler2D lowResVolumetricCloudsTexture;
 layout(set = 3, binding = 5) uniform  UniformBuffer {
     Fog fog;
     vec4 planetCenter;
+    vec4 mainLightColor;
+    vec4 mainLightDirection;
     int downsampled2x;
     int cloudsEnabled;
     int fogEnabled;
@@ -46,7 +48,7 @@ void LoadGroupSharedData() {
     if (gl_LocalInvocationIndex < depthDataSize) {
         ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
         offset += workGroupOffset;
-        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0) - ivec2(1));
         depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
         volumetrics[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricTexture, offset, 0);
 #ifdef CLOUDS
@@ -70,6 +72,13 @@ const ivec2 offsets[9] = ivec2[9](
     ivec2(1, 1)
 );
 
+const ivec2 pixelOffsets[4] = ivec2[4](
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
+
 int NearestDepth(float referenceDepth, float[9] depthVec) {
 
     int idx = 4;
@@ -88,14 +97,41 @@ int NearestDepth(float referenceDepth, float[9] depthVec) {
 void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out vec4 volumetricClouds) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
+    vec2 highResPixel = texCoord * vec2(imageSize(resolveImage));
 
-    float invocationDepths[9];
+    highResPixel /= 2.0;
 
-    float minWeight = 1.0;
+    float x = fract(highResPixel.x);
+    float y = fract(highResPixel.y);
+
+    float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
     referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
     float depthPhi = 128.0 / max(1.0, abs(referenceDepth));
 
+    volumetric = vec4(0.0);
+
+    float totalWeight = 0.0;
+    for (uint i = 0; i < 4; i++) {
+        int sharedMemoryOffset = Flatten2D(pixel + pixelOffsets[i], unflattenedDepthDataSize);
+
+        float depth = ConvertDepthToViewSpaceDepth(depths[sharedMemoryOffset]);
+
+        float depthDiff = abs(referenceDepth - depth);
+        float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
+        
+        float edgeWeight = depthWeight;
+        float weight = edgeWeight * weights[i];
+
+        volumetric += volumetrics[sharedMemoryOffset] * weight;
+        totalWeight += weight;
+    }
+
+    volumetric /= totalWeight;
+
+    float invocationDepths[9];
+
+    float minWeight = 1.0;
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
 
@@ -112,7 +148,9 @@ void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out ve
     int idx = NearestDepth(referenceDepth, invocationDepths);
     int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
-    volumetric = volumetrics[offset];
+    if (totalWeight < 10e-9) {
+        volumetric = volumetrics[offset];
+    }
 #ifdef CLOUDS
     vec4 bilinearCloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
     volumetricClouds = mix(clouds[offset], bilinearCloudScattering, minWeight);
@@ -151,10 +189,24 @@ void main() {
     vec3 resolve = imageLoad(resolveImage, pixel).rgb;
 
 #ifndef RAYMARCHED_FOG
+    float LdotV = dot(worldDirection, normalize(uniforms.mainLightDirection.xyz));
+    float phaseFunction = ComputeScattering(uniforms.fog.scatteringAnisotropy, LdotV);
+
     vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
     volumetricFog.a = ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition);
 
-    volumetricFog.rgb = uniforms.fog.extinctionCoefficients.rgb * clamp(1.0 - volumetricFog.a, 0.0, 1.0);
+    vec3 lightPosition = worldPosition - 10000.0 * normalize(uniforms.mainLightDirection.xyz);
+    lightPosition = vec3(globalData.ivMatrix * vec4(lightPosition, 1.0));
+    float extinctionToLight = ComputeVolumetricFog(uniforms.fog, worldPosition, lightPosition);
+
+    vec3 scatteringCoefficient = uniforms.fog.scatteringFactor *
+            uniforms.fog.extinctionCoefficients.rgb;
+
+    vec3 lightScattering = phaseFunction * uniforms.mainLightColor.rgb;
+
+    vec3 scattering = scatteringCoefficient * (lightScattering + vec3(uniforms.fog.ambientFactor));
+
+    volumetricFog.rgb = scattering * clamp(1.0 - volumetricFog.a, 0.0, 1.0);
 #endif
 
     resolve = ApplyVolumetrics(uniforms.fog, resolve, volumetricFog, volumetricClouds,

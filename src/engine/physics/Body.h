@@ -13,9 +13,11 @@ namespace Atlas::Physics {
         Body() = default;
         Body(BodyID bodyId, PhysicsWorld* world) : bodyId(bodyId), world(world) {}
 
-        bool IsValid() const { return world != nullptr; }
+        bool IsValid() const { return world != nullptr && !bodyId.IsInvalid(); }
 
         void SetMatrix(mat4 matrix);
+
+        void MoveKinematic(mat4 matrix, float deltaTime);
 
         mat4 GetMatrix();
 
@@ -38,6 +40,8 @@ namespace Atlas::Physics {
         void SetFriction(float friction);
 
         float GetFriction();
+
+        Ref<Shape> GetShape() const;
 
         uint64_t GetUserData() const;
 

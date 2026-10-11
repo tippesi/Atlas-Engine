@@ -43,6 +43,13 @@ namespace Atlas {
             static std::string GetAssetDirectory();
 
             /**
+             * Gets the data directory 
+             * @note This will be the asset directory for Windows, Linux and MacOS.
+             * For Android and iOS/iPadOS this will be the path to writable content.
+             */
+            static std::string GetDataDirectory();
+
+            /**
              * Check whether a file exists in the asset directory
              * @return True if file exists, false otherwise
              */
@@ -141,10 +148,11 @@ namespace Atlas {
             static void SetReloadBehaviour(bool alwaysReload = false);
 
         private:
-            static std::string GetAssetPath(std::string path);
+            static std::string GetAssetPath(const std::string& path);
+            static std::string GetDataPath(const std::string& path);
+            static bool ExistsAtPath(const std::string& path);
 
             static std::string assetDirectory;
-
             static std::string dataDirectory;
 
             static std::mutex assetLoaderMutex;

@@ -1,4 +1,5 @@
 #include "Viewport.h"
+#include "common/MathHelper.h"
 
 namespace Atlas {
 
@@ -35,7 +36,7 @@ namespace Atlas {
         float fWidth = float(width);
         float fHeight = float(height);
 
-        transformed = glm::clamp(transformed, 0.0f, 1.0f);
+        transformed = Helper::Math::Saturate(transformed);
 
         transformed.x *= fWidth;
         transformed.y *= fHeight;

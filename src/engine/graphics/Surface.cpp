@@ -60,7 +60,7 @@ namespace Atlas {
         void Surface::GetExtent(int32_t& width, int32_t& height) {
 
             if ((this->width < 0 || this->height < 0) && window != nullptr) {
-                SDL_GL_GetDrawableSize(window, &width, &height);
+                SDL_Vulkan_GetDrawableSize(window, &width, &height);
             }
             else if (window == nullptr) {
                 width = this->width;

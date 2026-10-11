@@ -29,6 +29,7 @@ layout(set = 3, binding = 9) uniform sampler2D historyMomentsTexture;
 layout(set = 3, binding = 10) uniform sampler2D historyDepthTexture;
 layout(set = 3, binding = 11) uniform sampler2D historyNormalTexture;
 layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
+layout(set = 3, binding = 13) uniform sampler2D historyRoughnessMetallicAoTexture;
 
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
@@ -41,10 +42,13 @@ const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadi
 shared vec4 sharedRadianceDepth[sharedDataSize];
 
 layout(push_constant) uniform constants {
+    vec4 cameraLocationLast;
     float temporalWeight;
     float historyClipMax;
     float currentClipFactor;
+    float roughnessCutoff;
     int resetHistory;
+    uint frameCount;
 } pushConstants;
 
 const ivec2 offsets[9] = ivec2[9](
@@ -73,9 +77,10 @@ float Luma(vec3 color) {
 
 }
 
-vec3 FetchTexel(ivec2 texel) {
+vec4 FetchTexel(ivec2 texel) {
     
-    vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
+    vec4 color = texelFetch(currentTexture, texel, 0);
+    color.rgb = max(color.rgb, 0);
     return color;
 
 }
@@ -91,7 +96,8 @@ void LoadGroupSharedData() {
 
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
-        sharedRadianceDepth[i].rgb = FetchTexel(texel);
+        vec4 radianceRayLength = FetchTexel(texel);
+        sharedRadianceDepth[i].rgb = RGBToYCoCg(radianceRayLength.rgb);
         sharedRadianceDepth[i].a = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
     }
 
@@ -157,7 +163,7 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
 
 }
 
-bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 historyMoments) {
+bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 history, out vec4 historyMoments) {
     
     history = vec4(0.0);
     historyMoments = vec4(0.0);
@@ -172,7 +178,10 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = 16.0 / abs(linearDepth);
+    float depthPhi = normalPhi / abs(linearDepth);
+
+    float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -182,12 +191,15 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
+        confidence *= pow(max(dot(historyNormal, normal), 0.0), normalPhi);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        float historyLinearDepth = historyDepth;
         
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx == materialIdx ? 1.0 : 0.0;
 
         if (confidence > 0.2) {
             totalWeight += weights[i];
@@ -203,17 +215,20 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     }
 
     for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        ivec2 offsetPixel = ivec2(historyPixel + 0.5) + offsets[i];
         float confidence = 1.0;
 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
+        confidence *= pow(max(dot(historyNormal, normal), 0.0), normalPhi);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx == materialIdx ? 1.0 : 0.0;
 
         if (confidence > 0.2) {
             totalWeight += 1.0;
@@ -242,7 +257,7 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal) {
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
     confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
-    float depthPhi = 16.0 / abs(linearDepth);
+    float depthPhi = 128.0 / abs(linearDepth);
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     float historyLinearDepth = historyDepth;
     confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
@@ -310,18 +325,19 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
     return false;
 }
 
-void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
+void ComputeVarianceMinMax(float roughness, int radius, out vec3 mean, out vec3 std) {
 
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = kernelRadius;
+    
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = max(1.0, abs(0.025 * linearDepth));
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
@@ -331,10 +347,9 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
         for (int j = -radius; j <= radius; j++) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            vec3 sampleRadiance = RGBToYCoCg(FetchCurrentRadiance(sharedMemoryIdx));
+            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
-
-            float depthPhi = max(1.0, abs(0.025 * linearDepth));
+            
             float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
         
             m1 += sampleRadiance * weight;
@@ -348,6 +363,75 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
     std = sqrt(max((m2 / totalWeight) - (mean * mean), 0.0));
 }
 
+float ComputeParallax(vec3 position, vec3 historyPosition) {
+
+    vec3 cameraDelta = pushConstants.cameraLocationLast.xyz - globalData.cameraLocation.xyz;
+
+    vec3 V = normalize(position);
+    vec3 historyV = normalize(historyPosition - cameraDelta);
+
+    float cosTheta = saturate(dot(V, historyV));
+    return sqrt(1.0 - cosTheta * cosTheta) / max(cosTheta, 1e-6) * 60.0;
+
+}
+
+float GetSpecularDominantFactor(float NdotV, float roughness) {
+
+    float a =  0.298475 * log(39.4115 - 39.0029 * roughness);
+    float f = pow(saturate(1.0 - NdotV), 10.8649) * (1.0 - a) + a;
+
+    return sqr(saturate(f));
+
+}
+
+float GetAccumulationSpeed(float NdotV, float roughness, float parallax) {
+
+    const float accumCurve = 0.5;
+    const float accumBasePower = 0.5;
+
+    float acossqr = 1.0 - NdotV;
+    float rsqr = sqr(roughness);
+
+    float a = pow(saturate(acossqr), accumCurve);
+    float b = 1.1 + rsqr;
+
+    float parallaxSensitivity = (b + a) / (b - a);
+    float powerScale = 1.0 + parallax * parallaxSensitivity;
+
+    float f = 1.0 - exp2(-200.0 * rsqr);
+    f *= pow(saturate(roughness), accumBasePower * powerScale);
+
+    return min(f, pushConstants.temporalWeight);
+
+}
+
+vec2 SurfacePointReprojection(vec2 pixel, vec2 velocity) {
+
+    return pixel + velocity * resolution;
+
+}
+
+vec2 VirtualPointReprojection(vec2 pixel, ivec2 size, float rayLength) {
+
+    const vec2 texCoord  = (vec2(pixel)) / vec2(size);   
+    vec3 rayOrigin = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(texelFetch(depthTexture, ivec2(pixel), 0).r, texCoord), 1.0));
+
+    vec3 cameraRay = rayOrigin - globalData.cameraLocation.xyz;
+
+    float cameraRayLength = length(cameraRay);
+    float reflectionRayLength = rayLength;
+
+    cameraRay = normalize(cameraRay);
+
+    vec3 parallaxHitPoint = globalData.cameraLocation.xyz + cameraRay * (cameraRayLength + reflectionRayLength);
+
+    vec4 parallaxHitPointLast = globalData.pMatrix * globalData.vMatrixLast * vec4(parallaxHitPoint, 1.0);
+    parallaxHitPointLast.xy /= parallaxHitPointLast.w;
+ 
+    return (parallaxHitPointLast.xy * 0.5 + 0.5) * vec2(size);
+    
+}
+
 void main() {
 
     LoadGroupSharedData();
@@ -357,29 +441,98 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
+    vec2 uv = (vec2(pixel) + 0.5) * invResolution;
+
+    vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
+    float roughness = textureLod(roughnessMetallicAoTexture, uv, .0).r;
+    vec3 normal = normalize(DecodeNormal(texelFetch(normalTexture, pixel, 0).rg));
+
+    vec2 surfaceHistoryPixel = SurfacePointReprojection(vec2(pixel), velocity);
+    vec2 surfaceHistoryUV = (surfaceHistoryPixel + 0.5) * invResolution;
+
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+    float depthHistory = texelFetch(depthTexture, ivec2(surfaceHistoryPixel), 0).r;
+
+    //vec3 position = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, uv), 1.0));
+    //vec3 positionHistory = vec3(inverse(globalData.vMatrixLast) * vec4(ConvertDepthToViewSpace(depthHistory, surfaceHistoryUV), 1.0));
+
+    vec3 position = ConvertDepthToViewSpace(depth, uv);
+    vec3 positionHistory = ConvertDepthToViewSpace(depthHistory, uv);
+
+    float parallax = ComputeParallax(position, positionHistory);
+    float NdotV = abs(dot(normalize(-position), normal));
+
+    float dominantFactor = GetSpecularDominantFactor(NdotV, sqrt(roughness));
+
     vec3 mean, std;
-    ComputeVarianceMinMax(mean, std);
+#ifdef UPSCALE
+    const int radius = int(mix(3.0, float(kernelRadius), min(1.0, roughness * 4.0)));
+#else
+    const int radius = int(mix(2.0, float(kernelRadius), min(1.0, roughness * 4.0)));
+#endif
+    if (roughness < pushConstants.roughnessCutoff) {
+        ComputeVarianceMinMax(roughness, radius, mean, std);
+    }
+    else {
+        // Don't need much denoising here (except for roughness = 1. looks noisy for metallic surfaces)
+        ComputeVarianceMinMax(roughness, 3, mean, std);
+    }
 
     ivec2 velocityPixel = pixel;
-    vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
-    vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
+    uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
+    uv = (historyPixel + 0.5) * invResolution;
 
     bool valid = true;
-    vec4 history;
-    vec4 historyMoments;
-    valid = SampleHistory(pixel, historyPixel, history, historyMoments);
+    vec4 history = vec4(0.0);
+    vec4 historyMoments = vec4(0.0);
+    valid = SampleHistory(pixel, historyPixel, 16.0,
+        history, historyMoments);
 
 #ifdef BICUBIC_FILTER
     // This should be implemented more efficiently, see 
-    vec4 catmullRomHistory;
-    bool success = SampleCatmullRom(pixel, uv, catmullRomHistory);
-    history = success && valid ? catmullRomHistory : history;  
+    if (roughness < pushConstants.roughnessCutoff) {
+        vec4 catmullRomHistory;
+        bool success = SampleCatmullRom(pixel, uv, catmullRomHistory);
+        history = success && valid ? catmullRomHistory : history; 
+    }
 #endif
 
-    vec3 historyColor = RGBToYCoCg(history.rgb);
     vec3 currentColor = RGBToYCoCg(texelFetch(currentTexture, pixel, 0).rgb);
+    
+    float rayLength = texelFetch(currentTexture, pixel, 0).a;
+    if (rayLength != 0 &&  roughness < pushConstants.roughnessCutoff) {
+        vec2 virtualHistoryPixel = VirtualPointReprojection(pixel, imageSize(resolveImage), abs(rayLength));
+
+        bool validRepojection = true;
+        vec4 historyVirtualRepojection = vec4(0.0);
+        vec4 historyMomentsVirtualRepojection = vec4(0.0);
+        validRepojection = SampleHistory(pixel, virtualHistoryPixel, 32.0,
+            historyVirtualRepojection, historyMomentsVirtualRepojection);
+
+#ifdef BICUBIC_FILTER
+        // This should be implemented more efficiently, see 
+        if (validRepojection) {
+            vec4 catmullRomHistory;
+            uv = (virtualHistoryPixel + 0.5) * invResolution;
+            bool success = SampleCatmullRom(pixel, uv, catmullRomHistory);
+            historyVirtualRepojection = success ? catmullRomHistory : historyVirtualRepojection; 
+        }
+#endif
+
+        vec3 virtualNormal = normalize(DecodeNormal(texelFetch(historyNormalTexture, ivec2(virtualHistoryPixel), 0).rg));
+        float virtualRoughness = texelFetch(historyRoughnessMetallicAoTexture, ivec2(virtualHistoryPixel), 0).r;
+
+        const float virtualCutoff = 0.2;
+        float virtualConfidence = dominantFactor * sqr(max((virtualCutoff - roughness) / virtualCutoff, 0.0));
+        virtualConfidence *= pow(max(dot(virtualNormal, normal), 0.0), 512.0);
+        virtualConfidence *= pow(1.0 - abs(virtualRoughness - roughness), 32.0);
+
+        valid = valid || validRepojection;
+        history = (historyVirtualRepojection * virtualConfidence + 
+                (1.0 - virtualConfidence) * history);
+    }
 
     vec2 currentMoments;
     currentMoments.r = currentColor.r;
@@ -390,39 +543,49 @@ void main() {
 
     vec3 currentNeighbourhoodMin = mean - pushConstants.currentClipFactor * std;
     vec3 currentNeighbourhoodMax = mean + pushConstants.currentClipFactor * std;
+    currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
 
-    // In case of clipping we might also reject the sample. TODO: Investigate
+    vec3 historyColor = RGBToYCoCg(history.rgb);
     float clipBlend = ClipBoundingBox(historyNeighbourhoodMin, historyNeighbourhoodMax,
         historyColor, currentColor);
-    float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
-    currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
+
+    // In case of clipping we might also reject the sample. TODO: Investigate
+    clipBlend = ClipBoundingBox(historyNeighbourhoodMin, historyNeighbourhoodMax,
+        historyColor, currentColor);
+    float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);    
 
     currentColor = valid ? currentColor : mean;
 
     historyColor = YCoCgToRGB(historyColor);
     currentColor = YCoCgToRGB(currentColor);
 
-    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-    Material material = UnpackMaterial(materialIdx);
+    float temporalWeight = mix(pushConstants.temporalWeight, 0.0, adjClipBlend);
 
-    float roughness = material.roughness;
-    roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
-
-    float temporalWeight = mix(pushConstants.temporalWeight, 0.5, adjClipBlend);
-    float factor = clamp(32.0 * log(roughness + 1.0), 0.5, temporalWeight);
-    factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
-         || uv.y > 1.0) ? 0.0 : factor;
+#ifdef UPSCALE
+    float roughnessMinTemporalWeight = 0.75;
+#else
+    float roughnessMinTemporalWeight = temporalWeight;
+#endif
+    float factor = clamp(32.0 * log(roughness + 1.0), roughnessMinTemporalWeight, temporalWeight);
+    //factor = GetAccumulationSpeed(NdotV, roughness, parallax);
+    valid = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
+         || uv.y > 1.0) ? false : valid;
 
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
     float historyLength = historyMoments.b;
-    if (factor < 0.1 * roughness || !valid) {
+    if (factor <= 0.1 * roughness || !valid) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;
     }
 
+    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
     factor = min(factor, historyLength / (historyLength + 1.0));
+
+#ifdef UPSCALE
+    factor = rayLength > 0.0 ? factor : (valid ? mix(1.0, 0.0, adjClipBlend) : factor);
+#endif
 
     vec3 resolve = factor <= 0.0 ? currentColor : mix(currentColor, historyColor, factor);
     vec2 momentsResolve = factor <= 0.0 ? currentMoments : mix(currentMoments, historyMoments.rg, factor);
@@ -432,9 +595,9 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
-    variance = roughness <= 0.1 ? 0.0 : variance;
+    variance = roughness <= 0.1 ? max(variance * roughness, roughness * 1e-6) : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(resolve, variance));
+    imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));
 
 }

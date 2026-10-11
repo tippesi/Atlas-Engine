@@ -4,33 +4,28 @@ namespace Atlas {
 
     namespace Mesh {
 
-        Impostor::Impostor(int32_t views, int32_t resolution) : 
-            views(views), resolution(resolution) {
-
-            baseColorTexture = Atlas::Texture::Texture2DArray(resolution,
-                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-            roughnessMetalnessAoTexture = Atlas::Texture::Texture2DArray(resolution,
-                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-            normalTexture = Atlas::Texture::Texture2DArray(resolution,
-                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-            depthTexture = Atlas::Texture::Texture2DArray(resolution,
-                resolution, views * views, VK_FORMAT_R16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
+        Impostor::Impostor() {
 
             impostorInfoBuffer = Buffer::UniformBuffer(sizeof(ImpostorInfo));
 
         }
 
-        void Impostor::FillViewPlaneBuffer(std::vector<vec3> rightVectors, std::vector<vec3> upVectors) {
+        Impostor::Impostor(int32_t views, int32_t resolution) : 
+            views(views), resolution(resolution) {
 
-            std::vector<ViewPlane> viewPlanes;
+            AllocateTextures();
+
+            impostorInfoBuffer = Buffer::UniformBuffer(sizeof(ImpostorInfo));
+
+        }
+
+        void Impostor::FillViewPlaneBuffer(const std::vector<vec3>& rightVectors, const std::vector<vec3>& upVectors) {
+
+            viewPlanes.clear();
 
             for (size_t i = 0; i < rightVectors.size(); i++) {
 
-                ViewPlane viewPlane;
+                ImpostorViewPlane viewPlane;
 
                 viewPlane.right = vec4(rightVectors[i], 0.0f);
                 viewPlane.up = vec4(upVectors[i], 0.0f);
@@ -39,8 +34,31 @@ namespace Atlas {
 
             }
 
+            RefreshViewPlaneBuffer();
+
+        }
+
+        void Impostor::RefreshViewPlaneBuffer() {
+
             viewPlaneBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
-                sizeof(ViewPlane), viewPlanes.size(), viewPlanes.data());
+                sizeof(ImpostorViewPlane), viewPlanes.size(), this->viewPlanes.data());
+
+        }
+
+        void Impostor::AllocateTextures() {
+
+            baseColorTexture = CreateRef<Atlas::Texture::Texture2DArray>(resolution,
+                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
+            roughnessMetalnessAoTexture = CreateRef<Atlas::Texture::Texture2DArray>(resolution,
+                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
+            normalTexture = CreateRef<Atlas::Texture::Texture2DArray>(resolution,
+                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
+            depthTexture = CreateRef<Atlas::Texture::Texture2DArray>(resolution,
+                resolution, views * views, VK_FORMAT_R16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 
         }
 

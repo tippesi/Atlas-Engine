@@ -8,7 +8,7 @@
 #include <../common/normalreconstruction.hsh>
 #include <../clouds/shadow.hsh>
 #include <../volumetric/volumetric.hsh>
-#include <../structures>
+#include <../structures.hsh>
 
 #include <shoreInteraction.hsh>
 
@@ -37,8 +37,9 @@ layout(location=3) in vec3 fOriginalCoord;
 layout(location=6) in float shoreScaling;
 layout(location=7) in vec3 ndcCurrent;
 layout(location=8) in vec3 ndcLast;
+#ifdef TERRAIN
 layout(location=9) in vec3 normalShoreWave;
-layout(location=10) in float perlinScale;
+#endif
 
 // Control water scattering at crests
 const float scatterIntensity = 1.5;
@@ -96,12 +97,13 @@ void main() {
     //vec3 fNormal = normal;
     vec3 fNormal = normalize(vec3(gradientDisplacement.x, 2.0, gradientDisplacement.y));
     
-    float shadowFactor = CalculateCascadedShadow(light.shadow,
-        cascadeMaps, fPosition, fNormal, 1.0);
+    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, fPosition, 
+        vec3(gl_FragCoord.xy, 0.0), fNormal, 0.0), 1.0);
+
 
 #ifdef CLOUD_SHADOWS
     float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudShadowMap);
-    shadowFactor = min(shadowFactor, cloudShadowFactor);
+    shadowFactor *= cloudShadowFactor;
 #endif
 
     shadowFactor = max(shadowFactor, 0.01);

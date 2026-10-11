@@ -6,12 +6,7 @@ namespace Atlas {
     namespace Graphics {
 
         DescriptorPool::DescriptorPool(GraphicsDevice* device, const DescriptorPoolDesc& desc) :
-            device(device), freeDescriptorSets(desc.freeDescriptorSets) {
-
-            DescriptorSetSize size = {};
-            pools.push_back(InitPool(size));
-
-        }
+            device(device), freeDescriptorSets(desc.freeDescriptorSets) {}
 
         DescriptorPool::~DescriptorPool() {
 
@@ -42,6 +37,15 @@ namespace Atlas {
 
         Ref<DescriptorSet> DescriptorPool::Allocate(const Ref<DescriptorSetLayout>& layout) {
 
+            while (poolIdx < pools.size() && !PoolFits(poolSizes[poolIdx], layout->size)) {
+                poolIdx++;
+            }
+
+            if (poolIdx == pools.size()) {
+                pools.push_back(InitPool(layout->size));
+                poolSizes.push_back(layout->size);
+            }
+
             VkDescriptorSetAllocateInfo allocInfo = {};
             allocInfo.pNext = nullptr;
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -68,10 +72,11 @@ namespace Atlas {
             Ref<DescriptorSet> set = CreateRef<DescriptorSet>();
             auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set->set);
             // Handle the pool out of memory error by allocating a new pool
-            if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
+            if (result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL) {
                 poolIdx++;
                 if (poolIdx == pools.size()) {
                     pools.push_back(InitPool(layout->size));
+                    poolSizes.push_back(layout->size);
                 }
                 allocInfo.descriptorPool = pools[poolIdx];
                 VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set->set))
@@ -103,7 +108,27 @@ namespace Atlas {
 
         VkDescriptorPool DescriptorPool::GetNativePool() {
 
+            if (pools.empty()) {
+                DescriptorSetSize size = {};
+                pools.push_back(InitPool(size));
+                poolSizes.push_back(size);
+            }
+
             return pools[poolIdx];
+
+        }
+
+        bool DescriptorPool::PoolFits(const DescriptorSetSize& poolSize,
+            const DescriptorSetSize& requestedSize) const {
+
+            return poolSize.dynamicUniformBufferCount >= requestedSize.dynamicUniformBufferCount &&
+                poolSize.uniformBufferCount >= requestedSize.uniformBufferCount &&
+                poolSize.dynamicStorageBufferCount >= requestedSize.dynamicStorageBufferCount &&
+                poolSize.storageBufferCount >= requestedSize.storageBufferCount &&
+                poolSize.combinedImageSamplerCount >= requestedSize.combinedImageSamplerCount &&
+                poolSize.sampledImageCount >= requestedSize.sampledImageCount &&
+                poolSize.storageImageCount >= requestedSize.storageImageCount &&
+                poolSize.samplerCount >= requestedSize.samplerCount;
 
         }
 

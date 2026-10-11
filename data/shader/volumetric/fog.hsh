@@ -37,10 +37,18 @@ float GetVolumetricFogDensity(Fog fog, vec3 worldPos) {
 
 // Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf
 float ComputeScattering(float scatteringAnisotropy, float lightDotView) {
+    
     // Range [-1;1]
     float g = scatteringAnisotropy;
     float g2 = g * g;
-    float result = 1.0 - g2;
-    result /= (4.0 * 3.14 * pow(1.0 + g2 - (2.0 * g) * lightDotView, 1.5));
-    return result;
+    return (1.0 - g2) / (4.0 * 3.14 * pow(1.0 + g2 - (2.0 * g) * lightDotView, 1.5));
+    
+
+    /*
+    float g = scatteringAnisotropy;
+    float k = 1.55*g - 0.55*g*g*g;
+    float k2 = k * k;
+    return (1.0 - k2) / (4.0 * 3.14 * pow(1.0 - k * lightDotView, 2.0)); 
+    */
+
 }

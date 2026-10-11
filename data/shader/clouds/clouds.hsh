@@ -1,14 +1,14 @@
 #include <../common/utility.hsh>
-#include <../structures>
+#include <../structures.hsh>
 
 layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler3D shapeTexture;
 layout(set = 3, binding = 3) uniform sampler3D detailTexture;
 layout(set = 3, binding = 4) uniform sampler2D coverageTexture;
 
-layout(set = 1, binding = 10) uniform samplerCube diffuseProbe;
+layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
-layout(std140, set = 3, binding = 5) uniform CloudUniformBuffer {
+layout(std140, set = 3, binding = 6) uniform CloudUniformBuffer {
     Light light;
 
     float planetRadius;
@@ -16,52 +16,61 @@ layout(std140, set = 3, binding = 5) uniform CloudUniformBuffer {
     float outerRadius;
     float distanceLimit;
 
-    float heightStretch;
-
     float coverageScale;
     float shapeScale;
+    float verticalShapeScale;
     float detailScale;
-    float coverageSpeed;
-    float shapeSpeed;
-    float detailSpeed;
     float detailStrength;
+    float densityMultiplier;
+
+    float coverage;
+    float cloudType;
+    float bottomType;
+    float heightVariation;
+    float anvilBias;
+    float shapeErosion;
 
     float extinctionFactor;
     float scatteringFactor;
-
     float eccentricityFirstPhase;
     float eccentricitySecondPhase;
     float phaseAlpha;
-
-    float densityMultiplier;
 
     float time;
     uint frameSeed;
 
     int sampleCount;
     int occlusionSampleCount;
-
-    float darkEdgeFocus;
-    float darkEdgeAmbient;
+    int padding0;
+    int padding1;
+    int padding2;
 
     vec4 extinctionCoefficients;
     vec4 planetCenter;
+    vec4 windAndCoverageOffset;
 } cloudUniforms;
-
-const float multiscatterAttenuation = 0.5;
-const float multiscatterContribution = 0.5;
-const float multiscatterEccentricityAttenuation = 0.5;
 
 const float epsilon = 0.001;
 const float logEpsilon = -log(epsilon);
-const vec3 windDirection = vec3(-0.4, -.4, -0.4) * 2.0;
-const vec3 windDirectionDetail = normalize(vec3(0.1, -0.8, -0.1));
-const vec2 windDirectionCoverage = vec2(0.2, 0.2) * 1.0;
-const float windSpeed = 0.001;
+
+// Local variation of the cloud types around the type set in the uniforms
+const float cloudTypeVariation = 0.55;
+const float bottomTypeVariation = 0.12;
+const float windSkew = 0.12;
+
+const float multiScatteringIntensity = 0.28;
+const float multiScatteringAttenuation = 0.65;
+const float multiScatteringContribution = 0.50;
+const float multiScatteringEccentricityAttenuation = 0.60;
+
+// Albedo at thin cloud edges, which darkens the edges compared to the dense interior
+const float edgeAlbedo = 0.68;
+const float edgeAlbedoCurve = 2.0;
+const float ambientAlbedoMix = 0.35;
 
 vec3 cloudPlanetCenter = cloudUniforms.planetCenter.xyz;
 
-#define MULTISCATTER_OCTAVES 2
+#define MULTISCATTER_OCTAVES 4
 
 vec3 Random3(vec3 p){
     vec3 q = vec3(dot(p, vec3(127.1, 311.7, 74.7)),
@@ -91,7 +100,7 @@ float Worley(vec3 pos, float scale, float seed) {
         }
     }
 
-    return 1.0 - dist;
+    return dist;
 
 }
 
@@ -177,7 +186,7 @@ float Perlin2Octaves(vec3 pos, float scale, vec2 weights) {
     float octave0 = Perlin3D(pos * scale, scale) * weights.x;
     float octave1 = Perlin3D(pos * 2.0 * scale, 2.0 * scale) * weights.y;
 
-    return 0.5 * ((octave0 + octave1) / sum(weights)) + 0.5;
+    return (octave0 + octave1) / sum(weights);
 
 }
 
@@ -202,7 +211,7 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
     float ct2 = dot(L, L) - DT * DT;
 
     if (ct2 > r2)
-    return vec2(-1.0);
+        return vec2(-1.0);
 
     float AT = sqrt(r2 - ct2);
     float BT = AT;
@@ -216,33 +225,109 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
     return vec2(minDist, maxDist);
 }
 
-float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
-    vec2 coverageTexCoords, vec3 weatherData, float lod, bool sampleDetail) {
+struct CloudNdf {
+    float coverage;
+    float topType;
+    float bottomType;
+    float maxHeight;
+};
 
-    float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
+float SaturatingRemap(float value, float oldMin, float oldMax) {
+    return saturate((value - oldMin) / max(oldMax - oldMin, 0.0001));
+}
+
+float Perlin4Octaves(vec3 pos, float scale, vec4 weights) {
+
+    float octave0 = Perlin3D(pos * scale, scale) * weights.x;
+    float octave1 = Perlin3D(pos * 2.0 * scale, 2.0 * scale) * weights.y;
+    float octave2 = Perlin3D(pos * 4.0 * scale, 4.0 * scale) * weights.z;
+    float octave3 = Perlin3D(pos * 8.0 * scale, 8.0 * scale) * weights.w;
+
+    return (octave0 + octave1 + octave2 + octave3) / sum(weights);
+
+}
+
+CloudNdf SampleCloudNdf(vec2 texCoords) {
+    // Weather map: coverage, top type, bottom type and local maximum height
+    vec4 fields = textureLod(coverageTexture, texCoords, 0.0);
+
+    CloudNdf ndf;
+    ndf.coverage = SaturatingRemap(fields.r,
+        1.0 - saturate(cloudUniforms.coverage), 1.0);
+    ndf.topType = saturate(cloudUniforms.cloudType +
+        (fields.g - 0.5) * 2.0 * cloudTypeVariation);
+    ndf.bottomType = saturate(cloudUniforms.bottomType +
+        (fields.b - 0.5) * 2.0 * bottomTypeVariation);
+    ndf.maxHeight = mix(1.0, mix(0.58, 1.0, fields.a),
+        saturate(cloudUniforms.heightVariation));
+    return ndf;
+}
+
+float ComputeTopProfile(float heightFraction, float topType) {
+    // Density gradient towards the cloud top. It starts well below the top, such that
+    // only dense cores grow into tall clouds
+    float stratus = 1.0 - smoothstep(0.10, 0.32, heightFraction);
+    float stratocumulus = 1.0 - smoothstep(0.16, 0.68, heightFraction);
+    float cumulus = 1.0 - smoothstep(0.12, 1.0, heightFraction);
+
+    float lowerBlend = smoothstep(0.0, 0.5, topType);
+    float upperBlend = smoothstep(0.5, 1.0, topType);
+    return mix(mix(stratus, stratocumulus, lowerBlend), cumulus, upperBlend);
+}
+
+float ComputeVerticalProfile(float heightFraction, CloudNdf ndf) {
+    float localHeight = heightFraction / max(ndf.maxHeight, 0.001);
+    if (localHeight >= 1.0)
+        return 0.0;
+
+    // Bottom type controls how gradually the density grows from the cloud base
+    float bottomRampEnd = mix(0.055, 0.30, ndf.bottomType);
+    float bottomProfile = smoothstep(0.0, bottomRampEnd, localHeight);
+    float topProfile = ComputeTopProfile(localHeight, ndf.topType);
+    return saturate(bottomProfile * topProfile);
+}
+
+float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
+    vec2 coverageTexCoords, float lod, bool sampleDetail) {
 
     float distFromCenter = distance(pos, cloudPlanetCenter);
     float heightFraction = (distFromCenter - cloudUniforms.innerRadius) /
         (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
-    float densityHeightGradient = exp(-sqr(heightFraction * 2.0 - 1.0) / (4.0 * cloudUniforms.heightStretch));
+    if (heightFraction <= 0.0 || heightFraction >= 1.0)
+        return 0.0;
 
-    baseCloudDensity *= saturate(densityHeightGradient);
+    CloudNdf ndf = SampleCloudNdf(coverageTexCoords);
+    if (ndf.coverage <= 0.001)
+        return 0.0;
 
-    const float cloudCoverage = min(cloudUniforms.densityMultiplier *
-        (textureLod(coverageTexture, coverageTexCoords, 0.0).r + 0.5), 1.0);
-    baseCloudDensity = Remap(baseCloudDensity, cloudCoverage, 1.0, 0.0, 1.0);
-    float finalCloudDensity = baseCloudDensity;
+    float verticalProfile = ComputeVerticalProfile(heightFraction, ndf);
+    if (verticalProfile <= 0.001)
+        return 0.0;
 
-    if (baseCloudDensity > 0.0 && sampleDetail) {
-        float highFrequencyFBM = textureLod(detailTexture, detailTexCoords, lod).r;
+    float localHeight = heightFraction / max(ndf.maxHeight, 0.001);
+    float anvilExponent = mix(1.0, 0.45,
+        smoothstep(0.68, 0.92, localHeight) * saturate(cloudUniforms.anvilBias));
+    float profileCoverage = pow(max(ndf.coverage, 0.0001), anvilExponent);
+    float dimensionalProfile = saturate(verticalProfile * profileCoverage);
 
-        float highFrequencyNoiseModifier = mix(highFrequencyFBM,
-        1.0 - highFrequencyFBM, saturate(heightFraction * 10.0));
+    // R is Perlin-Worley, GBA are increasingly finer Worley FBMs. The Worley FBM erodes the cell boundaries
+    vec4 baseNoise = textureLod(shapeTexture, shapeTexCoords, 0.0);
+    float lowFrequencyFBM = dot(baseNoise.gba, vec3(0.625, 0.250, 0.125));
+    float erosionFloor = mix(-1.0, -(1.0 - lowFrequencyFBM),
+        saturate(cloudUniforms.shapeErosion));
+    float noiseComposite = SaturatingRemap(baseNoise.r, erosionFloor, 1.0);
 
-        finalCloudDensity = Remap(baseCloudDensity,
-        highFrequencyNoiseModifier * cloudUniforms.detailStrength, 1.0, 0.0, 1.0);
+    if (sampleDetail) {
+        vec4 detailNoise = textureLod(detailTexture, detailTexCoords, 0.0);
+        float highFrequencyFBM = dot(detailNoise.rgb, vec3(0.50, 0.32, 0.18));
+        float heightErosion = mix(highFrequencyFBM, 1.0 - highFrequencyFBM,
+            saturate(localHeight * 10.0));
+        float detailThreshold = heightErosion * 0.50 *
+            saturate(cloudUniforms.detailStrength);
+        noiseComposite = SaturatingRemap(noiseComposite, detailThreshold, 1.0);
     }
 
-    return saturate(finalCloudDensity);
+    float cloudDensity = saturate(noiseComposite - (1.0 - dimensionalProfile));
+    return saturate(cloudDensity * cloudUniforms.densityMultiplier);
 
 }

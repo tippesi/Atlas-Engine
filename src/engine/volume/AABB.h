@@ -32,21 +32,21 @@ namespace Atlas {
              * @param aabb An AABB that is tested for intersection.
              * @return True if it intersects, false otherwise.
              */
-            bool Intersects(AABB aabb);
+            bool Intersects(AABB aabb) const;
 
             /**
              * Checks whether the AABB encloses an object.
              * @param point A point that is tested if it is inside the AABB.
              * @return True if the point is inside, false otherwise.
              */
-            bool IsInside(vec3 point);
+            bool IsInside(vec3 point) const;
 
             /**
              * Checks whether the AABB encloses an object.
              * @param aabb An AABB that is tested if it is inside the AABB.
              * @return True if the AABB is inside, false otherwise.
              */
-            bool IsInside(AABB aabb);
+            bool IsInside(AABB aabb) const;
 
             /**
              * Transforms the AABB.
@@ -54,7 +54,7 @@ namespace Atlas {
              * @return The transformed AABB.
              * @note The AABB where this method was called on won't be transformed.
              */
-            AABB Transform(mat4 matrix);
+            AABB Transform(mat4 matrix) const;
 
             /**
              * Translates the AABB.
@@ -62,7 +62,7 @@ namespace Atlas {
              * @return The translated AABB.
              * @note The AABB where this method was called on won't be translated.
              */
-            AABB Translate(vec3 translation);
+            AABB Translate(vec3 translation) const;
 
             /**
              * Uniformly scales the AABB on all axis.
@@ -70,9 +70,9 @@ namespace Atlas {
              * @return The scaled AABB.
              * @note The AABB where this method was called on won't be scaled.
              */
-            AABB Scale(float scale);
+            AABB Scale(float scale) const;
 
-            AABB Scale(vec3 scale);
+            AABB Scale(vec3 scale) const;
 
             void Grow(AABB aabb);
 

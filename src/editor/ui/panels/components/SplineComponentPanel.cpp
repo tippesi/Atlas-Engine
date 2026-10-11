@@ -1,0 +1,170 @@
+#include "SplineComponentPanel.h"
+#include <Singletons.h>
+
+#include <imgui_stdlib.h>
+
+#include "../../../tools/ResourcePayloadHelper.h"
+#include "../../Widgets.h"
+
+namespace Atlas::Editor::UI {
+
+    bool SplineComponentPanel::Render(Ref<Scene::Scene>& scene, Scene::Entity entity, 
+        SplineComponent& splineComponent) {
+
+        ImGui::PushID(GetNameID());
+
+        const char* typeItems[] = { "Linear", "Catmull Rom", "Hermite" };
+        auto type = static_cast<int32_t>(splineComponent.type);
+        auto prevItem = type;
+        ImGui::Combo("Type", &type, typeItems, IM_ARRAYSIZE(typeItems));
+        splineComponent.type = static_cast<SplineType>(type);
+
+        const char* bakeItems[] = { "No bake", "Equal time bake", "Distance time bake" };
+        auto bakeMode = static_cast<int32_t>(splineComponent.bakeMode);
+        prevItem = bakeMode;
+        ImGui::Combo("Bake mode", &bakeMode, bakeItems, IM_ARRAYSIZE(bakeItems));
+        splineComponent.bakeMode = static_cast<SplineBakeMode>(bakeMode);
+
+        auto& controlPoints = splineComponent.controlPoints;
+
+        ImGui::SeparatorText("Control points");
+        if (controlPoints.empty())
+            ImGui::TextDisabled("No control points yet");
+
+        size_t counter = 0;
+        size_t modifyIdx = 0;
+        ControlPointAction action = ControlPointAction::None;
+        for (auto& controlPoint : controlPoints) {
+            ControlPointAction currentAction = ControlPointAction::None;
+            RenderControlPoint(controlPoint, counter++, controlPoints.size(), currentAction);
+
+            if (currentAction != ControlPointAction::None) {
+                action = currentAction;
+                modifyIdx = counter - 1;
+            }
+        }
+
+        switch(action) {
+            case ControlPointAction::Delete: 
+                controlPoints.erase(controlPoints.begin() + modifyIdx);
+                break;
+            case ControlPointAction::MoveUp:
+                if (modifyIdx > 0)
+                    std::swap(controlPoints[modifyIdx - 1], controlPoints[modifyIdx]);
+                break;
+            case ControlPointAction::MoveDown:
+                if (modifyIdx + 1 < controlPoints.size())
+                    std::swap(controlPoints[modifyIdx + 1], controlPoints[modifyIdx]);
+                break;
+            default: break;
+        }
+
+        auto region = ImGui::GetContentRegionAvail();
+        if (ImGui::Button("Add point", ImVec2(region.x, 0.0f))) {
+            auto controlPoint = controlPoints.empty() ? SplineControlPoint{} : controlPoints.back();
+            controlPoints.push_back(controlPoint);
+
+            if (selectControlPointIdx >= 0)
+                selectControlPointIdx = int32_t(controlPoints.size() - 1);
+        }
+
+        if (ImGui::Button("Bake", ImVec2(region.x, 0.0f))) {
+            splineComponent.Bake();
+        }
+
+        ImGui::PopID();
+
+        return false;
+
+    }
+
+    void SplineComponentPanel::RenderControlPoint(SplineControlPoint& point, size_t idx, size_t count, ControlPointAction& action) {
+
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
+            | ImGuiTreeNodeFlags_AllowOverlap;
+        // The point picked in the viewport is highlighted
+        if (selectControlPointIdx == int32_t(idx))
+            nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+        // Buttons sit in a fixed column on the right side of the row, such that they stay inside of the panel
+        auto iconSize = ImGui::GetTextLineHeight();
+        auto buttonExtent = iconSize + 2.0f;
+        auto buttonsMinX = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x - 3.0f * buttonExtent;
+
+        bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(idx), nodeFlags, "Control point %d", int32_t(idx));
+        auto rowMin = ImGui::GetItemRectMin();
+        auto rowMax = ImGui::GetItemRectMax();
+
+        ImGui::SameLine();
+        ImGui::SetCursorScreenPos(ImVec2(buttonsMinX, rowMin.y + (rowMax.y - rowMin.y - buttonExtent) * 0.5f));
+
+        ImGui::PushID(int32_t(idx));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+
+        ImGui::BeginDisabled(idx == 0);
+        if (Widgets::IconButton("Move up button", Singletons::icons->Get(IconType::ArrowUp), iconSize, "Move up"))
+            action = ControlPointAction::MoveUp;
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(idx + 1 >= count);
+        if (Widgets::IconButton("Move down button", Singletons::icons->Get(IconType::ArrowDown), iconSize, "Move down"))
+            action = ControlPointAction::MoveDown;
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+
+        if (Widgets::IconButton("Delete button", Singletons::icons->Get(IconType::Trash), iconSize, "Delete point"))
+            action = ControlPointAction::Delete;
+
+        ImGui::PopStyleVar();
+        ImGui::PopID();
+
+        if (!open)
+            return;
+
+         // The matrix decomposition/composition code is a bit unstable and
+        // we work with fixed information that is recomposed when changed,
+        // but only decomposed when the entity changes. Note, that all
+        // component panels are unique per scene window
+        /*
+        if (ImGuizmo::IsUsing()) {
+            
+        }
+        */
+
+        auto decomposition = Common::MatrixDecomposition(point.transform);
+
+        vec3 position = decomposition.translation;
+        vec3 rotation = decomposition.rotation;
+        vec3 scale = decomposition.scale;
+
+        vec3 localPosition = position, localRotation = rotation, localScale = scale;
+
+        Widgets::DragVec3("Position", position, 0.01f);
+
+        // Rotation is stored in radians, but degrees are easier to work with
+        auto rotationDegrees = glm::degrees(rotation);
+        if (Widgets::DragVec3("Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
+            rotation = glm::radians(rotationDegrees);
+
+        Widgets::DragVec3("Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
+
+        ImGui::DragFloat("Time", &point.time, 0.001f, 0.0f, 1.0f);
+
+        // Only recompose when a local change happened
+        if (localPosition != position || localScale != scale ||
+            localRotation != rotation) {
+            Common::MatrixDecomposition composition;
+            composition.translation = position;
+            composition.rotation = rotation;
+            composition.scale = scale;
+
+            point.transform = composition.Compose();
+            point.tangent = glm::normalize(glm::vec3(point.transform * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)));
+        }
+
+        ImGui::TreePop();
+
+    }
+
+}

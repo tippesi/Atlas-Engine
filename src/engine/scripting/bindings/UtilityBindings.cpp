@@ -1,4 +1,5 @@
 #include "UtilityBindings.h"
+#include "MemberBindings.h"
 
 #include "Clock.h"
 #include "Log.h"
@@ -27,12 +28,12 @@ namespace Atlas::Scripting::Bindings {
             sol::constructors<Common::MatrixDecomposition(glm::mat4)>(),
             "Compose", &Common::MatrixDecomposition::Compose,
             "Decompose", &Common::MatrixDecomposition::Decompose,
-            "translation", &Common::MatrixDecomposition::translation,
-            "rotation", &Common::MatrixDecomposition::rotation,
-            "scale", &Common::MatrixDecomposition::scale,
-            "perspective", &Common::MatrixDecomposition::perspective,
-            "skew", &Common::MatrixDecomposition::skew,
-            "quaternion", &Common::MatrixDecomposition::quaternion);
+            "translation", DependentMember<&Common::MatrixDecomposition::translation>(),
+            "rotation", DependentMember<&Common::MatrixDecomposition::rotation>(),
+            "scale", DependentMember<&Common::MatrixDecomposition::scale>(),
+            "perspective", DependentMember<&Common::MatrixDecomposition::perspective>(),
+            "skew", DependentMember<&Common::MatrixDecomposition::skew>(),
+            "quaternion", DependentMember<&Common::MatrixDecomposition::quaternion>());
 
     }
 
@@ -67,18 +68,18 @@ namespace Atlas::Scripting::Bindings {
             "GetSize", &Volume::AABB::GetSize,
             "GetDistance", &Volume::AABB::GetDistance,
             "GetCorners", &Volume::AABB::GetCorners,
-            "min", &Volume::AABB::min,
-            "max", &Volume::AABB::max
+            "min", DependentMember<&Volume::AABB::min>(),
+            "max", DependentMember<&Volume::AABB::max>()
             );
 
         auto resizeFrustumOverload = sol::overload(
-            [](Volume::Frustum& frustum, const std::vector<vec3>& corners) { frustum.Resize(corners); },
+            [](Volume::Frustum& frustum, const std::array<vec3, 8>& corners) { frustum.Resize(corners); },
             [](Volume::Frustum& frustum, const mat4& matrix) { frustum.Resize(matrix); }
         );
 
         ns->new_usertype<Volume::Frustum>("Frustum",
             sol::call_constructor,
-            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::vector<vec3>&), Volume::Frustum(glm::mat4)>(),
+            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::array<vec3, 8>&), Volume::Frustum(glm::mat4)>(),
             "Resize", resizeFrustumOverload,
             "Intersects", &Volume::Frustum::Intersects,
             "IsInside", &Volume::Frustum::IsInside,

@@ -24,7 +24,7 @@
 
 #define AtlasLog(...) __android_log_print(ANDROID_LOG_INFO, "ATLAS_LOG", __VA_ARGS__)
 
-#elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
+#elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
 
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 
@@ -39,6 +39,12 @@
 
 // GLM
 // #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
+#define GLM_ENABLE_EXPERIMENTAL
+
+#if !defined(__arm__) 
+//#define GLM_FORCE_SSE2
+#endif
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>

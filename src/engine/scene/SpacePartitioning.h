@@ -18,20 +18,22 @@ namespace Atlas {
 		public:
 			SpacePartitioning(Scene* scene, vec3 min, vec3 max, int32_t depth);
 
+            const Volume::AABB aabb;
+            const float depth;
+
+		protected:
+			std::vector<Entity> QueryAABB(const Volume::AABB& aabb);
+
 			void InsertRenderableEntity(Entity entity, const MeshComponent& transform);
 
 			void RemoveRenderableEntity(Entity entity, const MeshComponent& transform);
 
-			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
+			void GetRenderList(const Volume::Frustum& frustum, const Ref<RenderList::Pass>& pass);
 
-            const Volume::AABB aabb;
-            const float depth;
-
-		private:
 			Scene* scene;
 
-			Volume::Octree<ECS::Entity> renderableMovableEntityOctree;
-			Volume::Octree<ECS::Entity> renderableStaticEntityOctree;
+			Volume::Octree<Entity> renderableMovableEntityOctree;
+			Volume::Octree<Entity> renderableStaticEntityOctree;
 
 		};
 

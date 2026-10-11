@@ -5,10 +5,15 @@
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
 
+#include "loader/TerrainLoader.h"
+
 namespace Atlas::Scene {
 
     void EntityToJson(json& j, const Entity& p, Scene* scene,
         std::set<ECS::Entity>& insertedEntities) {
+
+        if (!p.IsValid())
+            return;
 
         AE_ASSERT(!insertedEntities.contains(p) && "Entity should only be present once in the hierarchy");
 
@@ -54,20 +59,24 @@ namespace Atlas::Scene {
         if (p.HasComponent<LuaScriptComponent>()) {
             j["script"] = p.GetComponent<LuaScriptComponent>();
         }
+        if (p.HasComponent<SplineComponent>()) {
+            j["spline"] = p.GetComponent<SplineComponent>();
+        }
         if (p.HasComponent<HierarchyComponent>()) {
             // Need to check how to get this to work
             auto& hierarchyComponent = p.GetComponent<HierarchyComponent>();
-            std::vector<json> entities;
+            j["entities"] = json::array();
+            auto& entities = j["entities"];
+
             for (auto entity : hierarchyComponent.GetChildren()) {
                 entities.emplace_back();
                 EntityToJson(entities.back(), entity, scene, insertedEntities);
             }
-            j["entities"] = entities;
             j["root"] = hierarchyComponent.root;
         }
     }
 
-    void EntityFromJson(const json& j, Entity& p, Scene* scene) {
+    void EntityFromJson(const json& j, Entity& p, Scene* scene, bool containsEntityManager) {
         if (j.contains("name")) {
             NameComponent comp = j["name"];
             p.AddComponent<NameComponent>(comp);
@@ -112,15 +121,23 @@ namespace Atlas::Scene {
             LuaScriptComponent comp = j["script"];
             p.AddComponent<LuaScriptComponent>(comp);
         }
+        if (j.contains("spline")) {
+            SplineComponent comp = j["spline"];
+            p.AddComponent<SplineComponent>(comp);
+        }
         if (j.contains("entities")) {
             // We need to first push back to a temporary vector to not invalidate
             // component references (i.e. when directly getting the hierarchy component).
             // That way all children will have components created before the parent creates its own
-            std::vector<json> jEntities = j["entities"];
             std::vector<Entity> entities;
-            for (auto jEntity : jEntities) {
-                auto entity = scene->CreateEntity();
-                EntityFromJson(jEntity, entity, scene);
+            entities.reserve(j["entities"].size());
+            for (const auto& jEntity : j["entities"]) {
+                Entity entity;
+                if (containsEntityManager)
+                    entity = Entity(jEntity["id"], &scene->entityManager);
+                else
+                    entity = scene->CreateEntity();
+                EntityFromJson(jEntity, entity, scene, containsEntityManager);
                 entities.push_back(entity);
             }
 
@@ -134,8 +151,10 @@ namespace Atlas::Scene {
 
     void SceneToJson(json& j, Scene* scene) {
 
-        std::vector<json> entities;
         std::set<ECS::Entity> insertedEntities;
+
+        j["entities"] = json::array();
+        auto& entities = j["entities"];
 
         auto hierarchySubset = scene->GetSubset<HierarchyComponent>();
         for (auto entity : hierarchySubset) {
@@ -151,27 +170,28 @@ namespace Atlas::Scene {
             // No need here, since it was already inserted through the hierarchy
             if (insertedEntities.contains(entity))
                 continue;
+            if (!entity.IsValid())
+                continue;
 
             entities.emplace_back();
             EntityToJson(entities.back(), entity, scene, insertedEntities);
         }
 
+        EntityManagerToJson(j["entityManager"], scene->entityManager);
+
         // Parse all mandatory members
         j["name"] = scene->name;
         j["aabb"] = scene->aabb;
         j["depth"] = scene->depth;
-        j["entities"] = entities;
         j["sky"] = scene->sky;
         j["postProcessing"] = scene->postProcessing;
         j["wind"] = scene->wind;
-
+        
         // Parse all optional members
         if (scene->fog)
             j["fog"] = *scene->fog;
         if (scene->irradianceVolume)
             j["irradianceVolume"] = *scene->irradianceVolume;
-        if (scene->ao)
-            j["ao"] = *scene->ao;
         if (scene->reflection)
             j["reflection"] = *scene->reflection;
         if (scene->rtgi)
@@ -180,9 +200,12 @@ namespace Atlas::Scene {
             j["sss"] = *scene->sss;
         if (scene->ssgi)
             j["ssgi"] = *scene->ssgi;
+        if (scene->terrain.IsValid() && !scene->terrain.IsGenerated())
+            j["terrain"] = scene->terrain.GetResource()->path;
 
         if (scene->physicsWorld)
             Physics::SerializePhysicsWorld(j["physicsWorld"], scene->physicsWorld);
+       
 
     }
 
@@ -195,15 +218,28 @@ namespace Atlas::Scene {
         scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
         scene->physicsWorld->pauseSimulation = true;
 
+        bool containsEntityManager = j.contains("entityManager");
+        if (containsEntityManager) {
+            EntityManagerFromJson(j["entityManager"], scene->entityManager);
+        }
+
         if (j.contains("physicsWorld")) {
             std::unordered_map<uint32_t, Physics::BodyCreationSettings> bodyCreationMap;
             Physics::DeserializePhysicsWorld(j["physicsWorld"], bodyCreationMap);
         }
+        if (j.contains("terrain")) {
+            scene->terrain = ResourceManager<Terrain::Terrain>::GetOrLoadResourceWithLoaderAsync(
+                j["terrain"], Loader::TerrainLoader::LoadTerrain, false);
+        }
 
-        std::vector<json> jEntities = j["entities"];
-        for (auto jEntity : jEntities) {
-            auto entity = scene->CreateEntity();
-            EntityFromJson(jEntity, entity, scene.get());
+        for (const auto& jEntity : j["entities"]) {
+            Entity entity;
+            if (containsEntityManager)
+                entity = Entity(jEntity["id"], &scene->entityManager);
+            else                
+                entity = scene->CreateEntity();
+
+            EntityFromJson(jEntity, entity, scene.get(), containsEntityManager);
         }
 
         scene->sky = j["sky"];
@@ -216,10 +252,6 @@ namespace Atlas::Scene {
         if (j.contains("irradianceVolume")) {
             scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>();
             *scene->irradianceVolume = j["irradianceVolume"];
-        }
-        if (j.contains("ao")) {
-            scene->ao = CreateRef<Lighting::AO>();
-            *scene->ao = j["ao"];
         }
         if (j.contains("reflection")) {
             scene->reflection = CreateRef<Lighting::Reflection>();
@@ -244,6 +276,22 @@ namespace Atlas::Scene {
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
 
         scene->physicsWorld->OptimizeBroadphase();
+
+    }
+
+    void EntityManagerToJson(json& j, const ECS::EntityManager& p) {
+
+        j = json{
+            {"entities", p.entities},
+            {"destroyed", p.destroyed}
+        };
+
+    }
+
+    void EntityManagerFromJson(const json& j, ECS::EntityManager& p) {
+
+        try_get_json(j, "entities", p.entities);
+        try_get_json(j, "destroyed", p.destroyed);
 
     }
 

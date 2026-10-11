@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 namespace Atlas {
 
@@ -44,6 +45,8 @@ namespace Atlas {
                 const std::vector<std::string>& macros);
 
             static std::unordered_map<size_t, SpvCacheEntry> cache;
+            // Shaders are compiled from multiple threads (e.g. hot reload job), only guards the map access
+            static std::mutex cacheMutex;
 
             static const std::string cachePath;
 

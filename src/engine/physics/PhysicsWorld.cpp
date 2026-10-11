@@ -93,6 +93,15 @@ namespace Atlas {
 
         }
 
+        bool PhysicsWorld::ContainsBody(Body body) const {
+
+            if (body.bodyId.IsInvalid())
+                return false;
+
+            return bodyToShapeMap.contains(body.bodyId);
+
+        }
+
         void PhysicsWorld::SetBodyMatrix(BodyID bodyId, const mat4& matrix) {
 
             JPH::Vec3 pos;
@@ -101,6 +110,24 @@ namespace Atlas {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetPositionAndRotation(bodyId, pos, quat, JPH::EActivation::Activate);
+
+        }
+
+        void PhysicsWorld::MoveKinematicBody(BodyID bodyId, const mat4& matrix, float deltaTime) {
+
+            JPH::Vec3 pos;
+            JPH::Quat quat;
+            MatrixToJPHPosAndRot(matrix, pos, quat);
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.MoveKinematic(bodyId, pos, quat, deltaTime);
+
+        }
+
+        void PhysicsWorld::StopKinematicBody(BodyID bodyId) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.SetLinearAndAngularVelocity(bodyId, JPH::Vec3::sZero(), JPH::Vec3::sZero());
 
         }
 
@@ -243,6 +270,12 @@ namespace Atlas {
 
         }
 
+        uint32_t PhysicsWorld::GetBodyCount() const {
+
+            return system->GetNumBodies();
+
+        }
+
         Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray) {
 
             JPH::RayCastResult hit;
@@ -252,9 +285,9 @@ namespace Atlas {
 
             Volume::RayResult<Body> result;
 
-            JPH::RayCastSettings rayCastSettings = {
-                .mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces
-            };
+            JPH::RayCastSettings rayCastSettings = {};
+
+            rayCastSettings.SetBackFaceMode(JPH::EBackFaceMode::CollideWithBackFaces);
 
             if (system->GetNarrowPhaseQuery().CastRay(rayCast, hit)) {
                 auto& bodyLockInterface = system->GetBodyLockInterface();

@@ -34,6 +34,7 @@ namespace Atlas::Editor {
         case ContentType::Scene: ImportFile<Scene::Scene>(filename); break;
         case ContentType::Script: ImportFile<Scripting::Script>(filename); break;
         case ContentType::Font: ImportFile<Font>(filename); break;
+        case ContentType::Terrain: ImportFile<Terrain::Terrain>(filename); break;
         default: break;
         }
 

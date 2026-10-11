@@ -5,8 +5,9 @@ layout (location = 0) out vec4 baseColorFS;
 layout (location = 1) out vec2 normalFS;
 layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
-layout (location = 4) out uint materialIdxFS;
-layout (location = 5) out vec2 velocityFS;
+layout (location = 4) out vec3 emissiveFS;
+layout (location = 5) out uint materialIdxFS;
+layout (location = 6) out vec2 velocityFS;
 
 layout(location=0) in vec3 positionVS;
 layout(location=1) in vec2 texCoordVS;
@@ -27,8 +28,9 @@ layout(location=4) flat in int indexVS;
 
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=10) in vec3 modelPositionVS;
-layout(location=11) flat in mat4 instanceMatrix;
+layout(location=11) flat in vec3 instanceScale;
 #endif
+layout(location=12) flat in mat3 rotationMatrix;
 
 layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
 layout(set = 3, binding = 1) uniform sampler2DArray roughnessMetalnessAoMap;
@@ -86,7 +88,7 @@ void main() {
 	vec3 geometryNormal = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias + globalData.mipLodBias).rgb - 1.0;
 #endif
 
-    geometryNormal = normalize(vec3(globalData.vMatrix * vec4(geometryNormal, 0.0)));
+    geometryNormal = normalize(vec3(globalData.vMatrix * vec4(rotationMatrix * geometryNormal, 0.0)));
     // We want the normal always two face the camera for two sided materials
     geometryNormal *= -dot(geometryNormal, positionVS);
     geometryNormal = normalize(geometryNormal);
@@ -131,8 +133,8 @@ void main() {
 #else
     float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias + globalData.mipLodBias).r;
 #endif
-    vec3 modelPosition = modelPositionVS + depthOffset * -globalData.cameraDirection.xyz;
-    vec4 modelPositionFS = instanceMatrix * vec4(modelPosition.xyz, 1.0);
+    vec3 modelPosition = modelPositionVS + depthOffset * -globalData.cameraDirection.xyz * instanceScale;
+    vec4 modelPositionFS = globalData.pMatrix * globalData.vMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;
 #endif

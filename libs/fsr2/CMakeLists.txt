@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.25)
 project(fsr2)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ffx-fsr2-api)

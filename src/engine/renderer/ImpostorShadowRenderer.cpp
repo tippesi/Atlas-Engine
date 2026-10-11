@@ -14,8 +14,8 @@ namespace Atlas {
 
         }
 
-        void ImpostorShadowRenderer::Render(Ref<Graphics::FrameBuffer>& frameBuffer,
-            Graphics::CommandList* commandList, RenderList::Pass* renderPass,
+        void ImpostorShadowRenderer::Render(const Ref<Graphics::FrameBuffer>& frameBuffer,
+            Graphics::CommandList* commandList, RenderList* renderList, const RenderList::Pass* renderPass,
             mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 
             struct alignas(16) PushConstants {
@@ -30,23 +30,23 @@ namespace Atlas {
 
             auto lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
 
-            for (auto& item : renderPass->meshToInstancesMap) {
+            for (const auto& item : renderPass->meshToInstancesMap) {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto mesh = renderPass->meshIdToMeshMap[meshId];
-
-                // If there aren't any impostors there won't be a buffer
+                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
                     continue;
+
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 auto config = GetPipelineConfig(frameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
 
-                mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
-                mesh->impostor->depthTexture.Bind(commandList, 3, 1);
+                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
+                mesh->impostor->depthTexture->Bind(commandList, 3, 1);
                 mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 2);
                 mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 3);
 
@@ -64,7 +64,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer,
+        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
             bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {

@@ -39,6 +39,8 @@ namespace Atlas {
             entities[pos] = EntityConfig::InvalidEntity;
 
             for (auto& poolData : pools.data) {
+                if (!poolData.storage)
+                    continue;
                 if (poolData.storage->Contains(entity))
                     poolData.storage->Erase(entity);
             }
@@ -52,7 +54,7 @@ namespace Atlas {
             entities.clear();
             destroyed.clear();
 
-            pools.data.clear();
+            pools.Clear();
 
         }
 

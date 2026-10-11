@@ -57,7 +57,7 @@ namespace Atlas {
              * @param slot
              * @param material
              */
-            void WriteMaterial(int32_t slot, Ref<Material> material);
+            void WriteMaterial(int32_t slot, ResourceHandle<Material> material);
 
             /**
              * Generates all mipmaps after materials have been written
@@ -69,31 +69,45 @@ namespace Atlas {
              * @param slot
              * @param material
              */
-            void RemoveMaterial(int32_t slot, Ref<Material> material);
+            void RemoveMaterial(int32_t slot, ResourceHandle<Material> material);
+
+            void PushUnusedCellsToQueue();
+
+            std::vector<TerrainStorageCell*> GetUnusedCellsQueue();
+
+            void PushRequestedCellsToQueue();
+            
+            std::vector<TerrainStorageCell*> GetRequestedCellsQueue();
+            
+            void PushRequestedBvhCellsToQueue();
+
+            std::vector<TerrainStorageCell*> GetRequestedBvhCellsQueue();
 
             /**
              *
              * @return
              * @note Material pointers might be null (empty slots)
              */
-            std::vector<Ref<Material>> GetMaterials();
+            std::vector<ResourceHandle<Material>> GetMaterials();
 
-            /**
-             * The storage cells the terrain request to change the level of detail.
-             */
-            std::vector<TerrainStorageCell*> requestedCells;
-
-            /**
-             * The storage cells the terrain doesn't need any more because of a change
-             * in the level of detail.
-             */
             std::vector<TerrainStorageCell*> unusedCells;
+            std::vector<TerrainStorageCell*> requestedCells;
+            std::vector<TerrainStorageCell*> requestedBvhCells;
+
+            std::set<TerrainStorageCell*> unusedCellQueue;
+            std::set<TerrainStorageCell*> requestedCellQueue;
+            std::set<TerrainStorageCell*> requestedBvhCellQueue;           
 
             Texture::Texture2DArray baseColorMaps;
             Texture::Texture2DArray roughnessMaps;
             Texture::Texture2DArray aoMaps;
             Texture::Texture2DArray normalMaps;
             Texture::Texture2DArray displacementMaps;
+
+            std::vector<ResourceHandle<Material>> materials;
+            std::vector<std::vector<TerrainStorageCell>> cells;
+
+            bool inEditing = false;
 
         private:
             void BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
@@ -105,13 +119,13 @@ namespace Atlas {
             int32_t materialResolution;
             int32_t materialCount;
 
-            int32_t* LoDSideLengths;
-
-            std::vector<Ref<Material>> materials;
-
-            std::vector<std::vector<TerrainStorageCell>> cells;
+            std::vector<int32_t> LoDSideLengths;
 
             Graphics::CommandList* commandList = nullptr;
+
+            std::mutex unusedCellQueueMutex;
+            std::mutex cellQueueMutex;
+            std::mutex bvhCellQueueMutex;
 
         };
 

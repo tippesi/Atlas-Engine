@@ -6,8 +6,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : device(device), geometries(desc.geometries),
-            buildRanges(desc.buildRanges), flags(desc.flags) {
+        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : isDynamic(desc.isDynamic), device(device), 
+            geometries(desc.geometries), buildRanges(desc.buildRanges), flags(desc.flags)    {
 
             buildGeometryInfo = {};
             buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -49,7 +49,6 @@ namespace Atlas {
             };
 
             buffer = device->CreateBuffer(desc);
-            bufferDeviceAddress = buffer->GetDeviceAddress();
 
             VkAccelerationStructureCreateInfoKHR createInfo = {};
             createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -58,6 +57,13 @@ namespace Atlas {
             createInfo.buffer = buffer->buffer;
 
             VK_CHECK(vkCreateAccelerationStructureKHR(device->device, &createInfo, nullptr, &accelerationStructure))
+
+            // TLAS instances must reference the acceleration structure address,
+            // which is not necessarily the address of its backing buffer.
+            VkAccelerationStructureDeviceAddressInfoKHR addressInfo = {};
+            addressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+            addressInfo.accelerationStructure = accelerationStructure;
+            deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(device->device, &addressInfo);
 
         }
 

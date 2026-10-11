@@ -77,7 +77,19 @@ namespace Atlas {
 
             inline bool IsValid() const {
 
-                return entity != ECS::EntityConfig::InvalidEntity;
+                return entity != ECS::EntityConfig::InvalidEntity && entityManager->Valid(entity);
+
+            }
+
+            inline uint64_t GetID() const {
+
+                return uint64_t(entity);
+
+            }
+
+            inline uint32_t GetVersion() const {
+
+                return entityManager->Version(entity);
 
             }
 

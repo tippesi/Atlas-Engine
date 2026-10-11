@@ -11,7 +11,7 @@ namespace Atlas::Audio {
             {"loop", p.loop},
         };
 
-        if (p.data.IsValid())
+        if (p.data.IsValid() && !p.data.IsGenerated())
             j["resourcePath"] = p.data.GetResource()->path;
 
     }

@@ -4,7 +4,9 @@
 #include <vector>
 #include <set>
 
+#ifndef AE_OS_APPLE_MOBILE
 #define VK_NO_PROTOTYPES
+#endif
 #include <vulkan/vulkan.h>
 
 #include "Common.h"

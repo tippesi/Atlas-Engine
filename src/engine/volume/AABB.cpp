@@ -10,7 +10,7 @@ namespace Atlas {
 
         }
 
-        bool AABB::Intersects(AABB aabb) {
+        bool AABB::Intersects(AABB aabb) const {
 
             return aabb.min.x <= max.x && aabb.max.x >= min.x &&
                 aabb.min.y <= max.y && aabb.max.y >= min.y &&
@@ -18,7 +18,7 @@ namespace Atlas {
 
         }
 
-        bool AABB::IsInside(vec3 point) {
+        bool AABB::IsInside(vec3 point) const {
 
             return point.x >= min.x && point.x <= max.x &&
                 point.y >= min.y && point.y <= max.y &&
@@ -26,13 +26,13 @@ namespace Atlas {
 
         }
 
-        bool AABB::IsInside(AABB aabb) {
+        bool AABB::IsInside(AABB aabb) const {
 
             return IsInside(aabb.min) && IsInside(aabb.max);
 
         }
 
-        AABB AABB::Transform(mat4 matrix) {
+        AABB AABB::Transform(mat4 matrix) const {
 
             vec3 cube[] = { vec3(min.x, min.y, min.z), vec3(min.x, min.y, max.z),
                 vec3(max.x, min.y, min.z), vec3(max.x, min.y, max.z),
@@ -59,13 +59,13 @@ namespace Atlas {
 
         }
 
-        AABB AABB::Translate(vec3 translation) {
+        AABB AABB::Translate(vec3 translation) const {
 
             return AABB(min + translation, max + translation);
 
         }
 
-        AABB AABB::Scale(float scale) {
+        AABB AABB::Scale(float scale) const {
 
             auto center = 0.5f * (min + max);
             auto scaledMin = center + scale * (min - center);
@@ -75,7 +75,7 @@ namespace Atlas {
 
         }
 
-        AABB AABB::Scale(vec3 scale) {
+        AABB AABB::Scale(vec3 scale) const {
 
             auto center = 0.5f * (min + max);
             auto scaledMin = center + scale * (min - center);

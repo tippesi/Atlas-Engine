@@ -1,0 +1,50 @@
+#ifdef AE_HALF_FLOAT
+#extension GL_EXT_shader_explicit_arithmetic_types : require
+#extension GL_EXT_shader_16bit_storage : require
+#endif
+
+#define AeBool   bool
+#define AeF32   float
+#define AeF32x2 vec2
+#define AeF32x3 vec3
+#define AeF32x4 vec4
+#define AeUI32    uint
+#define AeUI32x2  uvec2
+#define AeUI32x3  uvec3
+#define AeUI32x4  uvec4
+#define AeI32     int
+#define AeI32x2   ivec2
+#define AeI32x3   ivec3
+#define AeI32x4   ivec4
+
+#ifdef AE_HALF_FLOAT
+#define AeF16   float16_t
+#define AeF16x2 f16vec2
+#define AeF16x3 f16vec3
+#define AeF16x4 f16vec4
+#define AeUI16    uint16_t
+#define AeUI16x2  u16vec2
+#define AeUI16x3  u16vec3
+#define AeUI16x4  u16vec4
+#define AeI16     int16_t
+#define AeI16x2   i16vec2
+#define AeI16x3   i16vec3
+#define AeI16x4   i16vec4
+#define AeF16x4x4   f16mat4x4
+#define AeF16x3x3   f16mat3x3
+#else
+#define AeF16   float
+#define AeF16x2 vec2
+#define AeF16x3 vec3
+#define AeF16x4 vec4
+#define AeUI16    uint
+#define AeUI16x2  uvec2
+#define AeUI16x3  uvec3
+#define AeUI16x4  uvec4
+#define AeI16     int
+#define AeI16x2   ivec2
+#define AeI16x3   ivec3
+#define AeI16x4   ivec4
+#define AeF16x4x4  mat4
+#define AeF16x3x3   mat3
+#endif

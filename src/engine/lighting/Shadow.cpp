@@ -1,4 +1,5 @@
 #include "Shadow.h"
+#include "common/MathHelper.h"
 
 namespace Atlas {
 
@@ -7,14 +8,14 @@ namespace Atlas {
         Shadow::Shadow(float distance, float bias, int32_t resolution, float edgeSoftness, int32_t cascadeCount, 
             float splitCorrection) : distance(distance), bias(bias), resolution(resolution), edgeSoftness(edgeSoftness) {
 
-            splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
+            splitCorrection = Helper::Math::Saturate(splitCorrection);
             viewCount = cascadeCount;
             this->splitCorrection = splitCorrection;
 
             isCascaded = true;
             useCubemap = false;
 
-            maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
+            maps = CreateRef<Texture::Texture2DArray>(resolution, resolution, cascadeCount, 
                 VK_FORMAT_D16_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
             views = std::vector<ShadowView>(cascadeCount);
@@ -24,20 +25,20 @@ namespace Atlas {
         }
 
         Shadow::Shadow(float distance, float bias, int32_t resolution, float edgeSoftness, bool useCubemap) :
-                distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap), edgeSoftness(edgeSoftness) {
+            distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap), edgeSoftness(edgeSoftness) {
 
             isCascaded = false;
 
             if (useCubemap) {
                 viewCount = 6;
 
-                cubemap  = Texture::Cubemap(resolution, resolution, VK_FORMAT_D16_UNORM,
+                cubemap = CreateRef<Texture::Cubemap>(resolution, resolution, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
             else {
                 viewCount = 1;
 
-                maps = Texture::Texture2DArray(resolution, resolution, 1, VK_FORMAT_D16_UNORM,
+                maps = CreateRef<Texture::Texture2DArray>(resolution, resolution, 1, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 
@@ -52,11 +53,11 @@ namespace Atlas {
             this->resolution = resolution;
 
             if (useCubemap) {
-                cubemap  = Texture::Cubemap(resolution, resolution, VK_FORMAT_D16_UNORM,
+                cubemap = CreateRef<Texture::Cubemap>(resolution, resolution, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
             else {
-                maps = Texture::Texture2DArray(resolution, resolution, viewCount, VK_FORMAT_D16_UNORM,
+                maps = CreateRef<Texture::Texture2DArray>(resolution, resolution, viewCount, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 

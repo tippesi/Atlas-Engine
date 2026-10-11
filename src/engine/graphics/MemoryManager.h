@@ -87,7 +87,8 @@ namespace Atlas {
             void DestroyAllImmediate();
 
             VmaAllocator allocator;
-            VmaPool hightPriorityBufferPool;
+            VmaPool highPriorityMemoryPool;
+            VmaPool highPriorityRenderTargetPool;
 
             VkPhysicalDeviceProperties deviceProperties;
 

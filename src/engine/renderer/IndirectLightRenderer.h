@@ -14,18 +14,20 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void RenderIndirectDiffuse(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
+            void RenderIndirectSpecular(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct Uniforms {
-                int aoDownsampled2x;
                 int reflectionDownsampled2x;
                 int giDownsampled2x;
                 float aoStrength;
                 int specularProbeMipLevels;
             };
 
-            PipelineConfig pipelineConfig;
+            PipelineConfig diffusePipelineConfig;
+            PipelineConfig specularPipelineConfig;
 
             Buffer::UniformBuffer uniformBuffer;
 

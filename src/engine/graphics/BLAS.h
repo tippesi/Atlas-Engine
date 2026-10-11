@@ -4,6 +4,7 @@
 #include "Buffer.h"
 
 #include <vector>
+#include <atomic>
 
 namespace Atlas {
 
@@ -15,6 +16,8 @@ namespace Atlas {
 
         struct BLASDesc {
             VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+
+            bool isDynamic = false;
 
             std::vector<VkAccelerationStructureGeometryKHR> geometries;
             std::vector<VkAccelerationStructureBuildRangeInfoKHR> buildRanges;
@@ -39,7 +42,10 @@ namespace Atlas {
             Ref<Buffer> buffer;
             VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
 
-            VkDeviceAddress bufferDeviceAddress;
+            VkDeviceAddress deviceAddress = 0;
+
+            bool isDynamic = false;
+            std::atomic_bool isBuilt = false;
 
         private:
             GraphicsDevice* device;

@@ -40,6 +40,8 @@ namespace Atlas {
                 auto lightDirection = glm::normalize(vec3(camera.viewMatrix * vec4(
                     light.transformedProperties.directional.direction, 0.0f)));
 
+                pipelineConfig.ManageMacro("TRACE_WORLD_SPACE", sss->traceWorldSpace);
+
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
 
@@ -50,11 +52,15 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 2);
 
+                bool temporalEnabled = scene->postProcessing.fsr2 || scene->postProcessing.taa.enable;
+
                 PushConstants constants = {
                     .lightDirection = vec4(lightDirection, 0.0),
                     .sampleCount = sss->sampleCount,
                     .maxLength = sss->maxLength,
-                    .thickness = sss->thickness
+                    .minLengthWorldSpace = sss->minLengthWorldSpace,
+                    .thickness = sss->thickness,
+                    .jitter = temporalEnabled ? 1 : 0
                 };
                 commandList->PushConstants("constants", &constants);
 

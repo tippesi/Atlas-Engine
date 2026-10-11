@@ -197,7 +197,7 @@ void main() {
     bool noHistory = historyLength <= 1.0;
 
     float centerLuminance = Luma(centerColor.rgb);
-    float centerLinearDepth = centerDepth;
+    float centerLinearDepth = ConvertDepthToViewSpaceDepth(centerDepth);
     
     vec4 outputColor = centerColor;
     float totalWeight = 1.0;
@@ -207,7 +207,7 @@ void main() {
 
     vec3 viewDir = normalize(ConvertDepthToViewSpace(centerDepth, texCoord));
     float NdotV = abs(dot(viewDir, centerNormal));
-    float depthPhi = max(32.0, NdotV * 128.0 / max(1.0, abs(ConvertDepthToViewSpaceDepth(centerLinearDepth))));
+    float depthPhi = max(32.0, NdotV * 128.0);
 
     const int radius = 2;
     for (int x = -radius; x <= radius; x++) {
@@ -227,7 +227,7 @@ void main() {
             vec4 sampleColor = samplePixelData.color;
             vec3 sampleNormal = samplePixelData.normal;
 
-            float sampleLinearDepth = samplePixelData.depth;
+            float sampleDepth = samplePixelData.depth;
             float sampleLuminance = Luma(sampleColor.rgb);
 
             uint sampleMaterialIdx = samplePixelData.materialIdx;
@@ -236,10 +236,10 @@ void main() {
             float edgeStoppingWeight = ComputeEdgeStoppingWeight(
                                     centerLuminance, sampleLuminance,
                                     centerNormal, sampleNormal,
-                                    centerLinearDepth, sampleLinearDepth,
+                                    centerDepth, sampleDepth,
                                     centerMaterialIdx, sampleMaterialIdx,
                                     stdDeviation * pushConstants.strength, 
-                                    noHistory ? 2.0 : NdotV * 512.0, depthPhi, noHistory);
+                                    noHistory ? 2.0 : NdotV * 128.0, depthPhi, noHistory);
 
             float weight = kernelWeight * edgeStoppingWeight;
             

@@ -10,6 +10,7 @@
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/Shape/Shape.h>
+#include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 
 namespace Atlas::Physics {
 
@@ -52,6 +53,8 @@ namespace Atlas::Physics {
         std::vector<float> heightData;
         vec3 translation = vec3(0.0f);
         vec3 scale = vec3(1.0f);
+
+        static inline const float holeValue = JPH::HeightFieldShapeConstants::cNoCollisionValue;
     };
 
     using ShapeRef = JPH::ShapeRefC;

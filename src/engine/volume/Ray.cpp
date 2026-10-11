@@ -11,13 +11,25 @@ namespace Atlas {
 
         }
 
+        Ray::Ray(const Ref<Viewport>& viewport, const CameraComponent& camera, vec2 mousePosition, 
+            float tMin, float tMax) : tMin(tMin), tMax(tMax) {
+
+            auto nearPoint = viewport->Unproject(vec3(mousePosition, 0.0f), camera);
+            auto farPoint = viewport->Unproject(vec3(mousePosition, 1.0f), camera);
+
+            direction = glm::normalize(farPoint - nearPoint);
+            inverseDirection = 1.0f / direction;
+            origin = nearPoint;
+
+        }
+
         vec3 Ray::Get(float distance) const {
 
             return origin + distance * direction;
 
         }
 
-        bool Ray::Intersects(const AABB& aabb) {
+        bool Ray::Intersects(const AABB& aabb) const {
 
             auto t = 0.0f;
 
@@ -25,7 +37,7 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(const AABB& aabb, float& t) {
+        bool Ray::Intersects(const AABB& aabb, float& t) const {
 
             auto t0 = (aabb.min - origin) * inverseDirection;
             auto t1 = (aabb.max - origin) * inverseDirection;
@@ -42,7 +54,7 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2) {
+        bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2) const {
 
             vec3 intersection;
 
@@ -50,7 +62,7 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection) {
+        bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection) const {
 
             auto e0 = v1 - v0;
             auto e1 = v2 - v0;
@@ -75,7 +87,7 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(const Rectangle& rect, float& t) {
+        bool Ray::Intersects(const Rectangle& rect, float& t) const {
 
             auto N = rect.GetNormal();
 
@@ -103,7 +115,7 @@ namespace Atlas {
 
         }
 
-        vec3 Ray::Distance(Ray ray, float& distance) {
+        vec3 Ray::Distance(Ray ray, float& distance) const {
 
             constexpr float minFloat = std::numeric_limits<float>::min();
 

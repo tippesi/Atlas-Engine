@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <atomic>
 
 namespace Atlas {
 
@@ -28,7 +29,7 @@ namespace Atlas {
         private:
             static uint64_t Identifier() noexcept {
 
-                static uint64_t value = 0;
+                static std::atomic<uint64_t> value = 0;
                 return value++;
 
             }

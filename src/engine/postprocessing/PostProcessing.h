@@ -7,6 +7,8 @@
 #include "Sharpen.h"
 #include "FilmGrain.h"
 #include "TAA.h"
+#include "Bloom.h"
+#include "Exposure.h"
 
 namespace Atlas {
 
@@ -15,6 +17,7 @@ namespace Atlas {
         class PostProcessing {
 
         public:
+            float exposureCompensation = 0.0f;
             float saturation = 1.0f;
             float contrast = 1.0f;
             vec3 tint = vec3(1.0f);
@@ -31,6 +34,8 @@ namespace Atlas {
             ChromaticAberration chromaticAberration;
             FilmGrain filmGrain;
             Sharpen sharpen;
+            Bloom bloom;
+            AutoExposure autoExposure;
 
         };
 

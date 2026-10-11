@@ -17,23 +17,29 @@
 #include <../common/PI.hsh>
 
 #include <../brdf/brdfEval.hsh>
+#include <../brdf/transmission.hsh>
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
 #include <../shadow.hsh>
-
+#include <../clouds/shadow.hsh>
 #include <ddgi.hsh>
+#include <transmission.hsh>
 
 layout (local_size_x = 32) in;
 
 layout(set = 3, binding = 0) uniform sampler2DArrayShadow cascadeMaps;
 
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 1) uniform sampler2D cloudMap;
+#endif
+
 // Instead of write ray array use hits array
-layout(std430, set = 3, binding = 1) buffer RayHits {
+layout(std430, set = 3, binding = 2) buffer RayHits {
     PackedRayHit hits[];
 };
 
-layout(std140, set = 3, binding = 2) uniform UniformBuffer {
+layout(std140, set = 3, binding = 3) uniform UniformBuffer {
     float seed;
     Shadow shadow;
 } Uniforms;
@@ -50,13 +56,21 @@ void main() {
         vec3 radiance = vec3(0.0);
         if (ray.ID >= 0) {
             radiance = EvaluateHit(ray);
+
+            // Probes store the lighting scaled, the lookup restores it
+            radiance *= ddgiData.volumeStorageScale;
         
             RayHit hit;
-            hit.radiance = radiance;
-            hit.direction = ray.direction;
-            hit.hitDistance = ray.hitDistance;
+#ifndef AE_HALF_FLOAT
+            hit.radiance.rgb = radiance;
+            hit.direction.xyz = ray.direction;
+            hit.radiance.a = ray.hitDistance;
+#else
+            hit.radiance = AeF16x4(radiance, ray.hitDistance);
+            hit.direction = AeF16x4(ray.direction, 1.0);
+#endif
 
-            hits[GetRayInvocation()] = PackRayHit(hit);
+            hits[ray.ID] = PackRayHit(hit);
         }
     }
 
@@ -88,11 +102,22 @@ vec3 EvaluateHit(inout Ray ray) {
     radiance += surface.material.emissiveColor;
 
     // Evaluate direct light
-    radiance += EvaluateDirectLight(surface);
+    radiance += EvaluateDirectLight(surface);    
+
+    vec4 probeIrradiance, probeRadiance;
+    GetLocalProbeLighting(surface.P, surface.V, surface.N, surface.N, surface.geometryNormal, probeIrradiance, probeRadiance);
+
+    vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * probeIrradiance.rgb +
+        EvaluateIndirectSpecularBRDF(surface) * probeRadiance.rgb;
+    indirect += GetTransmittedIndirectDiffuse(surface);
 
     // Need to sample the volume later for infinite bounces:
-    vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
-        GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+    //vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
+    //    GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+    
+    //indirect += EvaluateIndirectSpecularBRDF(surface) * 
+    //    GetLocalRadiance(surface.P, surface.V, surface.N).rgb;
+
     radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
     return radiance;
 
@@ -111,9 +136,13 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 
     float solidAngle, lightDistance;
     SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
+
+    bool transmittedLight = IsTransmittedLight(surface);
+    Surface lightSurface = transmittedLight ? GetTransmissionSurface(surface) : surface;
     
     // Evaluate the BRDF
-    vec3 reflectance = EvaluateDiffuseBRDF(surface);
+    vec3 reflectance = EvaluateDiffuseBRDF(lightSurface);
+    if (transmittedLight) reflectance *= GetTransmissionColor(surface.material);
     reflectance *= surface.material.opacity;
     vec3 radiance = light.radiance * solidAngle;
 
@@ -123,17 +152,26 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     if (light.type == uint(DIRECTIONAL_LIGHT)) {
 #ifdef USE_SHADOW_MAP
         float shadowFactor = CalculateShadowWorldSpace(Uniforms.shadow, cascadeMaps, surface.P,
-            surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+            lightSurface.geometryNormal, saturate(dot(lightSurface.L, lightSurface.geometryNormal)));
         radiance *= shadowFactor;
 #else
-        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+        if (light.castShadow)
+            radiance *= CheckVisibility(lightSurface, lightDistance) ? 1.0 : 0.0;
+
+#ifdef CLOUD_SHADOWS
+        vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
+        float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
+
+        radiance *= cloudShadowFactor;
+#endif
 #endif
     }
     else {
-        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+        if (light.castShadow)
+            radiance *= CheckVisibility(lightSurface, lightDistance) ? 1.0 : 0.0;
     }
     
-    return reflectance * radiance * surface.NdotL / lightPdf;
+    return reflectance * radiance * lightSurface.NdotL / lightPdf;
 
 }
 
@@ -142,7 +180,8 @@ bool CheckVisibility(Surface surface, float lightDistance) {
     if (surface.NdotL > 0.0) {
         Ray ray;
         ray.direction = surface.L;
-        ray.origin = surface.P + surface.N * EPSILON;
+        float side = dot(surface.L, surface.geometryNormal) < 0.0 ? -1.0 : 1.0;
+        ray.origin = surface.P + surface.geometryNormal * (side * EPSILON);
         return HitAny(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON) == false;
     }
     else {

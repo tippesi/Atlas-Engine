@@ -1,4 +1,6 @@
 #include "RigidBodyComponentPanel.h"
+#include "../../../Theme.h"
+#include "../../Widgets.h"
 
 namespace Atlas::Editor::UI {
 
@@ -7,21 +9,28 @@ namespace Atlas::Editor::UI {
     bool RigidBodyComponentPanel::Render(const Ref<Scene::Scene>& scene,
         Scene::Entity entity, RigidBodyComponent &rigidBodyComponent) {
 
-        auto creationSettings = rigidBodyComponent.GetBodyCreationSettings();
+        if (!entity.HasComponent<TransformComponent>())
+            Widgets::Callout("Rigid body component needs a transform component to work properly", Theme::Warning());
 
-        ImGui::Text("Shape");
+        auto creationSettings = rigidBodyComponent.GetBodyCreationSettings();
+        if (!creationSettings.shape) {
+            Widgets::Callout("Couldn't get body creation settings or shape", Theme::Error());
+            return false;
+        }
+
+        ImGui::SeparatorText("Shape");
 
         RenderShapeSettings(entity, creationSettings);
 
-        ImGui::Separator();
-
-        ImGui::Text("Body");
+        ImGui::SeparatorText("Body");
 
         RenderBodySettings(entity, creationSettings);
 
         // Only change when simulation is paused (otherwise we can't restore the state properly)
         if (scene->physicsWorld->pauseSimulation)
             rigidBodyComponent.creationSettings = CreateRef(creationSettings);
+
+        meshSelectionPanel.Reset();
 
         return false;
 
@@ -31,6 +40,11 @@ namespace Atlas::Editor::UI {
         Physics::BodyCreationSettings& creationSettings) {
 
         auto& shape = creationSettings.shape;
+
+        if (shape->type == Physics::ShapeType::HeightField) {
+            ImGui::TextDisabled("Body uses a height field shape");
+            return;
+        }
 
         const char* typeItems[] = { "Mesh", "Sphere", "Bounding box" };
         int currentItem = static_cast<int>(shape->type);
@@ -56,7 +70,7 @@ namespace Atlas::Editor::UI {
             meshSettings->mesh = meshSelectionPanel.Render(meshSettings->mesh, resourceChanged);
 
             if (meshComponent)
-                if (ImGui::Button("Take resource from mesh component"))
+                if (ImGui::Button("Take resource from mesh component", ImVec2(-FLT_MIN, 0.0f)))
                     meshSettings->mesh = meshComponent->mesh;
 
             scale = &meshSettings->scale;
@@ -81,8 +95,8 @@ namespace Atlas::Editor::UI {
 
             auto boundingBoxSettings = static_cast<BoundingBoxShapeSettings*>(shape->settings.get());
 
-            ImGui::DragFloat3("Min", glm::value_ptr(boundingBoxSettings->aabb.min), 0.1f, -10000.0f, 10000.0f);
-            ImGui::DragFloat3("Max", glm::value_ptr(boundingBoxSettings->aabb.max), 0.1f, -10000.0f, 10000.0f);
+            Widgets::DragVec3("Min", boundingBoxSettings->aabb.min, 0.1f, 0.0f, -10000.0f, 10000.0f);
+            Widgets::DragVec3("Max", boundingBoxSettings->aabb.max, 0.1f, 0.0f, -10000.0f, 10000.0f);
             if (meshComponent && meshComponent->mesh.IsLoaded())
                 if (ImGui::Button("Take bounding box from mesh component"))
                     boundingBoxSettings->aabb = meshComponent->mesh->data.aabb;
@@ -113,12 +127,12 @@ namespace Atlas::Editor::UI {
                 // Need scale from global matrix decomposition
                 *scale = Common::MatrixDecomposition(globalMatrix).scale;
             }
-            ImGui::DragFloat3("Scale", glm::value_ptr(*scale), 0.01f, -100.0f, 100.0f);
+            Widgets::DragVec3("Scale", *scale, 0.01f, 1.0f, -100.0f, 100.0f);
         }
 
         if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }) || shapeTypeChanged)
             shape->TryCreate();
-        else
+        else if (shape->type != Physics::ShapeType::HeightField)
             shape->Scale(*scale);
 
     }
@@ -126,20 +140,40 @@ namespace Atlas::Editor::UI {
     void RigidBodyComponentPanel::RenderBodySettings(Scene::Entity entity,
         Physics::BodyCreationSettings &settings) {
 
-        const char* layerItems[] = { "Static", "Movable" };
-        int currentItem = settings.objectLayer;
-        // Mesh can only be static
-        auto layoutItemCount = settings.shape->type != ShapeType::Mesh ? IM_ARRAYSIZE(layerItems) : 1;
-        ImGui::Combo("Object layer", &currentItem, layerItems, layoutItemCount);
-        settings.objectLayer = std::min(currentItem, layoutItemCount - 1);
+        // Mesh shapes can't be simulated, but they can be moved kinematically
+        std::vector<Physics::ObjectLayer> layers = { Physics::Layers::Static, Physics::Layers::Kinematic };
+        if (settings.shape->type != ShapeType::Mesh)
+            layers.insert(layers.begin() + 1, Physics::Layers::Movable);
+
+        auto layerName = [](Physics::ObjectLayer layer) {
+            switch (layer) {
+                case Physics::Layers::Movable: return "Movable";
+                case Physics::Layers::Kinematic: return "Kinematic";
+                default: return "Static";
+            }
+        };
+
+        if (std::find(layers.begin(), layers.end(), settings.objectLayer) == layers.end())
+            settings.objectLayer = Physics::Layers::Static;
+
+        if (ImGui::BeginCombo("Object layer", layerName(settings.objectLayer))) {
+            for (auto layer : layers) {
+                auto isSelected = layer == settings.objectLayer;
+                if (ImGui::Selectable(layerName(layer), isSelected))
+                    settings.objectLayer = layer;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
 
         const char* motionQualityItems[] = { "Discrete", "Linear cast" };
-        currentItem = static_cast<int>(settings.motionQuality);
+        int currentItem = static_cast<int>(settings.motionQuality);
         ImGui::Combo("Motion quality", &currentItem, motionQualityItems, IM_ARRAYSIZE(motionQualityItems));
         settings.motionQuality = static_cast<Physics::MotionQuality>(currentItem);
 
-        ImGui::DragFloat3("Linear velocity", glm::value_ptr(settings.linearVelocity), 0.1f, -1000.0f, 1000.0f);
-        ImGui::DragFloat3("Angular velocity", glm::value_ptr(settings.angularVelocity), 0.1f, -1000.0f, 1000.0f);
+        Widgets::DragVec3("Linear velocity", settings.linearVelocity, 0.1f, 0.0f, -1000.0f, 1000.0f);
+        Widgets::DragVec3("Angular velocity", settings.angularVelocity, 0.1f, 0.0f, -1000.0f, 1000.0f);
 
         ImGui::DragFloat("Friction", &settings.friction, 0.01f, -0.0f, 1.0f);
         ImGui::DragFloat("Restitution", &settings.restitution, 0.01f, -0.0f, 1.0f);

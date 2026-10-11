@@ -4,11 +4,6 @@
 
 namespace Atlas::Editor {
 
-	struct ContentBrowserSettings {
-        bool searchRecursively = true;
-        bool filterRecursively = false;
-    };
-
 	class Config {
 
 	public:
@@ -16,9 +11,17 @@ namespace Atlas::Editor {
 		bool pathTrace = false;
 		bool vsync = true;
 
-		ContentBrowserSettings contentBrowserSettings;
+		std::vector<ResourceHandle<Scene::Scene>> openedScenes;
 
-        std::vector<ResourceHandle<Scene::Scene>> openedScenes;
+		// Most recently opened scene paths, newest first
+		std::vector<std::string> recentScenes;
+
+		void AddRecentScene(const std::string& path) {
+			std::erase(recentScenes, path);
+			recentScenes.insert(recentScenes.begin(), path);
+			if (recentScenes.size() > 10)
+				recentScenes.resize(10);
+		}
 
 	};
 

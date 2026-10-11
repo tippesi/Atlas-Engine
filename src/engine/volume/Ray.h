@@ -3,6 +3,8 @@
 #include "../System.h"
 #include "AABB.h"
 #include "Rectangle.h"
+#include "../Viewport.h"
+#include "../scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -25,19 +27,22 @@ namespace Atlas {
 
             Ray(vec3 origin, vec3 direction, float tMin = 0.0f, float tMax = 2048.0f);
 
+            Ray(const Ref<Viewport>& viewport, const CameraComponent& camera, vec2 mousePosition,
+                float tMin = 0.0f, float tMax = 2048.0f);
+
             vec3 Get(float distance) const;
 
-            bool Intersects(const AABB& aabb);
+            bool Intersects(const AABB& aabb) const;
 
-            bool Intersects(const AABB& aabb, float& t);
+            bool Intersects(const AABB& aabb, float& t) const;
 
-            bool Intersects(vec3 v0, vec3 v1, vec3 v2);
+            bool Intersects(vec3 v0, vec3 v1, vec3 v2) const;
 
-            bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection);
+            bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection) const;
 
-            bool Intersects(const Rectangle& rect, float& t);
+            bool Intersects(const Rectangle& rect, float& t) const;
 
-            vec3 Distance(Ray ray, float& distance);
+            vec3 Distance(Ray ray, float& distance) const;
 
             vec3 origin = vec3(0.0f);
             vec3 direction = vec3(0.0f, 1.0f, 0.0f);

@@ -23,6 +23,7 @@ namespace Atlas {
             float aoStrength = 1.0f;
 
             bool halfResolution = true;
+            bool ddgi = true;
 
         };
 

@@ -21,12 +21,12 @@ namespace Atlas::Physics {
         float predictiveContactDistance = 0.1f;
 
         float shapePadding = 0.02f;
-        vec3 shapeOffset;
+        vec3 shapeOffset = vec3(0.0f);
 
 		Ref<Shape> shape;
 	};
 
-    class Player {
+    class Player : JPH::CharacterContactListener {
 
     public:
         Player() = default;
@@ -69,6 +69,9 @@ namespace Atlas::Physics {
 
 	protected:
 		void Init(PhysicsWorld* world, vec3 initialPosition, quat initialRotation);
+
+		virtual void OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::BodyID &inBodyID2, const JPH::SubShapeID &inSubShapeID2, 
+			JPH::RVec3Arg inContactPosition, JPH::Vec3Arg inContactNormal, JPH::CharacterContactSettings &ioSettings) override;
 
 		Ref<JPH::CharacterVirtual> character = nullptr;
 

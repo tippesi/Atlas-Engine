@@ -2,10 +2,10 @@
 
 #include "../System.h"
 
+#include "Signal.h"
 #include "ThreadSafeJobQueue.h"
 
 #include <thread>
-#include <semaphore>
 
 namespace Atlas {
 
@@ -20,15 +20,20 @@ namespace Atlas {
 
         void Start(std::function<void(Worker&)> function);
 
-        inline void Work() {
+        // Can be called from any thread (e.g. work stealing), returns the number of executed jobs
+        inline int32_t Work() {
 
+            int32_t executedJobs = 0;
             while(true) {
                 auto job = queue.Pop();
                 if (job == std::nullopt)
                     break;
 
                 RunJob(job.value());
+                executedJobs++;
             }
+
+            return executedJobs;
 
         }
 
@@ -36,7 +41,9 @@ namespace Atlas {
         JobPriority priority;
 
         std::thread thread;
-        std::binary_semaphore semaphore{0};
+        std::atomic_bool quit = false;
+
+        Signal signal;
         ThreadSafeJobQueue queue;
 
     private:
@@ -44,6 +51,7 @@ namespace Atlas {
 
             JobData data = {
                 .idx = job.idx,
+                .workerIdx = workerId,
                 .userData = job.userData
             };
 

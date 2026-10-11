@@ -17,7 +17,7 @@ namespace Atlas {
 
             void DownscaleDepthOnly(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
-            void FillNormalTexture(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
+            void Patch(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
             void GenerateReactiveMask(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 

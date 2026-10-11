@@ -27,7 +27,8 @@ namespace Atlas {
                 x = event.x;
                 y = event.y;
                 down = event.type == SDL_MOUSEBUTTONDOWN;
-
+                touch = event.which == SDL_TOUCH_MOUSEID;
+                
             }
 
             /**
@@ -59,6 +60,8 @@ namespace Atlas {
              * Whether this event is triggered by the button going down or up
              */
             bool down;
+
+            bool touch;
 
         };
 

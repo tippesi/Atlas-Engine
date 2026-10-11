@@ -3,8 +3,11 @@
 #include "System.h"
 
 #include "RTStructures.h"
+#include "BLAS.h"
 #include "scene/Subset.h"
 
+
+#include "terrain/TerrainNode.h"
 #include "scene/components/MeshComponent.h"
 #include "scene/components/TransformComponent.h"
 
@@ -47,23 +50,31 @@ namespace Atlas {
             bool includeObjectHistory = false;
 
         private:
-            struct MeshInfo {
-                Ref<Graphics::BLAS> blas = nullptr;
+            struct BlasInfo {
+                ResourceHandle<Mesh::Mesh> mesh;
+                Terrain::TerrainNode* node = nullptr;
 
                 int32_t offset = 0;
                 int32_t materialOffset = 0;
 
+                float cullingDistanceSqr = 0.0f;
+
                 int32_t idx = 0;
 
                 std::vector<GPULight> triangleLights;
-                std::vector<uint32_t> instanceIndices;
-                std::vector<mat4x3> matrices;
+            };
+
+            struct JobContext {
+                std::vector<VkAccelerationStructureInstanceKHR> hardwareInstances;
+                std::vector<GPUBVHInstance> gpuBvhInstances;
+                std::vector<Volume::AABB> instanceAABBs;
+                std::vector<mat3x4> lastMatrices;
             };
 
             void UpdateMaterials(std::vector<GPUMaterial>& materials);
 
             void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
-                std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
+                std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& instanceAABBs);
 
             void UpdateForHardwareRayTracing(Scene::Subset<MeshComponent,
                 TransformComponent>& entitySubset, size_t instanceCount);
@@ -74,8 +85,10 @@ namespace Atlas {
 
             Scene::Scene* scene;
 
+            Graphics::ASBuilder tlasBuilder;
             Ref<Graphics::TLAS> tlas;
-            std::vector<Ref<Graphics::BLAS>> blases;
+
+            std::vector<Ref<Graphics::BLAS>> buildBlases;
 
             Buffer::Buffer materialBuffer;
             Buffer::Buffer bvhInstanceBuffer;
@@ -84,12 +97,16 @@ namespace Atlas {
 
             std::vector<VkAccelerationStructureInstanceKHR> hardwareInstances;
             std::vector<GPUBVHInstance> gpuBvhInstances;
-            std::vector<Volume::AABB> actorAABBs;
+            std::vector<Volume::AABB> instanceAABBs;
             std::vector<mat3x4> lastMatrices;
 
             std::vector<GPULight> triangleLights;
 
-            std::unordered_map<size_t, MeshInfo> meshInfos;
+            std::unordered_map<Ref<BLAS>, BlasInfo> blasInfos;
+            std::unordered_map<Ref<BLAS>, BlasInfo> prevBlasInfos;
+
+            std::vector<GPUMaterial> materials;
+            std::vector<JobContext> jobContexts;
 
             bool hardwareRayTracing = false;
 

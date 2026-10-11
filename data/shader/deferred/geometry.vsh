@@ -17,7 +17,7 @@ layout(location=1) in vec4 vNormal;
 layout(location=2) in vec2 vTexCoord;
 #endif
 
-#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+#ifdef TANGENTS
 layout(location=3) in vec4 vTangent;
 #endif
 
@@ -25,11 +25,11 @@ layout(location=3) in vec4 vTangent;
 layout(location=4) in vec4 vVertexColors;
 #endif
 
-layout(std430, set = 1, binding = 1) buffer CurrentMatrices {
+layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
 
-layout(std430, set = 1, binding = 2) buffer LastMatrices {
+layout(std430, set = 1, binding = 2) readonly buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
 
@@ -46,14 +46,12 @@ layout(location=4) out vec3 ndcLastVS;
 layout(location=5) out vec4 vertexColorsVS;
 #endif
 
-layout(location=6) out float normalInversionVS;
-
 // Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=7) out mat3 TBN;
 #endif
 
-layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
+layout(set = 3, binding = 8) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
     uint vegetation;
@@ -66,6 +64,9 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
     uint baseColorTextureIdx;
     uint opacityTextureIdx;
     uint normalTextureIdx;
@@ -73,6 +74,7 @@ layout(push_constant) uniform constants {
     uint metalnessTextureIdx;
     uint aoTextureIdx;
     uint heightTextureIdx;
+    uint emissiveTextureIdx;
 } PushConstants;
 
 // Functions
@@ -81,10 +83,10 @@ void main() {
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
     mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
 
-    normalInversionVS = determinant(mMatrix) > 0.0 ? 1.0 : -1.0;
-
 #ifdef TEX_COORDS
-    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord; 
+    texCoordVS += vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY) * globalData.time;
+    texCoordVS *= PushConstants.uvTiling;
 #endif
     
     mat4 mvMatrix = globalData.vMatrix * mMatrix;
@@ -119,12 +121,19 @@ void main() {
     // Only after ndc calculation apply the clip correction
     gl_Position = gl_Position;
     
-    normalVS = mat3(mvMatrix) * vNormal.xyz;
+    // The cofactor matrix is the inverse transpose scaled by the determinant. Transforms with reversed winding have a
+    // negative determinant, so the orientation flips the normals back to the outside
+    mat3 modelView = mat3(mvMatrix);
+    mat3 cofactorMatrix = mat3(cross(modelView[1], modelView[2]),
+        cross(modelView[2], modelView[0]), cross(modelView[0], modelView[1]));
+    float orientation = dot(modelView[0], cofactorMatrix[0]) < 0.0 ? -1.0 : 1.0;
+    normalVS = orientation * (cofactorMatrix * vNormal.xyz);
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);
-    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? -1.0 : 1.0);
-    vec3 tangent = normalize(mat3(mvMatrix) * vTangent.xyz);
+    float correctionFactor = orientation * vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
+    vec3 tangent = mat3(mvMatrix) * vTangent.xyz;
+    tangent = normalize(tangent - normal * dot(tangent, normal));
     
     vec3 bitangent = normalize(correctionFactor * 
         cross(tangent, normal));

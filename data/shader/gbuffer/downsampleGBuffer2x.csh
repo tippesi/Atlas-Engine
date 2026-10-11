@@ -20,9 +20,15 @@ layout (set = 3, binding = 10, rg16f) writeonly uniform image2D velocityOut;
 layout (set = 3, binding = 11, r16ui) writeonly uniform uimage2D materialIdxOut;
 layout (set = 3, binding = 12, r8i) writeonly uniform iimage2D offsetOut;
 
-float Checkerboard(ivec2 coord) {
+float Checkerboard2x(ivec2 coord) {
 
     return float((coord.x + coord.y % 2) % 2);
+
+}
+
+float Checkerboard4x(ivec2 coord) {
+
+    return float((coord.x + coord.y % 4) % 4);
 
 }
 
@@ -64,7 +70,7 @@ int MaxDepth(vec4 depthVec, out float maxDepth) {
 
 int CheckerboardDepth(vec4 depthVec, ivec2 coord, out float depth) {
 
-    float minmax = 0.0;
+    float minmax = Checkerboard2x(coord);
 
     float maxDepth;
     int maxIdx = MaxDepth(depthVec, maxDepth);
@@ -90,8 +96,11 @@ void main() {
         float depth11 = texelFetch(depthIn, coord * 2 + ivec2(1, 1), 0).r;
 
         vec4 depthVec = vec4(depth00, depth10, depth01, depth11);        
-        int depthIdx = CheckerboardDepth(depthVec, coord, depthVec.x);
-        //depthIdx = 0;
+        //int depthIdx = (CheckerboardDepth(depthVec, coord, depthVec.x) + int(globalData.frameCount)) % 4;
+        //int depthIdx = int(globalData.frameCount) % 4;
+        //int depthIdx = CheckerboardDepth(depthVec, coord, depthVec.x);
+        int depthIdx = 0;
+        //int depthIdx = (int(Checkerboard4x(coord)) + int(globalData.frameCount) % 4);
         float depth = depthVec[depthIdx];
         imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));
 

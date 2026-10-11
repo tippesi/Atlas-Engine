@@ -33,11 +33,14 @@ namespace Atlas {
 
         void RemoveMacro(const std::string& macro);
 
-        bool HasMacro(const std::string& macro);
+        bool HasMacro(const char* macro);
 
-        bool ManageMacro(const std::string& macro, bool enable);
+        bool ManageMacro(const char* macro, bool enable);
 
         bool IsValid() const;
+
+        // Graphics config with the opposite front face, e.g. for instances with reversed winding
+        PipelineConfig GetReversedWindingVariant() const;
 
         Hash shaderHash = 0;
         Hash variantHash = 0;

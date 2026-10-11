@@ -21,9 +21,13 @@ struct AppConfiguration {
     bool sharpen = false;
     bool ssgi = true;
     bool ddgi = true;
+    bool rtgi = true;
     bool reflection = true;
     bool volumetric = true;
+    bool localVolumetric = true;
     bool ocean = true;
+    bool light = true;
+    bool fsr = true;
     bool resize = false;
     bool recreateSwapchain = false;
     bool minimizeWindow = false;
@@ -57,18 +61,16 @@ private:
 
     void SetResolution(int32_t width, int32_t height);
 
-    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
     Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 
-    Ref<Atlas::Font> font;
+    Atlas::ResourceHandle<Atlas::Font> font;
 
     Ref<Atlas::Scene::Scene> scene;
 
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
 
     Atlas::Scene::Entity cameraEntity;
-    Atlas::Scene::Entity directionalLightEntity;
     std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;
@@ -76,7 +78,7 @@ private:
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
 
-    Ref<Atlas::Texture::Texture2D> loadingTexture;
+    Atlas::ResourceHandle<Atlas::Texture::Texture2D> loadingTexture;
 
     Atlas::Renderer::ExampleRenderer exampleRenderer;
 

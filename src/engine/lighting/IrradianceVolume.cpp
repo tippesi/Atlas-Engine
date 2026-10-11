@@ -1,45 +1,52 @@
 #include "IrradianceVolume.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
     namespace Lighting {
 
         IrradianceVolume::IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount,
-            bool lowerResMoments) : probeCount(probeCount), cascadeCount(std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES)), 
-            momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments) {
+            bool lowerResMoments, bool lowerResRadiance) : probeCount(probeCount), cascadeCount(std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES)), 
+            momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments), radRes(lowerResRadiance ? 14 : 30), 
+            lowerResRadiance(lowerResRadiance) {
 
-            auto irrRes = ivec2(this->irrRes + 2);
-            irrRes.x *= probeCount.x;
-            irrRes.y *= probeCount.z;
+            auto irrFullRes = ivec2(this->irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
 
-            auto momRes = ivec2(this->momRes + 2);
-            momRes.x *= probeCount.x;
-            momRes.y *= probeCount.z;
+            auto radFullRes = ivec2(this->radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
+
+            auto momFullRes = ivec2(this->momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
 
             scroll = cascadeCount > 1;
 
             SetAABB(aabb);
 
-            internal = InternalIrradianceVolume(irrRes, momRes, probeCount, cascadeCount);
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
             internal.SetRayCount(rayCount, rayCountInactive);
                
         }
 
         ivec3 IrradianceVolume::GetIrradianceArrayOffset(ivec3 probeIndex, int32_t cascadeIndex) {
 
-            auto irrRes = ivec2(this->irrRes + 2);
+            auto irrFullRes = ivec2(this->irrRes + 2);
 
-            return ivec3(probeIndex.x * irrRes.x + 1,
-                probeIndex.z * irrRes.y + 1, probeIndex.y + cascadeIndex * probeCount.y);
+            return ivec3(probeIndex.x * irrFullRes.x + 1,
+                probeIndex.z * irrFullRes.y + 1, probeIndex.y + cascadeIndex * probeCount.y);
 
         }
 
         ivec3 IrradianceVolume::GetMomentsArrayOffset(ivec3 probeIndex, int32_t cascadeIndex) {
 
-            auto momRes = ivec2(this->momRes + 2);
+            auto momFullRes = ivec2(this->momRes + 2);
 
-            return ivec3(probeIndex.x * momRes.x + 1,
-                probeIndex.z * momRes.y + 1, probeIndex.y);
+            return ivec3(probeIndex.x * momFullRes.x + 1,
+                probeIndex.z * momFullRes.y + 1, probeIndex.y);
 
         }
 
@@ -57,7 +64,7 @@ namespace Atlas {
 
             for (int32_t i = 0; i < cascadeCount; i++) {
                 cascades[i].size = aabb.max - aabb.min;
-                cascades[i].cellSize = cascades[i].size / vec3(probeCount - ivec3(1));
+                cascades[i].cellSize = cascades[i].size / vec3(probeCount);
                 
                 if (!scroll) {
                     // In this case we can just set the AABB
@@ -71,7 +78,8 @@ namespace Atlas {
                     cascades[i].offsets = cascadeOffset;
 
                     vec3 offset = vec3(cascadeOffset) * cascades[i].cellSize;
-                    cascades[i].aabb = Volume::AABB(-cascades[i].size / 2.0f + offset, cascades[i].size / 2.0f + offset);
+                    cascades[i].aabb = Volume::AABB(-cascades[i].size / 2.0f + offset, 
+                        cascades[i].size / 2.0f + offset).Translate(cascades[i].cellSize * 0.5f);
                 }
 
                 aabb.min = center - cascades[i].size / (2.0f * splitCorrection);
@@ -94,30 +102,38 @@ namespace Atlas {
             this->probeCount = probeCount;
             this->cascadeCount = std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES);
 
-            auto irrRes = ivec2(this->irrRes + 2);
-            irrRes.x *= probeCount.x;
-            irrRes.y *= probeCount.z;
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
 
-            auto momRes = ivec2(this->momRes + 2);
-            momRes.x *= probeCount.x;
-            momRes.y *= probeCount.z;
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
 
-            internal = InternalIrradianceVolume(irrRes, momRes, probeCount, cascadeCount);
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
+
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
             internal.SetRayCount(rayCount, rayCountInactive);
 
         }
 
         void IrradianceVolume::ClearProbes() {
 
-            auto irrRes = ivec2(this->irrRes + 2);
-            irrRes.x *= probeCount.x;
-            irrRes.y *= probeCount.z;
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
 
-            auto momRes = ivec2(this->momRes + 2);
-            momRes.x *= probeCount.x;
-            momRes.y *= probeCount.z;
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
 
-            internal.ClearProbes(irrRes, momRes, probeCount, cascadeCount);
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
+
+            internal.ClearProbes(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
 
         }
 
@@ -127,7 +143,49 @@ namespace Atlas {
 
         }
 
-        InternalIrradianceVolume::InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount) {
+        void IrradianceVolume::SetMomentsResolution(bool lowerResMoments) {
+
+            momRes = lowerResMoments ? 6 : 14;
+
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
+
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
+
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
+
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
+            internal.SetRayCount(rayCount, rayCountInactive);
+
+        }
+
+        void IrradianceVolume::SetRadianceResolution(bool lowerResRadiance) {
+
+            radRes = lowerResRadiance ? 14 : 30;
+
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
+
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
+
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
+
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
+            internal.SetRayCount(rayCount, rayCountInactive);
+
+        }
+
+        InternalIrradianceVolume::InternalIrradianceVolume(ivec2 irrRes, ivec2 radRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount) {
 
             rayDirBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
             rayDirInactiveBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
@@ -141,19 +199,30 @@ namespace Atlas {
                 probeCount.x * probeCount.y * probeCount.z * cascadeCount);
 
             irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y * cascadeCount,
-                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            radianceArray0 = Texture::Texture2DArray(radRes.x, radRes.y, probeCount.y * cascadeCount,
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             momentsArray0 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y * cascadeCount,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
             irradianceArray1 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y * cascadeCount,
-                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            radianceArray1 = Texture::Texture2DArray(radRes.x, radRes.y, probeCount.y * cascadeCount,
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             momentsArray1 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y * cascadeCount, 
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+
+            probeDebugMaterial = CreateRef<Material>();
+            probeDebugActiveMaterial = CreateRef<Material>();
+            probeDebugInactiveMaterial = CreateRef<Material>();
+            probeDebugOffsetMaterial = CreateRef<Material>();
+            
+            probeDebugActiveMaterial->emissiveColor = vec3(0.0f, 1.0f, 0.0f);
+            probeDebugInactiveMaterial->emissiveColor = vec3(1.0f, 0.0f, 0.0f);
+            probeDebugOffsetMaterial->emissiveColor = vec3(0.0f, 0.0f, 1.0f);
 
             SwapTextures();
-            ClearProbes(irrRes, momRes, probeCount, cascadeCount);
+            ClearProbes(irrRes, radRes, momRes, probeCount, cascadeCount);
 
         }
 
@@ -165,33 +234,33 @@ namespace Atlas {
 
         }
 
-        std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+        std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>
             InternalIrradianceVolume::GetCurrentProbes() const {
         
             if (swapIdx == 0) {
-                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
-                    irradianceArray0, momentsArray0
+                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
+                    irradianceArray0, radianceArray0, momentsArray0
                     );
             }
             else {
-                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
-                    irradianceArray1, momentsArray1
+                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
+                    irradianceArray1, radianceArray1, momentsArray1
                     );
             }
         
         }
 
-        std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+        std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>
             InternalIrradianceVolume::GetLastProbes() const {
 
             if (swapIdx == 0) {
-                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
-                    irradianceArray1, momentsArray1
+                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
+                    irradianceArray1, radianceArray1, momentsArray1
                     );
             }
             else {
-                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
-                    irradianceArray0, momentsArray0
+                return std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>(
+                    irradianceArray0, radianceArray0, momentsArray0
                     );
             }    
 
@@ -279,22 +348,26 @@ namespace Atlas {
             rayDirInactiveBuffer.SetData(rayDirs.data(), 0, rayDirs.size());
         }
 
-        void InternalIrradianceVolume::ClearProbes(ivec2 irrRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount) {
+        void InternalIrradianceVolume::ClearProbes(ivec2 irrRes, ivec2 radRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount) {
             // Fill probe textures with initial values
             std::vector<float> irrVector(irrRes.x * irrRes.y * 4);
+            std::vector<float> radVector(radRes.x * radRes.y * 4);
             std::vector<float> momVector(momRes.x * momRes.y * 2);
 
             std::fill(irrVector.begin(), irrVector.end(), 0.0f);
+            std::fill(radVector.begin(), radVector.end(), 0.0f);
             std::fill(momVector.begin(), momVector.end(), 1000.0f);
 
-            auto [irradianceArray, momentsArray] = GetCurrentProbes();
+            auto [irradianceArray, radianceArray, momentsArray] = GetCurrentProbes();
 
             for (int32_t i = 0; i < probeCount.y * cascadeCount; i++) {
 
                 irradianceArray0.SetData(irrVector, i);
+                radianceArray0.SetData(radVector, i);
                 momentsArray0.SetData(momVector, i);
 
                 irradianceArray1.SetData(irrVector, i);
+                radianceArray1.SetData(radVector, i);
                 momentsArray1.SetData(momVector, i);
 
             }

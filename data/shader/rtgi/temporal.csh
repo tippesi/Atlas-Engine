@@ -93,7 +93,7 @@ void LoadGroupSharedData() {
 
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
-        sharedRadianceDepth[i].rgb = FetchTexel(texel);
+        sharedRadianceDepth[i].rgb = RGBToYCoCg(FetchTexel(texel));
         sharedRadianceDepth[i].a = texelFetch(depthTexture, texel, 0).r;
         sharedMaterialIdx[i].r = texelFetch(materialIdxTexture, texel, 0).r;
     }
@@ -187,8 +187,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     
     vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
     float NdotV = abs(dot(viewDir, worldNormal));
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = max(1.0, NdotV * 16.0 / max(1.0, abs(linearDepth)));
+    float linearDepth = depth;
+    float depthPhi = max(1.0, NdotV * 32.0 *  abs(ConvertDepthToViewSpaceDepth(depth)));
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -197,10 +197,10 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
-        float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
-        float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float depthWeight = min(1.0 , exp(-abs(depth - historyDepth) * depthPhi));
 
         float confidence = normalWeight * depthWeight;
 
@@ -223,10 +223,10 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
-        float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
-        float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float depthWeight = min(1.0 , exp(-abs(depth - historyDepth) * depthPhi));
 
         float confidence = normalWeight * depthWeight;
 
@@ -258,9 +258,9 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal, float dep
     confidence *= GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
     float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, pixel, 0).r);
-    confidence *= min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
+    confidence *= min(1.0 , exp(-abs(linearDepth - historyDepth)));
 
-    return confidence > 0.5 ? 1.0 : 0.0;
+    return confidence > 0.1 ? 1.0 : 0.0;
 
 }
 
@@ -361,7 +361,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
 
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            vec3 sampleRadiance = RGBToYCoCg(FetchCurrentRadiance(sharedMemoryIdx));
+            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
             float sampleDepth = FetchDepth(sharedMemoryIdx);
             uint sampleMaterialIdx = FetchMaterialIdx(sharedMemoryIdx);
 
@@ -401,7 +401,7 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
-    vec2 historyPixel = vec2(pixel) + (velocity * resolution) + 0.5;
+    vec2 historyPixel = vec2(pixel) + (velocity * resolution);
 
     bool valid = true;
     vec4 history;
@@ -454,8 +454,9 @@ void main() {
         currentMoments.r = 0.0;
     }
 
+    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
     factor = min(factor, historyLength / (historyLength + 1.0));
-
+    
     vec3 resolve = factor <= 0.0 ? currentColor : mix(currentColor, historyColor, factor);
     vec2 momentsResolve = factor <= 0.0 ? currentMoments : mix(currentMoments, historyMoments.rg, factor);
 
@@ -464,12 +465,9 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
+    variance = max(variance, 1e-5);
+
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(vec3(historyLength / 32.0), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(abs(velocity.x) + abs(velocity.y)), variance));
-    imageStore(resolveImage, pixel, vec4(vec3(success ? 1.0 : 0.0), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(materialIdx) / 3000.0, variance));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
 
 }

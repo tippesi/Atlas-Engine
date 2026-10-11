@@ -1,7 +1,6 @@
 #include "LightingBindings.h"
 
 #include "lighting/Shadow.h"
-#include "lighting/AO.h"
 #include "lighting/SSGI.h"
 #include "lighting/EnvironmentProbe.h"
 #include "lighting/SSS.h"
@@ -15,6 +14,12 @@
 namespace Atlas::Scripting::Bindings {
 
     void GenerateLightingBindings(sol::table* ns) {
+
+        ns->new_usertype<Lighting::IrradianceVolume>("IrradianceVolume",
+            sol::no_constructor,
+            "storageScale", &Lighting::IrradianceVolume::storageScale,
+            "ClearProbes", &Lighting::IrradianceVolume::ClearProbes
+        );
 
         ns->new_usertype<Lighting::VolumetricClouds::Scattering>("VolumetricCloudsScattering",
             "extinctionFactor", &Lighting::VolumetricClouds::Scattering::extinctionFactor,
@@ -30,32 +35,31 @@ namespace Atlas::Scripting::Bindings {
             "shapeTexture", &Lighting::VolumetricClouds::shapeTexture,
             "detailTexture", &Lighting::VolumetricClouds::detailTexture,
             "shadowTexture", &Lighting::VolumetricClouds::shadowTexture,
-            "sampleCount", &Lighting::VolumetricClouds::sampleCount,
-            "occlusionSampleCount", &Lighting::VolumetricClouds::occlusionSampleCount,
-            "shadowSampleFraction", &Lighting::VolumetricClouds::shadowSampleFraction,
-            "minHeight", &Lighting::VolumetricClouds::minHeight,
-            "maxHeight", &Lighting::VolumetricClouds::maxHeight,
-            "distanceLimit", &Lighting::VolumetricClouds::distanceLimit,
-            "coverageScale", &Lighting::VolumetricClouds::coverageScale,
-            "shapeScale", &Lighting::VolumetricClouds::shapeScale,
-            "detailScale", &Lighting::VolumetricClouds::detailScale,
-            "coverageSpeed", &Lighting::VolumetricClouds::coverageSpeed,
-            "shapeSpeed", &Lighting::VolumetricClouds::shapeSpeed,
-            "detailSpeed", &Lighting::VolumetricClouds::detailSpeed,
-            "detailStrength", &Lighting::VolumetricClouds::detailStrength,
+            "coverage", &Lighting::VolumetricClouds::coverage,
+            "cloudType", &Lighting::VolumetricClouds::cloudType,
+            "cloudSize", &Lighting::VolumetricClouds::cloudSize,
+            "verticalDevelopment", &Lighting::VolumetricClouds::verticalDevelopment,
+            "detail", &Lighting::VolumetricClouds::detail,
             "densityMultiplier", &Lighting::VolumetricClouds::densityMultiplier,
-            "heightStretch", &Lighting::VolumetricClouds::heightStretch,
-            "darkEdgeFocus", &Lighting::VolumetricClouds::darkEdgeFocus,
-            "darkEdgeAmbient", &Lighting::VolumetricClouds::darkEdgeAmbient,
+            "baseAltitude", &Lighting::VolumetricClouds::baseAltitude,
+            "layerThickness", &Lighting::VolumetricClouds::layerThickness,
+            "variationSeed", &Lighting::VolumetricClouds::variationSeed,
+            "quality", &Lighting::VolumetricClouds::quality,
+            "distanceLimit", &Lighting::VolumetricClouds::distanceLimit,
+            "scattering", &Lighting::VolumetricClouds::scattering,
             "needsNoiseUpdate", &Lighting::VolumetricClouds::needsNoiseUpdate,
             "enable", &Lighting::VolumetricClouds::enable,
-            "castShadow", &Lighting::VolumetricClouds::castShadow,
-            "stochasticOcclusionSampling", &Lighting::VolumetricClouds::stochasticOcclusionSampling,
-            "scattering", &Lighting::VolumetricClouds::scattering
+            "castShadow", &Lighting::VolumetricClouds::castShadow
             );
 
         ns->new_usertype<Lighting::Atmosphere>("Atmosphere",
-            "height", &Lighting::Atmosphere::height
+            "height", &Lighting::Atmosphere::height,
+            "rayleighScatteringCoeff", &Lighting::Atmosphere::rayleighScatteringCoeff,
+            "groundAlbedo", &Lighting::Atmosphere::groundAlbedo,
+            "mieScatteringCoeff", &Lighting::Atmosphere::mieScatteringCoeff,
+            "rayleighHeightScale", &Lighting::Atmosphere::rayleighHeightScale,
+            "mieHeightScale", &Lighting::Atmosphere::mieHeightScale,
+            "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 
         ns->new_usertype<Lighting::SSS>("SSS",
@@ -125,6 +129,37 @@ namespace Atlas::Scripting::Bindings {
             "atmosphere", &Lighting::Sky::atmosphere,
             "probe", &Lighting::Sky::probe
         );
+
+        ns->new_usertype<Lighting::ShadowView>("ShadowView",
+            "nearDistance", &Lighting::ShadowView::nearDistance,
+            "farDistance", &Lighting::ShadowView::farDistance,
+            "viewMatrix", &Lighting::ShadowView::viewMatrix,
+            "projectionMatrix", &Lighting::ShadowView::projectionMatrix,
+            "frustumMatrix", &Lighting::ShadowView::frustumMatrix,
+            "terrainFrustumMatrix", &Lighting::ShadowView::terrainFrustumMatrix,
+            "orthoSize", &Lighting::ShadowView::orthoSize
+        );
+
+        ns->new_usertype<Lighting::Shadow>("Shadow",
+            "SetResolution", &Lighting::Shadow::SetResolution,
+            "Update", &Lighting::Shadow::Update,
+            "center", &Lighting::Shadow::center,
+            "distance", &Lighting::Shadow::distance,
+            "longRangeDistance", &Lighting::Shadow::longRangeDistance,
+            "bias", &Lighting::Shadow::bias,
+            "splitCorrection", &Lighting::Shadow::splitCorrection,
+            "edgeSoftness", &Lighting::Shadow::edgeSoftness,
+            "cascadeBlendDistance", &Lighting::Shadow::cascadeBlendDistance,
+            "resolution", &Lighting::Shadow::resolution,
+            "views", &Lighting::Shadow::views,
+            "viewCount", &Lighting::Shadow::viewCount,
+            "isCascaded", &Lighting::Shadow::isCascaded,
+            "followMainCamera", &Lighting::Shadow::followMainCamera,
+            "useCubemap", &Lighting::Shadow::useCubemap,
+            "allowTerrain", &Lighting::Shadow::allowTerrain,
+            "longRange", &Lighting::Shadow::longRange,
+            "update", &Lighting::Shadow::update
+            );
 
     }
 

@@ -15,7 +15,8 @@ namespace Atlas::Scripting::Bindings {
             "IsValid", &ResourceHandle<T>::IsValid,
             "IsLoaded", &ResourceHandle<T>::IsLoaded,
             "WaitForLoad", &ResourceHandle<T>::WaitForLoad,
-            "GetID", &ResourceHandle<T>::GetID
+            "GetID", &ResourceHandle<T>::GetID,
+            "Reset", &ResourceHandle<T>::Reset
         );
 
         type.set_function("GetResource", sol::resolve<Ref<Resource<T>>&(void)>(&ResourceHandle<T>::GetResource));

@@ -1,4 +1,4 @@
-#include "../structures"
+#include <../structures.hsh>
 #include <../common/convert.hsh>
 
 in vec3 fTexCoordProj;

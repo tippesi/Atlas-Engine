@@ -7,8 +7,9 @@ layout (location = 0) out vec3 baseColorFS;
 layout (location = 1) out vec2 normalFS;
 layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
-layout (location = 4) out uint materialIdxFS;
-layout (location = 5) out vec2 velocityFS;
+layout (location = 4) out vec3 emissiveFS;
+layout (location = 5) out uint materialIdxFS;
+layout (location = 6) out vec2 velocityFS;
 
 layout(location=0) in vec3 positionVS;
 layout(location=1) in vec3 normalVS;
@@ -22,8 +23,6 @@ layout(location=4) in vec3 ndcLastVS;
 #ifdef VERTEX_COLORS
 layout(location=5) in vec4 vertexColorsVS;
 #endif
-
-layout(location=6) in float normalInversionVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=7) in mat3 TBN;
@@ -40,6 +39,9 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
     uint baseColorTextureIdx;
     uint opacityTextureIdx;
     uint normalTextureIdx;
@@ -47,6 +49,7 @@ layout(push_constant) uniform constants {
     uint metalnessTextureIdx;
     uint aoTextureIdx;
     uint heightTextureIdx;
+    uint emissiveTextureIdx;
 } PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
@@ -102,7 +105,7 @@ void main() {
 #endif
     
     // Check if usage is valid (otherwise texCoords won't be used)
-#if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP)) 
+#if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP) || defined(EMISSIVE_MAP)) 
     vec3 viewDir = normalize(transpose(TBN) * -positionVS);
     texCoords = ParallaxMapping(texCoords, viewDir);
 #endif
@@ -126,6 +129,11 @@ void main() {
     baseColorFS *= textureColor.rgb;
 #endif
 
+#ifdef EMISSIVE_MAP
+    vec3 emissiveColor = SampleEmissive(texCoords, PushConstants.emissiveTextureIdx, globalData.mipLodBias);
+    emissiveFS = emissiveColor.rgb;
+#endif
+
 #ifdef VERTEX_COLORS
     baseColorFS *= vertexColorsVS.rgb;
 #endif
@@ -138,7 +146,6 @@ void main() {
     // We want the normal always to face the camera for two sided materials
     geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
     normal *= dot(geometryNormal, normal) < 0.0 ? -1.0 : 1.0;
-    normal *= normalInversionVS;
 
     normalFS = EncodeNormal(normal);
 #else
@@ -146,9 +153,12 @@ void main() {
     geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
 #endif
 
-    geometryNormal *= normalInversionVS;
     
     geometryNormalFS = EncodeNormal(geometryNormal);
+#ifndef NORMAL_MAP
+    // Without a normal map the geometry normal is the shading normal
+    normalFS = geometryNormalFS;
+#endif
 
     float roughnessFactor = 1.0;
     float metalnessFactor = 1.0;

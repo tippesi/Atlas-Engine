@@ -50,10 +50,11 @@ namespace Atlas {
 
         void FrameBuffer::Refresh() {
 
-            std::vector<VkImageView> imageViews;
-
             const auto& rpColorAttachments = renderPass->colorAttachments;
             const auto& rpDepthAttachment = renderPass->depthAttachment;
+
+            imageViews.reserve(MAX_COLOR_ATTACHMENTS + 1);
+            imageViews.clear();
 
             // NOTE: The frame buffer requires to have an image view for each attachment in the render pass
             // This doesn't mean we need to write to all attachments. The writing to attachments is being configured

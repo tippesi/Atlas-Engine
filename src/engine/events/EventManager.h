@@ -14,6 +14,7 @@
 #include "ControllerButtonEvent.h"
 #include "ControllerDeviceEvent.h"
 #include "TouchEvent.h"
+#include "AppEvent.h"
 #include "TextInputEvent.h"
 #include "AudioDeviceEvent.h"
 #include "DropEvent.h"
@@ -47,6 +48,7 @@ namespace Atlas {
             static EventDelegate<ControllerButtonEvent> ControllerButtonEventDelegate;
             static EventDelegate<ControllerDeviceEvent> ControllerDeviceEventDelegate;
             static EventDelegate<TouchEvent> TouchEventDelegate;
+            static EventDelegate<AppEvent> AppEventDelegate;
             static EventDelegate<TextInputEvent> TextInputEventDelegate;
             static EventDelegate<AudioDeviceEvent> AudioDeviceEventDelegate;
             static EventDelegate<DropEvent> DropEventDelegate;
