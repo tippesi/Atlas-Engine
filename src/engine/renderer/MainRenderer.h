@@ -48,7 +48,8 @@ namespace Atlas {
                 std::span<Ref<PrimitiveBatch>> primitiveBatches = {}, Texture::Texture2D* texture = nullptr);
 
             void PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
-                Ref<Scene::Scene> scene, Texture::Texture2D* texture = nullptr);
+                Ref<Scene::Scene> scene, Texture::Texture2D* texture = nullptr,
+                std::span<Ref<PrimitiveBatch>> primitiveBatches = {});
 
             void RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
                 Ref<PrimitiveBatch> batch, const CameraComponent& camera, Graphics::CommandList* commandList = nullptr);
@@ -75,7 +76,7 @@ namespace Atlas {
             void UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
             PipelineConfig GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
-                Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth);
+                Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth, bool manualDepthTest = false);
 
             Graphics::GraphicsDevice* device = nullptr;
 

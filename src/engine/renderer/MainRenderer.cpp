@@ -387,7 +387,7 @@ namespace Atlas {
 		}
 
 		void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
-			Ref<Scene::Scene> scene, Texture::Texture2D* texture) {
+			Ref<Scene::Scene> scene, Texture::Texture2D* texture, std::span<Ref<PrimitiveBatch>> primitiveBatches) {
 
 			if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
 				return;
@@ -490,6 +490,10 @@ namespace Atlas {
 			pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
 
 			if (pathTracingRenderer.realTime) {
+				// Same place as in the rasterized path: after lighting, before the temporal resolve
+				for (const auto& primitiveBatch : primitiveBatches)
+					RenderPrimitiveBatch(viewport, target, primitiveBatch, camera, commandList);
+
 				if (scene->postProcessing.fsr2) {
 					fsr2Renderer.Render(target, scene, commandList);
 				}
@@ -560,10 +564,18 @@ namespace Atlas {
 
 			commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBufferWithStencil);
 
+			// A path traced target has no depth attachment. The depth test is then done in the shader
+			// against the depth texture written by the path tracer
+			bool pathTraced = target->IsUsedForPathTracing();
+			bool hardwareDepthTest = batch->testDepth && !pathTraced;
+			bool manualDepthTest = batch->testDepth && pathTraced;
+			if (manualDepthTest)
+				rtData->depthTexture->Bind(commandList, 3, 0);
+
 			if (batch->GetLineCount()) {
 
 				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
-					batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, batch->testDepth);
+					batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, hardwareDepthTest, manualDepthTest);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
@@ -579,7 +591,7 @@ namespace Atlas {
 			if (batch->GetTriangleCount()) {
 
 				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
-					batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, batch->testDepth);
+					batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, hardwareDepthTest, manualDepthTest);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
@@ -1152,7 +1164,7 @@ namespace Atlas {
 		}
 
 		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
-			Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth) {
+			Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth, bool manualDepthTest) {
 
 			const auto shaderConfig = ShaderConfig{
 				{ "primitive.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -1169,7 +1181,11 @@ namespace Atlas {
 			pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
 			pipelineDesc.rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 
-			return PipelineConfig(shaderConfig, pipelineDesc);
+			std::vector<std::string> macros;
+			if (manualDepthTest)
+				macros.push_back("MANUAL_DEPTH_TEST");
+
+			return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
 		}
 

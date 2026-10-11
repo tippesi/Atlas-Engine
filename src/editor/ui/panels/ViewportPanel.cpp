@@ -96,15 +96,16 @@ namespace Atlas::Editor::UI {
                 renderTarget->Resize(viewportTexture.width, viewportTexture.height);
             }
 
-            if (config->pathTrace) {               
-                Singletons::mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture);
+            Ref<Renderer::PrimitiveBatch> primitiveBatches[] = {
+                primitiveBatchWrapper.primitiveBatchDepthTest,
+                primitiveBatchWrapper.primitiveBatchNoDepthTest
+            };
+
+            if (config->pathTrace) {
+                // Overlays like the grid, bounding volumes and brushes are visible when path tracing as well
+                Singletons::mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture, primitiveBatches);
             }
             else {
-                Ref<Renderer::PrimitiveBatch> primitiveBatches[] = { 
-                    primitiveBatchWrapper.primitiveBatchDepthTest,
-                    primitiveBatchWrapper.primitiveBatchNoDepthTest
-                };
-
                 Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
                     primitiveBatches, &viewportTexture);
 
