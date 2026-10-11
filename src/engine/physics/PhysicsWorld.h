@@ -46,6 +46,10 @@ namespace Atlas {
 
             void SetBodyMatrix(BodyID bodyId, const mat4& matrix);
 
+            void MoveKinematicBody(BodyID bodyId, const mat4& matrix, float deltaTime);
+
+            void StopKinematicBody(BodyID bodyId);
+
             mat4 GetBodyMatrix(BodyID bodyId);
 
             void SetMotionQuality(BodyID bodyId, MotionQuality quality);

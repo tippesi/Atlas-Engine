@@ -113,6 +113,24 @@ namespace Atlas {
 
         }
 
+        void PhysicsWorld::MoveKinematicBody(BodyID bodyId, const mat4& matrix, float deltaTime) {
+
+            JPH::Vec3 pos;
+            JPH::Quat quat;
+            MatrixToJPHPosAndRot(matrix, pos, quat);
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.MoveKinematic(bodyId, pos, quat, deltaTime);
+
+        }
+
+        void PhysicsWorld::StopKinematicBody(BodyID bodyId) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.SetLinearAndAngularVelocity(bodyId, JPH::Vec3::sZero(), JPH::Vec3::sZero());
+
+        }
+
         mat4 PhysicsWorld::GetBodyMatrix(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();

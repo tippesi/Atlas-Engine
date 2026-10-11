@@ -10,6 +10,13 @@ namespace Atlas::Physics {
 
     }
 
+    void Body::MoveKinematic(glm::mat4 matrix, float deltaTime) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->MoveKinematicBody(bodyId, matrix, deltaTime);
+
+    }
+
     mat4 Body::GetMatrix() {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

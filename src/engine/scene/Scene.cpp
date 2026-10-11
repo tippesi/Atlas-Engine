@@ -241,9 +241,24 @@ namespace Atlas {
                         rigidBodyComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
                     }
 
+                    if (!rigidBodyComponent.IsValid())
+                        continue;
+
+                    // Kinematic bodies follow their transform through velocities, such that simulated bodies
+                    // are pushed instead of penetrated. A teleport is still needed if no simulation step follows.
+                    auto moveKinematic = rigidBodyComponent.layer == Physics::Layers::Kinematic &&
+                        !physicsWorld->pauseSimulation && deltaTime > 0.0f;
+
                     // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && rigidBodyComponent.IsValid()) {
-                        rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
+                    if (transformComponent.changed) {
+                        if (moveKinematic)
+                            rigidBodyComponent.MoveKinematic(transformComponent.globalMatrix, deltaTime);
+                        else
+                            rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
+                    }
+                    else if (moveKinematic) {
+                        // The velocity of the last move would otherwise carry the body away from its transform
+                        physicsWorld->StopKinematicBody(rigidBodyComponent.bodyId);
                     }
                 }
 
@@ -255,8 +270,10 @@ namespace Atlas {
                     for (auto entity : rigidBodySubset) {
                         const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
+                        // The transform drives kinematic bodies, reading them back would only drop the scale
                         if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
-                            rigidBodyComponent.layer == Physics::Layers::Static)
+                            rigidBodyComponent.layer == Physics::Layers::Static ||
+                            rigidBodyComponent.layer == Physics::Layers::Kinematic)
                             continue;
 
                         // This happens if no change was triggered by the user, then we still need

@@ -223,6 +223,7 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<RigidBodyComponent>("RigidBodyComponent",
             "IsValid", &RigidBodyComponent::IsValid,
             "SetMatrix", &RigidBodyComponent::SetMatrix,
+            "MoveKinematic", &RigidBodyComponent::MoveKinematic,
             "GetMatrix", &RigidBodyComponent::GetMatrix,
             "SetMotionQuality", &RigidBodyComponent::SetMotionQuality,
             "GetMotionQuality", &RigidBodyComponent::GetMotionQuality,

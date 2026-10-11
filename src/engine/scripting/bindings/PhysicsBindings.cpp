@@ -9,6 +9,7 @@ namespace Atlas::Scripting::Bindings {
         ns->new_enum<Physics::Layers>("Layers", {
             { "Static", Physics::Layers::Static },
             { "Movable", Physics::Layers::Movable },
+            { "Kinematic", Physics::Layers::Kinematic },
             { "NumLayers", Physics::Layers::NumLayers }
             });
 

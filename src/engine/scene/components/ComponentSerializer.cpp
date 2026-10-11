@@ -267,12 +267,15 @@ namespace Atlas::Scene::Components {
     }
 
     void to_json(json& j, const RigidBodyComponent& p) {
+        auto creationSettings = p.GetBodyCreationSettings();
+
+        // The creation settings are the source of truth, e.g. the editor only changes those
         j = json {
             {"bodyIndex", p.bodyId.GetIndex()},
-            {"layer", p.layer},
+            {"layer", creationSettings.objectLayer},
         };
 
-        j["creationSettings"] = p.GetBodyCreationSettings();
+        j["creationSettings"] = creationSettings;
     }
 
     void from_json(const json& j, RigidBodyComponent& p) {
@@ -286,6 +289,7 @@ namespace Atlas::Scene::Components {
         if (j.contains("creationSettings")) {
             p.creationSettings = CreateRef<Physics::BodyCreationSettings>();
             *p.creationSettings = j["creationSettings"];
+            p.layer = p.creationSettings->objectLayer;
         }
 
         // We can use the index here since when loading nothing but the loading thread

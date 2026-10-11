@@ -17,6 +17,8 @@ namespace Atlas::Physics {
 
         void SetMatrix(mat4 matrix);
 
+        void MoveKinematic(mat4 matrix, float deltaTime);
+
         mat4 GetMatrix();
 
         void SetMotionQuality(MotionQuality quality);

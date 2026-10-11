@@ -140,15 +140,35 @@ namespace Atlas::Editor::UI {
     void RigidBodyComponentPanel::RenderBodySettings(Scene::Entity entity,
         Physics::BodyCreationSettings &settings) {
 
-        const char* layerItems[] = { "Static", "Movable" };
-        int currentItem = settings.objectLayer;
-        // Mesh can only be static
-        auto layoutItemCount = settings.shape->type != ShapeType::Mesh ? IM_ARRAYSIZE(layerItems) : 1;
-        ImGui::Combo("Object layer", &currentItem, layerItems, layoutItemCount);
-        settings.objectLayer = std::min(currentItem, layoutItemCount - 1);
+        // Mesh shapes can't be simulated, but they can be moved kinematically
+        std::vector<Physics::ObjectLayer> layers = { Physics::Layers::Static, Physics::Layers::Kinematic };
+        if (settings.shape->type != ShapeType::Mesh)
+            layers.insert(layers.begin() + 1, Physics::Layers::Movable);
+
+        auto layerName = [](Physics::ObjectLayer layer) {
+            switch (layer) {
+                case Physics::Layers::Movable: return "Movable";
+                case Physics::Layers::Kinematic: return "Kinematic";
+                default: return "Static";
+            }
+        };
+
+        if (std::find(layers.begin(), layers.end(), settings.objectLayer) == layers.end())
+            settings.objectLayer = Physics::Layers::Static;
+
+        if (ImGui::BeginCombo("Object layer", layerName(settings.objectLayer))) {
+            for (auto layer : layers) {
+                auto isSelected = layer == settings.objectLayer;
+                if (ImGui::Selectable(layerName(layer), isSelected))
+                    settings.objectLayer = layer;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
 
         const char* motionQualityItems[] = { "Discrete", "Linear cast" };
-        currentItem = static_cast<int>(settings.motionQuality);
+        int currentItem = static_cast<int>(settings.motionQuality);
         ImGui::Combo("Motion quality", &currentItem, motionQualityItems, IM_ARRAYSIZE(motionQualityItems));
         settings.motionQuality = static_cast<Physics::MotionQuality>(currentItem);
 

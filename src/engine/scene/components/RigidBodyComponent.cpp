@@ -46,6 +46,8 @@ namespace Atlas {
                         return;
 
                 this->world = physicsWorld;
+                // Keep the layer in sync with the body, the settings might have been changed after construction
+                layer = creationSettings->objectLayer;
 
                 auto body = physicsWorld->CreateBody(*creationSettings, transformComponent.globalMatrix, entity);
 
