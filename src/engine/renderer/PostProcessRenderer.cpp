@@ -443,7 +443,7 @@ namespace Atlas {
             const auto& bloom = postProcessing.bloom;
 
             Uniforms uniforms = {
-                .exposure = camera.exposure,
+                .exposure = camera.exposure * glm::exp2(postProcessing.exposureCompensation),
                 .autoExposureMipLevel = float(target->lightingTexture.image->mipLevels - 1),
                 .paperWhiteLuminance = postProcessing.paperWhiteLuminance,
                 .maxScreenLuminance = postProcessing.screenMaxLuminance,

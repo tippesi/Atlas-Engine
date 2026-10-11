@@ -121,6 +121,7 @@ namespace Atlas::PostProcessing {
 
     void to_json(json& j, const PostProcessing& p) {
         j = json {
+            {"exposureCompensation", p.exposureCompensation},
             {"tint", p.tint},
             {"saturation", p.saturation},
             {"contrast", p.contrast},
@@ -139,6 +140,7 @@ namespace Atlas::PostProcessing {
     }
 
     void from_json(const json& j, PostProcessing& p) {
+        try_get_json(j, "exposureCompensation", p.exposureCompensation);
         j.at("tint").get_to(p.tint);
         j.at("saturation").get_to(p.saturation);
         j.at("contrast").get_to(p.contrast);
