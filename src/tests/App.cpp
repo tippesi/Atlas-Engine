@@ -101,8 +101,8 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.clouds) {
         scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>(512, 128, 32);
-        scene->sky.clouds->minHeight = 1400.0f;
-        scene->sky.clouds->maxHeight = 1700.0f;
+        scene->sky.clouds->baseAltitude = 1400.0f;
+        scene->sky.clouds->layerThickness = 1800.0f;
         scene->sky.clouds->castShadow = false;
     }
 

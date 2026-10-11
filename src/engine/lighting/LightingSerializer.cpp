@@ -1,4 +1,5 @@
 #include "LightingSerializer.h"
+#include "common/MathHelper.h"
 #include "../resource/ResourceManager.h"
 
 namespace Atlas::Lighting {
@@ -357,57 +358,65 @@ namespace Atlas::Lighting {
             {"shapeResolution", p.shapeTexture.width},
             {"detailResolution", p.detailTexture.width},
             {"shadowResolution", p.shadowTexture.width},
-            {"sampleCount", p.sampleCount},
-            {"occlusionSampleCount", p.occlusionSampleCount},
-            {"shadowSampleFraction", p.shadowSampleFraction},
-            {"minHeight", p.minHeight},
-            {"maxHeight", p.maxHeight},
-            {"distanceLimit", p.distanceLimit},
-            {"coverageScale", p.coverageScale},
-            {"shapeScale", p.shapeScale},
-            {"detailScale", p.detailScale},
-            {"coverageSpeed", p.coverageSpeed},
-            {"shapeSpeed", p.shapeSpeed},
-            {"detailSpeed", p.detailSpeed},
-            {"detailStrength", p.detailStrength},
+            {"coverage", p.coverage},
+            {"cloudType", p.cloudType},
+            {"cloudSize", p.cloudSize},
+            {"verticalDevelopment", p.verticalDevelopment},
+            {"detail", p.detail},
             {"densityMultiplier", p.densityMultiplier},
-            {"heightStretch", p.heightStretch},
-            {"darkEdgeFocus", p.darkEdgeFocus},
-            {"darkEdgeAmbient", p.darkEdgeAmbient},
+            {"baseAltitude", p.baseAltitude},
+            {"layerThickness", p.layerThickness},
+            {"distanceLimit", p.distanceLimit},
+            {"variationSeed", p.variationSeed},
+            {"quality", p.quality},
             {"scattering", p.scattering},
             {"enable", p.enable},
-            {"castShadow", p.castShadow},
-            {"stochasticOcclusionSampling", p.stochasticOcclusionSampling},
-            {"halfResolution", p.halfResolution}
+            {"castShadow", p.castShadow}
         };
     }
 
     void from_json(const json& j, VolumetricClouds& p) {
-        p = VolumetricClouds(j["coverageResolution"].get<int32_t>(), j["shapeResolution"].get<int32_t>(),
-            j["detailResolution"].get<int32_t>(), j["shadowResolution"].get<int32_t>());
+        p = VolumetricClouds(j.value("coverageResolution", 512), j.value("shapeResolution", 128),
+            j.value("detailResolution", 64), j.value("shadowResolution", 1024));
 
-        j.at("sampleCount").get_to(p.sampleCount);
-        j.at("occlusionSampleCount").get_to(p.occlusionSampleCount);
-        j.at("shadowSampleFraction").get_to(p.shadowSampleFraction);
-        j.at("minHeight").get_to(p.minHeight);
-        j.at("maxHeight").get_to(p.maxHeight);
-        j.at("distanceLimit").get_to(p.distanceLimit);
-        j.at("coverageScale").get_to(p.coverageScale);
-        j.at("shapeScale").get_to(p.shapeScale);
-        j.at("detailScale").get_to(p.detailScale);
-        j.at("coverageSpeed").get_to(p.coverageSpeed);
-        j.at("shapeSpeed").get_to(p.shapeSpeed);
-        j.at("detailSpeed").get_to(p.detailSpeed);
-        j.at("detailStrength").get_to(p.detailStrength);
-        j.at("densityMultiplier").get_to(p.densityMultiplier);
-        j.at("heightStretch").get_to(p.heightStretch);
-        j.at("darkEdgeFocus").get_to(p.darkEdgeFocus);
-        j.at("darkEdgeAmbient").get_to(p.darkEdgeAmbient);
-        j.at("scattering").get_to(p.scattering);
-        j.at("enable").get_to(p.enable);
-        j.at("castShadow").get_to(p.castShadow);
-        j.at("stochasticOcclusionSampling").get_to(p.stochasticOcclusionSampling);
-        try_get_json(j, "halfResolution", p.halfResolution);
+        try_get_json(j, "coverage", p.coverage);
+        try_get_json(j, "cloudType", p.cloudType);
+        try_get_json(j, "densityMultiplier", p.densityMultiplier);
+        try_get_json(j, "distanceLimit", p.distanceLimit);
+        try_get_json(j, "variationSeed", p.variationSeed);
+        try_get_json(j, "enable", p.enable);
+        try_get_json(j, "castShadow", p.castShadow);
+
+        if (j.contains("cloudSize")) {
+            try_get_json(j, "cloudSize", p.cloudSize);
+            try_get_json(j, "verticalDevelopment", p.verticalDevelopment);
+            try_get_json(j, "detail", p.detail);
+            try_get_json(j, "baseAltitude", p.baseAltitude);
+            try_get_json(j, "layerThickness", p.layerThickness);
+            try_get_json(j, "quality", p.quality);
+            try_get_json(j, "scattering", p.scattering);
+            return;
+        }
+
+        // Older scenes stored the renderer parameters directly. The scattering parameters are
+        // not migrated, they were tuned for the previous cloud model
+        float shapeScale = 2.0f, verticalShapeScale = 2.2f, detailStrength = p.detail;
+        float minHeight = p.baseAltitude, maxHeight = p.baseAltitude + p.layerThickness;
+        int32_t sampleCount = 64;
+        try_get_json(j, "shapeScale", shapeScale);
+        try_get_json(j, "verticalShapeScale", verticalShapeScale);
+        try_get_json(j, "detailStrength", detailStrength);
+        try_get_json(j, "minHeight", minHeight);
+        try_get_json(j, "maxHeight", maxHeight);
+        try_get_json(j, "sampleCount", sampleCount);
+        try_get_json(j, "shapeSeed", p.variationSeed);
+
+        p.cloudSize = glm::clamp(720.0f / glm::max(shapeScale, 0.001f), 100.0f, 10000.0f);
+        p.verticalDevelopment = Helper::Math::Saturate((2.2f - verticalShapeScale) / 1.3f);
+        p.detail = Helper::Math::Saturate(detailStrength);
+        p.baseAltitude = minHeight;
+        p.layerThickness = glm::max(maxHeight - minHeight, 1.0f);
+        p.quality = sampleCount <= 48 ? 0 : sampleCount <= 96 ? 1 : sampleCount <= 160 ? 2 : 3;
     }
 
     void to_json(json& j, const Sky& p) {

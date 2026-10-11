@@ -2,69 +2,39 @@
 
 namespace Atlas::ImguiExtension {
 
-    void VolumetricCloudsPanel::Render(Ref<Lighting::VolumetricClouds> &clouds, Ref<Renderer::RenderTarget>& target) {
+    void VolumetricCloudsPanel::Render(Ref<Lighting::VolumetricClouds>& clouds, Ref<Renderer::RenderTarget>& target) {
 
         ImGui::PushID(GetNameID());
 
         ImGui::Checkbox("Enable", &clouds->enable);
-        ImGui::Checkbox("Half resolution", &clouds->halfResolution);
-        ImGui::SetItemTooltip("Resoltion settings are shared between fog and volumetric clouds");
 
+        // Settings of disabled clouds are shown, but greyed out
+        ImGui::BeginDisabled(!clouds->enable);
         ImGui::Checkbox("Cast shadow", &clouds->castShadow);
-        ImGui::Checkbox("Stochastic occlusion sampling", &clouds->stochasticOcclusionSampling);
-        ImGui::Checkbox("Debug", &debug);
-        ImGui::Text("Quality");
-        ImGui::SliderInt("Sample count", &clouds->sampleCount, 1, 128);
-        ImGui::SliderInt("Shadow sample count", &clouds->occlusionSampleCount, 1, 16);
-        ImGui::Text("Shadow map");
-        ImGui::SliderInt("Sample fraction count", &clouds->shadowSampleFraction, 1, 4);
-        auto shadowResolution = clouds->shadowTexture.width;
-        const char* shadowResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096" };
-        int shadowResItem = 0;
-        if (shadowResolution == 512) shadowResItem = 0;
-        if (shadowResolution == 1024) shadowResItem = 1;
-        if (shadowResolution == 2048) shadowResItem = 2;
-        if (shadowResolution == 4096) shadowResItem = 3;
-        auto prevItem = shadowResItem;
-        ImGui::Combo("Map resolution", &shadowResItem, shadowResItems, IM_ARRAYSIZE(shadowResItems));
-        if (shadowResItem != prevItem) {
-            switch (shadowResItem) {
-            case 0: clouds->SetShadowResolution(512); break;
-            case 1: clouds->SetShadowResolution(1024); break;
-            case 2: clouds->SetShadowResolution(2048); break;
-            case 3: clouds->SetShadowResolution(4096); break;
-            }
-        }
-        ImGui::Text("Shape");
-        ImGui::SliderFloat("Density multiplier", &clouds->densityMultiplier, 0.0f, 1.0f);
-        ImGui::SliderFloat("Height stretch", &clouds->heightStretch, 0.0f, 1.0f);
-        if (ImGui::Button("Update noise textures")) {
+
+        ImGui::SeparatorText("Shape");
+        ImGui::SliderFloat("Coverage", &clouds->coverage, 0.0f, 1.0f);
+        ImGui::SliderFloat("Cloud type", &clouds->cloudType, 0.0f, 1.0f);
+        ImGui::SetItemTooltip("Continuous blend: stratus (0), stratocumulus (0.5), cumulus (1)");
+        ImGui::SliderFloat("Cloud size", &clouds->cloudSize, 100.0f, 10000.0f, "%.0f m", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Vertical development", &clouds->verticalDevelopment, 0.0f, 1.0f);
+        ImGui::SetItemTooltip("Controls billow proportions and height variation within the cloud layer");
+        ImGui::SliderFloat("Detail", &clouds->detail, 0.0f, 1.0f);
+        ImGui::SliderFloat("Density", &clouds->densityMultiplier, 0.0f, 2.0f);
+
+        ImGui::SeparatorText("Layer");
+        ImGui::DragFloat("Base altitude", &clouds->baseAltitude, 10.0f, 0.0f, 20000.0f, "%.0f m");
+        ImGui::DragFloat("Layer thickness", &clouds->layerThickness, 10.0f, 1.0f, 10000.0f, "%.0f m");
+        ImGui::SliderFloat("Distance limit", &clouds->distanceLimit, 1000.0f, 40000.0f, "%.0f m");
+        if (ImGui::SliderFloat("Variation seed", &clouds->variationSeed, 0.0f, 100.0f))
             clouds->needsNoiseUpdate = true;
-        }
-        ImGui::Separator();
-        ImGui::Text("Dimensions");
-        ImGui::SliderFloat("Min height", &clouds->minHeight, 0.0f, 2000.0f);
-        ImGui::SliderFloat("Max height", &clouds->maxHeight, 0.0f, 4000.0f);
-        ImGui::SliderFloat("GetDistance limit", &clouds->distanceLimit, 0.0f, 10000.0f);
-        ImGui::Separator();
-        ImGui::Text("Scattering");
-        ImGui::ColorEdit3("Extinction coefficients", &clouds->scattering.extinctionCoefficients[0]);
-        ImGui::DragFloat("Extinction factor", &clouds->scattering.extinctionFactor, 0.0001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Scattering factor", &clouds->scattering.scatteringFactor, 0.0001f, 0.0f, 10.0f);
-        ImGui::SliderFloat("Eccentricity first phase", &clouds->scattering.eccentricityFirstPhase, -1.0f, 1.0f);
-        ImGui::SliderFloat("Eccentricity second phase", &clouds->scattering.eccentricitySecondPhase, -1.0f, 1.0f);
-        ImGui::SliderFloat("Phase alpha", &clouds->scattering.phaseAlpha, 0.0f, 1.0f);
-        ImGui::Separator();
-        ImGui::Text("Noise texture behaviour");
-        ImGui::SliderFloat("Shape scale", &clouds->shapeScale, 0.0f, 100.0f);
-        ImGui::SliderFloat("Detail scale", &clouds->detailScale, 0.0f, 100.0f);
-        ImGui::SliderFloat("Shape speed", &clouds->shapeSpeed, 0.0f, 10.0f);
-        ImGui::SliderFloat("Detail speed", &clouds->detailSpeed, 0.0f, 10.0f);
-        ImGui::SliderFloat("Detail strength", &clouds->detailStrength, 0.0f, 1.0f);
-        ImGui::Separator();
-        ImGui::Text("Silver lining");
-        ImGui::SliderFloat("Dark edge strength", &clouds->darkEdgeFocus, 0.0f, 1025.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Dark edge ambient", &clouds->darkEdgeAmbient, 0.0f, 1.0f);
+
+        ImGui::SeparatorText("Quality");
+        ImGui::Combo("Quality", &clouds->quality, "Low\0Medium\0High\0Ultra\0");
+        ImGui::SetItemTooltip("Controls ray samples, lighting samples and volumetric resolution (shared with fog)");
+        ImGui::Checkbox("Debug", &debug);
+
+        ImGui::EndDisabled();
 
         ImGui::PopID();
 

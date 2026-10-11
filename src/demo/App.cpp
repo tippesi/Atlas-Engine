@@ -738,8 +738,8 @@ bool App::LoadScene() {
     auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
     scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>(512, 128, 32);
-    scene->sky.clouds->minHeight = 1400.0f;
-    scene->sky.clouds->maxHeight = 1700.0f;
+    scene->sky.clouds->baseAltitude = 1400.0f;
+    scene->sky.clouds->layerThickness = 1800.0f;
     scene->sky.clouds->castShadow = false;
 
     scene->sky.probe = nullptr;
@@ -962,10 +962,9 @@ bool App::LoadScene() {
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 1.0f;
 
-        scene->sky.clouds->minHeight = 700.0f;
-        scene->sky.clouds->maxHeight = 1000.0f;
+        scene->sky.clouds->baseAltitude = 700.0f;
+        scene->sky.clouds->layerThickness = 300.0f;
         scene->sky.clouds->densityMultiplier = 0.65f;
-        scene->sky.clouds->heightStretch = 1.0f;
 
         scene->fog->enable = true;
         scene->fog->volumetricIntensity = 0.08f;

@@ -53,8 +53,8 @@ namespace Atlas::Editor {
         scene->rtgi = CreateRef<Lighting::RTGI>();
 
         scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>(512, 128, 32);
-        scene->sky.clouds->minHeight = 1400.0f;
-        scene->sky.clouds->maxHeight = 2800.0f;
+        scene->sky.clouds->baseAltitude = 1400.0f;
+        scene->sky.clouds->layerThickness = 1400.0f;
         scene->sky.clouds->castShadow = false;
 
         scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
@@ -112,8 +112,8 @@ namespace Atlas::Editor {
         scene->rtgi = CreateRef<Lighting::RTGI>();
 
         scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>(512, 128, 32);
-        scene->sky.clouds->minHeight = 1400.0f;
-        scene->sky.clouds->maxHeight = 2800.0f;
+        scene->sky.clouds->baseAltitude = 1400.0f;
+        scene->sky.clouds->layerThickness = 1400.0f;
         scene->sky.clouds->castShadow = false;
 
         scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();

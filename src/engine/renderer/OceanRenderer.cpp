@@ -249,7 +249,7 @@ namespace Atlas {
 
                 if (cloudsEnabled) {
                     target->volumetricCloudsTexture.Bind(commandList, 3, 16);
-                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
+                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->baseAltitude;
                 }
 
                 refractionTexture.Bind(commandList, 3, 4);

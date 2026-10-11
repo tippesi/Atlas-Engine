@@ -164,7 +164,7 @@ namespace Atlas {
             if (cloudsEnabled) {
                 target->volumetricCloudsTexture.Bind(commandList, 3, 5);
 
-                float cloudInnerRadius = scene->sky.planetRadius + clouds->minHeight;
+                float cloudInnerRadius = scene->sky.planetRadius + clouds->baseAltitude;
                 uniforms.planetCenterAndRadius = vec4(scene->sky.planetCenter, cloudInnerRadius);
             }
 
@@ -341,7 +341,7 @@ namespace Atlas {
                 }
 
                 if (cloudsEnabled) {
-                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
+                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->baseAltitude;
                     uniforms.planetRadius = scene->sky.planetRadius;
                     uniforms.cloudDistanceLimit = clouds->distanceLimit;
                     uniforms.planetCenter = vec4(scene->sky.planetCenter, 1.0f);
