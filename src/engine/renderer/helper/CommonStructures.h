@@ -171,6 +171,7 @@ namespace Atlas {
             int optimizeProbes;
 
             int32_t volumeEnabled;
+            float volumeStorageScale;
         };
 
     }

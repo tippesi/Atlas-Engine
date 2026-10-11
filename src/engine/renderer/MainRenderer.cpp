@@ -1028,7 +1028,8 @@ namespace Atlas {
 					.volumeStrength = volume->strength,
 					.depthSharpness = volume->sharpness,
 					.optimizeProbes = volume->optimizeProbes ? 1 : 0,
-					.volumeEnabled = volume->enable ? 1 : 0
+					.volumeEnabled = volume->enable ? 1 : 0,
+					.volumeStorageScale = volume->storageScale
 				};
 
 				for (int32_t i = 0; i < volume->cascadeCount; i++) {

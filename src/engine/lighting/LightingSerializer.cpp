@@ -96,6 +96,7 @@ namespace Atlas::Lighting {
             {"bias", p.bias},
             {"sharpness", p.sharpness},
             {"gamma", p.gamma},
+            {"storageScale", p.storageScale},
             {"strength", p.strength},
             {"sampleEmissives", p.sampleEmissives},
             {"optimizeProbes", p.optimizeProbes},
@@ -122,6 +123,7 @@ namespace Atlas::Lighting {
         j.at("bias").get_to(p.bias);
         j.at("sharpness").get_to(p.sharpness);
         j.at("gamma").get_to(p.gamma);
+        p.storageScale = j.value("storageScale", 1.0f);
         j.at("strength").get_to(p.strength);
         j.at("sampleEmissives").get_to(p.sampleEmissives);
         j.at("optimizeProbes").get_to(p.optimizeProbes);

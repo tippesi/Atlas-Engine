@@ -59,6 +59,7 @@ layout(std140, set = 2, binding = 27) uniform DDGIBuffer {
     int optimizeProbes;
 
     int volumeEnabled;
+    float volumeStorageScale;
 } ddgiData;
 
 struct RayHit {
@@ -302,7 +303,7 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         : vec4(sqr(sumIrradianceIgnoredState / sumWeightIgnoredState), 0.0);
 
     // Due to the texture format we loose a bit of energy
-    irradiance *= 1.0989;
+    irradiance *= 1.0989 / ddgiData.volumeStorageScale;
 
     return irradiance;
 
@@ -460,7 +461,7 @@ vec4 GetLocalRadianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, in
         : vec4(sqr(sumIrradianceIgnoredState / sumWeightIgnoredState), 0.0);
 
     // Due to the texture format we loose a bit of energy
-    irradiance *= 1.0989;
+    irradiance *= 1.0989 / ddgiData.volumeStorageScale;
 
     return irradiance;
 
@@ -629,13 +630,13 @@ void GetLocalProbeLightingFromCascade(vec3 P, vec3 V, vec3 N, vec3 L, vec3 geome
     irradiance = sumWeight > 0.0 ? vec4(sqr(sumIrradiance / sumWeight), 0.0) 
         : vec4(sqr(sumIrradianceIgnoredState / sumWeightIgnoredState), 0.0);
     // Due to the texture format we loose a bit of energy
-    irradiance *= 1.0989;
+    irradiance *= 1.0989 / ddgiData.volumeStorageScale;
 
 #ifdef RADIANCE_VOLUME
     // If no probes are activated for the given geometry, at least use the information available
     radiance = sumWeight > 0.0 ? vec4(sqr(sumRadiance / sumWeight), 0.0) 
         : vec4(sqr(sumRadianceIgnoredState / sumWeightIgnoredState), 0.0);
-    radiance *= 1.0989;
+    radiance *= 1.0989 / ddgiData.volumeStorageScale;
 #else
     radiance = irradiance;
 #endif    

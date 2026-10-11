@@ -54,6 +54,9 @@ void main() {
         vec3 radiance = vec3(0.0);
         if (ray.ID >= 0) {
             radiance = EvaluateHit(ray);
+
+            // Probes store the lighting scaled, the lookup restores it
+            radiance *= ddgiData.volumeStorageScale;
         
             RayHit hit;
 #ifndef AE_HALF_FLOAT

@@ -126,6 +126,11 @@ namespace Atlas {
 
             float gamma = 5.0f;
 
+            // Scale lighting before storage and restore it on lookup. Use (0, 1];
+            // smaller values increase range at the cost of precision.
+            // Call ClearProbes() after changing this to reset encoded history.
+            float storageScale = 1.0f;
+
             float strength = 1.0f;
 
             float splitCorrection = 1.6f;

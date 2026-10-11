@@ -15,6 +15,12 @@ namespace Atlas::Scripting::Bindings {
 
     void GenerateLightingBindings(sol::table* ns) {
 
+        ns->new_usertype<Lighting::IrradianceVolume>("IrradianceVolume",
+            sol::no_constructor,
+            "storageScale", &Lighting::IrradianceVolume::storageScale,
+            "ClearProbes", &Lighting::IrradianceVolume::ClearProbes
+        );
+
         ns->new_usertype<Lighting::VolumetricClouds::Scattering>("VolumetricCloudsScattering",
             "extinctionFactor", &Lighting::VolumetricClouds::Scattering::extinctionFactor,
             "scatteringFactor", &Lighting::VolumetricClouds::Scattering::scatteringFactor,
