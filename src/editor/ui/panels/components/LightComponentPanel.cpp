@@ -1,4 +1,5 @@
 #include "LightComponentPanel.h"
+#include "../../Widgets.h"
 
 #include <imgui.h>
 
@@ -18,32 +19,28 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Static", &isStatic);
         lightComponent.mobility = isStatic ? LightMobility::StationaryLight : LightMobility::MovableLight;
 
-        ImGui::Separator();
-
-        ImGui::Text("Type properties");
+        ImGui::SeparatorText("Type properties");
 
         if (lightComponent.type == LightType::DirectionalLight) {
             ImGui::Checkbox("Main", &lightComponent.isMain);
             auto& directional = lightComponent.properties.directional;
-            ImGui::DragFloat3("Direction", glm::value_ptr(directional.direction), 0.005f, -1.0f, 1.0f);
+            Widgets::DragVec3("Direction", directional.direction, 0.005f, 0.0f, -1.0f, 1.0f);
         }
         else if (lightComponent.type == LightType::PointLight) {
             auto& point = lightComponent.properties.point;
-            ImGui::DragFloat3("Position", glm::value_ptr(point.position), 0.1f, -10000.0f, 10000.0f);
+            Widgets::DragVec3("Position", point.position, 0.1f, 0.0f, -10000.0f, 10000.0f);
             ImGui::DragFloat("Radius", &point.radius, 0.01f, 0.01f, 10000.0f);
         }
         else if (lightComponent.type == LightType::SpotLight) {
             auto& spot = lightComponent.properties.spot;
-            ImGui::DragFloat3("Position", glm::value_ptr(spot.position), 0.1f, -10000.0f, 10000.0f);
-            ImGui::DragFloat3("Direction", glm::value_ptr(spot.direction), 0.01f, -1.0f, 1.0f);
+            Widgets::DragVec3("Position", spot.position, 0.1f, 0.0f, -10000.0f, 10000.0f);
+            Widgets::DragVec3("Direction", spot.direction, 0.01f, 0.0f, -1.0f, 1.0f);
             ImGui::DragFloat("Radius", &spot.radius, 0.01f, 0.01f, 10000.0f);
             ImGui::DragFloat("Inner cone angle", &spot.innerConeAngle, 0.01f, 0.01f, 2.0f);
             ImGui::DragFloat("Outer cone angle", &spot.outerConeAngle, 0.01f, 0.01f, 2.0f);
         }
 
-        ImGui::Separator();
-
-        ImGui::Text("General properties");
+        ImGui::SeparatorText("General properties");
 
         bool castShadow = lightComponent.shadow != nullptr;
         ImGui::Checkbox("Shadow", &castShadow);
@@ -70,9 +67,7 @@ namespace Atlas::Editor::UI {
 
             auto& shadow = lightComponent.shadow;
 
-            ImGui::Separator();
-
-            ImGui::Text("Shadow");
+            ImGui::SeparatorText("Shadow");
 
             const char* shadowResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
             int shadowResItem = 0;
@@ -107,7 +102,7 @@ namespace Atlas::Editor::UI {
                     ImGui::Checkbox("Follow main camera", &shadow->followMainCamera);
 
                     if (!shadow->followMainCamera) {
-                        ImGui::DragFloat3("Center point", glm::value_ptr(shadow->center), 0.5f, -10000.0f, 10000.0f);
+                        Widgets::DragVec3("Center point", shadow->center, 0.5f, 0.0f, -10000.0f, 10000.0f);
                     }
 
                     auto orthoSize = shadow->views.front().orthoSize;

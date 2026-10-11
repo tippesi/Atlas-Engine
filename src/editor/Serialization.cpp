@@ -27,7 +27,8 @@ namespace Atlas::Editor {
             { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
             { "vsync", config->vsync },
-            { "scenes", scenePaths }
+            { "scenes", scenePaths },
+            { "recentScenes", config->recentScenes }
         };
 
         TryWriteToFile(configFilename, to_string(j));
@@ -55,6 +56,8 @@ namespace Atlas::Editor {
             j.at("vsync").get_to(config->vsync);
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
+        if (j.contains("recentScenes"))
+            j.at("recentScenes").get_to(config->recentScenes);
 
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)
@@ -78,6 +81,7 @@ namespace Atlas::Editor {
             { "rotationSnap", sceneWindow->guizmo.rotationSnap },
             { "scaleSnap", sceneWindow->guizmo.scaleSnap },
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
+            { "showGrid", sceneWindow->showGrid },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
             { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
             { "playMaximized", sceneWindow->playMaximized },
@@ -118,6 +122,7 @@ namespace Atlas::Editor {
         try_get_json(j, "rotationSnap", sceneWindow->guizmo.rotationSnap);
         try_get_json(j, "scaleSnap", sceneWindow->guizmo.scaleSnap);
         try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
+        try_get_json(j, "showGrid", sceneWindow->showGrid);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
         try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
         try_get_json(j, "playMaximized", sceneWindow->playMaximized);
@@ -143,6 +148,7 @@ namespace Atlas::Editor {
             { "filterRecursively", contentBrowserWindow.filterRecursively },
             { "searchRecursively", contentBrowserWindow.searchRecursively },
             { "contentFilter", contentBrowserWindow.contentFilter },
+            { "iconSize", contentBrowserWindow.iconSize },
         };
 
         TryWriteToFile(contentBrowserWindowFilename, to_string(j));
@@ -164,6 +170,8 @@ namespace Atlas::Editor {
             j.at("searchRecursively").get_to(contentBrowserWindow.searchRecursively);
         if (j.contains("contentFilter"))
             j.at("contentFilter").get_to(contentBrowserWindow.contentFilter);
+        if (j.contains("iconSize"))
+            j.at("iconSize").get_to(contentBrowserWindow.iconSize);
     }
 
     void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {

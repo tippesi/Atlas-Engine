@@ -1,4 +1,6 @@
 #include "PlayerComponentPanel.h"
+#include "../../../Theme.h"
+#include "../../Widgets.h"
 #include "Notifications.h"
 
 namespace Atlas::Editor::UI {
@@ -10,15 +12,13 @@ namespace Atlas::Editor::UI {
 		ImGui::PushID(GetNameID());
 
 		if (!entity.HasComponent<TransformComponent>())
-            ImGui::Text("Player component needs a transform component to work properly");
+            Widgets::Callout("Player component needs a transform component to work properly", Theme::Warning());
 
-		ImGui::Text("Shape");
+		ImGui::SeparatorText("Shape");
 
 		RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);
 
-		ImGui::Separator();
-
-		ImGui::Text("Player");
+		ImGui::SeparatorText("Player");
 
 		RenderPlayerSettings(entity, playerComponent);
 
@@ -45,7 +45,7 @@ namespace Atlas::Editor::UI {
 
 		if (transformComponent)
 			capsuleSettings->scale = transformComponent->Decompose().scale;
-		ImGui::DragFloat3("Scale", glm::value_ptr(capsuleSettings->scale), 0.01f, 0.0f);
+		Widgets::DragVec3("Scale", capsuleSettings->scale, 0.01f, 1.0f);
 
 		if (ImGui::Button("Generate shape", { -FLT_MIN, 0 })) {
 			if (!shape->TryCreate()) {
@@ -63,7 +63,7 @@ namespace Atlas::Editor::UI {
 		ImGui::DragFloat("Mass", &player.creationSettings->mass, 0.5f, 1.0f, 1000.0f);
 		ImGui::DragFloat("Max strength", &player.creationSettings->maxStrength, 0.5f, 1.0f, 1000.0f);
 
-		ImGui::Separator();
+		ImGui::SeparatorText("Movement");
 
 		ImGui::DragFloat("Slow movement velocity", &player.slowVelocity, 0.1f, 0.0f, 100.0f);
 		ImGui::DragFloat("Fast movement velocity", &player.fastVelocity, 0.1f, 0.0f, 100.0f);

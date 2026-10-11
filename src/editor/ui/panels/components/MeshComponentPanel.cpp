@@ -21,8 +21,7 @@ namespace Atlas::Editor::UI {
             auto& mesh = meshComponent.mesh;
 
             {
-                ImGui::Separator();
-                ImGui::Text("Mesh settings");
+                ImGui::SeparatorText("Mesh settings");
 
                 const char* mobilityItems[] = { "Stationary", "Movable" };
                 int mobilityItem = static_cast<int>(mesh->mobility);
@@ -43,16 +42,14 @@ namespace Atlas::Editor::UI {
             }
 
             {
-                ImGui::Separator();
-                ImGui::Text("Culling settings");
+                ImGui::SeparatorText("Culling settings");
                 ImGui::DragFloat("Distance culling", &mesh->distanceCulling, 1.0f);
                 ImGui::DragFloat("Shadow distance culling", &mesh->shadowDistanceCulling, 1.0f);
                 ImGui::DragFloat("Ray trace distance culling", &mesh->rayTraceDistanceCulling, 1.0f);
             }
 
             {
-                ImGui::Separator();
-                ImGui::Text("Impostor settings");
+                ImGui::SeparatorText("Impostor settings");
 
                 auto impostorFilename = mesh.GetResource()->path + ".aeimpostor";
                 bool impostorEnabled = mesh->impostor.IsLoaded();
@@ -88,15 +85,13 @@ namespace Atlas::Editor::UI {
             }
             
             {
-                ImGui::Separator();
-                ImGui::Text("Wind settings");
+                ImGui::SeparatorText("Wind settings");
                 ImGui::DragFloat("Noise lod", &mesh->windNoiseTextureLod, 1.0f, 0.0f, 6.0f);
                 ImGui::DragFloat("Bend scale", &mesh->windBendScale, 0.05f, 0.0f, 5.0f);
                 ImGui::DragFloat("Wiggle scale", &mesh->windWiggleScale, 0.05f, 0.0f, 5.0f);
             }
 
-            ImGui::Separator();
-            ImGui::Text("Materials");
+            ImGui::SeparatorText("Materials");
             materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials, 
                 [&](ResourceHandle<Material> material) {
                     return materialSelectionPanel.Render(material);

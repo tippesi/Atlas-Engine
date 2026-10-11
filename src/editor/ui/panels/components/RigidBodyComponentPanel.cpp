@@ -1,4 +1,6 @@
 #include "RigidBodyComponentPanel.h"
+#include "../../../Theme.h"
+#include "../../Widgets.h"
 
 namespace Atlas::Editor::UI {
 
@@ -8,21 +10,19 @@ namespace Atlas::Editor::UI {
         Scene::Entity entity, RigidBodyComponent &rigidBodyComponent) {
 
         if (!entity.HasComponent<TransformComponent>())
-            ImGui::Text("Rigid body component needs a transform component to work properly");
+            Widgets::Callout("Rigid body component needs a transform component to work properly", Theme::Warning());
 
         auto creationSettings = rigidBodyComponent.GetBodyCreationSettings();
         if (!creationSettings.shape) {
-            ImGui::Text("Couldn't get body creation settings or shape");
+            Widgets::Callout("Couldn't get body creation settings or shape", Theme::Error());
             return false;
         }
 
-        ImGui::Text("Shape");
+        ImGui::SeparatorText("Shape");
 
         RenderShapeSettings(entity, creationSettings);
 
-        ImGui::Separator();
-
-        ImGui::Text("Body");
+        ImGui::SeparatorText("Body");
 
         RenderBodySettings(entity, creationSettings);
 
@@ -42,7 +42,7 @@ namespace Atlas::Editor::UI {
         auto& shape = creationSettings.shape;
 
         if (shape->type == Physics::ShapeType::HeightField) {
-            ImGui::Text("Body uses a height field shape");
+            ImGui::TextDisabled("Body uses a height field shape");
             return;
         }
 
@@ -70,7 +70,7 @@ namespace Atlas::Editor::UI {
             meshSettings->mesh = meshSelectionPanel.Render(meshSettings->mesh, resourceChanged);
 
             if (meshComponent)
-                if (ImGui::Button("Take resource from mesh component"))
+                if (ImGui::Button("Take resource from mesh component", ImVec2(-FLT_MIN, 0.0f)))
                     meshSettings->mesh = meshComponent->mesh;
 
             scale = &meshSettings->scale;
@@ -95,8 +95,8 @@ namespace Atlas::Editor::UI {
 
             auto boundingBoxSettings = static_cast<BoundingBoxShapeSettings*>(shape->settings.get());
 
-            ImGui::DragFloat3("Min", glm::value_ptr(boundingBoxSettings->aabb.min), 0.1f, -10000.0f, 10000.0f);
-            ImGui::DragFloat3("Max", glm::value_ptr(boundingBoxSettings->aabb.max), 0.1f, -10000.0f, 10000.0f);
+            Widgets::DragVec3("Min", boundingBoxSettings->aabb.min, 0.1f, 0.0f, -10000.0f, 10000.0f);
+            Widgets::DragVec3("Max", boundingBoxSettings->aabb.max, 0.1f, 0.0f, -10000.0f, 10000.0f);
             if (meshComponent && meshComponent->mesh.IsLoaded())
                 if (ImGui::Button("Take bounding box from mesh component"))
                     boundingBoxSettings->aabb = meshComponent->mesh->data.aabb;
@@ -127,7 +127,7 @@ namespace Atlas::Editor::UI {
                 // Need scale from global matrix decomposition
                 *scale = Common::MatrixDecomposition(globalMatrix).scale;
             }
-            ImGui::DragFloat3("Scale", glm::value_ptr(*scale), 0.01f, -100.0f, 100.0f);
+            Widgets::DragVec3("Scale", *scale, 0.01f, 1.0f, -100.0f, 100.0f);
         }
 
         if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }) || shapeTypeChanged)
@@ -172,8 +172,8 @@ namespace Atlas::Editor::UI {
         ImGui::Combo("Motion quality", &currentItem, motionQualityItems, IM_ARRAYSIZE(motionQualityItems));
         settings.motionQuality = static_cast<Physics::MotionQuality>(currentItem);
 
-        ImGui::DragFloat3("Linear velocity", glm::value_ptr(settings.linearVelocity), 0.1f, -1000.0f, 1000.0f);
-        ImGui::DragFloat3("Angular velocity", glm::value_ptr(settings.angularVelocity), 0.1f, -1000.0f, 1000.0f);
+        Widgets::DragVec3("Linear velocity", settings.linearVelocity, 0.1f, 0.0f, -1000.0f, 1000.0f);
+        Widgets::DragVec3("Angular velocity", settings.angularVelocity, 0.1f, 0.0f, -1000.0f, 1000.0f);
 
         ImGui::DragFloat("Friction", &settings.friction, 0.01f, -0.0f, 1.0f);
         ImGui::DragFloat("Restitution", &settings.restitution, 0.01f, -0.0f, 1.0f);

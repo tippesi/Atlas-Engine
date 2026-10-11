@@ -19,9 +19,12 @@
 
 #include "tools/CopyPasteHelper.h"
 #include "Notifications.h"
+#include "Singletons.h"
+#include "ui/Widgets.h"
 
 #include <imgui.h>
 #include <optional>
+#include <functional>
 
 namespace Atlas::Editor::UI {
 
@@ -52,6 +55,9 @@ namespace Atlas::Editor::UI {
         HierarchyComponentPanel hierarchyComponentPanel;
 
     private:
+        std::function<void()> pendingRemoval;
+        std::string componentSearch;
+
         template<class T>
         struct ComponentCopy {
             Scene::Scene* scene;
@@ -64,12 +70,18 @@ namespace Atlas::Editor::UI {
             bool resourceChanged = false;
 
             ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
-                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed |
+                ImGuiTreeNodeFlags_AllowOverlap;
 
+            // Component headers are neutral, the accent is reserved for selection
+            ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
             bool open = ImGui::TreeNodeEx(name.c_str(), nodeFlags);
+            ImGui::PopStyleColor(3);
 
+            bool removeComponent = false;
             if (ImGui::BeginPopupContextItem(name.c_str())) {
-                // We shouldn't allow the user to delete the root entity
                 if (ImGui::MenuItem("Copy")) {
                     if constexpr (std::is_same_v<T, RigidBodyComponent>) {
                         // Restore body creation settings, after the copy the current body id is not valid anymore due
@@ -79,15 +91,46 @@ namespace Atlas::Editor::UI {
                     ComponentCopy<T> copy { scene.get(), component };
                     CopyPasteHelper::Copy(copy);
                 }
+                if (ImGui::MenuItem("Remove"))
+                    removeComponent = true;
 
                 ImGui::EndPopup();
             }
+
+            // Remove button on the right side of the header
+            {
+                auto headerMin = ImGui::GetItemRectMin();
+                auto headerMax = ImGui::GetItemRectMax();
+                auto iconSize = ImGui::GetTextLineHeight();
+                auto buttonExtent = iconSize + 2.0f;
+                auto cursorPos = ImGui::GetCursorPos();
+
+                ImGui::SameLine();
+                ImGui::SetCursorScreenPos(ImVec2(headerMax.x - buttonExtent - ImGui::GetStyle().FramePadding.x,
+                    headerMin.y + (headerMax.y - headerMin.y - buttonExtent) * 0.5f));
+
+                auto alpha = ImGui::IsMouseHoveringRect(headerMin, headerMax) ? 1.0f : 0.45f;
+                ImGui::PushID(name.c_str());
+                if (Widgets::IconButton("Remove component", Singletons::icons->Get(IconType::Trash),
+                    iconSize, "Remove component", alpha))
+                    removeComponent = true;
+                ImGui::PopID();
+
+                ImGui::SetCursorPos(cursorPos);
+            }
+
+            // Defer removal until all panels are rendered. Some components are copied and
+            // re-added after their panel was rendered, which would otherwise revive them
+            if (removeComponent)
+                pendingRemoval = [entity]() mutable { entity.RemoveComponent<T>(); };
 
             if (open) {
                 resourceChanged = panel.Render(scene, entity, component);
 
                 ImGui::TreePop();
             }
+
+            ImGui::Spacing();
 
             return resourceChanged;
         }

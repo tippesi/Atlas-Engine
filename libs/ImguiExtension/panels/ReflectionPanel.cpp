@@ -15,8 +15,8 @@ namespace Atlas::ImguiExtension {
         //ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
         ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
-                        This is only possible when cascaded shadow maps are not used.");
+            ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. "
+                        "This is only possible when cascaded shadow maps are not used.");
         }
         ImGui::Checkbox("Use normal maps", &reflection->useNormalMaps);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
@@ -31,7 +31,7 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderInt("Texture level##Reflection", &reflection->textureLevel, 0, 10);
         ImGui::SliderInt("Sample count##Reflection", &reflection->sampleCount, 1, 10);
         ImGui::SliderInt("Light sample count##Reflection", &reflection->lightSampleCount, 1, 10);
-        ImGui::Text("Denoiser");
+        ImGui::SeparatorText("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &reflection->spatialFilterStrength, 0.0f, 10.0f);
         ImGui::SliderFloat("Temporal weight", &reflection->temporalWeight, 0.0f, 1.0f);
         ImGui::SliderFloat("Maximum history clip factor", &reflection->historyClipMax, 0.0f, 1.0f);

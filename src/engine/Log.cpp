@@ -34,6 +34,20 @@ namespace Atlas {
         return std::vector<Log::Entry>(entries.begin() + offset, entries.end());
     }
 
+    std::vector<Log::Entry> Log::GetEntriesSince(size_t firstIndex) {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        if (firstIndex >= entries.size())
+            return {};
+
+        return std::vector<Log::Entry>(entries.begin() + firstIndex, entries.end());
+    }
+
+    size_t Log::GetEntryCount() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return entries.size();
+    }
+
     void Log::AddEntry(const std::string& message, int32_t severity, int32_t type) {
 
         Entry entry;

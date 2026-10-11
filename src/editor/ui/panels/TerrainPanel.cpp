@@ -1,4 +1,6 @@
 #include "TerrainPanel.h"
+#include "../../Theme.h"
+#include "../Widgets.h"
 
 #include <tools/TerrainTool.h>
 #include <ImguiExtension/UiElements.h>
@@ -16,22 +18,22 @@ namespace Atlas::Editor::UI {
         bool terrainChanged = false;
         terrain = terrainSelectionPanel.Render(scene->terrain, terrainChanged);
 
-        if (ImGui::CollapsingHeader("General")) {
+        if (Widgets::SectionHeader("General")) {
             RenderGeneralSettings(terrain);
         }
-        if (ImGui::CollapsingHeader("Materials")) {
+        if (Widgets::SectionHeader("Materials")) {
             RenderMaterialSettings(terrain);
         }
-        if (ImGui::CollapsingHeader("Editing")) {
+        if (Widgets::SectionHeader("Editing")) {
             RenderEditingSettings(terrain, scene);
         }
-        if (ImGui::CollapsingHeader("Generator")) {
+        if (Widgets::SectionHeader("Generator")) {
             if (scene->terrain.IsLoaded() && editingMode) {
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Exit terrain editing mode to access the generator");
+                Widgets::Callout("Exit terrain editing mode to access the generator", Theme::Warning());
             }
             else {
                 if (scene->terrain.IsLoaded()) {
-                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Regenerating might terrain overrides any manual changes.");
+                    Widgets::Callout("Regenerating the terrain overrides any manual changes.", Theme::Warning());
                 }
 
                 terrainGenerator.Render(scene->terrain);
@@ -42,7 +44,7 @@ namespace Atlas::Editor::UI {
                 }
             }
         }
-        if(ImGui::CollapsingHeader("Vegetation")) {
+        if(Widgets::SectionHeader("Vegetation")) {
             vegetationGeneratorPanel.Render(scene, terrainGenerator);
         }
 
@@ -62,16 +64,15 @@ namespace Atlas::Editor::UI {
     void TerrainPanel::RenderGeneralSettings(ResourceHandle<Terrain::Terrain>& terrain) {
 
         if (!terrain.IsLoaded()) {
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "No terrain generated or selected.");
+            Widgets::Callout("No terrain generated or selected.", Theme::Warning());
             return;
         }
 
         ImGui::Checkbox("Wireframe", &terrain->wireframe);
-        ImGui::DragFloat3("Translation", glm::value_ptr(terrain->translation), 1.0f, -10000.0f, 10000.0f);
+        Widgets::DragVec3("Translation", terrain->translation, 1.0f, 0.0f, -10000.0f, 10000.0f);
         ImGui::SliderFloat("Height", &terrain->heightScale, 1.0f, 2000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
 
-        ImGui::Separator();
-        ImGui::Text("Tessellation");
+        ImGui::SeparatorText("Tessellation");
 
         ImGui::SliderFloat("Factor", &terrain->tessellationFactor, 0.0f,
             16000.0f, "%.3f", 4.0f);
@@ -84,11 +85,10 @@ namespace Atlas::Editor::UI {
         ImGui::SliderFloat("Distance", &terrain->displacementDistance, 0.0f, 100.0f,
             "%.3f", ImGuiSliderFlags_Logarithmic);
 
-        ImGui::Separator();
-        ImGui::Text("Lod distances");
+        ImGui::SeparatorText("Lod distances");
 
         if (editingMode)
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Lods can't be changed in editing mode");
+            Widgets::Callout("Lods can't be changed in editing mode", Theme::Warning());
 
         for (size_t i = 0; i < terrain->LoDCount; i++) {
             auto distance = terrain->GetLoDDistance((int32_t)i);
@@ -102,7 +102,7 @@ namespace Atlas::Editor::UI {
     void TerrainPanel::RenderMaterialSettings(ResourceHandle<Terrain::Terrain>& terrain) {
 
         if (!terrain.IsLoaded()) {
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "No terrain generated or selected.");
+            Widgets::Callout("No terrain generated or selected.", Theme::Warning());
             return;
         }
 
@@ -140,7 +140,7 @@ namespace Atlas::Editor::UI {
     void TerrainPanel::RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain, Ref<Scene::Scene> scene) {
 
         if (!terrain.IsLoaded()) {
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "No terrain generated or selected.");
+            Widgets::Callout("No terrain generated or selected.", Theme::Warning());
             return;
         }
 
@@ -166,75 +166,80 @@ namespace Atlas::Editor::UI {
 
         UIElements::Tooltip("Pushes LoD distances to 512 to enable editing without baking");
 
+        if (!editingMode)
+            Widgets::Callout("Enable editing mode, then hold the right mouse button in the viewport to paint.",
+                Theme::Accent());
+
+        // Only one brush can be active, show the settings of the selected one
+        ImGui::SeparatorText("Brush");
+
+        const char* brushTypeItems[] = { "Height", "Material", "Hole" };
+        int32_t brushTypeSelection = static_cast<int32_t>(brushType);
+        Widgets::SegmentedControl("Type", brushTypeSelection, brushTypeItems, IM_ARRAYSIZE(brushTypeItems));
+        brushType = static_cast<TerrainBrushType>(brushTypeSelection);
+
         auto maxSize = 8.0f * terrain->patchSizeFactor - 1.0f;
         ImGui::DragFloat("Brush size", &brushSize, 0.25f, 1.0f, maxSize);
 
-        auto brushStrengthMin = -2000.0f;
-        auto brushStrengthMax = 2000.0f;
+        if (brushType == TerrainBrushType::Height) {
+            ImGui::PushID("Height");
 
-        if (brushFunction == TerrainBrushFunction::Smooth ||
-            brushFunction == TerrainBrushFunction::Flatten) {
-            brushStrengthMin = 0.0f;
-            brushStrengthMax = 1.0f;
-            brushStrength = glm::min(1.0f, brushStrength);
+            const char* functionItems[] = { "Gauss", "Box", "Smooth", "Flatten" };
+            int32_t heightBrushSelection = static_cast<int32_t>(brushFunction);
+            Widgets::SegmentedControl("Function", heightBrushSelection, functionItems, IM_ARRAYSIZE(functionItems));
+            brushFunction = static_cast<TerrainBrushFunction>(heightBrushSelection);
+
+            auto brushStrengthMin = -2000.0f;
+            auto brushStrengthMax = 2000.0f;
+
+            if (brushFunction == TerrainBrushFunction::Smooth ||
+                brushFunction == TerrainBrushFunction::Flatten) {
+                brushStrengthMin = 0.0f;
+                brushStrengthMax = 1.0f;
+                brushStrength = glm::min(1.0f, brushStrength);
+            }
+            ImGui::SliderFloat("Brush strength", &brushStrength, brushStrengthMin,
+                brushStrengthMax, "%.3f", ImGuiSliderFlags_Logarithmic);
+
+            // Need some extra setting here
+            if (brushFunction == TerrainBrushFunction::Flatten) {
+                ImGui::Checkbox("Query regular geometry", &brushFlattenQueryRegularGeometry);
+            }
+
+            ImGui::PopID();
         }
-        ImGui::SliderFloat("Brush strength", &brushStrength, brushStrengthMin,
-            brushStrengthMax, "%.3f", ImGuiSliderFlags_Logarithmic);
+        else if (brushType == TerrainBrushType::Material) {
+            ImGui::PushID("Material");
 
-        ImGui::Separator();
-        ImGui::Text("Height Brush");
-        ImGui::PushID("Height");
+            std::vector<std::string> counter;
+            std::vector<const char*> pointer;
 
-        bool heightBrushActive = brushType == TerrainBrushType::Height;
-        ImGui::Checkbox("Active", &heightBrushActive);
-        brushType = heightBrushActive ? TerrainBrushType::Height : brushType;
+            for (size_t count = 0; count < terrain->storage->materials.size(); count++) {
+                auto& material = terrain->storage->materials[count];
+                auto name = material.IsLoaded() ? material->name : std::string("Empty");
+                counter.push_back(std::to_string(count) + ": " + name);
+            }
+            for (const auto& name : counter) {
+                pointer.push_back(name.c_str());
+            }
 
-        const char* comboItems[] = { "Gauss", "Box", "Smooth", "Flatten" };
-        int32_t heightBrushSelection = static_cast<int32_t>(brushFunction);
-        ImGui::Combo("Function", &heightBrushSelection, comboItems, IM_ARRAYSIZE(comboItems));
-        brushFunction = static_cast<TerrainBrushFunction>(heightBrushSelection);
-        // Need some extra setting here
-        if (brushFunction == TerrainBrushFunction::Flatten) {
-            ImGui::Checkbox("Query regular geometry", &brushFlattenQueryRegularGeometry);
+            ImGui::Combo("Slot", &materialBrushSelection,
+                pointer.data(), pointer.size());
+
+            ImGui::PopID();
+        }
+        else if (brushType == TerrainBrushType::Hole) {
+            ImGui::TextDisabled("Paints holes into the terrain");
         }
 
-        ImGui::Separator();
-
-        ImGui::PopID();
-        ImGui::Text("Material Brush");
-        ImGui::PushID("Material");
-
-        bool materialBrushActive = brushType == TerrainBrushType::Material;
-        ImGui::Checkbox("Active", &materialBrushActive);
-        brushType = materialBrushActive ? TerrainBrushType::Material : brushType;
-
-        std::vector<std::string> counter;
-        std::vector<const char*> pointer;
-
-        for (size_t count = 0; count < terrain->storage->materials.size(); count++) {
-            counter.push_back(std::to_string(count));
-        }
-        for (const auto& name : counter) {
-            pointer.push_back(name.c_str());
-        }
-
-        ImGui::Combo("Slot", &materialBrushSelection,
-            pointer.data(), pointer.size());
-
-        ImGui::Separator();
-
-        ImGui::PopID();
-        ImGui::Text("Hole Brush");
-        ImGui::PushID("Hole");
-
-        bool holeBrushActive = brushType == TerrainBrushType::Hole;
-        ImGui::Checkbox("Active", &holeBrushActive);
-        brushType = holeBrushActive ? TerrainBrushType::Hole : brushType;
+        ImGui::SeparatorText("Actions");
+        ImGui::PushID("Actions");
 
         if (ImGui::Button("Bake terrain", ImVec2(region.x, 0.0f))) {
             Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);
             Tools::TerrainTool::BakeTerrain(terrain.Get());
         }
+        ImGui::SetItemTooltip("Bakes the edited cells, such that the terrain can be rendered with the regular LoD distances");
 
         if (ImGui::Button("Recalculate physics shape", ImVec2(region.x, 0.0f))) {
             Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);

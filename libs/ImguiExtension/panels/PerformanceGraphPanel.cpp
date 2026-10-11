@@ -50,8 +50,8 @@ namespace Atlas::ImguiExtension {
         }
 
         ImPlot::PopStyleVar();
-        ImPlot::PopStyleColor();
-        ImPlot::PopStyleColor();
+        // Four colors were pushed above
+        ImPlot::PopStyleColor(4);
 
     }
 

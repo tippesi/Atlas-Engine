@@ -3,6 +3,7 @@
 #include "DataCreator.h"
 #include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
+#include "ui/Widgets.h"
 #include "tools/CopyPasteHelper.h"
 #include "tools/FileSystemHelper.h"
 
@@ -79,11 +80,9 @@ namespace Atlas::Editor::UI {
 
         ImGui::Begin("ResourceTypeSelection", nullptr);
 
-        ImGui::SetWindowFontScale(1.5f);
-
-        ImGui::Text("Folders");
-
-        ImGui::SetWindowFontScale(1.0f);
+        // Same height as the toolbar on the right side
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("Folders");
 
         ImGui::Separator();
 
@@ -94,7 +93,9 @@ namespace Atlas::Editor::UI {
         ImGui::Begin("ResourceTypeOverview", nullptr);
 
         // Use a child as a dummy to create a drop target, since it doesn't work directly on a window
-        ImGui::BeginChild("ResourceTypeDropChild", ImVec2(0.0, 0.0));
+        // While Ctrl is held the mouse wheel zooms the icons instead of scrolling
+        ImGui::BeginChild("ResourceTypeDropChild", ImVec2(0.0, 0.0), ImGuiChildFlags_None,
+            ImGui::GetIO().KeyCtrl ? ImGuiWindowFlags_NoScrollWithMouse : ImGuiWindowFlags_None);
 
         RenderDirectoryContentControl();
 
@@ -176,48 +177,83 @@ namespace Atlas::Editor::UI {
 
         auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
-        ImGui::SetWindowFontScale(1.5f);
-        // Since the buttom will be 50% the normal text size, we will move it a bit up
-        ImGui::SetCursorPosY(-3.0f);
-
         auto lineHeight = ImGui::GetTextLineHeight();
         auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->Get(IconType::ArrowLeft));
 
+        auto normalizedDataDirectory = Common::Path::Normalize(dataDirectory);
+        bool atRoot = Common::Path::Normalize(currentDirectory) == normalizedDataDirectory;
+
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
-        if (ImGui::ImageButton("Back button", set, ImVec2(lineHeight, lineHeight), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f))) {
-            if (currentDirectory != dataDirectory) {
-                auto parentPath = std::filesystem::path(currentDirectory).parent_path();
-                currentDirectory = Common::Path::Normalize(parentPath.string());
-            }
+        ImGui::BeginDisabled(atRoot);
+        if (ImGui::ImageButton("Back button", set, ImVec2(lineHeight, lineHeight), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            auto parentPath = std::filesystem::path(currentDirectory).parent_path();
+            currentDirectory = Common::Path::Normalize(parentPath.string());
         }
+        ImGui::EndDisabled();
+        ImGui::SetItemTooltip("Go to parent folder");
 
-        ImGui::PopStyleColor();
-
-        ImGui::SameLine();
-
-        // Being in a child window offsets everything, need to align the // slashes
-        ImGui::SetCursorPosY(-2.0f);
-
+        // Breadcrumbs: every part of the path can be clicked to jump there
         auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory);
         assetPath = Common::Path::Normalize(assetPath);
-        if (assetPath.starts_with('/'))
-            assetPath.erase(assetPath.begin());
 
-        assetPath = "//:" + assetPath;
-        ImGui::Text("%s", assetPath.c_str());
+        std::vector<std::string> segments;
+        size_t segmentStart = 0;
+        while (segmentStart <= assetPath.size()) {
+            auto segmentEnd = assetPath.find('/', segmentStart);
+            if (segmentEnd == std::string::npos)
+                segmentEnd = assetPath.size();
+            if (segmentEnd > segmentStart)
+                segments.push_back(assetPath.substr(segmentStart, segmentEnd - segmentStart));
+            segmentStart = segmentEnd + 1;
+        }
+
+        std::string crumbTarget;
+        auto renderCrumb = [&](const std::string& label, const std::string& target, bool last, int32_t id) {
+            ImGui::PushID(id);
+            if (last) {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(label.c_str());
+            }
+            else if (ImGui::Button(label.c_str())) {
+                crumbTarget = target;
+            }
+            ImGui::PopID();
+            };
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, ImGui::GetStyle().ItemSpacing.y));
 
         ImGui::SameLine();
+        renderCrumb("data", normalizedDataDirectory, segments.empty(), -1);
 
-        ImGui::SetWindowFontScale(1.0f);
+        auto accumulatedPath = normalizedDataDirectory;
+        for (int32_t i = 0; i < int32_t(segments.size()); i++) {
+            accumulatedPath += "/" + segments[i];
+
+            ImGui::SameLine();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextDisabled("/");
+            ImGui::SameLine();
+            renderCrumb(segments[i], accumulatedPath, i == int32_t(segments.size()) - 1, i);
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+
+        if (!crumbTarget.empty())
+            currentDirectory = Common::Path::Normalize(crumbTarget);
+
+        ImGui::SameLine(0.0f, 2.0f * padding);
 
         auto region = ImGui::GetContentRegionAvail();
-        lineHeight = ImGui::GetTextLineHeight();
         auto buttonSize = ImVec2(lineHeight, lineHeight);
 
         // Wrap input text field into child, such that we can adjust the total size to not overlap anything
-        ImGui::BeginChild("Search field", ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), lineHeight + 2.0f * padding));
-        ImGui::InputTextWithHint("Search", "Type to search for files", &assetSearch);
+        ImGui::BeginChild("Search field", ImVec2(std::max(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 100.0f), lineHeight + 2.0f * padding));
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##Search", "Search files...", &assetSearch);
         ImGui::EndChild();
 
         region = ImGui::GetContentRegionAvail();
@@ -229,28 +265,37 @@ namespace Atlas::Editor::UI {
 
         ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
         if (ImGui::ImageButton("Filter button", set, buttonSize, uvMin, uvMax)) {
             ImGui::OpenPopup("Content browser filter settings");
         }
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
+
+        // Mark the button while a filter hides content
+        bool filterActive = (contentFilter & ContentFilterBits::AllBit) != ContentFilterBits::AllBit;
+        ImGui::SetItemTooltip(filterActive ? "Filter content (active)" : "Filter content");
+        if (filterActive)
+            Widgets::ActiveIndicator();
 
         if (ImGui::BeginPopup("Content browser filter settings")) {
             auto renderSingleBitOption = [&](const char* name, ContentFilterBits bit) {
+                // Filters can be combined, so they are checkboxes
                 bool isSet = contentFilter & bit;
-                if (ImGui::RadioButton(name, isSet)) {
-                    contentFilter = isSet ? contentFilter & ~bit : contentFilter | bit;
+                if (ImGui::Checkbox(name, &isSet)) {
+                    contentFilter = isSet ? contentFilter | bit : contentFilter & ~bit;
                 }
                 };
 
-            ImGui::Text("Filters");
-            ImGui::Separator();
+            ImGui::SeparatorText("Show content of type");
 
             ContentFilter filtered = contentFilter & ContentFilterBits::AllBit;
             bool isSet = filtered == ContentFilterBits::AllBit;
 
-            if (ImGui::RadioButton("All", isSet)) {
-                contentFilter = isSet ? 0 : ContentFilterBits::AllBit;
+            if (ImGui::Checkbox("All", &isSet)) {
+                contentFilter = isSet ? ContentFilterBits::AllBit : 0;
             }
+            ImGui::Separator();
             renderSingleBitOption("Audio", ContentFilterBits::AudioBit);
             renderSingleBitOption("Mesh", ContentFilterBits::MeshBit);
             renderSingleBitOption("Mesh source", ContentFilterBits::MeshSourceBit);
@@ -272,18 +317,23 @@ namespace Atlas::Editor::UI {
 
         ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
         if (ImGui::ImageButton("Settings button", set, buttonSize, uvMin, uvMax)) {
             ImGui::OpenPopup("Content browser settings");
         }
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
 
         if (ImGui::BeginPopup("Content browser settings")) {
 
-            ImGui::Text("Content settings");
-            ImGui::Separator();
+            ImGui::SeparatorText("Search");
 
             ImGui::Checkbox("Search recursively", &searchRecursively);
             ImGui::Checkbox("Filter recursively", &filterRecursively);
+
+            ImGui::SeparatorText("Display");
+            ImGui::SliderFloat("Icon size", &iconSize, minIconSize, maxIconSize, "%.0f px");
+            ImGui::TextDisabled("Ctrl + mouse wheel over the content also changes the size");
 
             ImGui::EndPopup();
         }
@@ -293,6 +343,13 @@ namespace Atlas::Editor::UI {
     void ContentBrowserWindow::RenderDirectoryContent() {
 
         float totalWidth = ImGui::GetContentRegionAvail().x;
+        // Ctrl + mouse wheel zooms the icons
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::GetIO().KeyCtrl &&
+            ImGui::GetIO().MouseWheel != 0.0f) {
+            iconSize = std::clamp(iconSize + ImGui::GetIO().MouseWheel * 8.0f, minIconSize, maxIconSize);
+        }
+
+        auto itemSize = iconSize + 2.0f * padding;
         auto columnCount = int32_t(totalWidth / itemSize);
         columnCount = columnCount <= 0 ? 1 : columnCount;
 
@@ -447,6 +504,7 @@ namespace Atlas::Editor::UI {
         ImGui::PushID(entryIdx);
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         Texture::Texture2D iconTexture;
         if (isDirectory)
@@ -482,7 +540,8 @@ namespace Atlas::Editor::UI {
         if (!isDirectory && ImGui::BeginDragDropSource()) {
             // Size doesn't count the termination character, so add +1
             ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.data(), assetRelativePath.size() + 1);
-            ImGui::Text("Drag to entity component");
+            ImGui::TextUnformatted(filename.c_str());
+            ImGui::TextDisabled("Drop on a matching resource slot");
 
             ImGui::EndDragDropSource();
         }
@@ -526,12 +585,14 @@ namespace Atlas::Editor::UI {
         }
 
         // Just draw the icon if it is actually visible
-        if (ImGui::IsItemVisible()) {
+        bool isVisible = ImGui::IsItemVisible();
+        if (isVisible) {
             ImGui::SameLine();
             ImGui::SetCursorPosX(cursorPos.x);
             ImGui::Image(set, buttonSize);
         }
 
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
 
         if (isEditing && editingPath == path) {
@@ -568,16 +629,27 @@ namespace Atlas::Editor::UI {
             ImGui::PopStyleColor();
             ImGui::PopStyleColor();
         }
-        else {
-            auto offset = 0.0f;
-            auto textSize = ImGui::CalcTextSize(filename.c_str());
-            if (textSize.x < iconSize)
-                offset = (iconSize - textSize.x) / 2.0f;
+        else if (isVisible) {
+            // Single centered line, which is truncated if too long. The full name is shown in the tooltip
+            auto maxWidth = std::min(columnSize - padding, iconSize + 2.0f * padding);
+            auto label = filename;
+            bool truncated = ImGui::CalcTextSize(label.c_str()).x > maxWidth;
+            if (truncated) {
+                while (!label.empty() && ImGui::CalcTextSize((label + "...").c_str()).x > maxWidth)
+                    label.pop_back();
+                label += "...";
+            }
+
+            auto textWidth = ImGui::CalcTextSize(label.c_str()).x;
             auto cursorX = ImGui::GetCursorPosX();
-            ImGui::SetCursorPosX(cursorX + offset);
-            ImGui::PushTextWrapPos(cursorX + buttonSize.x);
-            ImGui::Text("%s", filename.c_str());
-            ImGui::PopTextWrapPos();
+            ImGui::SetCursorPosX(std::max(0.0f, cursorX + (iconSize - textWidth) * 0.5f));
+            ImGui::TextUnformatted(label.c_str());
+            if (truncated)
+                ImGui::SetItemTooltip("%s", filename.c_str());
+        }
+        else {
+            // Keep the layout stable for invisible entries
+            ImGui::NewLine();
         }
 
         ImGui::PopID();

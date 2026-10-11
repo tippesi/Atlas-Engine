@@ -1,6 +1,9 @@
 #include "SceneHierarchyPanel.h"
 
+#include "../Widgets.h"
+
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <ImGuizmo.h>
 
@@ -80,18 +83,8 @@ namespace Atlas::Editor::UI {
                 // Unselect entity in this case, since this popup could only be opened by clicking on emtpy space
                 ClearSelection();
 
-                Scene::Entity entity;
-                if (ImGui::MenuItem("Add emtpy entity"))
-                    entity = scene->CreateEntity();
-
-                if (entity.IsValid()) {
-                    entity.AddComponent<NameComponent>("Entity " + std::to_string(entity));
-
-                    auto& hierarchyComponent = root.GetComponent<HierarchyComponent>();
-                    hierarchyComponent.AddChild(entity);
-
-                    SelectEntity(entity);
-                }
+                ImGui::SeparatorText("Create");
+                RenderCreateMenuItems(root);
 
                 ImGui::EndPopup();
             }
@@ -103,11 +96,27 @@ namespace Atlas::Editor::UI {
             auto buttonSize = ImVec2(lineHeight, lineHeight);
 
             // Wrap input text field into child, such that we can adjust the total size to not overlap anything
-            ImGui::BeginChild("Search field", ImVec2(region.x - (buttonSize.x + padding), lineHeight + padding));
-            ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
+            // Leave exactly enough room for the filter image button (icon + frame padding) next to it
+            const auto& style = ImGui::GetStyle();
+            auto filterButtonWidth = buttonSize.x + 2.0f * style.FramePadding.x;
+            auto createButtonWidth = ImGui::GetFrameHeight();
+            ImGui::BeginChild("Search field", ImVec2(region.x - filterButtonWidth - createButtonWidth - 2.0f * style.ItemSpacing.x,
+                ImGui::GetFrameHeight()));
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            ImGui::InputTextWithHint("##Search", "Search entities...", &entitySearch);
             bool searchChanged = entitySearch != prevEntitySearch;
             if (ImGui::IsItemClicked()) selectionChanged = true;
             ImGui::EndChild();
+
+            ImGui::SameLine();
+            if (ImGui::Button("+", ImVec2(createButtonWidth, 0.0f)))
+                ImGui::OpenPopup("Create entity");
+            ImGui::SetItemTooltip("Create entity");
+            if (ImGui::BeginPopup("Create entity")) {
+                ImGui::SeparatorText("Create");
+                RenderCreateMenuItems(root);
+                ImGui::EndPopup();
+            }
 
             RenderFilterPopup();
 
@@ -126,6 +135,8 @@ namespace Atlas::Editor::UI {
                 DuplicateSelectedEntity(scene);
             if (inFocus && !io.WantCaptureKeyboard && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
                 DeleteSelectedEntities(scene);
+            if (inFocus && !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F2, false) && selectedEntity.IsValid())
+                StartRename(selectedEntity);
 
             if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !selectionChanged) {
                 ClearSelection();
@@ -157,6 +168,44 @@ namespace Atlas::Editor::UI {
 
         selectedEntity = entity;
         selectedEntities.insert(entity);
+
+    }
+
+    bool SceneHierarchyPanel::RenderCreateMenuItems(Scene::Entity parent) {
+
+        bool created = false;
+        auto item = [&](const char* name, EntityTemplate type) {
+            if (ImGui::MenuItem(name)) {
+                createRequest = { .type = type, .parent = parent, .pending = true };
+                created = true;
+            }
+            };
+
+        item("Empty entity", EntityTemplate::Empty);
+        ImGui::Separator();
+        item("Point light", EntityTemplate::PointLight);
+        item("Spot light", EntityTemplate::SpotLight);
+        item("Directional light", EntityTemplate::DirectionalLight);
+        ImGui::Separator();
+        item("Camera", EntityTemplate::Camera);
+        item("Audio source", EntityTemplate::AudioSource);
+        item("Text", EntityTemplate::Text);
+
+        return created;
+
+    }
+
+    void SceneHierarchyPanel::StartRename(Scene::Entity entity) {
+
+        auto nameComponent = entity.TryGetComponent<NameComponent>();
+        // The root entity is found by its name, so it must not be renamed
+        if (!nameComponent || nameComponent->name == "Root")
+            return;
+
+        renamingEntity = entity;
+        renameBuffer = nameComponent->name;
+        renameFocusPending = true;
+        renameFrameCount = 0;
 
     }
 
@@ -215,7 +264,45 @@ namespace Atlas::Editor::UI {
         // Don't waste precious CPU cycles here if not visible
         if (isItemVisible) {
             auto entityId = static_cast<uint64_t>(entity);
-            nodeOpen = ImGui::TreeNodeEx(reinterpret_cast<void*>(entityId), nodeFlags, "%s", nodeName.c_str());
+
+            // The visibility button sits in a fixed column on the right side of the row. The name is
+            // clipped before it, such that long names don't run underneath the button
+            const float eyePadding = 2.0f;
+            auto eyeIconSize = ImGui::GetTextLineHeight();
+            auto eyeExtent = eyeIconSize + 2.0f * eyePadding;
+            auto eyeMinX = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x - eyeExtent;
+
+            // Hidden entities are dimmed
+            bool isHidden = nodeInvisibleSet.contains(entity);
+            if (isHidden)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            bool isRenaming = renamingEntity == entity && nameComponent && !rootNode;
+            nodeOpen = ImGui::TreeNodeEx(reinterpret_cast<void*>(entityId), nodeFlags, "");
+
+            auto rowMin = ImGui::GetItemRectMin();
+            auto rowMax = ImGui::GetItemRectMax();
+
+            bool nameTruncated = false;
+            if (!isRenaming) {
+                auto textPos = ImVec2(rowMin.x + ImGui::GetTreeNodeToLabelSpacing(), rowMin.y + ImGui::GetStyle().FramePadding.y);
+                auto textMaxX = eyeMinX - ImGui::GetStyle().ItemInnerSpacing.x;
+                nameTruncated = textPos.x + ImGui::CalcTextSize(nodeName.c_str()).x > textMaxX;
+                ImGui::RenderTextEllipsis(ImGui::GetWindowDrawList(), textPos, ImVec2(textMaxX, rowMax.y),
+                    textMaxX, textMaxX, nodeName.c_str(), nullptr, nullptr);
+            }
+            if (isHidden)
+                ImGui::PopStyleColor();
+
+            // Full name for clipped names
+            if (nameTruncated && !ImGui::IsDragDropActive())
+                ImGui::SetItemTooltip("%s", nodeName.c_str());
+
+            // Double click focuses the camera on the entity
+            if (!isRenaming && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) &&
+                !ImGui::IsItemToggledOpen())
+                focusRequested = true;
+
+            bool rowHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlappedByItem);
 
             if (ImGui::IsItemToggledOpen())
                 toggledOpenSet.insert(entity);
@@ -238,7 +325,12 @@ namespace Atlas::Editor::UI {
 
             if (ImGui::BeginDragDropSource()) {
                 ImGui::SetDragDropPayload(typeid(Scene::Entity).name(), &entity, sizeof(Scene::Entity));
-                ImGui::Text("Drag to other entity in hierarchy or into content browser to create a prefab");
+                // Show what is dragged, the hint is secondary
+                if (selectedEntities.size() > 1)
+                    ImGui::Text("%d entities", int32_t(selectedEntities.size()));
+                else
+                    ImGui::TextUnformatted(nodeName.c_str());
+                ImGui::TextDisabled("Drop on an entity to reparent, or into the content browser to create a prefab");
 
                 ImGui::EndDragDropSource();
             }
@@ -253,8 +345,18 @@ namespace Atlas::Editor::UI {
             }
 
             if (ImGui::BeginPopupContextItem()) {
-                if (ImGui::MenuItem("Add emtpy entity"))
-                    createEntity = true;
+                if (ImGui::MenuItem("Focus", "F"))
+                    focusRequested = true;
+
+                if (!rootNode && nameComponent && ImGui::MenuItem("Rename", "F2"))
+                    StartRename(entity);
+
+                ImGui::Separator();
+
+                if (ImGui::BeginMenu("Create child")) {
+                    createEntity = RenderCreateMenuItems(entity);
+                    ImGui::EndMenu();
+                }
 
                 if (!rootNode && ImGui::MenuItem("Duplicate entity"))
                     duplicateEntity = true;
@@ -266,23 +368,49 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
+            if (isRenaming) {
+                const auto& style = ImGui::GetStyle();
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(eyeMinX - ImGui::GetCursorScreenPos().x - style.ItemInnerSpacing.x);
+                if (renameFocusPending) {
+                    ImGui::SetKeyboardFocusHere();
+                    renameFocusPending = false;
+                }
+
+                bool confirmed = ImGui::InputText("##Rename", &renameBuffer,
+                    ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+                bool cancelled = ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+                // Clicking somewhere else confirms as well, escape cancels
+                bool finished = confirmed || ImGui::IsItemDeactivated() ||
+                    (!ImGui::IsItemActive() && renameFrameCount > 2);
+                renameFrameCount++;
+
+                if (finished) {
+                    if (!cancelled && !renameBuffer.empty())
+                        nameComponent->name = renameBuffer;
+                    renamingEntity = Scene::Entity();
+                }
+            }
+
             ImGui::SameLine();
 
-            bool isNodeVisible = !nodeInvisibleSet.contains(entity);
-            auto visibilityIcon = Singletons::icons->Get(IconType::Visibility);
+            bool isNodeVisible = !isHidden;
+            auto& visibilityIcon = Singletons::icons->Get(isNodeVisible ? IconType::Visibility : IconType::VisibilityOff);
             auto set = Singletons::imguiWrapper->GetTextureId(&visibilityIcon);
 
-            float buttonSize = ImGui::GetTextLineHeight();
-            auto width = ImGui::GetContentRegionAvail().x;
-            auto pos = ImGui::GetCursorPosX();
+            // Keep the eye subtle unless the row is hovered or the entity is hidden
+            auto iconAlpha = rowHovered || !isNodeVisible ? 1.0f : 0.4f;
 
-            ImGui::SetCursorPosX(pos + width - buttonSize);
+            ImGui::SetCursorScreenPos(ImVec2(eyeMinX, rowMin.y + (rowMax.y - rowMin.y - eyeExtent) * 0.5f));
 
             ImGui::PushID(reinterpret_cast<void*>(entityId));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(eyePadding, eyePadding));
 
-            if (ImGui::ImageButton("Visibility button", set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            if (ImGui::ImageButton("Visibility button", set, ImVec2(eyeIconSize, eyeIconSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f),
+                ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, iconAlpha))) {
                 isNodeVisible = !isNodeVisible;
 
                 ToggleHierarchyVisibility(entity, isNodeVisible);
@@ -294,6 +422,9 @@ namespace Atlas::Editor::UI {
                     nodeInvisibleSet.erase(entity);
             }
 
+            ImGui::SetItemTooltip(isNodeVisible ? "Hide" : "Show");
+
+            ImGui::PopStyleVar(2);
             ImGui::PopStyleColor();
             ImGui::PopStyleVar();
             ImGui::PopID();
@@ -320,21 +451,6 @@ namespace Atlas::Editor::UI {
         if (rootNode) {
             duplicateEntity = false;
             deleteEntity = false;
-        }
-
-        if (createEntity) {
-            auto newEntity = scene->CreateEntity();
-            newEntity.AddComponent<NameComponent>("Entity " + std::to_string(newEntity));
-
-            // No hierarchy component, so create one
-            if (!hierarchyComponent) {
-                entity.AddComponent<HierarchyComponent>();
-                hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
-            }
-
-            hierarchyComponent->AddChild(newEntity);
-
-            SelectEntity(newEntity);
         }
 
         if (deleteEntity) {
@@ -382,7 +498,8 @@ namespace Atlas::Editor::UI {
 
     void SceneHierarchyPanel::RenderExtendedHierarchy(const Ref<Scene::Scene>& scene, bool* selectionChanged) {
 
-        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::SeparatorText("Scene settings");
 
         RenderExtendedItem("Terrain", &selectedProperty.terrain, selectionChanged);
         if (scene->irradianceVolume)
@@ -436,40 +553,49 @@ namespace Atlas::Editor::UI {
 
         //ImGui::SetCursorPosX(ImVec2(region.x - (buttonSize.x + 2.0f * padding), ImGui::GetCursorPosY()));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
         if (ImGui::ImageButton("Filter button", set, buttonSize, uvMin, uvMax)) {
             ImGui::OpenPopup("Hierarchy filter settings");
         }
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
 
+        // Mark the button while a filter hides entities
+        bool filterActive = (hierarchyFilter & HierarchyFilterBits::AllBit) != HierarchyFilterBits::AllBit;
+        ImGui::SetItemTooltip(filterActive ? "Filter entities (active)" : "Filter entities");
+        if (filterActive)
+            Widgets::ActiveIndicator();
+
+        // Filters can be combined, so they are checkboxes
         auto renderSingleBitOption = [&](const char* name, HierarchyFilterBits bit) {
             bool isSet = hierarchyFilter & bit;
-            if (ImGui::RadioButton(name, isSet)) {
-                hierarchyFilter = isSet ? hierarchyFilter & ~bit : hierarchyFilter | bit;
+            if (ImGui::Checkbox(name, &isSet)) {
+                hierarchyFilter = isSet ? hierarchyFilter | bit : hierarchyFilter & ~bit;
             }
             };
 
         if (ImGui::BeginPopup("Hierarchy filter settings")) {
-            ImGui::Text("Component filter settings");
-            ImGui::Separator();
+            ImGui::SeparatorText("Show entities with");
 
             auto prevHierarchyFilter = hierarchyFilter;
             HierarchyFilter filtered = hierarchyFilter & HierarchyFilterBits::AllBit;
             bool isSet = filtered == HierarchyFilterBits::AllBit;
 
-            if (ImGui::RadioButton("All", isSet)) {
-                hierarchyFilter = isSet ? 0 : HierarchyFilterBits::AllBit;
+            if (ImGui::Checkbox("All", &isSet)) {
+                hierarchyFilter = isSet ? HierarchyFilterBits::AllBit : 0;
             }
-            renderSingleBitOption("Name component", HierarchyFilterBits::NameBit);
-            renderSingleBitOption("Transform component", HierarchyFilterBits::TransformBit);
-            renderSingleBitOption("Mesh component", HierarchyFilterBits::MeshBit);
-            renderSingleBitOption("Text component", HierarchyFilterBits::TextBit);
-            renderSingleBitOption("Audio component", HierarchyFilterBits::AudioBit);
-            renderSingleBitOption("Audio volume component", HierarchyFilterBits::AudioVolumeBit);
-            renderSingleBitOption("Player component", HierarchyFilterBits::PlayerBit);
-            renderSingleBitOption("Rigid body component", HierarchyFilterBits::RigidBodyBit);
-            renderSingleBitOption("Camera component", HierarchyFilterBits::CameraBit);
-            renderSingleBitOption("Script component", HierarchyFilterBits::ScriptBit);
-            renderSingleBitOption("Light component", HierarchyFilterBits::LightBit);
+            ImGui::Separator();
+            renderSingleBitOption("Name", HierarchyFilterBits::NameBit);
+            renderSingleBitOption("Transform", HierarchyFilterBits::TransformBit);
+            renderSingleBitOption("Mesh", HierarchyFilterBits::MeshBit);
+            renderSingleBitOption("Text", HierarchyFilterBits::TextBit);
+            renderSingleBitOption("Audio", HierarchyFilterBits::AudioBit);
+            renderSingleBitOption("Audio volume", HierarchyFilterBits::AudioVolumeBit);
+            renderSingleBitOption("Player", HierarchyFilterBits::PlayerBit);
+            renderSingleBitOption("Rigid body", HierarchyFilterBits::RigidBodyBit);
+            renderSingleBitOption("Camera", HierarchyFilterBits::CameraBit);
+            renderSingleBitOption("Script", HierarchyFilterBits::ScriptBit);
+            renderSingleBitOption("Light", HierarchyFilterBits::LightBit);
 
             hierarchyFilterChanged = prevHierarchyFilter != hierarchyFilter;
 

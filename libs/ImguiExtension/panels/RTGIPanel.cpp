@@ -11,8 +11,8 @@ namespace Atlas::ImguiExtension {
 
         ImGui::Checkbox("Use shadow map", &rtgi->useShadowMap);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("Uses the shadow map to calculate shadows in GI. \
-                        This is only possible when cascaded shadow maps are not used.");
+            ImGui::SetTooltip("Uses the shadow map to calculate shadows in GI. "
+                        "This is only possible when cascaded shadow maps are not used.");
         }
         ImGui::Checkbox("Use normal maps", &rtgi->useNormalMaps);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
@@ -29,7 +29,7 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderInt("Texture level##RTGI", &rtgi->textureLevel, 0, 10);
         ImGui::SliderInt("Sample count##RTGI", &rtgi->sampleCount, 1, 10);
         ImGui::SliderInt("Light sample count##RTGI", &rtgi->lightSampleCount, 1, 10);
-        ImGui::Text("Denoiser");
+        ImGui::SeparatorText("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &rtgi->spatialFilterStrength, 0.0f, 10.0f);
         ImGui::SliderFloat("Temporal weight", &rtgi->temporalWeight, 0.0f, 1.0f);
         ImGui::SliderFloat("Maximum history clip factor", &rtgi->historyClipMax, 0.0f, 1.0f);

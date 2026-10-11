@@ -2,6 +2,8 @@
 
 #include "common/RandomHelper.h"
 #include "../../Notifications.h"
+#include "../../Theme.h"
+#include "../Widgets.h"
 
 #include <glm/gtx/quaternion.hpp>
 
@@ -14,7 +16,8 @@ namespace Atlas::Editor::UI {
 
         RenderBrushSettings(activeSceneWindow);
 
-        if (brushEnabled) {
+        // There might be no scene window at all, e.g. when every scene was closed
+        if (brushEnabled && activeSceneWindow) {
             activeSceneWindow->lockSelection = true;
 
             auto dropTarget = CalculateBrushTarget(activeSceneWindow);
@@ -40,46 +43,40 @@ namespace Atlas::Editor::UI {
     void GeometryBrushWindow::RenderBrushSettings(const Ref<SceneWindow>& activeSceneWindow) { 
         
         if (!activeSceneWindow) {
-            ImGui::Text("No active scene right now");
+            Widgets::Callout("Open a scene to use the geometry brush.", Theme::Warning());
         }
-        else {            
+        else {
             auto scene = activeSceneWindow->scene;
-            ImGui::Text("Brushing into scene %s", scene->name.c_str());
+            ImGui::TextDisabled("Target scene");
+            ImGui::SameLine();
+            ImGui::TextUnformatted(scene->name.c_str());
         }
 
         ImGui::Checkbox("Enable", &brushEnabled);
 
         const char* brushTypes[] = { "Create", "Delete" };
         int32_t brushSelection = static_cast<int32_t>(brushType);
-        ImGui::Combo("Type", &brushSelection, brushTypes, IM_ARRAYSIZE(brushTypes));
+        Widgets::SegmentedControl("Type", brushSelection, brushTypes, IM_ARRAYSIZE(brushTypes));
         brushType = static_cast<BrushType>(brushSelection);
 
         ImGui::DragFloat("Brush radius", &brushRadius, 0.5f, 0.5f, 1000.0f);
         ImGui::Checkbox("Only query terrain", &brushOnlyQueryTerrain);
 
-        if (ImGui::CollapsingHeader("Create brush settings")) {
+        // The delete brush has no further settings
+        if (brushType == BrushType::Create)
             RenderCreateBrushSettings();
-        }
-
-        if (ImGui::CollapsingHeader("Delete brush settings")) {
-            RenderDeleteBrushSettings();
-        }
 
     }
 
     void GeometryBrushWindow::RenderCreateBrushSettings() {
 
-        auto scene = brushEntity.GetScene();
+        ImGui::SeparatorText("Entities");
 
-        
-
-        ImGui::Text("Entities");
-
-        std::string buttonName = "Drop entity with transform component here";
-
-        if (brushEntity.IsValid() && brushEntity.HasComponent<NameComponent>())
-            buttonName = brushEntity.GetComponent<NameComponent>().name;
-        ImGui::Button(buttonName.c_str(), { -FLT_MIN, 0 });
+        bool hasBrushEntity = brushEntity.IsValid() && brushEntity.HasComponent<NameComponent>();
+        std::string buttonName = hasBrushEntity ? brushEntity.GetComponent<NameComponent>().name :
+            "Drop entity with transform component here";
+        Widgets::DropSlot((buttonName + "##Brush entity").c_str(), !hasBrushEntity);
+        ImGui::SetItemTooltip("Entity that is placed by the brush");
 
         Scene::Entity dropEntity;
         if (ImGui::BeginDragDropTarget()) {
@@ -96,11 +93,10 @@ namespace Atlas::Editor::UI {
             ImGui::EndDragDropTarget();
         }
 
-        buttonName = "Drop hierarchy entity here";
-
-        if (parentEntity.IsValid() && parentEntity.HasComponent<NameComponent>())
-            buttonName = parentEntity.GetComponent<NameComponent>().name;
-        ImGui::Button(buttonName.c_str(), { -FLT_MIN, 0 });
+        bool hasParentEntity = parentEntity.IsValid() && parentEntity.HasComponent<NameComponent>();
+        buttonName = hasParentEntity ? parentEntity.GetComponent<NameComponent>().name : "Drop parent entity here";
+        Widgets::DropSlot((buttonName + "##Parent entity").c_str(), !hasParentEntity);
+        ImGui::SetItemTooltip("New entities are added as children of this entity");
 
         if (ImGui::BeginDragDropTarget()) {
             auto dropPayload = ImGui::GetDragDropPayload();
@@ -115,17 +111,12 @@ namespace Atlas::Editor::UI {
             ImGui::EndDragDropTarget();
         }
 
-        ImGui::Separator();
+        ImGui::SeparatorText("Placement");
 
         ImGui::DragFloat("Brush ray length", &brushRayLength, 0.5f, 0.5f, 1000.0f);
         ImGui::DragInt("Brush drop rate (per second)", &brushDropRate, 1.0f, 1, 100000);
 
         ImGui::Checkbox("Align to surface", &brushAlignToSurface);
-        ImGui::Checkbox("Only query terrain", &brushOnlyQueryTerrain);
-
-        ImGui::Separator();
-
-        ImGui::Text("Drop randomization");
 
     }
 

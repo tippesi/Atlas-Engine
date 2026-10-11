@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "Singletons.h"
 #include "Notifications.h"
+#include "Theme.h"
 #include "ui/popups/ResourceSelectionPopup.h"
 #include "tools/ResourcePayloadHelper.h"
 #include "ui/windows/ContentBrowserWindow.h"
@@ -38,8 +39,28 @@ namespace Atlas::Editor::UI {
             ImGui::PushID(resourceHandle.IsValid() ? int32_t(resourceHandle.GetID()) : counter);
 
             popup.SetID(resourceHandle.IsValid() ? resourceHandle.GetID() : counter);
+            // Empty slots are muted, all slots are outlined while dragging to show where resources can be dropped
+            bool isEmpty = !resourceHandle.IsValid();
+            bool dragActive = ImGui::IsDragDropActive();
+            if (isEmpty)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            if (dragActive) {
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+                ImGui::PushStyleColor(ImGuiCol_Border, Theme::Accent(0.8f));
+            }
+
             if (ImGui::Button(buttonName.c_str(), { resourceButtonSize, 0 }))
                 popup.Open();
+
+            if (dragActive) {
+                ImGui::PopStyleColor();
+                ImGui::PopStyleVar();
+            }
+            if (isEmpty)
+                ImGui::PopStyleColor();
+
+            if (!isEmpty)
+                ImGui::SetItemTooltip("%s", resourceHandle.GetResource()->path.c_str());
 
             if (resourceHandle.IsValid() && ImGui::BeginPopupContextItem()) {
                 if (ImGui::MenuItem("Copy name")) {
@@ -72,10 +93,12 @@ namespace Atlas::Editor::UI {
                 auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
                 if (ImGui::ImageButton("Resource delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                     resourceHandle = ResourceHandle<T>();
                     resourceChanged = true;
                 }
+                ImGui::PopStyleVar();
                 ImGui::PopStyleColor();
             }
 

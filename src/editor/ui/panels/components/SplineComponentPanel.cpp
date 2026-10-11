@@ -4,6 +4,7 @@
 #include <imgui_stdlib.h>
 
 #include "../../../tools/ResourcePayloadHelper.h"
+#include "../../Widgets.h"
 
 namespace Atlas::Editor::UI {
 
@@ -24,17 +25,18 @@ namespace Atlas::Editor::UI {
         ImGui::Combo("Bake mode", &bakeMode, bakeItems, IM_ARRAYSIZE(bakeItems));
         splineComponent.bakeMode = static_cast<SplineBakeMode>(bakeMode);
 
-        ImGui::Separator();
-        ImGui::Text("Points");
-
         auto& controlPoints = splineComponent.controlPoints;
+
+        ImGui::SeparatorText("Control points");
+        if (controlPoints.empty())
+            ImGui::TextDisabled("No control points yet");
 
         size_t counter = 0;
         size_t modifyIdx = 0;
         ControlPointAction action = ControlPointAction::None;
         for (auto& controlPoint : controlPoints) {
             ControlPointAction currentAction = ControlPointAction::None;
-            RenderControlPoint(controlPoint, counter++, currentAction);
+            RenderControlPoint(controlPoint, counter++, controlPoints.size(), currentAction);
 
             if (currentAction != ControlPointAction::None) {
                 action = currentAction;
@@ -47,10 +49,12 @@ namespace Atlas::Editor::UI {
                 controlPoints.erase(controlPoints.begin() + modifyIdx);
                 break;
             case ControlPointAction::MoveUp:
-                std::swap(controlPoints[std::max(size_t(0), modifyIdx - 1)], controlPoints[modifyIdx]);
+                if (modifyIdx > 0)
+                    std::swap(controlPoints[modifyIdx - 1], controlPoints[modifyIdx]);
                 break;
             case ControlPointAction::MoveDown:
-                std::swap(controlPoints[std::min(controlPoints.size() - 1, modifyIdx + 1)], controlPoints[modifyIdx]);
+                if (modifyIdx + 1 < controlPoints.size())
+                    std::swap(controlPoints[modifyIdx + 1], controlPoints[modifyIdx]);
                 break;
             default: break;
         }
@@ -64,7 +68,7 @@ namespace Atlas::Editor::UI {
                 selectControlPointIdx = int32_t(controlPoints.size() - 1);
         }
 
-        if(ImGui::Button("Bake", ImVec2(region.x, 0.0f))) {
+        if (ImGui::Button("Bake", ImVec2(region.x, 0.0f))) {
             splineComponent.Bake();
         }
 
@@ -74,46 +78,46 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SplineComponentPanel::RenderControlPoint(SplineControlPoint& point, size_t idx, ControlPointAction& action) {
+    void SplineComponentPanel::RenderControlPoint(SplineControlPoint& point, size_t idx, size_t count, ControlPointAction& action) {
 
-        const float padding = 8.0f;
-        const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
             | ImGuiTreeNodeFlags_AllowOverlap;
+        // The point picked in the viewport is highlighted
+        if (selectControlPointIdx == int32_t(idx))
+            nodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-        auto region = ImGui::GetContentRegionAvail();
-        auto lineHeight = ImGui::GetTextLineHeight();
-        auto deleteButtonSize = ImVec2(lineHeight, lineHeight);        
-
-        auto treeNodeSize = region.x - deleteButtonSize.x + 2.0f * padding;
-        ImGui::SetNextItemWidth(treeNodeSize);
+        // Buttons sit in a fixed column on the right side of the row, such that they stay inside of the panel
+        auto iconSize = ImGui::GetTextLineHeight();
+        auto buttonExtent = iconSize + 2.0f;
+        auto buttonsMinX = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x - 3.0f * buttonExtent;
 
         bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(idx), nodeFlags, "Control point %d", int32_t(idx));
+        auto rowMin = ImGui::GetItemRectMin();
+        auto rowMax = ImGui::GetItemRectMax();
+
         ImGui::SameLine();
-        
+        ImGui::SetCursorScreenPos(ImVec2(buttonsMinX, rowMin.y + (rowMax.y - rowMin.y - buttonExtent) * 0.5f));
+
+        ImGui::PushID(int32_t(idx));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        auto upArrowIcon = Singletons::icons->Get(IconType::ArrowUp);
-        auto set = Singletons::imguiWrapper->GetTextureId(&upArrowIcon);
-        if (ImGui::ImageButton("Move up button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        ImGui::BeginDisabled(idx == 0);
+        if (Widgets::IconButton("Move up button", Singletons::icons->Get(IconType::ArrowUp), iconSize, "Move up"))
             action = ControlPointAction::MoveUp;
-        }
+        ImGui::EndDisabled();
         ImGui::SameLine();
 
-        auto downArrowIcon = Singletons::icons->Get(IconType::ArrowDown);
-        set = Singletons::imguiWrapper->GetTextureId(&downArrowIcon);
-        if (ImGui::ImageButton("Move down button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        ImGui::BeginDisabled(idx + 1 >= count);
+        if (Widgets::IconButton("Move down button", Singletons::icons->Get(IconType::ArrowDown), iconSize, "Move down"))
             action = ControlPointAction::MoveDown;
-        }
+        ImGui::EndDisabled();
         ImGui::SameLine();
 
-        auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
-        set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
-        if (ImGui::ImageButton("Delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        if (Widgets::IconButton("Delete button", Singletons::icons->Get(IconType::Trash), iconSize, "Delete point"))
             action = ControlPointAction::Delete;
-        }
-        ImGui::PopStyleColor();
+
         ImGui::PopStyleVar();
+        ImGui::PopID();
 
         if (!open)
             return;
@@ -136,9 +140,14 @@ namespace Atlas::Editor::UI {
 
         vec3 localPosition = position, localRotation = rotation, localScale = scale;
 
-        ImGui::DragFloat3("Position", &position[0], 0.01f);
-        ImGui::DragFloat3("Rotation", &rotation[0], 0.01f);
-        ImGui::DragFloat3("Scale", &scale[0], 0.01f, -100.0f, 100.0f);
+        Widgets::DragVec3("Position", position, 0.01f);
+
+        // Rotation is stored in radians, but degrees are easier to work with
+        auto rotationDegrees = glm::degrees(rotation);
+        if (Widgets::DragVec3("Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
+            rotation = glm::radians(rotationDegrees);
+
+        Widgets::DragVec3("Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
 
         ImGui::DragFloat("Time", &point.time, 0.001f, 0.0f, 1.0f);
 

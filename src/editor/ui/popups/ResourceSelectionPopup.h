@@ -26,10 +26,13 @@ namespace Atlas::Editor::UI {
         ResourceSelectionPopup() : Popup("ResourceSelectionPopup") {}
 
         template<class T>
-        ResourceHandle<T> Render(std::vector<ResourceHandle<T>> resources, ImVec2 size = ImVec2(-FLT_MAX, 200.0f)) {
+        ResourceHandle<T> Render(std::vector<ResourceHandle<T>> resources, ImVec2 size = ImVec2(-FLT_MAX, 260.0f)) {
 
             ResourceHandle<T> handle;
 
+            // A negative width means automatic, which is a width that fits typical file names
+            if (size.x < 0.0f)
+                size.x = ImGui::GetFontSize() * 24.0f;
             ImGui::SetNextWindowSize(size);
 
             if (ImGui::BeginPopup(GetNameID())) {
@@ -37,22 +40,41 @@ namespace Atlas::Editor::UI {
                 if (wasJustOpened) {
                     ImGui::SetKeyboardFocusHere();
                 }
-                ImGui::InputTextWithHint("Search", "Type to search for loaded resource", &resourceSearch);
-                
-                ImGui::BeginChild("Resource list");
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                bool confirmFirst = ImGui::InputTextWithHint("##Search", "Search loaded resources...",
+                    &resourceSearch, ImGuiInputTextFlags_EnterReturnsTrue);
 
                 resources = ApplySearchAndSortFiltering(resources);
 
-                for (size_t i = 0; i < resources.size(); i++) {
-                    bool isSelected = false;
-                    const auto& resource = resources[i].GetResource();
+                ImGui::TextDisabled("%d %s", int32_t(resources.size()), resources.size() == 1 ? "resource" : "resources");
 
-                    auto itemName = resource->GetFileName();
+                ImGui::BeginChild("Resource list", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
 
-                    ImGui::Selectable(itemName.c_str(), &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
+                if (resources.empty())
+                    ImGui::TextDisabled("%s", resourceSearch.empty() ? "No resources of this type are loaded" :
+                        "No resources match the search");
 
-                    if (isSelected)
-                        handle = resources[i];
+                // Pressing enter in the search field picks the first match
+                if (confirmFirst && !resources.empty())
+                    handle = resources.front();
+
+                ImGuiListClipper clipper;
+                clipper.Begin(int32_t(resources.size()));
+                while (clipper.Step()) {
+                    for (int32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                        bool isSelected = false;
+                        const auto& resource = resources[i].GetResource();
+
+                        auto itemName = resource->GetFileName();
+
+                        ImGui::PushID(i);
+                        ImGui::Selectable(itemName.c_str(), &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
+                        ImGui::SetItemTooltip("%s", resource->path.c_str());
+                        ImGui::PopID();
+
+                        if (isSelected)
+                            handle = resources[i];
+                    }
                 }
 
                 ImGui::EndChild();

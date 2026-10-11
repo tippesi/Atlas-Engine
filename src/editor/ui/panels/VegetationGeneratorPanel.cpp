@@ -1,4 +1,6 @@
 #include "VegetationGeneratorPanel.h"
+#include "../../Theme.h"
+#include "../Widgets.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -16,7 +18,7 @@ namespace Atlas::Editor::UI {
     void VegetationGeneratorPanel::Render(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator) {
 
         if (!scene->terrain.IsLoaded()) {
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Terrain must be loaded or generated first");
+            Widgets::Callout("Terrain must be loaded or generated first", Theme::Warning());
             return;
         }
 
@@ -72,14 +74,15 @@ namespace Atlas::Editor::UI {
             ImGui::SetCursorPosX(pos + width - buttonSize);
 
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
             if (ImGui::ImageButton("Vegetationtype delete button", set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                 deleteIdx = i;
             }
 
             ImGui::PopStyleColor();
-            ImGui::PopStyleVar();
+            ImGui::PopStyleVar(2);
 
             // Here we can use the copy pase helper to copy over some settings to other biomes
             if (!open)
@@ -133,9 +136,9 @@ namespace Atlas::Editor::UI {
             ImGui::DragFloat("Max slope", &type.slopeMax, 0.001f, 0.0f, 1.0f);
 
             ImGui::SeparatorText("Transform");
-            ImGui::DragFloat3("Offset", glm::value_ptr(type.offset), 0.1f);
-            ImGui::DragFloat3("Min scale", glm::value_ptr(type.scaleMin), 0.1f);
-            ImGui::DragFloat3("Max scale", glm::value_ptr(type.scaleMax), 0.1f);
+            Widgets::DragVec3("Offset", type.offset, 0.1f, 0.0f);
+            Widgets::DragVec3("Min scale", type.scaleMin, 0.1f, 1.0f);
+            Widgets::DragVec3("Max scale", type.scaleMax, 0.1f, 1.0f);
 
             ImGui::Checkbox("Align to surface", &type.alignToSurface);
             ImGui::DragFloat("Max alignment angle", &type.maxAlignmentAngle, 0.01f, 0.0f, 3.14f / 2.0f);

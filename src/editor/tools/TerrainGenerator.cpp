@@ -82,8 +82,7 @@ namespace Atlas::Editor {
 
         ImGui::InputTextWithHint("Name", "Type name", &name);
 
-        ImGui::Separator();
-        ImGui::Text("Heightmap");
+        ImGui::SeparatorText("Heightmap");
 
         ImGui::RadioButton("Generate new", &heightMapSelection, 0);
         ImGui::SameLine();
@@ -92,8 +91,8 @@ namespace Atlas::Editor {
         ImGui::RadioButton("Use existing terrain", &heightMapSelection, 2);
 
         UIElements::TextureView(imguiWrapper, &previewHeightMap, width / 2.0f);
-        ImGui::SetItemTooltip("Higher octaves have a higher frequency, which might not be visible in the preview\n \
-            Use the sliders to change the strength of an octave");
+        ImGui::SetItemTooltip("Higher octaves have a higher frequency, which might not be visible in the preview\n "
+            "Use the sliders to change the strength of an octave");
 
         if (heightMapSelection == 0) {
             const char* resolutions[] = { "512x512", "1024x1024", "2048x2048",
@@ -125,9 +124,7 @@ namespace Atlas::Editor {
                 UpdateHeightmapFromTerrain(terrain);
         }
 
-        ImGui::Separator();
-
-        ImGui::Text("General settings");
+        ImGui::SeparatorText("General settings");
         ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
         ImGui::SliderInt("Patch size", &patchSize, 1, 32);
         ImGui::DragFloat("Resolution", &resolution, 0.01f, 0.1f, 4.0f);
@@ -148,8 +145,8 @@ namespace Atlas::Editor {
             ImGui::Text("Moisture");
 
             UIElements::TextureView(imguiWrapper, &previewMoistureMap, width / 2.0f);
-            ImGui::SetItemTooltip("Higher octaves have a higher frequency, which might not be visible in the preview\n \
-                    Use the sliders to change the strength of an octave");
+            ImGui::SetItemTooltip("Higher octaves have a higher frequency, which might not be visible in the preview\n "
+                    "Use the sliders to change the strength of an octave");
 
             int32_t count = 0;
             for (auto& amplitude : moistureAmplitudes) {
@@ -159,8 +156,7 @@ namespace Atlas::Editor {
 
             ImGui::SliderInt("Seed##1", &moistureSeed, 0, 100);
 
-            ImGui::Separator();
-            ImGui::Text("Materials");
+            ImGui::SeparatorText("Materials");
 
             auto region = ImGui::GetContentRegionAvail();
             auto lineHeight = ImGui::GetTextLineHeight();
@@ -181,9 +177,11 @@ namespace Atlas::Editor {
                 ImGui::SameLine();
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
                 if (ImGui::ImageButton("Material delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                     material.Reset();
                 }
+                ImGui::PopStyleVar();
                 ImGui::PopStyleColor();
 
                 if (open) {
@@ -205,8 +203,7 @@ namespace Atlas::Editor {
                 materials.push_back({ ResourceHandle<Material>(), vec3(0.0f) });
             }
 
-            ImGui::Separator();
-            ImGui::Text("Biomes");
+            ImGui::SeparatorText("Biomes");
 
             UIElements::TextureView(imguiWrapper, &previewBiomeMap, width / 2.0f);
             ImGui::SetItemTooltip("Add materials to get started with the biome editing.\n"
@@ -245,9 +242,11 @@ namespace Atlas::Editor {
 
                 ImGui::SetCursorPosX(eleRegion.x - deleteButtonSize.x - padding);
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
                 if (ImGui::ImageButton("Biome delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                     deleteElevationElement = eleBiomeCount - 1;
                 }
+                ImGui::PopStyleVar();
                 ImGui::PopStyleColor();
 
                 if (eleOpen) {

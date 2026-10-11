@@ -25,7 +25,7 @@ namespace Atlas::Editor::UI {
             MoveDown
         };
 
-        void RenderControlPoint(SplineControlPoint& point, size_t idx, ControlPointAction& action);
+        void RenderControlPoint(SplineControlPoint& point, size_t idx, size_t count, ControlPointAction& action);
 
     };
 

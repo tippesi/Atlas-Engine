@@ -1,5 +1,7 @@
 #include "Notifications.h"
+#include "common/MathHelper.h"
 #include "Singletons.h"
+#include "Theme.h"
 
 #include "common/Hash.h"
 #include "Log.h"
@@ -8,6 +10,13 @@
 #include <imgui_stdlib.h>
 
 namespace Atlas::Editor {
+
+	static ImVec4 Fade(ImVec4 color, float alpha) {
+
+		color.w *= alpha;
+		return color;
+
+	}
 
 	std::vector<Notification> Notifications::notifications;
 	std::mutex Notifications::mutex;
@@ -28,18 +37,16 @@ namespace Atlas::Editor {
 		auto viewport = ImGui::GetMainViewport();
 		auto viewportSize = viewport->Size;
 
-		auto config = Singletons::config;
-
 		std::scoped_lock lock(mutex);
 
 		std::vector<uint32_t> toBeRemoved;
 
-		auto textScale = 1.15f;
+		auto textScale = 1.1f;
 		auto notificationDist = 8.0f;
-		auto notificationWidth = viewportSize.x * 0.5f;
-		auto notificationHeight = ImGui::GetTextLineHeightWithSpacing() * textScale + 16.0f;
-		ImVec2 notificationOffset = ImVec2((viewportSize.x - notificationWidth) / 2.0f,
-			viewportSize.y - notificationDist - notificationHeight);
+		auto padding = ImVec2(16.0f, 10.0f);
+		auto stripeWidth = 4.0f;
+		auto notificationHeight = ImGui::GetTextLineHeight() * textScale + 2.0f * padding.y;
+		auto bottomY = viewport->Pos.y + viewportSize.y - 24.0f;
 
 		auto notificationsReversed = notifications;
 		std::reverse(notificationsReversed.begin(), notificationsReversed.end());
@@ -55,48 +62,51 @@ namespace Atlas::Editor {
 				continue;
 			}
 
-			auto alpha = std::min(timeRemaining - notification.fadeoutTime, 1.0f);
+			auto alpha = Helper::Math::Saturate(timeRemaining - notification.fadeoutTime);
 
 			Hash hash = 0;
 			HashCombine(hash, notification.message);
 			HashCombine(hash, notification.creationTime);
 
-			if (config->darkMode) {
-				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, alpha * 0.9f));
-				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, alpha * 0.9f));
-			}
-			else {
-				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, alpha * 0.9f));
-				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.7f, 0.7f, 0.7f, alpha * 0.9f));
-			}
+			// White is the default color, which means "informational": use the accent then
+			bool isDefaultColor = notification.color == vec3(1.0f);
+			auto stripeColor = isDefaultColor ? Theme::Accent(alpha) :
+				ImVec4(notification.color.r, notification.color.g, notification.color.b, alpha);
+
+			ImGui::SetNextWindowBgAlpha(1.0f);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, Fade(ImGui::GetStyleColorVec4(ImGuiCol_PopupBg), alpha));
+			ImGui::PushStyleColor(ImGuiCol_Border, Fade(ImGui::GetStyleColorVec4(ImGuiCol_Border), alpha));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, Theme::overlayRounding);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+			auto textWidth = ImGui::CalcTextSize(notification.message.c_str()).x * textScale;
+			auto notificationWidth = std::min(textWidth + 2.0f * padding.x + stripeWidth, viewportSize.x * 0.8f);
 
 			auto windowName = "Notification##" + std::to_string(hash);
+			ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + (viewportSize.x - notificationWidth) * 0.5f,
+				bottomY - notificationHeight));
+			ImGui::SetNextWindowSize(ImVec2(notificationWidth, notificationHeight));
 			ImGui::Begin(windowName.c_str(), nullptr, notificationWindowFlags);
 
-			ImGui::SetWindowPos(notificationOffset);
-			ImGui::SetWindowSize(ImVec2(notificationWidth, notificationHeight));
-
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(notification.color.r,
-				notification.color.g, notification.color.b, alpha));
+			auto windowPos = ImGui::GetWindowPos();
+			ImGui::GetWindowDrawList()->AddRectFilled(windowPos, ImVec2(windowPos.x + stripeWidth, windowPos.y + notificationHeight),
+				ImGui::GetColorU32(stripeColor), Theme::overlayRounding, ImDrawFlags_RoundCornersLeft);
 
 			ImGui::SetWindowFontScale(textScale);
+			ImGui::SetCursorPos(ImVec2(stripeWidth + padding.x, padding.y));
 
-			auto textWidth = ImGui::CalcTextSize(notification.message.c_str()).x;
-
-			ImGui::SetCursorPosX((notificationWidth - textWidth) * 0.5f);
-
-			ImGui::Text("%s", notification.message.c_str());
+			ImGui::PushStyleColor(ImGuiCol_Text, Fade(ImGui::GetStyleColorVec4(ImGuiCol_Text), alpha));
+			ImGui::TextUnformatted(notification.message.c_str());
+			ImGui::PopStyleColor();
 
 			ImGui::SetWindowFontScale(1.0f);
 
-			ImGui::PopStyleColor();
-
-			notificationOffset.y = notificationOffset.y - ImGui::GetWindowHeight() - notificationDist;
+			bottomY -= notificationHeight + notificationDist;
 
 			ImGui::End();
 
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
+			ImGui::PopStyleVar(2);
+			ImGui::PopStyleColor(2);
 
 		}
 

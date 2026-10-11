@@ -65,7 +65,40 @@ namespace Atlas::Editor::UI {
 
         HierarchyFilter hierarchyFilter = HierarchyFilterBits::AllBit;
 
+        // Set when the user wants to focus the camera on the selection (double click, context menu)
+        bool focusRequested = false;
+
+        // Predefined entities that can be created from the hierarchy, the command palette etc.
+        enum class EntityTemplate {
+            Empty = 0,
+            PointLight,
+            SpotLight,
+            DirectionalLight,
+            Camera,
+            AudioSource,
+            Text
+        };
+
+        // Set by the create menus. The scene window creates the entity, since it knows the editor camera for the placement
+        struct CreateRequest {
+            EntityTemplate type = EntityTemplate::Empty;
+            Scene::Entity parent;
+            bool pending = false;
+        };
+        CreateRequest createRequest;
+
+        // Menu items for all entity templates, returns true if one was chosen
+        bool RenderCreateMenuItems(Scene::Entity parent);
+
     private:
+        void StartRename(Scene::Entity entity);
+
+        // Inline renaming of an entity in the hierarchy
+        Scene::Entity renamingEntity;
+        std::string renameBuffer;
+        bool renameFocusPending = false;
+        int32_t renameFrameCount = 0;
+
         struct EntityData {
             ECS::Pool<HierarchyComponent> hierarchyPool;
             ECS::Pool<NameComponent> namePool;

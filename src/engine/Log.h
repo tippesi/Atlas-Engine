@@ -66,6 +66,20 @@ namespace Atlas {
         static std::vector<Entry> GetLatestEntries(int32_t count);
 
         /**
+         * Returns the entries that were added after the given amount of entries.
+         * Together with GetEntryCount() this allows to only fetch new entries.
+         * @param firstIndex Index of the first entry to return.
+         * @return The entries starting at firstIndex.
+         */
+        static std::vector<Entry> GetEntriesSince(size_t firstIndex);
+
+        /**
+         * Returns the total amount of entries. Entries are never removed, so this can be used to detect new ones.
+         * @return The amount of entries.
+         */
+        static size_t GetEntryCount();
+
+        /**
          * Save the log to the hard drive.
          * @param filename The filename of the log.
          */

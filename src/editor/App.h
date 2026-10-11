@@ -15,6 +15,7 @@
 #include "ui/windows/LogWindow.h"
 #include "ui/windows/ProfilerWindow.h"
 #include "ui/windows/GeometryBrushWindow.h"
+#include "ui/popups/CommandPalette.h"
 
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
@@ -38,6 +39,18 @@ namespace Atlas::Editor {
         
         void SetupMainDockspace(ImGuiID dsID);
 
+        void RenderEmptyState(ImGuiID dsID);
+
+        void RenderStatusBar();
+
+        void RenderRecentScenesMenu();
+
+        void RenderShortcutsWindow();
+
+        void RegisterCommands();
+
+        Ref<UI::SceneWindow> GetActiveSceneWindow() const;
+
         void SubscribeToResourceEvents();
 
         void SetDefaultWindowResolution();
@@ -51,6 +64,9 @@ namespace Atlas::Editor {
         UI::GeometryBrushWindow geometryBrushWindow = UI::GeometryBrushWindow(false);
 
         ImguiExtension::PerformanceGraphPanel performanceGraphPanel;
+
+        UI::CommandPalette commandPalette;
+        bool showShortcutsWindow = false;
 
         std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
         std::vector<Ref<UI::SceneWindow>> sceneWindows;

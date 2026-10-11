@@ -39,6 +39,13 @@ namespace Atlas::Editor::UI {
 
         void SaveScene();
 
+        // Moves the editor camera such that the selected entities are in view
+        void FocusSelection();
+
+        // Creates a predefined entity in front of the editor camera and selects it.
+        // An invalid parent means the root entity
+        Scene::Entity CreateEntityFromTemplate(SceneHierarchyPanel::EntityTemplate type, Scene::Entity parent = Scene::Entity());
+
         void ApplyBrush();
 
         SceneHierarchyPanel sceneHierarchyPanel;
@@ -57,6 +64,7 @@ namespace Atlas::Editor::UI {
         float resolutionScale = 0.75f;       
 
         bool depthTestBoundingVolumes = false;
+        bool showGrid = false;
 
         bool hasMainCamera = false;
         bool hasPlayer = false;
@@ -69,6 +77,12 @@ namespace Atlas::Editor::UI {
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);
+
+        // Ground grid on the y = 0 plane around the editor camera
+        void RenderGrid();
+
+        // Time when the camera speed was last changed with the mouse wheel, to show a short hint
+        float cameraSpeedChangeTime = -1000.0f;
 
         void PerformEntitySelection();
 

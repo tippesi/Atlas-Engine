@@ -1,4 +1,5 @@
 #include "TransformComponentPanel.h"
+#include "../../Widgets.h"
 
 #include <imgui.h>
 #include <ImGuizmo.h>
@@ -29,9 +30,14 @@ namespace Atlas::Editor::UI {
 
         vec3 localPosition = position, localRotation = rotation, localScale = scale;
 
-        ImGui::DragFloat3("Position", &position[0], 0.01f);
-        ImGui::DragFloat3("Rotation", &rotation[0], 0.01f);
-        ImGui::DragFloat3("Scale", &scale[0], 0.01f, -100.0f, 100.0f);
+        Widgets::DragVec3("Position", position, 0.01f);
+
+        // Rotation is stored in radians, but degrees are easier to work with
+        auto rotationDegrees = glm::degrees(rotation);
+        if (Widgets::DragVec3("Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
+            rotation = glm::radians(rotationDegrees);
+
+        Widgets::DragVec3("Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
 
         // Only recompose when a local change happened
         if (localPosition != position || localScale != scale ||

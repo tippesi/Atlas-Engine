@@ -1,7 +1,9 @@
 #include "SceneWindow.h"
+#include "common/MathHelper.h"
 #include "../../Singletons.h"
 #include "../../Notifications.h"
 #include "../../tools/ResourcePayloadHelper.h"
+#include "../../Theme.h"
 
 #include "Serializer.h"
 #include "common/Hash.h"
@@ -66,6 +68,22 @@ namespace Atlas::Editor::UI {
         if (controlDown && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
         }   
+
+        // Viewport shortcuts. W/A/S/D/Q/E are used for camera movement, therefore gizmo modes are on 1/2/3.
+        // Ignore them while typing into a text field.
+        bool typing = ImGui::GetIO().WantTextInput;
+        if (inFocus && !isPlaying && !typing && !controlDown) {
+            if (ImGui::IsKeyPressed(ImGuiKey_1, false))
+                guizmo.mode = ImGuizmo::OPERATION::TRANSLATE;
+            if (ImGui::IsKeyPressed(ImGuiKey_2, false))
+                guizmo.mode = ImGuizmo::OPERATION::ROTATE;
+            if (ImGui::IsKeyPressed(ImGuiKey_3, false))
+                guizmo.mode = ImGuizmo::OPERATION::SCALE;
+            if (ImGui::IsKeyPressed(ImGuiKey_F, false))
+                FocusSelection();
+            if (ImGui::IsKeyPressed(ImGuiKey_G, false))
+                showGrid = !showGrid;
+        }
 
     }
 
@@ -161,10 +179,24 @@ namespace Atlas::Editor::UI {
 
         sceneHierarchyPanel.Render(refScene, inFocus);
 
+        if (sceneHierarchyPanel.focusRequested) {
+            sceneHierarchyPanel.focusRequested = false;
+            FocusSelection();
+        }
+
+        if (sceneHierarchyPanel.createRequest.pending) {
+            auto request = sceneHierarchyPanel.createRequest;
+            sceneHierarchyPanel.createRequest.pending = false;
+            CreateEntityFromTemplate(request.type, request.parent);
+        }
+
         for (auto entity : sceneHierarchyPanel.selectedEntities) {
             Scene::Entity selectedEntity(entity, &scene->entityManager);
             RenderEntityBoundingVolumes(selectedEntity);
         }
+
+        if (showGrid && !isPlaying && scene.IsLoaded())
+            RenderGrid();
 
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
@@ -216,72 +248,79 @@ namespace Atlas::Editor::UI {
 
         viewportPanel.DrawMenuBar([&]() {
 
-            const float padding = 8.0f;
+            // Toolbar is drawn as floating, rounded button groups on top of the viewport
+            const float margin = 8.0f;
+            const float groupPadding = 3.0f;
+            const float buttonSpacing = 2.0f;
+            const ImVec2 framePadding = ImVec2(5.0f, 5.0f);
 
-            auto height = ImGui::GetTextLineHeight();
+            auto iconSize = ImGui::GetTextLineHeight() * 1.15f;
             auto region = ImGui::GetContentRegionAvail();
-            auto buttonSize = ImVec2(height, height);
-
-            ImVec4 selectedColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-
-            auto barBackgroundColor = Singletons::config->darkMode ? IM_COL32(0, 0, 0, 75) : IM_COL32(255, 255, 255, 75);
-
             auto windowPos = ImGui::GetWindowPos();
             auto drawList = ImGui::GetWindowDrawList();
-            drawList->AddRectFilled(windowPos, ImVec2(region.x + windowPos.x, height + windowPos.y + padding), barBackgroundColor);
 
-            ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+            auto buttonExtent = iconSize + 2.0f * framePadding.x;
+            auto groupHeight = buttonExtent + 2.0f * groupPadding;
+            auto groupWidth = [&](int32_t buttonCount) {
+                return float(buttonCount) * buttonExtent + float(buttonCount - 1) * buttonSpacing + 2.0f * groupPadding;
+                };
 
-            auto uvMin = ImVec2(0.15f, 0.15f);
-            auto uvMax = ImVec2(0.85f, 0.85f);
+            auto beginGroup = [&](float x, int32_t buttonCount) {
+                auto min = ImVec2(windowPos.x + x, windowPos.y + margin);
+                auto max = ImVec2(min.x + groupWidth(buttonCount), min.y + groupHeight);
+                drawList->AddRectFilled(min, max, ImGui::GetColorU32(Theme::OverlayBackground()), Theme::overlayRounding);
+                drawList->AddRect(min, max, ImGui::GetColorU32(Theme::OverlayBorder()), Theme::overlayRounding);
+                ImGui::SetCursorPos(ImVec2(x + groupPadding, margin + groupPadding));
+                };
 
+            auto iconButton = [&](const char* id, IconType iconType, bool selected, bool enabled,
+                const char* tooltip, ImVec2 uvMin = ImVec2(0.15f, 0.15f), ImVec2 uvMax = ImVec2(0.85f, 0.85f)) {
+                auto& icon = Singletons::icons->Get(iconType);
+                auto set = Singletons::imguiWrapper->GetTextureId(&icon);
+
+                // Light mode icons are dark, so they would vanish on a solid accent fill, use a tint there
+                bool darkMode = Singletons::config->darkMode;
+                auto selectedColor = darkMode ? Theme::AccentFill() : Theme::Accent(0.22f);
+                auto selectedHoverColor = darkMode ? Theme::AccentFillHovered() : Theme::Accent(0.32f);
+
+                auto hoverColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+                ImGui::PushStyleColor(ImGuiCol_Button, selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, selected ? selectedHoverColor : hoverColor);
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, selectedColor);
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, framePadding);
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
+                ImGui::BeginDisabled(!enabled);
+                bool pressed = ImGui::ImageButton(id, set, ImVec2(iconSize, iconSize), uvMin, uvMax);
+                ImGui::EndDisabled();
+
+                ImGui::PopStyleVar(2);
+                ImGui::PopStyleColor(3);
+
+                ImGui::SetItemTooltip("%s", tooltip);
+                ImGui::SameLine(0.0f, buttonSpacing);
+
+                return pressed && enabled;
+                };
+
+            // Left: gizmo operations
             if (!isPlaying) {
-                auto& moveIcon = Singletons::icons->Get(IconType::Move);
-                auto set = Singletons::imguiWrapper->GetTextureId(&moveIcon);
-                bool selected = guizmo.mode == ImGuizmo::OPERATION::TRANSLATE;
-                ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-                ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-                if (ImGui::ImageButton("Translate button", set, buttonSize, uvMin, uvMax)) {
+                beginGroup(margin, 4);
+
+                if (iconButton("Translate button", IconType::Move, guizmo.mode == ImGuizmo::OPERATION::TRANSLATE,
+                    true, "Translate (1)"))
                     guizmo.mode = ImGuizmo::OPERATION::TRANSLATE;
-                }
-                ImGui::SetItemTooltip("Sets the gizmo into translation mode");
-                ImGui::PopStyleColor();
-
-                ImGui::SameLine();
-                auto& rotateIcon = Singletons::icons->Get(IconType::Rotate);
-                set = Singletons::imguiWrapper->GetTextureId(&rotateIcon);
-                selected = guizmo.mode == ImGuizmo::OPERATION::ROTATE;
-                backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-                ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-                if (ImGui::ImageButton("Rotate button", set, buttonSize, uvMin, uvMax)) {
+                if (iconButton("Rotate button", IconType::Rotate, guizmo.mode == ImGuizmo::OPERATION::ROTATE,
+                    true, "Rotate (2)"))
                     guizmo.mode = ImGuizmo::OPERATION::ROTATE;
-                }
-                ImGui::SetItemTooltip("Sets the gizmo into rotation mode");
-                ImGui::PopStyleColor();
-
-                ImGui::SameLine();
-                auto& scaleIcon = Singletons::icons->Get(IconType::Scale);
-                set = Singletons::imguiWrapper->GetTextureId(&scaleIcon);
-                selected = guizmo.mode == ImGuizmo::OPERATION::SCALE;
-                backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-                ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-                if (ImGui::ImageButton("Scale button", set, buttonSize, uvMin, uvMax)) {
+                if (iconButton("Scale button", IconType::Scale, guizmo.mode == ImGuizmo::OPERATION::SCALE,
+                    true, "Scale (3)"))
                     guizmo.mode = ImGuizmo::OPERATION::SCALE;
-                }
-                ImGui::SetItemTooltip("Sets the gizmo into scaling mode");
-                ImGui::PopStyleColor();
-
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-
-                auto& moreHorizIcon = Singletons::icons->Get(IconType::MoreHorizontal);
-                set = Singletons::imguiWrapper->GetTextureId(&moreHorizIcon);
-                ImGui::SameLine();
-                if (ImGui::ImageButton("More button", set, buttonSize, uvMin, uvMax)) {
+                if (iconButton("More button", IconType::MoreHorizontal, false, true, "Gizmo settings"))
                     ImGui::OpenPopup("Guizmo settings");
-                }
 
                 if (ImGui::BeginPopup("Guizmo settings")) {
-                    ImGui::Text("Snapping");
+                    ImGui::SeparatorText("Snapping");
 
                     float translationSnap = guizmo.translationSnap.x;
                     ImGui::Checkbox("Enabled", &guizmo.snappingEnabled);
@@ -291,17 +330,11 @@ namespace Atlas::Editor::UI {
 
                     guizmo.translationSnap = vec3(translationSnap);
 
-                    ImGui::Text("Manipulate");
+                    ImGui::SeparatorText("Manipulate");
                     ImGui::Checkbox("Object space", &guizmo.objectSpace);
-
-                    ImGui::Text("Bounding volumes");
-                    ImGui::Checkbox("Test depth", &depthTestBoundingVolumes);
 
                     ImGui::EndPopup();
                 }
-            }
-            else {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
             }
 
             hasMainCamera = false;
@@ -326,48 +359,51 @@ namespace Atlas::Editor::UI {
                 }
             }
 
-            uvMin = ImVec2(0.25f, 0.25f);
-            uvMax = ImVec2(0.75f, 0.75f);
+            // Center: play controls
+            {
+                auto playUvMin = ImVec2(0.2f, 0.2f);
+                auto playUvMax = ImVec2(0.8f, 0.8f);
 
-            auto& playIcon = Singletons::icons->Get(IconType::Play);
-            auto set = Singletons::imguiWrapper->GetTextureId(&playIcon);
+                beginGroup((region.x - groupWidth(2)) * 0.5f, 2);
 
-            auto offset = region.x / 2.0f - buttonSize.x - padding;
-            ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton("Play button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && !isPlaying) {
-                StartPlaying();
+                if (iconButton("Play button", IconType::Play, isPlaying, scene.IsLoaded() && !isPlaying,
+                    "Play scene", playUvMin, playUvMax))
+                    StartPlaying();
+                if (iconButton("Stop button", IconType::Stop, false, scene.IsLoaded() && isPlaying,
+                    "Stop playing (Ctrl+Q)", playUvMin, playUvMax))
+                    StopPlaying();
             }
 
-            auto& stopIcon = Singletons::icons->Get(IconType::Stop);
-            set = Singletons::imguiWrapper->GetTextureId(&stopIcon);
+            // Right: viewport settings and visualization
+            if (!isPlaying) {
+                auto uvMin = ImVec2(0.1f, 0.1f);
+                auto uvMax = ImVec2(0.9f, 0.9f);
 
-            offset = region.x / 2.0f + padding;
-            ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton("Stop button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
-                StopPlaying();
-            }
+                beginGroup(region.x - margin - groupWidth(2), 2);
 
-            auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
-            set = Singletons::imguiWrapper->GetTextureId(&settingsIcon);
-
-            uvMin = ImVec2(0.1f, 0.1f);
-            uvMax = ImVec2(0.9f, 0.9f);
-
-            ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
-            if (!isPlaying && ImGui::ImageButton("Viewport settings button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
-                ImGui::OpenPopup("Viewport settings");
+                if (iconButton("Viewport settings button", IconType::Settings, false, scene.IsLoaded(),
+                    "Viewport settings", uvMin, uvMax))
+                    ImGui::OpenPopup("Viewport settings");
+                if (iconButton("Visualization settings button", IconType::Visibility,
+                    viewportPanel.visualization != ViewportVisualization::Lit, scene.IsLoaded(),
+                    "Visualization", uvMin, uvMax))
+                    ImGui::OpenPopup("Visualization settings");
             }
 
             if (ImGui::BeginPopup("Viewport settings")) {
-                ImGui::Text("Movement");
+                ImGui::SeparatorText("Overlays");
+                ImGui::Checkbox("Show grid (G)", &showGrid);
+                ImGui::Checkbox("Depth test bounding volumes", &depthTestBoundingVolumes);
+
+                ImGui::SeparatorText("Movement");
 
                 ImGui::DragFloat("Movement speed", &cameraMovementSpeed, 0.1f, 0.1f, 100.0f);
+                ImGui::SetItemTooltip("The mouse wheel over the viewport changes the speed as well");
                 ImGui::DragFloat("Rotation speed", &cameraRotationSpeed, 0.1f, 0.1f, 10.0f);
 
                 auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
-                ImGui::Separator();
-                ImGui::Text("Editor camera");
+                ImGui::SeparatorText("Editor camera");
 
                 ImGui::DragFloat("Exposure", &camera.exposure, 0.1f, 0.01f, 180.0f);
                 ImGui::DragFloat("Field of view", &camera.fieldOfView, 0.1f, 1.0f, 180.0f);
@@ -375,19 +411,16 @@ namespace Atlas::Editor::UI {
                 ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
                 ImGui::DragFloat("Far plane", &camera.farPlane, 1.0f, 1.0f, 20000.0f);
 
-                ImGui::Separator();
-                ImGui::Text("Rendering scale");
+                ImGui::SeparatorText("Rendering scale");
 
                 ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
 
-                ImGui::Separator();
-                ImGui::Text("Path traces samples");
+                ImGui::SeparatorText("Path tracer samples");
                 // ImGui::Checkbox("Realtime", &Singletons::mainRenderer->pathTracingRenderer.realTime);
                 ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
                 ImGui::DragFloat("Max clipping", &Singletons::mainRenderer->pathTracingRenderer.historyClipMax, 0.001f, 0.0f, 1.0f);
 
-                ImGui::Separator();
-                ImGui::Text("Playing");
+                ImGui::SeparatorText("Playing");
                 ImGui::Checkbox("Play maximized", &playMaximized);
                 ImGui::Checkbox("Show performance overlay", &perfOverlayMaximized);
 
@@ -397,14 +430,6 @@ namespace Atlas::Editor::UI {
             if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
                 Singletons::renderTarget->SetScalingFactor(resolutionScale);
 
-            auto& eyeIcon = Singletons::icons->Get(IconType::Visibility);
-            set = Singletons::imguiWrapper->GetTextureId(&eyeIcon);
-
-            ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
-            if (!isPlaying && ImGui::ImageButton("Visualization settings button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
-                ImGui::OpenPopup("Visualization settings");
-            }
-
             auto menuItem = [&](const char* name, ViewportVisualization vis) {
                 bool selected = viewportPanel.visualization == vis;
                 ImGui::MenuItem(name, nullptr, &selected);
@@ -413,8 +438,7 @@ namespace Atlas::Editor::UI {
             };
 
             if (ImGui::BeginPopup("Visualization settings")) {
-                ImGui::Text("Visualization");
-                ImGui::Separator();
+                ImGui::SeparatorText("Visualization");
 
                 menuItem("Lit", ViewportVisualization::Lit);
 
@@ -440,11 +464,37 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            ImGui::PopStyleColor();
+            // Short hint after the camera speed was changed with the mouse wheel
+            auto timeSinceSpeedChange = Clock::Get() - cameraSpeedChangeTime;
+            if (timeSinceSpeedChange < 1.5f) {
+                auto alpha = Helper::Math::Saturate((1.5f - timeSinceSpeedChange) / 0.3f);
+                char speedText[64];
+                std::snprintf(speedText, sizeof(speedText), "Camera speed %.1f", cameraMovementSpeed);
+
+                auto textSize = ImGui::CalcTextSize(speedText);
+                auto pillPadding = ImVec2(12.0f, 6.0f);
+                auto pillMin = ImVec2(windowPos.x + (region.x - textSize.x) * 0.5f - pillPadding.x,
+                    windowPos.y + region.y - textSize.y - 2.0f * pillPadding.y - 16.0f);
+                auto pillMax = ImVec2(pillMin.x + textSize.x + 2.0f * pillPadding.x, pillMin.y + textSize.y + 2.0f * pillPadding.y);
+
+                drawList->AddRectFilled(pillMin, pillMax, ImGui::GetColorU32(Theme::OverlayBackground(alpha)), Theme::overlayRounding);
+                drawList->AddText(ImVec2(pillMin.x + pillPadding.x, pillMin.y + pillPadding.y),
+                    ImGui::GetColorU32(ImGuiCol_Text, alpha), speedText);
+            }
+
+            // Don't leave the cursor on the toolbar line
+            ImGui::NewLine();
 
             });
 
         viewportPanel.DrawOverlay([&]() {
+            // Mouse wheel over the viewport changes the camera speed
+            const auto& wheelIO = ImGui::GetIO();
+            if (!isPlaying && ImGui::IsWindowHovered() && wheelIO.MouseWheel != 0.0f && !wheelIO.KeyCtrl) {
+                cameraMovementSpeed = std::clamp(cameraMovementSpeed * std::pow(1.25f, wheelIO.MouseWheel), 0.1f, 100.0f);
+                cameraSpeedChangeTime = Clock::Get();
+            }
+
             guizmo.needEnabled = false;
             auto selectedEntity = sceneHierarchyPanel.selectedEntity;
 
@@ -767,6 +817,168 @@ namespace Atlas::Editor::UI {
 
                 Notifications::Push({ .message = "Saved scene " + scene->name });
             });       
+
+    }
+
+    void SceneWindow::RenderGrid() {
+
+        if (!cameraEntity.IsValid())
+            return;
+
+        const auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        auto location = camera.GetLocation();
+
+        // The spacing grows with the camera height (1, 10, 100, ...), such that the grid stays readable
+        auto height = std::max(std::abs(location.y), 1.0f);
+        auto spacing = std::pow(10.0f, std::floor(std::log10(height)));
+
+        const int32_t halfLineCount = 50;
+        auto extent = spacing * float(halfLineCount);
+        auto center = glm::round(vec2(location.x, location.z) / spacing) * spacing;
+
+        const auto minorColor = vec3(0.25f);
+        const auto majorColor = vec3(0.45f);
+        const auto xAxisColor = vec3(0.85f, 0.25f, 0.25f);
+        const auto zAxisColor = vec3(0.25f, 0.45f, 0.95f);
+
+        auto& wrapper = viewportPanel.primitiveBatchWrapper;
+        for (int32_t i = -halfLineCount; i <= halfLineCount; i++) {
+            auto offset = float(i) * spacing;
+
+            // Line parallel to the z axis at this x position
+            auto x = center.x + offset;
+            auto xIndex = int64_t(std::round(x / spacing));
+            auto xColor = std::abs(x) < 0.5f * spacing ? zAxisColor : (xIndex % 10 == 0 ? majorColor : minorColor);
+            wrapper.RenderLine(vec3(x, 0.0f, center.y - extent), vec3(x, 0.0f, center.y + extent), xColor, true);
+
+            // Line parallel to the x axis at this z position
+            auto z = center.y + offset;
+            auto zIndex = int64_t(std::round(z / spacing));
+            auto zColor = std::abs(z) < 0.5f * spacing ? xAxisColor : (zIndex % 10 == 0 ? majorColor : minorColor);
+            wrapper.RenderLine(vec3(center.x - extent, 0.0f, z), vec3(center.x + extent, 0.0f, z), zColor, true);
+        }
+
+    }
+
+    Scene::Entity SceneWindow::CreateEntityFromTemplate(SceneHierarchyPanel::EntityTemplate type, Scene::Entity parent) {
+
+        using Template = SceneHierarchyPanel::EntityTemplate;
+
+        if (!scene.IsLoaded() || isPlaying)
+            return Scene::Entity();
+
+        if (!parent.IsValid())
+            parent = scene->GetEntityByName("Root");
+
+        const char* name = "Entity";
+        switch (type) {
+        case Template::PointLight: name = "Point light"; break;
+        case Template::SpotLight: name = "Spot light"; break;
+        case Template::DirectionalLight: name = "Directional light"; break;
+        case Template::Camera: name = "Camera"; break;
+        case Template::AudioSource: name = "Audio source"; break;
+        case Template::Text: name = "Text"; break;
+        default: break;
+        }
+
+        auto entity = scene->CreateEntity();
+        entity.AddComponent<NameComponent>(name);
+
+        if (!parent.HasComponent<HierarchyComponent>())
+            parent.AddComponent<HierarchyComponent>();
+        parent.GetComponent<HierarchyComponent>().AddChild(entity);
+
+        // Place it in front of the editor camera, such that it is directly visible
+        auto worldPosition = vec3(0.0f);
+        auto cameraRotation = vec2(0.0f);
+        if (cameraEntity.IsValid()) {
+            const auto& camera = cameraEntity.GetComponent<CameraComponent>();
+            worldPosition = camera.GetLocation() + camera.direction * 5.0f;
+            cameraRotation = camera.rotation;
+        }
+
+        // Lights, cameras etc. take their position from the transform, their own position stays at the origin
+        auto worldMatrix = glm::translate(mat4(1.0f), worldPosition);
+        auto& transform = entity.AddComponent<TransformComponent>(worldMatrix, false);
+        transform.globalMatrix = worldMatrix;
+        transform.ReconstructLocalMatrix(parent);
+
+        switch (type) {
+        case Template::PointLight:
+            entity.AddComponent<LightComponent>(LightType::PointLight);
+            break;
+        case Template::SpotLight: {
+            auto& light = entity.AddComponent<LightComponent>(LightType::SpotLight);
+            light.properties.spot.direction = vec3(0.0f, -1.0f, 0.0f);
+            light.properties.spot.innerConeAngle = 0.5f;
+            light.properties.spot.outerConeAngle = 0.7f;
+            break;
+        }
+        case Template::DirectionalLight: {
+            auto& light = entity.AddComponent<LightComponent>(LightType::DirectionalLight);
+            light.properties.directional.direction = glm::normalize(vec3(-0.4f, -1.0f, -0.3f));
+            break;
+        }
+        case Template::Camera: {
+            // Same lens as the editor camera and looking into the same direction
+            auto& camera = entity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 2000.0f);
+            camera.rotation = cameraRotation;
+            break;
+        }
+        case Template::AudioSource:
+            entity.AddComponent<AudioComponent>();
+            break;
+        case Template::Text:
+            entity.AddComponent<TextComponent>();
+            break;
+        default:
+            break;
+        }
+
+        sceneHierarchyPanel.SelectEntity(entity);
+
+        return entity;
+
+    }
+
+    void SceneWindow::FocusSelection() {
+
+        if (!scene.IsLoaded() || !cameraEntity.IsValid())
+            return;
+
+        Volume::AABB bounds(vec3(std::numeric_limits<float>::max()), vec3(-std::numeric_limits<float>::max()));
+        bool hasBounds = false;
+
+        for (auto ecsEntity : sceneHierarchyPanel.selectedEntities) {
+            Scene::Entity entity(ecsEntity, &scene->entityManager);
+            if (!entity.IsValid())
+                continue;
+
+            // Meshes have proper world space bounds, everything else is treated as a small box around its origin
+            auto meshComponent = entity.TryGetComponent<MeshComponent>();
+            if (meshComponent) {
+                bounds.Grow(meshComponent->aabb);
+            }
+            else {
+                auto position = vec3(GetGlobalMatrix(entity)[3]);
+                bounds.Grow(Volume::AABB(position - vec3(0.5f), position + vec3(0.5f)));
+            }
+            hasBounds = true;
+        }
+
+        if (!hasBounds) {
+            Notifications::Push({ .message = "Select an entity to focus it" });
+            return;
+        }
+
+        auto& camera = cameraEntity.GetComponent<CameraComponent>();
+
+        // Keep the view direction and back off until the bounding sphere fits into the field of view
+        auto center = 0.5f * (bounds.min + bounds.max);
+        auto radius = std::max(0.5f * glm::length(bounds.max - bounds.min), 0.5f);
+        auto distance = radius / std::sin(glm::radians(camera.fieldOfView) * 0.5f);
+
+        camera.location = center - camera.direction * distance;
 
     }
 

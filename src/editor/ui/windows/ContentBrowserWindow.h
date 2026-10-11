@@ -47,6 +47,11 @@ namespace Atlas::Editor::UI {
         ContentFilter contentFilter = ContentFilterBits::AllBit;
         bool searchRecursively = true;
 		bool filterRecursively = false;
+
+        // Can be changed with Ctrl + mouse wheel
+        float iconSize = 64.0f;
+        static constexpr float minIconSize = 32.0f;
+        static constexpr float maxIconSize = 160.0f;
         
         static inline std::string contentToShowPath = "";
 
@@ -104,8 +109,6 @@ namespace Atlas::Editor::UI {
         std::filesystem::path editingPath;
 
         const float padding = 8.0f;
-        const float iconSize = 64.f;
-        const float itemSize = iconSize + 2.0f * padding;
 
     };
 

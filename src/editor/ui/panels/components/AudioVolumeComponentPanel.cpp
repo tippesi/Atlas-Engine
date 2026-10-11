@@ -1,4 +1,5 @@
 #include "AudioVolumeComponentPanel.h"
+#include "../../Widgets.h"
 
 #include "../../../tools/ResourcePayloadHelper.h"
 
@@ -20,8 +21,8 @@ namespace Atlas::Editor::UI {
         }
 
         ImGui::Text("AABB");
-        ImGui::DragFloat3("Min", glm::value_ptr(audioVolumeComponent.aabb.min), 0.1f, -10000.0f, 10000.0f);
-        ImGui::DragFloat3("Max", glm::value_ptr(audioVolumeComponent.aabb.max), 0.1f, -10000.0f, 10000.0f);
+        Widgets::DragVec3("Min", audioVolumeComponent.aabb.min, 0.1f, 0.0f, -10000.0f, 10000.0f);
+        Widgets::DragVec3("Max", audioVolumeComponent.aabb.max, 0.1f, 0.0f, -10000.0f, 10000.0f);
 
         ImGui::DragFloat("Volume", &audioVolumeComponent.volume, 0.005f, 0.0f, 1.0f);
         ImGui::DragFloat("Cutoff", &audioVolumeComponent.cutoff, 0.001f, 0.0001f, 0.2f);

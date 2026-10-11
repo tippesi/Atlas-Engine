@@ -25,18 +25,44 @@ namespace Atlas::Editor::UI {
         auto lightCount = scene->GetComponentCount<LightComponent>();
         auto meshInstanceCount = scene->GetComponentCount<MeshComponent>();
 
-        ImGui::SeparatorText("Dimensions");
-        ImGui::Text("Min: %.2f, %.2f, %.2f", min.x, min.y, min.z);
-        ImGui::Text("Max: %.2f, %.2f, %.2f", max.x, max.y, max.z);
-        ImGui::Text("Size: %.2f, %.2f, %.2f", size.x, size.y, size.z);
+        auto tableFlags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_PadOuterX;
 
+        auto row = [](const char* name, const std::string& value) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%s", name);
+            ImGui::TableNextColumn();
+            // Right align the values
+            auto width = ImGui::CalcTextSize(value.c_str()).x;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - width);
+            ImGui::TextUnformatted(value.c_str());
+            };
+
+        auto vecToString = [](vec3 v) {
+            char buffer[96];
+            std::snprintf(buffer, sizeof(buffer), "%.2f, %.2f, %.2f", v.x, v.y, v.z);
+            return std::string(buffer);
+            };
+
+        ImGui::SeparatorText("Dimensions");
+        if (ImGui::BeginTable("Dimensions table", 2, tableFlags)) {
+            row("Min", vecToString(min));
+            row("Max", vecToString(max));
+            row("Size", vecToString(size));
+            ImGui::EndTable();
+        }
+
+        ImGui::Spacing();
         ImGui::SeparatorText("Content");
-        ImGui::Text("Entity count: %d", int32_t(scene->GetEntityCount()));
-        ImGui::Text("Mesh count: %d", int32_t(meshes.size()));
-        ImGui::Text("Material count: %d", int32_t(materials.size()));
-        ImGui::Text("Light count: %d", int32_t(lightCount));
-        ImGui::Text("Mesh instance count: %d", int32_t(meshInstanceCount));
-        ImGui::Text("Physics body count: %d", scene->physicsWorld->GetBodyCount());
+        if (ImGui::BeginTable("Content table", 2, tableFlags)) {
+            row("Entities", std::to_string(scene->GetEntityCount()));
+            row("Meshes", std::to_string(meshes.size()));
+            row("Materials", std::to_string(materials.size()));
+            row("Lights", std::to_string(lightCount));
+            row("Mesh instances", std::to_string(meshInstanceCount));
+            row("Physics bodies", std::to_string(scene->physicsWorld->GetBodyCount()));
+            ImGui::EndTable();
+        }
 
     }
 

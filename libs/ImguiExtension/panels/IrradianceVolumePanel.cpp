@@ -9,19 +9,29 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::Text("Probe count: %s", VecToString(volume->probeCount).c_str());
-        ImGui::Text("Cell size: %s", VecToString(volume->cascades[0].cellSize).c_str());
+        // Read-only information
+        ImGui::TextDisabled("Probe count");
+        ImGui::SameLine();
+        ImGui::TextUnformatted(VecToString(volume->probeCount).c_str());
+        ImGui::TextDisabled("Cell size");
+        ImGui::SameLine();
+        ImGui::TextUnformatted(VecToString(volume->cascades[0].cellSize).c_str());
+
+        ImGui::SeparatorText("General");
         ImGui::Checkbox("Enable volume", &volume->enable);
         ImGui::Checkbox("Update volume", &volume->update);
         ImGui::Checkbox("Visualize probes", &volume->debug);
+
+        ImGui::SeparatorText("Sampling");
         ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
         ImGui::Checkbox("Use shadow map", &volume->useShadowMap);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("Uses the shadow map to calculate shadows in the GI. "
+                "This is only possible when cascaded shadow maps are not used.");
+        }
         ImGui::Checkbox("Calculate visibility", &volume->visibility);
         ImGui::Checkbox("Calculate radiance", &volume->radiance);
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("Uses the shadow map to calculate shadows in the GI. \
-                        This is only possible when cascaded shadow maps are not used.");
-        }
+
         bool prevMomentRes = volume->lowerResMoments;
         ImGui::Checkbox("Lower resolution visibility", &volume->lowerResMoments);
         if (prevMomentRes != volume->lowerResMoments) {
@@ -35,12 +45,8 @@ namespace Atlas::ImguiExtension {
         }
 
         ImGui::Checkbox("Opacity check", &volume->opacityCheck);
-        ImGui::Checkbox("Scrolling", &volume->scroll);
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("Scrolls the volume based on a set position (by default the camera). \
-                        This should be used for large scenes where the volume can't cover the whole scene");
-        }
 
+        ImGui::SeparatorText("Probe grid");
         auto prevCascadeCount = volume->cascadeCount;
         ImGui::SliderInt("Cascades count", &volume->cascadeCount, 1, MAX_IRRADIANCE_VOLUME_CASCADES);
 
@@ -85,7 +91,22 @@ namespace Atlas::ImguiExtension {
         }
 
         ImGui::SliderFloat("Strength", &volume->strength, 0.0f, 5.0f);
-        ImGui::Separator();
+        if (ImGui::SliderFloat("Probe storage scale", &volume->storageScale, 0.000001f, 1.0f,
+            "%.6f", ImGuiSliderFlags_Logarithmic)) {
+            volume->ClearProbes();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Smaller values increase lighting range at the cost of precision.\n"
+                "0.1 gives 10x range; lighting brightness is restored when sampled.\n"
+                "Changing this clears probe history.");
+        }
+
+        ImGui::SeparatorText("Volume bounds");
+        ImGui::Checkbox("Scrolling", &volume->scroll);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("Scrolls the volume based on a set position (by default the camera). "
+                "This should be used for large scenes where the volume can't cover the whole scene");
+        }
 
         if (volume->scroll) {
             auto volumeSize = volume->aabb.GetSize();
@@ -93,17 +114,16 @@ namespace Atlas::ImguiExtension {
             volume->aabb = volume->aabb.Scale(volumeSize / volume->aabb.GetSize());
         }
         else {
-            ImGui::Text("AABB");
             ImGui::DragFloat3("Min", (float*)&volume->aabb.min, 0.5f, -2000.0f, 2000.0f);
             ImGui::DragFloat3("Max", (float*)&volume->aabb.max, 0.5f, -2000.0f, 2000.0f);
 
-            if (ImGui::Button("Adjust to scene size")) {
+            if (ImGui::Button("Adjust to scene size", ImVec2(-FLT_MIN, 0.0f))) {
                 volume->aabb = CalculateSceneSize(scene);
             }
         }
         volume->SetAABB(volume->aabb);
-       
-        ImGui::Separator();
+
+        ImGui::SeparatorText("Filtering");
         ImGui::SliderFloat("Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f");
         ImGui::SliderFloat("Sharpness", &volume->sharpness, 0.01f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
         ImGui::SliderFloat("Bias", &volume->bias, 0.0f, 1.0f);
@@ -111,11 +131,12 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Gamma exponent", &volume->gamma, 0.0f, 10.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
         if (prevGamma != volume->gamma) volume->ClearProbes();
         ImGui::DragFloat("Split correction", &volume->splitCorrection, 0.01f, 1.0f, 10.0f);
-        ImGui::Separator();
-        if (ImGui::Button("Reset probe offsets")) {
+
+        ImGui::SeparatorText("Probe optimization");
+        ImGui::Checkbox("Optimize probes", &volume->optimizeProbes);
+        if (ImGui::Button("Reset probe offsets", ImVec2(-FLT_MIN, 0.0f))) {
             volume->ResetProbeOffsets();
         }
-        ImGui::Checkbox("Optimize probes", &volume->optimizeProbes);
 
         ImGui::PopID();
 

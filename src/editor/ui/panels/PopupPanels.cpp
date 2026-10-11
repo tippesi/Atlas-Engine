@@ -7,6 +7,11 @@
 #include "DataCreator.h"
 #include "Singletons.h"
 #include "Notifications.h"
+#include "Theme.h"
+#include "loader/AssetLoader.h"
+
+#include <filesystem>
+#include <algorithm>
 
 namespace Atlas::Editor::UI {
 
@@ -33,8 +38,6 @@ namespace Atlas::Editor::UI {
         static auto maxSize = glm::vec3(2048.0f);
         static int32_t octreeDepth = 5;
 
-        SetupPopupSize(0.6f, 0.3f);
-
         bool popupNew = false;
 
         if (!ImGui::IsPopupOpen("New scene")) {
@@ -42,25 +45,24 @@ namespace Atlas::Editor::UI {
             ImGui::OpenPopup("New scene");
         }
 
-        if (ImGui::BeginPopupModal("New scene", nullptr, ImGuiWindowFlags_NoResize)) {
+        SetupDialog();
+
+        if (ImGui::BeginPopupModal("New scene", nullptr, dialogFlags)) {
+
+            ImGui::SeparatorText("Scene");
 
             if (popupNew)
                 ImGui::SetKeyboardFocusHere();
-                
-            ImGui::InputTextWithHint("Name", "Type scene name here",  &name);
+            ImGui::InputTextWithHint("Name", "Type scene name here", &name);
 
+            ImGui::SeparatorText("Bounds");
             ImGui::DragFloat3("Min size", &minSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::DragFloat3("Max size", &maxSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::SliderInt("Octree depth", &octreeDepth, 1, 12);
 
-            if (ImGui::Button("Cancel")) {
-                isNewScenePopupVisible = false;
-                ImGui::CloseCurrentPopup();
-            }
+            auto confirm = RenderDialogFooter("Create", ValidateSceneName(name));
 
-            ImGui::SameLine();
-
-            if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
+            if (confirm == DialogResult::Confirm) {
                 auto scene = DataCreator::CreateScene(name, minSize, maxSize, octreeDepth);
 
                 bool alreadyExisted;
@@ -69,7 +71,9 @@ namespace Atlas::Editor::UI {
                 if (alreadyExisted) {
                     Log::Warning("Scene couldn't be created due to scene with same name existing already");
                 }
+            }
 
+            if (confirm != DialogResult::None) {
                 isNewScenePopupVisible = false;
                 ImGui::CloseCurrentPopup();
             }
@@ -93,8 +97,6 @@ namespace Atlas::Editor::UI {
         static bool addRigidBodies = true;
         static bool makeMeshesStatic = false;
 
-        SetupPopupSize(0.6f, 0.3f);
-
         bool popupNew = false;
 
         if (!ImGui::IsPopupOpen("Import scene")) {
@@ -102,34 +104,33 @@ namespace Atlas::Editor::UI {
             ImGui::OpenPopup("Import scene");
         }
 
-        if (ImGui::BeginPopupModal("Import scene", nullptr, ImGuiWindowFlags_NoResize)) {
+        SetupDialog();
 
-            if (popupNew) {
-                ImGui::SetKeyboardFocusHere();
+        if (ImGui::BeginPopupModal("Import scene", nullptr, dialogFlags)) {
+
+            if (popupNew)
                 name = Common::Path::GetFileNameWithoutExtension(filename);
-            }
 
-            ImGui::Text("General properties");
-                
-            ImGui::InputTextWithHint("Name", "Type scene name here",  &name);
+            ImGui::TextDisabled("Source: %s", filename.c_str());
 
+            ImGui::SeparatorText("Scene");
+            if (popupNew)
+                ImGui::SetKeyboardFocusHere();
+            ImGui::InputTextWithHint("Name", "Type scene name here", &name);
+
+            ImGui::SeparatorText("Bounds");
             ImGui::DragFloat3("Min size", &minSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::DragFloat3("Max size", &maxSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::SliderInt("Octree depth", &octreeDepth, 1, 12);
 
-            ImGui::Text("Import properties");
+            ImGui::SeparatorText("Import");
             ImGui::Checkbox("Invert UVs", &invertUVs);
             ImGui::Checkbox("Attach mesh rigid body components", &addRigidBodies);
             ImGui::Checkbox("Make meshes static", &makeMeshesStatic);
 
-            if (ImGui::Button("Cancel")) {
-                isImportScenePopupVisible = false;
-                ImGui::CloseCurrentPopup();
-            }
+            auto confirm = RenderDialogFooter("Import", ValidateSceneName(name));
 
-            ImGui::SameLine();
-
-            if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
+            if (confirm == DialogResult::Confirm) {
                 Singletons::blockingOperation->Block("Importing scene. Please wait...",
                     [&]() {
                         auto scene = DataCreator::CreateSceneFromMesh(filename, minSize, maxSize,
@@ -145,9 +146,11 @@ namespace Atlas::Editor::UI {
                             return;
                         }
 
-                        Notifications::Push({ .message = "Imported scene " + scene->name });                        
+                        Notifications::Push({ .message = "Imported scene " + scene->name });
                     });
+            }
 
+            if (confirm != DialogResult::None) {
                 isImportScenePopupVisible = false;
                 ImGui::CloseCurrentPopup();
             }
@@ -155,6 +158,75 @@ namespace Atlas::Editor::UI {
             ImGui::EndPopup();
 
         }
+
+    }
+
+    void PopupPanels::SetupDialog() {
+
+        // Centered, fixed width and height fitting the content
+        auto viewport = ImGui::GetMainViewport();
+        auto center = viewport->GetCenter();
+        auto width = std::clamp(viewport->Size.x * 0.35f, 420.0f, 720.0f);
+
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSizeConstraints(ImVec2(width, 0.0f), ImVec2(width, FLT_MAX));
+
+    }
+
+    std::string PopupPanels::ValidateSceneName(const std::string& name) {
+
+        if (name.empty())
+            return "Enter a name for the scene";
+
+        if (name.find_first_of("/\\:*?\"<>|") != std::string::npos)
+            return "The name contains invalid characters";
+
+        auto path = Loader::AssetLoader::GetFullPath("scenes/" + name + ".aescene");
+        if (std::filesystem::exists(path))
+            return "A scene with this name already exists";
+
+        return "";
+
+    }
+
+    PopupPanels::DialogResult PopupPanels::RenderDialogFooter(const char* confirmLabel, const std::string& error) {
+
+        auto& style = ImGui::GetStyle();
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        bool canConfirm = error.empty();
+        if (!canConfirm)
+            ImGui::TextColored(Theme::Warning(), "%s", error.c_str());
+        else
+            ImGui::TextUnformatted("");
+
+        // Buttons are right aligned, the primary action is the rightmost one
+        auto buttonWidth = std::max(ImGui::CalcTextSize(confirmLabel).x, ImGui::CalcTextSize("Cancel").x) +
+            4.0f * style.FramePadding.x;
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 2.0f * buttonWidth - style.ItemSpacing.x);
+
+        auto result = DialogResult::None;
+
+        if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+            result = DialogResult::Cancel;
+
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(!canConfirm);
+        Theme::PushPrimaryButton();
+        if (ImGui::Button(confirmLabel, ImVec2(buttonWidth, 0.0f)) ||
+            canConfirm && ImGui::IsKeyReleased(ImGuiKey_Enter))
+            result = DialogResult::Confirm;
+        Theme::PopPrimaryButton();
+        ImGui::EndDisabled();
+
+        if (!canConfirm && result == DialogResult::Confirm)
+            result = DialogResult::None;
+
+        return result;
 
     }
 
@@ -167,17 +239,8 @@ namespace Atlas::Editor::UI {
             ImGui::OpenPopup("Blocking popup");
         }
 
-        auto config = Singletons::config;
-
-        if (config->darkMode) {
-            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 0.7f));
-            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        }
-        else {
-            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(1.0f, 1.0f, 1.0f, 0.8f));
-            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-        }
-        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 2.0f);
+        ImGui::PushStyleColor(ImGuiCol_Border, Theme::Accent(0.6f));
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 1.0f);
 
         SetupPopupSize(0.2f, 0.05f);
 
@@ -185,7 +248,12 @@ namespace Atlas::Editor::UI {
 
             ImGui::SetKeyboardFocusHere();
 
-            ImGui::Text("%s", Singletons::blockingOperation->blockText.c_str());
+            // Center the text in the popup
+            auto& blockText = Singletons::blockingOperation->blockText;
+            auto textSize = ImGui::CalcTextSize(blockText.c_str());
+            auto windowSize = ImGui::GetWindowSize();
+            ImGui::SetCursorPos(ImVec2((windowSize.x - textSize.x) * 0.5f, (windowSize.y - textSize.y) * 0.5f));
+            ImGui::TextUnformatted(blockText.c_str());
 
             if (!Singletons::blockingOperation->block)
                 ImGui::CloseCurrentPopup();
@@ -195,7 +263,6 @@ namespace Atlas::Editor::UI {
         }
 
         ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
         ImGui::PopStyleColor();
 
     }

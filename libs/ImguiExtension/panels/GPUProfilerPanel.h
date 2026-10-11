@@ -4,6 +4,8 @@
 #include "PerformanceGraphPanel.h"
 
 #include <deque>
+#include <functional>
+#include <algorithm>
 
 namespace Atlas::ImguiExtension {
 
@@ -17,6 +19,8 @@ namespace Atlas::ImguiExtension {
         void RenderTable();
 
         bool showGraph = false;
+
+        int32_t sortItem = 0;
 
         PerformanceGraphPanel perfGraphPanel;
 

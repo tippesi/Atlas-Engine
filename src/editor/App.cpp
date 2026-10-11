@@ -4,9 +4,14 @@
 #include "Serialization.h"
 #include "Notifications.h"
 #include "ContentDiscovery.h"
+#include "Theme.h"
 #include "ui/panels/PopupPanels.h"
 #include "tools/FileSystemHelper.h"
 #include <ImGuizmo.h>
+#include <imgui_internal.h>
+
+#include <filesystem>
+#include <algorithm>
 #include <implot.h>
 
 #include <chrono>
@@ -63,14 +68,9 @@ namespace Atlas::Editor {
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
 
-        if (Singletons::config->darkMode) {
-            ImGui::StyleColorsDark();
-            ImPlot::StyleColorsDark();
-        }
-        else {
-            ImGui::StyleColorsLight();
-            ImPlot::StyleColorsLight();
-        }
+        Theme::Apply(Singletons::config->darkMode);
+
+        RegisterCommands();
 
     }
 
@@ -250,12 +250,21 @@ namespace Atlas::Editor {
             playingMaximized = activeSceneWindow->isPlaying && activeSceneWindow->playMaximized;
         }
         if (!playingMaximized) {
-            ImGui::SetNextWindowPos(viewport->Pos);
-            ImGui::SetNextWindowSize(viewport->Size);
+            // The dockspace host is transparent, fill the gaps between the docked windows with the base color
+            ImGui::GetBackgroundDrawList(viewport)->AddRectFilled(viewport->Pos,
+                ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y),
+                ImGui::GetColorU32(Theme::Base()));
+
+            // Status bar first, it reduces the work area of the viewport
+            RenderStatusBar();
+
+            // The host covers the work area, which excludes the main menu bar and the status bar
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
             ImGui::SetNextWindowViewport(viewport->ID);
             ImGui::SetNextWindowBgAlpha(0.0f);
 
-            ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking |
                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
@@ -273,17 +282,27 @@ namespace Atlas::Editor {
             ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
             ImGui::DockSpace(mainDsId, ImVec2(0.0f, 0.0f), dockspace_flags);
 
+            if (sceneWindows.empty())
+                RenderEmptyState(mainDsId);
+
             if (ImGui::BeginMainMenuBar()) {
                 static bool newScene = false;
                 bool saveScene = false, exitEditor = false;
+#ifdef AE_OS_MACOS
+                const char* saveShortcut = "Cmd+S";
+#else
+                const char* saveShortcut = "Ctrl+S";
+#endif
                 if (ImGui::BeginMenu("File")) {
                     /*
                     ImGui::MenuItem("Open project", nullptr, &openProject);
                     ImGui::MenuItem("Save project", nullptr, &saveProject);
                     ImGui::Separator();
                     */
-                    ImGui::MenuItem("New scene", nullptr, &newScene);
-                    ImGui::MenuItem("Save scene", nullptr, &saveScene);
+                    ImGui::MenuItem("New scene...", nullptr, &newScene);
+                    RenderRecentScenesMenu();
+                    ImGui::MenuItem("Save scene", saveShortcut, &saveScene, activeSceneWindow != nullptr);
+                    ImGui::Separator();
                     ImGui::MenuItem("Exit", nullptr, &exitEditor);
                     /*
                     ImGui::Separator();
@@ -293,28 +312,30 @@ namespace Atlas::Editor {
                 }
 
                 if (ImGui::BeginMenu("View")) {
-                    if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
-                        if (config->darkMode) {
-                            ImGui::StyleColorsDark();
-                            ImPlot::StyleColorsDark();
-                        }
-                        else {
-                            ImGui::StyleColorsLight();
-                            ImPlot::StyleColorsLight();
-                        }
-                    }
+                    ImGui::SeparatorText("Windows");
+                    ImGui::MenuItem("Content browser", nullptr, &contentBrowserWindow.show);
+                    ImGui::MenuItem("Log", nullptr, &logWindow.show);
+                    ImGui::MenuItem("Profiler", nullptr, &profilerWindow.show);
+                    ImGui::MenuItem("Geometry brush", nullptr, &geometryBrushWindow.show);
 
+                    ImGui::SeparatorText("Appearance");
+                    if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
+                        Theme::Apply(config->darkMode);
+                    }
                     ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
-                    ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
-                    ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);
-                    ImGui::MenuItem("Show profiler", nullptr, &profilerWindow.show);
-                    ImGui::MenuItem("Show geometry brush", nullptr, &geometryBrushWindow.show);
                     ImGui::EndMenu();
                 }
 
                 if (ImGui::BeginMenu("Renderer")) {
                     ImGui::MenuItem("VSync", nullptr, &config->vsync);
                     ImGui::MenuItem("Pathtracer", nullptr, &config->pathTrace);
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("Help")) {
+                    if (ImGui::MenuItem("Command palette", "Ctrl+P"))
+                        commandPalette.Open();
+                    ImGui::MenuItem("Keyboard shortcuts", nullptr, &showShortcutsWindow);
                     ImGui::EndMenu();
                 }
 
@@ -350,8 +371,21 @@ namespace Atlas::Editor {
             RenderSceneMaximized();
         }
 
+        // Global shortcut for the command palette
+#ifdef AE_OS_MACOS
+        bool commandDown = ImGui::GetIO().KeySuper;
+#else
+        bool commandDown = ImGui::GetIO().KeyCtrl;
+#endif
+        if (commandDown && ImGui::IsKeyPressed(ImGuiKey_P, false) && !Singletons::blockingOperation->block)
+            commandPalette.Open();
+
+        if (!playingMaximized)
+            RenderShortcutsWindow();
+
         Notifications::Display();
         UI::PopupPanels::Render();
+        commandPalette.Render();
 
         ImGui::Render();
         Singletons::imguiWrapper->Render(true);
@@ -381,7 +415,6 @@ namespace Atlas::Editor {
         ImGui::Image(set, renderArea);
 
         if (activeSceneWindow->perfOverlayMaximized) {
-            ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
             auto gpuProfilerData = Graphics::Profiler::GetQueriesAverage(32, Graphics::Profiler::OrderBy::MAX_TIME);
 
             std::string perfString;
@@ -399,18 +432,368 @@ namespace Atlas::Editor {
 
             auto target = Singletons::renderTarget;
 
-            ImGui::SetWindowFontScale(1.5f);
-            ImGui::Text("Frame time: %.3fms, GPU time: %.3fms", Clock::GetAverage() * 1000.0f, float(slowestTime / 1000000.0));
-            ImGui::Text("Resolution %dx%d upscaled from %dx%d", target->GetWidth(), target->GetHeight(), target->GetScaledWidth(), target->GetScaledHeight());
-            ImGui::SetWindowFontScale(1.0f);
+            // Put the overlay on a translucent panel, such that it stays readable on bright scenes
+            ImGui::SetCursorPos(ImVec2(12.0f, 12.0f));
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, Theme::OverlayBackground());
+            ImGui::PushStyleColor(ImGuiCol_Border, Theme::OverlayBorder());
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::overlayRounding);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
+            ImGui::BeginChild("Performance overlay", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders |
+                ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY,
+                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs);
 
-            performanceGraphPanel.Render(ivec2(400, 300), 0.05f);
+            ImGui::SetWindowFontScale(1.25f);
+            ImGui::Text("%.2f ms", Clock::GetAverage() * 1000.0f);
+            ImGui::SameLine();
+            ImGui::TextDisabled("frame");
+            ImGui::SameLine(0.0f, 24.0f);
+            ImGui::Text("%.2f ms", float(slowestTime / 1000000.0));
+            ImGui::SameLine();
+            ImGui::TextDisabled("GPU");
+            ImGui::SetWindowFontScale(1.0f);
+            ImGui::TextDisabled("%dx%d upscaled from %dx%d", target->GetWidth(), target->GetHeight(),
+                target->GetScaledWidth(), target->GetScaledHeight());
+
+            performanceGraphPanel.Render(ivec2(400, 220), 0.0f);
+
+            ImGui::EndChild();
+            ImGui::PopStyleVar(2);
+            ImGui::PopStyleColor(2);
         }
 
         ImGui::PopStyleVar();
         ImGui::PopStyleVar();
         ImGui::PopStyleVar();
 
+        ImGui::End();
+
+    }
+
+    void App::RenderEmptyState(ImGuiID dsID) {
+
+        // The central node is transparent when nothing is docked, draw a hint behind all windows
+        auto centralNode = ImGui::DockBuilderGetCentralNode(dsID);
+        if (!centralNode || centralNode->Size.x <= 0.0f || centralNode->Size.y <= 0.0f)
+            return;
+
+        bool loading = !waitToLoadScenes.empty();
+        const char* title = loading ? "Loading scene..." : "No scene open";
+        const char* subtitle = loading ? "" :
+            "Double-click a scene in the content browser or create one with File > New scene";
+
+        auto drawList = ImGui::GetBackgroundDrawList(ImGui::GetMainViewport());
+        auto font = ImGui::GetFont();
+        auto fontSize = ImGui::GetFontSize();
+        auto titleSize = fontSize * 1.5f;
+
+        auto center = ImVec2(centralNode->Pos.x + centralNode->Size.x * 0.5f,
+            centralNode->Pos.y + centralNode->Size.y * 0.5f);
+
+        auto titleWidth = font->CalcTextSizeA(titleSize, FLT_MAX, 0.0f, title).x;
+        auto subtitleWidth = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, subtitle).x;
+
+        drawList->AddText(font, titleSize, ImVec2(center.x - titleWidth * 0.5f, center.y - titleSize),
+            ImGui::GetColorU32(ImGuiCol_Text), title);
+        drawList->AddText(font, fontSize, ImVec2(center.x - subtitleWidth * 0.5f, center.y + fontSize * 0.5f),
+            ImGui::GetColorU32(Theme::TextMuted()), subtitle);
+
+    }
+
+    Ref<UI::SceneWindow> App::GetActiveSceneWindow() const {
+
+        if (sceneWindows.empty())
+            return nullptr;
+
+        return sceneWindows[std::min(activeSceneIdx, sceneWindows.size() - 1)];
+
+    }
+
+    void App::RegisterCommands() {
+
+        auto& config = Singletons::config;
+
+        auto hasScene = [this]() {
+            auto sceneWindow = GetActiveSceneWindow();
+            return sceneWindow != nullptr && sceneWindow->scene.IsLoaded();
+            };
+        auto canEdit = [this, hasScene]() {
+            return hasScene() && !GetActiveSceneWindow()->isPlaying;
+            };
+
+        // File
+        commandPalette.Register({ .category = "File", .name = "New scene...",
+            .action = []() { UI::PopupPanels::isNewScenePopupVisible = true; } });
+        commandPalette.Register({ .category = "File", .name = "Save scene", .shortcut = "Ctrl+S",
+            .action = [this]() { GetActiveSceneWindow()->SaveScene(); }, .isEnabled = canEdit });
+
+        // Windows
+        auto registerWindow = [&](const char* name, bool* show) {
+            commandPalette.Register({ .category = "Window", .name = std::string("Toggle ") + name,
+                .action = [show]() { *show = !*show; }, .isChecked = [show]() { return *show; } });
+            };
+        registerWindow("content browser", &contentBrowserWindow.show);
+        registerWindow("log", &logWindow.show);
+        registerWindow("profiler", &profilerWindow.show);
+        registerWindow("geometry brush", &geometryBrushWindow.show);
+        commandPalette.Register({ .category = "Window", .name = "Reset layout",
+            .action = [this]() { resetDockspaceLayout = true; } });
+
+        // Appearance and renderer
+        commandPalette.Register({ .category = "View", .name = "Toggle dark mode",
+            .action = [&config]() { config->darkMode = !config->darkMode; Theme::Apply(config->darkMode); },
+            .isChecked = [&config]() { return config->darkMode; } });
+        commandPalette.Register({ .category = "Renderer", .name = "Toggle VSync",
+            .action = [&config]() { config->vsync = !config->vsync; },
+            .isChecked = [&config]() { return config->vsync; } });
+        commandPalette.Register({ .category = "Renderer", .name = "Toggle path tracer",
+            .action = [&config]() { config->pathTrace = !config->pathTrace; },
+            .isChecked = [&config]() { return config->pathTrace; } });
+
+        // Viewport
+        auto registerGizmoMode = [&](const char* name, const char* shortcut, int32_t mode) {
+            commandPalette.Register({ .category = "Viewport", .name = name, .shortcut = shortcut,
+                .action = [this, mode]() { GetActiveSceneWindow()->guizmo.mode = mode; },
+                .isEnabled = canEdit,
+                .isChecked = [this, mode]() { auto window = GetActiveSceneWindow(); return window && window->guizmo.mode == mode; } });
+            };
+        registerGizmoMode("Translate gizmo", "1", ImGuizmo::OPERATION::TRANSLATE);
+        registerGizmoMode("Rotate gizmo", "2", ImGuizmo::OPERATION::ROTATE);
+        registerGizmoMode("Scale gizmo", "3", ImGuizmo::OPERATION::SCALE);
+
+        commandPalette.Register({ .category = "Viewport", .name = "Focus selection", .shortcut = "F",
+            .action = [this]() { GetActiveSceneWindow()->FocusSelection(); }, .isEnabled = canEdit });
+        commandPalette.Register({ .category = "Viewport", .name = "Toggle grid", .shortcut = "G",
+            .action = [this]() { auto window = GetActiveSceneWindow(); window->showGrid = !window->showGrid; },
+            .isEnabled = canEdit,
+            .isChecked = [this]() { auto window = GetActiveSceneWindow(); return window && window->showGrid; } });
+        commandPalette.Register({ .category = "Viewport", .name = "Toggle gizmo snapping",
+            .action = [this]() { auto& guizmo = GetActiveSceneWindow()->guizmo; guizmo.snappingEnabled = !guizmo.snappingEnabled; },
+            .isEnabled = canEdit,
+            .isChecked = [this]() { auto window = GetActiveSceneWindow(); return window && window->guizmo.snappingEnabled; } });
+        commandPalette.Register({ .category = "Viewport", .name = "Toggle gizmo object space",
+            .action = [this]() { auto& guizmo = GetActiveSceneWindow()->guizmo; guizmo.objectSpace = !guizmo.objectSpace; },
+            .isEnabled = canEdit,
+            .isChecked = [this]() { auto window = GetActiveSceneWindow(); return window && window->guizmo.objectSpace; } });
+
+        auto registerVisualization = [&](const char* name, UI::ViewportVisualization visualization) {
+            commandPalette.Register({ .category = "Visualization", .name = name,
+                .action = [this, visualization]() { GetActiveSceneWindow()->viewportPanel.visualization = visualization; },
+                .isEnabled = hasScene,
+                .isChecked = [this, visualization]() {
+                    auto window = GetActiveSceneWindow();
+                    return window && window->viewportPanel.visualization == visualization; } });
+            };
+        registerVisualization("Lit", UI::ViewportVisualization::Lit);
+        registerVisualization("Base color", UI::ViewportVisualization::GBufferBaseColor);
+        registerVisualization("Roughness/Metalness/Ao", UI::ViewportVisualization::GBufferRoughnessMetalnessAo);
+        registerVisualization("Normals", UI::ViewportVisualization::GBufferNormals);
+        registerVisualization("Depth", UI::ViewportVisualization::GBufferDepth);
+        registerVisualization("Velocity", UI::ViewportVisualization::GBufferVelocity);
+        registerVisualization("Reflections", UI::ViewportVisualization::Reflections);
+        registerVisualization("Clouds", UI::ViewportVisualization::Clouds);
+        registerVisualization("SSGI", UI::ViewportVisualization::SSGI);
+
+        // Create
+        auto registerCreate = [&](const char* name, UI::SceneHierarchyPanel::EntityTemplate type) {
+            commandPalette.Register({ .category = "Create", .name = name,
+                .action = [this, type]() { GetActiveSceneWindow()->CreateEntityFromTemplate(type); },
+                .isEnabled = canEdit });
+            };
+        registerCreate("Empty entity", UI::SceneHierarchyPanel::EntityTemplate::Empty);
+        registerCreate("Point light", UI::SceneHierarchyPanel::EntityTemplate::PointLight);
+        registerCreate("Spot light", UI::SceneHierarchyPanel::EntityTemplate::SpotLight);
+        registerCreate("Directional light", UI::SceneHierarchyPanel::EntityTemplate::DirectionalLight);
+        registerCreate("Camera", UI::SceneHierarchyPanel::EntityTemplate::Camera);
+        registerCreate("Audio source", UI::SceneHierarchyPanel::EntityTemplate::AudioSource);
+        registerCreate("Text", UI::SceneHierarchyPanel::EntityTemplate::Text);
+
+        // Scene
+        commandPalette.Register({ .category = "Scene", .name = "Play",
+            .action = [this]() { GetActiveSceneWindow()->StartPlaying(); }, .isEnabled = canEdit });
+        commandPalette.Register({ .category = "Scene", .name = "Stop playing", .shortcut = "Ctrl+Q",
+            .action = [this]() { GetActiveSceneWindow()->StopPlaying(); },
+            .isEnabled = [this, hasScene]() { return hasScene() && GetActiveSceneWindow()->isPlaying; } });
+
+        // Help
+        commandPalette.Register({ .category = "Help", .name = "Keyboard shortcuts",
+            .action = [this]() { showShortcutsWindow = true; } });
+
+    }
+
+    void App::RenderRecentScenesMenu() {
+
+        auto& config = Singletons::config;
+
+        if (!ImGui::BeginMenu("Open recent", !config->recentScenes.empty()))
+            return;
+
+        std::string openPath;
+        for (const auto& path : config->recentScenes) {
+            // Scenes might have been moved or deleted in the meantime
+            bool exists = std::filesystem::exists(Loader::AssetLoader::GetFullPath(path));
+            // An opened scene can still be loading or might have failed to load
+            auto openedIter = std::find_if(config->openedScenes.begin(), config->openedScenes.end(),
+                [&](const ResourceHandle<Scene::Scene>& handle) { return handle.IsValid() && handle.GetResource()->path == path; });
+            bool isOpened = openedIter != config->openedScenes.end();
+            bool loadFailed = isOpened && openedIter->GetResource()->errorOnLoad;
+            const char* state = !isOpened ? nullptr : openedIter->IsLoaded() ? "open" : loadFailed ? "failed" : "loading";
+
+            auto name = Common::Path::GetFileNameWithoutExtension(path);
+            if (ImGui::MenuItem(name.c_str(), state, false, exists && !isOpened))
+                openPath = path;
+
+            if (!exists)
+                ImGui::SetItemTooltip("File doesn't exist anymore");
+            else if (loadFailed)
+                ImGui::SetItemTooltip("Loading failed: %s", openedIter->GetResource()->exceptionOnLoad.what());
+            else
+                ImGui::SetItemTooltip("%s", path.c_str());
+        }
+
+        ImGui::Separator();
+        if (ImGui::MenuItem("Clear list"))
+            config->recentScenes.clear();
+
+        ImGui::EndMenu();
+
+        if (!openPath.empty())
+            FileImporter::ImportFile<Scene::Scene>(openPath);
+
+    }
+
+    void App::RenderStatusBar() {
+
+        auto viewport = ImGui::GetMainViewport();
+        auto flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
+
+        auto divider = []() {
+            ImGui::SameLine();
+            ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+            ImGui::SameLine();
+            };
+
+        ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Theme::Base());
+        if (ImGui::BeginViewportSideBar("##Status bar", viewport, ImGuiDir_Down, ImGui::GetFrameHeight(), flags)) {
+            if (ImGui::BeginMenuBar()) {
+                auto sceneWindow = GetActiveSceneWindow();
+                if (sceneWindow && sceneWindow->scene.IsLoaded()) {
+                    if (sceneWindow->isPlaying)
+                        ImGui::TextColored(Theme::Success(), "Playing");
+                    else
+                        ImGui::TextDisabled("Editing");
+
+                    divider();
+                    ImGui::TextUnformatted(sceneWindow->scene->name.c_str());
+
+                    divider();
+                    const auto& selection = sceneWindow->sceneHierarchyPanel.selectedEntities;
+                    auto selectedEntity = sceneWindow->sceneHierarchyPanel.selectedEntity;
+                    if (selection.empty()) {
+                        ImGui::TextDisabled("Nothing selected");
+                    }
+                    else if (selection.size() == 1 && selectedEntity.IsValid()) {
+                        auto nameComponent = selectedEntity.TryGetComponent<NameComponent>();
+                        auto name = nameComponent ? nameComponent->name : "Entity " + std::to_string(selectedEntity);
+                        ImGui::TextDisabled("Selected");
+                        ImGui::SameLine();
+                        ImGui::TextUnformatted(name.c_str());
+                    }
+                    else {
+                        ImGui::Text("%d entities selected", int32_t(selection.size()));
+                    }
+
+                    divider();
+                    const auto& guizmo = sceneWindow->guizmo;
+                    const char* modeName = guizmo.mode == ImGuizmo::OPERATION::ROTATE ? "Rotate" :
+                        guizmo.mode == ImGuizmo::OPERATION::SCALE ? "Scale" : "Translate";
+                    ImGui::TextDisabled("%s, %s%s", modeName, guizmo.objectSpace ? "local" : "world",
+                        guizmo.snappingEnabled ? ", snapping" : "");
+                }
+                else {
+                    ImGui::TextDisabled("No scene open");
+                }
+
+                // Performance on the right side
+                auto frameTime = Clock::GetAverage() * 1000.0f;
+                char rightText[64];
+                std::snprintf(rightText, sizeof(rightText), "%.1f ms  %.0f fps",
+                    frameTime, frameTime > 0.0f ? 1000.0f / frameTime : 0.0f);
+                auto rightWidth = ImGui::CalcTextSize(rightText).x + ImGui::GetStyle().ItemSpacing.x;
+                auto rightPos = ImGui::GetWindowContentRegionMax().x - rightWidth;
+                if (rightPos > ImGui::GetCursorPosX()) {
+                    ImGui::SameLine(rightPos);
+                    ImGui::TextDisabled("%s", rightText);
+                }
+
+                ImGui::EndMenuBar();
+            }
+        }
+        // Side bars always need to be ended
+        ImGui::End();
+        ImGui::PopStyleColor();
+
+    }
+
+    void App::RenderShortcutsWindow() {
+
+        if (!showShortcutsWindow)
+            return;
+
+        auto viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        auto flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking |
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+        if (ImGui::Begin("Keyboard shortcuts", &showShortcutsWindow, flags)) {
+            auto section = [](const char* title, std::initializer_list<std::pair<const char*, const char*>> rows) {
+                ImGui::SeparatorText(title);
+                if (ImGui::BeginTable(title, 2, ImGuiTableFlags_SizingFixedFit)) {
+                    // Same key column width in every section, such that the descriptions line up
+                    ImGui::TableSetupColumn("Keys", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("Left mouse drag").x + ImGui::GetFontSize());
+                    ImGui::TableSetupColumn("Description", ImGuiTableColumnFlags_WidthFixed);
+                    for (const auto& [keys, description] : rows) {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(keys);
+                        ImGui::TableNextColumn();
+                        ImGui::TextDisabled("%s", description);
+                    }
+                    ImGui::EndTable();
+                }
+                };
+
+            section("General", {
+                { "Ctrl+P", "Open the command palette" },
+                { "Ctrl+S", "Save the active scene" },
+                { "Ctrl+Q", "Stop playing" },
+                });
+            section("Viewport", {
+                { "Left mouse drag", "Rotate the camera" },
+                { "W / A / S / D", "Move the camera" },
+                { "Q / E", "Move the camera down / up" },
+                { "Hold Ctrl", "Lock camera movement" },
+                { "Right click", "Select entity (Shift to add)" },
+                { "1 / 2 / 3", "Translate / rotate / scale gizmo" },
+                { "F", "Focus the selection" },
+                { "G", "Toggle the ground grid" },
+                { "Mouse wheel", "Change the camera speed" },
+                });
+            section("Scene hierarchy", {
+                { "Double click", "Focus the entity" },
+                { "F2", "Rename the selected entity" },
+                { "Shift+Click", "Add to the selection" },
+                { "Ctrl+D", "Duplicate the selection" },
+                { "Delete", "Delete the selection" },
+                { "Drag and drop", "Reparent, or create a prefab in the content browser" },
+                });
+            section("Content browser", {
+                { "Double click", "Open a folder or scene" },
+                { "Ctrl + mouse wheel", "Change the icon size" },
+                });
+            section("Terrain editing", {
+                { "Hold right mouse", "Paint with the active brush" },
+                });
+        }
         ImGui::End();
 
     }
@@ -463,6 +846,7 @@ namespace Atlas::Editor {
             [&](Ref<Resource<Scene::Scene>>& scene) {
                 waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
                 Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
+                Singletons::config->AddRecentScene(scene->path);
             });
 
         // Also kind of a resource event

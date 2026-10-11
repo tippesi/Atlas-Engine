@@ -8,7 +8,8 @@ namespace Atlas::Editor::UI {
     bool HierarchyComponentPanel::Render(const Ref<Scene::Scene>& scene,
         Scene::Entity entity, HierarchyComponent& component) {
 
-        ImGui::Text("Number of children: %d", int32_t(component.GetChildren().size()));
+        auto childCount = int32_t(component.GetChildren().size());
+        ImGui::TextDisabled("%d %s", childCount, childCount == 1 ? "child" : "children");
 
         return false;
 
