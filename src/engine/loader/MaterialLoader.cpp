@@ -1,5 +1,6 @@
 #include "MaterialLoader.h"
 #include "AssetLoader.h"
+#include "AssetReferences.h"
 
 #include "mesh/MeshSerializer.h"
 
@@ -29,6 +30,8 @@ namespace Atlas::Loader {
 
         fileStream.close();
 
+        AssetReferences::ResolveReferences(j, AssetReferences::Type::Material, filename);
+
         auto material = CreateRef<Material>();
         from_json(j, *material);
 
@@ -49,6 +52,7 @@ namespace Atlas::Loader {
 
         json j;
         to_json(j, *material);
+        AssetReferences::MakeReferences(j, AssetReferences::Type::Material, filename);
 
         if (binaryJson) {
             auto data = json::to_bjdata(j);

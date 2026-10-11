@@ -1,5 +1,6 @@
 #include "TerrainLoader.h"
 #include "AssetLoader.h"
+#include "AssetReferences.h"
 #include "MaterialLoader.h"
 #include "resource/ResourceManager.h"
 #include "../Log.h"
@@ -65,7 +66,9 @@ namespace Atlas {
             count = 0;
             for (auto& material : materials) {
                 if (material.IsValid()) {
-                    body.append(std::to_string(count) + " " + material.GetResource()->path + "\n");
+                    body.append(std::to_string(count) + " " +
+                        AssetReferences::MakeReference(filename,
+                            material.GetResource()->path) + "\n");
                 }
                 if (material.IsLoaded()) {
                     MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
@@ -184,6 +187,7 @@ namespace Atlas {
                 auto pos = line.find_last_of("\r\n");
                 auto materialPath = line.substr(offset, pos - offset);
 
+                materialPath = AssetReferences::ResolveReference(filename, materialPath);
                 auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(materialPath,
                     ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
 

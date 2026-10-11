@@ -6,6 +6,7 @@
 #include "physics/PhysicsSerializer.h"
 
 #include "loader/AssetLoader.h"
+#include "loader/AssetReferences.h"
 #include "loader/TerrainLoader.h"
 #include "loader/MeshLoader.h"
 #include "loader/MaterialLoader.h"
@@ -35,6 +36,7 @@ namespace Atlas {
 
             json j;
             Scene::SceneToJson(j, scene.get());
+            Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Scene, filename);
 
             if (binaryJson) {
                 auto data = json::to_msgpack(j);
@@ -74,6 +76,8 @@ namespace Atlas {
             
             fileStream.close();
 
+            Loader::AssetReferences::ResolveReferences(j, Loader::AssetReferences::Type::Scene, filename);
+
             Ref<Scene::Scene> scene;
             Scene::SceneFromJson(j, scene);
 
@@ -102,6 +106,8 @@ namespace Atlas {
                 j["body"] = rigidBody->GetBodyCreationSettings();
             }
 
+            Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Entity, filename);
+
             fileStream << (formatJson ? j.dump(2) : j.dump());
 
             fileStream.close();
@@ -125,6 +131,7 @@ namespace Atlas {
             fileStream.close();
 
             json j = json::parse(serialized);
+            Loader::AssetReferences::ResolveReferences(j, Loader::AssetReferences::Type::Entity, filename);
 
             auto entity = scene->CreateEntity();
 
