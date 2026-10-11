@@ -1,4 +1,5 @@
 #include "SceneBindings.h"
+#include "MemberBindings.h"
 
 #include "scene/Scene.h"
 #include "scene/components/LuaScriptComponent.h"
@@ -6,6 +7,12 @@
 namespace Atlas::Scripting::Bindings {
 
     void GenerateSceneBindings(sol::table* ns) {
+
+        ns->new_usertype<Scene::Wind>("Wind",
+            "direction", &Scene::Wind::direction,
+            "speed", &Scene::Wind::speed,
+            "noiseMap", &Scene::Wind::noiseMap
+            );
 
         ns->new_usertype<Scene::Scene>("Scene",
             "CreateEntity", &Scene::Scene::CreateEntity,
@@ -24,14 +31,7 @@ namespace Atlas::Scripting::Bindings {
             "reflection", &Scene::Scene::reflection,
             "sss", &Scene::Scene::sss,
             "ssgi", &Scene::Scene::ssgi,
-            "sky", &Scene::Scene::sky,
             "postProcessing", &Scene::Scene::postProcessing
-            );
-
-        ns->new_usertype<Scene::Wind>("Wind",
-            "direction", &Scene::Wind::direction,
-            "speed", &Scene::Wind::speed,
-            "noiseMap", &Scene::Wind::noiseMap
             );
 
     }
@@ -192,6 +192,7 @@ namespace Atlas::Scripting::Bindings {
             "mobility", &LightComponent::mobility,
             "color", &LightComponent::color,
             "intensity", &LightComponent::intensity,
+            "volumetricIntensity", &LightComponent::volumetricIntensity,
             "properties", &LightComponent::properties,
             "transformedProperties", &LightComponent::transformedProperties,
             "shadow", &LightComponent::shadow,
@@ -217,7 +218,8 @@ namespace Atlas::Scripting::Bindings {
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
             "matrix", &TransformComponent::matrix,
-            "globalMatrix", &TransformComponent::globalMatrix
+            "globalMatrix", &TransformComponent::globalMatrix,
+            "isStatic", &TransformComponent::isStatic
         );
 
         ns->new_usertype<RigidBodyComponent>("RigidBodyComponent",
@@ -294,18 +296,37 @@ namespace Atlas::Scripting::Bindings {
             { "Hermite", SplineType::Hermite }
             });
 
+        ns->new_enum<SplineBakeMode>("SplineBakeMode", {
+            { "NoBake", SplineBakeMode::NoBake },
+            { "EqualSpacingBake", SplineBakeMode::EqualSpacingBake },
+            { "DistanceSpacingBake", SplineBakeMode::DistanceSpacingBake }
+            });
+
+        ns->new_usertype<SplineControlPoint>("SplineControlPoint",
+            sol::call_constructor,
+            sol::constructors<SplineControlPoint(), SplineControlPoint(glm::mat4, float)>(),
+            "transform", DependentMember<&SplineControlPoint::transform>(),
+            "tangent", DependentMember<&SplineControlPoint::tangent>(),
+            "time", &SplineControlPoint::time
+            );
+
         ns->new_usertype<SplinePoint>("SplinePoint",
-            "position", &SplinePoint::position,
-            "rotation", &SplinePoint::rotation,
-            "scale", &SplinePoint::scale,
-            "tangent", &SplinePoint::tangent,
+            "position", DependentMember<&SplinePoint::position>(),
+            "rotation", DependentMember<&SplinePoint::rotation>(),
+            "scale", DependentMember<&SplinePoint::scale>(),
+            "tangent", DependentMember<&SplinePoint::tangent>(),
             "time", &SplinePoint::time
         );
 
         ns->new_usertype<SplineComponent>("SplineComponent",
+            "AddControlPoint", &SplineComponent::AddControlPoint,
+            "ClearControlPoints", &SplineComponent::ClearControlPoints,
+            "GetControlPoint", &SplineComponent::GetControlPoint,
+            "GetControlPointCount", &SplineComponent::GetControlPointCount,
             "Bake", &SplineComponent::Bake,
             "GetInterpolated", &SplineComponent::GetInterpolated,
-            "type", &SplineComponent::type
+            "type", &SplineComponent::type,
+            "bakeMode", &SplineComponent::bakeMode
         );
 
     }

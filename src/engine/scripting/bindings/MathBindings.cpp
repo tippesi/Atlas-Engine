@@ -28,7 +28,7 @@ namespace Atlas::Scripting::Bindings {
             sol::constructors<glm::mat3(float)>());
 
         GenerateGlmTypeBinding<glm::mat4, float>(ns, "Mat4",
-            sol::constructors<glm::mat4(float)>());
+            sol::constructors<glm::mat4(float), glm::mat4(const glm::mat4&)>());
 
          auto quat_multiplication_overloads = sol::overload(
             [](const glm::quat& v0, const glm::quat& v1) { return v0 * v1; },

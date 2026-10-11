@@ -54,6 +54,14 @@ namespace Atlas::Scene::Components {
 
         void Bake();
 
+        void AddControlPoint(glm::mat4 matrix, float time);
+
+        void ClearControlPoints();
+
+        SplineControlPoint* GetControlPoint(int32_t index);
+
+        size_t GetControlPointCount() const;
+
         SplinePoint GetInterpolated(float time, const glm::mat4& parentMatrix) const;
 
         SplinePoint GetInterpolatedFromIndex(int32_t idx, float t) const;

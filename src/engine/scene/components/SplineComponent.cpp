@@ -6,6 +6,34 @@
 
 namespace Atlas::Scene::Components {
 
+    void SplineComponent::AddControlPoint(glm::mat4 matrix, float time) {
+
+        controlPoints.emplace_back(matrix, time);
+
+    }
+
+    void SplineComponent::ClearControlPoints() {
+
+        controlPoints.clear();
+        bakedPoints.clear();
+
+    }
+
+    SplineControlPoint* SplineComponent::GetControlPoint(int32_t index) {
+
+        if (index < 0 || index >= int32_t(controlPoints.size()))
+            return nullptr;
+
+        return &controlPoints[size_t(index)];
+
+    }
+
+    size_t SplineComponent::GetControlPointCount() const {
+
+        return controlPoints.size();
+
+    }
+
     void SplineComponent::Bake() {
 
         if (bakeMode == SplineBakeMode::EqualSpacingBake) {

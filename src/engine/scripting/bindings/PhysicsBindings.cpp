@@ -1,4 +1,5 @@
 #include "PhysicsBindings.h"
+#include "MemberBindings.h"
 
 #include "physics/PhysicsWorld.h"
 
@@ -87,8 +88,8 @@ namespace Atlas::Scripting::Bindings {
             sol::constructors<Physics::BodyCreationSettings>(),
             "objectLayer", &Physics::BodyCreationSettings::objectLayer,
             "motionQuality", &Physics::BodyCreationSettings::motionQuality,
-            "linearVelocity", &Physics::BodyCreationSettings::linearVelocity,
-            "angularVelocity", &Physics::BodyCreationSettings::angularVelocity,
+            "linearVelocity", DependentMember<&Physics::BodyCreationSettings::linearVelocity>(),
+            "angularVelocity", DependentMember<&Physics::BodyCreationSettings::angularVelocity>(),
             "friction", &Physics::BodyCreationSettings::friction,
             "restitution", &Physics::BodyCreationSettings::restitution,
             "linearDampening", &Physics::BodyCreationSettings::linearDampening,

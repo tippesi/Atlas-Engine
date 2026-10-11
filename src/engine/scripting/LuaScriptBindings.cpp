@@ -29,6 +29,8 @@ namespace Atlas::Scripting {
 
     void LuaScriptBindings::GenerateBindings() {
 
+        // Math types need to be registered before the bindings that use them as members
+        Bindings::GenerateMathBindings(glmNs);
         Bindings::GenerateSceneBindings(atlasNs);
         Bindings::GenerateEntityBindings(atlasNs);
         Bindings::GenerateComponentBindings(atlasNs);
@@ -37,7 +39,6 @@ namespace Atlas::Scripting {
         Bindings::GenerateAudioBindings(atlasNs);
         Bindings::GenerateMeshBindings(atlasNs);
         Bindings::GeneratePhysicsBindings(atlasNs);
-        Bindings::GenerateMathBindings(glmNs);
         Bindings::GenerateVolumeBindings(atlasNs);
         Bindings::GenerateLightingBindings(atlasNs);
         Bindings::GenerateKeyboardBindings(atlasNs);
