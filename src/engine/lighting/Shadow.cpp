@@ -1,4 +1,5 @@
 #include "Shadow.h"
+#include "common/MathHelper.h"
 
 namespace Atlas {
 
@@ -7,7 +8,7 @@ namespace Atlas {
         Shadow::Shadow(float distance, float bias, int32_t resolution, float edgeSoftness, int32_t cascadeCount, 
             float splitCorrection) : distance(distance), bias(bias), resolution(resolution), edgeSoftness(edgeSoftness) {
 
-            splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
+            splitCorrection = Helper::Math::Saturate(splitCorrection);
             viewCount = cascadeCount;
             this->splitCorrection = splitCorrection;
 

@@ -1,4 +1,5 @@
 #include "Mouse.h"
+#include "common/MathHelper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +54,7 @@ namespace Atlas {
 
         void MouseHandler::Update(CameraComponent& camera, float deltaTime) {
 
-            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+            float progress = Helper::Math::Saturate(reactivity * deltaTime);
 
             interpolatedAngularVelocity = glm::mix(interpolatedAngularVelocity, angularVelocity, progress);
             camera.rotation += interpolatedAngularVelocity;

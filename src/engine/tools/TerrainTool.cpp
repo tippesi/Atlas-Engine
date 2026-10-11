@@ -1,4 +1,5 @@
 #include "TerrainTool.h"
+#include "common/MathHelper.h"
 #include "../terrain/TerrainManager.h"
 #include "../loader/AssetLoader.h"
 #include "../loader/ImageLoader.h"
@@ -608,7 +609,7 @@ namespace Atlas::Tools {
                 if (data[index] == FLT_MAX)
                     continue;
                 float value = data[index] + scale * weights[i][j] / terrain->heightScale;
-                data[index] = glm::clamp(value, 0.0f, 1.0f);
+                data[index] = Helper::Math::Saturate(value);
             }
         }
 
@@ -720,8 +721,8 @@ namespace Atlas::Tools {
 
         int32_t sizeRadius = (size - 1) / 2;
 
-        strength = glm::clamp(strength, 0.0f, 1.0f);
-        flattenHeight = glm::clamp((flattenHeight - terrain->translation.y) / terrain->heightScale, 0.0f, 1.0f);
+        strength = Helper::Math::Saturate(strength);
+        flattenHeight = Helper::Math::Saturate((flattenHeight - terrain->translation.y) / terrain->heightScale);
         for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
             for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
                 if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)

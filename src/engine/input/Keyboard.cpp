@@ -1,4 +1,5 @@
 #include "Keyboard.h"
+#include "common/MathHelper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +55,7 @@ namespace Atlas {
 
             linearVelocity.y += movement.z * speed;
 
-            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+            float progress = Helper::Math::Saturate(reactivity * deltaTime);
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
 
@@ -72,7 +73,7 @@ namespace Atlas {
 
             if (glm::length(linearVelocity) > 0.0f)
                 linearVelocity = glm::normalize(linearVelocity);
-            float progress = glm::clamp(reactivity, 0.0f, 1.0f);
+            float progress = Helper::Math::Saturate(reactivity);
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
 

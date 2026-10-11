@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../System.h"
+#include "MathHelper.h"
 #include "../texture/Texture2D.h"
 #include "Image.h"
 #include "RandomHelper.h"
@@ -40,7 +41,7 @@ namespace Atlas::Common {
             }
         }
 
-        return glm::clamp(dist, 0.0f, 1.0f);
+        return Helper::Math::Saturate(dist);
 
     }
 

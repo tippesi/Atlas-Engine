@@ -1,4 +1,5 @@
 #include "ImpostorTool.h"
+#include "common/MathHelper.h"
 #include "../renderer/ImpostorRenderer.h"
 #include "../scene/Scene.h"
 
@@ -109,7 +110,7 @@ namespace Atlas {
             dir.y = glm::max(dir.y, 0.0001f);
             dir /= glm::dot(glm::abs(dir), vec3(1.0));
 
-            return glm::clamp(0.5f * vec2(dir.x + dir.z, dir.x - dir.z) + 0.5f, 0.0f, 1.0f);
+            return Helper::Math::Saturate(0.5f * vec2(dir.x + dir.z, dir.x - dir.z) + 0.5f);
 
         }
 
@@ -140,7 +141,7 @@ namespace Atlas {
                 dir.z = (orig.y >= 0.0f ? 1.0f : -1.0f) * (1.0f - abs(orig.x));
             }
 
-            return glm::clamp(0.5f * vec2(dir.x, dir.z) + 0.5f, 0.0f, 1.0f);
+            return Helper::Math::Saturate(0.5f * vec2(dir.x, dir.z) + 0.5f);
 
         }
 

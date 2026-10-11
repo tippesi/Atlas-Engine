@@ -1,4 +1,5 @@
 #include "VegetationGenerator.h"
+#include "common/MathHelper.h"
 
 #include "tools/TerrainTool.h"
 
@@ -107,7 +108,7 @@ namespace Atlas::Editor {
             vec3 scale = mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(type.randGenerator));
 
             instance.scale *= glm::mix(type.growthMinScale, type.growthMaxScale,
-                glm::clamp(float(instance.age) / float(type.growthMaxAge), 0.0f, 1.0f));
+                Helper::Math::Saturate(float(instance.age) / float(type.growthMaxAge)));
 
             mat4 rot{ 1.0f };
             if (type.alignToSurface) {

@@ -1,6 +1,7 @@
 // Based on: Spatial Splits in Bounding Volume Hierarchies, Stich et. al.
 // https://www.nvidia.in/docs/IO/77714/sbvh.pdf
 #include <numeric>
+#include "common/MathHelper.h"
 #include <future>
 
 #include "BVH.h"
@@ -807,8 +808,8 @@ namespace Atlas {
                 if (v0[axis] < planePos && v1[axis] > planePos ||
                     v0[axis] > planePos && v1[axis] < planePos) {
                     // Interpolate on edge and find point at plane position
-                    auto off = glm::clamp((planePos - v0[axis]) /
-                        (v1[axis] - v0[axis]), 0.0f, 1.0f);
+                    auto off = Helper::Math::Saturate((planePos - v0[axis]) /
+                        (v1[axis] - v0[axis]));
                     auto interpolation = glm::mix(v0, v1, off);
 
                     leftRef.aabb.Grow(interpolation);

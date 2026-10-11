@@ -1,4 +1,5 @@
 #include "ModelImporter.h"
+#include "common/MathHelper.h"
 #include "ImageLoader.h"
 #include "MaterialLoader.h"
 #include "MeshLoader.h"
@@ -640,8 +641,8 @@ namespace Atlas {
                 assimpMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, material.roughness);
             }
 
-            material.roughness = glm::clamp(material.roughness, 0.0f, 1.0f);
-            material.metalness = glm::clamp(material.metalness, 0.0f, 1.0f);
+            material.roughness = Helper::Math::Saturate(material.roughness);
+            material.metalness = Helper::Math::Saturate(material.metalness);
 
             if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
                 assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
