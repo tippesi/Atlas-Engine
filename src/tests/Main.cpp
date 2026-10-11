@@ -186,6 +186,9 @@ int main(int argc, char** argv) {
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
 #endif
 
+    // To test with swiftshader locally, set VK_ICD_FILENAMES to the path of the vk_swiftshader_icd.json
+    // in the environment before starting the tests (the CI does the same)
+
     testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();

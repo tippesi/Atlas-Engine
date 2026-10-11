@@ -1,64 +1,73 @@
-local.properties
-vsbuild
-build
-out
-cmake-build-debug
-cmake-build-release
-cmake-build-debug-visual-studio
-dependencies/SDL
-dependencies/Assimp
-.idea
-.gradle
-.cxx
-.externalNativeBuild
-.vs
-platform/android/app/app.iml
-platform/android/android.iml
-assets
-data/sanmiguel
-cmake-build-relwithdebinfo
-data/cornell
-data/bistro
-dependencies/ImguiPlatform/imgui
-data/pica pica
-data/medieval
+# Allowlist: everything in the repository root is ignored, project files and folders are re-included below.
+# Rules are anchored ("/...") and use "/*" instead of "*". A bare "*" matches at every depth and hides
+# tracked files in tools that apply .gitignore to the file tree, e.g. the Visual Studio folder view.
+/*
+
+# Project files
+!/.gitattributes
+!/.gitignore
+!/CMakeLists.txt
+!/Doxyfile
+!/LICENSE.md
+!/README.md
+!/THIRDPARTY.md
+!/vcpkg.json
+!/vsbuild.bat
+
+# Project folders
+!/.github/
+!/libs/
+!/src/
+!/wiki/
+
+# data/: engine assets only. The large sample asset folders are downloaded separately (see data/README.md)
+!/data/
+/data/*
+
+!/data/editor/
+!/data/font/
+!/data/materials/
+!/data/meshes/
+!/data/prefabs/
+!/data/scripts/
+!/data/shader/
+!/data/sponza/
+
+!/data/README.md
+!/data/capsule.gltf
+!/data/chromesphere.bin
+!/data/chromesphere.gltf
+!/data/cloudHeight.png
+!/data/download_assets.ps1
+!/data/download_assets.sh
+!/data/environment.hdr
+!/data/icon.png
+!/data/loading.png
+!/data/metallicwall.gltf
+!/data/noise.png
+!/data/scrambling_ranking.png
+!/data/sobol.png
+
+# Scenes: only the sample scene, other scenes belong to the downloaded asset folders
+!/data/scenes/
+/data/scenes/*
+!/data/scenes/README.md
+!/data/scenes/sponza.aescene
+
+# Scripts that belong to downloaded asset folders
+/data/scripts/kingdomPlayer.lua
+
+# Generated files inside the project folders
+__pycache__/
+
+# IDE and OS files
+.vs/
+.vscode/
+.idea/
+.gradle/
+.cxx/
+.externalNativeBuild/
 .DS_Store
-data/newsponza
-data/emeraldsquare
-data/forest
+local.properties
 CMakeSettings.json
 CMakeUserPresets.json
-.vscode/settings.json
-xcode
-bin
-data/dump.txt
-data/subway
-data/material demo
-data/emissivesphere.gltf
-data/.cache
-data/.config
-data/.config
-data/emissive mesh
-data/flying world
-data/living room
-data/mis
-data/ancient
-data/farm
-data/town
-data/tropical
-data/scifiy city
-data/pirates
-data/meadow
-.vscode
-data/elven
-data/dungeon
-data/namaqualand
-data/quarry
-data/hiddenalley
-data/kingdom
-data/swamp
-data/japan
-data/synty
-data/generated
-data/cliff
-data/enchanted_day
