@@ -1,6 +1,7 @@
 #include <deferred.hsh>
 
 #include <../brdf/brdfEval.hsh>
+#include <../brdf/transmission.hsh>
 #include <../common/flatten.hsh>
 
 #ifdef DDGI
@@ -205,6 +206,21 @@ void main() {
 #endif
         prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
         prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
+        if (surface.material.transmissive) {
+            vec3 backDiffuse = textureLod(diffuseProbe, -worldNormal, 0).rgb;
+#ifdef DDGI_SCROLL
+            vec4 backDiffuseLocal = ddgiData.volumeEnabled > 0 ?
+                GetLocalIrradiance(worldPosition, -worldView, -worldNormal, -geometryWorldNormal, backDiffuse) :
+                vec4(0.0, 0.0, 0.0, 1.0);
+#else
+            vec4 backDiffuseLocal = ddgiData.volumeEnabled > 0 ?
+                GetLocalIrradiance(worldPosition, -worldView, -worldNormal, -geometryWorldNormal) :
+                vec4(0.0, 0.0, 0.0, 1.0);
+#endif
+            backDiffuseLocal = IsInsideVolume(worldPosition) ? backDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
+            backDiffuse = backDiffuseLocal.rgb + backDiffuse * backDiffuseLocal.a;
+            prefilteredDiffuse += GetTransmissionColor(surface.material) * backDiffuse;
+        }
         vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.volumeStrength;
 #else
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;

@@ -1,4 +1,5 @@
 #include "RayTracingWorld.h"
+#include "common/MathHelper.h"
 #include "scene/Scene.h"
 
 #include "mesh/MeshData.h"
@@ -6,6 +7,7 @@
 #include "graphics/ASBuilder.h"
 #include "graphics/Profiler.h"
 #include "common/ColorConverter.h"
+#include "common/Packing.h"
 
 #include <unordered_map>
 #include <set>
@@ -345,6 +347,8 @@ namespace Atlas {
                         auto& mesh = blasInfo.mesh;
 
                         gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
+                        gpuMaterial.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(
+                            vec4(Helper::Math::Saturate(Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor)), 0.0f));
                         gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
                             * material->emissiveIntensity;
 

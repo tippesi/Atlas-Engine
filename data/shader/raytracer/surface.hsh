@@ -27,7 +27,8 @@ Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMater
 
     mat.baseColor = vec3(rayMat.baseR, rayMat.baseG, rayMat.baseB);
     mat.emissiveColor = vec3(rayMat.emissR, rayMat.emissG, rayMat.emissB);
-    mat.transmissiveColor = vec3(0.0);
+    mat.transmissiveColor = unpackColorVector(int(rayMat.transmissionColor)).rgb;
+    mat.transmissive = any(greaterThan(mat.transmissiveColor, vec3(0.0)));
 
     mat.opacity = rayMat.opacity;
 
@@ -95,8 +96,9 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     float orientation = determinant(mat3(transpose(instance.inverseMatrix))) < 0.0 ? -1.0 : 1.0;
     triangleNormal *= orientation;
     bool flipNormal = dot(triangleNormal, ray.direction) > 0.0;
-    backfaceHit = rayMat.twoSided > 0 || rayMat.cullBackFaces == 0 ? false : flipNormal;
-    triangleNormal *= flipNormal && rayMat.twoSided > 0 ? -1.0 : 1.0;
+    bool twoSided = rayMat.twoSided > 0 || mat.transmissive;
+    backfaceHit = twoSided || rayMat.cullBackFaces == 0 ? false : flipNormal;
+    triangleNormal *= flipNormal && twoSided ? -1.0 : 1.0;
 
     vec3 geometryNormal = triangleNormal;
 
@@ -139,14 +141,21 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     normal = dot(normal, triangleNormal) < 0.0 && rayMat.twoSided > 0 ? -normal : normal;
 
     surface.P = position;
+    // Transmissive surfaces scatter on both sides, the normals always face the incoming ray
+    if (mat.transmissive) {
+        if (dot(geometryNormal, -ray.direction) < 0.0) geometryNormal = -geometryNormal;
+        if (dot(normal, geometryNormal) < 0.0) normal = -normal;
+    }
+
     surface.V = -ray.direction;
     surface.N = normalize(normal);
     surface.material = mat;
 
     surface.geometryNormal = geometryNormal;
 
-    surface.F0 = mix(vec3(0.04), surface.material.baseColor, surface.material.metalness);
-    surface.F90 = 1.0;
+    // No light direction yet, but the view dependent terms are needed for indirect lighting
+    surface.L = surface.N;
+    UpdateSurface(surface);
 
     return surface;
 

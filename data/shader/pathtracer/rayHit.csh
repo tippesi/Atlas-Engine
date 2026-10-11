@@ -9,6 +9,7 @@
 #include <../common/PI.hsh>
 
 #include <../brdf/brdfEval.hsh>
+#include <../brdf/transmission.hsh>
 #include <../brdf/brdfSample.hsh>
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
@@ -166,8 +167,8 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // we add the contribution of the environment map
     if (ray.hitID == -1) {
         // Clamp env map, since there is only a uniform sampling for now
-        payload.radiance += min(1.0 * SampleEnvironmentMap(ray.direction).rgb * 
-            payload.throughput, vec3(10.0));
+        payload.radiance += min(SampleEnvironmentMap(ray.direction).rgb *
+            payload.throughput, vec3(1000.0));
         payload.throughput = vec3(0.0);
         return surface;    
     }
@@ -191,7 +192,7 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 #endif
 
     // Evaluate direct and indirect light
-    vec3 radiance = payload.throughput * surface.material.opacity
+    vec3 radiance = payload.throughput * saturate(surface.material.opacity)
         * EvaluateDirectLight(surface);
     
     // Clamp indirect radiance
@@ -227,46 +228,49 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 
     float solidAngle, lightDistance;
     SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
-    
-    // Evaluate the BRDF
+
+    if (lightPdf <= 0.0) return vec3(0.0);
+
+    vec3 transmissionColor = GetTransmissionColor(surface.material);
+    // Front side reflection, transmission is evaluated separately below
     vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
     reflectance *= surface.material.opacity;
     vec3 radiance = light.radiance * solidAngle;
+    float visibility = light.castShadow ? CheckVisibility(surface, lightDistance) : 1.0;
+    vec3 direct = reflectance * radiance * surface.NdotL * visibility / lightPdf;
 
-    // Check for visibilty. This is important to get an
-    // estimate of the solid angle of the light from point P
-    // on the surface.
-    if (light.castShadow)
-        radiance *= CheckVisibility(surface, lightDistance);
-    
-    return reflectance * radiance * surface.NdotL / lightPdf;
+    if (surface.material.transmissive && dot(surface.L, surface.geometryNormal) < 0.0) {
+        Surface backSurface = GetTransmissionSurface(surface);
+        if (backSurface.NdotL > 0.0) {
+            float backVisibility = light.castShadow ? CheckVisibility(backSurface, lightDistance) : 1.0;
+            direct += transmissionColor * EvaluateDiffuseBRDF(backSurface) * surface.material.opacity *
+                radiance * backSurface.NdotL * backVisibility / lightPdf;
+        }
+    }
+
+    return direct;
 
 }
 
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload) {
 
-    // Something that is not ideal right now:
-    // There should be a difference between the shading normal and the 
-    // geometry normal. Hemisphere sampling should either be done using the geometry
-    // normal or we should check if we somehow sampled the lower hemisphere below
-    // the surface. In that case we need to stop the ray to prevent leaking from below.
-    // This case can only happen with normal maps enabled. Additionally we should use
-    // the previous ray direction/view direction to offset the ray origin from the surface
     Material mat = surface.material;
-    ray.origin = surface.P;
+    float opacity = saturate(mat.opacity);
+    vec3 transmissionColor = GetTransmissionColor(mat);
 
     float curSeed = Uniforms.seed;
     float raySeed = float(ray.ID);
 
-    float refractChance = clamp(1.0 - mat.opacity, 0.1, 0.9);
-    refractChance = mat.opacity == 1.0 ? 0.0 : refractChance;
+    float passThroughChance = opacity == 1.0 ? 0.0 : clamp(1.0 - opacity, 0.1, 0.9);
 
     float rnd = saturate(random(raySeed, curSeed));
 
     BRDFSample brdfSample;
 
-    bool refracted = false;
-    if (rnd >= refractChance) {
+    bool transmitted = false;
+    bool passedThrough = false;
+    float cosine = 1.0;
+    if (rnd >= passThroughChance) {
         rnd = random(raySeed, curSeed);
 
         vec3 F = FresnelSchlick(surface.F0, surface.F90, surface.NdotV);
@@ -278,39 +282,59 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 
         if (rnd < specChance) {
             brdfSample = SampleSpecularBRDF(surface, vec2(u0, u1));
-            brdfSample.reflectance *= mat.opacity;
+            brdfSample.reflectance *= opacity;
             brdfSample.pdf *= specChance;
+            cosine = surface.NdotL;
         }
         else {
-            brdfSample = SampleDiffuseBRDF(surface, vec2(u0, u1));
-            brdfSample.reflectance *= (1.0 - surface.material.metalness) * mat.opacity;
-            brdfSample.pdf *= (1.0 - specChance);
+            // Transmission is an additional diffuse lobe on the back side, choose between both lobes
+            float transmissionWeight = dot(transmissionColor, vec3(1.0 / 3.0));
+            float transmissionChance = transmissionWeight / (1.0 + transmissionWeight);
+            if (mat.metalness >= 1.0) transmissionChance = 0.0;
+            if (transmissionChance > 0.0 && random(raySeed, curSeed) < transmissionChance) {
+                Surface backSurface = GetTransmissionSurface(surface);
+                brdfSample = SampleDiffuseBRDF(backSurface, vec2(u0, u1));
+                brdfSample.reflectance *= (1.0 - mat.metalness) * transmissionColor * opacity;
+                brdfSample.pdf *= (1.0 - specChance) * transmissionChance;
+                cosine = backSurface.NdotL;
+                transmitted = true;
+            }
+            else {
+                brdfSample = SampleDiffuseBRDF(surface, vec2(u0, u1));
+                brdfSample.reflectance *= (1.0 - mat.metalness) * opacity;
+                brdfSample.pdf *= (1.0 - specChance) * (1.0 - transmissionChance);
+                cosine = surface.NdotL;
+            }
         }
 
-        brdfSample.pdf *= (1.0 - refractChance);
-        ray.origin += surface.V * EPSILON;
+        brdfSample.pdf *= (1.0 - passThroughChance);
     }
     else {
         brdfSample.L = ray.direction;
-        brdfSample.pdf = refractChance;
-        brdfSample.reflectance = vec3(1.0 - mat.opacity);
-        
-        // We want full throughput
-        surface.NdotL = 1.0;
-        ray.origin -= surface.N * EPSILON;
-
-        refracted = true;
+        brdfSample.pdf = passThroughChance;
+        brdfSample.reflectance = vec3(1.0 - opacity);
+        transmitted = true;
+        passedThrough = true;
     }
 
     if (brdfSample.pdf > 0.0 && sum(brdfSample.reflectance) > 0.0) {
         payload.throughput *= brdfSample.reflectance *
-            surface.NdotL / brdfSample.pdf;
+            cosine / brdfSample.pdf;
     }
     else {
         payload.throughput = vec3(0.0);
+        return;
     }
     
     ray.direction = normalize(brdfSample.L);
+    float geometryCosine = dot(ray.direction, surface.geometryNormal);
+    if (!passedThrough && (transmitted ? geometryCosine >= 0.0 : geometryCosine <= 0.0)) {
+        payload.throughput = vec3(0.0);
+        return;
+    }
+    // Offset the origin to the side the ray continues on
+    ray.origin = transmitted && !passedThrough ? surface.P - surface.geometryNormal * EPSILON :
+        passedThrough ? surface.P - surface.N * EPSILON : surface.P + surface.V * EPSILON;
     payload.throughput *= mat.ao;
 
     // Russain roulette, terminate rays with a chance of one percent
@@ -324,11 +348,6 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
         return;
     }
 
-    if (dot(ray.direction, surface.geometryNormal) <= 0.0 && !refracted) {
-        payload.throughput = vec3(0.0);
-        return;
-    }
-
     payload.throughput /= probability;
 
 }
@@ -338,6 +357,7 @@ float CheckVisibility(Surface surface, float lightDistance) {
     if (surface.NdotL > 0.0) {
         Ray ray;
         ray.direction = surface.L;
+        // For transmitted light N is already flipped to the back side
         ray.origin = surface.P + surface.N * EPSILON;
         return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
     }

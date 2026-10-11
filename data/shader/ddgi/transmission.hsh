@@ -1,0 +1,15 @@
+#include <ddgi.hsh>
+#include <../brdf/transmission.hsh>
+
+// Indirect diffuse lighting which passes through a transmissive surface from its back side
+vec3 GetTransmittedIndirectDiffuse(Surface surface) {
+
+    if (!surface.material.transmissive)
+        return vec3(0.0);
+
+    Surface backSurface = GetTransmissionSurface(surface);
+    vec3 backIrradiance = GetLocalIrradiance(backSurface.P, backSurface.V,
+        backSurface.N, backSurface.geometryNormal).rgb;
+    return GetTransmissionColor(surface.material) * EvaluateIndirectDiffuseBRDF(backSurface) * backIrradiance;
+
+}

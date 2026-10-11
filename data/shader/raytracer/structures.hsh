@@ -140,7 +140,7 @@ struct RaytraceMaterial {
     int emissiveTexture;    
     int terrainNormalTexture;
 
-    int padding;
+    uint transmissionColor;
 
 };
 

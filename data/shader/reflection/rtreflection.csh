@@ -14,11 +14,13 @@
 #include <../common/bluenoise.hsh>
 
 #include <../brdf/brdfEval.hsh>
+#include <../brdf/transmission.hsh>
 #include <../brdf/brdfSample.hsh>
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
 #include <../ddgi/ddgi.hsh>
+#include <../ddgi/transmission.hsh>
 #include <../shadow.hsh>
 #include <../clouds/shadow.hsh>
 
@@ -266,6 +268,7 @@ vec3 EvaluateHit(inout Ray ray, float rand) {
     surface.NdotV = saturate(dot(surface.N, surface.V));
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * probeIrradiance.rgb +
         EvaluateIndirectSpecularBRDF(surface) * probeRadiance.rgb;
+    indirect += GetTransmittedIndirectDiffuse(surface);
     radiance += IsInsideVolume(surface.P) ? indirect * ddgiDistanceDamp * ddgiData.volumeStrength: vec3(0.0);
 #endif
     
@@ -295,8 +298,12 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
     float solidAngle, lightDistance;
     SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
 
+    bool transmittedLight = IsTransmittedLight(surface);
+    Surface lightSurface = transmittedLight ? GetTransmissionSurface(surface) : surface;
+
     // Evaluate the BRDF
-    vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
+    vec3 reflectance = transmittedLight ? GetTransmissionColor(surface.material) * EvaluateDiffuseBRDF(lightSurface) :
+        EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
     reflectance *= surface.material.opacity;
     vec3 radiance = light.radiance * solidAngle;
 
@@ -305,10 +312,10 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
     // on the surface.
 #ifdef USE_SHADOW_MAP
     radiance *= CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
-        surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+        lightSurface.geometryNormal, saturate(dot(lightSurface.L, lightSurface.geometryNormal)));
 #else
     if (light.castShadow)
-        radiance *= CheckVisibility(surface, lightDistance);
+        radiance *= CheckVisibility(lightSurface, lightDistance);
 #endif
 
 #ifdef CLOUD_SHADOWS
@@ -320,7 +327,7 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
     }
 #endif
     
-    return reflectance * radiance * surface.NdotL / lightPdf;
+    return reflectance * radiance * lightSurface.NdotL / lightPdf;
 
 }
 
@@ -329,7 +336,8 @@ float CheckVisibility(Surface surface, float lightDistance) {
     if (surface.NdotL > 0.0) {
         Ray ray;
         ray.direction = surface.L;
-        ray.origin = surface.P + surface.N * EPSILON;
+        float side = dot(surface.L, surface.geometryNormal) < 0.0 ? -1.0 : 1.0;
+        ray.origin = surface.P + surface.geometryNormal * (side * EPSILON);
         return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {

@@ -14,11 +14,13 @@
 #include <../common/bluenoise.hsh>
 
 #include <../brdf/brdfEval.hsh>
+#include <../brdf/transmission.hsh>
 #include <../brdf/brdfSample.hsh>
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
 #include <../ddgi/ddgi.hsh>
+#include <../ddgi/transmission.hsh>
 #include <../clouds/shadow.hsh>
 #include <../shadow.hsh>
 
@@ -129,23 +131,40 @@ void main() {
 
                 Surface surface = CreateSurface(V, N, vec3(1.0), material);
 
+                // Choose between the front and the transmitted back side diffuse lobe
+                vec3 transmissionColor = GetTransmissionColor(material);
+                float transmissionWeight = dot(transmissionColor, vec3(1.0 / 3.0));
+                float transmissionChance = transmissionWeight / (1.0 + transmissionWeight);
+                bool transmitted = blueNoiseVec.z < transmissionChance;
+                vec3 sampleNormal = transmitted ? -N : N;
+                vec3 sampleView = transmitted ? -V : V;
+                vec3 lobeWeight;
+                if (transmitted) {
+                    lobeWeight = transmissionColor / transmissionChance;
+                    blueNoiseVec.z /= transmissionChance;
+                }
+                else {
+                    lobeWeight = vec3(1.0 / (1.0 - transmissionChance));
+                    blueNoiseVec.z = (blueNoiseVec.z - transmissionChance) / (1.0 - transmissionChance);
+                }
+
                 blueNoiseVec.x *= (1.0 - uniforms.bias);
 
                 Ray ray;
 
                 float pdf = 1.0;
                 float NdotL;
-                ImportanceSampleCosDir(N, blueNoiseVec.xy, 
+                ImportanceSampleCosDir(sampleNormal, blueNoiseVec.xy,
                     ray.direction, NdotL, pdf);
 
-                bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
-                    !isnan(ray.direction.z) || dot(N, ray.direction) > 0.0;
+                bool isRayValid = !isnan3(ray.direction) && !isinf3(ray.direction) &&
+                    dot(sampleNormal, ray.direction) > 0.0;
 
                 if (isRayValid) {               
 
                     // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
                     float viewOffset = max(1.0, 4.0 * length(viewPos));
-                    ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
+                    ray.origin = worldPos + ray.direction * EPSILON * viewOffset + sampleNormal * EPSILON * viewOffset;
 
                     ray.hitID = -1;
                     ray.hitDistance = 0.0;
@@ -167,26 +186,26 @@ void main() {
 #endif                    
 
 #ifdef DDGI               
-                    radiance = EvaluateHit(ray, N, blueNoiseVec.z);     
+                    radiance = EvaluateHit(ray, sampleNormal, blueNoiseVec.z);
                     if (ray.hitID == -1) {
                         vec4 probeIrradiance, probeRadiance;
-                        GetLocalProbeLighting(worldPos, V, worldNorm, worldNorm, worldNorm, blueNoiseVec.z, 
+                        GetLocalProbeLighting(worldPos, sampleView, sampleNormal, sampleNormal, sampleNormal, blueNoiseVec.z,
                             radiance, vec3(0.0), probeIrradiance, probeRadiance) ;
                         radiance = probeIrradiance.rgb * ddgiData.volumeStrength;
                     }
-                    else {
-                        float radianceMax = max(max(max(radiance.r, 
-                            max(radiance.g, radiance.b)), radianceLimit), 1e-12);
-                        radiance *= (radianceLimit / radianceMax);
-                    }
 #else
-                    radiance = EvaluateHit(ray, N, blueNoiseVec.z);
-                    float radianceMax = max(max(max(radiance.r, 
-                            max(radiance.g, radiance.b)), radianceLimit), 1e-12);
-                    radiance *= (radianceLimit / radianceMax);
+                    radiance = EvaluateHit(ray, sampleNormal, blueNoiseVec.z);
 #endif
+
+                    if (isnan3(radiance) || isinf3(radiance))
+                        radiance = vec3(0.0);
+
+                    radiance = max(radiance, vec3(0.0));
+                    float radianceMax = max(max(max(radiance.r,
+                        max(radiance.g, radiance.b)), radianceLimit), 1e-12);
+                    radiance *= radianceLimit / radianceMax;
                     
-                    reflection += radiance;
+                    reflection += radiance * lobeWeight;
                 }
             }
 
@@ -229,6 +248,7 @@ vec3 EvaluateHit(inout Ray ray, vec3 cubemapSamplingDirection, float rand) {
     // This enables metallic materials to have some kind of secondary reflection
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * probeIrradiance.rgb +
         EvaluateIndirectSpecularBRDF(surface) * probeIrradiance.rgb;
+    indirect += GetTransmittedIndirectDiffuse(surface);
     radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength * min(1.0, sqr(ray.hitDistance)) : vec3(0.0);
 #endif
     
@@ -258,17 +278,21 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
     float solidAngle, lightDistance;
     SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
 
+    bool transmittedLight = IsTransmittedLight(surface);
+    Surface lightSurface = transmittedLight ? GetTransmissionSurface(surface) : surface;
+
 #ifdef USE_SHADOW_MAP
     float shadowFactor = CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
-        surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+        lightSurface.geometryNormal, saturate(dot(lightSurface.L, lightSurface.geometryNormal)));
 #else
     float shadowFactor = 1.0;
     if (light.castShadow)
-        shadowFactor *= CheckVisibility(surface, lightDistance);
+        shadowFactor *= CheckVisibility(lightSurface, lightDistance);
 #endif
 
     // Evaluate the BRDF
-    vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
+    vec3 reflectance = transmittedLight ? GetTransmissionColor(surface.material) * EvaluateDiffuseBRDF(lightSurface) :
+        EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
     reflectance *= surface.material.opacity;
     vec3 radiance = light.radiance * solidAngle * shadowFactor;
 
@@ -285,7 +309,7 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
     }
 #endif
     
-    return reflectance * radiance * surface.NdotL / lightPdf;
+    return reflectance * radiance * lightSurface.NdotL / lightPdf;
 
 }
 
@@ -294,7 +318,8 @@ float CheckVisibility(Surface surface, float lightDistance) {
     if (surface.NdotL > 0.0) {
         Ray ray;
         ray.direction = surface.L;
-        ray.origin = surface.P + surface.N * EPSILON;
+        float side = dot(surface.L, surface.geometryNormal) < 0.0 ? -1.0 : 1.0;
+        ray.origin = surface.P + surface.geometryNormal * (side * EPSILON);
         return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {

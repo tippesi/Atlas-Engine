@@ -80,6 +80,8 @@ namespace Atlas {
         int32_t aoTexture = -1;
         int32_t emissiveTexture = -1;
         int32_t terrainNormalTexture = -1;
+        // RGB packed as 10:10:10
+        uint32_t transmissionColor = 0;
     };
 
     struct GPUAABB {
