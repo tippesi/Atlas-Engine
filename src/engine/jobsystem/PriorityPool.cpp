@@ -47,10 +47,4 @@ namespace Atlas {
 
     }
 
-    std::vector<Worker>& PriorityPool::GetAllWorkers() {
-
-        return workers;
-
-    }
-
 }

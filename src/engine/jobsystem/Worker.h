@@ -20,19 +20,20 @@ namespace Atlas {
 
         void Start(std::function<void(Worker&)> function);
 
-        inline void Work() {
+        // Can be called from any thread (e.g. work stealing), returns the number of executed jobs
+        inline int32_t Work() {
 
-            idling = false;
-
+            int32_t executedJobs = 0;
             while(true) {
                 auto job = queue.Pop();
                 if (job == std::nullopt)
                     break;
 
                 RunJob(job.value());
+                executedJobs++;
             }
 
-            idling = true;
+            return executedJobs;
 
         }
 
@@ -41,7 +42,6 @@ namespace Atlas {
 
         std::thread thread;
         std::atomic_bool quit = false;
-        std::atomic_bool idling = true;
 
         Signal signal;
         ThreadSafeJobQueue queue;

@@ -18,6 +18,7 @@ namespace Atlas {
 
         bool ShaderCompiler::includeDebugInfo = false;
         std::unordered_map<size_t, ShaderCompiler::SpvCacheEntry> ShaderCompiler::cache;
+        std::mutex ShaderCompiler::cacheMutex;
         const std::string ShaderCompiler::cachePath = ".cache/";
 
         void ShaderCompiler::Init() {
@@ -30,6 +31,7 @@ namespace Atlas {
 
             glslang::FinalizeProcess();
 
+            std::scoped_lock lock(cacheMutex);
             for (auto& [_, entry] : cache) {
                 if (!entry.wasModified) continue;
 
@@ -126,10 +128,17 @@ namespace Atlas {
             success = true;
 
             SpvCacheEntry entry;
-            if (cache.contains(hash)) {
-                entry = cache[hash];
+            bool foundInMemory = false;
+            {
+                std::scoped_lock lock(cacheMutex);
+                auto iter = cache.find(hash);
+                if (iter != cache.end()) {
+                    entry = iter->second;
+                    foundInMemory = true;
+                }
             }
-            else {
+
+            if (!foundInMemory) {
                 std::string path;
                 if (includeDebugInfo)
                     path = cachePath + std::to_string(hash) + "_debug";
@@ -176,7 +185,9 @@ namespace Atlas {
 
                 .wasModified = true
             };
-            cache[hash] = entry;
+
+            std::scoped_lock lock(cacheMutex);
+            cache[hash] = std::move(entry);
 
         }
 

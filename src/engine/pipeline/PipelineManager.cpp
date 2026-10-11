@@ -7,9 +7,9 @@
 namespace Atlas {
 
 #ifdef AE_BUILDTYPE_RELEASE
-    bool PipelineManager::hotReload = false;
+    std::atomic_bool PipelineManager::hotReload = false;
 #else
-    bool PipelineManager::hotReload = true;
+    std::atomic_bool PipelineManager::hotReload = true;
 #endif
     std::shared_mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
@@ -32,6 +32,8 @@ namespace Atlas {
 
     void PipelineManager::Clear() {
 
+        std::unique_lock lock(shaderToVariantsMutex);
+
         for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
             globalDescriptorSetLayoutOverrides[i] = nullptr;
         }
@@ -51,6 +53,7 @@ namespace Atlas {
 
                 for (auto& [_, variants] : shaderToVariantsMap) {
                     std::lock_guard innerLock(variants->variantsMutex);
+                    if (!variants->isComplete) continue;
 
                     for (auto& stageFile : variants->shader->shaderStageFiles) {
                         for (auto& includePath : stageFile.includes) {
@@ -68,6 +71,7 @@ namespace Atlas {
                 // Do check for hot reload only once per frame
                 for (auto& [hash, variants] : shaderToVariantsMap) {
                     std::lock_guard innerLock(variants->variantsMutex);
+                    if (!variants->isComplete) continue;
 
                     if (hotReload && variants->shader->Reload(modifiedMap)) {
                         // Clear variants on hot reload
@@ -141,24 +145,22 @@ namespace Atlas {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
-        // In most cases we will find the variants and don't need a unique lock
-        PipelineVariants* variants = nullptr;
-        {
-            std::shared_lock lock(shaderToVariantsMutex);
-
-            if (shaderToVariantsMap.contains(config.shaderHash)) {
-                variants = shaderToVariantsMap[config.shaderHash].get();
+        // Keep the cache entry and global layout overrides stable while using them.
+        std::shared_lock mapLock(shaderToVariantsMutex);
+        auto variantsIt = shaderToVariantsMap.find(config.shaderHash);
+        while (variantsIt == shaderToVariantsMap.end()) {
+            mapLock.unlock();
+            {
+                std::unique_lock insertLock(shaderToVariantsMutex);
+                // Another caller may have inserted this shader while we changed locks.
+                if (!shaderToVariantsMap.contains(config.shaderHash))
+                    shaderToVariantsMap.emplace(config.shaderHash, std::make_shared<PipelineVariants>());
             }
+            mapLock.lock();
+            // Clear() may have run between releasing the exclusive lock and reacquiring this lock.
+            variantsIt = shaderToVariantsMap.find(config.shaderHash);
         }
-
-        // In case we didn't find anything we need to lock it for real
-        if (!variants) {
-            std::unique_lock lock(shaderToVariantsMutex);
-
-            auto pipelineVariants = std::make_shared<PipelineVariants>();
-            shaderToVariantsMap[config.shaderHash] = pipelineVariants;
-            variants = pipelineVariants.get();
-        }
+        const auto& variants = variantsIt->second;
 
         {
             std::lock_guard lock(variants->variantsMutex);

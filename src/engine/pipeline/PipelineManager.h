@@ -48,7 +48,7 @@ namespace Atlas {
 
         static Ref<Graphics::Pipeline> GetOrCreatePipeline(PipelineConfig &config);
 
-        static bool hotReload;
+        static std::atomic_bool hotReload;
         static std::shared_mutex shaderToVariantsMutex;
         static std::unordered_map<size_t, Ref<PipelineVariants>> shaderToVariantsMap;
         static JobGroup hotReloadGroup;

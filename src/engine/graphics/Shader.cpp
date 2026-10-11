@@ -111,14 +111,10 @@ namespace Atlas {
         Ref<ShaderVariant> Shader::GetVariant(std::vector<std::string> macros) {
 
             std::sort(macros.begin(), macros.end());
-
-            {
-                std::lock_guard lock(variantMutex);
-
-                auto existingVariant = FindVariant(macros);
-
-                if (existingVariant) return existingVariant;
-            }
+            // Reload and compilation must not access the stage source vectors concurrently.
+            std::lock_guard lock(variantMutex);
+            auto existingVariant = FindVariant(macros);
+            if (existingVariant) return existingVariant;
 
             auto variant = std::make_shared<ShaderVariant>(device, shaderStageFiles, macros);
 
@@ -126,24 +122,14 @@ namespace Atlas {
             if (!variant->isComplete && historyShaderStageFiles.size()) {
                 Log::Warning("Rolling back shader due to compilation failure");
 
-                {
-                    std::lock_guard lock(variantMutex);
-                    shaderStageFiles = historyShaderStageFiles;
-                    historyShaderStageFiles.clear();
-                    shaderVariants.clear();
-                }
+                shaderStageFiles = historyShaderStageFiles;
+                historyShaderStageFiles.clear();
+                shaderVariants.clear();
 
                 variant = std::make_shared<ShaderVariant>(device, shaderStageFiles, macros);
             }
 
-            // In the meanwhile another process could have created this variant, check again
-            {
-                std::lock_guard lock(variantMutex);
-
-                if (!FindVariant(macros)) {
-                    shaderVariants.push_back(variant);
-                }
-            }
+            shaderVariants.push_back(variant);
 
             return variant;
 
@@ -342,6 +328,11 @@ namespace Atlas {
         bool ShaderVariant::TryOverrideDescriptorSetLayout(Ref<DescriptorSetLayout> layout, uint32_t set) {
 
             AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
+
+            // The same shader variant can back several rasterizer pipelines. Do not rewrite
+            // its reflection data while existing pipelines are being recorded with this layout.
+            if (set < DESCRIPTOR_SET_COUNT && sets[set].layout == layout)
+                return true;
 
             if (set >= DESCRIPTOR_SET_COUNT ||
                 !layout->IsCompatible(sets[set].layout)) {

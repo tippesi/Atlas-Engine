@@ -6,10 +6,6 @@
 #include "Windows.h"
 #endif
 
-#if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
-#include <pthread.h>
-#endif
-
 // Use this macro to make the job system single threaded
 // #define JOBS_SINGLE_THREADED
 
@@ -23,25 +19,17 @@ namespace Atlas {
         auto mediumPrioThreadCount = std::max(1, config.mediumPriorityThreadCount);
         auto lowPrioThreadCount = std::max(1, config.lowPriorityThreadCount);
 
+        // The main thread gets the same priority as the high priority workers, otherwise it might lose when
+        // in contention with them. On macOS and Linux the main thread already has the highest priority used
+#ifdef AE_OS_WINDOWS
+        auto threadHandle = GetCurrentThread();
+        if (!SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST))
+            Log::Warning("Couldn't set priority of main thread");
+#endif
+
         priorityPools[static_cast<int>(JobPriority::High)].Init(highPrioThreadCount, JobPriority::High);
         priorityPools[static_cast<int>(JobPriority::Medium)].Init(mediumPrioThreadCount, JobPriority::Medium);
         priorityPools[static_cast<int>(JobPriority::Low)].Init(lowPrioThreadCount, JobPriority::Low);
-
-        bool success = false;
-        // Need to set our own main thread priority, otherwise we will loose when in contention with other threads
-#ifdef AE_OS_WINDOWS
-        auto threadHandle = GetCurrentThread();
-        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_TIME_CRITICAL) > 0;
-#endif
-#if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
-        auto maxPriority = sched_get_priority_max(SCHED_RR);
-        sched_param params = { 
-            .sched_priority = maxPriority
-        };
-        success = pthread_setschedparam(pthread_self(), SCHED_RR, &params) == 0;
-#endif
-        if (!success)
-            Log::Warning("Couldn't set priority of main thread");
 
     }
 
@@ -72,6 +60,7 @@ namespace Atlas {
 
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
         group.counter.fetch_add(1);
+        priorityPool.pendingJobs.fetch_add(1);
 
         auto& worker = priorityPool.GetNextWorker();
         worker.queue.Push(std::move(job));
@@ -100,6 +89,7 @@ namespace Atlas {
 
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
         group.counter += count;
+        priorityPool.pendingJobs.fetch_add(count);
 
         if (count <= priorityPool.workerCount) {
             for (int32_t i = 0; i < count; i++) {
@@ -256,23 +246,14 @@ namespace Atlas {
         while (jobsFound) {
             jobsFound = false;
 
-            // Check if any pool has work and help pools that still have work
+            // Help pools that still have queued or executing jobs
             for (auto& priorityPool : priorityPools) {
-                bool poolHasWork = false, poolIsWorking = false;
+                if (priorityPool.pendingJobs.load() == 0)
+                    continue;
 
-                for (auto& worker : priorityPool.GetAllWorkers()) {
-                    poolHasWork |= !worker.queue.Empty();
-                    poolIsWorking |= !worker.idling;
-                }
-
-                // Help pool
-                if (poolHasWork) {
-                    const auto& worker = priorityPool.GetNextWorker();
-                    priorityPool.Work(worker.workerId);                    
-                }
-
-                if (poolHasWork || poolIsWorking)
-                    jobsFound = true;
+                jobsFound = true;
+                const auto& worker = priorityPool.GetNextWorker();
+                priorityPool.Work(worker.workerId);
             }
         }
 
