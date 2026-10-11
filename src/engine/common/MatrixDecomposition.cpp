@@ -7,6 +7,25 @@ namespace Atlas {
 
     namespace Common {
 
+        // Returns (pitch, yaw, roll) such that glm::quat(angles) reproduces the rotation. Unlike glm::eulerAngles
+        // this is stable close to yaw = +-90 degrees, where only pitch - roll is defined and the rotation goes into pitch
+        static vec3 EulerAnglesFromRotation(const mat3& rotation) {
+
+            // glm matrices are column-major: rotation[column][row]
+            auto cosYaw = glm::sqrt(rotation[0][0] * rotation[0][0] + rotation[0][1] * rotation[0][1]);
+            auto yaw = glm::atan(-rotation[0][2], cosYaw);
+
+            if (cosYaw > 3e-4f) {
+                auto pitch = glm::atan(rotation[1][2], rotation[2][2]);
+                auto roll = glm::atan(rotation[0][1], rotation[0][0]);
+                return vec3(pitch, yaw, roll);
+            }
+
+            auto pitch = glm::atan(-rotation[2][1], rotation[1][1]);
+            return vec3(pitch, yaw, 0.0f);
+
+        }
+
         MatrixDecomposition::MatrixDecomposition(const mat4& matrix) {
 
             Decompose(matrix);
@@ -34,10 +53,8 @@ namespace Atlas {
             if (det < 0.0f)
                 scale[minIdx] *= -1.0f;
 
-            quaternion = glm::conjugate(quaternion);
-            rotation = glm::eulerAngles(quaternion);
-
-            quaternion = glm::normalize(quaternion);
+            quaternion = glm::normalize(glm::conjugate(quaternion));
+            rotation = EulerAnglesFromRotation(glm::mat3_cast(quaternion));
 
         }
 

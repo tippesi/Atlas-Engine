@@ -135,8 +135,8 @@ namespace Atlas {
             commandList->BindImage(lastRadianceArray.image, lastRadianceArray.sampler, 2, 25);
             commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 26);
 
-            auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
             rayHitPipelineConfig.ManageMacro("RADIANCE_VOLUME", volume->radiance);
+            auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
 
             helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, volume->opacityCheck,
                 [&]() {

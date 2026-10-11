@@ -42,7 +42,7 @@ namespace Atlas {
             Ref<Buffer> buffer;
             VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
 
-            VkDeviceAddress bufferDeviceAddress;
+            VkDeviceAddress deviceAddress = 0;
 
             bool isDynamic = false;
             std::atomic_bool isBuilt = false;

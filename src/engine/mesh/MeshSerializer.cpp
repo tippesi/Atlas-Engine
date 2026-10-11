@@ -1,4 +1,5 @@
 #include "MeshSerializer.h"
+#include "common/MathHelper.h"
 #include "resource/ResourceManager.h"
 #include "loader/MaterialLoader.h"
 #include "loader/ImpostorLoader.h"
@@ -285,6 +286,12 @@ namespace Atlas {
         j.at("twoSided").get_to(p.twoSided);
         j.at("vertexColors").get_to(p.vertexColors);
         j.at("uvChannel").get_to(p.uvChannel);
+
+        p.opacity = Helper::Math::Saturate(p.opacity);
+        p.roughness = Helper::Math::Saturate(p.roughness);
+        p.metalness = Helper::Math::Saturate(p.metalness);
+        p.ao = Helper::Math::Saturate(p.ao);
+        p.reflectance = Helper::Math::Saturate(p.reflectance);
 
         try_get_json(j, "uvAnimation", p.uvAnimation);
 

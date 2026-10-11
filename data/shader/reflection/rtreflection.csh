@@ -181,8 +181,8 @@ void main() {
 
                 Surface surface = CreateSurface(V, N, ray.direction, material);
 
-                bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
-                    !isnan(ray.direction.z) || dot(N, ray.direction) >= 0.0;
+                bool isRayValid = !isnan3(ray.direction) && !isinf3(ray.direction) &&
+                    dot(N, ray.direction) >= 0.0;
 
                 if (isRayValid) {
                     // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
@@ -194,7 +194,7 @@ void main() {
 
                     vec3 radiance = vec3(0.0);
 
-                    if (material.roughness < uniforms.roughnessCutoff) {
+                    if (material.roughness <= uniforms.roughnessCutoff) {
 #ifdef OPACITY_CHECK
                         HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
 #else

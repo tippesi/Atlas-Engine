@@ -218,8 +218,8 @@ void main() {
 
                 vec3 viewDir = normalize(vec3(globalData.vMatrix * vec4(rayDirection, 0.0)));
 
-                bool isRayValid = !isnan(rayDirection.x) || !isnan(rayDirection.y) || 
-                    !isnan(rayDirection.z) || dot(N, rayDirection) >= 0.0;
+                bool isRayValid = !isnan3(rayDirection) && !isinf3(rayDirection) &&
+                    dot(N, rayDirection) >= 0.0;
 
                 vec3 radiance = vec3(0.0);
 

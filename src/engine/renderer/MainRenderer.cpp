@@ -112,7 +112,7 @@ namespace Atlas {
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
 			commandList->BindSampler(globalSampler, 1, 14);
 			commandList->BindSampler(globalNearestSampler, 1, 16);
-			commandList->BindSampler(globalClampToEdgeSampler, 1, 18);
+			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
 
 			if (scene->clutter)
 				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);

@@ -39,7 +39,8 @@ namespace Atlas {
             auto descriptorPoolDesc = DescriptorPoolDesc();
             descriptorPool = new DescriptorPool(device, descriptorPoolDesc);
 
-            CreatePlaceholders(device);
+            // Transfer command lists never bind shader descriptors.
+            if (queueType != TransferQueue) CreatePlaceholders(device);
 
             isComplete = true;
 
@@ -77,8 +78,9 @@ namespace Atlas {
 
             VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo))
 
-            // This is only effective for the first time it's called
-            ChangePlaceholderLayouts();
+            // Shader-read access is not supported by transfer-only queues.
+            // This is only effective for the first time it's called.
+            if (queueType != TransferQueue) ChangePlaceholderLayouts();
 
         }
 

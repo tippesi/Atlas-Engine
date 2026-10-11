@@ -76,21 +76,20 @@ void main() {
     GetProbeHistoryInfo(ivec3(gl_WorkGroupID.xyz), cascadeIndex, historyProbeCoord, reset);
 
     uint historyBaseIdx = Flatten3D(ivec3(historyProbeCoord.xzy), ivec3(gl_NumWorkGroups.xzy));
+    vec3 probePosition = GetProbePosition(probeIndex, cascadeIndex);
 
     if (gl_LocalInvocationIndex == 0u) {
         probeState = floatBitsToUint(historyProbeStates[historyBaseIdx].x);
         probeOffset = probeState == PROBE_STATE_NEW || reset ? vec3(0.0) : historyProbeOffsets[historyBaseIdx].xyz;
-    }
 
-    barrier();
-
-    vec3 probePosition = GetProbePosition(probeIndex, cascadeIndex);
-    if (!IsProbeVisible(probePosition, cascadeIndex)) {
-        probeState = PROBE_STATE_INVISIBLE;
-        if (gl_LocalInvocationIndex == 0u) {
+        if (!IsProbeVisible(probePosition, cascadeIndex)) {
+            probeState = PROBE_STATE_INVISIBLE;
             historyProbeStates[historyBaseIdx].x = uintBitsToFloat(PROBE_STATE_INVISIBLE);
         }
     }
+
+    // Publish the final state and offset before any invocation generates rays.
+    barrier();
 
     uint rayBaseIdx = baseIdx * ddgiData.rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);

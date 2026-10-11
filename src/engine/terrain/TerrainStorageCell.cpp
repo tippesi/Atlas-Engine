@@ -86,6 +86,10 @@ namespace Atlas {
                         float(i) * stretchFactor
                     );
 
+                    // Don't want to expand AABB in the case there is a hole
+                    if (heightData[idx] == FLT_MAX)
+                        continue;
+
                     aabb.min = glm::min(aabb.min, vertices[idx]);
                     aabb.max = glm::max(aabb.max, vertices[idx]);
                 }

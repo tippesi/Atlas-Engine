@@ -38,7 +38,8 @@ layout(std430, set = 2, binding = 21) buffer Instances {
     Instance bvhInstances[];
 };
 
-layout(std430, set = 2, binding = 27) buffer InstanceLastMatrices {
+// Binding 27 is reserved for the DDGI uniform buffer.
+layout(std430, set = 2, binding = 28) buffer InstanceLastMatrices {
     mat3x4 instanceLastMatrices[];
 };
 

@@ -1,5 +1,6 @@
 #include "SplineComponent.h"
 #include "common/MatrixDecomposition.h"
+#include "common/MathHelper.h"
 
 #include <glm/gtx/spline.hpp>
 
@@ -16,7 +17,17 @@ namespace Atlas::Scene::Components {
             }
         }
         else if (bakeMode == SplineBakeMode::DistanceSpacingBake) {
+            std::vector<float> distances(controlPoints.size(), 0.0f);
+            float totalDistance = 0.0f;
+            for (size_t i = 1; i < controlPoints.size(); i++) {
+                auto previousPosition = vec3(controlPoints[i - 1].transform[3]);
+                auto position = vec3(controlPoints[i].transform[3]);
+                totalDistance += glm::distance(previousPosition, position);
+                distances[i] = totalDistance;
+            }
 
+            for (size_t i = 0; i < controlPoints.size(); i++)
+                controlPoints[i].time = totalDistance > 0.0f ? distances[i] / totalDistance : 0.0f;
         }
         else {
             std::sort(controlPoints.begin(), controlPoints.end(),
@@ -26,45 +37,54 @@ namespace Atlas::Scene::Components {
         }
 
         const float epsilon = 0.001f;
-        for (size_t i = 0; i < controlPoints.size() - 1; i++) {
+        for (size_t i = 0; i + 1 < controlPoints.size(); i++) {
             auto& controlPoint = controlPoints[i];
             auto nextPoint = GetInterpolatedFromIndex(int32_t(i), epsilon);
 
             auto position = vec3(controlPoint.transform[3]);
             auto nextPosition = nextPoint.position;
 
-            controlPoint.tangent = glm::normalize(nextPosition - position);
+            controlPoint.tangent = Helper::Math::NormalizeOrZero(nextPosition - position);
         }
 
         // Last point works a bit differently
         if (controlPoints.size() > 1) {
             auto lastIdx = int32_t(controlPoints.size() - 1);
             auto& controlPoint = controlPoints[lastIdx];
-            auto prevPoint = GetInterpolatedFromIndex(lastIdx, 1.0f - epsilon);
+            auto prevPoint = GetInterpolatedFromIndex(lastIdx - 1, 1.0f - epsilon);
 
             auto position = vec3(controlPoint.transform[3]);
             auto prevPosition = prevPoint.position;
 
-            controlPoint.tangent = glm::normalize(position - prevPosition);
+            controlPoint.tangent = Helper::Math::NormalizeOrZero(position - prevPosition);
         }
 
     }
 
     SplinePoint SplineComponent::GetInterpolated(float time, const glm::mat4& parentMatrix) const {
 
-        auto iter = std::lower_bound(controlPoints.begin(), controlPoints.end(), time,
-            [](const SplineControlPoint& controlPoint, float time) {
-                return controlPoint.time < time;
-            });
-
-        if (iter == controlPoints.end() || iter == controlPoints.begin())
+        if (controlPoints.empty())
             return SplinePoint{};
 
-        auto ele1 = iter - 1;
-        auto ele2 = iter;
-        
-        float timeFract = (time - (*ele1).time) / ((*ele2).time - (*ele1).time);
-        int32_t itemIdx = int32_t(iter - controlPoints.begin());
+        // Times outside of the spline are clamped to its ends
+        time = glm::clamp(time, controlPoints.front().time, controlPoints.back().time);
+
+        int32_t itemIdx = 0;
+        float timeFract = 0.0f;
+        if (controlPoints.size() > 1) {
+            // Find the segment which ends at the first point at or after the time, the last segment otherwise
+            auto iter = std::lower_bound(controlPoints.begin() + 1, controlPoints.end() - 1, time,
+                [](const SplineControlPoint& controlPoint, float time) {
+                    return controlPoint.time < time;
+                });
+
+            auto ele1 = iter - 1;
+            auto ele2 = iter;
+
+            auto segmentTime = ele2->time - ele1->time;
+            timeFract = segmentTime > 0.0f ? (time - ele1->time) / segmentTime : 0.0f;
+            itemIdx = int32_t(ele1 - controlPoints.begin());
+        }
 
         auto splinePoint = GetInterpolatedFromIndex(itemIdx, timeFract);
         TransformSplinePoint(splinePoint, parentMatrix);
@@ -112,6 +132,7 @@ namespace Atlas::Scene::Components {
             decomp2.rotation, decomp3.rotation, t);
         interpolated.tangent = interpolateProperty(controlPoints[idx0].tangent, controlPoints[idx1].tangent,
             controlPoints[idx2].tangent, controlPoints[idx3].tangent, t);
+        interpolated.time = glm::mix(controlPoints[idx1].time, controlPoints[idx2].time, t);
 
         return interpolated;
 
@@ -120,7 +141,7 @@ namespace Atlas::Scene::Components {
     void SplineComponent::TransformSplinePoint(SplinePoint& point, const glm::mat4& transform) const {
 
         point.position = vec3(transform * vec4(point.position, 1.0f));
-        point.tangent = glm::normalize(vec3(transform * vec4(point.tangent, 0.0f)));
+        point.tangent = Helper::Math::NormalizeOrZero(vec3(transform * vec4(point.tangent, 0.0f)));
 
     }
 

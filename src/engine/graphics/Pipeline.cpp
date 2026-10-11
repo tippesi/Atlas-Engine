@@ -119,6 +119,12 @@ namespace Atlas {
 
             pipelineInfo.flags = 0;
             pipelineInfo.stage = shader->stageCreateInfos.front();
+            VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroupSizeInfo = {};
+            if (desc.requiredSubgroupSize != 0) {
+                subgroupSizeInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO;
+                subgroupSizeInfo.requiredSubgroupSize = desc.requiredSubgroupSize;
+                pipelineInfo.stage.pNext = &subgroupSizeInfo;
+            }
             pipelineInfo.layout = layout;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.basePipelineIndex = 0;

@@ -440,7 +440,7 @@ namespace Atlas::Scene::Components {
         j.at("bakeMode").get_to(bakeMode);
 
         p.type = static_cast<SplineType>(type);
-        p.bakeMode = static_cast<SplineBakeMode>(type);
+        p.bakeMode = static_cast<SplineBakeMode>(bakeMode);
 
         const auto& controlPoints = j["controlPoints"];
         for (const auto& cp : controlPoints) {

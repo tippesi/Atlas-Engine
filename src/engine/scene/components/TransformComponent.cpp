@@ -56,12 +56,15 @@ namespace Atlas {
 
 			void TransformComponent::Update(const glm::mat4& parentMatrix, bool parentChanged) {
 
-				lastGlobalMatrix = globalMatrix;
                 wasStatic = isStatic;
 
 				changed |= parentChanged;
 
 				if (changed) {
+
+					// A transform can be updated multiple times per frame, keep the matrix of the last frame
+					if (!updated)
+						lastGlobalMatrix = globalMatrix;
 
 					globalMatrix = parentMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));

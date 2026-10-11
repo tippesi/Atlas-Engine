@@ -1112,6 +1112,7 @@ namespace Atlas {
             features13.synchronization2 = availableFeatures13.synchronization2;
             features13.dynamicRendering = availableFeatures13.dynamicRendering;
             features13.maintenance4 = availableFeatures13.maintenance4;
+            features13.subgroupSizeControl = availableFeatures13.subgroupSizeControl;
 
             // Check for ray tracing extension support
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&

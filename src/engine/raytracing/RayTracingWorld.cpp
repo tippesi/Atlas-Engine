@@ -194,7 +194,7 @@ namespace Atlas {
 
                         inst.transform = transform;
                         inst.instanceCustomIndex = blasInfo.offset;
-                        inst.accelerationStructureReference = meshComponent.mesh->blas->blas->bufferDeviceAddress;
+                        inst.accelerationStructureReference = meshComponent.mesh->blas->blas->deviceAddress;
                         inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                         inst.mask = mask;
                         inst.instanceShaderBindingTableRecordOffset = 0;
@@ -243,7 +243,7 @@ namespace Atlas {
 
                     inst.transform = transform;
                     inst.instanceCustomIndex = blasInfo.offset;
-                    inst.accelerationStructureReference = node->cell->blas->blas->bufferDeviceAddress;
+                    inst.accelerationStructureReference = node->cell->blas->blas->deviceAddress;
                     inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                     inst.mask = mask;
                     inst.instanceShaderBindingTableRecordOffset = 0;

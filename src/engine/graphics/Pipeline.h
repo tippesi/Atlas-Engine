@@ -41,6 +41,8 @@ namespace Atlas {
         struct ComputePipelineDesc {
             // These need to be set
             Ref<ShaderVariant> shader = nullptr;
+            // Zero lets the implementation choose the subgroup size.
+            uint32_t requiredSubgroupSize = 0;
         };
 
         class Pipeline {
@@ -51,8 +53,8 @@ namespace Atlas {
 
             ~Pipeline();
 
-            VkPipeline pipeline;
-            VkPipelineLayout layout;
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            VkPipelineLayout layout = VK_NULL_HANDLE;
             VkPipelineBindPoint bindPoint;
 
             Ref<ShaderVariant> shader = nullptr;

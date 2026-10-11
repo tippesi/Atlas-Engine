@@ -373,6 +373,9 @@ namespace Atlas {
 
             renderState.FillMainRenderPass();
 
+            // Clear old state
+            mainLightEntity = Entity();
+
             JobGroup lightJobGroup{ "Lights update", JobPriority::High };
             auto& lightComponentPool = entityManager.GetPool<LightComponent>();
             JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {

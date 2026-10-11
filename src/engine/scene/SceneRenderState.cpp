@@ -27,6 +27,8 @@ namespace Atlas::Scene {
 
     void SceneRenderState::NewFrame() {
 
+        meshes = scene->GetMeshes();
+
         JobSystem::Execute(newFrameRenderListJob, [&](JobData&) {
             renderList.NewFrame(scene);
 
@@ -34,8 +36,6 @@ namespace Atlas::Scene {
                 pass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
             }
         });
-
-        meshes = scene->GetMeshes();
 
     }
 
@@ -450,10 +450,12 @@ namespace Atlas::Scene {
 
             JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
 
+            // Always clear lights to get rid of old state
+            lights.clear();
+            volumetricLights.clear();
+            volumetricShadows.clear();
+
             if (lightEntities.size()) {
-                lights.clear();
-                volumetricLights.clear();
-                volumetricShadows.clear();
 
                 for (const auto& entity : lightEntities) {
                     auto& light = entity.comp;

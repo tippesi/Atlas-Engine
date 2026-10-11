@@ -166,7 +166,7 @@ namespace Atlas {
         static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path,
             std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
 
-            return GetResourceWithLoaderAsync(path, System, loaderFunction, std::forward<Args>(args)...);
+            return GetOrLoadResourceWithLoaderAsync(path, System, loaderFunction, std::forward<Args>(args)...);
 
         }
 

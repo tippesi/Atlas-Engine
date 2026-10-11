@@ -417,8 +417,12 @@ namespace Atlas::Lighting {
 
         if (p.atmosphere)
             j["atmosphere"] = *p.atmosphere;
+        else
+            j["atmosphere"] = nullptr;
         if (p.clouds)
             j["clouds"] = *p.clouds;
+        else
+            j["clouds"] = nullptr;
         if (p.probe)
             j["probe"] = *p.probe;
     }
@@ -429,12 +433,22 @@ namespace Atlas::Lighting {
         try_get_json(j, "intensity", p.intensity);
 
         if (j.contains("atmosphere")) {
-            p.atmosphere = CreateRef<Atmosphere>();
-            *p.atmosphere = j["atmosphere"];
+            if (j["atmosphere"].is_null()) {
+                p.atmosphere = nullptr;
+            }
+            else {
+                p.atmosphere = CreateRef<Atmosphere>();
+                *p.atmosphere = j["atmosphere"];
+            }
         }
         if (j.contains("clouds")) {
-            p.clouds = CreateRef<VolumetricClouds>();
-            *p.clouds = j["clouds"];
+            if (j["clouds"].is_null()) {
+                p.clouds = nullptr;
+            }
+            else {
+                p.clouds = CreateRef<VolumetricClouds>();
+                *p.clouds = j["clouds"];
+            }
         }
         if (j.contains("probe")) {
             p.probe = CreateRef<EnvironmentProbe>();

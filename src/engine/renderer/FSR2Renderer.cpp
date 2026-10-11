@@ -241,7 +241,13 @@ namespace Atlas::Renderer {
 			return FFX_SURFACE_FORMAT_R16_SNORM;
 		case VK_FORMAT_R8_UNORM:
 			return FFX_SURFACE_FORMAT_R8_UNORM;
+		case VK_FORMAT_R8G8_UNORM:
+			return FFX_SURFACE_FORMAT_R8G8_UNORM;
 		case VK_FORMAT_R32_SFLOAT:
+			return FFX_SURFACE_FORMAT_R32_FLOAT;
+		case VK_FORMAT_D16_UNORM:
+			return FFX_SURFACE_FORMAT_R16_UNORM;
+		case VK_FORMAT_D32_SFLOAT:
 			return FFX_SURFACE_FORMAT_R32_FLOAT;
 		case VK_FORMAT_R8_UINT:
 			return FFX_SURFACE_FORMAT_R8_UINT;
@@ -403,6 +409,9 @@ namespace Atlas::Renderer {
 
 		auto mipLevels = createResourceDescription->resourceDescription.mipCount;
 
+		auto format = GetFormatFromSurfaceFormat(createResourceDescription->resourceDescription.format);
+		AE_ASSERT(format != VK_FORMAT_UNDEFINED && "Unsupported FSR2 resource format");
+
 		Graphics::ImageDesc desc = {
 			.usageFlags = GetImageUsageFlagsFromResourceUsage(createResourceDescription->usage),
 			.type = GetImageTypeFromResourceType(createResourceDescription->resourceDescription.type),
@@ -410,7 +419,7 @@ namespace Atlas::Renderer {
 			.height = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE1D ? 1 : createResourceDescription->resourceDescription.height,
 			.depth = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE3D ? createResourceDescription->resourceDescription.depth : 1,
 			.mipLevels = mipLevels,
-			.format = GetFormatFromSurfaceFormat(createResourceDescription->resourceDescription.format),
+			.format = format,
 			.mipMapping = mipLevels == 0 || mipLevels > 1,
 			.data = createResourceDescription->initData,
 		};
@@ -751,19 +760,9 @@ namespace Atlas::Renderer {
 			}
 		}
 
-		auto& shaderStageCreateInfo = variant->stageCreateInfos.front();
-
-		// set wave64 if possible
-		VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroupSizeCreateInfo = {};
-		if (canForceWave64) {
-			subgroupSizeCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO;
-			subgroupSizeCreateInfo.requiredSubgroupSize = 64;
-
-			shaderStageCreateInfo.pNext = &subgroupSizeCreateInfo;
-		}
-
 		Graphics::ComputePipelineDesc pipelineDesc = {
-			.shader = variant
+			.shader = variant,
+            .requiredSubgroupSize = canForceWave64 ? 64u : 0u
 		};
 		fsr2Pass.pipeline = fsr2Context->device->CreatePipeline(pipelineDesc);
 
