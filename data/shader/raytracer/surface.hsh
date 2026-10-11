@@ -51,9 +51,10 @@ void TransformTriangle(inout Triangle tri, Instance instance) {
     tri.v1 = vec3(matrix * vec4(tri.v1, 1.0));
     tri.v2 = vec3(matrix * vec4(tri.v2, 1.0));
 
-    tri.n0 = normalize(vec3(matrix * vec4(tri.n0, 0.0)));
-    tri.n1 = normalize(vec3(matrix * vec4(tri.n1, 0.0)));
-    tri.n2 = normalize(vec3(matrix * vec4(tri.n2, 0.0)));
+    mat3 normalMatrix = transpose(mat3(transpose(instance.inverseMatrix)));
+    tri.n0 = normalize(normalMatrix * tri.n0);
+    tri.n1 = normalize(normalMatrix * tri.n1);
+    tri.n2 = normalize(normalMatrix * tri.n2);
 
     tri.t = normalize(vec3(matrix * vec4(tri.t, 0.0)));
     tri.bt = normalize(vec3(matrix * vec4(tri.bt, 0.0)));
@@ -90,6 +91,9 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     // Produces some problems in the bottom left corner of the Sponza scene,
     // but fixes the cube. Should work in theory.
     vec3 triangleNormal = normalize(cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
+    // Transforms with reversed winding need the same front-face correction as in the rasterizer
+    float orientation = determinant(mat3(transpose(instance.inverseMatrix))) < 0.0 ? -1.0 : 1.0;
+    triangleNormal *= orientation;
     bool flipNormal = dot(triangleNormal, ray.direction) > 0.0;
     backfaceHit = rayMat.twoSided > 0 || rayMat.cullBackFaces == 0 ? false : flipNormal;
     triangleNormal *= flipNormal && rayMat.twoSided > 0 ? -1.0 : 1.0;

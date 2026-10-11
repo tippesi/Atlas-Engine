@@ -130,6 +130,7 @@ namespace Atlas {
                 if (subData->shadowConfig.IsValid()) continue;
 
                 subData->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
+                subData->shadowReversedWindingConfig = subData->shadowConfig.GetReversedWindingVariant();
             }
 
             // Sort materials by hash
@@ -176,11 +177,25 @@ namespace Atlas {
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
-                commandList->DrawIndexed(subData->indicesCount, instances.count, subData->indicesOffset,
-                    0, instances.offset);
+                const auto defaultWindingCount = instances.count - instances.reversedWindingCount;
+                if (defaultWindingCount) {
+                    commandList->DrawIndexed(subData->indicesCount, defaultWindingCount, subData->indicesOffset,
+                        0, instances.offset);
+                }
+                if (instances.reversedWindingCount) {
+                    auto& reversedWindingConfig = subData->shadowReversedWindingConfig;
+                    reversedWindingConfig.graphicsPipelineDesc.frameBuffer = frameBuffer;
+                    currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
+                    commandList->BindPipeline(currentPipeline);
+                    commandList->PushConstants("constants", &pushConstants);
+                    commandList->DrawIndexed(subData->indicesCount, instances.reversedWindingCount, subData->indicesOffset,
+                        0, instances.reversedWindingOffset);
+                    prevHash = reversedWindingConfig.variantHash;
+                }
 
                 // Reset the frame buffer here to let it be able to be deleted
                 subData->shadowConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+                subData->shadowReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
             }
 

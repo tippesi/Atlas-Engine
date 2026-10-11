@@ -49,6 +49,16 @@ namespace Atlas {
 
     }
 
+    PipelineConfig PipelineConfig::GetReversedWindingVariant() const {
+
+        auto desc = graphicsPipelineDesc;
+        desc.rasterizer.frontFace = desc.rasterizer.frontFace == VK_FRONT_FACE_COUNTER_CLOCKWISE ?
+            VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+        return PipelineConfig(shaderConfig, desc, macros);
+
+    }
+
     void PipelineConfig::AddMacro(const std::string& macro) {
 
         macros.push_back(macro);
@@ -125,6 +135,7 @@ namespace Atlas {
             HashCombine(variantHash, graphicsPipelineDesc.colorBlendAttachment.blendEnable);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.polygonMode);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.cullMode);
+            HashCombine(variantHash, graphicsPipelineDesc.rasterizer.frontFace);
             HashCombine(variantHash, graphicsPipelineDesc.depthStencilInputInfo.depthTestEnable);
             HashCombine(variantHash, graphicsPipelineDesc.depthStencilInputInfo.depthCompareOp);
             HashCombine(variantHash, graphicsPipelineDesc.depthStencilInputInfo.depthWriteEnable);

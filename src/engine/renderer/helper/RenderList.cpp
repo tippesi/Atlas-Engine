@@ -1,4 +1,5 @@
 #include "RenderList.h"
+#include "common/TransformOrientation.h"
 
 #include "graphics/GraphicsDevice.h"
 #include "scene/Scene.h"
@@ -236,48 +237,37 @@ namespace Atlas {
                 mesh->impostorShadowDistance : mesh->impostorDistance;
             auto sqdDistance = typeDistance * typeDistance;
 
-            MeshInstances instances;
-
+            MeshInstances instances{};
             instances.offset = currentEntityMatrices.size();
             instances.impostorOffset = impostorMatrices.size();
 
-            if (hasImpostor) {
-                for (size_t i = 0; i < batch.count; i++) {
-                    auto& ecsEntity = batch.entities[i];
-                    auto& transformComponent = transformPool.Get(ecsEntity);
-                    auto distance = glm::distance2(
-                        vec3(transformComponent.globalMatrix[3]),
-                        cameraLocation);
+            auto reversedWindingBegin = Common::PartitionByWinding(batch.entities.begin(),
+                batch.entities.begin() + batch.count, [&](ECS::Entity entity) -> const mat4& {
+                    return transformPool.Get(entity).globalMatrix;
+                });
+            const auto defaultWindingEntityCount = size_t(reversedWindingBegin - batch.entities.begin());
 
-                    if (distance < sqdDistance) {
-                        currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
-                        if (needsHistory) {
-                            lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
-                        }
-                        else if (type != RenderPassType::Shadow) {
-                            // For now push back anyways for main pass (since indices of matrices per entity need to match)
-                            lastEntityMatrices.push_back(currentEntityMatrices.back());
-                        }
-                    }
-                    else {
-                        impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
-                    }
+            for (size_t i = 0; i < batch.count; i++) {
+                if (i == defaultWindingEntityCount)
+                    instances.reversedWindingOffset = currentEntityMatrices.size();
+                auto& transformComponent = transformPool.Get(batch.entities[i]);
+                const auto distance = hasImpostor ? glm::distance2(
+                    vec3(transformComponent.globalMatrix[3]), cameraLocation) : 0.0f;
+                if (hasImpostor && distance >= sqdDistance) {
+                    impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                    continue;
+                }
+                currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                if (needsHistory) {
+                    lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                }
+                else if (type != RenderPassType::Shadow) {
+                    lastEntityMatrices.push_back(currentEntityMatrices.back());
                 }
             }
-            else {
-                for (size_t i = 0; i < batch.count; i++) {
-                    auto& ecsEntity = batch.entities[i];
-                    auto& transformComponent = transformPool.Get(ecsEntity);
-                    currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
-                    if (needsHistory) {
-                        lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
-                    }
-                    else if (type != RenderPassType::Shadow) {
-                        // For now push back anyways for main pass (since indices of matrices per entity need to match)
-                        lastEntityMatrices.push_back(currentEntityMatrices.back());
-                    }
-                }
-            }
+            if (defaultWindingEntityCount == batch.count)
+                instances.reversedWindingOffset = currentEntityMatrices.size();
+            instances.reversedWindingCount = currentEntityMatrices.size() - instances.reversedWindingOffset;
 
             instances.count = currentEntityMatrices.size() - instances.offset;
             instances.impostorCount = impostorMatrices.size() - instances.impostorOffset;

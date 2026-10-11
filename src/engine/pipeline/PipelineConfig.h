@@ -39,6 +39,9 @@ namespace Atlas {
 
         bool IsValid() const;
 
+        // Graphics config with the opposite front face, e.g. for instances with reversed winding
+        PipelineConfig GetReversedWindingVariant() const;
+
         Hash shaderHash = 0;
         Hash variantHash = 0;
 

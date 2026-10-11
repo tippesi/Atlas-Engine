@@ -63,6 +63,8 @@ namespace Atlas {
                 subData.material = data.materials[subData.materialIdx];
                 subData.mainConfig = PipelineConfig();
                 subData.shadowConfig = PipelineConfig();
+                subData.mainReversedWindingConfig = PipelineConfig();
+                subData.shadowReversedWindingConfig = PipelineConfig();
             }
 
         }

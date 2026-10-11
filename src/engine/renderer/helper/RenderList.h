@@ -26,6 +26,10 @@ namespace Atlas {
             size_t offset;
             size_t count;
 
+            // Instances with reversed winding occupy the suffix of the mesh's matrix range.
+            size_t reversedWindingOffset = 0;
+            size_t reversedWindingCount = 0;
+
             size_t impostorOffset;
             size_t impostorCount;
         };

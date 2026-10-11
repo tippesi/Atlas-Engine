@@ -32,6 +32,9 @@ namespace Atlas {
 
             PipelineConfig mainConfig;
             PipelineConfig shadowConfig;
+            // Used for instances with reversed winding
+            PipelineConfig mainReversedWindingConfig;
+            PipelineConfig shadowReversedWindingConfig;
         
         };
 

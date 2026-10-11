@@ -46,8 +46,6 @@ layout(location=4) out vec3 ndcLastVS;
 layout(location=5) out vec4 vertexColorsVS;
 #endif
 
-layout(location=6) out float normalInversionVS;
-
 // Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=7) out mat3 TBN;
@@ -84,8 +82,6 @@ void main() {
 
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
     mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
-
-    normalInversionVS = determinant(mMatrix) > 0.0 ? 1.0 : -1.0;
 
 #ifdef TEX_COORDS
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord; 
@@ -125,12 +121,19 @@ void main() {
     // Only after ndc calculation apply the clip correction
     gl_Position = gl_Position;
     
-    normalVS = mat3(mvMatrix) * vNormal.xyz;
+    // The cofactor matrix is the inverse transpose scaled by the determinant. Transforms with reversed winding have a
+    // negative determinant, so the orientation flips the normals back to the outside
+    mat3 modelView = mat3(mvMatrix);
+    mat3 cofactorMatrix = mat3(cross(modelView[1], modelView[2]),
+        cross(modelView[2], modelView[0]), cross(modelView[0], modelView[1]));
+    float orientation = dot(modelView[0], cofactorMatrix[0]) < 0.0 ? -1.0 : 1.0;
+    normalVS = orientation * (cofactorMatrix * vNormal.xyz);
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);
-    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
-    vec3 tangent = normalize(mat3(mvMatrix) * vTangent.xyz);
+    float correctionFactor = orientation * vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
+    vec3 tangent = mat3(mvMatrix) * vTangent.xyz;
+    tangent = normalize(tangent - normal * dot(tangent, normal));
     
     vec3 bitangent = normalize(correctionFactor * 
         cross(tangent, normal));
