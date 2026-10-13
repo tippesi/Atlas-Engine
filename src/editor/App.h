@@ -3,6 +3,7 @@
 #include <EngineInstance.h>
 #include <input/Mouse.h>
 #include <input/Keyboard.h>
+#include <input/PlayerInput.h>
 #include <input/Controller.h>
 #include <input/Touch.h>
 #include <loader/ModelImporter.h>
@@ -57,6 +58,7 @@ namespace Atlas::Editor {
 
         Input::MouseHandler mouseHandler;
         Input::KeyboardHandler keyboardHandler;
+        Input::PlayerInput playerInput;
 
         UI::LogWindow logWindow = UI::LogWindow(true);
         UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(true);

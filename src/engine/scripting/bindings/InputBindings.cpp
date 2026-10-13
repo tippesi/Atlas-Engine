@@ -2,6 +2,7 @@
 
 #include "input/Keyboard.h"
 #include "input/KeyboardMap.h"
+#include "input/ControllerMap.h"
 
 namespace Atlas::Scripting::Bindings {
 
@@ -109,6 +110,43 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<Input::KeyboardMap>("KeyboardMap",
             "GetKeyState", Input::KeyboardMap::GetKeyState,
             "IsKeyPressed", Input::KeyboardMap::IsKeyPressed
+        );
+
+    }
+
+    void GenerateControllerBindings(sol::table* ns) {
+
+        ns->new_enum("ControllerButton",
+            "A", AE_CONTROLLERBUTTON_A,
+            "B", AE_CONTROLLERBUTTON_B,
+            "X", AE_CONTROLLERBUTTON_X,
+            "Y", AE_CONTROLLERBUTTON_Y,
+            "DPadUp", AE_CONTROLLERBUTTON_UP,
+            "DPadDown", AE_CONTROLLERBUTTON_DOWN,
+            "DPadLeft", AE_CONTROLLERBUTTON_LEFT,
+            "DPadRight", AE_CONTROLLERBUTTON_RIGHT,
+            "LeftStick", AE_CONTROLLERBUTTON_LEFTSTICK,
+            "RightStick", AE_CONTROLLERBUTTON_RIGHTSTICK,
+            "LeftShoulder", AE_CONTROLLERBUTTON_LEFTSHOULDER,
+            "RightShoulder", AE_CONTROLLERBUTTON_RIGHTSHOULDER,
+            "Back", AE_CONTROLLERBUTTON_BACK,
+            "Guide", AE_CONTROLLERBUTTON_GUIDE,
+            "Start", AE_CONTROLLERBUTTON_START
+        );
+
+        ns->new_enum("ControllerAxis",
+            "LeftX", AE_CONTROLLERAXIS_LEFTX,
+            "LeftY", AE_CONTROLLERAXIS_LEFTY,
+            "RightX", AE_CONTROLLERAXIS_RIGHTX,
+            "RightY", AE_CONTROLLERAXIS_RIGHTY,
+            "LeftTrigger", AE_CONTROLLERAXIS_LEFTTRIGGER,
+            "RightTrigger", AE_CONTROLLERAXIS_RIGHTTRIGGER
+        );
+
+        ns->new_usertype<Input::ControllerMap>("ControllerMap",
+            "IsConnected", Input::ControllerMap::IsConnected,
+            "IsButtonPressed", Input::ControllerMap::IsButtonPressed,
+            "GetAxis", Input::ControllerMap::GetAxis
         );
 
     }

@@ -52,11 +52,6 @@ namespace Atlas {
                 AtmosphereParameters atmosphere;
             };
 
-            struct alignas(16) MultipleScatteringUniforms {
-                vec4 sunRadiance;
-                AtmosphereParameters atmosphere;
-            };
-
             struct alignas(16) SkyViewUniforms {
                 vec4 cameraLocation;
                 vec4 planetCenter;
@@ -68,7 +63,7 @@ namespace Atlas {
             void UpdateTransmittanceLut(AtmosphereParameters atmosphereParameters,
                 Lighting::Atmosphere* atmosphere, Graphics::CommandList* commandList);
 
-            void UpdateMultipleScatteringLut(const MultipleScatteringUniforms& uniforms,
+            void UpdateMultipleScatteringLut(AtmosphereParameters atmosphereParameters,
                 Lighting::Atmosphere* atmosphere, Graphics::CommandList* commandList);
 
             void UpdateSkyViewLut(const SkyViewUniforms& uniforms, Lighting::Atmosphere* atmosphere,

@@ -80,11 +80,12 @@ namespace Atlas {
                                             &glyph->width, &glyph->height, &offset.x, &offset.y);
 
             for (int32_t j = 0; j < AE_FONT_GLYPH_COUNT; j++) {
-                glyph->kern[j] = (int32_t) ((float) stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
+                glyph->kern[j] = (float) stbtt_GetCodepointKernAdvance(&font, i, j) * scale;
             }
 
-            stbtt_GetCodepointHMetrics(&font, i, &glyph->advance, 0);
-            glyph->advance = (int32_t) ((float) glyph->advance * scale);
+            int32_t advance;
+            stbtt_GetCodepointHMetrics(&font, i, &advance, 0);
+            glyph->advance = (float) advance * scale;
 
             if (!data[i]) {
                 glyph->height = 0;
@@ -205,7 +206,7 @@ namespace Atlas {
             auto glyph = nextGlyph;
             nextGlyph = GetGlyphUTF8(ctext);
 
-            *width += ((float) (glyph->advance + glyph->kern[nextGlyph->codepoint]) * scale);
+            *width += (glyph->advance + glyph->kern[nextGlyph->codepoint]) * scale;
 
         }
 

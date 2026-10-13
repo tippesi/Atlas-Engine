@@ -8,6 +8,7 @@
 #include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
 #include "input/KeyboardMap.h"
+#include "input/ControllerMap.h"
 #include "events/EventManager.h"
 #include "raytracing/RayTracingManager.h"
 #include "terrain/TerrainManager.h"
@@ -51,12 +52,9 @@ namespace Atlas {
         // Then create graphics instance
         auto instanceDesc = Graphics::InstanceDesc{
             .instanceName = "AtlasEngineInstance",
-#ifdef AE_BUILDTYPE_DEBUG
-            .enableValidationLayers = true,
-#else
-            .enableValidationLayers = false,
-#endif
-            .validationLayerSeverity = config.validationLayerSeverity,
+            .enableValidationLayers = config.deviceDesc.enableValidationLayers,
+            .enableExtendedValidation = config.deviceDesc.enableExtendedValidation,
+            .validationLayerSeverity = config.deviceDesc.validationLayerSeverity,
 #ifndef AE_HEADLESS
             .requiredExtensions = requiredExtensions
 #else
@@ -73,7 +71,7 @@ namespace Atlas {
         surface = Graphics::Instance::DefaultInstance->CreateHeadlessSurface();
 #endif
         // Initialize device
-        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface);
+        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface, config.deviceDesc);
         Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
 
 #ifndef AE_HEADLESS
@@ -89,6 +87,7 @@ namespace Atlas {
         PipelineManager::Init();
         Physics::PhysicsManager::Init();
         Input::KeyboardMap::Init();
+        Input::ControllerMap::Init();
 
         // We need lower sample size for smaller buffer on SDL side (e.g. 256 instead of 1024)
         Audio::AudioManager::Configure(48000, 2, 128);
@@ -107,6 +106,7 @@ namespace Atlas {
         Texture::Texture::Shutdown();
         Audio::AudioManager::Shutdown();
         Input::KeyboardMap::Shutdown();
+        Input::ControllerMap::Shutdown();
 
         Events::EventManager::ShutdownEventDelegate.Fire();
 
@@ -121,6 +121,7 @@ namespace Atlas {
         Graphics::Profiler::BeginFrame();
         // First reset keyboard state before new events
         Input::KeyboardMap::Update();
+        Input::ControllerMap::Update();
         Events::EventManager::Update();
         PipelineManager::Update();
         Audio::AudioManager::Update();

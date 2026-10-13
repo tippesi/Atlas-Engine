@@ -31,6 +31,8 @@ namespace Atlas::Editor::UI {
 
         void StartPlaying();
 
+        void TogglePause();
+
         void StopPlaying();
 
         void SaveSceneState();

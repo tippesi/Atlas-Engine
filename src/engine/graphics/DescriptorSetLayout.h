@@ -40,6 +40,7 @@ namespace Atlas {
             uint32_t sampledImageCount = 0;
             uint32_t storageImageCount = 0;
             uint32_t samplerCount = 0;
+            uint32_t accelerationStructureCount = 0;
         };
 
         class DescriptorSetLayout {

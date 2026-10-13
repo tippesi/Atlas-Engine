@@ -46,6 +46,8 @@ namespace Atlas::Editor::UI {
 
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
+            // Scripts create and destroy entities, which would race with the hierarchy search
+            sceneHierarchyPanel.WaitForSearch();
             scene->Update(deltaTime);
         }
         else {
@@ -366,9 +368,15 @@ namespace Atlas::Editor::UI {
 
                 beginGroup((region.x - groupWidth(2)) * 0.5f, 2);
 
-                if (iconButton("Play button", IconType::Play, isPlaying, scene.IsLoaded() && !isPlaying,
-                    "Play scene", playUvMin, playUvMax))
-                    StartPlaying();
+                // While playing, the play button pauses and resumes
+                bool running = isPlaying && !scene->paused;
+                if (iconButton("Play button", running ? IconType::Pause : IconType::Play, false, scene.IsLoaded(),
+                    !isPlaying ? "Play scene" : running ? "Pause playing" : "Resume playing", playUvMin, playUvMax)) {
+                    if (isPlaying)
+                        TogglePause();
+                    else
+                        StartPlaying();
+                }
                 if (iconButton("Stop button", IconType::Stop, false, scene.IsLoaded() && isPlaying,
                     "Stop playing (Ctrl+Q)", playUvMin, playUvMax))
                     StopPlaying();
@@ -744,6 +752,7 @@ namespace Atlas::Editor::UI {
             SaveSceneState();
 
             scene->physicsWorld->pauseSimulation = false;
+            scene->paused = false;
             // Unselect when starting the simulation/scene (otherwise some physics settings might not
             // be reverted after stopping
             sceneHierarchyPanel.ClearSelection();
@@ -754,6 +763,15 @@ namespace Atlas::Editor::UI {
                 Notifications::Push({ "To stop playing, press Ctrl + Q" });
             }
             });        
+
+    }
+
+    void SceneWindow::TogglePause() {
+
+        if (!isPlaying)
+            return;
+
+        scene->paused = !scene->paused;
 
     }
 

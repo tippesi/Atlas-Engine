@@ -18,7 +18,8 @@ namespace Atlas {
 
         int32_t codepoint;
 
-        int32_t advance;
+        // In pixels, kept fractional such that the spacing doesn't shrink with every character
+        float advance;
 
         int32_t width;
         int32_t height;
@@ -28,7 +29,7 @@ namespace Atlas {
         vec2 textureScale;
         vec2 offset;
 
-        std::vector<int32_t> kern;
+        std::vector<float> kern;
 
     };
 

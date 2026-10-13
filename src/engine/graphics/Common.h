@@ -34,7 +34,11 @@
 
 #define VK_CHECK(x) {                                                               \
     VkResult err = x;                                                               \
-    if (err)                                                                        \
+    if (err == VK_ERROR_DEVICE_LOST)                                                \
+    {                                                                               \
+        Atlas::Graphics::HandleDeviceLost();                                        \
+    }                                                                               \
+    else if (err)                                                                   \
     {                                                                               \
         Atlas::Log::Error("Detected Vulkan error: " +                               \
             Atlas::Graphics::VkResultToString(err));                                \
@@ -45,7 +49,11 @@
 
 #define VK_CHECK_MESSAGE(x,y) {                                                     \
     VkResult err = x;                                                               \
-    if (err)                                                                        \
+    if (err == VK_ERROR_DEVICE_LOST)                                                \
+    {                                                                               \
+        Atlas::Graphics::HandleDeviceLost();                                        \
+    }                                                                               \
+    else if (err)                                                                   \
     {                                                                               \
         Atlas::Log::Error("Detected Vulkan error: " +                               \
             Atlas::Graphics::VkResultToString(err));                                \
@@ -57,6 +65,9 @@
 namespace Atlas {
 
     namespace Graphics {
+
+        // Defined in GraphicsDevice.cpp
+        void HandleDeviceLost();
 
         inline std::string VkResultToString(VkResult result) {
             switch (result) {

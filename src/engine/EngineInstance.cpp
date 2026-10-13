@@ -49,8 +49,9 @@ namespace Atlas {
 
     }
 
-    void EngineInstance::Exit() {
+    void EngineInstance::Exit(int32_t exitCode) {
 
+        this->exitCode = exitCode;
         Events::EventManager::QuitEventDelegate.Fire();
 
     }

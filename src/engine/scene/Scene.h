@@ -35,6 +35,7 @@
 
 #include <type_traits>
 #include <map>
+#include <functional>
 
 namespace Atlas {
 
@@ -95,6 +96,17 @@ namespace Atlas {
 
             void Update(float deltaTime);
 
+            /**
+             * Time in seconds that the scene was updated for. It stands still while the scene is paused,
+             * everything animated by the renderers (wind, clouds, water) uses it.
+             */
+            float GetTime() const { return time; }
+
+            /**
+             * Time step of the last update in seconds, 0 while the scene is paused.
+             */
+            float GetDeltaTime() const { return deltaTime; }
+
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
             std::vector<ResourceHandle<Material>> GetMaterials();
@@ -107,8 +119,15 @@ namespace Atlas {
 
             bool HasMainLight() const;
 
-            Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
-                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
+            /**
+             * Casts a ray against the scene. Physics bodies are tested with their collision shapes, meshes with
+             * triangle precision. If bodies are queried, meshes covered by a mesh shape body are only hit
+             * through the physics world instead of being tested twice. Only mesh hits report a triangle
+             * index, query meshes without bodies to get the visible triangle. Entities for which ignore returns true are skipped.
+             */
+            Volume::RayResult<Entity> CastRay(Volume::Ray& ray,
+                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit,
+                const std::function<bool(const Entity&)>& ignore = nullptr);
 
             std::vector<Entity> QueryAABB(const Volume::AABB& aabb, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
@@ -136,7 +155,10 @@ namespace Atlas {
             static Ref<Scene> Restore(const std::vector<uint8_t>& serialized);
 
             std::string name;
-            
+
+            // Halts scripts, physics and players of a running simulation while keeping their state
+            bool paused = false;
+
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
@@ -190,7 +212,8 @@ namespace Atlas {
 
             Entity mainCameraEntity;
             Entity mainLightEntity;
-            float deltaTime = 1.0f;
+            float time = 0.0f;
+            float deltaTime = 0.0f;
 
             bool firstTimestep = true;
             bool hasChanged = true;

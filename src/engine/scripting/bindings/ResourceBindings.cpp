@@ -1,6 +1,7 @@
 #include "ResourceBindings.h"
 
 #include "audio/AudioData.h"
+#include "Font.h"
 #include "mesh/Mesh.h"
 #include "scripting/Script.h"
 
@@ -16,6 +17,17 @@ namespace Atlas::Scripting::Bindings {
         GenerateResourceBinding<Texture::Cubemap>(ns, "CubemapResourceHandle");
         GenerateResourceBinding<Mesh::Mesh>(ns, "MeshResourceHandle");
         GenerateResourceBinding<Scripting::Script>(ns, "ScriptResourceHandle");
+        GenerateResourceBinding<Font>(ns, "FontResourceHandle");
+
+        // Text components scale the font by textScale / 16, e.g. ComputeDimensions(text, textScale / 16)
+        ns->new_usertype<Font>("Font",
+            "ComputeDimensions", [](Font& font, const std::string& text, float scale) {
+                vec2 size;
+                font.ComputeDimensions(text, scale, &size.x, &size.y);
+                return size;
+            },
+            "lineHeight", &Font::lineHeight
+            );
 
         auto type = ns->create_named("ResourceManager");
 
@@ -35,6 +47,15 @@ namespace Atlas::Scripting::Bindings {
 
         type.set_function("GetScripts", []() { 
                 return ResourceManager<Scripting::Script>::GetResources();
+            });
+
+        type.set_function("GetOrLoadAudio", [](const std::string& filename) -> ResourceHandle<Audio::AudioData> {
+                return ResourceManager<Audio::AudioData>::GetOrLoadResource(filename, ResourceOrigin::User);
+            });
+
+        // Same font settings as text components loaded from a scene
+        type.set_function("GetOrLoadFont", [](const std::string& filename) -> ResourceHandle<Font> {
+                return ResourceManager<Font>::GetOrLoadResourceAsync(filename, ResourceOrigin::User, 32.0f, 7, uint8_t(127));
             });
 
     }

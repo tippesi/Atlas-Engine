@@ -51,6 +51,9 @@ namespace Atlas::Editor::UI {
 
         void Update(Ref<Scene::Scene>& scene);
 
+        // The search reads the component pools in a job, the scene must not change while it runs
+        void WaitForSearch() { JobSystem::Wait(searchJob); }
+
         void Render(Ref<Scene::Scene>& scene, bool inFocus);
 
         void SelectEntity(Scene::Entity entity, bool keepSelection = false);

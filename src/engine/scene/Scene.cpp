@@ -90,12 +90,25 @@ namespace Atlas {
 
         void Scene::Update(float deltaTime) {
 
-            this->deltaTime = deltaTime;
+            this->deltaTime = paused ? 0.0f : deltaTime;
+            time += this->deltaTime;
 
             WaitForAsyncWorkCompletion();
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
+
+            // Motion vectors use the matrix of the last frame. Transforms that don't change in this frame
+            // (stopped or paused objects) didn't move, a change overwrites it with the matrix before the change.
+            {
+                auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+                JobGroup historyJobGroup{ "Transform history", JobPriority::High };
+                JobSystem::ParallelFor(historyJobGroup, int32_t(transformComponentPool.GetCount()), 64, [&](JobData&, int32_t idx) {
+                    auto& transformComponent = transformComponentPool.GetByIndex(idx);
+                    transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                    });
+                JobSystem::Wait(historyJobGroup);
+            }
 
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
@@ -204,6 +217,8 @@ namespace Atlas {
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
 
+                auto simulate = !physicsWorld->pauseSimulation && !paused;
+
                 // This part (updating physics transforms) is required regardless of the simulation running
                 auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
                 for (auto entity : playerSubset) {
@@ -212,6 +227,8 @@ namespace Atlas {
                     // Might happen if there was no transform at the creation of rigid body component
                     if (!playerComponent.IsValid()) {
                         playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
+                        if (playerComponent.IsValid())
+                            playerComponent.SetUserData(entity);
                     }
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
@@ -222,7 +239,8 @@ namespace Atlas {
                         playerComponent.SetPosition(decomposition.translation);
                     }
 
-                    playerComponent.Update(deltaTime);
+                    if (simulate)
+                        playerComponent.Update(deltaTime);
 
                     auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
                     if (hierarchyComponent) {
@@ -247,7 +265,7 @@ namespace Atlas {
                     // Kinematic bodies follow their transform through velocities, such that simulated bodies
                     // are pushed instead of penetrated. A teleport is still needed if no simulation step follows.
                     auto moveKinematic = rigidBodyComponent.layer == Physics::Layers::Kinematic &&
-                        !physicsWorld->pauseSimulation && deltaTime > 0.0f;
+                        simulate && deltaTime > 0.0f;
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
                     if (transformComponent.changed) {
@@ -263,7 +281,7 @@ namespace Atlas {
                 }
 
                 // This part only needs to be executed if the simulation is running
-                if (!physicsWorld->pauseSimulation) {
+                if (simulate) {
 
                     physicsWorld->Update(deltaTime);
 
@@ -580,55 +598,107 @@ namespace Atlas {
 
         }
 
-        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents) {
+        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents,
+            const std::function<bool(const Entity&)>& ignore) {
 
             Volume::RayResult<Entity> result;
             result.hitDistance = ray.tMax;
 
-            // Most accurate method if it works
-            if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
-                auto bodyResult = physicsWorld->CastRay(ray);
+            auto isIgnored = [&](const Entity& entity) {
+                return ignore && entity.IsValid() && ignore(entity);
+            };
 
-                if (bodyResult.valid) {
-                    auto userData = bodyResult.data.GetUserData();
+            if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
+                // Ignored bodies are skipped by continuing the ray behind them
+                auto bodyRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, ray.tMax);
+                for (int32_t i = 0; i < 16 && bodyRay.tMin < bodyRay.tMax; i++) {
+                    auto bodyResult = physicsWorld->CastRay(bodyRay);
+                    if (!bodyResult.valid)
+                        break;
+
+                    Entity entity = { bodyResult.data.GetUserData(), &entityManager };
+                    if (isIgnored(entity)) {
+                        bodyRay.tMin = bodyResult.hitDistance + 0.001f;
+                        continue;
+                    }
 
                     result.valid = true;
                     result.hitDistance = bodyResult.hitDistance;
                     result.normal = bodyResult.normal;
-                    result.data = { userData, &entityManager };
+                    result.data = entity;
+                    break;
                 }
             }
 
-            // This isn't really optimized, we could use hierarchical data structures
+            // The bounding boxes only cull the triangle tests, this isn't optimized with hierarchical data structures.
+            // Meshes with a mesh shape body of the same mesh were already hit exactly by the physics query above.
             if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
-                auto meshSubset = entityManager.GetSubset<MeshComponent>();
+                auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
+                auto queriedBodies = physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit);
+
+                auto hasMeshBody = [&](ECS::Entity entity, const MeshComponent& meshComp) {
+                    auto rigidBodyComp = entityManager.TryGet<RigidBodyComponent>(entity);
+                    if (!rigidBodyComp || !rigidBodyComp->IsValid() || !rigidBodyComp->creationSettings)
+                        return false;
+
+                    const auto& shape = rigidBodyComp->creationSettings->shape;
+                    if (!shape || shape->type != Physics::ShapeType::Mesh || !shape->settings)
+                        return false;
+
+                    auto meshSettings = static_cast<Physics::MeshShapeSettings*>(shape->settings.get());
+                    return meshSettings->mesh == meshComp.mesh;
+                };
 
                 for (auto entity : meshSubset) {
-                    const auto& meshComp = meshSubset.Get(entity);
+                    const auto& [meshComp, transformComp] = meshSubset.Get(entity);
+                    if (!meshComp.mesh.IsLoaded() || (queriedBodies && hasMeshBody(entity, meshComp)))
+                        continue;
 
-                    auto dist = 0.0f;
-                    ray.tMax = result.hitDistance;
-                    if (ray.Intersects(meshComp.aabb, dist)) {
-                        auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
-                        // This means we already found a more accurate hit
-                        if (result.valid && entityManager.Contains<RigidBodyComponent>(entity))
-                            continue;
+                    auto boxRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
+                    auto boxDistance = 0.0f;
+                    if (!boxRay.Intersects(meshComp.aabb, boxDistance))
+                        continue;
 
-                        // Accept all hits greater equal if they were within the updated hit distance
-                        if (dist > 0.0f) {
-                            result.valid = true;
-                            result.data = { entity, &entityManager };
-                            result.hitDistance = dist;
-                            result.normal = vec3(0.0f);
-                        }
+                    Entity sceneEntity = { entity, &entityManager };
+                    if (isIgnored(sceneEntity))
+                        continue;
 
-                        // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
-                        if (!result.valid) {
-                            result.valid = true;
-                            result.data = { entity, &entityManager };
-                            result.normal = vec3(0.0f);
+                    auto& data = meshComp.mesh->data;
+                    auto& vertices = data.vertices.Get();
+                    auto& indices = data.indices.Get();
+                    if (vertices.empty() || indices.size() < 3)
+                        continue;
+
+                    // The ray parameter stays the same in local space as long as the direction isn't normalized
+                    auto inverseMatrix = glm::inverse(transformComp.globalMatrix);
+                    auto localRay = Volume::Ray(vec3(inverseMatrix * vec4(ray.origin, 1.0f)),
+                        vec3(inverseMatrix * vec4(ray.direction, 0.0f)), ray.tMin, result.hitDistance);
+
+                    int32_t hitTriangle = -1;
+                    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+                        auto t = 0.0f;
+                        if (localRay.IntersectsTriangle(vertices[indices[i]], vertices[indices[i + 1]],
+                            vertices[indices[i + 2]], t)) {
+                            localRay.tMax = t;
+                            hitTriangle = int32_t(i / 3);
                         }
                     }
+
+                    if (hitTriangle < 0)
+                        continue;
+
+                    const auto& v0 = vertices[indices[hitTriangle * 3]];
+                    const auto& v1 = vertices[indices[hitTriangle * 3 + 1]];
+                    const auto& v2 = vertices[indices[hitTriangle * 3 + 2]];
+                    auto normalMatrix = glm::transpose(glm::inverse(mat3(transformComp.globalMatrix)));
+                    auto normal = glm::normalize(normalMatrix * glm::cross(v1 - v0, v2 - v0));
+
+                    result.valid = true;
+                    result.data = sceneEntity;
+                    result.hitDistance = localRay.tMax;
+                    // Report the side the ray hit
+                    result.normal = glm::dot(normal, ray.direction) > 0.0f ? -normal : normal;
+                    result.triangleIndex = hitTriangle;
                 }
             }
 
@@ -637,6 +707,9 @@ namespace Atlas {
 
                 for (auto entity : textSubset) {
                     const auto& textComp = textSubset.Get(entity);
+
+                    if (isIgnored({ entity, &entityManager }))
+                        continue;
 
                     auto dist = 0.0f;
                     ray.tMax = result.hitDistance;
@@ -891,6 +964,9 @@ namespace Atlas {
 
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.InsertIntoPhysicsWorld(*transformComp, physicsWorld.get());
+                    // Ray hits on the character body have to map back to the entity
+                    if (rigidBodyComponent.IsValid())
+                        rigidBodyComponent.SetUserData(entity);
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,

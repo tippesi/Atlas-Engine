@@ -128,7 +128,8 @@ namespace Atlas {
                 poolSize.combinedImageSamplerCount >= requestedSize.combinedImageSamplerCount &&
                 poolSize.sampledImageCount >= requestedSize.sampledImageCount &&
                 poolSize.storageImageCount >= requestedSize.storageImageCount &&
-                poolSize.samplerCount >= requestedSize.samplerCount;
+                poolSize.samplerCount >= requestedSize.samplerCount &&
+                poolSize.accelerationStructureCount >= requestedSize.accelerationStructureCount;
 
         }
 
@@ -144,6 +145,11 @@ namespace Atlas {
                     { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          std::max(DESCRIPTOR_POOL_SIZE, size.storageImageCount) },
                     { VK_DESCRIPTOR_TYPE_SAMPLER,                std::max(DESCRIPTOR_POOL_SIZE, size.samplerCount) },
                 };
+
+            if (size.accelerationStructureCount) {
+                sizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+                    std::max(DESCRIPTOR_POOL_SIZE, size.accelerationStructureCount) });
+            }
 
             VkDescriptorPoolCreateInfo poolInfo = {};
             poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

@@ -6,7 +6,7 @@
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../../data",
     .shaderDirectory = "shader",
-    .validationLayerSeverity = Log::SEVERITY_MEDIUM,
+    .deviceDesc = { .validationLayerSeverity = Log::SEVERITY_MEDIUM },
 };
 
 using namespace Atlas::Scene::Components;

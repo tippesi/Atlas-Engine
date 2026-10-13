@@ -106,6 +106,10 @@ namespace Atlas::Scene::Components {
             updateFunction.reset();
             scriptEnvironment.reset();
         }
+        else if (scene->paused && !permanentExecution) {
+            // a paused instance keeps its state
+            return;
+        }
         else {
             // the instance is running, create a state if not existing
             if (!scriptEnvironment.has_value()) {

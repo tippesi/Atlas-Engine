@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "../Filter.h"
+#include "MathHelper.h"
 
 #include <stb_image_resize2.h>
 
@@ -218,8 +219,9 @@ namespace Atlas {
             void ExpandToChannelCount(int32_t channels, T fill);
 
             /**
-             * Converts the data into the specified type
-             * @tparam R
+             * Converts the data into the specified type. Integer formats are normalized to [0,1]
+             * (e.g. 255 becomes 1.0), floating point values are clamped to [0,1] when converted to integers.
+             * @tparam R uint8_t, uint16_t, float or float16
              * @return
              */
             template<typename R>
@@ -847,28 +849,22 @@ namespace Atlas {
 
             std::vector<R> convertedData;
             auto& data = GetData();
+            convertedData.reserve(data.size());
 
             for (auto value : data) {
+                auto normalized = float(value) / MaxPixelValue();
+
                 if constexpr (std::is_same_v<R, uint8_t>) {
-                    T t = std::max(T(0), std::min(T(255), value));
-                    convertedData.push_back(reinterpret_cast<R>(t));
+                    convertedData.push_back(R(Helper::Math::Saturate(normalized) * 255.0f + 0.5f));
                 }
                 else if constexpr (std::is_same_v<R, uint16_t>) {
-                    T t = std::max(T(0), std::min(T(65535), value));
-                    convertedData.push_back(reinterpret_cast<R>(t));
+                    convertedData.push_back(R(Helper::Math::Saturate(normalized) * 65535.0f + 0.5f));
                 }
                 else if constexpr (std::is_same_v<R, float>) {
-                    convertedData.push_back(reinterpret_cast<R>(value));
+                    convertedData.push_back(normalized);
                 }
                 else if constexpr (std::is_same_v<R, float16>) {
-                    float t = 0.0f;
-                    if constexpr (std::is_same_v<T, float>) {
-                        t = value;
-                    }
-                    else {
-                        t = reinterpret_cast<float>(value);
-                    }
-                    convertedData.push_back(glm::detail::toFloat16(t));
+                    convertedData.push_back(glm::detail::toFloat16(normalized));
                 }
             }
 

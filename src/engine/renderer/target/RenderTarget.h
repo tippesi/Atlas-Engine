@@ -173,6 +173,11 @@ namespace Atlas::Renderer {
 
         bool HasHistory() const;
 
+        /**
+         * Temporal effects (anti-aliasing, exposure, ...) start over in the next frame, e.g. after a camera cut.
+         */
+        void InvalidateHistory();
+
         void SetScalingFactor(float factor);
 
         float GetScalingFactor() const;

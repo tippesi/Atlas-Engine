@@ -108,10 +108,8 @@ void LoadLightTypeData(uint requestedLightType) {
 
 void main() {
 
+    // No early return, all invocations have to reach the barriers when loading the lights
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(volumetricImage).x ||
-        pixel.y > imageSize(volumetricImage).y)
-        return;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricImage));
 
@@ -405,13 +403,16 @@ float GetShadowFactorDirectionalLight(int lightIdx, int shadowIdx, uint lightTyp
 
     float dist = -currentPosition.z;
 
+    if (shadowIdx < 0)
+        return 1.0;
+
 #ifndef AE_BINDLESS
     int mapIdx = lightIdx;
 #else
     int mapIdx = volumetricShadows[shadowIdx].mapIdx;
 #endif
 
-    if (shadowIdx < 0 || dist > volumetricShadows[shadowIdx].distance || mapIdx < 0)
+    if (dist > volumetricShadows[shadowIdx].distance || mapIdx < 0)
         return 1.0;
     
     float shadowValue = 1.0;
@@ -470,13 +471,16 @@ float GetShadowFactorPunctualLight(int lightIdx, int shadowIdx, uint lightType, 
 
     float dist = -currentPosition.z;
 
+    if (shadowIdx < 0)
+        return 1.0;
+
 #ifndef AE_BINDLESS
     int mapIdx = lightIdx;
 #else
     int mapIdx = volumetricShadows[shadowIdx].mapIdx;
 #endif
 
-    if (shadowIdx < 0 || dist > volumetricShadows[shadowIdx].distance || mapIdx < 0)
+    if (dist > volumetricShadows[shadowIdx].distance || mapIdx < 0)
         return 1.0;
     
     float shadowValue = 1.0;

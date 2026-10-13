@@ -279,9 +279,10 @@ namespace Atlas {
         Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray) {
 
             JPH::RayCastResult hit;
-            // Actually direction is not really a direction but one endpoint
+            // The ray starts at tMin and the direction is the whole segment up to tMax
+            auto length = ray.tMax - ray.tMin;
             JPH::RRayCast rayCast{ VecToJPHVec(ray.origin + ray.direction * ray.tMin),
-                VecToJPHVec(ray.direction * ray.tMax) };
+                VecToJPHVec(ray.direction * length) };
 
             Volume::RayResult<Body> result;
 
@@ -301,7 +302,8 @@ namespace Atlas {
                 }
 
                 result.valid = true;
-                result.hitDistance = (ray.tMax - ray.tMin) * hit.mFraction;
+                // Distances are measured from the ray origin like for all other ray queries
+                result.hitDistance = ray.tMin + length * hit.mFraction;
                 result.data = { hit.mBodyID, this };
             }
 

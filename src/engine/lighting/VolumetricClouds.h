@@ -35,8 +35,9 @@ namespace Atlas {
 
                 vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
 
+                // Henyey-Greenstein eccentricities, positive values scatter forward (silver lining)
                 float eccentricityFirstPhase = 0.0f;
-                float eccentricitySecondPhase = -0.5f;
+                float eccentricitySecondPhase = 0.5f;
                 float phaseAlpha = 0.5f;
             };
 

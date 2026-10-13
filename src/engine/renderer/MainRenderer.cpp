@@ -4,7 +4,6 @@
 
 #include "../common/Packing.h"
 #include "../tools/PerformanceCounter.h"
-#include "../Clock.h"
 
 namespace Atlas {
 
@@ -447,8 +446,8 @@ namespace Atlas {
 				.windDir = glm::normalize(scene->wind.direction),
 				.windSpeed = scene->wind.speed,
 				.planetRadius = scene->sky.planetRadius,
-				.time = Clock::Get(),
-				.deltaTime = Clock::GetDelta(),
+				.time = scene->GetTime(),
+				.deltaTime = scene->GetDeltaTime(),
 				.frameCount = frameCount,
 				.mipLodBias = -1.0f / target->GetScalingFactor(),
 				.cameraNearPlane = camera.nearPlane,
@@ -999,8 +998,8 @@ namespace Atlas {
 				.windDir = glm::normalize(scene->wind.direction),
 				.windSpeed = scene->wind.speed,
 				.planetRadius = scene->sky.planetRadius,
-				.time = Clock::Get(),
-				.deltaTime = Clock::GetDelta(),
+				.time = scene->GetTime(),
+				.deltaTime = scene->GetDeltaTime(),
 				.frameCount = frameCount,
 				.mipLodBias = mipBias ? log2f(target->GetScalingFactor()) - 1.0f : 0.0f,
 				.cameraNearPlane = camera.nearPlane,

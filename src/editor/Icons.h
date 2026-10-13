@@ -15,6 +15,7 @@ namespace Atlas::Editor {
         Mesh,
         Play,
         Stop,
+        Pause,
         Scene,
         Terrain,
         Font,

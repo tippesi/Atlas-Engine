@@ -58,7 +58,7 @@ const float cloudTypeVariation = 0.55;
 const float bottomTypeVariation = 0.12;
 const float windSkew = 0.12;
 
-const float multiScatteringIntensity = 0.28;
+const float multiScatteringIntensity = 0.45;
 const float multiScatteringAttenuation = 0.65;
 const float multiScatteringContribution = 0.50;
 const float multiScatteringEccentricityAttenuation = 0.60;
@@ -67,6 +67,15 @@ const float multiScatteringEccentricityAttenuation = 0.60;
 const float edgeAlbedo = 0.68;
 const float edgeAlbedoCurve = 2.0;
 const float ambientAlbedoMix = 0.35;
+
+// Cloud tops see the bright sky, bottoms are occluded by the cloud above and mostly see the ground
+const float ambientTopStrength = 0.6;
+const float ambientBottomStrength = 0.18;
+const float ambientGroundMix = 0.5;
+
+// Powder effect: surfaces which only received light close to the surface scatter less light back.
+// It darkens the creases of billowing clouds when the sun is behind the viewer.
+const float powderStrength = 0.65;
 
 vec3 cloudPlanetCenter = cloudUniforms.planetCenter.xyz;
 

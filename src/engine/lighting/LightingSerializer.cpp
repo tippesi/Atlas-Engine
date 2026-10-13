@@ -340,6 +340,7 @@ namespace Atlas::Lighting {
             {"eccentricityFirstPhase", p.eccentricityFirstPhase},
             {"eccentricitySecondPhase", p.eccentricitySecondPhase},
             {"phaseAlpha", p.phaseAlpha},
+            {"positiveForwardScattering", true}
         };
     }
 
@@ -350,6 +351,12 @@ namespace Atlas::Lighting {
         j.at("eccentricityFirstPhase").get_to(p.eccentricityFirstPhase);
         j.at("eccentricitySecondPhase").get_to(p.eccentricitySecondPhase);
         j.at("phaseAlpha").get_to(p.phaseAlpha);
+
+        // Older scenes stored the eccentricities with the opposite sign, negative values scattered forward
+        if (!j.contains("positiveForwardScattering")) {
+            p.eccentricityFirstPhase = -p.eccentricityFirstPhase;
+            p.eccentricitySecondPhase = -p.eccentricitySecondPhase;
+        }
     }
 
     void to_json(json& j, const VolumetricClouds& p) {

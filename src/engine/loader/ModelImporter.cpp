@@ -573,8 +573,6 @@ namespace Atlas {
 
                 bool existed = false;
                 auto handle = ResourceManager<Material>::AddResource(materialFilename, material, existed);
-                if (existed)
-                    Log::Warning("Material " + materialFilename + " was already loaded in the resource manager");
                 materials.push_back(handle);
 
                 if (saveToDisk)

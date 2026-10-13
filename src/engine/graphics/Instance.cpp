@@ -21,7 +21,8 @@ namespace Atlas {
         Instance* Instance::DefaultInstance = nullptr;
 
         Instance::Instance(const InstanceDesc& desc) :  name(desc.instanceName), 
-            validationLayersEnabled(desc.enableValidationLayers), validationLayerSeverity(desc.validationLayerSeverity) {
+            validationLayersEnabled(desc.enableValidationLayers), extendedValidationEnabled(desc.enableExtendedValidation),
+            validationLayerSeverity(desc.validationLayerSeverity) {
 
 #ifndef AE_OS_APPLE_MOBILE
             // Volk is not needed on iPadOS and iOS, MoltenVK is bundled there
@@ -46,6 +47,7 @@ namespace Atlas {
                 Log::Warning("Required validation layers were not found. Disabling validation layers");
                 validationLayersEnabled = false;
             }
+            extendedValidationEnabled &= validationLayersEnabled;
 
             auto requiredExtensions = desc.requiredExtensions;
 #ifdef AE_HEADLESS
@@ -89,6 +91,12 @@ namespace Atlas {
             VkValidationFeatureEnableEXT enables[] = {
                 VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
             };
+            VkValidationFeatureEnableEXT extendedEnables[] = {
+                VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+                VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
+                VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+                VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
+            };
             VkValidationFeaturesEXT validationFeatures = {};
 
             StructureChainBuilder structureChainBuilder(createInfo);
@@ -99,14 +107,16 @@ namespace Atlas {
 
                 structureChainBuilder.Append(debugCreateInfo);
 
-#ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
                 // This doesn't seem to work anymore with newer VulkanSDKs on Nvidia hardware
                 //validationFeatures.enabledValidationFeatureCount = std::size(enables);
                 //validationFeatures.pEnabledValidationFeatures = enables;
+                if (extendedValidationEnabled) {
+                    validationFeatures.enabledValidationFeatureCount = uint32_t(std::size(extendedEnables));
+                    validationFeatures.pEnabledValidationFeatures = extendedEnables;
+                }
 
-                structureChainBuilder.Append(validationFeatures);                
-#endif
+                structureChainBuilder.Append(validationFeatures);
             }
             else {
                 createInfo.enabledLayerCount = 0;
@@ -237,9 +247,9 @@ namespace Atlas {
 
         }
 
-        void Instance::InitializeGraphicsDevice(Surface* surface) {
+        void Instance::InitializeGraphicsDevice(Surface* surface, const DeviceDesc& desc) {
 
-            graphicsDevice = new GraphicsDevice(surface, validationLayersEnabled);
+            graphicsDevice = new GraphicsDevice(surface, desc);
 
         }
 
@@ -272,7 +282,7 @@ namespace Atlas {
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
             createInfo.pfnUserCallback = DebugCallback;
-            createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
+            createInfo.pUserData = this;
             return createInfo;
 
         }
@@ -290,21 +300,21 @@ namespace Atlas {
             output.append("\nType: ");
 
             switch (messageType) {
-                case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT: output.append("Validation");
-                    logType = Log::Type::TYPE_ERROR; break;
-                case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT: output.append("Performance");
-                    logType = Log::Type::TYPE_WARNING; break;
-                case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT: output.append("General");
-                    logType = Log::Type::TYPE_MESSAGE;  break;
+                case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT: output.append("Validation"); break;
+                case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT: output.append("Performance"); break;
+                case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT: output.append("General"); break;
                 default: break;
             }
 
             output.append("\nSeverity: ");
 
+            // The severity decides how a message is logged, a validation warning is still just a warning
             switch (messageSeverity) {
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: output.append("Error");
+                    logType = Log::Type::TYPE_ERROR;
                     logSeverity = Log::Severity::SEVERITY_HIGH; break;
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: output.append("Warning");
+                    logType = Log::Type::TYPE_WARNING;
                     logSeverity = Log::Severity::SEVERITY_MEDIUM; break;
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: output.append("Info");
                     logSeverity = Log::Severity::SEVERITY_LOW; break;
@@ -332,11 +342,15 @@ namespace Atlas {
 #endif
 
 #ifndef AE_BUILDTYPE_RELEASE
-            if (logSeverity == Log::Severity::SEVERITY_HIGH)
+            // Extended validation reports all errors instead of stopping at the first one
+            auto instance = static_cast<Instance*>(pUserData);
+            if (logType == Log::Type::TYPE_ERROR && !instance->extendedValidationEnabled)
                 throw std::runtime_error(output);
 #endif
 
-            return VK_TRUE;
+            // VK_TRUE would abort the Vulkan call that triggered the message, e.g. a pipeline creation
+            // after a warning, applications are supposed to always return VK_FALSE
+            return VK_FALSE;
 
         }
 

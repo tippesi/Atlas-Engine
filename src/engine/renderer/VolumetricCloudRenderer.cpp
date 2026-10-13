@@ -1,6 +1,5 @@
 #include "VolumetricCloudRenderer.h"
 
-#include "../Clock.h"
 
 namespace Atlas {
 
@@ -373,7 +372,7 @@ namespace Atlas {
                 .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
                 .phaseAlpha = clouds->scattering.phaseAlpha,
 
-                .time = Clock::Get(),
+                .time = scene->GetTime(),
                 .frameSeed = frameCount,
 
                 .sampleCount = sampleCounts[quality],

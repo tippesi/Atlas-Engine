@@ -16,7 +16,20 @@ namespace Atlas {
 
         GraphicsDevice* GraphicsDevice::DefaultDevice = nullptr;
 
-        GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
+        void HandleDeviceLost() {
+
+            auto device = GraphicsDevice::DefaultDevice;
+            if (!device || device->isDeviceLost.exchange(true))
+                return;
+
+            Log::Error("Graphics device lost on " + std::string(device->deviceProperties.properties.deviceName) +
+                " (driver " + std::string(device->driverProperties.driverInfo) + "), shutting down");
+            AE_LOG_STACKTRACE();
+
+        }
+
+        GraphicsDevice::GraphicsDevice(Surface* surface, const DeviceDesc& desc) :
+            surface(surface), desc(desc) {
 
             instance = Instance::DefaultInstance;
 
@@ -33,6 +46,7 @@ namespace Atlas {
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
                 VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
                 VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+                VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
                 VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
                 VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
 #ifdef AE_BINDLESS
@@ -60,7 +74,7 @@ namespace Atlas {
             BuildPhysicalDeviceFeatures(physicalDevice);
 
             // Uses the physical device structures generated above
-            CreateDevice(queueCreateInfos, requiredExtensions, enableValidationLayers);
+            CreateDevice(queueCreateInfos, requiredExtensions);
 
             for (auto& queueFamily : queueFamilyIndices.families) {
                 for (auto& queue : queueFamily.queues) {
@@ -998,6 +1012,11 @@ namespace Atlas {
             availableFeatures11.pNext = &availableFeatures12;
             availableFeatures12.pNext = &availableFeatures13;
 
+            availableRobustness2Features = {};
+            availableRobustness2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME))
+                availableFeatures13.pNext = &availableRobustness2Features;
+
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
 
@@ -1038,7 +1057,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
-            const std::vector<const char*>& extensions, bool enableValidationLayers) {
+            const std::vector<const char*>& extensions) {
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1155,6 +1174,20 @@ namespace Atlas {
                 featureBuilder.Append(memoryPriorityFeature);
 
                 support.memoryPriority = true;
+            }
+
+            VkPhysicalDeviceRobustness2FeaturesEXT robustness2Features = {};
+            robustness2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+
+            if (desc.enableRobustness && supportedExtensions.contains(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
+                // robustBufferAccess2 requires robustBufferAccess to be enabled as well
+                robustness2Features.robustBufferAccess2 = availableRobustness2Features.robustBufferAccess2 &&
+                    availableFeatures.features.robustBufferAccess;
+                robustness2Features.robustImageAccess2 = availableRobustness2Features.robustImageAccess2;
+                robustness2Features.nullDescriptor = availableRobustness2Features.nullDescriptor;
+                features.features.robustBufferAccess = robustness2Features.robustBufferAccess2;
+
+                featureBuilder.Append(robustness2Features);
             }
 
             VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedStateFeatures = {};

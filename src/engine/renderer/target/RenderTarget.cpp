@@ -290,6 +290,12 @@ namespace Atlas::Renderer {
 
     }
 
+    void RenderTarget::InvalidateHistory() {
+
+        hasHistory = false;
+
+    }
+
     void RenderTarget::SetScalingFactor(float factor) {
 
         scalingFactor = factor;

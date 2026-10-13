@@ -1,6 +1,5 @@
 #include "PostProcessRenderer.h"
 
-#include "../Clock.h"
 
 namespace Atlas {
 
@@ -258,7 +257,7 @@ namespace Atlas {
                 auto pushConstants = TemporalPushConstants{
                     .logLuminanceMin = logLuminanceMin,
                     .logLuminanceRange = logLuminanceRange,
-                    .timeCoefficient = 1.0f - exp(-Clock::GetDelta() * exposure.timeCoefficient),
+                    .timeCoefficient = 1.0f - exp(-scene->GetDeltaTime() * exposure.timeCoefficient),
                     .pixelCount = float(target->GetScaledWidth() * target->GetScaledHeight()),
                     .resetHistory = !target->HasHistory() ? 1 : 0
                 };

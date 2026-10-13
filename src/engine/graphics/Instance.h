@@ -24,6 +24,7 @@ namespace Atlas {
             std::string instanceName;
 
             bool enableValidationLayers = false;
+            bool enableExtendedValidation = false;
             Log::Severity validationLayerSeverity = Log::Severity::SEVERITY_LOW;
 
             std::vector<const char*> requiredExtensions;
@@ -57,6 +58,7 @@ namespace Atlas {
 
             const std::string name;
             bool validationLayersEnabled;
+            bool extendedValidationEnabled;
 
             static Instance* DefaultInstance;
 
@@ -67,7 +69,7 @@ namespace Atlas {
 
             bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayerNames);
 
-            void InitializeGraphicsDevice(Surface* surface);
+            void InitializeGraphicsDevice(Surface* surface, const DeviceDesc& desc);
 
             bool DestroyGraphicsDevice();
 

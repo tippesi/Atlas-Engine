@@ -54,6 +54,9 @@ namespace Atlas::Physics {
 
 		bool IsOnGround() const;
 
+		// Sets the user data of the character and its inner body, e.g. the owning entity
+		void SetUserData(uint64_t userData);
+
 		void SetUp(vec3 up);
 
 		vec3 GetUp() const;

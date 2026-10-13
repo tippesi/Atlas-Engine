@@ -27,6 +27,7 @@ option(ATLAS_EXPORT_MAIN "Add main file in root of directory tree. Add ${ATLAS_E
 option(ATLAS_NO_APP "Disables the engines main function" OFF)
 option(ATLAS_DEMO "Build demo executable" OFF)
 option(ATLAS_EDITOR "Build editor executable" ON)
+option(ATLAS_CAPTURE "Build the scene capture and inspection tool executable" OFF)
 option(ATLAS_IMGUI "Activate ImGui integration" OFF)
 option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 option(ATLAS_HEADLESS "Activate support for running the engine in headless mode" OFF)
@@ -72,12 +73,16 @@ endif()
 if (ATLAS_DEMO)
 set(ATLAS_EXPORT_MAIN ON CACHE BOOL "Override engine settings" FORCE)
 endif()
+if (ATLAS_CAPTURE)
+set(ATLAS_EXPORT_MAIN ON CACHE BOOL "Override engine settings" FORCE)
+endif()
 
 # Set dependencies location #######################################################################
 set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
 set (TESTS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
 set (EDITOR_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/editor)
+set (CAPTURE_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/capture)
 set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
@@ -119,6 +124,10 @@ endif()
 if (ATLAS_EDITOR)
     find_package(imguizmo CONFIG REQUIRED)
     add_subdirectory(${EDITOR_LOCATION})
+endif()
+
+if (ATLAS_CAPTURE)
+    add_subdirectory(${CAPTURE_LOCATION})
 endif()
 
 if (ATLAS_TESTS)
