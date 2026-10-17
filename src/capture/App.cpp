@@ -1482,21 +1482,8 @@ namespace Atlas::Capture {
         if (useCaptureCamera)
             ApplyCameraSpec(spec);
 
-        // Override main-camera flags only during the scene update
-        std::vector<std::pair<Scene::Entity, bool>> mainStates;
-        auto cameraSubset = scene->GetSubset<CameraComponent>();
-        if (useCaptureCamera) {
-            for (auto entity : cameraSubset) {
-                auto& camera = cameraSubset.Get(entity);
-                mainStates.emplace_back(entity, camera.isMain);
-                camera.isMain = entity == ECS::Entity(captureCameraEntity);
-            }
-        }
-
-        scene->Update(deltaTime < 0.0f ? job.fixedDeltaTime : deltaTime);
-
-        for (auto [entity, isMain] : mainStates)
-            cameraSubset.Get(entity).isMain = isMain;
+        scene->Update(deltaTime < 0.0f ? job.fixedDeltaTime : deltaTime,
+            useCaptureCamera ? captureCameraEntity : Scene::Entity());
 
     }
 

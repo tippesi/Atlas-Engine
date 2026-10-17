@@ -530,7 +530,8 @@ void HitClosest(inout Ray ray, uint cullMask, float tMin, float tMax) {
     ray.hitDistance = tMax;
 
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, cullMask,
+    // Every candidate would be confirmed anyway, opaque rays keep the traversal in hardware
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsOpaqueEXT, cullMask,
         ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete
@@ -545,8 +546,8 @@ void HitClosest(inout Ray ray, uint cullMask, float tMin, float tMax) {
         ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
         ray.hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
 
-        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
-        int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false);
+        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
+        int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true);
 
         int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[nonuniformEXT(geometryOffset)]);
         ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
@@ -558,7 +559,7 @@ bool HitAny(inout Ray ray, uint cullMask, float tMin, float tMax) {
     ray.hitDistance = tMax;
 
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, cullMask,
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT, cullMask,
         ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete

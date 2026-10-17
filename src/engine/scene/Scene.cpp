@@ -88,7 +88,10 @@ namespace Atlas {
 
         }
 
-        void Scene::Update(float deltaTime) {
+        void Scene::Update(float deltaTime, Entity mainCameraOverride) {
+
+            AE_ASSERT((!mainCameraOverride.IsValid() || mainCameraOverride.HasComponent<CameraComponent>()) &&
+                "Main camera override needs a camera component");
 
             this->deltaTime = paused ? 0.0f : deltaTime;
             time += this->deltaTime;
@@ -371,7 +374,7 @@ namespace Atlas {
             // Do camera update while we find changed meshes
             FindChangedMeshes([&]() {
                 // Don't do anything in parallel here, we don't expect to have many cameras
-                mainCameraEntity = Entity();
+                mainCameraEntity = mainCameraOverride;
                 auto cameraSubset = entityManager.GetSubset<CameraComponent>();
                 // Attempt to find a main camera
                 for (auto entity : cameraSubset) {

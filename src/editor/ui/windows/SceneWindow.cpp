@@ -202,31 +202,10 @@ namespace Atlas::Editor::UI {
 
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
-            // Temporarily disable all scene cameras, only let editor camera be main
-            std::map<ECS::Entity, bool> cameraMainMap;
-            auto cameraSubset = scene->GetSubset<CameraComponent>();
-            for (auto entity : cameraSubset) {
-                if (entity == cameraEntity)
-                    continue;
-
-                auto& comp = cameraSubset.Get(entity);
-                cameraMainMap[entity] = comp.isMain;
-                comp.isMain = false;
-            }
-
             // Path tracing needs history while ray tracing
             scene->rayTracingWorld->includeObjectHistory = Singletons::config->pathTrace;
 
-            scene->Update(Clock::GetDelta());
-
-            // Restore all previous camera main values
-            for (auto entity : cameraSubset) {
-                if (entity == cameraEntity)
-                    continue;
-
-                auto& comp = cameraSubset.Get(entity);
-                comp.isMain = cameraMainMap[entity];
-            }
+            scene->Update(Clock::GetDelta(), cameraEntity);
         }
 
         viewportPanel.Render(refScene, isActiveWindow);

@@ -94,7 +94,8 @@ namespace Atlas {
 
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
-            void Update(float deltaTime);
+            // A valid mainCameraOverride is used as the main camera regardless of the isMain flags
+            void Update(float deltaTime, Entity mainCameraOverride = Entity());
 
             /**
              * Time in seconds that the scene was updated for. It stands still while the scene is paused,

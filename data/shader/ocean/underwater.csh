@@ -24,8 +24,8 @@ layout(set = 3, binding = 20, rgba16f) uniform image2D outputImage;
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(outputImage).x ||
-        pixel.y > imageSize(outputImage).y)
+    if (pixel.x >= imageSize(outputImage).x ||
+        pixel.y >= imageSize(outputImage).y)
         return;
 
     Light light = LightUniforms.light;

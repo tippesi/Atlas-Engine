@@ -162,6 +162,9 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
     if (attenuation == 0.0)
         return vec3(0.0);
 
+    if (dot(surface.N, surface.L) <= 0.0 && !surface.material.transmissive)
+        return vec3(0.0);
+
     float shadowFactor = GetShadowFactor(light, surface, lightType, geometryNormal, isMain);
 
     UpdateSurface(surface);

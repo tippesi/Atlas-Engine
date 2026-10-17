@@ -104,27 +104,6 @@ namespace Atlas::Capture {
 
     }
 
-    template<class T>
-    static void PatchReference(Ref<T>& reference, const json& patch) {
-
-        if (!reference)
-            reference = CreateRef<T>();
-
-        json j = *reference;
-        j.merge_patch(patch);
-        *reference = j;
-
-    }
-
-    template<class T>
-    static void PatchValue(T& value, const json& patch) {
-
-        json j = value;
-        j.merge_patch(patch);
-        value = j;
-
-    }
-
     std::string GetHitMaterial(const RaycastHit& hit) {
 
         if (hit.triangle < 0 || !hit.entity.IsValid())
@@ -427,21 +406,7 @@ namespace Atlas::Capture {
     json ExportSettings(Scene::Scene& scene) {
 
         json j;
-        j["sky"] = scene.sky;
-        j["postProcessing"] = scene.postProcessing;
-        j["wind"] = scene.wind;
-        if (scene.fog)
-            j["fog"] = *scene.fog;
-        if (scene.irradianceVolume)
-            j["irradianceVolume"] = *scene.irradianceVolume;
-        if (scene.reflection)
-            j["reflection"] = *scene.reflection;
-        if (scene.rtgi)
-            j["rtgi"] = *scene.rtgi;
-        if (scene.ssgi)
-            j["ssgi"] = *scene.ssgi;
-        if (scene.sss)
-            j["sss"] = *scene.sss;
+        Scene::SceneSettingsToJson(j, &scene);
 
         // Variants restore these settings, so the sun has to be part of them
         if (scene.HasMainLight()) {
@@ -454,6 +419,8 @@ namespace Atlas::Capture {
     }
 
     void ApplySettings(Scene::Scene& scene, const json& settings) {
+
+        json features = json::object();
 
         for (auto& [key, patch] : settings.items()) {
             if (key == "materials")
@@ -476,27 +443,18 @@ namespace Atlas::Capture {
                 if (patch.contains("intensity"))
                     light.intensity = patch["intensity"].get<float>();
             }
-            else if (key == "sky")
-                PatchValue(scene.sky, patch);
-            else if (key == "postProcessing")
-                PatchValue(scene.postProcessing, patch);
-            else if (key == "wind")
-                PatchValue(scene.wind, patch);
-            else if (key == "fog")
-                PatchReference(scene.fog, patch);
-            else if (key == "irradianceVolume")
-                PatchReference(scene.irradianceVolume, patch);
-            else if (key == "reflection")
-                PatchReference(scene.reflection, patch);
-            else if (key == "rtgi")
-                PatchReference(scene.rtgi, patch);
-            else if (key == "ssgi")
-                PatchReference(scene.ssgi, patch);
-            else if (key == "sss")
-                PatchReference(scene.sss, patch);
             else
-                throw std::runtime_error("Unknown settings key '" + key + "'. Known keys: sky, postProcessing, "
-                    "wind, fog, irradianceVolume, reflection, rtgi, ssgi, sss, materials, sun");
+                features[key] = patch;
+        }
+
+        Scene::PatchSceneSettings(features, &scene);
+
+        json applied;
+        Scene::SceneSettingsToJson(applied, &scene);
+        for (auto& [key, patch] : features.items()) {
+            if (!applied.contains(key))
+                throw std::runtime_error("Unknown settings key '" + key + "'. Known keys: the scene settings "
+                    "(sky, postProcessing, wind, fog, ...), materials and sun");
         }
 
     }
