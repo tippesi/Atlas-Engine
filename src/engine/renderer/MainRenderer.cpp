@@ -330,7 +330,7 @@ namespace Atlas {
 			// downscaleRenderer.Downscale(target, commandList);
 
 			{
-				commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+				commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBufferWithStencil);
 
 				textRenderer.Render(target, scene, commandList);
 

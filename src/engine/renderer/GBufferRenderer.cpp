@@ -118,7 +118,15 @@ namespace Atlas {
             commandList->BindImage(stencilTexture->image, stencilTexture->sampler, 3, 1);
             commandList->BindImage(roughnessMetallicAo->image, roughnessMetallicAo->sampler, 3, 2);
 
+            auto lastStencilTexture = target->GetHistoryData(RenderResolution::FULL_RES)->stencilTexture;
+            commandList->BindImage(lastStencilTexture->image, lastStencilTexture->sampler, 3, 3);
+            commandList->BindImage(rt->velocityTexture->image, rt->velocityTexture->sampler, 3, 4);
+
+            int32_t hasHistory = target->HasHistory() ? 1 : 0;
+            commandList->PushConstants("constants", &hasHistory);
+
             commandList->ImageMemoryBarrier(reactiveMaskTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(lastStencilTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

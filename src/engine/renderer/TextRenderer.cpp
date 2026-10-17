@@ -28,7 +28,7 @@ namespace Atlas {
                 
                 RenderOutlined3D(commandList, textComp.font.Get(), textComp.text, textComp.GetTransformedPosition(),
                     textComp.GetTransformedRotation(), textComp.halfSize, textComp.textColor, textComp.outlineColor,
-                    textComp.outlineFactor, textComp.textScale, target->afterLightingFrameBuffer);
+                    textComp.outlineFactor, textComp.textScale, target->afterLightingFrameBufferWithStencil);
 
             }
 

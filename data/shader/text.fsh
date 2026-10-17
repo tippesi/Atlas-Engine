@@ -1,9 +1,11 @@
 #include <globals.hsh>
+#include <common/stencil.hsh>
 
 layout (location=0) out vec4 colorFS;
 
 #ifdef TEXT_3D
 layout (location=1) out vec2 velocityFS;
+layout (location=2) out uint stencilFS;
 #endif
 
 layout(location=0) in vec3 texCoordVS;
@@ -71,6 +73,10 @@ void main() {
 #ifdef TEXT_3D
     if (colorFS.a < 0.5)
         discard;
+
+    StencilFeatures features = CreateStencilFeatures();
+    features.noTemporalAccumulation = true;
+    stencilFS = EncodeStencilFeatures(features);
 
     vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
     vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
