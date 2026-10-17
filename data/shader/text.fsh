@@ -81,8 +81,8 @@ void main() {
     vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
     vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
+    // The current position is unjittered already (see text.vsh), the last one used the jittered matrix
     ndcL -= globalData.jitterLast;
-    ndcC -= globalData.jitterCurrent;
 
     velocityFS = (ndcL - ndcC) * 0.5;
 #endif

@@ -206,7 +206,7 @@ namespace Atlas {
 
                 nextGlyph = font->GetGlyphUTF8(ctext);
 
-                xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
+                xOffset += glyph->advance + font->GetKerning(glyph->codepoint, nextGlyph->codepoint);
 
             }
 
@@ -252,7 +252,7 @@ namespace Atlas {
 
                 nextGlyph = font->GetGlyphUTF8(ctext);
 
-                xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
+                xOffset += glyph->advance + font->GetKerning(glyph->codepoint, nextGlyph->codepoint);
 
             }
 
