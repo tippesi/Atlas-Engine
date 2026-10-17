@@ -69,7 +69,7 @@ namespace Atlas::Scripting::Bindings {
     template<class Comp>
     static Comp& ResolveComponent(const ComponentRef<Comp>& ref) {
 
-        auto component = ref.entity.IsValid() ? ref.entity.TryGetComponent<Comp>() : nullptr;
+        auto component = ref.entity.IsValid() ? ref.entity.template TryGetComponent<Comp>() : nullptr;
         if (!component)
             throw std::runtime_error("The entity doesn't have the component anymore");
         return *component;

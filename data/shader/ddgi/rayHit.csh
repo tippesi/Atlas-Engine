@@ -7,6 +7,8 @@
 #define SHADOW_FILTER_1x1
 #endif
 
+#define LOCAL_STACK
+
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
 #include <../raytracer/direct.hsh>
