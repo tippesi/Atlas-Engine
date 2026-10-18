@@ -88,6 +88,21 @@ namespace Atlas {
 
         }
 
+        mat4 Scene::GetGlobalMatrix(Entity entity) {
+
+            if (!entity.IsValid())
+                return mat4(1.0f);
+
+            if (auto transformComponent = entity.TryGetComponent<TransformComponent>())
+                return transformComponent->globalMatrix;
+
+            if (auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>())
+                return hierarchyComponent->globalMatrix;
+
+            return mat4(1.0f);
+
+        }
+
         void Scene::Update(float deltaTime, Entity mainCameraOverride) {
 
             AE_ASSERT((!mainCameraOverride.IsValid() || mainCameraOverride.HasComponent<CameraComponent>()) &&
@@ -101,14 +116,14 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
-            // Motion vectors use the matrix of the last frame. Transforms that don't change in this frame
-            // (stopped or paused objects) didn't move, a change overwrites it with the matrix before the change.
+            // Motion vectors use the matrix of the last frame, SetGlobal before the update already stored it
             {
                 auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
                 JobGroup historyJobGroup{ "Transform history", JobPriority::High };
                 JobSystem::ParallelFor(historyJobGroup, int32_t(transformComponentPool.GetCount()), 64, [&](JobData&, int32_t idx) {
                     auto& transformComponent = transformComponentPool.GetByIndex(idx);
-                    transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                    if (!transformComponent.lastGlobalMatrixSet)
+                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
                     });
                 JobSystem::Wait(historyJobGroup);
             }
@@ -495,6 +510,7 @@ namespace Atlas {
                     transformComponent.changed = false;
                     transformComponent.updated = false;
                 }
+                transformComponent.lastGlobalMatrixSet = false;
                 });
 
             // After everything we need to reset transform component changed and prepare the updated for next frame

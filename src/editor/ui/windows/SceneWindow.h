@@ -88,8 +88,6 @@ namespace Atlas::Editor::UI {
 
         void PerformEntitySelection();
 
-        mat4 GetGlobalMatrix(Scene::Entity entity);
-
         std::vector<uint8_t> sceneState;
         std::vector<uint8_t> cameraState;
 

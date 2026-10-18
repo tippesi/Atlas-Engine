@@ -185,6 +185,7 @@ namespace Atlas::Scripting::Bindings {
             "DuplicateEntity", &Scene::Scene::DuplicateEntity,
             "GetEntityByName", &Scene::Scene::GetEntityByName,
             "GetParentEntity", &Scene::Scene::GetParentEntity,
+            "GetGlobalMatrix", &Scene::Scene::GetGlobalMatrix,
             "GetEntityCount", &Scene::Scene::GetEntityCount,
             "GetMainCamera", [](Scene::Scene& scene, sol::this_state state) -> sol::object {
                 // The main camera is a component as well, scripts get a reference to it
@@ -392,6 +393,7 @@ namespace Atlas::Scripting::Bindings {
             "Set", &TransformComponent::Set,
             "Decompose", &TransformComponent::Decompose,
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
+            "SetGlobal", &TransformComponent::SetGlobal,
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix,

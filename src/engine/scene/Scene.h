@@ -86,6 +86,9 @@ namespace Atlas {
 
             Entity GetParentEntity(Entity entity);
 
+            // World matrix of the transform, entities without one use the matrix of their hierarchy
+            mat4 GetGlobalMatrix(Entity entity);
+
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
