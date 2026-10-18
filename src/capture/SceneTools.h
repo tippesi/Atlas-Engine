@@ -35,6 +35,9 @@ namespace Atlas::Capture {
     // Material path of the hit triangle, or the submesh name if it has no material; empty if unknown
     std::string GetHitMaterial(const RaycastHit& hit);
 
+    // Label of the hit entity, or the kind of the hit if no entity was hit (e.g. terrain)
+    std::string GetHitLabel(const RaycastHit& hit);
+
     // Converts a pixel of a camera described by a job camera spec into a world space ray (origin, direction)
     using PickRayFunction = std::function<std::pair<vec3, vec3>(const json& camera, vec2 pixel)>;
 
@@ -77,11 +80,14 @@ namespace Atlas::Capture {
 
     void ApplySettings(Scene::Scene& scene, const json& settings);
 
+    // Merge patch with the fields of the .aematerial files, null removes a map
+    void PatchMaterial(Material& material, const json& patch);
+
     // Patches all loaded materials whose path matches a pattern, e.g. { "kingdom/*_01_A*": { "metalness": 0.2 } }
     // The fields are the ones of the .aematerial files. Returns the number of patched materials
     int32_t ApplyMaterialPatches(const json& patches);
 
-    // Runs a list of spatial queries, see README.md for the available types
-    json RunQueries(Scene::Scene& scene, const json& queries, const PickRayFunction& pickRay = {});
+    // Runs a list of spatial queries, maps and routes are written into the output directory
+    json RunQueries(Scene::Scene& scene, const json& queries, const PickRayFunction& pickRay = {}, const fs::path& outputDirectory = {});
 
 }

@@ -28,6 +28,10 @@ namespace Atlas::Capture {
 
         void Init(Ref<Renderer::MainRenderer> mainRenderer, ivec2 resolution);
 
+        // Changes the resolution of an initialized renderer, the render target is resized such that
+        // renderers which keep state per target (e.g. FSR2) adapt to it
+        void Resize(ivec2 resolution);
+
         void Render(const Ref<Scene::Scene>& scene, const std::vector<std::string>& passes,
             std::span<Ref<Renderer::PrimitiveBatch>> primitiveBatches = {});
 
@@ -46,6 +50,11 @@ namespace Atlas::Capture {
         static const std::vector<std::string>& GetPassNames();
 
         const Ref<Viewport>& GetViewport() const { return viewport; }
+
+        // Scaling factor of the render target, the output keeps the resolution
+        void SetRenderScale(float renderScale);
+
+        float GetRenderScale() const;
 
         // Temporal effects start over, e.g. when switching to another camera while the scene is paused
         void InvalidateHistory() { renderTarget->InvalidateHistory(); }

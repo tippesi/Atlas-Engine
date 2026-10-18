@@ -126,8 +126,7 @@ namespace Atlas::Capture {
             auto glyphWidth = x1 - x0, glyphHeight = y1 - y0;
             if (glyphWidth > 0 && glyphHeight > 0) {
                 std::vector<uint8_t> bitmap(size_t(glyphWidth) * size_t(glyphHeight));
-                stbtt_MakeCodepointBitmap(
-                    &font.info, bitmap.data(), glyphWidth, glyphHeight, glyphWidth, scale, scale, codepoint);
+                stbtt_MakeCodepointBitmap(&font.info, bitmap.data(), glyphWidth, glyphHeight, glyphWidth, scale, scale, codepoint);
 
                 for (int32_t gy = 0; gy < glyphHeight; gy++) {
                     for (int32_t gx = 0; gx < glyphWidth; gx++) {
@@ -144,8 +143,7 @@ namespace Atlas::Capture {
 
             cursor += float(advance) * scale;
             if (i + 1 < text.size())
-                cursor +=
-                    scale * float(stbtt_GetCodepointKernAdvance(&font.info, codepoint, int32_t(uint8_t(text[i + 1]))));
+                cursor += scale * float(stbtt_GetCodepointKernAdvance(&font.info, codepoint, int32_t(uint8_t(text[i + 1]))));
         }
 
         return int32_t(cursor) - x;

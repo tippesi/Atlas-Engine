@@ -35,7 +35,16 @@ namespace Atlas::Capture {
 
     vec3 ToVec3(const json& j, vec3 defaultValue = vec3(0.0f));
 
+    // Horizontal position from [x, z] or [x, y, z]
+    vec2 ToVec2(const json& j);
+
     json FromVec3(vec3 v);
+
+    // Rounds to a number of decimals to keep the JSON output readable
+    double Round(double value, int32_t decimals = 3);
+
+    // Unit vector for angles in degrees, azimuth 0 points towards +Z and 90 towards +X
+    vec3 GetDirection(float azimuth, float elevation);
 
     std::string FormatFloat(float value, int32_t precision = 3);
 

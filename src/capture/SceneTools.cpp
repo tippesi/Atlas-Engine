@@ -1,4 +1,6 @@
 #include "SceneTools.h"
+#include "Image.h"
+#include "TerrainTools.h"
 
 #include "scene/SceneSerializer.h"
 #include "scene/components/ComponentSerializer.h"
@@ -9,6 +11,7 @@
 #include "resource/ResourceManager.h"
 #include "common/MathHelper.h"
 
+#include <cfloat>
 #include <optional>
 #include <set>
 #include <stdexcept>
@@ -22,11 +25,10 @@ namespace Atlas::Capture {
         if (!hit.valid)
             return json{ { "hit", false } };
 
-        auto material = GetHitMaterial(hit);
         return json{
-            { "material", material },
+            { "material", GetHitMaterial(hit) },
             { "hit", true },
-            { "distance", std::round(hit.distance * 1000.0f) / 1000.0f },
+            { "distance", Round(hit.distance) },
             { "position", FromVec3(hit.position) },
             { "normal", FromVec3(hit.normal) },
             { "kind", hit.kind },
@@ -37,8 +39,20 @@ namespace Atlas::Capture {
 
     static json BoundsToJson(const Volume::AABB& aabb) {
 
-        return json{ { "min", FromVec3(aabb.min) }, { "max", FromVec3(aabb.max) },
-            { "size", FromVec3(aabb.GetSize()) } };
+        return json{ { "min", FromVec3(aabb.min) }, { "max", FromVec3(aabb.max) }, { "size", FromVec3(aabb.GetSize()) } };
+
+    }
+
+    static EntitySet GetIgnoredEntities(Scene::Scene& scene, const json& query) {
+
+        EntitySet ignored;
+        if (!query.contains("ignore"))
+            return ignored;
+
+        for (auto entity : FindEntities(scene, query["ignore"].get<std::vector<std::string>>()))
+            CollectHierarchy(entity, ignored);
+
+        return ignored;
 
     }
 
@@ -123,6 +137,12 @@ namespace Atlas::Capture {
         }
 
         return "";
+
+    }
+
+    std::string GetHitLabel(const RaycastHit& hit) {
+
+        return hit.entity.IsValid() ? GetEntityLabel(hit.entity) : hit.kind;
 
     }
 
@@ -250,9 +270,8 @@ namespace Atlas::Capture {
 
         if (scene.terrain.IsLoaded()) {
             auto& terrain = scene.terrain;
-            bounds.Grow(vec3(terrain->translation.x, terrain->translation.y, terrain->translation.z));
-            bounds.Grow(vec3(terrain->translation.x + terrain->sideLength,
-                terrain->translation.y + terrain->heightScale, terrain->translation.z + terrain->sideLength));
+            bounds.Grow(terrain->translation);
+            bounds.Grow(terrain->translation + vec3(terrain->sideLength, terrain->heightScale, terrain->sideLength));
             found = true;
         }
 
@@ -368,7 +387,7 @@ namespace Atlas::Capture {
                 e["localPosition"] = FromVec3(local.translation);
                 e["localRotationDegrees"] = FromVec3(glm::degrees(local.rotation));
                 e["localScale"] = FromVec3(local.scale);
-                e["worldYawDegrees"] = std::round(glm::degrees(GetEntityYaw(entity)) * 100.0f) / 100.0f;
+                e["worldYawDegrees"] = Round(glm::degrees(GetEntityYaw(entity)), 2);
                 e["static"] = transform->IsStatic();
             }
 
@@ -381,16 +400,13 @@ namespace Atlas::Capture {
                 e["mesh"] = mesh->mesh.IsValid() ? mesh->mesh.GetResource()->path : "";
                 e["visible"] = mesh->visible;
             }
-            if (auto camera = entity.TryGetComponent<CameraComponent>()) {
+            if (auto camera = entity.TryGetComponent<CameraComponent>())
                 e["camera"] = { { "isMain", camera->isMain }, { "fov", camera->fieldOfView },
                     { "location", FromVec3(camera->GetLocation()) } };
-            }
-            if (auto light = entity.TryGetComponent<LightComponent>()) {
+            if (auto light = entity.TryGetComponent<LightComponent>())
                 e["light"] = { { "type", int32_t(light->type) }, { "isMain", light->isMain } };
-            }
-            if (auto script = entity.TryGetComponent<LuaScriptComponent>()) {
+            if (auto script = entity.TryGetComponent<LuaScriptComponent>())
                 e["script"] = script->script.IsValid() ? script->script.GetResource()->path : "";
-            }
 
             if (!detail.empty() && MatchAnyPattern(detail, name))
                 e["detail"] = ComponentDetails(entity);
@@ -423,8 +439,9 @@ namespace Atlas::Capture {
         json features = json::object();
 
         for (auto& [key, patch] : settings.items()) {
-            if (key == "materials")
+            if (key == "materials") {
                 ApplyMaterialPatches(patch);
+            }
             else if (key == "sun") {
                 if (!scene.HasMainLight())
                     throw std::runtime_error("The scene has no main directional light for the sun settings");
@@ -432,19 +449,18 @@ namespace Atlas::Capture {
                 auto& light = scene.GetMainLight();
                 if (patch.contains("direction"))
                     light.properties.directional.direction = glm::normalize(ToVec3(patch["direction"]));
-                if (patch.contains("elevation") || patch.contains("azimuth")) {
-                    // Light direction points from the sun towards the scene
-                    auto el = glm::radians(patch.value("elevation", 45.0f));
-                    auto az = glm::radians(patch.value("azimuth", 0.0f));
-                    light.properties.directional.direction = -vec3(cos(el) * sin(az), sin(el), cos(el) * cos(az));
-                }
+                // Light direction points from the sun towards the scene
+                if (patch.contains("elevation") || patch.contains("azimuth"))
+                    light.properties.directional.direction =
+                        -GetDirection(patch.value("azimuth", 0.0f), patch.value("elevation", 45.0f));
                 if (patch.contains("color"))
                     light.color = ToVec3(patch["color"]);
                 if (patch.contains("intensity"))
                     light.intensity = patch["intensity"].get<float>();
             }
-            else
+            else {
                 features[key] = patch;
+            }
         }
 
         Scene::PatchSceneSettings(features, &scene);
@@ -456,6 +472,32 @@ namespace Atlas::Capture {
                 throw std::runtime_error("Unknown settings key '" + key + "'. Known keys: the scene settings "
                     "(sky, postProcessing, wind, fog, ...), materials and sun");
         }
+
+    }
+
+    void PatchMaterial(Material& material, const json& patch) {
+
+        // Round trip through the engine serializer, so the keys are the ones of the material files
+        json j = material;
+        j.merge_patch(patch);
+
+        // from_json only sets maps which are present, removed maps (null in the patch) are reset here
+        auto resetRemoved = [&](const char* key, ResourceHandle<Texture::Texture2D>& map) {
+
+            if (patch.contains(key) && patch[key].is_null())
+                map = ResourceHandle<Texture::Texture2D>();
+
+        };
+        resetRemoved("baseColorMapPath", material.baseColorMap);
+        resetRemoved("opacityMapPath", material.opacityMap);
+        resetRemoved("normalMapPath", material.normalMap);
+        resetRemoved("roughnessMapPath", material.roughnessMap);
+        resetRemoved("metalnessMapPath", material.metalnessMap);
+        resetRemoved("aoMapPath", material.aoMap);
+        resetRemoved("displacementMapPath", material.displacementMap);
+        resetRemoved("emissiveMapPath", material.emissiveMap);
+
+        from_json(j, material);
 
     }
 
@@ -471,28 +513,7 @@ namespace Atlas::Capture {
                 if (!MatchPattern(pattern, path))
                     continue;
 
-                // Round trip through the engine serializer, so the keys are the ones of the material files
-                auto& data = *material.Get();
-                json j = data;
-                j.merge_patch(patch);
-
-                // from_json only sets maps which are present, removed maps (null in the patch) are reset here
-                auto resetRemoved = [&](const char* key, ResourceHandle<Texture::Texture2D>& map) {
-
-                    if (patch.contains(key) && patch[key].is_null())
-                        map = ResourceHandle<Texture::Texture2D>();
-
-                };
-                resetRemoved("baseColorMapPath", data.baseColorMap);
-                resetRemoved("opacityMapPath", data.opacityMap);
-                resetRemoved("normalMapPath", data.normalMap);
-                resetRemoved("roughnessMapPath", data.roughnessMap);
-                resetRemoved("metalnessMapPath", data.metalnessMap);
-                resetRemoved("aoMapPath", data.aoMap);
-                resetRemoved("displacementMapPath", data.displacementMap);
-                resetRemoved("emissiveMapPath", data.emissiveMap);
-
-                from_json(j, data);
+                PatchMaterial(*material.Get(), patch);
                 count++;
             }
         }
@@ -504,7 +525,7 @@ namespace Atlas::Capture {
 
     }
 
-    json RunQueries(Scene::Scene& scene, const json& queries, const PickRayFunction& pickRay) {
+    json RunQueries(Scene::Scene& scene, const json& queries, const PickRayFunction& pickRay, const fs::path& outputDirectory) {
 
         json results = json::array();
 
@@ -516,10 +537,7 @@ namespace Atlas::Capture {
                 auto type = query.at("type").get<std::string>();
 
                 if (type == "raycast") {
-                    EntitySet ignored;
-                    if (query.contains("ignore"))
-                        for (auto entity : FindEntities(scene, query["ignore"].get<std::vector<std::string>>()))
-                            CollectHierarchy(entity, ignored);
+                    auto ignored = GetIgnoredEntities(scene, query);
 
                     // Physics bodies can be included explicitly, by default only visible geometry is hit
                     Scene::SceneQueryComponents components = VisualComponents;
@@ -556,7 +574,7 @@ namespace Atlas::Capture {
                         match["hasMesh"] = hasMesh;
                         match["groundBelow"] = HitToJson(ground);
                         if (ground.valid)
-                            match["gapToGround"] = std::round((bounds.min.y - ground.position.y) * 1000.0f) / 1000.0f;
+                            match["gapToGround"] = Round(bounds.min.y - ground.position.y);
                         matches.push_back(match);
                     }
                     result["result"] = matches;
@@ -592,12 +610,9 @@ namespace Atlas::Capture {
                     auto distance = query.value("distance", 100.0f);
                     auto samples = std::max(query.value("samples", 5), 2);
 
-                    EntitySet ignored;
+                    auto ignored = GetIgnoredEntities(scene, query);
                     for (auto entity : entities)
                         CollectHierarchy(entity, ignored);
-                    if (query.contains("ignore"))
-                        for (auto entity : FindEntities(scene, query["ignore"].get<std::vector<std::string>>()))
-                            CollectHierarchy(entity, ignored);
 
                     auto bounds = GetBounds(entities);
                     // Shrink slightly so rays don't start inside touching neighbors
@@ -630,7 +645,7 @@ namespace Atlas::Capture {
                         }
                     }
 
-                    result["result"] = { { "clearance", std::round(minClearance * 1000.0f) / 1000.0f },
+                    result["result"] = { { "clearance", Round(minClearance) },
                         { "blocked", !blocker.is_null() }, { "blocker", blocker }, { "bounds", BoundsToJson(bounds) } };
                 }
                 else if (type == "pick") {
@@ -640,8 +655,7 @@ namespace Atlas::Capture {
 
                     json hits = json::array();
                     for (const auto& pixel : query.at("pixels")) {
-                        auto [origin, direction] =
-                            pickRay(query.at("camera"), vec2(pixel.at(0).get<float>(), pixel.at(1).get<float>()));
+                        auto [origin, direction] = pickRay(query.at("camera"), vec2(pixel.at(0).get<float>(), pixel.at(1).get<float>()));
                         auto hit = Raycast(scene, origin, direction, 4096.0f);
                         auto entry = HitToJson(hit);
                         entry["pixel"] = pixel;
@@ -655,16 +669,15 @@ namespace Atlas::Capture {
                     auto spacing = std::max(query.value("spacing", 0.5f), 0.05f);
                     auto maxStep = query.value("maxStep", 0.3f);
                     auto radius = query.value("radius", 0.4f);
+                    // Points given as x/z start at the terrain height with "snap": true
+                    auto snap = query.value("snap", false);
                     std::vector<vec3> points;
                     for (const auto& point : query.at("points"))
-                        points.push_back(ToVec3(point));
+                        points.push_back(point.size() == 2 ? vec3(point[0].get<float>(), 0.0f, point[1].get<float>()) : ToVec3(point));
                     if (points.size() < 2)
                         throw std::runtime_error("A path needs at least two points");
 
-                    EntitySet ignored;
-                    if (query.contains("ignore"))
-                        for (auto entity : FindEntities(scene, query["ignore"].get<std::vector<std::string>>()))
-                            CollectHierarchy(entity, ignored);
+                    auto ignored = GetIgnoredEntities(scene, query);
 
                     json issues = json::array();
                     json samples = json::array();
@@ -676,8 +689,12 @@ namespace Atlas::Capture {
                         auto count = std::max(int32_t(std::ceil(glm::length(vec2(segment.x, segment.z)) / spacing)), 1);
                         for (int32_t k = (i == 0 ? 0 : 1); k <= count; k++) {
                             auto guess = points[i] + segment * (float(k) / float(count));
-                            auto ground = Raycast(scene, guess + vec3(0.0f, 1.5f, 0.0f), vec3(0.0f, -1.0f, 0.0f), 4.0f,
-                                ignored, CollisionComponents);
+                            if (snap) {
+                                auto sample = SampleTerrain(GetCompleteTerrain(scene), vec2(guess.x, guess.z));
+                                if (sample.valid && !sample.hole)
+                                    guess.y = sample.height;
+                            }
+                            auto ground = Raycast(scene, guess + vec3(0.0f, 1.5f, 0.0f), vec3(0.0f, -1.0f, 0.0f), 4.0f, ignored, CollisionComponents);
                             if (!ground.valid) {
                                 issues.push_back({ { "at", FromVec3(guess) },
                                     { "issue", "no ground within 1.5 m above and 2.5 m below" } });
@@ -685,20 +702,15 @@ namespace Atlas::Capture {
                             }
 
                             auto position = ground.position;
-                            samples.push_back({ { "position", FromVec3(position) },
-                                { "on", ground.entity.IsValid() ? GetEntityLabel(ground.entity) : ground.kind } });
+                            samples.push_back({ { "position", FromVec3(position) }, { "on", GetHitLabel(ground) } });
 
                             if (last) {
                                 auto step = position.y - last->y;
                                 if (std::abs(step) > maxStep)
                                     issues.push_back({ { "at", FromVec3(position) },
-                                        { "issue",
-                                            "step of " + FormatFloat(step, 2) + " m onto " +
-                                                (ground.entity.IsValid() ? GetEntityLabel(ground.entity) :
-                                                                           ground.kind) } });
+                                        { "issue", "step of " + FormatFloat(step, 2) + " m onto " + GetHitLabel(ground) } });
 
-                                // Obstacles between the previous and this sample, at knee and chest height and at the
-                                // sides
+                                // Obstacles between the previous and this sample, at knee and chest height and at the sides
                                 auto direction = position - *last;
                                 direction.y = 0.0f;
                                 auto distance = glm::length(direction);
@@ -708,15 +720,10 @@ namespace Atlas::Capture {
                                     for (auto height : { 0.5f, 1.3f }) {
                                         for (auto offset : { vec3(0.0f), side, -side }) {
                                             auto origin = *last + vec3(0.0f, height, 0.0f) + offset;
-                                            auto hit = Raycast(
-                                                scene, origin, direction, distance, ignored, CollisionComponents);
+                                            auto hit = Raycast(scene, origin, direction, distance, ignored, CollisionComponents);
                                             if (hit.valid)
                                                 issues.push_back({ { "at", FromVec3(hit.position) },
-                                                    { "issue",
-                                                        "blocked by " +
-                                                            (hit.entity.IsValid() ? GetEntityLabel(hit.entity) :
-                                                                                    hit.kind) +
-                                                            " (" + hit.kind + ")" } });
+                                                    { "issue", "blocked by " + GetHitLabel(hit) + " (" + hit.kind + ")" } });
                                         }
                                     }
                                 }
@@ -729,17 +736,113 @@ namespace Atlas::Capture {
                     // Neighboring samples often report the same obstacle, keep the first occurrence per description
                     json uniqueIssues = json::array();
                     std::set<std::string> seen;
-                    for (const auto& issue : issues) {
+                    for (const auto& issue : issues)
                         if (seen.insert(issue["issue"].get<std::string>()).second)
                             uniqueIssues.push_back(issue);
-                    }
 
                     result["result"] = { { "walkable", uniqueIssues.empty() }, { "length", length },
                         { "issues", uniqueIssues }, { "samples", samples } };
                 }
+                else if (type == "terrain") {
+                    result["result"] = DescribeTerrain(GetCompleteTerrain(scene));
+                }
+                else if (type == "terrainSample") {
+                    // Points or a grid ("min", "max", "step") of x/z positions
+                    const auto& terrain = GetCompleteTerrain(scene);
+                    std::vector<vec2> points;
+                    if (query.contains("points")) {
+                        for (const auto& point : query["points"])
+                            points.emplace_back(point.at(0).get<float>(), point.at(point.size() == 3 ? 2 : 1).get<float>());
+                    }
+                    else {
+                        auto min = vec2(query.at("min").at(0).get<float>(), query.at("min").at(1).get<float>());
+                        auto max = vec2(query.at("max").at(0).get<float>(), query.at("max").at(1).get<float>());
+                        auto step = query.at("step").get<float>();
+                        if (step <= 0.0f)
+                            throw std::runtime_error("terrainSample: the step has to be positive");
+                        for (auto z = min.y; z <= max.y + 1e-3f; z += step)
+                            for (auto x = min.x; x <= max.x + 1e-3f; x += step)
+                                points.emplace_back(x, z);
+                    }
+
+                    json samples = json::array();
+                    for (auto point : points) {
+                        auto sample = SampleTerrain(terrain, point);
+                        json entry = { { "x", point.x }, { "z", point.y }, { "valid", sample.valid } };
+                        if (sample.valid) {
+                            entry["hole"] = sample.hole;
+                            entry["material"] = sample.material;
+                            if (!sample.hole) {
+                                entry["height"] = Round(sample.height);
+                                entry["slope"] = Round(sample.slopeDegrees, 1);
+                            }
+                        }
+                        samples.push_back(entry);
+                    }
+                    result["result"] = samples;
+                }
+                else if (type == "terrainMap") {
+                    if (outputDirectory.empty())
+                        throw std::runtime_error("terrainMap needs an output directory");
+                    auto file = query.value("file", std::string("terrain_map.png"));
+                    auto image = RenderTerrainMap(scene, query);
+                    WritePng(image, outputDirectory / file);
+                    result["result"] = { { "file", file }, { "width", image->width }, { "height", image->height } };
+                }
+                else if (type == "route") {
+                    result["result"] = FindRoute(scene, query, outputDirectory);
+                }
+                else if (type == "buried") {
+                    // Meshes of a hierarchy which reach above the terrain (or lie below a hole), e.g. to check
+                    // that a level placed under the terrain only shows at its entrance
+                    const auto& terrain = GetCompleteTerrain(scene);
+                    auto margin = query.value("margin", 0.0f);
+                    EntitySet members;
+                    for (auto entity : FindEntities(scene, query.at("entity").get<std::string>()))
+                        CollectHierarchy(entity, members);
+
+                    json exposed = json::array();
+                    int32_t meshCount = 0;
+                    for (auto member : members) {
+                        Scene::Entity entity = { member, &scene.entityManager };
+                        auto mesh = entity.TryGetComponent<MeshComponent>();
+                        if (!mesh || !mesh->visible || !mesh->mesh.IsLoaded())
+                            continue;
+                        meshCount++;
+
+                        const auto& aabb = mesh->aabb;
+                        float lowest = FLT_MAX, worst = -FLT_MAX;
+                        bool underHole = false;
+                        for (auto fraction : { vec2(0.5f), vec2(0.1f), vec2(0.9f), vec2(0.1f, 0.9f), vec2(0.9f, 0.1f) }) {
+                            auto point = glm::mix(vec2(aabb.min.x, aabb.min.z), vec2(aabb.max.x, aabb.max.z), fraction);
+                            auto sample = SampleTerrain(terrain, point);
+                            if (!sample.valid)
+                                continue;
+                            if (sample.hole) {
+                                underHole = true;
+                                continue;
+                            }
+                            lowest = std::min(lowest, sample.height);
+                            worst = std::max(worst, aabb.max.y - sample.height);
+                        }
+                        if (underHole || worst > -margin)
+                            exposed.push_back({ { "entity", GetEntityLabel(entity) }, { "above", worst }, { "underHole", underHole },
+                                { "top", aabb.max.y }, { "terrain", lowest }, { "center", FromVec3(aabb.GetCenter()) } });
+                    }
+
+                    std::sort(exposed.begin(), exposed.end(), [](const json& a, const json& b) {
+
+                        return a["above"].get<float>() > b["above"].get<float>();
+
+                    });
+                    auto exposedCount = exposed.size();
+                    if (exposed.size() > 200)
+                        exposed.erase(exposed.begin() + 200, exposed.end());
+                    result["result"] = { { "meshes", meshCount }, { "exposedCount", exposedCount }, { "exposed", exposed } };
+                }
                 else {
-                    throw std::runtime_error(
-                        "Unknown query type '" + type + "' (raycast, ground, entity, around, clearance, path, pick)");
+                    throw std::runtime_error("Unknown query type '" + type +
+                        "' (raycast, ground, entity, around, clearance, path, pick, terrain, terrainSample, terrainMap, route, buried)");
                 }
             }
             catch (const std::exception& e) {

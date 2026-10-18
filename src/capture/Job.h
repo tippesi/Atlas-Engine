@@ -33,6 +33,9 @@ namespace Atlas::Capture {
         // Offset of the follow camera relative to the followed entity (in its local space if local = true)
         vec3 offset = vec3(0.0f, 2.0f, -6.0f);
 
+        // Manual cameras: the heights of the position and the target are relative to the ground below them
+        bool groundRelative = false;
+
         float fieldOfView = 60.0f;
         float nearPlane = 0.1f;
         float farPlane = 2000.0f;
@@ -54,6 +57,8 @@ namespace Atlas::Capture {
 
         std::string name;
         json settings = json::object();
+        // Overrides the render scale of the job
+        std::optional<float> renderScale;
 
     };
 
@@ -163,6 +168,10 @@ namespace Atlas::Capture {
         bool overwrite = false;
         // Saves the scene even if no entity changed, e.g. to store settings or data migrated while loading
         bool saveUnchanged = false;
+        // Applies the operations and runs the checks and shots on the edited scene, but saves nothing
+        bool dryRun = false;
+        // Queries on the edited scene, written to edit_queries.json
+        json queries = json::array();
 
     };
 
@@ -173,6 +182,8 @@ namespace Atlas::Capture {
         fs::path outputDirectory;
 
         ivec2 resolution = ivec2(1280, 720);
+        // Scaling factor of the render target relative to the resolution, upscaled by FSR2 or TAA. Unset keeps the engine default
+        std::optional<float> renderScale;
         int32_t settleFrames = 60;
         float loadTimeout = 300.0f;
         float fixedDeltaTime = 1.0f / 60.0f;

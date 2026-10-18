@@ -23,8 +23,7 @@ namespace Atlas::Capture {
 
     // Draws byte-wise text with font/roboto.ttf from the asset directory and returns its width
     // The engine font stores glyph textures on the GPU; CPU bitmaps are rasterized here with stb_truetype
-    int32_t DrawText(
-        Image& image, int32_t x, int32_t y, const std::string& text, float pixelHeight, u8vec4 color = u8vec4(255));
+    int32_t DrawText(Image& image, int32_t x, int32_t y, const std::string& text, float pixelHeight, u8vec4 color = u8vec4(255));
 
     // Grid of labeled images with an optional title
     Ref<Image> ComposeSheet(const std::vector<Ref<Image>>& images, const std::vector<std::string>& labels,

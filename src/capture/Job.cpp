@@ -60,6 +60,16 @@ namespace Atlas::Capture {
 
     }
 
+    static float ParseRenderScale(const json& j) {
+
+        auto renderScale = j.get<float>();
+        if (renderScale <= 0.0f || renderScale > 1.0f)
+            throw std::runtime_error("renderScale must be in (0, 1]");
+
+        return renderScale;
+
+    }
+
     static ShotSpec ParseShot(const json& j, size_t index) {
 
         CheckKeys(j, { "name", "camera", "views", "passes", "settleFrames" }, "shot");
@@ -119,7 +129,7 @@ namespace Atlas::Capture {
 
         CheckKeys(j,
             { "mode", "position", "lookAt", "yaw", "pitch", "entity", "view", "azimuth", "elevation", "local",
-                "distance", "padding", "avoidOcclusion", "dynamic", "offset", "fov", "near", "far" },
+                "distance", "padding", "avoidOcclusion", "dynamic", "offset", "fov", "near", "far", "groundRelative" },
             "camera");
 
         // Infer the mode from the given keys if it isn't specified
@@ -156,6 +166,7 @@ namespace Atlas::Capture {
         camera.fieldOfView = j.value("fov", camera.fieldOfView);
         camera.nearPlane = j.value("near", camera.nearPlane);
         camera.farPlane = j.value("far", camera.farPlane);
+        camera.groundRelative = j.value("groundRelative", camera.groundRelative);
 
         if ((camera.mode == "focus" || camera.mode == "follow") && camera.entity.empty())
             throw std::runtime_error("Camera mode '" + camera.mode + "' requires an entity pattern");
@@ -167,8 +178,8 @@ namespace Atlas::Capture {
     Job ParseJob(const json& j, const fs::path& baseDirectory) {
 
         CheckKeys(j,
-            { "name", "scene", "out", "resolution", "settleFrames", "loadTimeout", "fixedDt", "showWindow", "settings",
-                "variants", "inspect", "queries", "edit", "shots", "play", "duration", "timeline", "strips", "observer",
+            { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow",
+                "settings", "variants", "inspect", "queries", "edit", "shots", "play", "duration", "timeline", "strips", "observer",
                 "scripts", "track", "overlay", "checks", "profile", "$schema", "description" },
             "job");
 
@@ -186,8 +197,7 @@ namespace Atlas::Capture {
         }
         else {
             // bin/<build type>/../capture/<name>, the bin directory is ignored by git
-            job.outputDirectory =
-                (fs::current_path() / ".." / "capture" / SanitizeFileName(job.name)).lexically_normal();
+            job.outputDirectory = (fs::current_path() / ".." / "capture" / SanitizeFileName(job.name)).lexically_normal();
         }
 
         if (j.contains("resolution")) {
@@ -196,6 +206,9 @@ namespace Atlas::Capture {
             if (job.resolution.x <= 0 || job.resolution.y <= 0)
                 throw std::runtime_error("Invalid resolution");
         }
+
+        if (j.contains("renderScale"))
+            job.renderScale = ParseRenderScale(j["renderScale"]);
 
         job.settleFrames = j.value("settleFrames", job.settleFrames);
         job.loadTimeout = j.value("loadTimeout", job.loadTimeout);
@@ -210,9 +223,13 @@ namespace Atlas::Capture {
 
         if (j.contains("variants")) {
             for (const auto& variant : j["variants"]) {
-                CheckKeys(variant, { "name", "settings" }, "variant");
-                job.variants.push_back(
-                    { variant.at("name").get<std::string>(), variant.value("settings", json::object()) });
+                CheckKeys(variant, { "name", "settings", "renderScale" }, "variant");
+                VariantSpec spec;
+                spec.name = variant.at("name").get<std::string>();
+                spec.settings = variant.value("settings", json::object());
+                if (variant.contains("renderScale"))
+                    spec.renderScale = ParseRenderScale(variant["renderScale"]);
+                job.variants.push_back(spec);
             }
         }
 
@@ -239,12 +256,14 @@ namespace Atlas::Capture {
 
         if (j.contains("edit")) {
             auto& edit = j["edit"];
-            CheckKeys(edit, { "operations", "output", "overwrite", "saveUnchanged" }, "edit");
+            CheckKeys(edit, { "operations", "output", "overwrite", "saveUnchanged", "dryRun", "queries" }, "edit");
             EditSpec spec;
             spec.operations = edit.value("operations", json::array());
             spec.output = edit.contains("output") ? ToAssetPath(edit["output"].get<std::string>()) : "";
             spec.overwrite = edit.value("overwrite", false);
             spec.saveUnchanged = edit.value("saveUnchanged", false);
+            spec.dryRun = edit.value("dryRun", false);
+            spec.queries = edit.value("queries", json::array());
             job.edit = spec;
         }
 
@@ -271,8 +290,7 @@ namespace Atlas::Capture {
                     }
                 }
                 if (spec.type.empty())
-                    throw std::runtime_error(
-                        "Timeline event without a known type (capture, key, look, teleport, log, expect, resetScripts, pause): " +
+                    throw std::runtime_error("Timeline event without a known type (capture, key, look, teleport, log, expect, resetScripts, pause): " +
                         event.dump());
                 if (spec.type == "pause" && !event["pause"].is_boolean())
                     throw std::runtime_error("A pause event needs true or false: " + event.dump());
@@ -282,8 +300,7 @@ namespace Atlas::Capture {
                     bool isLog = when.is_object() && when.contains("log") && when["log"].is_string();
                     bool isProperty = when.is_object() && when.contains("entity") && when.contains("property");
                     if (!isLog && !isProperty)
-                        throw std::runtime_error(
-                            "A when condition needs a log text or entity, property, op and value " "like an expectation: " +
+                        throw std::runtime_error("A when condition needs a log text or entity, property, op and value like an expectation: " +
                             event.dump());
                     spec.when = when;
                     spec.delay = event.value("delay", 0.0f);
@@ -372,8 +389,7 @@ namespace Atlas::Capture {
             auto& overlay = j["overlay"];
             OverlaySpec spec;
             if (overlay.is_object()) {
-                CheckKeys(
-                    overlay, { "bounds", "markers", "axes", "players", "trails", "queries", "depthTest" }, "overlay");
+                CheckKeys(overlay, { "bounds", "markers", "axes", "players", "trails", "queries", "depthTest" }, "overlay");
                 if (overlay.contains("bounds"))
                     spec.bounds = ToStringList(overlay["bounds"]);
                 spec.markers = overlay.value("markers", json::array());
@@ -411,13 +427,12 @@ namespace Atlas::Capture {
         if (!job.play && (!job.timeline.empty() || !job.strips.empty() || !job.scripts.empty()))
             throw std::runtime_error("timeline, strips and scripts require play = true");
         if (job.play && job.edit)
-            throw std::runtime_error(
-                "edit and play can't be combined, scripts would create runtime entities " "that end up in the saved scene. Run a second job on the edited scene instead");
+            throw std::runtime_error("edit and play can't be combined, scripts would create runtime entities that end up in the saved scene. "
+                "Run a second job on the edited scene instead");
 
         // Without any explicit work, take a picture with the scene camera
-        if (job.shots.empty() && !job.play && !job.inspect && job.queries.empty() && !job.edit) {
+        if (job.shots.empty() && !job.play && !job.inspect && job.queries.empty() && !job.edit)
             job.shots.push_back(ShotSpec { .name = "frame" });
-        }
 
         return job;
 
@@ -449,9 +464,8 @@ namespace Atlas::Capture {
 
             };
 
-            if (arg == "--help" || arg == "-h") {
+            if (arg == "--help" || arg == "-h")
                 throw std::runtime_error(GetUsage());
-            }
             else if (arg == "--job" || (!arg.starts_with("--") && arg.ends_with(".json"))) {
                 auto path = ResolveUserPath(arg == "--job" ? next() : arg);
                 std::ifstream stream(path);
@@ -475,9 +489,8 @@ namespace Atlas::Capture {
             }
             else if (arg == "--scene")
                 j["scene"] = next();
-            else if (arg == "--out") {
+            else if (arg == "--out")
                 j["out"] = ResolveUserPath(next()).string();
-            }
             else if (arg == "--name")
                 j["name"] = next();
             else if (arg == "--resolution") {
@@ -487,6 +500,8 @@ namespace Atlas::Capture {
                     throw std::runtime_error("--resolution expects WIDTHxHEIGHT");
                 j["resolution"] = json::array({ std::stoi(parts[0]), std::stoi(parts[1]) });
             }
+            else if (arg == "--render-scale")
+                j["renderScale"] = std::stof(next());
             else if (arg == "--settle")
                 j["settleFrames"] = std::stoi(next());
             else if (arg == "--timeout")
@@ -505,9 +520,8 @@ namespace Atlas::Capture {
                 j["play"] = true;
                 j["duration"] = std::stof(next());
             }
-            else if (arg == "--camera") {
+            else if (arg == "--camera")
                 cliCamera["position"] = ParseVec3Argument(next(), arg);
-            }
             else if (arg == "--look-at")
                 cliCamera["lookAt"] = ParseVec3Argument(next(), arg);
             else if (arg == "--yaw")
@@ -578,13 +592,20 @@ namespace Atlas::Capture {
   AtlasEngineCapture <job.json> [options]
   AtlasEngineCapture --scene <scene> [options]
   AtlasEngineCapture --compose <out.png> [--title <text>] [--columns <n>] <label>=<image.png> ...
+  AtlasEngineCapture --serve <directory> [options]
+  AtlasEngineCapture --pipeline <pipeline.json> [--from <step>] [--force] [options]
 
 Options:
   --job <file>            Job file (see src/capture/README.md for the format)
+  --serve <directory>     Run the commands written to the directory as JSON files (loadScene, run, ...)
+  --pipeline <file>       Run the edit jobs of a pipeline, unchanged steps are restored from snapshots
+  --from <step>           Pipeline: run again from this step
+  --force                 Pipeline: run all steps
   --scene <path>          Scene, relative to data/ or the launch directory
   --out <dir>             Output directory (default: bin/capture/<name>)
   --name <name>           Job name
   --resolution <WxH>      Render resolution (default 1280x720)
+  --render-scale <f>      Render target scale, upscaled with FSR2 or TAA (default 0.75)
   --settle <frames>       Frames rendered before each capture (default 60)
   --timeout <seconds>     Maximum time to wait for the scene to load
   --show                  Show the frames and the output in a window (default)

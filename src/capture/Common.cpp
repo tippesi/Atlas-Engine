@@ -104,15 +104,29 @@ namespace Atlas::Capture {
 
     }
 
+    vec2 ToVec2(const json& j) {
+
+        return vec2(j.at(0).get<float>(), j.at(j.size() == 3 ? 2 : 1).get<float>());
+
+    }
+
     json FromVec3(vec3 v) {
 
-        // Round a bit to keep the output readable
-        auto round = [](float x) {
+        return json::array({ Round(v.x, 4), Round(v.y, 4), Round(v.z, 4) });
 
-            return std::round(x * 10000.0f) / 10000.0f;
+    }
 
-        };
-        return json::array({ round(v.x), round(v.y), round(v.z) });
+    double Round(double value, int32_t decimals) {
+
+        auto scale = std::pow(10.0, double(decimals));
+        return std::round(value * scale) / scale;
+
+    }
+
+    vec3 GetDirection(float azimuth, float elevation) {
+
+        auto az = glm::radians(azimuth), el = glm::radians(elevation);
+        return vec3(std::cos(el) * std::sin(az), std::sin(el), std::cos(el) * std::cos(az));
 
     }
 

@@ -1,11 +1,28 @@
 #include "CaptureRenderer.h"
 
 #include "graphics/GraphicsDevice.h"
+
 #include <glm/detail/type_half.hpp>
 
 #include <stdexcept>
 
 namespace Atlas::Capture {
+
+    // Images don't support half floats, the data goes through a float image
+    static Common::Image<float> ReadFloatImage(Texture::Texture2D& texture) {
+
+        auto data = texture.GetData<float16>();
+
+        Common::Image<float> image(texture.width, texture.height, 4);
+        std::transform(data.begin(), data.end(), image.GetData().begin(), [](float16 value) {
+
+            return glm::detail::toFloat32(value);
+
+        });
+
+        return image;
+
+    }
 
     void CaptureRenderer::Init(Ref<Renderer::MainRenderer> mainRenderer, ivec2 resolution) {
 
@@ -27,6 +44,15 @@ namespace Atlas::Capture {
             .outputLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         };
         passRenderPass = device->CreateRenderPass(Graphics::RenderPassDesc { .colorAttachments = { colorAttachment } });
+
+    }
+
+    void CaptureRenderer::Resize(ivec2 resolution) {
+
+        this->resolution = resolution;
+        renderTarget->Resize(resolution.x, resolution.y);
+        viewport->Set(0, 0, resolution.x, resolution.y);
+        outputTexture = CreateRef<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16G16B16A16_SFLOAT);
 
     }
 
@@ -71,8 +97,7 @@ namespace Atlas::Capture {
         if (panelHeight > 0.0f) {
             auto y = float(extent.height) - panelHeight + panelPadding;
             for (const auto& line : lines) {
-                mainRenderer->textRenderer.Render(
-                    commandList, windowViewport, font, line.text, panelPadding, y, line.color);
+                mainRenderer->textRenderer.Render(commandList, windowViewport, font, line.text, panelPadding, y, line.color);
                 y += font->lineHeight;
             }
         }
@@ -90,18 +115,24 @@ namespace Atlas::Capture {
 
     }
 
+    void CaptureRenderer::SetRenderScale(float renderScale) {
+
+        if (renderTarget->GetScalingFactor() != renderScale)
+            renderTarget->SetScalingFactor(renderScale);
+
+    }
+
+    float CaptureRenderer::GetRenderScale() const {
+
+        return renderTarget->GetScalingFactor();
+
+    }
+
     Ref<Image> CaptureRenderer::ReadOutput() {
 
-        auto data = outputTexture->GetData<float16>();
-
-        // Images don't support half floats, the output goes through a float image
-        Common::Image<float> floatImage(outputTexture->width, outputTexture->height, 4);
+        auto floatImage = ReadFloatImage(*outputTexture);
         auto& floatData = floatImage.GetData();
-        std::transform(data.begin(), data.end(), floatData.begin(), [](float16 value) {
 
-            return glm::detail::toFloat32(value);
-
-        });
         // The alpha channel isn't meaningful, write opaque images
         for (size_t i = 3; i < floatData.size(); i += 4)
             floatData[i] = 1.0f;
@@ -116,15 +147,8 @@ namespace Atlas::Capture {
     Ref<Image> CaptureRenderer::ReadPass(const std::string& pass) {
 
         auto& target = GetPassTarget(pass);
-        auto data = target.texture->GetData<float16>();
-
-        Common::Image<float> floatImage(target.texture->width, target.texture->height, 4);
+        auto floatImage = ReadFloatImage(*target.texture);
         auto& floatData = floatImage.GetData();
-        std::transform(data.begin(), data.end(), floatData.begin(), [](float16 value) {
-
-            return glm::detail::toFloat32(value);
-
-        });
 
         for (size_t i = 0; i < floatData.size(); i += 4) {
             // Signed screen space motion, no motion is gray

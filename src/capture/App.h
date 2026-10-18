@@ -5,6 +5,8 @@
 #include "Checks.h"
 #include "SceneTools.h"
 #include "Overlay.h"
+#include "Pipeline.h"
+#include "SceneEditor.h"
 
 #include "EngineInstance.h"
 #include "input/PlayerInput.h"
@@ -14,6 +16,7 @@
 #include <fstream>
 #include <map>
 #include <mutex>
+#include <set>
 
 namespace Atlas::Capture {
 
@@ -32,6 +35,8 @@ namespace Atlas::Capture {
 
     private:
         enum class Phase {
+            // Server mode: waiting for the next command
+            Idle,
             Loading,
             Prepare,
             EditSave,
@@ -92,10 +97,43 @@ namespace Atlas::Capture {
         };
 
         struct ValidationMessage {
+
             std::string severity;
             std::string message;
             int32_t count = 0;
+
         };
+
+        // A single job (the default), a server that processes commands or a pipeline of edit jobs
+        enum class Mode {
+            Job,
+            Server,
+            Pipeline
+        };
+
+        // Sets up a job, it uses the loaded scene if it is the scene of the job
+        void StartJob(const Job& nextJob);
+
+        // Parses a job file with the options of the command line that apply to every job
+        Job ParseJobFile(const fs::path& path, const std::vector<std::string>& extraArguments = {}) const;
+
+        // Resets everything that belongs to a single job
+        void ResetJobState();
+
+        void LoadScene(const std::string& path);
+
+        void UnloadScene();
+
+        // Server mode: reads the next command file, runs commands that don't need frames immediately
+        void ProcessNextCommand();
+
+        // Server mode: writes <command>.result.json, the result of the current command
+        void CompleteCommand(const json& result);
+
+        // Called once the report of a job is written: exits, continues the pipeline or waits for the next command
+        void FinishJob();
+
+        void StartPipelineStep();
 
         void Fail(const std::string& message);
 
@@ -119,6 +157,9 @@ namespace Atlas::Capture {
 
         void UpdateStill();
 
+        // Whether a time of the timeline is reached, tolerates the rounding of the fixed time steps
+        bool IsDue(float time) const;
+
         // Checks the conditions of conditional events and queues the events that are due
         void UpdateTriggers();
 
@@ -129,6 +170,8 @@ namespace Atlas::Capture {
         void WriteValidationReport();
 
         void Finish();
+
+        void CreateCaptureCamera();
 
         // Updates the scene while the capture camera is the main camera. A negative delta
         // time uses the fixed delta time of the job
@@ -161,15 +204,43 @@ namespace Atlas::Capture {
 
         std::string GetStatusLine() const;
 
+        // Render scale and upscaler, e.g. ", render scale 0.75 (FSR2)"
+        std::string GetRenderDescription() const;
+
         static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
             VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* data, void* userData);
+
+        Mode mode = Mode::Job;
+        // Options of the command line which are passed on to every job of a server or pipeline
+        std::vector<std::string> jobArguments;
 
         Job job;
         Phase phase = Phase::Loading;
         bool fatal = false;
 
         Ref<Scene::Scene> scene;
+        // Asset path of the loaded scene and its settings right after loading, restored for each job
+        std::string scenePath;
+        json sceneSettings;
+        // A scene loaded by a command or kept between pipeline steps stays loaded after the job
+        bool keepScene = false;
+        // Set while a loadScene command waits for the scene to finish loading
+        bool loadingForCommand = false;
         Scene::Entity captureCameraEntity;
+        std::chrono::steady_clock::time_point loadStartTime;
+
+        fs::path serverDirectory;
+        // File name of the current command and the time it started
+        std::string commandName;
+        std::chrono::steady_clock::time_point commandStartTime;
+        std::chrono::steady_clock::time_point nextPollTime;
+
+        std::optional<Pipeline> pipeline;
+        size_t pipelineStep = 0;
+        int32_t pipelineExitCode = 0;
+
+        bool rendererInitialized = false;
+        float defaultRenderScale = 1.0f;
 
         CaptureRenderer captureRenderer;
 
@@ -184,7 +255,9 @@ namespace Atlas::Capture {
         ShotState shotState;
         StillState stillState;
         json baseSettings;
+        float baseRenderScale = 1.0f;
         int32_t editFrames = 0;
+        EditState editState;
 
         // Capture path -> (sheet group, label) for the comparison of variants
         std::map<std::string, std::pair<std::string, std::string>> variantCaptures;

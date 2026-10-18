@@ -172,28 +172,20 @@ namespace Atlas::Capture {
 
             // Standing on a prop (e.g. walking over hay bales) counts as a failure if surfaces are given
             const auto& surfaces = spec.grounded->surfaces;
-            if (!surfaces.empty() && ground.entity.IsValid() &&
-                !MatchesSelfOrAncestor(scene, ground.entity, surfaces)) {
-
+            if (!surfaces.empty() && ground.entity.IsValid() && !MatchesSelfOrAncestor(scene, ground.entity, surfaces)) {
                 AddFailure({ "grounded", GetEntityLabel(entity), time,
                     "stands on " + GetEntityLabel(ground.entity) + ", which doesn't match the allowed surfaces" });
                 continue;
-
             }
 
+            auto heights = " (bottom y " + FormatFloat(bounds.min.y) + ", ground y " + FormatFloat(ground.position.y) + ")";
             auto gap = bounds.min.y - ground.position.y;
-            if (gap > spec.grounded->maxGap) {
+            if (gap > spec.grounded->maxGap)
                 AddFailure({ "grounded", GetEntityLabel(entity), time,
-                    "floats " + FormatFloat(gap) + " m above " +
-                        (ground.entity.IsValid() ? GetEntityLabel(ground.entity) : ground.kind) + " (bottom y " +
-                        FormatFloat(bounds.min.y) + ", ground y " + FormatFloat(ground.position.y) + ")" });
-            }
-            else if (gap < -spec.grounded->maxSink) {
+                    "floats " + FormatFloat(gap) + " m above " + GetHitLabel(ground) + heights });
+            else if (gap < -spec.grounded->maxSink)
                 AddFailure({ "grounded", GetEntityLabel(entity), time,
-                    "sinks " + FormatFloat(-gap) + " m into " +
-                        (ground.entity.IsValid() ? GetEntityLabel(ground.entity) : ground.kind) + " (bottom y " +
-                        FormatFloat(bounds.min.y) + ", ground y " + FormatFloat(ground.position.y) + ")" });
-            }
+                    "sinks " + FormatFloat(-gap) + " m into " + GetHitLabel(ground) + heights });
         }
 
     }
@@ -235,13 +227,11 @@ namespace Atlas::Capture {
                 auto [it, inserted] = baselineIntrusions.try_emplace(key, intruding);
                 auto increase = intruding - it->second;
 
-                if (increase >= penetration.minTriangles) {
+                if (increase >= penetration.minTriangles)
                     AddFailure({ "penetration", GetEntityLabel(entity), time,
                         std::to_string(increase) + " more triangles of " + GetEntityLabel(other) +
-                            " intrude into its bounds than at the start (" + std::to_string(intruding) + " vs " +
-                            std::to_string(it->second) + ", bounds " + FormatVec3(bounds.min) + " - " +
-                            FormatVec3(bounds.max) + ")" });
-                }
+                        " intrude into its bounds than at the start (" + std::to_string(intruding) + " vs " +
+                        std::to_string(it->second) + ", bounds " + FormatVec3(bounds.min) + " - " + FormatVec3(bounds.max) + ")" });
             }
         }
 
@@ -270,24 +260,29 @@ namespace Atlas::Capture {
         json j;
         j["passed"] = failures.empty();
 
+        auto getRunCount = [&](const std::string& check) {
+
+            return runCounts.contains(check) ? runCounts.at(check) : 0;
+
+        };
+
         json checks = json::object();
         if (spec.grounded)
-            checks["grounded"] = { { "evaluations", runCounts.contains("grounded") ? runCounts.at("grounded") : 0 } };
+            checks["grounded"] = { { "evaluations", getRunCount("grounded") } };
         if (spec.penetration)
-            checks["penetration"] = { { "evaluations",
-                runCounts.contains("penetration") ? runCounts.at("penetration") : 0 } };
+            checks["penetration"] = { { "evaluations", getRunCount("penetration") } };
         j["checks"] = checks;
 
         json failureList = json::array();
         for (const auto& failure : failures) {
             auto key = failure.check + "|" + failure.entity;
-            failureList.push_back(
-                { { "check", failure.check }, { "entity", failure.entity }, { "firstTime", failure.time },
-                    { "message", failure.message }, { "occurrences", failureCounts.at(key) } });
+            failureList.push_back({ { "check", failure.check }, { "entity", failure.entity }, { "firstTime", failure.time },
+                { "message", failure.message }, { "occurrences", failureCounts.at(key) } });
         }
         j["failures"] = failureList;
 
         return j;
+
     }
 
     std::vector<std::string> CheckRunner::GetSummary() const {
@@ -300,6 +295,7 @@ namespace Atlas::Capture {
         }
 
         return lines;
+
     }
 
     void Tracker::Record(Scene::Scene& scene, float time) {
@@ -307,8 +303,7 @@ namespace Atlas::Capture {
         auto entities = RemoveDescendants(scene, FindEntities(scene, spec.entities));
         for (auto entity : entities) {
             auto bounds = GetEntityBounds(entity);
-            samples[GetEntityLabel(entity)].push_back(
-                { time, GetEntityPosition(entity), glm::degrees(GetEntityYaw(entity)), bounds.min.y });
+            samples[GetEntityLabel(entity)].push_back({ time, GetEntityPosition(entity), glm::degrees(GetEntityYaw(entity)), bounds.min.y });
         }
 
     }
@@ -326,9 +321,8 @@ namespace Atlas::Capture {
             float minY = std::numeric_limits<float>::max(), maxY = -std::numeric_limits<float>::max();
             for (size_t i = 0; i < list.size(); i++) {
                 const auto& sample = list[i];
-                entitySamples.push_back({ { "t", std::round(sample.time * 1000.0f) / 1000.0f },
-                    { "position", FromVec3(sample.position) }, { "yaw", std::round(sample.yaw * 10.0f) / 10.0f },
-                    { "bottomY", std::round(sample.minY * 1000.0f) / 1000.0f } });
+                entitySamples.push_back({ { "t", Round(sample.time) }, { "position", FromVec3(sample.position) },
+                    { "yaw", Round(sample.yaw, 1) }, { "bottomY", Round(sample.minY) } });
                 if (i > 0)
                     travelled += glm::distance(sample.position, list[i - 1].position);
                 minY = std::min(minY, sample.position.y);
@@ -336,16 +330,17 @@ namespace Atlas::Capture {
             }
             entities[label] = entitySamples;
 
-            if (!list.empty()) {
-                summary[label] = { { "start", FromVec3(list.front().position) },
-                    { "end", FromVec3(list.back().position) }, { "distanceTravelled", travelled }, { "minY", minY },
-                    { "maxY", maxY }, { "firstSeen", list.front().time }, { "lastSeen", list.back().time } };
-            }
+            if (!list.empty())
+                summary[label] = { { "start", FromVec3(list.front().position) }, { "end", FromVec3(list.back().position) },
+                    { "distanceTravelled", travelled }, { "minY", minY }, { "maxY", maxY },
+                    { "firstSeen", list.front().time }, { "lastSeen", list.back().time } };
         }
 
         j["summary"] = summary;
         j["entities"] = entities;
+
         return j;
+
     }
 
     json EvaluateExpectation(Scene::Scene& scene, const json& expectation, bool& passed) {
@@ -407,8 +402,9 @@ namespace Atlas::Capture {
                 actual = bounds.max.y;
             else if (property == "yaw")
                 actual = glm::degrees(GetEntityYaw(entity));
-            else if (property == "distanceTo")
+            else if (property == "distanceTo") {
                 actual = glm::distance(position, ToVec3(expectation.at("point")));
+            }
             else if (property == "gapToGround") {
                 EntitySet ignored;
                 CollectHierarchy(entity, ignored);
@@ -418,7 +414,7 @@ namespace Atlas::Capture {
             }
             else {
                 throw std::runtime_error("Unknown expectation property '" + property +
-                    "' (exists, position.x/y/z, " "bottom.y, top.y, yaw, distanceTo, gapToGround)");
+                    "' (count, exists, position.x/y/z, bottom.y, top.y, yaw, distanceTo, gapToGround)");
             }
 
             actualValues[GetEntityLabel(entity)] = actual;
