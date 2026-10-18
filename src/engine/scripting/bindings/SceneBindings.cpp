@@ -66,13 +66,14 @@ namespace Atlas::Scripting::Bindings {
         Scene::Entity entity;
     };
 
+    // Raises a Lua error, which jumps over the caller: no objects with destructors may be alive at the call
     template<class Comp>
-    static Comp& ResolveComponent(const ComponentRef<Comp>& ref) {
+    static Comp* ResolveComponent(const ComponentRef<Comp>& ref, lua_State* state) {
 
         auto component = ref.entity.IsValid() ? ref.entity.template TryGetComponent<Comp>() : nullptr;
         if (!component)
-            throw std::runtime_error("The entity doesn't have the component anymore");
-        return *component;
+            luaL_error(state, "The entity doesn't have the component anymore");
+        return component;
 
     }
 
@@ -96,33 +97,62 @@ namespace Atlas::Scripting::Bindings {
     template<class Comp>
     static void GenerateComponentRefBindings(sol::table* ns, const std::string& name) {
 
+        sol::state_view lua(ns->lua_state());
+
+        // Methods are called with the reference as self and need the component instead. Forwarding happens
+        // in Lua, so errors of the method propagate as they are.
+        auto resolve = [](const ComponentRef<Comp>& ref, sol::this_state state) {
+            return ResolveComponent(ref, state);
+        };
+        sol::protected_function makeForwardFactory = lua.load(R"(
+            local resolve = ...
+            return function(method)
+                return function(self, ...)
+                    return method(resolve(self), ...)
+                end
+            end
+        )");
+        sol::protected_function makeForward = makeForwardFactory(sol::as_function(resolve));
+
+        // Forwarding functions don't depend on the component, they are created once per method
+        auto methodsName = name + "RefMethods";
+        auto makeForwardName = name + "RefMakeForward";
+        lua.registry()[methodsName] = lua.create_table();
+        lua.registry()[makeForwardName] = makeForward;
+
         ns->new_usertype<ComponentRef<Comp>>(name + "Ref", sol::no_constructor,
-            sol::meta_function::index, [](const ComponentRef<Comp>& ref, sol::object key, sol::this_state state) -> sol::object {
-                sol::userdata component = sol::make_object(state, &ResolveComponent(ref));
-                sol::object value = component[key];
+            sol::meta_function::index, [methodsName, makeForwardName](const ComponentRef<Comp>& ref, sol::stack_object key,
+                sol::this_state state) -> sol::object {
+                {
+                    sol::table methods = sol::state_view(state).registry()[methodsName];
+                    sol::object forward = methods[key];
+                    if (forward.get_type() == sol::type::function)
+                        return forward;
+                }
+
+                auto component = ResolveComponent(ref, state);
+                sol::stack::push(state, component);
+                key.push(state);
+                lua_gettable(state, -2);
+                sol::stack_object value(state, lua_absindex(state, -1));
                 if (value.get_type() != sol::type::function)
                     return value;
 
-                // Methods are called with the reference as self and need the component instead
-                sol::protected_function method = value;
-                return sol::make_object(state, sol::as_function([method](const ComponentRef<Comp>& self, sol::variadic_args args,
-                    sol::this_state state) {
-                    sol::protected_function_result result = method(&ResolveComponent(self), args);
-                    if (!result.valid()) {
-                        sol::error error = result;
-                        throw std::runtime_error(error.what());
-                    }
-
-                    sol::variadic_results results;
-                    for (int32_t i = 0; i < result.return_count(); i++)
-                        results.push_back(result.get<sol::object>(i));
-                    return results;
-                    }));
+                auto registry = sol::state_view(state).registry();
+                sol::table methods = registry[methodsName];
+                sol::protected_function makeForward = registry[makeForwardName];
+                sol::object forward = makeForward(value);
+                methods[key] = forward;
+                return forward;
             },
-            sol::meta_function::new_index, [](const ComponentRef<Comp>& ref, sol::object key, sol::object value,
+            sol::meta_function::new_index, [](const ComponentRef<Comp>& ref, sol::stack_object key, sol::stack_object value,
                 sol::this_state state) {
-                sol::userdata component = sol::make_object(state, &ResolveComponent(ref));
-                component[key] = value;
+                auto component = ResolveComponent(ref, state);
+                sol::stack::push(state, component);
+                key.push(state);
+                value.push(state);
+                lua_settable(state, -3);
+                lua_pop(state, 1);
             },
             sol::meta_function::equal_to, [](const ComponentRef<Comp>& a, const ComponentRef<Comp>& b) {
                 return a.entity == b.entity;
