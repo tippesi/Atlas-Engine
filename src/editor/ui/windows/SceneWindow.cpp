@@ -46,8 +46,6 @@ namespace Atlas::Editor::UI {
 
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
-            // Scripts create and destroy entities, which would race with the hierarchy search
-            sceneHierarchyPanel.WaitForSearch();
             scene->Update(deltaTime);
         }
         else {

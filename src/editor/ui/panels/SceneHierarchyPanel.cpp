@@ -43,19 +43,20 @@ namespace Atlas::Editor::UI {
             .cameraPool = scene->entityManager.GetPool<CameraComponent>(),
             .scriptPool = scene->entityManager.GetPool<LuaScriptComponent>(),
             .lightPool = scene->entityManager.GetPool<LightComponent>(),
+            .search = entitySearch,
+            .filter = hierarchyFilter,
         };
 
-        auto root = scene->GetEntityByName("Root");
-        // Aquire scene here such that it can't be freed and copy important pools
-        JobSystem::Execute(searchJob, [&, scene = scene, root = root, data = std::move(data)](JobData&) mutable {
+        // Search should be case-insensitive
+        std::transform(data.search.begin(), data.search.end(), data.search.begin(), ::tolower);
 
-            // Search should be case-insensitive
-            transformedEntitySearch = entitySearch;
-            std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
-                transformedEntitySearch.begin(), ::tolower);
+        auto root = scene->GetEntityByName("Root");
+        auto aliveCount = scene->entityManager.Alive();
+        // Aquire scene here such that it can't be freed. The job only works on copies, the scene and UI can change meanwhile
+        JobSystem::Execute(searchJob, [&, scene = scene, root = root, aliveCount, data = std::move(data)](JobData&) mutable {
 
             newMatchSet.clear();
-            newMatchSet.reserve(scene->entityManager.Alive());
+            newMatchSet.reserve(aliveCount);
             std::string nodeName;
             SearchHierarchy(data, root, newMatchSet, nodeName, false);
             });
@@ -667,15 +668,15 @@ namespace Atlas::Editor::UI {
             nodeName = "entity " + std::to_string(entity);
         }
 
-        auto it = std::search(nodeName.begin(), nodeName.end(), transformedEntitySearch.begin(), transformedEntitySearch.end(),
+        auto it = std::search(nodeName.begin(), nodeName.end(), data.search.begin(), data.search.end(),
             [](unsigned char nodeChar, unsigned char searchChar) { return std::tolower(nodeChar) == searchChar; });
 
         parentMatches |= it != nodeName.end();
-        parentMatches |= transformedEntitySearch.empty();
+        parentMatches |= data.search.empty();
 
-        if (hierarchyFilter != HierarchyFilterBits::AllBit) {
+        if (data.filter != HierarchyFilterBits::AllBit) {
             auto checkBit = [&]<class T>(ECS::Pool<T>&pool, HierarchyFilterBits bit) -> bool {
-                if (hierarchyFilter & bit) {
+                if (data.filter & bit) {
                     return pool.Contains(entity);
                 }
                 return false;

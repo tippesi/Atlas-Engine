@@ -51,9 +51,6 @@ namespace Atlas::Editor::UI {
 
         void Update(Ref<Scene::Scene>& scene);
 
-        // The search reads the component pools in a job, the scene must not change while it runs
-        void WaitForSearch() { JobSystem::Wait(searchJob); }
-
         void Render(Ref<Scene::Scene>& scene, bool inFocus);
 
         void SelectEntity(Scene::Entity entity, bool keepSelection = false);
@@ -115,6 +112,8 @@ namespace Atlas::Editor::UI {
             ECS::Pool<CameraComponent> cameraPool;
             ECS::Pool<LuaScriptComponent> scriptPool;
             ECS::Pool<LightComponent> lightPool;
+            std::string search;
+            HierarchyFilter filter;
         };        
 
         void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
@@ -138,7 +137,6 @@ namespace Atlas::Editor::UI {
         JobGroup searchJob{ "Scene hierarchy search", JobPriority::Low };
 
         std::string entitySearch;
-        std::string transformedEntitySearch;
         std::unordered_set<ECS::Entity> matchSet;
         std::unordered_set<ECS::Entity> newMatchSet;
         std::unordered_set<ECS::Entity> nodeInvisibleSet;
