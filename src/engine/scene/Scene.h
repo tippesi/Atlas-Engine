@@ -144,6 +144,7 @@ namespace Atlas {
 
             void WaitForAsyncWorkCompletion();
 
+            // Meshes and terrain finished loading, resources that failed to load count as finished
             bool IsFullyLoaded();
 
             bool IsRtDataValid() const;

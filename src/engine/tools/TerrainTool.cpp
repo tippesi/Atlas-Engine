@@ -676,11 +676,14 @@ namespace Atlas::Tools {
                     }
                 }
 
-                sum /= contributing;
-
                 int32_t xTranslated = x + i;
                 int32_t yTranslated = y + j;
                 int32_t index = yTranslated * width * 3 + xTranslated;
+                // Holes and texels outside of the terrain keep their value, as do texels without valid neighbors
+                if (heightsCopy[index] < 0.0f || heightsCopy[index] == FLT_MAX || contributing == 0.0f)
+                    continue;
+
+                sum /= contributing;
                 data[index] = heightsCopy[index] - (heightsCopy[index] - sum) * strength;
             }
         }

@@ -164,7 +164,7 @@ namespace Atlas {
 
                 if (ocean) {
                     JobSystem::Execute(terrainOceanJobGroup, [&](JobData&) {
-                        ocean->Update(mainCamera, deltaTime);
+                        ocean->Update(mainCamera, this->deltaTime);
                         });
                 }
             }
@@ -889,13 +889,20 @@ namespace Atlas {
 
         bool Scene::IsFullyLoaded() {
 
+            auto isDone = [](const auto& handle) {
+                return handle.IsLoaded() || (handle.IsValid() && handle.GetResource()->errorOnLoad);
+            };
+
             bool loaded = true;
 
             auto meshes = GetMeshes();
 
             for (const auto& mesh : meshes) {
-                loaded &= mesh.IsLoaded();
+                loaded &= isDone(mesh);
             }
+
+            if (terrain.IsValid())
+                loaded &= isDone(terrain);
 
             return loaded;
 
