@@ -6,7 +6,6 @@
 
 #include <cstring>
 
-#include <chrono>
 #include <fstream>
 #include <sstream>
 
@@ -16,8 +15,6 @@
 namespace Atlas {
 
     Font::Font(const std::string& filename, float pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
-
-        auto startTime = std::chrono::steady_clock::now();
 
         stbtt_fontinfo font;
 
@@ -66,17 +63,13 @@ namespace Atlas {
 
         codepointCount = codepointCount > AE_FONT_GLYPH_COUNT ? AE_FONT_GLYPH_COUNT : codepointCount;
 
-        auto firstCodepoint = std::max(font.fontstart, 0);
-        auto loadedCount = std::max(codepointCount - firstCodepoint, 0);
-
         // The distance fields are independent of each other, stb_truetype only reads the font data
         std::vector<uint8_t*> data(AE_FONT_GLYPH_COUNT, nullptr);
         std::vector<ivec2> offsets(AE_FONT_GLYPH_COUNT, ivec2(0));
         std::vector<int32_t> glyphIndices(AE_FONT_GLYPH_COUNT, 0);
 
-        JobGroup glyphGroup { "Font glyphs", JobPriority::High };
-        JobSystem::ParallelFor(glyphGroup, loadedCount, 64, [&](JobData&, int32_t idx) {
-            auto i = firstCodepoint + idx;
+        JobGroup glyphGroup { "Font glyphs" };
+        JobSystem::ParallelFor(glyphGroup, codepointCount, 64, [&](JobData&, int32_t i) {
             auto glyph = &glyphs[i];
 
             glyph->codepoint = i;
@@ -94,7 +87,7 @@ namespace Atlas {
         int32_t width = 0, height = 0, depth = 0;
 
         // Texture layers are assigned in codepoint order such that the result doesn't depend on the job order
-        for (int32_t i = firstCodepoint; i < codepointCount; i++) {
+        for (int32_t i = 0; i < codepointCount; i++) {
 
             auto glyph = &glyphs[i];
 
@@ -118,12 +111,12 @@ namespace Atlas {
         // Only pairs with a kerning value are stored. The lookups use glyph indices and run in parallel,
         // one row of pairs per job.
         std::vector<int32_t> kernCodepoints;
-        for (int32_t i = firstCodepoint; i < codepointCount; i++)
+        for (int32_t i = 0; i < codepointCount; i++)
             if (glyphIndices[i])
                 kernCodepoints.push_back(i);
 
         std::vector<std::vector<std::pair<uint32_t, float>>> kernRows(kernCodepoints.size());
-        JobGroup kernGroup { "Font kerning", JobPriority::High };
+        JobGroup kernGroup { "Font kerning" };
         JobSystem::ParallelFor(kernGroup, int32_t(kernCodepoints.size()), 64, [&](JobData&, int32_t idx) {
             auto first = kernCodepoints[idx];
             for (auto second : kernCodepoints) {
@@ -146,7 +139,7 @@ namespace Atlas {
 
         std::vector<uint8_t> glyphData(size_t(width) * size_t(height) * size_t(std::max(depth, 1)), 0);
 
-        for (int32_t i = firstCodepoint; i < codepointCount; i++) {
+        for (int32_t i = 0; i < codepointCount; i++) {
 
             if (!data[i])
                 continue;
@@ -183,9 +176,6 @@ namespace Atlas {
             glyphTexture.SetData(glyphData, 0, depth);
 
         glyphBuffer.SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT);
-
-        auto loadTime = std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime).count();
-        Log::Message("Loaded font " + filename + " in " + std::to_string(int32_t(loadTime * 1000.0f)) + " ms");
 
     }
 

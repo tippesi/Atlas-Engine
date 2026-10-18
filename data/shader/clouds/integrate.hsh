@@ -150,8 +150,7 @@ vec3 ComputeAmbientColor(vec3 pos, float extinction) {
 
 float ComputePowder(vec3 lightExtinction, float lightDotView) {
 
-    // Optical depth towards the light is -log(lightExtinction). Following Schneider (2015) the powder
-    // term is 1 - exp(-2 * depth), which equals 1 - lightExtinction^2.
+    // Powder term 1 - exp(-2 * depth) with the optical depth -log(lightExtinction) towards the light
     float extinctionToLight = dot(lightExtinction, vec3(0.3333));
     float powder = 1.0 - extinctionToLight * extinctionToLight;
 
