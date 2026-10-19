@@ -628,31 +628,20 @@ namespace Atlas {
             };
 
             if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
-                // Ignored bodies are skipped by continuing the ray behind them
-                auto bodyRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, ray.tMax);
-                for (int32_t i = 0; i < 16 && bodyRay.tMin < bodyRay.tMax; i++) {
-                    auto bodyResult = physicsWorld->CastRay(bodyRay);
-                    if (!bodyResult.valid)
-                        break;
+                auto bodyResult = physicsWorld->CastRay(ray, [&](const Physics::Body& body) {
+                    return isIgnored({ body.GetUserData(), &entityManager });
+                });
 
-                    Entity entity = { bodyResult.data.GetUserData(), &entityManager };
-                    if (isIgnored(entity)) {
-                        bodyRay.tMin = bodyResult.hitDistance + 0.001f;
-                        continue;
-                    }
-
+                if (bodyResult.valid) {
                     result.valid = true;
                     result.hitDistance = bodyResult.hitDistance;
                     result.normal = bodyResult.normal;
-                    result.data = entity;
-                    break;
+                    result.data = { bodyResult.data.GetUserData(), &entityManager };
                 }
             }
 
-            // The bounding boxes only cull the triangle tests, this isn't optimized with hierarchical data structures.
             // Meshes with a mesh shape body of the same mesh were already hit exactly by the physics query above.
             if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
-                auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
                 auto queriedBodies = physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit);
 
                 auto hasMeshBody = [&](ECS::Entity entity, const MeshComponent& meshComp) {
@@ -668,17 +657,30 @@ namespace Atlas {
                     return meshSettings->mesh == meshComp.mesh;
                 };
 
-                for (auto entity : meshSubset) {
-                    const auto& [meshComp, transformComp] = meshSubset.Get(entity);
-                    if (!meshComp.mesh.IsLoaded() || (queriedBodies && hasMeshBody(entity, meshComp)))
+                // Candidates are the meshes in the octree nodes along the ray, Update inserts them with their bounds
+                std::vector<Entity> candidates;
+                auto octreeRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
+                renderableStaticEntityOctree.QueryRay(candidates, octreeRay);
+                renderableMovableEntityOctree.QueryRay(candidates, octreeRay);
+
+                // The bounds test comes first, most candidates are rejected by it
+                for (auto sceneEntity : candidates) {
+                    auto meshCompPtr = entityManager.TryGet<MeshComponent>(sceneEntity);
+                    if (!meshCompPtr)
                         continue;
 
+                    const auto& meshComp = *meshCompPtr;
                     auto boxRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
                     auto boxDistance = 0.0f;
                     if (!boxRay.Intersects(meshComp.aabb, boxDistance))
                         continue;
 
-                    Entity sceneEntity = { entity, &entityManager };
+                    auto transformCompPtr = entityManager.TryGet<TransformComponent>(sceneEntity);
+                    if (!transformCompPtr || !meshComp.mesh.IsLoaded() || (queriedBodies && hasMeshBody(sceneEntity, meshComp)))
+                        continue;
+
+                    const auto& transformComp = *transformCompPtr;
+
                     if (isIgnored(sceneEntity))
                         continue;
 

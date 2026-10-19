@@ -276,7 +276,20 @@ namespace Atlas {
 
         }
 
-        Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray) {
+        Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray, const std::function<bool(const Body&)>& ignore) {
+
+            // Ignored bodies are filtered in the query. Continuing a ray behind them would start inside of convex
+            // shapes, which count as solid and are hit again right away
+            class IgnoreFilter : public JPH::BodyFilter {
+            public:
+                IgnoreFilter(PhysicsWorld* world, const std::function<bool(const Body&)>& ignore) : world(world), ignore(ignore) {}
+
+                bool ShouldCollide(const JPH::BodyID& bodyId) const override { return !ignore || !ignore(Body(bodyId, world)); }
+
+            private:
+                PhysicsWorld* world;
+                const std::function<bool(const Body&)>& ignore;
+            };
 
             JPH::RayCastResult hit;
             // The ray starts at tMin and the direction is the whole segment up to tMax
@@ -290,7 +303,8 @@ namespace Atlas {
 
             rayCastSettings.SetBackFaceMode(JPH::EBackFaceMode::CollideWithBackFaces);
 
-            if (system->GetNarrowPhaseQuery().CastRay(rayCast, hit)) {
+            IgnoreFilter bodyFilter(this, ignore);
+            if (system->GetNarrowPhaseQuery().CastRay(rayCast, hit, JPH::BroadPhaseLayerFilter(), JPH::ObjectLayerFilter(), bodyFilter)) {
                 auto& bodyLockInterface = system->GetBodyLockInterface();
 
                 JPH::BodyLockRead lock(bodyLockInterface, hit.mBodyID);
