@@ -6,6 +6,9 @@
 
 #include "scene/components/CameraComponent.h"
 
+#include <unordered_map>
+#include <mutex>
+
 namespace Atlas {
 
     namespace Lighting {
@@ -69,6 +72,11 @@ namespace Atlas {
             bool needsNoiseUpdate = true;
             bool enable = true;
             bool castShadow = true;
+
+        private:
+            // The coverage only depends on the resolution, add new inputs to the key
+            static std::unordered_map<int32_t, std::vector<float16>> coverageDataCache;
+            static std::mutex coverageDataCacheMutex;
 
         };
 
