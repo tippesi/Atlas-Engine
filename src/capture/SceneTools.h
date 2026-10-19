@@ -50,8 +50,16 @@ namespace Atlas::Capture {
 
     std::vector<Scene::Entity> FindEntities(Scene::Scene& scene, const std::string& pattern);
 
+    // Matching entities without those whose ancestor matches as well
+    std::vector<Scene::Entity> FindTopmostEntities(Scene::Scene& scene, const std::vector<std::string>& patterns);
+
+    std::vector<Scene::Entity> FindTopmostEntities(Scene::Scene& scene, const std::string& pattern);
+
     // Adds the entity and all of its descendants to the set
     void CollectHierarchy(Scene::Entity entity, EntitySet& set);
+
+    // The hierarchies of all matching entities, e.g. to ignore them in raycasts
+    EntitySet CollectHierarchies(Scene::Scene& scene, const std::vector<std::string>& patterns);
 
     // Union of the loaded mesh bounds of the entity and its descendants. Entities without
     // loaded meshes get a small box around their position
@@ -72,6 +80,18 @@ namespace Atlas::Capture {
 
     // Casts downwards from the given height
     RaycastHit GroundBelow(Scene::Scene& scene, vec3 position, const EntitySet& ignored = {});
+
+    struct EntityGround {
+
+        Volume::AABB bounds;
+        bool hasMesh = false;
+        RaycastHit ground;
+
+    };
+
+    // Ground below the center of the entity bounds, ignoring its own hierarchy. The ray starts searchAbove
+    // over the top of the bounds, such that roofs or arches above the entity are not hit
+    EntityGround GroundBelowEntity(Scene::Scene& scene, Scene::Entity entity, float searchAbove = 0.5f);
 
     json InspectScene(Scene::Scene& scene, const std::vector<std::string>& filter,
         const std::vector<std::string>& detail, const EntitySet& excluded = {});

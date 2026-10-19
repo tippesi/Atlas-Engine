@@ -1257,7 +1257,7 @@ namespace Atlas::Capture {
                 entities.push_back(entity);
             }
             else {
-                entities = RemoveDescendants(*scene, FindEntities(*scene, spec.entity));
+                entities = FindTopmostEntities(*scene, spec.entity);
                 if (entities.empty())
                     throw std::runtime_error("Script " + spec.path + ": no entity matches '" + spec.entity + "'");
             }
@@ -1374,7 +1374,7 @@ namespace Atlas::Capture {
             else if (event.type == "teleport") {
                 const auto& teleport = data["teleport"];
                 auto position = ToVec3(teleport.at("position"));
-                auto entities = RemoveDescendants(*scene, FindEntities(*scene, teleport.at("entity").get<std::string>()));
+                auto entities = FindTopmostEntities(*scene, teleport.at("entity").get<std::string>());
                 if (entities.empty())
                     Warn(FormatTime(playTime) + " teleport: no entity matches " + teleport["entity"].dump());
 
@@ -1389,7 +1389,7 @@ namespace Atlas::Capture {
             }
             else if (event.type == "look") {
                 const auto& look = data["look"];
-                auto entities = RemoveDescendants(*scene, FindEntities(*scene, look.at("entity").get<std::string>()));
+                auto entities = FindTopmostEntities(*scene, look.at("entity").get<std::string>());
                 if (entities.empty())
                     Warn(FormatTime(playTime) + " look: no entity matches " + look["entity"].dump());
                 for (auto entity : entities)
@@ -1984,7 +1984,7 @@ namespace Atlas::Capture {
             float entityYaw = 0.0f;
             EntitySet focused;
             if (mode == "focus") {
-                auto entities = RemoveDescendants(*scene, FindEntities(*scene, spec.entity));
+                auto entities = FindTopmostEntities(*scene, spec.entity);
                 if (entities.empty()) {
                     // Entities created by scripts might not exist yet while loading or playing
                     if (phase == Phase::Play || phase == Phase::Loading)
@@ -2068,7 +2068,7 @@ namespace Atlas::Capture {
             camera.farPlane = std::max(spec.farPlane, distance + radius * 4.0f);
         }
         else if (mode == "follow") {
-            auto entities = RemoveDescendants(*scene, FindEntities(*scene, spec.entity));
+            auto entities = FindTopmostEntities(*scene, spec.entity);
             if (entities.empty())
                 return;
 
@@ -2230,7 +2230,7 @@ namespace Atlas::Capture {
         const auto& spec = *job.overlay;
         overlay->depthTest = spec.depthTest;
 
-        for (auto entity : RemoveDescendants(*scene, FindEntities(*scene, spec.bounds)))
+        for (auto entity : FindTopmostEntities(*scene, spec.bounds))
             overlay->Box(GetEntityBounds(entity), vec3(1.0f, 0.85f, 0.1f));
 
         if (spec.players) {

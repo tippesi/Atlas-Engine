@@ -45,14 +45,7 @@ namespace Atlas::Capture {
 
     static EntitySet GetIgnoredEntities(Scene::Scene& scene, const json& query) {
 
-        EntitySet ignored;
-        if (!query.contains("ignore"))
-            return ignored;
-
-        for (auto entity : FindEntities(scene, query["ignore"].get<std::vector<std::string>>()))
-            CollectHierarchy(entity, ignored);
-
-        return ignored;
+        return CollectHierarchies(scene, query.value("ignore", std::vector<std::string>()));
 
     }
 
@@ -196,6 +189,34 @@ namespace Atlas::Capture {
 
     }
 
+    std::vector<Scene::Entity> FindTopmostEntities(Scene::Scene& scene, const std::vector<std::string>& patterns) {
+
+        auto entities = FindEntities(scene, patterns);
+        EntitySet contained(entities.begin(), entities.end());
+
+        std::vector<Scene::Entity> result;
+        for (auto entity : entities) {
+            bool ancestorContained = false;
+            auto parent = scene.GetParentEntity(entity);
+            while (parent.IsValid() && !ancestorContained) {
+                ancestorContained = contained.contains(parent);
+                parent = scene.GetParentEntity(parent);
+            }
+
+            if (!ancestorContained)
+                result.push_back(entity);
+        }
+
+        return result;
+
+    }
+
+    std::vector<Scene::Entity> FindTopmostEntities(Scene::Scene& scene, const std::string& pattern) {
+
+        return FindTopmostEntities(scene, std::vector<std::string> { pattern });
+
+    }
+
     void CollectHierarchy(Scene::Entity entity, EntitySet& set) {
 
         if (!entity.IsValid() || set.contains(entity))
@@ -209,6 +230,16 @@ namespace Atlas::Capture {
 
         for (auto child : hierarchyComponent->GetChildren())
             CollectHierarchy(child, set);
+
+    }
+
+    EntitySet CollectHierarchies(Scene::Scene& scene, const std::vector<std::string>& patterns) {
+
+        EntitySet set;
+        for (auto entity : FindEntities(scene, patterns))
+            CollectHierarchy(entity, set);
+
+        return set;
 
     }
 
@@ -345,6 +376,20 @@ namespace Atlas::Capture {
     RaycastHit GroundBelow(Scene::Scene& scene, vec3 position, const EntitySet& ignored) {
 
         return Raycast(scene, position, vec3(0.0f, -1.0f, 0.0f), 4096.0f, ignored, CollisionComponents);
+
+    }
+
+    EntityGround GroundBelowEntity(Scene::Scene& scene, Scene::Entity entity, float searchAbove) {
+
+        EntityGround result;
+        result.bounds = GetEntityBounds(entity, &result.hasMesh);
+
+        EntitySet ignored;
+        CollectHierarchy(entity, ignored);
+        auto center = result.bounds.GetCenter();
+        result.ground = GroundBelow(scene, vec3(center.x, result.bounds.max.y + searchAbove, center.z), ignored);
+
+        return result;
 
     }
 
@@ -558,13 +603,7 @@ namespace Atlas::Capture {
                 else if (type == "entity") {
                     json matches = json::array();
                     for (auto entity : FindEntities(scene, query.at("entity").get<std::string>())) {
-                        bool hasMesh = false;
-                        auto bounds = GetEntityBounds(entity, &hasMesh);
-
-                        EntitySet ignored;
-                        CollectHierarchy(entity, ignored);
-                        auto center = bounds.GetCenter();
-                        auto ground = GroundBelow(scene, vec3(center.x, bounds.max.y + 0.5f, center.z), ignored);
+                        auto [bounds, hasMesh, ground] = GroundBelowEntity(scene, entity);
 
                         json match;
                         match["entity"] = GetEntityLabel(entity);
@@ -797,9 +836,7 @@ namespace Atlas::Capture {
                     // that a level placed under the terrain only shows at its entrance
                     const auto& terrain = GetCompleteTerrain(scene);
                     auto margin = query.value("margin", 0.0f);
-                    EntitySet members;
-                    for (auto entity : FindEntities(scene, query.at("entity").get<std::string>()))
-                        CollectHierarchy(entity, members);
+                    auto members = CollectHierarchies(scene, { query.at("entity").get<std::string>() });
 
                     json exposed = json::array();
                     int32_t meshCount = 0;

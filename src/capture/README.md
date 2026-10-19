@@ -467,13 +467,14 @@ enabled before the job is read.
 script. Model files other than `.aemesh` (glTF, FBX, ...) are imported first, next to the source into
 `meshes/` and `materials/`, because scenes only reference `.aemesh` files. `"body": true` adds a static
 mesh shape, such that the piece collides and is found by physics queries. Lights are `point` or `spot`
-lights at the entity origin (`radius`, `intensity`, `color`, `volumetric`, `shadow`; spots also
-`direction` in entity space and the cone half angles in degrees). Spot lights with `shadow` currently
+lights at the entity origin (`radius`, `intensity`, `color`, `volumetric` (off by default), `shadow`;
+spots also `direction` in entity space and the cone half angles in degrees). Spot lights with `shadow` currently
 stay dark when created this way.
 
 `add`, `prefab` and `scatter` put new entities below the root of the scene (or `parent`); scenes
-without a root get top level entities. `localPosition` places an added entity (with `rotation` and
-`scale`) in the space of its parent, `"visible": false` adds a hidden mesh, e.g. one a script shows.
+without a root get top level entities. `localPosition` places an added entity or prefab (with
+`rotation` and `scale`) in the space of its parent, `"visible": false` adds a hidden mesh, e.g. one a
+script shows.
 
 `edit.dryRun` applies the operations and runs the checks and shots on the edited scene without
 saving it or edited materials. Operations that write their own files (`terrainCopy`, `meshCopy`,
@@ -543,7 +544,8 @@ or `path`/`width`, all in x/z) and outside of the `exclude` areas into a new gro
   towards the ground normal, `tilt` randomly, `sink` moves them into the ground relative to their scale
   (negative values lift them).
 - Bodies are `"mesh"` (static mesh shape) or `"capsule"` (a feet aligned trunk, the crown stays passable).
-- `name` replaces the instance names (`<group> <mesh> <index>`), `light` adds a point light child.
+- `name` replaces the instance names (`<group> <mesh> <index>`), `light` adds a child with a light like the
+  one of `add`, at `offset` in the space of the instance.
 - `append` adds to an existing group. `required` fails the job when nothing could be placed. The
   result lists placed instances per mesh and rejections per reason; scatters with a million attempts
   or more print their progress.

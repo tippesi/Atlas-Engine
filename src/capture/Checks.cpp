@@ -103,29 +103,6 @@ namespace Atlas::Capture {
 
     }
 
-    std::vector<Scene::Entity> RemoveDescendants(Scene::Scene& scene, const std::vector<Scene::Entity>& entities) {
-
-        EntitySet contained;
-        for (auto entity : entities)
-            contained.insert(entity);
-
-        std::vector<Scene::Entity> result;
-        for (auto entity : entities) {
-            bool ancestorContained = false;
-            auto parent = scene.GetParentEntity(entity);
-            while (parent.IsValid() && !ancestorContained) {
-                ancestorContained = contained.contains(parent);
-                parent = scene.GetParentEntity(parent);
-            }
-
-            if (!ancestorContained)
-                result.push_back(entity);
-        }
-
-        return result;
-
-    }
-
     void CheckRunner::Run(Scene::Scene& scene, float time) {
 
         if (spec.grounded)
@@ -147,26 +124,18 @@ namespace Atlas::Capture {
 
     void CheckRunner::CheckGrounded(Scene::Scene& scene, float time) {
 
-        auto entities = RemoveDescendants(scene, FindEntities(scene, spec.grounded->entities));
+        auto entities = FindTopmostEntities(scene, spec.grounded->entities);
         runCounts["grounded"] += int32_t(entities.size());
 
         for (auto entity : entities) {
-            EntitySet ignored;
-            CollectHierarchy(entity, ignored);
-
             // Skip entities whose hierarchy has no loaded mesh bounds
-            bool hasMesh = false;
-            auto bounds = GetEntityBounds(entity, &hasMesh);
+            auto [bounds, hasMesh, ground] = GroundBelowEntity(scene, entity);
             if (!hasMesh)
                 continue;
 
-            auto center = bounds.GetCenter();
-            // Start just above the entity so roofs or arches above it are not hit
-            auto ground = GroundBelow(scene, vec3(center.x, bounds.max.y + 0.5f, center.z), ignored);
-
             if (!ground.valid) {
                 AddFailure({ "grounded", GetEntityLabel(entity), time,
-                    "no ground below the entity at " + FormatVec3(center) });
+                    "no ground below the entity at " + FormatVec3(bounds.GetCenter()) });
                 continue;
             }
 
@@ -193,7 +162,7 @@ namespace Atlas::Capture {
     void CheckRunner::CheckPenetration(Scene::Scene& scene, float time) {
 
         auto& penetration = *spec.penetration;
-        auto entities = RemoveDescendants(scene, FindEntities(scene, penetration.entities));
+        auto entities = FindTopmostEntities(scene, penetration.entities);
         runCounts["penetration"] += int32_t(entities.size());
 
         for (auto entity : entities) {
@@ -300,8 +269,7 @@ namespace Atlas::Capture {
 
     void Tracker::Record(Scene::Scene& scene, float time) {
 
-        auto entities = RemoveDescendants(scene, FindEntities(scene, spec.entities));
-        for (auto entity : entities) {
+        for (auto entity : FindTopmostEntities(scene, spec.entities)) {
             auto bounds = GetEntityBounds(entity);
             samples[GetEntityLabel(entity)].push_back({ time, GetEntityPosition(entity), glm::degrees(GetEntityYaw(entity)), bounds.min.y });
         }
@@ -351,7 +319,7 @@ namespace Atlas::Capture {
 
         auto entityPattern = expectation.at("entity").get<std::string>();
         auto property = expectation.at("property").get<std::string>();
-        auto entities = RemoveDescendants(scene, FindEntities(scene, entityPattern));
+        auto entities = FindTopmostEntities(scene, entityPattern);
 
         if (property == "count") {
             auto op = expectation.value("op", std::string("=="));
@@ -406,10 +374,7 @@ namespace Atlas::Capture {
                 actual = glm::distance(position, ToVec3(expectation.at("point")));
             }
             else if (property == "gapToGround") {
-                EntitySet ignored;
-                CollectHierarchy(entity, ignored);
-                auto center = bounds.GetCenter();
-                auto ground = GroundBelow(scene, vec3(center.x, bounds.max.y + 0.5f, center.z), ignored);
+                auto ground = GroundBelowEntity(scene, entity).ground;
                 actual = ground.valid ? bounds.min.y - ground.position.y : std::numeric_limits<float>::infinity();
             }
             else {

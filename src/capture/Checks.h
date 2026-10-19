@@ -78,9 +78,6 @@ namespace Atlas::Capture {
 
     };
 
-    // Removes entities whose ancestor is also contained in the list
-    std::vector<Scene::Entity> RemoveDescendants(Scene::Scene& scene, const std::vector<Scene::Entity>& entities);
-
     // Evaluates a timeline expectation, e.g. { "entity": "Crate", "property": "position.y", "op": ">", "value": 0 }
     json EvaluateExpectation(Scene::Scene& scene, const json& expectation, bool& passed);
 

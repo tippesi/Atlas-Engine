@@ -327,10 +327,7 @@ namespace Atlas::Capture {
 
         // Existing meshes block placement, except ignored entities (e.g. grass) and huge meshes like merged
         // terrain pieces, which the ground raycast handles
-        EntitySet ignored;
-        if (spec.contains("ignore"))
-            for (auto entity : FindEntities(scene, spec["ignore"].get<std::vector<std::string>>()))
-                CollectHierarchy(entity, ignored);
+        auto ignored = CollectHierarchies(scene, spec.value("ignore", std::vector<std::string>()));
         auto maxBlockerSize = spec.value("maxBlockerSize", 120.0f);
 
         SpatialGrid<Blocker> blockers;
@@ -496,25 +493,19 @@ namespace Atlas::Capture {
             entity.AddComponent<NameComponent>(name);
             entity.GetComponent<TransformComponent>().globalMatrix = matrix;
 
-            // A point light on a child entity, offset in the space of the instance (e.g. the flame of a lantern)
+            // A light on a child entity, offset in the space of the instance (e.g. the flame of a lantern)
             if (!item.light.is_null()) {
                 auto offset = ToVec3(item.light.value("offset", json()));
                 auto lightEntity = scene.CreateEntity();
                 lightEntity.AddComponent<NameComponent>(name + " Light");
                 auto& lightTransform = lightEntity.AddComponent<TransformComponent>(glm::translate(offset), true);
                 lightTransform.globalMatrix = matrix * glm::translate(offset);
-                auto& light = lightEntity.AddComponent<LightComponent>(LightType::PointLight, LightMobility::StationaryLight);
-                light.color = ToVec3(item.light.value("color", json()), vec3(1.0f, 0.6f, 0.3f));
-                light.intensity = item.light.value("intensity", 2.0f);
-                light.volumetric = item.light.value("volumetric", false);
-                light.properties.point.radius = item.light.value("radius", 8.0f);
-                entity.AddComponent<HierarchyComponent>().AddChild(lightEntity);
+                AddLight(lightEntity, item.light);
+                AddChild(entity, lightEntity);
             }
 
             if (item.body == "mesh") {
-                Physics::MeshShapeSettings settings = { .mesh = item.mesh, .scale = vec3(scale) };
-                entity.AddComponent<RigidBodyComponent>(Physics::BodyCreationSettings {
-                    .objectLayer = Physics::Layers::Static, .shape = Physics::ShapesManager::CreateShape(settings) });
+                AddMeshBody(entity, item.mesh, vec3(scale));
             }
             else if (item.body == "capsule") {
                 // Trunks and posts: a feet aligned capsule, the crown stays passable
@@ -546,16 +537,10 @@ namespace Atlas::Capture {
             group.AddComponent<NameComponent>(groupName);
             // Without a transform the group is in the space of its parent, the scene only updates it in the next frame
             group.AddComponent<HierarchyComponent>().globalMatrix = scene.GetGlobalMatrix(parent);
-            if (parent.IsValid()) {
-                if (!parent.HasComponent<HierarchyComponent>())
-                    parent.AddComponent<HierarchyComponent>();
-                parent.GetComponent<HierarchyComponent>().AddChild(group);
-            }
+            AddChild(parent, group);
         }
-        if (!group.HasComponent<HierarchyComponent>())
-            group.AddComponent<HierarchyComponent>();
         for (auto entity : created) {
-            group.GetComponent<HierarchyComponent>().AddChild(entity);
+            AddChild(group, entity);
             // The instances were placed in world space, groups (or their parents) may have a transform
             auto& transform = entity.GetComponent<TransformComponent>();
             transform.SetGlobal(transform.globalMatrix, group);

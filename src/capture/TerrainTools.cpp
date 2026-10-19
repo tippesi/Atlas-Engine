@@ -381,10 +381,7 @@ namespace Atlas::Capture {
 
         // Footprints of mesh entities. Grass and other small vegetation would hide the terrain
         // Highlighted hierarchies are drawn on top in cyan, e.g. to see the footprint of a placed prefab
-        EntitySet highlighted;
-        if (spec.contains("highlight"))
-            for (auto entity : FindEntities(scene, spec["highlight"].get<std::vector<std::string>>()))
-                CollectHierarchy(entity, highlighted);
+        auto highlighted = CollectHierarchies(scene, spec.value("highlight", std::vector<std::string>()));
 
         if (spec.value("meshes", true) || !highlighted.empty()) {
             auto smallMeshes = spec.value("smallMeshes", false);
@@ -555,9 +552,7 @@ namespace Atlas::Capture {
         auto walkOn = query.value("walkOn", std::vector<std::string>());
         auto slopeWeight = query.value("slopeWeight", 2.0f);
 
-        EntitySet ignored;
-        for (auto entity : FindEntities(scene, query.value("ignore", std::vector<std::string>())))
-            CollectHierarchy(entity, ignored);
+        auto ignored = CollectHierarchies(scene, query.value("ignore", std::vector<std::string>()));
         // The terrain is sampled directly, its height field body would count as an obstacle on slopes
         auto rigidBodySubset = scene.GetSubset<RigidBodyComponent>();
         for (auto entity : rigidBodySubset) {

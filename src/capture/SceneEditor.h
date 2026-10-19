@@ -37,6 +37,15 @@ namespace Atlas::Capture {
     // Moves an entity to a world position, keeping its rotation (the parent transform is taken into account)
     void SetWorldPosition(Scene::Entity entity, vec3 position);
 
+    // An invalid parent leaves the entity at the top level
+    void AddChild(Scene::Entity parent, Scene::Entity entity);
+
+    // Static body with the mesh as its collision shape
+    void AddMeshBody(Scene::Entity entity, const ResourceHandle<Mesh::Mesh>& mesh, vec3 scale);
+
+    // Point or spot light at the entity origin, the light of the add and scatter operations
+    void AddLight(Scene::Entity entity, const json& spec);
+
     // Compares selected entity fields of two InspectScene results, including their rounded transform values
     json DiffInspections(const json& before, const json& after);
 

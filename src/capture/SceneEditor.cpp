@@ -28,7 +28,7 @@ namespace Atlas::Capture {
     static std::vector<Scene::Entity> SelectEntities(Scene::Scene& scene, const json& operation) {
 
         auto pattern = operation.at("entity").get<std::string>();
-        auto entities = RemoveDescendants(scene, FindEntities(scene, pattern));
+        auto entities = FindTopmostEntities(scene, pattern);
         auto all = operation.value("all", false);
 
         if (entities.empty())
@@ -80,13 +80,91 @@ namespace Atlas::Capture {
 
     }
 
-    static void AddChild(Scene::Entity parent, Scene::Entity entity) {
+    // Added entities need unique names, such that later operations can select them
+    static void CheckNewName(Scene::Scene& scene, const std::string& name) {
+
+        if (scene.GetEntityByName(name).IsValid())
+            throw std::runtime_error("An entity named '" + name + "' already exists");
+
+    }
+
+    static void SetName(Scene::Entity entity, const std::string& name) {
+
+        if (auto nameComponent = entity.TryGetComponent<NameComponent>())
+            nameComponent->name = name;
+        else
+            entity.AddComponent<NameComponent>(name);
+
+    }
+
+    // position is in world space, localPosition (with rotation and scale) in the space of the parent
+    static mat4 GetPlacement(Scene::Scene& scene, const json& operation, Scene::Entity parent) {
+
+        Common::MatrixDecomposition decomposition;
+        decomposition.translation = ToVec3(operation.value("position", json()));
+        decomposition.rotation = glm::radians(ToVec3(operation.value("rotation", json())));
+        decomposition.scale = ToVec3(operation.value("scale", json()), vec3(1.0f));
+        if (!operation.contains("localPosition"))
+            return decomposition.Compose();
+
+        decomposition.translation = ToVec3(operation["localPosition"]);
+        return scene.GetGlobalMatrix(parent) * decomposition.Compose();
+
+    }
+
+    static void Place(Scene::Entity entity, Scene::Entity parent, const mat4& global) {
+
+        GetTransform(entity).SetGlobal(global, parent);
+        AddChild(parent, entity);
+
+    }
+
+    void AddChild(Scene::Entity parent, Scene::Entity entity) {
 
         if (!parent.IsValid())
             return;
         if (!parent.HasComponent<HierarchyComponent>())
             parent.AddComponent<HierarchyComponent>();
         parent.GetComponent<HierarchyComponent>().AddChild(entity);
+
+    }
+
+    void AddMeshBody(Scene::Entity entity, const ResourceHandle<Mesh::Mesh>& mesh, vec3 scale) {
+
+        Physics::MeshShapeSettings settings = { .mesh = mesh, .scale = scale };
+        entity.AddComponent<RigidBodyComponent>(Physics::BodyCreationSettings {
+            .objectLayer = Physics::Layers::Static, .shape = Physics::ShapesManager::CreateShape(settings) });
+
+    }
+
+    void AddLight(Scene::Entity entity, const json& spec) {
+
+        auto type = spec.value("type", std::string("point"));
+        if (type != "point" && type != "spot")
+            throw std::runtime_error("light.type must be point or spot");
+
+        auto& light = entity.AddComponent<LightComponent>(
+            type == "point" ? LightType::PointLight : LightType::SpotLight, LightMobility::StationaryLight);
+        light.color = ToVec3(spec.value("color", json()), vec3(1.0f));
+        light.intensity = spec.value("intensity", 1.0f);
+        light.volumetric = spec.value("volumetric", false);
+        auto radius = spec.value("radius", 20.0f);
+        auto shadow = spec.value("shadow", false);
+        if (type == "point") {
+            light.properties.point.radius = radius;
+            if (shadow)
+                light.AddPointShadow(0.25f, 1024);
+        }
+        else {
+            // The direction is in entity space
+            light.properties.spot.radius = radius;
+            light.properties.spot.direction =
+                glm::normalize(ToVec3(spec.value("direction", json()), vec3(0.0f, -1.0f, 0.0f)));
+            light.properties.spot.innerConeAngle = glm::radians(spec.value("innerAngle", 25.0f));
+            light.properties.spot.outerConeAngle = glm::radians(spec.value("outerAngle", 40.0f));
+            if (shadow)
+                light.AddSpotShadow(2.0f, 1024);
+        }
 
     }
 
@@ -292,12 +370,7 @@ namespace Atlas::Capture {
             else if (type == "snapToGround") {
                 auto offset = operation.value("offset", 0.0f);
                 for (auto entity : SelectEntities(scene, operation)) {
-                    EntitySet ignored;
-                    CollectHierarchy(entity, ignored);
-                    auto bounds = GetEntityBounds(entity);
-                    auto center = bounds.GetCenter();
-                    auto searchHeight = bounds.max.y + operation.value("searchAbove", 0.5f);
-                    auto ground = GroundBelow(scene, vec3(center.x, searchHeight, center.z), ignored);
+                    auto [bounds, hasMesh, ground] = GroundBelowEntity(scene, entity, operation.value("searchAbove", 0.5f));
                     if (!ground.valid)
                         throw std::runtime_error("No ground below " + GetEntityLabel(entity));
 
@@ -333,15 +406,10 @@ namespace Atlas::Capture {
 
                     // Keep the duplicate in the same place of the hierarchy, the local matrix refers to the parent
                     auto parent = scene.GetParentEntity(entity);
-                    if (parent.IsValid())
-                        parent.GetComponent<HierarchyComponent>().AddChild(copy);
+                    AddChild(parent, copy);
 
-                    if (operation.contains("name")) {
-                        if (auto nameComponent = copy.TryGetComponent<NameComponent>())
-                            nameComponent->name = operation["name"].get<std::string>();
-                        else
-                            copy.AddComponent<NameComponent>(operation["name"].get<std::string>());
-                    }
+                    if (operation.contains("name"))
+                        SetName(copy, operation["name"].get<std::string>());
 
                     if (operation.contains("position")) {
                         // The copy has no updated global matrix yet, so start from the original
@@ -380,21 +448,10 @@ namespace Atlas::Capture {
             }
             else if (type == "add") {
                 auto name = operation.at("name").get<std::string>();
-                if (scene.GetEntityByName(name).IsValid())
-                    throw std::runtime_error("An entity named '" + name + "' already exists");
+                CheckNewName(scene, name);
 
                 auto parent = GetParent(scene, operation);
-
-                // position is in world space, localPosition (with rotation and scale) in the space of the parent
-                Common::MatrixDecomposition decomposition;
-                decomposition.translation = ToVec3(operation.value("position", json()));
-                decomposition.rotation = glm::radians(ToVec3(operation.value("rotation", json())));
-                decomposition.scale = ToVec3(operation.value("scale", json()), vec3(1.0f));
-                auto global = decomposition.Compose();
-                if (operation.contains("localPosition")) {
-                    decomposition.translation = ToVec3(operation["localPosition"]);
-                    global = scene.GetGlobalMatrix(parent) * decomposition.Compose();
-                }
+                auto global = GetPlacement(scene, operation, parent);
 
                 ResourceHandle<Mesh::Mesh> mesh;
                 if (operation.contains("mesh"))
@@ -410,9 +467,7 @@ namespace Atlas::Capture {
                     entity.AddComponent<TransformComponent>(global, !hasScript);
                 }
                 entity.AddComponent<NameComponent>(name);
-                auto& transform = entity.GetComponent<TransformComponent>();
-                transform.SetGlobal(global, parent);
-                AddChild(parent, entity);
+                Place(entity, parent, global);
 
                 json added = { { "entity", GetEntityLabel(entity) } };
                 if (mesh.IsValid()) {
@@ -421,14 +476,8 @@ namespace Atlas::Capture {
                     entity.GetComponent<MeshComponent>().visible = operation.value("visible", true);
 
                     // Use the world scale for the collision mesh
-                    if (operation.value("body", false)) {
-                        Physics::MeshShapeSettings settings = { .mesh = mesh, .scale = transform.DecomposeGlobal().scale };
-                        auto bodySettings = Physics::BodyCreationSettings {
-                            .objectLayer = Physics::Layers::Static,
-                            .shape = Physics::ShapesManager::CreateShape(settings),
-                        };
-                        entity.AddComponent<RigidBodyComponent>(bodySettings);
-                    }
+                    if (operation.value("body", false))
+                        AddMeshBody(entity, mesh, GetTransform(entity).DecomposeGlobal().scale);
                 }
                 else if (operation.contains("body")) {
                     throw std::runtime_error("add: a body requires a mesh");
@@ -443,36 +492,9 @@ namespace Atlas::Capture {
                     added["camera"] = camera.isMain ? "main" : "secondary";
                 }
 
-                // Point and spot lights at the entity origin, the spot direction is in entity space
                 if (operation.contains("light")) {
-                    const auto& spec = operation["light"];
-                    auto lightType = spec.value("type", std::string("point"));
-                    if (lightType != "point" && lightType != "spot")
-                        throw std::runtime_error("add: light.type must be point or spot");
-
-                    auto& light = entity.AddComponent<LightComponent>(
-                        lightType == "point" ? LightType::PointLight : LightType::SpotLight,
-                        LightMobility::StationaryLight);
-                    light.color = ToVec3(spec.value("color", json()), vec3(1.0f));
-                    light.intensity = spec.value("intensity", 1.0f);
-                    light.volumetric = spec.value("volumetric", true);
-                    auto radius = spec.value("radius", 20.0f);
-                    auto shadow = spec.value("shadow", false);
-                    if (lightType == "point") {
-                        light.properties.point.radius = radius;
-                        if (shadow)
-                            light.AddPointShadow(0.25f, 1024);
-                    }
-                    else {
-                        light.properties.spot.radius = radius;
-                        light.properties.spot.direction =
-                            glm::normalize(ToVec3(spec.value("direction", json()), vec3(0.0f, -1.0f, 0.0f)));
-                        light.properties.spot.innerConeAngle = glm::radians(spec.value("innerAngle", 25.0f));
-                        light.properties.spot.outerConeAngle = glm::radians(spec.value("outerAngle", 40.0f));
-                        if (shadow)
-                            light.AddSpotShadow(2.0f, 1024);
-                    }
-                    added["light"] = lightType;
+                    AddLight(entity, operation["light"]);
+                    added["light"] = operation["light"].value("type", std::string("point"));
                 }
 
                 if (hasScript) {
@@ -634,10 +656,7 @@ namespace Atlas::Capture {
 
                 int32_t assigned = 0;
                 if (operation.contains("assign")) {
-                    EntitySet members;
-                    for (auto entity : FindEntities(scene, operation["assign"].get<std::vector<std::string>>()))
-                        CollectHierarchy(entity, members);
-                    for (auto member : members) {
+                    for (auto member : CollectHierarchies(scene, operation["assign"].get<std::vector<std::string>>())) {
                         Scene::Entity entity = { member, &scene.entityManager };
                         auto meshComponent = entity.TryGetComponent<MeshComponent>();
                         if (meshComponent && meshComponent->mesh.IsValid() &&
@@ -661,26 +680,18 @@ namespace Atlas::Capture {
             }
             else if (type == "prefab") {
                 auto name = operation.at("name").get<std::string>();
-                if (scene.GetEntityByName(name).IsValid())
-                    throw std::runtime_error("An entity named '" + name + "' already exists");
+                CheckNewName(scene, name);
+
+                auto parent = GetParent(scene, operation);
+                auto global = GetPlacement(scene, operation, parent);
 
                 auto prefabPath = ToAssetPath(operation.at("prefab").get<std::string>());
                 auto entity = Serializer::DeserializePrefab(sceneRef, prefabPath);
-                if (auto nameComponent = entity.TryGetComponent<NameComponent>())
-                    nameComponent->name = name;
-                else
-                    entity.AddComponent<NameComponent>(name);
-
-                Common::MatrixDecomposition decomposition;
-                decomposition.translation = ToVec3(operation.value("position", json()));
-                decomposition.rotation = glm::radians(ToVec3(operation.value("rotation", json())));
-                decomposition.scale = ToVec3(operation.value("scale", json()), vec3(1.0f));
+                SetName(entity, name);
 
                 if (!entity.HasComponent<TransformComponent>())
                     entity.AddComponent<TransformComponent>(mat4(1.0f), true);
-                auto parent = GetParent(scene, operation);
-                entity.GetComponent<TransformComponent>().SetGlobal(decomposition.Compose(), parent);
-                AddChild(parent, entity);
+                Place(entity, parent, global);
 
                 EntitySet members;
                 CollectHierarchy(entity, members);

@@ -53,6 +53,8 @@ namespace Atlas::Capture {
         renderTarget->Resize(resolution.x, resolution.y);
         viewport->Set(0, 0, resolution.x, resolution.y);
         outputTexture = CreateRef<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16G16B16A16_SFLOAT);
+        // Recreated with the new resolution on their next use
+        passTargets.clear();
 
     }
 
