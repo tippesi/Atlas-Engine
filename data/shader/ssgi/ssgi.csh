@@ -34,6 +34,7 @@ layout(set = 3, binding = 6) uniform sampler2D directLightTexture;
 
 layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
+layout(set = 3, binding = 14) uniform sampler2D hiZTexture;
 
 layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
@@ -55,6 +56,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     uint rayCount;
     uint sampleCount;
     int downsampled2x;
+    int hiZLevelCount;
 } uniforms;
 
 float Luma(vec3 color) {
@@ -148,8 +150,8 @@ void main() {
                 
                 vec2 hitPixel;
                 vec3 hitPoint;
-                float jitter =  GetInterleavedGradientNoise(vec2(pixel)) / float(uniforms.rayCount) + j / float(uniforms.rayCount);
-                if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 4.0, 16.0, jitter, 64.0, 1000.0, false, false, hitPixel, hitPoint)) {
+                if (traceScreenSpaceHiZ(viewRayOrigin, viewDir, hiZTexture, uniforms.hiZLevelCount, vec2(textureSize(depthTexture, 0)),
+                    32, 1000.0, false, hitPixel, hitPoint)) {
                     vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
                     vec3 stepViewNorm = normalize(DecodeNormal(texelFetch(normalTexture, ivec2(hitPixel), 0).rg));
                     float depth = texelFetch(depthTexture, ivec2(hitPixel), 0).r;

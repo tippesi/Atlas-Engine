@@ -44,6 +44,11 @@ namespace Atlas::Renderer {
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             velocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+
+            auto hiZPadding = 1 << (hiZLevelCount - 1);
+            auto hiZResolution = ((resolution + hiZPadding - 1) / hiZPadding) * hiZPadding;
+            hiZTexture = std::make_shared<Texture::Texture2D>(hiZResolution.x, hiZResolution.y,
+                VK_FORMAT_R32G32_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapNearest, false, true);
         }
 
         void Resize(ivec2 resolution) {
@@ -57,6 +62,10 @@ namespace Atlas::Renderer {
             materialIdxTexture->Resize(resolution.x, resolution.y);
             stencilTexture->Resize(resolution.x, resolution.y);
             velocityTexture->Resize(resolution.x, resolution.y);
+
+            auto hiZPadding = 1 << (hiZLevelCount - 1);
+            auto hiZResolution = ((resolution + hiZPadding - 1) / hiZPadding) * hiZPadding;
+            hiZTexture->Resize(hiZResolution.x, hiZResolution.y);
         }
 
         Ref<Texture::Texture2D> baseColorTexture = nullptr;
@@ -69,6 +78,9 @@ namespace Atlas::Renderer {
         Ref<Texture::Texture2D> materialIdxTexture = nullptr;
         Ref<Texture::Texture2D> stencilTexture = nullptr;
         Ref<Texture::Texture2D> velocityTexture = nullptr;
+        Ref<Texture::Texture2D> hiZTexture = nullptr;
+
+        int32_t hiZLevelCount = 8;
     };
 
     class RenderTarget {

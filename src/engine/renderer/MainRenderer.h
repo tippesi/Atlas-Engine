@@ -20,6 +20,7 @@
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
 #include "GBufferRenderer.h"
+#include "HiZRenderer.h"
 #include "TextRenderer.h"
 #include "SSGIRenderer.h"
 #include "DDGIRenderer.h"
@@ -110,6 +111,7 @@ namespace Atlas {
             SkyboxRenderer skyboxRenderer;
             PostProcessRenderer postProcessRenderer;
             GBufferRenderer gBufferRenderer;
+            HiZRenderer hiZRenderer;
             SSGIRenderer ssgiRenderer;
             DDGIRenderer ddgiRenderer;
             RTGIRenderer rtgiRenderer;

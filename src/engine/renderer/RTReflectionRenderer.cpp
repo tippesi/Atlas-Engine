@@ -105,6 +105,7 @@ namespace Atlas {
             uniforms.textureLevel = reflection->textureLevel;
             uniforms.halfRes = reflection->halfResolution ? 1 : 0;
             uniforms.resolution = rayRes;
+            uniforms.hiZLevelCount = target->GetData(target->GetReflectionResolution())->hiZLevelCount;
 
             if (shadow && reflection->useShadowMap) {
                 auto& shadowUniform = uniforms.shadow;
@@ -157,6 +158,10 @@ namespace Atlas {
                 commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
                 commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
                 commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
+
+                auto hiZRT = target->GetData(target->GetReflectionResolution());
+                commandList->BindImage(hiZRT->hiZTexture->image, hiZRT->hiZTexture->sampler, 3, 12);
+                commandList->BindImage(hiZRT->depthTexture->image, hiZRT->depthTexture->sampler, 3, 13);
 
                 ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 4);
                 groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);

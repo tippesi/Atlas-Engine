@@ -30,7 +30,7 @@ namespace Atlas {
                 int32_t halfRes;
                 ivec2 resolution;
                 uint32_t frameCount;
-                int32_t padding1;
+                int32_t hiZLevelCount;
                 Shadow shadow;
             };
 

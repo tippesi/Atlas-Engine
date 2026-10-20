@@ -45,6 +45,7 @@ namespace Atlas {
 			impostorShadowRenderer.Init(device);
 			terrainShadowRenderer.Init(device);
 			gBufferRenderer.Init(device);
+			hiZRenderer.Init(device);
 			ddgiRenderer.Init(device);
 			rtgiRenderer.Init(device);
 			ssgiRenderer.Init(device);
@@ -301,6 +302,10 @@ namespace Atlas {
 				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
 			if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
+				if (scene->ssgi && scene->ssgi->enable) {
+					auto resolution = scene->ssgi->halfResolution ? HALF_RES : FULL_RES;
+					hiZRenderer.Generate(target->GetData(resolution), 4.0f, commandList);
+				}
 				ssgiRenderer.Render(target, scene, commandList);
 			}
 
@@ -313,6 +318,13 @@ namespace Atlas {
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 			commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+			auto reflection = scene->reflection;
+			if (reflection && reflection->enable && reflection->ssr) {
+				// Upscaled reflections trace from full resolution, surfaces have no thickness when ray tracing continues the rays
+				auto resolution = !reflection->halfResolution || reflection->upsampleBeforeFiltering ? FULL_RES : HALF_RES;
+				hiZRenderer.Generate(target->GetData(resolution), reflection->rt ? 0.0f : 1.0f, commandList);
+			}
 
 			rtrRenderer.Render(target, scene, commandList);
 
