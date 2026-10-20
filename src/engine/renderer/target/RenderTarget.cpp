@@ -205,6 +205,17 @@ namespace Atlas::Renderer {
 
     }
 
+    void RenderTarget::SetFroxelResolution(ivec3 resolution) {
+
+        froxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        historyFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        integratedFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+
+    }
+
     void RenderTarget::SetReflectionResolution(RenderResolution resolution) {
 
         auto res = GetRelativeResolution(resolution);

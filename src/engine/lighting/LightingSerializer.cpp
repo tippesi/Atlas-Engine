@@ -63,6 +63,9 @@ namespace Atlas::Lighting {
             {"rayMarching", p.rayMarching},
             {"localLights", p.localLights},
             {"rayMarchStepCount", p.rayMarchStepCount},
+            {"froxels", p.froxels},
+            {"froxelTileSize", p.froxelTileSize},
+            {"froxelSliceCount", p.froxelSliceCount},
             {"volumetricIntensity", p.volumetricIntensity},
         };
     }
@@ -82,6 +85,9 @@ namespace Atlas::Lighting {
         j.at("volumetricIntensity").get_to(p.volumetricIntensity);
 
         try_get_json(j, "localLights", p.localLights);
+        try_get_json(j, "froxels", p.froxels);
+        try_get_json(j, "froxelTileSize", p.froxelTileSize);
+        try_get_json(j, "froxelSliceCount", p.froxelSliceCount);
     }
 
     void to_json(json& j, const IrradianceVolume& p) {

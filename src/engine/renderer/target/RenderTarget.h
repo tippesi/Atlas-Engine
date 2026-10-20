@@ -3,6 +3,7 @@
 #include "System.h"
 #include "texture/Texture2D.h"
 #include "texture/Texture2DArray.h"
+#include "texture/Texture3D.h"
 #include "graphics/RenderPass.h"
 #include "graphics/Framebuffer.h"
 
@@ -162,6 +163,11 @@ namespace Atlas::Renderer {
         RenderResolution GetVolumetricResolution();
 
         /*
+         * Sets the resolution of the froxel grid of the volumetric fog
+         */
+        void SetFroxelResolution(ivec3 resolution);
+
+        /*
          * Sets the render resolution for reflections
          */
         void SetReflectionResolution(RenderResolution resolution);
@@ -234,6 +240,10 @@ namespace Atlas::Renderer {
         Texture::Texture2D volumetricCloudsTexture;
         Texture::Texture2D swapVolumetricCloudsTexture;
         Texture::Texture2D historyVolumetricCloudsTexture;
+
+        Texture::Texture3D froxelTexture;
+        Texture::Texture3D historyFroxelTexture;
+        Texture::Texture3D integratedFroxelTexture;
 
         Texture::Texture2D reflectionTexture;
         Texture::Texture2D swapReflectionTexture;

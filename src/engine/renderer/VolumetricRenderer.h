@@ -22,6 +22,28 @@ namespace Atlas {
                 int32_t lightCount;
             };
 
+            struct alignas(16) FroxelPushConstants {
+                ivec2 columnCount;
+                ivec2 resolution;
+                int32_t sliceCount;
+                int32_t tileSize;
+                float near;
+                float far;
+                int32_t lightCount;
+                int32_t resetHistory;
+                int32_t padding0;
+                int32_t padding1;
+                vec4 jitter;
+                float extendedFar;
+                // Temporary debug options
+                float currentWeight;
+                float distributionExponent;
+                int32_t directionalJitter;
+                int32_t localLightJitter;
+                int32_t localLightSampleCount;
+                int32_t jitterMode;
+            };
+
             struct alignas(16) VolumetricUniforms {
                 int sampleCount;
                 float intensity;
@@ -55,7 +77,21 @@ namespace Atlas {
 
             Filter blurFilter;
 
+            void RenderFroxels(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, ivec2 resolution,
+                int32_t lightCount, bool cloudsEnabled, bool cloudShadowsEnabled, bool oceanEnabled,
+                Graphics::CommandList* commandList);
+
             PipelineConfig volumetricPipelineConfig;
+
+            PipelineConfig froxelCullingPipelineConfig;
+            PipelineConfig froxelInjectPipelineConfig;
+            PipelineConfig froxelIntegratePipelineConfig;
+            PipelineConfig froxelApplyPipelineConfig;
+
+            uint64_t froxelFrameCount = 0;
+
+            // Has to match FROXEL_CLUSTER_SIZE
+            const int32_t froxelClusterSize = 4;
 
             PipelineConfig horizontalBlurPipelineConfig;
             PipelineConfig verticalBlurPipelineConfig;

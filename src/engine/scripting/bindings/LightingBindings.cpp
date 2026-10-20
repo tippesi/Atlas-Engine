@@ -118,6 +118,9 @@ namespace Atlas::Scripting::Bindings {
             "ambientFactor", &Lighting::Fog::ambientFactor,
             "rayMarching", &Lighting::Fog::rayMarching,
             "rayMarchStepCount", &Lighting::Fog::rayMarchStepCount,
+            "froxels", &Lighting::Fog::froxels,
+            "froxelTileSize", &Lighting::Fog::froxelTileSize,
+            "froxelSliceCount", &Lighting::Fog::froxelSliceCount,
             "volumetricIntensity", &Lighting::Fog::volumetricIntensity
         );
 
