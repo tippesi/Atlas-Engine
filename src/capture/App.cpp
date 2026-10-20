@@ -19,7 +19,9 @@
 #include <cstdlib>
 #include <csignal>
 #include <exception>
+#if __has_include(<stacktrace>)
 #include <stacktrace>
+#endif
 
 #ifdef AE_OS_WINDOWS
 #ifndef NOMINMAX
@@ -181,7 +183,10 @@ namespace Atlas::Capture {
     // Record crashes in the job output
     static void PrintCrash(const std::string& reason) {
 
-        auto message = "[capture] CRASH: " + reason + "\nStack trace:\n" + std::to_string(std::stacktrace::current());
+        auto message = "[capture] CRASH: " + reason;
+#if defined(__cpp_lib_stacktrace) && __cpp_lib_stacktrace >= 202011L
+        message += "\nStack trace:\n" + std::to_string(std::stacktrace::current());
+#endif
         std::fprintf(stderr, "%s\n", message.c_str());
         std::fprintf(stdout, "%s\n", message.c_str());
         std::fflush(stderr);
