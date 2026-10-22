@@ -3,7 +3,6 @@
 #include <volumetricLights.hsh>
 #include <froxel.hsh>
 #include <../common/random.hsh>
-#include <../common/ign.hsh>
 
 layout (local_size_x = FROXEL_CLUSTER_SIZE, local_size_y = FROXEL_CLUSTER_SIZE, local_size_z = FROXEL_CLUSTER_SIZE) in;
 
@@ -31,11 +30,11 @@ vec3 ComputePunctualLightScattering(uint lightType, vec3 position, vec3 rayDirec
             vec3 pointToLight = light.location.xyz - position;
             sqrDistance = max(0.0, dot(pointToLight, pointToLight));
 
-            attenuation = saturate(1.0 - pow(sqrDistance / (radius * radius), 4.0));
+            attenuation = saturate(1.0 - pow(sqrDistance / (radius * radius), 2.0));
             if (attenuation == 0.0)
                 continue;
 
-            NdotL = dot(-normalize(light.location.xyz), rayDirection);
+            NdotL = dot(normalize(position - light.location.xyz), rayDirection);
             shadowValue = GetShadowFactorPunctualLight(j, POINT_LIGHT, position);
         }
         else if (lightType == SPOT_LIGHT) {
@@ -46,11 +45,11 @@ vec3 ComputePunctualLightScattering(uint lightType, vec3 position, vec3 rayDirec
 
             float strength = dot(L, normalize(-light.direction.xyz));
             float angleAttenuation = saturate(strength * light.specific0 + light.specific1);
-            float distAttenuation = saturate(1.0 - pow(sqrDistance / (radius * radius), 4.0));
+            float distAttenuation = saturate(1.0 - pow(sqrDistance / (radius * radius), 2.0));
             if (angleAttenuation == 0.0 || distAttenuation == 0.0)
                 continue;
 
-            NdotL = dot(-normalize(light.location.xyz), rayDirection);
+            NdotL = dot(normalize(position - light.location.xyz), rayDirection);
             attenuation = min(distAttenuation * sqr(angleAttenuation), 1.0);
             shadowValue = GetShadowFactorPunctualLight(j, SPOT_LIGHT, position);
         }
@@ -65,11 +64,11 @@ vec3 ComputePunctualLightScattering(uint lightType, vec3 position, vec3 rayDirec
 
 }
 
-// Cranley-Patterson rotation per froxel
+// One offset for all froxels or Cranley-Patterson rotation per froxel
 vec3 GetFroxelJitter(ivec3 froxel) {
 
     if (pushConstants.jitterMode == 0)
-        return vec3(0.5, 0.5, GetInterleavedGradientNoise(vec2(0.0), 1024u));
+        return pushConstants.jitter.xyz;
 
     uvec3 seed = uvec3(froxel);
     vec3 rotation = vec3(floatConstruct(hash(uvec4(seed, 0u))), floatConstruct(hash(uvec4(seed, 1u))),

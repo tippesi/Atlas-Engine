@@ -85,6 +85,8 @@ namespace Atlas {
 
             PipelineConfig froxelCullingPipelineConfig;
             PipelineConfig froxelInjectPipelineConfig;
+            PipelineConfig froxelHorizontalFilterPipelineConfig;
+            PipelineConfig froxelVerticalFilterPipelineConfig;
             PipelineConfig froxelIntegratePipelineConfig;
             PipelineConfig froxelApplyPipelineConfig;
 
@@ -107,6 +109,7 @@ namespace Atlas {
             Buffer::UniformBuffer resolveUniformBuffer;
             
             Ref<Graphics::Sampler> shadowSampler;
+            Ref<Graphics::Sampler> shadowDepthSampler;
 
             const int32_t filterSize = 4;
 

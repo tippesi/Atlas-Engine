@@ -66,6 +66,7 @@ namespace Atlas::Lighting {
             {"froxels", p.froxels},
             {"froxelTileSize", p.froxelTileSize},
             {"froxelSliceCount", p.froxelSliceCount},
+            {"froxelFilter", p.froxelFilter},
             {"volumetricIntensity", p.volumetricIntensity},
         };
     }
@@ -88,6 +89,7 @@ namespace Atlas::Lighting {
         try_get_json(j, "froxels", p.froxels);
         try_get_json(j, "froxelTileSize", p.froxelTileSize);
         try_get_json(j, "froxelSliceCount", p.froxelSliceCount);
+        try_get_json(j, "froxelFilter", p.froxelFilter);
     }
 
     void to_json(json& j, const IrradianceVolume& p) {

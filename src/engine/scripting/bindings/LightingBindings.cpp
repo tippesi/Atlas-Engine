@@ -121,6 +121,7 @@ namespace Atlas::Scripting::Bindings {
             "froxels", &Lighting::Fog::froxels,
             "froxelTileSize", &Lighting::Fog::froxelTileSize,
             "froxelSliceCount", &Lighting::Fog::froxelSliceCount,
+            "froxelFilter", &Lighting::Fog::froxelFilter,
             "volumetricIntensity", &Lighting::Fog::volumetricIntensity
         );
 

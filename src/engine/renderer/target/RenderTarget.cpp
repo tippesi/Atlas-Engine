@@ -211,6 +211,8 @@ namespace Atlas::Renderer {
             VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
             VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        filteredFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         integratedFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
             VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 

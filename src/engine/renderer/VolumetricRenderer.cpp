@@ -32,6 +32,8 @@ namespace Atlas {
             volumetricPipelineConfig = PipelineConfig("volumetric/volumetric.csh");
             froxelCullingPipelineConfig = PipelineConfig("volumetric/froxelCulling.csh");
             froxelInjectPipelineConfig = PipelineConfig("volumetric/froxelInject.csh");
+            froxelHorizontalFilterPipelineConfig = PipelineConfig("volumetric/froxelFilter.csh", {"HORIZONTAL"});
+            froxelVerticalFilterPipelineConfig = PipelineConfig("volumetric/froxelFilter.csh", {"VERTICAL"});
             froxelIntegratePipelineConfig = PipelineConfig("volumetric/froxelIntegrate.csh");
             froxelApplyPipelineConfig = PipelineConfig("volumetric/froxelApply.csh");
 
@@ -56,6 +58,9 @@ namespace Atlas {
                 .compareEnabled = true
             };
             shadowSampler = device->CreateSampler(samplerDesc);
+
+            samplerDesc.compareEnabled = false;
+            shadowDepthSampler = device->CreateSampler(samplerDesc);
 
         }
 
@@ -192,6 +197,7 @@ namespace Atlas {
             }
             
             commandList->BindSampler(shadowSampler, 3, 6);
+            commandList->BindSampler(shadowDepthSampler, 3, 12);
 
             if (!bindless) {
                 std::vector<Ref<Graphics::Image>> cascadeMaps;
@@ -474,11 +480,17 @@ namespace Atlas {
                 commandList->Dispatch(clusterCount.x, clusterCount.y, clusterCount.z);
             }
 
-            {
-                Graphics::Profiler::EndAndBeginQuery("Integrate");
+            auto integrateInputTexture = &target->froxelTexture;
+            if (fog->froxelFilter) {
+                Graphics::Profiler::EndAndBeginQuery("Filter");
 
-                froxelIntegratePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
-                auto pipeline = PipelineManager::GetPipeline(froxelIntegratePipelineConfig);
+                ivec3 groupCount = froxelCount / 4;
+                groupCount.x += ((froxelCount.x % 4 == 0) ? 0 : 1);
+                groupCount.y += ((froxelCount.y % 4 == 0) ? 0 : 1);
+                groupCount.z += ((froxelCount.z % 4 == 0) ? 0 : 1);
+
+                // The integrated texture is free until the integration, it holds the horizontal pass
+                auto pipeline = PipelineManager::GetPipeline(froxelHorizontalFilterPipelineConfig);
                 commandList->BindPipeline(pipeline);
                 commandList->PushConstants("constants", &constants);
 
@@ -490,6 +502,43 @@ namespace Atlas {
 
                 commandList->BindImage(target->integratedFroxelTexture.image, 3, 0);
                 commandList->BindImage(target->froxelTexture.image, target->froxelTexture.sampler, 3, 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
+
+                pipeline = PipelineManager::GetPipeline(froxelVerticalFilterPipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                Graphics::ImageBarrier verticalImageBarriers[] = {
+                    {target->integratedFroxelTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->filteredFroxelTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(verticalImageBarriers, {});
+
+                commandList->BindImage(target->filteredFroxelTexture.image, 3, 0);
+                commandList->BindImage(target->integratedFroxelTexture.image, target->integratedFroxelTexture.sampler, 3, 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
+
+                integrateInputTexture = &target->filteredFroxelTexture;
+            }
+
+            {
+                Graphics::Profiler::EndAndBeginQuery("Integrate");
+
+                froxelIntegratePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
+                auto pipeline = PipelineManager::GetPipeline(froxelIntegratePipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                Graphics::ImageBarrier imageBarriers[] = {
+                    {integrateInputTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->integratedFroxelTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, {});
+
+                commandList->BindImage(target->integratedFroxelTexture.image, 3, 0);
+                commandList->BindImage(integrateInputTexture->image, integrateInputTexture->sampler, 3, 1);
 
                 ivec2 groupCount = columnCount / 8;
                 groupCount.x += ((columnCount.x % 8 == 0) ? 0 : 1);

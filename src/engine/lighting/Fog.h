@@ -33,13 +33,14 @@ namespace Atlas {
             bool froxels = true;
             int32_t froxelTileSize = 8;
             int32_t froxelSliceCount = 64;
+            bool froxelFilter = false;
 
             // Temporary froxel debug options
             bool froxelDirectionalJitter = true;
             int32_t froxelJitterMode = 0;
             float froxelFarDistance = 0.0f;
             float froxelDistributionExponent = 1.0f;
-            bool froxelLocalLightJitter = false;
+            bool froxelLocalLightJitter = true;
             int32_t froxelLocalLightSamples = 1;
             float froxelHistoryWeight = 0.9f;
 

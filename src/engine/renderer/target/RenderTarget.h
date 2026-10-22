@@ -243,6 +243,7 @@ namespace Atlas::Renderer {
 
         Texture::Texture3D froxelTexture;
         Texture::Texture3D historyFroxelTexture;
+        Texture::Texture3D filteredFroxelTexture;
         Texture::Texture3D integratedFroxelTexture;
 
         Texture::Texture2D reflectionTexture;
