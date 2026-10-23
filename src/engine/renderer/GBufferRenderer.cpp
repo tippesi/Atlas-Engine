@@ -168,17 +168,7 @@ namespace Atlas {
             commandList->BindImage(velocityIn->image, velocityIn->sampler, 3 , 4);
             commandList->BindImage(materialIdxIn->image, materialIdxIn->sampler, 3 , 5);
 
-            Graphics::ImageBarrier preImageBarriers[] = {
-                {depthOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                {normalOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                {geometryNormalOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                {roughnessMetallicAoOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                {velocityOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                {materialIdxOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                {offsetOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
-            };
-
-            commandList->PipelineBarrier(preImageBarriers, {});
+            downsampledRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
             commandList->BindImage(depthOut->image, 3 , 6);
             commandList->BindImage(normalOut->image, 3 , 7);
@@ -190,17 +180,7 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-            Graphics::ImageBarrier postImageBarriers[] = {
-                {depthOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {normalOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {geometryNormalOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {roughnessMetallicAoOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {velocityOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {materialIdxOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {offsetOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT}
-            };
-
-            commandList->PipelineBarrier(postImageBarriers, {});
+            downsampledRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
         }
 

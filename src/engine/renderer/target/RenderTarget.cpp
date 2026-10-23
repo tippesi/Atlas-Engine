@@ -3,6 +3,36 @@
 
 namespace Atlas::Renderer {
 
+    void RenderTargetData::Transition(Graphics::CommandList* commandList, VkImageLayout layout, VkAccessFlags access,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) const {
+
+        Graphics::ImageBarrier imageBarriers[10];
+        size_t barrierCount = 0;
+        for (auto& texture : { baseColorTexture, depthTexture, normalTexture, geometryNormalTexture,
+            roughnessMetallicAoTexture, emissiveTexture, offsetTexture, materialIdxTexture, stencilTexture, velocityTexture }) {
+            if (texture)
+                imageBarriers[barrierCount++] = { texture->image, layout, access };
+        }
+
+        commandList->PipelineBarrier(std::span(imageBarriers, barrierCount), {}, srcStageMask, dstStageMask);
+
+    }
+
+    void RenderTargetDataHistory::Transition(Graphics::CommandList* commandList, VkImageLayout layout, VkAccessFlags access,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) const {
+
+        Graphics::ImageBarrier imageBarriers[7];
+        size_t barrierCount = 0;
+        for (auto& texture : { depthTexture, normalTexture, geometryNormalTexture, roughnessMetallicAoTexture,
+            materialIdxTexture, stencilTexture, velocityTexture }) {
+            if (texture)
+                imageBarriers[barrierCount++] = { texture->image, layout, access };
+        }
+
+        commandList->PipelineBarrier(std::span(imageBarriers, barrierCount), {}, srcStageMask, dstStageMask);
+
+    }
+
     RenderTarget::RenderTarget(int32_t width, int32_t height) : 
         width(glm::max(4, width)), height(glm::max(4, height)) {
 
@@ -14,11 +44,11 @@ namespace Atlas::Renderer {
 
         ivec2 res = GetRelativeResolution(FULL_RES);
         targetData = RenderTargetData(res, true);
-        targetDataSwap = RenderTargetData(res, true);
+        historyData = RenderTargetDataHistory(res, true);
 
         ivec2 halfRes = GetRelativeResolution(HALF_RES);
         targetDataDownsampled2x = RenderTargetData(halfRes, false);
-        targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
+        historyDataDownsampled2x = RenderTargetDataHistory(halfRes, false);
 
         historyTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
@@ -41,12 +71,6 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
         oceanStencilTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UINT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
-
-        radianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-        historyRadianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-        frameAccumTexture = Texture::Texture2DArray(scaledWidth, scaledHeight, 3, VK_FORMAT_R32_UINT);
 
         CreateRenderPasses();
         CreateFrameBuffers();
@@ -121,6 +145,10 @@ namespace Atlas::Renderer {
         swap = !swap;
 
         std::swap(historyRadianceTexture, radianceTexture);
+
+        historyData.Swap(targetData);
+        if (targetDataDownsampled2x.depthTexture)
+            historyDataDownsampled2x.Swap(targetDataDownsampled2x);
 
         CreateFrameBuffers();
 
@@ -248,17 +276,17 @@ namespace Atlas::Renderer {
     RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return swap ? &targetData : &targetDataSwap;
-        default: return swap ? &targetDataDownsampled2x : &targetDataSwapDownsampled2x;
+        case FULL_RES: return &targetData;
+        default: return &targetDataDownsampled2x;
         }
 
     }
 
-    RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
+    RenderTargetDataHistory* RenderTarget::GetHistoryData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return swap ? &targetDataSwap : &targetData;
-        default: return swap ? &targetDataSwapDownsampled2x : &targetDataDownsampled2x;
+        case FULL_RES: return &historyData;
+        default: return &historyDataDownsampled2x;
         }
 
     }
@@ -331,10 +359,10 @@ namespace Atlas::Renderer {
         if (useForPathTracing) {
             ivec2 res = GetRelativeResolution(FULL_RES);
             targetData = RenderTargetData(res, false);
-            targetDataSwap = RenderTargetData(res, false);
+            historyData = RenderTargetDataHistory(res, false);
 
             targetDataDownsampled2x = RenderTargetData();
-            targetDataSwapDownsampled2x = RenderTargetData();
+            historyDataDownsampled2x = RenderTargetDataHistory();
 
             radianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
@@ -346,11 +374,11 @@ namespace Atlas::Renderer {
         else {
             ivec2 res = GetRelativeResolution(FULL_RES);
             targetData = RenderTargetData(res, true);
-            targetDataSwap = RenderTargetData(res, true);
+            historyData = RenderTargetDataHistory(res, true);
 
             ivec2 halfRes = GetRelativeResolution(HALF_RES);
             targetDataDownsampled2x = RenderTargetData(halfRes, false);
-            targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
+            historyDataDownsampled2x = RenderTargetDataHistory(halfRes, false);
 
             radianceTexture.Reset();
             historyRadianceTexture.Reset();

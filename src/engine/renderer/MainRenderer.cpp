@@ -222,53 +222,21 @@ namespace Atlas {
 			commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
 
 			if (!target->HasHistory()) {
-				auto rtHalfData = target->GetHistoryData(HALF_RES);
-				auto rtData = target->GetHistoryData(FULL_RES);
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-				Graphics::ImageBarrier imageBarriers[] = {
-					{rtData->baseColorTexture->image, layout, access},
-					{rtData->depthTexture->image, layout, access},
-					{rtData->normalTexture->image, layout, access},
-					{rtData->geometryNormalTexture->image, layout, access},
-					{rtData->roughnessMetallicAoTexture->image, layout, access},
-					{rtData->emissiveTexture->image, layout, access},
-					{rtData->offsetTexture->image, layout, access},
-					{rtData->materialIdxTexture->image, layout, access},
-					{rtData->stencilTexture->image, layout, access},
-					{rtData->velocityTexture->image, layout, access},
-					{rtHalfData->baseColorTexture->image, layout, access},
-					{rtHalfData->depthTexture->image, layout, access},
-					{rtHalfData->normalTexture->image, layout, access},
-					{rtHalfData->geometryNormalTexture->image, layout, access},
-					{rtHalfData->roughnessMetallicAoTexture->image, layout, access},
-					{rtHalfData->emissiveTexture->image, layout, access},
-					{rtHalfData->offsetTexture->image, layout, access},
-					{rtHalfData->materialIdxTexture->image, layout, access},
-					{rtHalfData->stencilTexture->image, layout, access},
-					{rtHalfData->velocityTexture->image, layout, access},
-					{target->exposureTexture.image, layout, access}
-				};
-				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				target->GetHistoryData(FULL_RES)->Transition(commandList, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				target->GetHistoryData(HALF_RES)->Transition(commandList, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				commandList->ImageMemoryBarrier(target->exposureTexture.image, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 			}
 
-			{
-				auto rtData = target->GetData(FULL_RES);
+			target->GetData(FULL_RES)->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
+			{
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
 				Graphics::ImageBarrier imageBarriers[] = {
-					{rtData->baseColorTexture->image, layout, access},
-					{rtData->depthTexture->image, layout, access},
-					{rtData->normalTexture->image, layout, access},
-					{rtData->geometryNormalTexture->image, layout, access},
-					{rtData->roughnessMetallicAoTexture->image, layout, access},
-					{rtData->emissiveTexture->image, layout, access},
-					{rtData->offsetTexture->image, layout, access},
-					{rtData->materialIdxTexture->image, layout, access},
-					{rtData->stencilTexture->image, layout, access},
-					{rtData->velocityTexture->image, layout, access},
 					{target->oceanStencilTexture.image, layout, access},
 					{target->oceanDepthTexture.image, layout, access}
 				};
@@ -320,6 +288,7 @@ namespace Atlas {
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 			auto reflection = scene->reflection;
+
 			if (reflection && reflection->enable && reflection->ssr) {
 				// Upscaled reflections trace from full resolution, surfaces have no thickness when ray tracing continues the rays
 				auto resolution = !reflection->halfResolution || reflection->upsampleBeforeFiltering ? FULL_RES : HALF_RES;
