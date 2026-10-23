@@ -111,6 +111,12 @@ namespace Atlas {
             bool fogEnabled = fog && fog->enable;
             bool cloudsEnabled = clouds && clouds->enable;
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
+
+            // Same conditions as the indirect diffuse lighting of the scene
+            auto volume = scene->irradianceVolume;
+            auto rtgi = scene->rtgi;
+            bool rtgiEnabled = rtgi && rtgi->enable && scene->IsRtDataValid();
+            bool ddgiEnabled = volume && volume->enable && !rtgiEnabled && scene->IsRtDataValid();
             if (cloudShadowsEnabled)
                 clouds->shadowTexture.Bind(commandList, 3, 15);
 
@@ -191,6 +197,8 @@ namespace Atlas {
                 auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
                 if (fogEnabled) config.AddMacro("FOG");
                 if (cloudsEnabled) config.AddMacro("CLOUDS");
+                if (ddgiEnabled) config.AddMacro("DDGI");
+                if (ddgiEnabled && volume->scroll) config.AddMacro("DDGI_SCROLL");
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
                 if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
@@ -231,6 +239,9 @@ namespace Atlas {
                     .terrainSideLength = -1.0f,
                     .N = ocean->simulation.N,
                     .spectrumCount = ocean->simulation.C,
+                    .foamOffset = ocean->simulation.foamOffset,
+                    .foamScale = ocean->simulation.foamScale,
+                    .foamSize = ocean->simulation.foamSize,
                 };
 
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
@@ -241,10 +252,6 @@ namespace Atlas {
                 }
                 else {
                     dummyTexture.Bind(commandList, 3, 2);
-                }
-
-                if (scene->sky.GetProbe()) {
-                    scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
                 }
 
                 if (cloudsEnabled) {

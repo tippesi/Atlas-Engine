@@ -37,6 +37,10 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
     int N;
     int spectrumCount;
     float innerCloudRadius;
+
+    float foamOffset;
+    float foamScale;
+    float foamSize;
 } Uniforms;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {

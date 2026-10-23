@@ -56,6 +56,10 @@ namespace Atlas {
                 int32_t N;
                 int32_t spectrumCount;
                 float innerCloudRadius;
+
+                float foamOffset;
+                float foamScale;
+                float foamSize;
             };
 
             struct alignas(16) PushConstants {
