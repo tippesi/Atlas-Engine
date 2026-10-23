@@ -40,6 +40,7 @@ namespace Atlas {
                 float surfaceHeightOffset = 0.0f;
                 float planetRadius = 0.0f;
                 float atmosphereRadius = 0.0f;
+                float sunAngularRadius = 0.0f;
             };
 
             struct alignas(16) RenderUniforms {

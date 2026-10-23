@@ -41,6 +41,7 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
     float foamOffset;
     float foamScale;
     float foamSize;
+    float sunAngularRadius;
 } Uniforms;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {

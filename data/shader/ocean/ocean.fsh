@@ -156,9 +156,11 @@ void main() {
     // Calculate sun spot
     float alpha = GetOceanAlpha(slopeVariance);
     float surfaceRoughness = sqrt(alpha);
+    // The sun is a disk, the half vectors which reflect parts of it spread by half its angular radius
+    float sunAlpha = sqrt(sqr(alpha) + sqr(tan(0.5 * Uniforms.sunAngularRadius)));
     vec3 halfway = normalize(lightDir - eyeDir);
-    float specularFactor = shadowFactor * saturate(nDotL) * DistributionGGX(saturate(dot(norm, halfway)), alpha) *
-        VisibilitySmithGGXCorrelated(saturate(nDotL), max(nDotE, 0.0001), alpha) *
+    float specularFactor = shadowFactor * saturate(nDotL) * DistributionGGX(saturate(dot(norm, halfway)), sunAlpha) *
+        VisibilitySmithGGXCorrelated(saturate(nDotL), max(nDotE, 0.0001), sunAlpha) *
         FresnelSchlick(vec3(0.02), 1.0, saturate(dot(-eyeDir, halfway))).r;
 
     // Scattering equations

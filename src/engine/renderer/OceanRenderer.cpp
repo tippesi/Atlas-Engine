@@ -244,6 +244,9 @@ namespace Atlas {
                     .foamSize = ocean->simulation.foamSize,
                 };
 
+                if (scene->sky.atmosphere)
+                    uniforms.sunAngularRadius = glm::radians(0.5f * glm::max(scene->sky.atmosphere->sunDiskSize, 0.01f));
+
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
                 ocean->simulation.normalMap.Bind(commandList, 3, 1);
 

@@ -34,6 +34,7 @@ namespace Atlas::Lighting {
             {"mieScatteringCoeff", p.mieScatteringCoeff},
             {"rayleighHeightScale", p.rayleighHeightScale},
             {"mieHeightScale", p.mieHeightScale},
+            {"sunDiskSize", p.sunDiskSize},
             {"probeResolution", p.probe->GetCubemap().width}
         };
     }
@@ -47,6 +48,7 @@ namespace Atlas::Lighting {
         try_get_json(j, "mieScatteringCoeff", p.mieScatteringCoeff);
         try_get_json(j, "rayleighHeightScale", p.rayleighHeightScale);
         try_get_json(j, "mieHeightScale", p.mieHeightScale);
+        try_get_json(j, "sunDiskSize", p.sunDiskSize);
     }
 
     void to_json(json& j, const Fog& p) {

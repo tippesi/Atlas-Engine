@@ -27,6 +27,7 @@ layout(set = 3, binding = 3, std140) uniform UniformBuffer {
     float surfaceHeightOffset;
     float planetRadius;
     float atmosphereRadius;
+    float sunAngularRadius;
 } uniforms;
 
 #ifndef ENVIRONMENT_PROBE
@@ -116,9 +117,9 @@ void main() {
 
 vec3 GetSunDisk(vec3 viewDirection, AtmosphereParameters atmosphere) {
 
-    float viewSunCosAngle = dot(viewDirection, uniforms.sunDirection.xyz);
-    float sunDisk = smoothstep(cos(atmosphereSunAngularRadius * 1.25), cos(atmosphereSunAngularRadius),
-        viewSunCosAngle);
+    // The chord length stays precise for small sun disks, unlike the cosine of the angle
+    float viewSunDistance = distance(viewDirection, uniforms.sunDirection.xyz);
+    float sunDisk = 1.0 - smoothstep(uniforms.sunAngularRadius, uniforms.sunAngularRadius * 1.25, viewSunDistance);
 
     vec3 cameraUp = normalize(uniforms.cameraLocation.xyz - uniforms.planetCenter.xyz);
     float cameraRadius = length(uniforms.cameraLocation.xyz - uniforms.planetCenter.xyz);

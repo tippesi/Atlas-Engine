@@ -60,6 +60,7 @@ namespace Atlas {
                 float foamOffset;
                 float foamScale;
                 float foamSize;
+                float sunAngularRadius;
             };
 
             struct alignas(16) PushConstants {

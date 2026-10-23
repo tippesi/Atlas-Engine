@@ -294,7 +294,8 @@ namespace Atlas {
                 .mieHeightScale = atmosphere.mieHeightScale,
                 .surfaceHeightOffset = -(sky.planetCenter.y + sky.planetRadius),
                 .planetRadius = sky.planetRadius,
-                .atmosphereRadius = sky.planetRadius + atmosphere.height
+                .atmosphereRadius = sky.planetRadius + atmosphere.height,
+                .sunAngularRadius = glm::radians(glm::max(atmosphere.sunDiskSize, 0.01f) * 0.5f)
             };
 
         }

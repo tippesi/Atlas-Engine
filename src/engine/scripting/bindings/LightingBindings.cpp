@@ -59,6 +59,7 @@ namespace Atlas::Scripting::Bindings {
             "mieScatteringCoeff", &Lighting::Atmosphere::mieScatteringCoeff,
             "rayleighHeightScale", &Lighting::Atmosphere::rayleighHeightScale,
             "mieHeightScale", &Lighting::Atmosphere::mieHeightScale,
+            "sunDiskSize", &Lighting::Atmosphere::sunDiskSize,
             "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 
