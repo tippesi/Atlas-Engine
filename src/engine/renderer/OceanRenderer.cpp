@@ -112,11 +112,9 @@ namespace Atlas {
             bool cloudsEnabled = clouds && clouds->enable;
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
 
-            // Same conditions as the indirect diffuse lighting of the scene
+            // The ocean can't use RTGI, so DDGI lights it even when RTGI lights the rest of the scene
             auto volume = scene->irradianceVolume;
-            auto rtgi = scene->rtgi;
-            bool rtgiEnabled = rtgi && rtgi->enable && scene->IsRtDataValid();
-            bool ddgiEnabled = volume && volume->enable && !rtgiEnabled && scene->IsRtDataValid();
+            bool ddgiEnabled = volume && volume->enable && scene->IsRtDataValid();
             if (cloudShadowsEnabled)
                 clouds->shadowTexture.Bind(commandList, 3, 15);
 
