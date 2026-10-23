@@ -71,6 +71,8 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
         oceanStencilTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UINT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
+        oceanNormalTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
 
         CreateRenderPasses();
         CreateFrameBuffers();
@@ -104,12 +106,16 @@ namespace Atlas::Renderer {
         sssTexture.Resize(scaledWidth, scaledHeight);
         oceanDepthTexture.Resize(scaledWidth, scaledHeight);
         oceanStencilTexture.Resize(scaledWidth, scaledHeight);
+        oceanNormalTexture.Resize(scaledWidth, scaledHeight);
 
         SetGIResolution(giResolution, giMomentsTexture.IsValid());
         SetVolumetricResolution(volumetricResolution);
         SetReflectionResolution(reflectionResolution);
 
         UseForPathTracing(useForPathTracing);
+
+        if (separateReflectionData)
+            CreateReflectionData();
 
         hasHistory = false;
 
@@ -149,6 +155,11 @@ namespace Atlas::Renderer {
         historyData.Swap(targetData);
         if (targetDataDownsampled2x.depthTexture)
             historyDataDownsampled2x.Swap(targetDataDownsampled2x);
+
+        if (separateReflectionData) {
+            reflectionHistoryData.Swap(reflectionData);
+            reflectionHistoryDataDownsampled2x.Swap(reflectionDataDownsampled2x);
+        }
 
         CreateFrameBuffers();
 
@@ -287,6 +298,58 @@ namespace Atlas::Renderer {
         switch (resolution) {
         case FULL_RES: return &historyData;
         default: return &historyDataDownsampled2x;
+        }
+
+    }
+
+    void RenderTarget::SetSeparateReflectionData(bool separate) {
+
+        if (separate == separateReflectionData)
+            return;
+
+        separateReflectionData = separate;
+
+        if (separate) {
+            CreateReflectionData();
+        }
+        else {
+            reflectionData = RenderTargetData();
+            reflectionDataDownsampled2x = RenderTargetData();
+            reflectionHistoryData = RenderTargetDataHistory();
+            reflectionHistoryDataDownsampled2x = RenderTargetDataHistory();
+        }
+
+        // The history of the reflection data needs to be written first
+        hasHistory = false;
+
+    }
+
+    bool RenderTarget::HasSeparateReflectionData() const {
+
+        return separateReflectionData;
+
+    }
+
+    RenderTargetData* RenderTarget::GetReflectionData(RenderResolution resolution) {
+
+        if (!separateReflectionData)
+            return GetData(resolution);
+
+        switch (resolution) {
+        case FULL_RES: return &reflectionData;
+        default: return &reflectionDataDownsampled2x;
+        }
+
+    }
+
+    RenderTargetDataHistory* RenderTarget::GetReflectionHistoryData(RenderResolution resolution) {
+
+        if (!separateReflectionData)
+            return GetHistoryData(resolution);
+
+        switch (resolution) {
+        case FULL_RES: return &reflectionHistoryData;
+        default: return &reflectionHistoryDataDownsampled2x;
         }
 
     }
@@ -462,7 +525,8 @@ namespace Atlas::Renderer {
         }
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = oceanStencilTexture.format}
+                {.imageFormat = oceanStencilTexture.format},
+                {.imageFormat = oceanNormalTexture.format}
             };
             for (auto& attachment : colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -477,7 +541,7 @@ namespace Atlas::Renderer {
             };
 
             auto oceanRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0]},
+                .colorAttachments = {colorAttachments[0], colorAttachments[1]},
                 .depthAttachment = depthAttachment
             };
             oceanRenderPass = graphicsDevice->CreateRenderPass(oceanRenderPassDesc);
@@ -498,6 +562,19 @@ namespace Atlas::Renderer {
             };
             outputRenderPass = graphicsDevice->CreateRenderPass(outputPassDesc);
         }
+
+    }
+
+    void RenderTarget::CreateReflectionData() {
+
+        // The data is written by compute shaders, so the depth can't be in a depth format
+        ivec2 res = GetRelativeResolution(FULL_RES);
+        reflectionData = RenderTargetData(res, false, true);
+        reflectionHistoryData = RenderTargetDataHistory(res, false);
+
+        ivec2 halfRes = GetRelativeResolution(HALF_RES);
+        reflectionDataDownsampled2x = RenderTargetData(halfRes, false, true);
+        reflectionHistoryDataDownsampled2x = RenderTargetDataHistory(halfRes, false);
 
     }
 
@@ -552,6 +629,7 @@ namespace Atlas::Renderer {
             .renderPass = oceanRenderPass,
             .colorAttachments = {
                 {oceanStencilTexture.image, 0, true},
+                {oceanNormalTexture.image, 0, true},
             },
             .depthAttachment = {oceanDepthTexture.image, 0, true},
             .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}

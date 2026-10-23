@@ -29,6 +29,9 @@ layout (location = 1) out vec2 velocity;
 layout (location = 2) out uint stencil;
 
 layout (set = 3, binding = 2) uniform sampler2D foamTexture;
+#ifdef REFLECTION
+layout (set = 3, binding = 3) uniform sampler2D reflectionTexture;
+#endif
 layout (set = 3, binding = 4) uniform sampler2D refractionTexture;
 layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
@@ -182,8 +185,13 @@ void main() {
 
     // Retrieve colors from textures
     vec3 refractionColor = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb;
+#ifdef REFLECTION
+    // Traced and filtered from the ocean surface together with the reflections of the scene
+    vec3 reflectionColor = textureLod(reflectionTexture, ndcCoord, 0.0).rgb;
+#else
     float reflectionMipLevel = surfaceRoughness * float(textureQueryLevels(specularProbe) - 1);
     vec3 reflectionColor = textureLod(specularProbe, reflectionVec, reflectionMipLevel).rgb;
+#endif
 
     // Calculate water color
     vec3 depthFog = mix(Uniforms.deepWaterBodyColor.rgb, Uniforms.waterBodyColor.rgb, min(1.0 , exp(-waterViewDepth / 10.0)));

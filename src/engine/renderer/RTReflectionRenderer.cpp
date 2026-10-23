@@ -76,7 +76,7 @@ namespace Atlas {
             if (mainLightEntity.IsValid())
                 shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
 
-            auto downsampledRT = target->GetData(!reflection->halfResolution ? FULL_RES : HALF_RES);
+            auto downsampledRT = target->GetReflectionData(!reflection->halfResolution ? FULL_RES : HALF_RES);
             // Should be reflection resolution
             auto lightingTexture = &target->lightingTexture;
 
@@ -143,7 +143,7 @@ namespace Atlas {
             if (reflection->ssr) {
                 Graphics::Profiler::BeginQuery("SSR");
 
-                auto rt = target->GetData(FULL_RES);
+                auto rt = target->GetReflectionData(FULL_RES);
 
                 auto depthTexture = rt->depthTexture;
                 auto normalTexture = reflection->useNormalMaps ? rt->normalTexture : rt->geometryNormalTexture;
@@ -159,6 +159,7 @@ namespace Atlas {
                 commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
                 commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
 
+                // The rays only hit the scene, not the ocean surface they might start from
                 auto hiZRT = target->GetData(target->GetReflectionResolution());
                 commandList->BindImage(hiZRT->hiZTexture->image, hiZRT->hiZTexture->sampler, 3, 12);
                 commandList->BindImage(hiZRT->depthTexture->image, hiZRT->depthTexture->sampler, 3, 13);
@@ -205,7 +206,7 @@ namespace Atlas {
 
                 auto clouds = scene->sky.clouds;
 
-                auto rt = reflection->upsampleBeforeFiltering ? target->GetData(FULL_RES) : downsampledRT;
+                auto rt = reflection->upsampleBeforeFiltering ? target->GetReflectionData(FULL_RES) : downsampledRT;
 
                 auto depthTexture = rt->depthTexture;
                 auto normalTexture = reflection->useNormalMaps ? rt->normalTexture : rt->geometryNormalTexture;
@@ -305,8 +306,8 @@ namespace Atlas {
             }
 
             // Now after a potential upsampling get the actual data for the filtering
-            downsampledRT = target->GetData(target->GetReflectionResolution());
-            auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
+            downsampledRT = target->GetReflectionData(target->GetReflectionResolution());
+            auto downsampledHistoryRT = target->GetReflectionHistoryData(target->GetReflectionResolution());
 
             // Should be reflection resolution
             depthTexture = downsampledRT->depthTexture;

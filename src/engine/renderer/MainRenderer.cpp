@@ -209,8 +209,6 @@ namespace Atlas {
 
 			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
 
-			oceanRenderer.RenderDepthOnly(target, scene, commandList);
-
 			auto targetData = target->GetData(FULL_RES);
 
 			commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 3);
@@ -232,12 +230,16 @@ namespace Atlas {
 			target->GetData(FULL_RES)->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 				VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
+			// The ocean depth pass reads the scene depth
+			oceanRenderer.RenderDepthOnly(target, scene, commandList);
+
 			{
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
 				Graphics::ImageBarrier imageBarriers[] = {
 					{target->oceanStencilTexture.image, layout, access},
+					{target->oceanNormalTexture.image, layout, access},
 					{target->oceanDepthTexture.image, layout, access}
 				};
 
@@ -288,6 +290,14 @@ namespace Atlas {
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 			auto reflection = scene->reflection;
+
+			// The reflections start on the ocean surface where it's visible, which isn't part of the G-buffer
+			auto reflectionEnabled = reflection && reflection->enable && (reflection->ssr || scene->IsRtDataValid());
+			auto oceanReflections = reflectionEnabled && scene->ocean && scene->ocean->enable;
+			target->SetSeparateReflectionData(oceanReflections);
+			if (oceanReflections) {
+				oceanRenderer.RenderReflectionData(target, scene, commandList);
+			}
 
 			if (reflection && reflection->enable && reflection->ssr) {
 				// Upscaled reflections trace from full resolution, surfaces have no thickness when ray tracing continues the rays

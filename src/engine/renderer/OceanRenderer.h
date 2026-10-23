@@ -20,6 +20,8 @@ namespace Atlas {
 
             void RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
+            void RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
         private:
             struct alignas(16) Uniforms {
                 Fog fog;
@@ -81,6 +83,7 @@ namespace Atlas {
 
             PipelineConfig causticPipelineConfig;
             PipelineConfig underWaterPipelineConfig;
+            PipelineConfig reflectionDataPipelineConfig;
 
             Buffer::VertexArray vertexArray;
 

@@ -15,6 +15,7 @@ namespace Atlas {
 
             causticPipelineConfig = PipelineConfig("ocean/caustics.csh");
             underWaterPipelineConfig = PipelineConfig("ocean/underwater.csh");
+            reflectionDataPipelineConfig = PipelineConfig("ocean/reflectionData.csh");
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             depthUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
@@ -185,7 +186,10 @@ namespace Atlas {
                 commandList->PipelineBarrier(postImageBarriers, {},
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
-            
+
+            // The reflections were traced from the ocean surface together with the ones of the scene
+            bool oceanReflections = target->HasSeparateReflectionData();
+
             {
                 Graphics::Profiler::EndAndBeginQuery("Surface");
 
@@ -200,6 +204,7 @@ namespace Atlas {
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
                 if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
+                if (oceanReflections) config.AddMacro("REFLECTION");
                 if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
                 auto pipeline = PipelineManager::GetPipeline(config);
@@ -258,6 +263,10 @@ namespace Atlas {
                 if (cloudsEnabled) {
                     target->volumetricCloudsTexture.Bind(commandList, 3, 16);
                     uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->baseAltitude;
+                }
+
+                if (oceanReflections) {
+                    target->reflectionTexture.Bind(commandList, 3, 3);
                 }
 
                 refractionTexture.Bind(commandList, 3, 4);
@@ -400,6 +409,73 @@ namespace Atlas {
 
         }
 
+        void OceanRenderer::RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+
+            Graphics::Profiler::BeginQuery("Ocean reflection data");
+
+            auto rt = target->GetData(FULL_RES);
+            auto reflectionRt = target->GetReflectionData(FULL_RES);
+            auto halfResReflectionRt = target->GetReflectionData(HALF_RES);
+
+            ivec2 res = ivec2(reflectionRt->depthTexture->width, reflectionRt->depthTexture->height);
+
+            ivec2 groupCount = res / 8;
+            groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
+            groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
+
+            auto pipeline = PipelineManager::GetPipeline(reflectionDataPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            uint32_t oceanMaterialIdx = scene->renderState.materialMap[scene->ocean.get()];
+            commandList->PushConstants("constants", &oceanMaterialIdx);
+
+            commandList->BindImage(rt->depthTexture->image, nearestSampler, 3, 0);
+            commandList->BindImage(rt->normalTexture->image, nearestSampler, 3, 1);
+            commandList->BindImage(rt->geometryNormalTexture->image, nearestSampler, 3, 2);
+            commandList->BindImage(rt->roughnessMetallicAoTexture->image, nearestSampler, 3, 3);
+            commandList->BindImage(rt->velocityTexture->image, nearestSampler, 3, 4);
+            commandList->BindImage(rt->materialIdxTexture->image, nearestSampler, 3, 5);
+
+            // The ray origins on the ocean are written by the depth only pass
+            commandList->BindImage(target->oceanDepthTexture.image, nearestSampler, 3, 6);
+            commandList->BindImage(target->oceanNormalTexture.image, nearestSampler, 3, 7);
+            commandList->BindImage(target->oceanStencilTexture.image, nearestSampler, 3, 8);
+
+            reflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            halfResReflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+            commandList->BindImage(reflectionRt->depthTexture->image, 3, 9);
+            commandList->BindImage(reflectionRt->normalTexture->image, 3, 10);
+            commandList->BindImage(reflectionRt->geometryNormalTexture->image, 3, 11);
+            commandList->BindImage(reflectionRt->roughnessMetallicAoTexture->image, 3, 12);
+            commandList->BindImage(reflectionRt->velocityTexture->image, 3, 13);
+            commandList->BindImage(reflectionRt->materialIdxTexture->image, 3, 14);
+
+            commandList->BindImage(halfResReflectionRt->depthTexture->image, 3, 15);
+            commandList->BindImage(halfResReflectionRt->normalTexture->image, 3, 16);
+            commandList->BindImage(halfResReflectionRt->geometryNormalTexture->image, 3, 17);
+            commandList->BindImage(halfResReflectionRt->roughnessMetallicAoTexture->image, 3, 18);
+            commandList->BindImage(halfResReflectionRt->velocityTexture->image, 3, 19);
+            commandList->BindImage(halfResReflectionRt->materialIdxTexture->image, 3, 20);
+            commandList->BindImage(halfResReflectionRt->offsetTexture->image, 3, 21);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            reflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            halfResReflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+            // Freshly created history data was never written, it can only be read after a transition
+            if (!target->HasHistory()) {
+                target->GetReflectionHistoryData(FULL_RES)->Transition(commandList,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                target->GetReflectionHistoryData(HALF_RES)->Transition(commandList,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            }
+
+            Graphics::Profiler::EndQuery();
+
+        }
+
         void OceanRenderer::RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->ocean || !scene->ocean->enable)
@@ -463,8 +539,9 @@ namespace Atlas {
                 scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
             }
 
-            refractionTexture.Bind(commandList, 3, 4);
-            depthTexture.Bind(commandList, 3, 5);
+            // Normals are only computed where the ocean isn't hidden by the scene
+            auto sceneDepthTexture = target->GetData(FULL_RES)->depthTexture;
+            commandList->BindImage(sceneDepthTexture->image, nearestSampler, 3, 5);
 
             if (scene->terrain.IsLoaded()) {
                 if (scene->terrain->shoreLine.IsValid()) {

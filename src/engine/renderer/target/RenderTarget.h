@@ -19,9 +19,21 @@ namespace Atlas::Renderer {
     public:
         RenderTargetData() = default;
 
-        explicit RenderTargetData(ivec2 resolution, bool useDepthFormat) {
-            baseColorTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        // The reflection data only has the channels the reflections read
+        explicit RenderTargetData(ivec2 resolution, bool useDepthFormat, bool reflectionData = false) {
+            if (!reflectionData) {
+                baseColorTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                    VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                emissiveTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                    VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+                stencilTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_UINT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
+
+                auto hiZPadding = 1 << (hiZLevelCount - 1);
+                auto hiZResolution = ((resolution + hiZPadding - 1) / hiZPadding) * hiZPadding;
+                hiZTexture = std::make_shared<Texture::Texture2D>(hiZResolution.x, hiZResolution.y,
+                    VK_FORMAT_R32G32_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapNearest, false, true);
+            }
             if (useDepthFormat) {
                 depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_D32_SFLOAT,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
@@ -36,21 +48,12 @@ namespace Atlas::Renderer {
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             roughnessMetallicAoTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-            emissiveTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             offsetTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_SINT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             materialIdxTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16_UINT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
-            stencilTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_UINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             velocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-
-            auto hiZPadding = 1 << (hiZLevelCount - 1);
-            auto hiZResolution = ((resolution + hiZPadding - 1) / hiZPadding) * hiZPadding;
-            hiZTexture = std::make_shared<Texture::Texture2D>(hiZResolution.x, hiZResolution.y,
-                VK_FORMAT_R32G32_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapNearest, false, true);
         }
 
         // Transitions all existing channels, except the hierarchical depth which has its own layouts
@@ -112,7 +115,9 @@ namespace Atlas::Renderer {
             std::swap(roughnessMetallicAoTexture, data.roughnessMetallicAoTexture);
             std::swap(materialIdxTexture, data.materialIdxTexture);
             std::swap(velocityTexture, data.velocityTexture);
-            std::swap(stencilTexture, data.stencilTexture);
+            // The reflection data has no stencil
+            if (data.stencilTexture)
+                std::swap(stencilTexture, data.stencilTexture);
         }
 
         Ref<Texture::Texture2D> depthTexture = nullptr;
@@ -221,6 +226,17 @@ namespace Atlas::Renderer {
 
         RenderTargetDataHistory* GetHistoryData(RenderResolution resolution);
 
+        /*
+         * Gives the reflections their own geometry data, e.g. for the ocean surface
+         */
+        void SetSeparateReflectionData(bool separate);
+
+        bool HasSeparateReflectionData() const;
+
+        RenderTargetData* GetReflectionData(RenderResolution resolution);
+
+        RenderTargetDataHistory* GetReflectionHistoryData(RenderResolution resolution);
+
         Texture::Texture2D* GetHistory();
 
         Texture::Texture2D* GetLastHistory();
@@ -273,6 +289,7 @@ namespace Atlas::Renderer {
 
         Texture::Texture2D oceanDepthTexture;
         Texture::Texture2D oceanStencilTexture;
+        Texture::Texture2D oceanNormalTexture;
 
         Texture::Texture2D volumetricTexture;
         Texture::Texture2D swapVolumetricTexture;
@@ -307,6 +324,8 @@ namespace Atlas::Renderer {
 
         void CreateFrameBuffers();
 
+        void CreateReflectionData();
+
         Texture::Texture2D historyTexture;
         Texture::Texture2D swapHistoryTexture;
 
@@ -314,6 +333,11 @@ namespace Atlas::Renderer {
         RenderTargetData targetDataDownsampled2x;
         RenderTargetDataHistory historyData;
         RenderTargetDataHistory historyDataDownsampled2x;
+
+        RenderTargetData reflectionData;
+        RenderTargetData reflectionDataDownsampled2x;
+        RenderTargetDataHistory reflectionHistoryData;
+        RenderTargetDataHistory reflectionHistoryDataDownsampled2x;
 
         int32_t width = 0;
         int32_t height = 0;
@@ -330,6 +354,7 @@ namespace Atlas::Renderer {
         bool swap = false;
         bool hasHistory = false;
         bool useForPathTracing = false;
+        bool separateReflectionData = false;
 
     };
 
