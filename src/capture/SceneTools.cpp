@@ -504,6 +504,10 @@ namespace Atlas::Capture {
                     light.intensity = patch["intensity"].get<float>();
             }
             else {
+                // A default constructed ocean has no valid simulation to patch, so it starts with the editor defaults
+                if (key == "ocean" && !scene.ocean)
+                    scene.ocean = CreateRef<Ocean::Ocean>(9, 4096.0f);
+
                 features[key] = patch;
             }
         }

@@ -123,7 +123,7 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.ocean) {
         scene->ocean = Atlas::CreateRef<Atlas::Ocean::Ocean>(9, 4096.0f,
-            glm::vec3(0.0f, 5.0f, 0.0f), 128, 86);
+            glm::vec3(0.0f, 5.0f, 0.0f), 128);
     }
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();

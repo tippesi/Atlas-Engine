@@ -4,6 +4,7 @@
 #include "audio/AudioSerializer.h"
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
+#include "ocean/OceanSerializer.h"
 
 #include "loader/TerrainLoader.h"
 
@@ -255,6 +256,8 @@ namespace Atlas::Scene {
             j["sss"] = *scene->sss;
         if (scene->ssgi)
             j["ssgi"] = *scene->ssgi;
+        if (scene->ocean)
+            j["ocean"] = *scene->ocean;
 
     }
 
@@ -271,7 +274,7 @@ namespace Atlas::Scene {
 
             json merged = settings;
             merged.merge_patch(j[key]);
-            settings = merged;
+            merged.get_to(settings);
         };
 
         auto readFeature = [&]<class T>(const char* key, Ref<T>& feature) {
@@ -293,6 +296,7 @@ namespace Atlas::Scene {
         readFeature("rtgi", scene->rtgi);
         readFeature("sss", scene->sss);
         readFeature("ssgi", scene->ssgi);
+        readFeature("ocean", scene->ocean);
 
     }
 

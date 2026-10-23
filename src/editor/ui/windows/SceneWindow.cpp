@@ -147,6 +147,8 @@ namespace Atlas::Editor::UI {
 
             if (sceneHierarchyPanel.selectedProperty.terrain)
                 scenePropertiesPanel.Render(scene->terrain, refScene, target);
+            else if (sceneHierarchyPanel.selectedProperty.ocean)
+                scenePropertiesPanel.Render(scene->ocean);
             else if (sceneHierarchyPanel.selectedProperty.fog)
                 scenePropertiesPanel.Render(scene->fog, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)

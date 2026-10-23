@@ -15,6 +15,7 @@ namespace Atlas::Editor::UI {
         bool rtgi = false;
         bool sss = false;
         bool irradianceVolume = false;
+        bool ocean = false;
         bool wind = false;
         bool sky = false;
         bool postProcessing = false;

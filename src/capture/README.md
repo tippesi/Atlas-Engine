@@ -162,9 +162,11 @@ pattern matches a parent and its children, only the topmost matched entities are
 
 `settings` patches the scene's feature settings with JSON merge semantics. The keys and fields
 are the ones of the scene serializer: `sky` (including `clouds` and `atmosphere`),
-`postProcessing`, `wind`, `fog`, `irradianceVolume`, `reflection`, `rtgi`, `ssgi` and `sss`. The
+`postProcessing`, `wind`, `fog`, `irradianceVolume`, `reflection`, `rtgi`, `ssgi`, `sss` and `ocean`. The
 current values are in the `settings` section of an `--inspect` output. On the command line use
-`--set fog.density=0.02`. Two additional keys:
+`--set fog.density=0.02`. Patching `ocean` adds an ocean to a scene without one, e.g.
+`{ "ocean": { "translation": { "x": 0, "y": 0, "z": 0 }, "N": 512 } }`. Changing `N`, `size` or `LoDCount`
+recreates the simulation. Two additional keys:
 
 - `sun`: the main directional light, `{ "elevation": 12, "azimuth": 10 }` in degrees (azimuth 0 places
   the sun on the +Z side) or `"direction"`, plus `"color"` and `"intensity"`. Clouds, fog and

@@ -67,6 +67,18 @@ namespace Atlas::Editor::UI {
                 RenderHeading("Screen-space shadows");
                 sssPanel.Render(t);
             }
+            else if constexpr (std::is_same_v<T, Ref<Ocean::Ocean>>) {
+                RenderHeading("Ocean");
+                if (t) {
+                    oceanPanel.Render(t);
+                    ImGui::Separator();
+                    if (ImGui::Button("Remove ocean", ImVec2(-FLT_MIN, 0.0f)))
+                        t = nullptr;
+                }
+                else if (ImGui::Button("Create ocean", ImVec2(-FLT_MIN, 0.0f))) {
+                    t = CreateRef<Ocean::Ocean>(9, 4096.0f);
+                }
+            }
             else if constexpr (std::is_same_v<T, Scene::Wind>) {
                 RenderHeading("Wind");
                 windPanel.Render(Singletons::imguiWrapper, t);
@@ -111,6 +123,7 @@ namespace Atlas::Editor::UI {
         ImguiExtension::SSGIPanel ssgiPanel;
         ImguiExtension::RTGIPanel rtgiPanel;
         ImguiExtension::SSSPanel sssPanel;
+        ImguiExtension::OceanPanel oceanPanel;
         ImguiExtension::WindPanel windPanel;
         ImguiExtension::SkyPanel skyPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;

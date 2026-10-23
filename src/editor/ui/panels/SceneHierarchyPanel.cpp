@@ -503,6 +503,7 @@ namespace Atlas::Editor::UI {
         ImGui::SeparatorText("Scene settings");
 
         RenderExtendedItem("Terrain", &selectedProperty.terrain, selectionChanged);
+        RenderExtendedItem("Ocean", &selectedProperty.ocean, selectionChanged);
         if (scene->irradianceVolume)
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
         if (scene->rtgi)
