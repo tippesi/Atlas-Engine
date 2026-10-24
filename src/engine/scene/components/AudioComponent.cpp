@@ -2,6 +2,7 @@
 #include "../../audio/AudioManager.h"
 
 #include "../Scene.h"
+#include "common/MathHelper.h"
 
 namespace Atlas {
 
@@ -55,7 +56,7 @@ namespace Atlas {
                 if (!stream)
                     return;
 
-                if (scene->physicsWorld->pauseSimulation && !permanentPlay) {
+                if ((scene->physicsWorld->pauseSimulation || scene->paused) && !permanentPlay) {
                     stream->SetVolume(0.0f);
                     return;
                 }
@@ -83,15 +84,11 @@ namespace Atlas {
                 auto audible = distanceVolume > cutoff;
 
                 if (audible) {
-                    auto mix = 0.0f;
-
-                    if (distance == epsilon) {
-                        mix = 0.5f;
-                    }
-                    else {
-                        auto direction = glm::normalize(objectLocation - listenerLocation);
-                        mix = 0.5f * glm::dot(direction, -listenerRight) + 0.5f;
-                    }
+                    // Sources at the listener (e.g. music attached to the camera) have no stable direction,
+                    // so panning fades in over the first meter instead of flipping between the channels
+                    auto direction = Helper::Math::NormalizeOrZero(objectLocation - listenerLocation);
+                    auto panning = Helper::Math::Saturate(distance);
+                    auto mix = 0.5f * panning * glm::dot(direction, -listenerRight) + 0.5f;
 
                     auto lastDistance = glm::distance(lastObjectLocation, lastListenerLocation);
 

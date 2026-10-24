@@ -4,6 +4,7 @@
 #include "audio/AudioSerializer.h"
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
+#include "ocean/OceanSerializer.h"
 
 #include "loader/TerrainLoader.h"
 
@@ -183,23 +184,10 @@ namespace Atlas::Scene {
         j["name"] = scene->name;
         j["aabb"] = scene->aabb;
         j["depth"] = scene->depth;
-        j["sky"] = scene->sky;
-        j["postProcessing"] = scene->postProcessing;
-        j["wind"] = scene->wind;
-        
+
+        SceneSettingsToJson(j, scene);
+
         // Parse all optional members
-        if (scene->fog)
-            j["fog"] = *scene->fog;
-        if (scene->irradianceVolume)
-            j["irradianceVolume"] = *scene->irradianceVolume;
-        if (scene->reflection)
-            j["reflection"] = *scene->reflection;
-        if (scene->rtgi)
-            j["rtgi"] = *scene->rtgi;
-        if (scene->sss)
-            j["sss"] = *scene->sss;
-        if (scene->ssgi)
-            j["ssgi"] = *scene->ssgi;
         if (scene->terrain.IsValid() && !scene->terrain.IsGenerated())
             j["terrain"] = scene->terrain.GetResource()->path;
 
@@ -242,40 +230,85 @@ namespace Atlas::Scene {
             EntityFromJson(jEntity, entity, scene.get(), containsEntityManager);
         }
 
-        scene->sky = j["sky"];
-        scene->postProcessing = j["postProcessing"];
-
-        if (j.contains("fog")) {
-            scene->fog = CreateRef<Lighting::Fog>();
-            *scene->fog = j["fog"];
-        }
-        if (j.contains("irradianceVolume")) {
-            scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>();
-            *scene->irradianceVolume = j["irradianceVolume"];
-        }
-        if (j.contains("reflection")) {
-            scene->reflection = CreateRef<Lighting::Reflection>();
-            *scene->reflection = j["reflection"];
-        }
-        if (j.contains("rtgi")) {
-            scene->rtgi = CreateRef<Lighting::RTGI>();
-            *scene->rtgi = j["rtgi"];
-        }
-        if (j.contains("sss")) {
-            scene->sss = CreateRef<Lighting::SSS>();
-            *scene->sss = j["sss"];
-        }
-        if (j.contains("ssgi")) {
-            scene->ssgi = CreateRef<Lighting::SSGI>();
-            *scene->ssgi = j["ssgi"];
-        }
-        if (j.contains("wind")) {
-            scene->wind = j["wind"];
-        }
+        SceneSettingsFromJson(j, scene.get());
 
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
 
         scene->physicsWorld->OptimizeBroadphase();
+
+    }
+
+    void SceneSettingsToJson(json& j, const Scene* scene) {
+
+        j["sky"] = scene->sky;
+        j["postProcessing"] = scene->postProcessing;
+        j["wind"] = scene->wind;
+
+        if (scene->fog)
+            j["fog"] = *scene->fog;
+        if (scene->irradianceVolume)
+            j["irradianceVolume"] = *scene->irradianceVolume;
+        if (scene->reflection)
+            j["reflection"] = *scene->reflection;
+        if (scene->rtgi)
+            j["rtgi"] = *scene->rtgi;
+        if (scene->sss)
+            j["sss"] = *scene->sss;
+        if (scene->ssgi)
+            j["ssgi"] = *scene->ssgi;
+        if (scene->ocean)
+            j["ocean"] = *scene->ocean;
+
+    }
+
+    static void ReadSceneSettings(const json& j, Scene* scene, bool mergePatch) {
+
+        auto readSettings = [&]<class T>(const char* key, T& settings) {
+            if (!j.contains(key))
+                return;
+
+            if (!mergePatch) {
+                settings = j[key];
+                return;
+            }
+
+            json merged = settings;
+            merged.merge_patch(j[key]);
+            merged.get_to(settings);
+        };
+
+        auto readFeature = [&]<class T>(const char* key, Ref<T>& feature) {
+            if (!j.contains(key))
+                return;
+
+            if (!feature)
+                feature = CreateRef<T>();
+            readSettings(key, *feature);
+        };
+
+        readSettings("sky", scene->sky);
+        readSettings("postProcessing", scene->postProcessing);
+        readSettings("wind", scene->wind);
+
+        readFeature("fog", scene->fog);
+        readFeature("irradianceVolume", scene->irradianceVolume);
+        readFeature("reflection", scene->reflection);
+        readFeature("rtgi", scene->rtgi);
+        readFeature("sss", scene->sss);
+        readFeature("ssgi", scene->ssgi);
+        readFeature("ocean", scene->ocean);
+
+    }
+
+    void SceneSettingsFromJson(const json& j, Scene* scene) {
+
+        ReadSceneSettings(j, scene, false);
+
+    }
+
+    void PatchSceneSettings(const json& patch, Scene* scene) {
+
+        ReadSceneSettings(patch, scene, true);
 
     }
 

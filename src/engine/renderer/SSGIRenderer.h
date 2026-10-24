@@ -26,6 +26,7 @@ namespace Atlas {
                 uint32_t rayCount;
                 uint32_t sampleCount;
                 int32_t downsampled2x;
+                int32_t hiZLevelCount;
             };
 
             Filter blurFilter;

@@ -28,7 +28,7 @@ namespace Atlas {
                 
                 RenderOutlined3D(commandList, textComp.font.Get(), textComp.text, textComp.GetTransformedPosition(),
                     textComp.GetTransformedRotation(), textComp.halfSize, textComp.textColor, textComp.outlineColor,
-                    textComp.outlineFactor, textComp.textScale, target->afterLightingFrameBuffer);
+                    textComp.outlineFactor, textComp.textScale, target->afterLightingFrameBufferWithStencil);
 
             }
 
@@ -148,13 +148,23 @@ namespace Atlas {
                 .smoothness = font->smoothness
             };
 
-            commandList->PushConstants("constants", &constants);
-
             commandList->BindImage(font->glyphTexture.image, font->glyphTexture.sampler, 3, 0);
 
             commandList->BindBuffer(font->glyphBuffer.Get(), 3, 1);
             commandList->BindBuffer(instanceBuffer.GetMultiBuffer(), 3, 2);
 
+            // Without blending the outline of a character would cover its neighbours, so all outlines
+            // are drawn first and the characters on top of them
+            if (outlineScale > 0.0f) {
+                auto outlineConstants = constants;
+                outlineConstants.characterColor = outlineColor;
+                commandList->PushConstants("constants", &outlineConstants);
+                commandList->Draw(4, uint32_t(characterCount), 0, frameCharacterCount);
+
+                constants.outlineScale = 0.0f;
+            }
+
+            commandList->PushConstants("constants", &constants);
             commandList->Draw(4, uint32_t(characterCount), 0, frameCharacterCount);
 
             frameCharacterCount += characterCount;
@@ -196,7 +206,7 @@ namespace Atlas {
 
                 nextGlyph = font->GetGlyphUTF8(ctext);
 
-                xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
+                xOffset += glyph->advance + font->GetKerning(glyph->codepoint, nextGlyph->codepoint);
 
             }
 
@@ -242,7 +252,7 @@ namespace Atlas {
 
                 nextGlyph = font->GetGlyphUTF8(ctext);
 
-                xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
+                xOffset += glyph->advance + font->GetKerning(glyph->codepoint, nextGlyph->codepoint);
 
             }
 

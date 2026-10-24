@@ -253,10 +253,17 @@ namespace Atlas {
 
             auto material = subData->material;
 
+            bool hasTexCoords = mesh->data.texCoords.ContainsData();
+            bool hasOpacityMap = material->HasOpacityMap() && hasTexCoords;
+
+            // Without an opacity map only depth is written, which doesn't need a fragment shader
             auto shaderConfig = ShaderConfig {
                 {"shadowMapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                {"shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
+            if (hasOpacityMap) {
+                shaderConfig.push_back({"shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT});
+            }
+
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                 .frameBuffer = frameBuffer,
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
@@ -266,10 +273,8 @@ namespace Atlas {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 
-            bool hasTexCoords = mesh->data.texCoords.ContainsData();
-
             std::vector<std::string> macros;
-            if (material->HasOpacityMap() && hasTexCoords) {
+            if (hasOpacityMap) {
                 macros.push_back("OPACITY_MAP");
             }
 

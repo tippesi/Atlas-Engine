@@ -34,6 +34,7 @@ namespace Atlas::Lighting {
             {"mieScatteringCoeff", p.mieScatteringCoeff},
             {"rayleighHeightScale", p.rayleighHeightScale},
             {"mieHeightScale", p.mieHeightScale},
+            {"sunDiskSize", p.sunDiskSize},
             {"probeResolution", p.probe->GetCubemap().width}
         };
     }
@@ -47,6 +48,7 @@ namespace Atlas::Lighting {
         try_get_json(j, "mieScatteringCoeff", p.mieScatteringCoeff);
         try_get_json(j, "rayleighHeightScale", p.rayleighHeightScale);
         try_get_json(j, "mieHeightScale", p.mieHeightScale);
+        try_get_json(j, "sunDiskSize", p.sunDiskSize);
     }
 
     void to_json(json& j, const Fog& p) {
@@ -63,6 +65,10 @@ namespace Atlas::Lighting {
             {"rayMarching", p.rayMarching},
             {"localLights", p.localLights},
             {"rayMarchStepCount", p.rayMarchStepCount},
+            {"froxels", p.froxels},
+            {"froxelTileSize", p.froxelTileSize},
+            {"froxelSliceCount", p.froxelSliceCount},
+            {"froxelFilter", p.froxelFilter},
             {"volumetricIntensity", p.volumetricIntensity},
         };
     }
@@ -82,6 +88,10 @@ namespace Atlas::Lighting {
         j.at("volumetricIntensity").get_to(p.volumetricIntensity);
 
         try_get_json(j, "localLights", p.localLights);
+        try_get_json(j, "froxels", p.froxels);
+        try_get_json(j, "froxelTileSize", p.froxelTileSize);
+        try_get_json(j, "froxelSliceCount", p.froxelSliceCount);
+        try_get_json(j, "froxelFilter", p.froxelFilter);
     }
 
     void to_json(json& j, const IrradianceVolume& p) {
@@ -340,6 +350,7 @@ namespace Atlas::Lighting {
             {"eccentricityFirstPhase", p.eccentricityFirstPhase},
             {"eccentricitySecondPhase", p.eccentricitySecondPhase},
             {"phaseAlpha", p.phaseAlpha},
+            {"positiveForwardScattering", true}
         };
     }
 
@@ -350,6 +361,12 @@ namespace Atlas::Lighting {
         j.at("eccentricityFirstPhase").get_to(p.eccentricityFirstPhase);
         j.at("eccentricitySecondPhase").get_to(p.eccentricitySecondPhase);
         j.at("phaseAlpha").get_to(p.phaseAlpha);
+
+        // Older scenes stored the eccentricities with the opposite sign, negative values scattered forward
+        if (!j.contains("positiveForwardScattering")) {
+            p.eccentricityFirstPhase = -p.eccentricityFirstPhase;
+            p.eccentricitySecondPhase = -p.eccentricitySecondPhase;
+        }
     }
 
     void to_json(json& j, const VolumetricClouds& p) {

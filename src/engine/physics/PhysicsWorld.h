@@ -84,7 +84,8 @@ namespace Atlas {
 
             uint32_t GetBodyCount() const;
 
-            Volume::RayResult<Body> CastRay(Volume::Ray& ray);
+            // The ray passes through bodies for which ignore returns true
+            Volume::RayResult<Body> CastRay(Volume::Ray& ray, const std::function<bool(const Body&)>& ignore = {});
 
             void OptimizeBroadphase();
 

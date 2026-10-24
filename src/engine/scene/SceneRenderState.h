@@ -33,7 +33,7 @@ namespace Atlas::Scene {
 
         void PrepareMaterials();
 
-        void UpdateBlasBindlessData();
+        void UpdateBlasBindlessData(bool rayTracing);
 
         void UpdateTextureBindlessData();
 

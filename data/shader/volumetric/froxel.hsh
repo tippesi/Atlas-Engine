@@ -1,0 +1,77 @@
+#define FROXEL_CLUSTER_SIZE 4
+
+layout(push_constant) uniform constants {
+    ivec2 columnCount;
+    ivec2 resolution;
+    int sliceCount;
+    int tileSize;
+    float near;
+    float far;
+    int lightCount;
+    int resetHistory;
+    vec4 jitter;
+    float extendedFar;
+    // Temporary debug options
+    float currentWeight;
+    float distributionExponent;
+    int directionalJitter;
+    int localLightJitter;
+    int localLightSampleCount;
+    int jitterMode;
+} pushConstants;
+
+float GetRegularFroxelSliceDepth(float slice) {
+
+    float t = pow(clamp(slice / float(pushConstants.sliceCount), 0.0, 1.0), pushConstants.distributionExponent);
+    return pushConstants.near * pow(pushConstants.far / pushConstants.near, t);
+
+}
+
+float GetFroxelSliceDepth(float slice) {
+
+    float lastSlice = float(pushConstants.sliceCount - 1);
+    if (slice <= lastSlice)
+        return GetRegularFroxelSliceDepth(slice);
+
+    float lastSliceStart = GetRegularFroxelSliceDepth(lastSlice);
+    return mix(lastSliceStart, max(pushConstants.extendedFar, pushConstants.far), slice - lastSlice);
+
+}
+
+float GetFroxelSlice(float viewDepth) {
+
+    float lastSlice = float(pushConstants.sliceCount - 1);
+    float lastSliceStart = GetRegularFroxelSliceDepth(lastSlice);
+    if (viewDepth >= lastSliceStart) {
+        float lastSliceEnd = max(pushConstants.extendedFar, pushConstants.far);
+        return lastSlice + clamp((viewDepth - lastSliceStart) / max(lastSliceEnd - lastSliceStart, 1e-6), 0.0, 1.0);
+    }
+
+    float t = log(max(viewDepth, pushConstants.near) / pushConstants.near) / log(pushConstants.far / pushConstants.near);
+    return pow(t, 1.0 / pushConstants.distributionExponent) * float(pushConstants.sliceCount);
+
+}
+
+// The grid is fixed to the unjittered projection, a jittered grid shows up as pulsing of small lights
+vec2 UnjitteredToJitteredTexCoord(vec2 texCoord) {
+
+    return texCoord + 0.5 * globalData.jitterCurrent;
+
+}
+
+vec2 GetFroxelColumnTexCoord(ivec2 column, vec2 volumetricResolution) {
+
+    return UnjitteredToJitteredTexCoord((vec2(column) + 0.5) * float(pushConstants.tileSize) / volumetricResolution);
+
+}
+
+vec3 GetFroxelPosition(ivec3 froxel, vec3 offset, vec2 volumetricResolution) {
+
+    vec2 texCoord = (vec2(froxel.xy) + offset.xy) * float(pushConstants.tileSize) / volumetricResolution;
+
+    float viewDepth = GetFroxelSliceDepth(float(froxel.z) + offset.z);
+
+    vec3 rayDirection = normalize(ConvertDepthToViewSpace(1.0, UnjitteredToJitteredTexCoord(texCoord)));
+    return rayDirection * (viewDepth / max(-rayDirection.z, 1e-3));
+
+}

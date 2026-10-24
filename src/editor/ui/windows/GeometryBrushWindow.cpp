@@ -257,14 +257,10 @@ namespace Atlas::Editor::UI {
 
             auto entity = scene->DuplicateEntity(brushEntity);
 
-            auto& transformComponent = entity.GetComponent<TransformComponent>();
-            transformComponent.Set(matrix);
-
             parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
 
-            // Ray cast result is in global space, so need to bring transform to valid local one
-            transformComponent.globalMatrix = matrix;
-            transformComponent.ReconstructLocalMatrix(parentEntity);
+            // Ray cast result is in global space
+            entity.GetComponent<TransformComponent>().SetGlobal(matrix, parentEntity);
         }
 
     }

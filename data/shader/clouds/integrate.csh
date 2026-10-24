@@ -27,8 +27,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth);
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(volumetricCloudImage).x ||
-        pixel.y > imageSize(volumetricCloudImage).y)
+    if (pixel.x >= imageSize(volumetricCloudImage).x ||
+        pixel.y >= imageSize(volumetricCloudImage).y)
         return;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricCloudImage));

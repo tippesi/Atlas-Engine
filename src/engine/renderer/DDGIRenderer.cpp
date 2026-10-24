@@ -26,10 +26,6 @@ namespace Atlas {
             probeRadianceUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh", {"RADIANCE"});
             probeMomentsUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh");
 
-            irradianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"IRRADIANCE"});
-            radianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"RADIANCE"});
-            momentsCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh");
-
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -135,7 +131,6 @@ namespace Atlas {
             commandList->BindImage(lastRadianceArray.image, lastRadianceArray.sampler, 2, 25);
             commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 26);
 
-            rayHitPipelineConfig.ManageMacro("RADIANCE_VOLUME", volume->radiance);
             auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
 
             helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, volume->opacityCheck,
@@ -234,7 +229,9 @@ namespace Atlas {
                     pipeline = PipelineManager::GetPipeline(probeRadianceUpdatePipelineConfig);
                     commandList->BindPipeline(pipeline);
 
-                    commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
+                    // Full resolution probes are split into slices, see probeSliceCount in the shader
+                    auto sliceCount = volume->lowerResRadiance ? 1 : 3;
+                    commandList->Dispatch(probeCount.x * sliceCount, probeCount.y, probeCount.z);
                 }
 
                 if (volume->visibility) {
@@ -250,70 +247,6 @@ namespace Atlas {
                 }
 
                 Graphics::Profiler::EndQuery();
-            }
-
-            Graphics::Profiler::EndAndBeginQuery("Update probe edges");
-
-            // Copy the probe edges
-            {
-                commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-
-                auto pipeline = PipelineManager::GetPipeline(irradianceCopyEdgePipelineConfig);
-                commandList->BindPipeline(pipeline);
-
-                auto probeRes = volume->irrRes;
-
-                auto res = ivec2(irradianceArray.width, irradianceArray.height);
-                auto groupCount = res / 8;
-
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
-
-                commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
-                commandList->BindImage(irradianceArray.image, 3, 0);
-                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);               
-
-                if (volume->radiance) {
-                    commandList->ImageMemoryBarrier(radianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-
-                    pipeline = PipelineManager::GetPipeline(radianceCopyEdgePipelineConfig);
-                    commandList->BindPipeline(pipeline);
-
-                    probeRes = volume->radRes;
-
-                    res = ivec2(radianceArray.width, radianceArray.height);
-                    groupCount = res / 8;
-
-                    groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                    groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
-
-                    commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
-                    commandList->BindImage(radianceArray.image, 3, 0);
-                    commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
-                }
-
-                if (volume->visibility) {
-                    commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-
-                    pipeline = PipelineManager::GetPipeline(momentsCopyEdgePipelineConfig);
-                    commandList->BindPipeline(pipeline);
-
-                    probeRes = volume->momRes;
-
-                    res = ivec2(momentsArray.width, momentsArray.height);
-                    groupCount = res / 8;
-
-                    groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                    groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
-
-                    commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
-                    commandList->BindImage(momentsArray.image, 3, 0);
-                    commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
-                }
-
             }
 
             helper.InvalidateRayBuffer(commandList);

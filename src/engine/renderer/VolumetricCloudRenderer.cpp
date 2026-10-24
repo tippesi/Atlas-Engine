@@ -1,6 +1,5 @@
 #include "VolumetricCloudRenderer.h"
 
-#include "../Clock.h"
 
 namespace Atlas {
 
@@ -54,6 +53,9 @@ namespace Atlas {
                 GenerateTextures(scene, commandList);
                 clouds->needsNoiseUpdate = false;
             }
+
+            // The result of the last frame becomes the history, the temporal pass overwrites the old history
+            std::swap(target->volumetricCloudsTexture, target->historyVolumetricCloudsTexture);
 
             if (target->historyVolumetricCloudsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 commandList->ImageMemoryBarrier(target->historyVolumetricCloudsTexture.image,
@@ -142,32 +144,14 @@ namespace Atlas {
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-                Graphics::Profiler::EndQuery();
-            }
-
-            {
-                Graphics::Profiler::BeginQuery("Copy to history");
-
-                // Need barriers for both images
-                Graphics::ImageBarrier preImageBarriers[] = {
-                    {target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->historyVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                };
-                commandList->PipelineBarrier(preImageBarriers, {},
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                commandList->CopyImage(target->volumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.image);
-
-                Graphics::ImageBarrier postImageBarriers[] = {
-                    {target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                };
-                commandList->PipelineBarrier(postImageBarriers, {},
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                commandList->ImageMemoryBarrier(target->volumetricCloudsTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
                 Graphics::Profiler::EndQuery();
             }
-            
+
             Graphics::Profiler::EndQuery();
 
         }
@@ -373,7 +357,7 @@ namespace Atlas {
                 .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
                 .phaseAlpha = clouds->scattering.phaseAlpha,
 
-                .time = Clock::Get(),
+                .time = scene->GetTime(),
                 .frameSeed = frameCount,
 
                 .sampleCount = sampleCounts[quality],

@@ -147,6 +147,8 @@ namespace Atlas::Editor::UI {
 
             if (sceneHierarchyPanel.selectedProperty.terrain)
                 scenePropertiesPanel.Render(scene->terrain, refScene, target);
+            else if (sceneHierarchyPanel.selectedProperty.ocean)
+                scenePropertiesPanel.Render(scene->ocean);
             else if (sceneHierarchyPanel.selectedProperty.fog)
                 scenePropertiesPanel.Render(scene->fog, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
@@ -200,31 +202,10 @@ namespace Atlas::Editor::UI {
 
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
-            // Temporarily disable all scene cameras, only let editor camera be main
-            std::map<ECS::Entity, bool> cameraMainMap;
-            auto cameraSubset = scene->GetSubset<CameraComponent>();
-            for (auto entity : cameraSubset) {
-                if (entity == cameraEntity)
-                    continue;
-
-                auto& comp = cameraSubset.Get(entity);
-                cameraMainMap[entity] = comp.isMain;
-                comp.isMain = false;
-            }
-
             // Path tracing needs history while ray tracing
             scene->rayTracingWorld->includeObjectHistory = Singletons::config->pathTrace;
 
-            scene->Update(Clock::GetDelta());
-
-            // Restore all previous camera main values
-            for (auto entity : cameraSubset) {
-                if (entity == cameraEntity)
-                    continue;
-
-                auto& comp = cameraSubset.Get(entity);
-                comp.isMain = cameraMainMap[entity];
-            }
+            scene->Update(Clock::GetDelta(), cameraEntity);
         }
 
         viewportPanel.Render(refScene, isActiveWindow);
@@ -366,9 +347,15 @@ namespace Atlas::Editor::UI {
 
                 beginGroup((region.x - groupWidth(2)) * 0.5f, 2);
 
-                if (iconButton("Play button", IconType::Play, isPlaying, scene.IsLoaded() && !isPlaying,
-                    "Play scene", playUvMin, playUvMax))
-                    StartPlaying();
+                // While playing, the play button pauses and resumes
+                bool running = isPlaying && !scene->paused;
+                if (iconButton("Play button", running ? IconType::Pause : IconType::Play, false, scene.IsLoaded(),
+                    !isPlaying ? "Play scene" : running ? "Pause playing" : "Resume playing", playUvMin, playUvMax)) {
+                    if (isPlaying)
+                        TogglePause();
+                    else
+                        StartPlaying();
+                }
                 if (iconButton("Stop button", IconType::Stop, false, scene.IsLoaded() && isPlaying,
                     "Stop playing (Ctrl+Q)", playUvMin, playUvMax))
                     StopPlaying();
@@ -522,7 +509,7 @@ namespace Atlas::Editor::UI {
                 auto& entityPropPanel = scenePropertiesPanel.entityPropertiesPanel;
                 auto selectionType = sceneHierarchyPanel.selectedType;
 
-                auto globalMatrix = GetGlobalMatrix(selectedEntity);
+                auto globalMatrix = scene->GetGlobalMatrix(selectedEntity);
 
                 if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
@@ -577,17 +564,23 @@ namespace Atlas::Editor::UI {
                     auto invPrevGlobalMatrix = glm::inverse(transform.globalMatrix);
                     auto newGlobalMatrix = guizmo.transform;
 
+                    // Children of selected entities follow their parent through the hierarchy
+                    auto hasSelectedAncestor = [&](Scene::Entity entity) {
+                        for (auto parent = scene->GetParentEntity(entity); parent.IsValid(); parent = scene->GetParentEntity(parent))
+                            if (sceneHierarchyPanel.selectedEntities.contains(parent) && parent.HasComponent<TransformComponent>())
+                                return true;
+                        return false;
+                    };
+
                     for (auto& entity : sceneHierarchyPanel.selectedEntities) {
                         Scene::Entity transformEntity(entity, &scene->entityManager);
 
-                        if (!transformEntity.HasComponent<TransformComponent>())
+                        if (!transformEntity.HasComponent<TransformComponent>() || hasSelectedAncestor(transformEntity))
                             continue;
 
                         auto& selectedTransform = transformEntity.GetComponent<TransformComponent>();
-                        selectedTransform.globalMatrix = newGlobalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix;
-
-                        auto parentEntity = scene->GetParentEntity(transformEntity);
-                        selectedTransform.ReconstructLocalMatrix(parentEntity);
+                        selectedTransform.SetGlobal(newGlobalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix,
+                            scene->GetParentEntity(transformEntity));
                     }
                 }
                 else if (ImGuizmo::IsUsing() && selectionType == EntitySelectionType::Spline && selectedEntity.HasComponent<SplineComponent>()) {
@@ -671,7 +664,7 @@ namespace Atlas::Editor::UI {
             const auto& splineComponent = entity.GetComponent<SplineComponent>();
             auto transformComponent = entity.TryGetComponent<TransformComponent>();
 
-            glm::mat4 globalMatrix = GetGlobalMatrix(entity);
+            glm::mat4 globalMatrix = scene->GetGlobalMatrix(entity);
 
             SplinePoint lastSplinePoint = splineComponent.GetInterpolatedFromIndex(0, 0.0f);
             lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));
@@ -744,6 +737,7 @@ namespace Atlas::Editor::UI {
             SaveSceneState();
 
             scene->physicsWorld->pauseSimulation = false;
+            scene->paused = false;
             // Unselect when starting the simulation/scene (otherwise some physics settings might not
             // be reverted after stopping
             sceneHierarchyPanel.ClearSelection();
@@ -754,6 +748,15 @@ namespace Atlas::Editor::UI {
                 Notifications::Push({ "To stop playing, press Ctrl + Q" });
             }
             });        
+
+    }
+
+    void SceneWindow::TogglePause() {
+
+        if (!isPlaying)
+            return;
+
+        scene->paused = !scene->paused;
 
     }
 
@@ -900,8 +903,7 @@ namespace Atlas::Editor::UI {
         // Lights, cameras etc. take their position from the transform, their own position stays at the origin
         auto worldMatrix = glm::translate(mat4(1.0f), worldPosition);
         auto& transform = entity.AddComponent<TransformComponent>(worldMatrix, false);
-        transform.globalMatrix = worldMatrix;
-        transform.ReconstructLocalMatrix(parent);
+        transform.SetGlobal(worldMatrix, parent);
 
         switch (type) {
         case Template::PointLight:
@@ -960,7 +962,7 @@ namespace Atlas::Editor::UI {
                 bounds.Grow(meshComponent->aabb);
             }
             else {
-                auto position = vec3(GetGlobalMatrix(entity)[3]);
+                auto position = vec3(scene->GetGlobalMatrix(entity)[3]);
                 bounds.Grow(Volume::AABB(position - vec3(0.5f), position + vec3(0.5f)));
             }
             hasBounds = true;
@@ -1095,7 +1097,7 @@ namespace Atlas::Editor::UI {
         if (selectedEntity.IsValid() && selectedEntity.HasComponent<SplineComponent>()) {
             auto& splineComponent = selectedEntity.GetComponent<SplineComponent>();
             
-            auto globalMatrix = GetGlobalMatrix(selectedEntity);
+            auto globalMatrix = scene->GetGlobalMatrix(selectedEntity);
             for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()); i++) {
                 auto controlPoint = splineComponent.controlPoints[i];
                 controlPoint.transform = globalMatrix * controlPoint.transform;
@@ -1126,25 +1128,6 @@ namespace Atlas::Editor::UI {
         }
         
         sceneHierarchyPanel.selectedType = selectionType;
-    
-    }
-
-    mat4 SceneWindow::GetGlobalMatrix(Scene::Entity entity) {
-
-        if (!entity.IsValid())
-            return mat4(1.0f);
-
-        auto transformComponent = entity.TryGetComponent<TransformComponent>();
-        if (transformComponent) {
-            return transformComponent->globalMatrix;
-        }
-
-        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
-        if (hierarchyComponent) {
-            return hierarchyComponent->globalMatrix;
-        }
-
-        return mat4(1.0f);
 
     }
 

@@ -2,6 +2,7 @@
 
 #include <../brdf/brdfEval.hsh>
 #include <../common/flatten.hsh>
+#include <../common/stencil.hsh>
 
 #ifdef DDGI
 #include <../ddgi/ddgi.hsh>
@@ -14,6 +15,10 @@ layout(set = 3, binding = 1) uniform sampler2D reflectionTexture;
 layout(set = 3, binding = 2) uniform sampler2D giTexture;
 layout(set = 3, binding = 3) uniform sampler2D lowResDepthTexture;
 layout(set = 3, binding = 4) uniform sampler2D lowResNormalTexture;
+#ifdef OCEAN_REFLECTION
+layout(set = 3, binding = 6) uniform sampler2D oceanDepthTexture;
+layout(set = 3, binding = 7) uniform usampler2D oceanStencilTexture;
+#endif
 
 layout(set = 3, binding = 5) uniform UniformBuffer {
     int reflectionDownsampled2x;
@@ -194,8 +199,8 @@ void main() {
 
     if (Uniforms.giDownsampled2x > 0 || Uniforms.reflectionDownsampled2x > 0) LoadGroupSharedData();
 
-    if (gl_GlobalInvocationID.x > imageSize(image).x ||
-        gl_GlobalInvocationID.y > imageSize(image).y)
+    if (gl_GlobalInvocationID.x >= imageSize(image).x ||
+        gl_GlobalInvocationID.y >= imageSize(image).y)
         return;
 
     ivec2 resolution = imageSize(image);
@@ -231,6 +236,13 @@ void main() {
 
 #ifdef REFLECTION
         vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? upsampleResult.reflection : textureLod(reflectionTexture, texCoord, 0.0).rgb;
+#ifdef OCEAN_REFLECTION
+        // Below the visible ocean surface the reflections were traced from the ocean
+        float oceanDepth = texelFetch(oceanDepthTexture, pixel, 0).r;
+        StencilFeatures oceanFeatures = DecodeStencilFeatures(texelFetch(oceanStencilTexture, pixel, 0).r);
+        if (oceanDepth < depth && !oceanFeatures.underWaterPixel)
+            indirectSpecular = prefilteredSpecular;
+#endif
 #else
 #ifdef DDGI
         vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;

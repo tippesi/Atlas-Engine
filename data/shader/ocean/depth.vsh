@@ -7,6 +7,8 @@
 
 layout(location=0) in vec3 vPosition;
 
+layout(location=0) out vec3 fOriginalCoord;
+
 vec3 stitch(vec3 position) {
     
     // Note: This only works because our grid has a constant size
@@ -42,6 +44,7 @@ void main() {
         vec3(PushConstants.nodeLocation.x, 0.0, PushConstants.nodeLocation.y)
         + Uniforms.translation.xyz;
     
+    fOriginalCoord = fPosition;
     float distanceToCamera = distance(fPosition.xyz, globalData.cameraLocation.xyz);
 
     float perlinScale, shoreScaling;

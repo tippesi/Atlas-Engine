@@ -42,11 +42,13 @@ namespace Atlas {
             auto const velocity = target->GetVelocity();
             const auto depth = targetData->depthTexture;
             const auto stencil = targetData->stencilTexture;
+            const auto lastStencil = target->GetHistoryData(FULL_RES)->stencilTexture;
 
             Graphics::ImageBarrier imageBarriers[] = {
                 {lastHistory->image,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT},
                 {history->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT},
-                {lastVelocity->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT}
+                {lastVelocity->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT},
+                {lastStencil->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT}
             };
             commandList->PipelineBarrier(imageBarriers, {});
 
@@ -58,6 +60,7 @@ namespace Atlas {
             commandList->BindImage(depth->image, depth->sampler, 3, 4);
             commandList->BindImage(lastVelocity->image, lastVelocity->sampler, 3, 5);
             commandList->BindImage(stencil->image, stencil->sampler, 3, 6);
+            commandList->BindImage(lastStencil->image, lastStencil->sampler, 3, 7);
 
             auto constants = PushConstants {
                 .resolution = vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),

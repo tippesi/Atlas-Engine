@@ -1,6 +1,7 @@
 #define SHADOW_FILTER_VOGEL
 
 #include <common.hsh>
+#include <surface.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
@@ -9,8 +10,17 @@
 #include <../clouds/shadow.hsh>
 #include <../volumetric/volumetric.hsh>
 #include <../structures.hsh>
+#include <../brdf/brdf.hsh>
 
 #include <shoreInteraction.hsh>
+
+#ifdef DDGI
+#include <../ddgi/ddgi.hsh>
+#endif
+
+// From deferred.hsh
+layout(set = 1, binding = 11) uniform samplerCube specularProbe;
+layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
 // Lighting based on Island Demo (NVIDIA SDK 11)
 
@@ -19,7 +29,9 @@ layout (location = 1) out vec2 velocity;
 layout (location = 2) out uint stencil;
 
 layout (set = 3, binding = 2) uniform sampler2D foamTexture;
-layout (set = 3, binding = 3) uniform samplerCube skyEnvProbe;
+#ifdef REFLECTION
+layout (set = 3, binding = 3) uniform sampler2D reflectionTexture;
+#endif
 layout (set = 3, binding = 4) uniform sampler2D refractionTexture;
 layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
@@ -41,14 +53,10 @@ layout(location=8) in vec3 ndcLast;
 layout(location=9) in vec3 normalShoreWave;
 #endif
 
-// Control water scattering at crests
-const float scatterIntensity = 1.5;
-const float scatterCrestScale = 0.2;
-const float scatterCrestOffset = 0.0;
-
-// Specular properties
-const float specularPower = 500.0;
-const float specularIntensity = 350.0;
+// Sun light scattered through the thin wave crests, the jacobian tells how thin they are
+const float scatterIntensity = 2.5;
+const float scatterThinnessScale = 4.0;
+const float scatterCrestHeight = 1.0;
 
 // Shore softness (lower is softer)
 const float shoreSoftness = 70.5;
@@ -70,10 +78,10 @@ void main() {
     
     vec2 fTexCoord = fOriginalCoord.xz / Uniforms.tiling;
 
-    float fold;
+    float fold, jacobian, slopeVariance;
     vec2 gradientDisplacement;
-    GetOceanGradientAndFold(fOriginalCoord.xz, distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz),
-        fold, gradientDisplacement);
+    float viewDistance = distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz);
+    GetOceanGradientAndFold(fOriginalCoord.xz, viewDistance, fold, gradientDisplacement, jacobian, slopeVariance);
 
     /*
     // This stuff calculates the geometry normals from the depth buffer
@@ -95,10 +103,10 @@ void main() {
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
     //vec3 fNormal = normal;
-    vec3 fNormal = normalize(vec3(gradientDisplacement.x, 2.0, gradientDisplacement.y));
+    vec3 fNormal = normalize(vec3(gradientDisplacement.x, 1.0, gradientDisplacement.y));
     
-    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, fPosition, 
-        vec3(gl_FragCoord.xy, 0.0), fNormal, 0.0), 1.0);
+    float shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps, fPosition, 
+        vec3(gl_FragCoord.xy, 0.0), fNormal, 0.0);
 
 
 #ifdef CLOUD_SHADOWS
@@ -135,35 +143,37 @@ void main() {
     norm = normalize(mix(fNormal, norm, rippleScaling));
 
     vec3 eyeDir = normalize(fModelCoord - globalData.cameraLocation.xyz);
+    vec3 lightDir = -light.direction.xyz;
 
-    float nDotL = dot(norm, -light.direction.xyz);
+    float nDotL = dot(norm, lightDir);
     float nDotE = saturate(dot(norm, -eyeDir));
 
     // Calculate fresnel factor
-    float fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - nDotE, 5.0);
-    
-    // Calculate reflection vector    
+    float fresnel = FresnelSchlick(vec3(0.02), 1.0, nDotE).r;
+
+    // Reflections below the horizon would show the ground of the sky probe
     vec3 reflectionVec = normalize(reflect(eyeDir, norm));
-    //reflectionVec.y = max(0.0, reflectionVec.y);
-    
+    reflectionVec.y = max(0.0, reflectionVec.y);
+    reflectionVec = normalize(reflectionVec);
+
     // Calculate sun spot
-    float specularFactor = shadowFactor * fresnel * pow(max(dot(normalize(reflectionVec),
-         -normalize(light.direction.xyz)), 0.0), specularPower);
+    float alpha = GetOceanAlpha(slopeVariance);
+    float surfaceRoughness = sqrt(alpha);
+    // The sun is a disk, the half vectors which reflect parts of it spread by half its angular radius
+    float sunAlpha = sqrt(sqr(alpha) + sqr(tan(0.5 * Uniforms.sunAngularRadius)));
+    vec3 halfway = normalize(lightDir - eyeDir);
+    float specularFactor = shadowFactor * saturate(nDotL) * DistributionGGX(saturate(dot(norm, halfway)), sunAlpha) *
+        VisibilitySmithGGXCorrelated(saturate(nDotL), max(nDotE, 0.0001), sunAlpha) *
+        FresnelSchlick(vec3(0.02), 1.0, saturate(dot(-eyeDir, halfway))).r;
 
     // Scattering equations
     float waveHeight = fModelCoord.y - Uniforms.translation.y;
-    float scatterFactor = scatterIntensity * max(0.0, waveHeight
-         * scatterCrestScale + scatterCrestOffset);
-
-    scatterFactor *= shadowFactor * pow(max(0.0, dot(-light.direction.xyz, eyeDir)), 8.0);
-    
-    scatterFactor *= pow(clamp(1.0 - nDotL, 0.0, 1.1), 16.0);
-
-    /*
-    scatterFactor += shadowFactor * Uniforms.waterColorIntensity.y
-         * max(0.0, waveHeight) * max(0.0, nDotE) * 
-         max(0.0, 1.0 + eyeDir.y) * dot(-light.direction.xyz, -eyeDir);
-    */
+    float crestThinness = saturate((1.0 - jacobian) * scatterThinnessScale) *
+        smoothstep(0.0, scatterCrestHeight, waveHeight);
+    // Only visible when looking towards the sun through the wave side which faces away from it
+    float scatterFactor = scatterIntensity * crestThinness * pow(saturate(dot(lightDir, eyeDir)), 4.0) *
+        pow(saturate(0.5 - 0.5 * dot(lightDir, norm)), 3.0);
+    scatterFactor *= shadowFactor * saturate(lightDir.y + 0.2);
 
     // Calculate water depth based on the viewer (ray from camera to ground)
     float waterViewDepth = max(0.0, fPosition.z - depthPos.z);
@@ -175,13 +185,33 @@ void main() {
 
     // Retrieve colors from textures
     vec3 refractionColor = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb;
-    vec3 reflectionColor = textureLod(skyEnvProbe, reflectionVec, 0).rgb;
+#ifdef REFLECTION
+    // Traced and filtered from the ocean surface together with the reflections of the scene
+    vec3 reflectionColor = textureLod(reflectionTexture, ndcCoord, 0.0).rgb;
+#else
+    float reflectionMipLevel = surfaceRoughness * float(textureQueryLevels(specularProbe) - 1);
+    vec3 reflectionColor = textureLod(specularProbe, reflectionVec, reflectionMipLevel).rgb;
+#endif
 
     // Calculate water color
     vec3 depthFog = mix(Uniforms.deepWaterBodyColor.rgb, Uniforms.waterBodyColor.rgb, min(1.0 , exp(-waterViewDepth / 10.0)));
-    float diffuseFactor = Uniforms.waterColorIntensity.x + Uniforms.waterColorIntensity.y * 
-        max(0.0, nDotL) * shadowFactor;
-    vec3 waterColor = diffuseFactor * light.intensity * light.color.rgb * depthFog;
+
+    // The light which enters the water body from above, like the indirect diffuse lighting of the scene
+    vec3 indirectLight = textureLod(diffuseProbe, norm, 0.0).rgb;
+#ifdef DDGI
+#ifdef DDGI_SCROLL
+    vec4 indirectLightLocal = ddgiData.volumeEnabled > 0 ?
+        GetLocalIrradiance(fModelCoord, eyeDir, norm, norm, indirectLight) : vec4(0.0, 0.0, 0.0, 1.0);
+#else
+    vec4 indirectLightLocal = ddgiData.volumeEnabled > 0 ?
+        GetLocalIrradiance(fModelCoord, eyeDir, norm, norm) : vec4(0.0, 0.0, 0.0, 1.0);
+#endif
+    indirectLightLocal = IsInsideVolume(fModelCoord) ? indirectLightLocal : vec4(0.0, 0.0, 0.0, 1.0);
+    indirectLight = (indirectLightLocal.rgb + indirectLight * indirectLightLocal.a) * ddgiData.volumeStrength;
+#endif
+
+    vec3 waterColor = depthFog * (Uniforms.waterColorIntensity.x * indirectLight +
+        Uniforms.waterColorIntensity.y * max(0.0, nDotL) * shadowFactor * light.intensity * light.color.rgb);
     
     // Water edges at shore sould be soft
     fresnel *= min(1.0, waterViewDepth * shoreSoftness);
@@ -204,17 +234,25 @@ void main() {
 
     // Mix relection and refraction and add sun spot
     color = mix(refractionColor, reflectionColor, fresnel);
-    color += specularIntensity * fresnel * specularFactor * light.color.rgb;
-    color += Uniforms.scatterColor.rgb * scatterFactor;
+    color += specularFactor * light.intensity * light.color.rgb;
+    color += (1.0 - fresnel) * scatterFactor * light.intensity * light.color.rgb * Uniforms.scatterColor.rgb;
 
     vec3 foamShadowFactor = mix(vec3(0.1),
         vec3(0.5) * max(0.0, nDotL) * shadowFactor, 0.7);
 
-    vec3 foamColor = vec3(1.0);
+    // Without a foam texture the foam is broken up by noise
+    vec3 foamColor = foamShadowFactor * light.intensity * light.color.rgb;
 #ifdef FOAM_TEXTURE
-    foamColor = foamShadowFactor * light.intensity * light.color.rgb;
+    float foamPattern = texture(foamTexture, fOriginalCoord.xz / 8.0, globalData.mipLodBias).r;
+#else
+    float foamNoise = 0.6 * texture(perlinNoiseMap, fOriginalCoord.xz / (3.0 * Uniforms.foamSize), globalData.mipLodBias).r +
+        0.4 * texture(perlinNoiseMap, fOriginalCoord.xz / Uniforms.foamSize, globalData.mipLodBias).r;
+    float foamPattern = saturate((foamNoise - 0.2) / 0.6);
 #endif
-    color = mix(color, foamColor, foam * texture(foamTexture, fOriginalCoord.xz / 8.0, globalData.mipLodBias).r);
+    // Thresholding the pattern by the amount of foam keeps the foam edges sharp instead of blending a blurry pattern
+    float foamEdge = max(fwidth(foamPattern), 0.02);
+    float foamCoverage = smoothstep(1.0 - foam - foamEdge, 1.0 - foam + foamEdge, foamPattern) * step(0.001, foam);
+    color = mix(color, foamColor, foamCoverage);
 
     vec3 breakingColor = foamShadowFactor * light.intensity * light.color.rgb;
     color = mix(color, breakingColor, shoreInteraction.y);

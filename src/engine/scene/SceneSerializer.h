@@ -17,6 +17,14 @@ namespace Atlas::Scene {
 
     void SceneFromJson(const json& j, Ref<Scene>& scene);
 
+    // Scene wide feature settings (sky, post processing, wind and the optional lighting features)
+    void SceneSettingsToJson(json& j, const Scene* scene);
+
+    void SceneSettingsFromJson(const json& j, Scene* scene);
+
+    // Applies a JSON merge patch to the settings, missing features are created with default settings
+    void PatchSceneSettings(const json& patch, Scene* scene);
+
     void EntityManagerToJson(json& j, const ECS::EntityManager& p);
 
     void EntityManagerFromJson(const json& j, ECS::EntityManager& p);

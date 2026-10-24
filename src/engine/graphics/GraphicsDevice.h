@@ -34,6 +34,21 @@ namespace Atlas {
         class Instance;
         class ImguiWrapper;
 
+        struct DeviceDesc {
+#ifdef AE_BUILDTYPE_DEBUG
+            bool enableValidationLayers = true;
+            // Bounds checks for descriptor accesses (VK_EXT_robustness2), costs some GPU performance
+            bool enableRobustness = true;
+#else
+            bool enableValidationLayers = false;
+            bool enableRobustness = false;
+#endif
+            // GPU assisted, synchronization and best practices validation, very slow
+            bool enableExtendedValidation = false;
+            // Configures which messages of the validation layers to log
+            Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
+        };
+
         struct DeviceSupport {
             bool hardwareRayTracing = false;
             bool shaderPrintf = false;
@@ -104,7 +119,7 @@ namespace Atlas {
             friend ImguiWrapper;
 
         public:
-            explicit GraphicsDevice(Surface* surface, bool enableValidationLayers = false);
+            explicit GraphicsDevice(Surface* surface, const DeviceDesc& desc);
 
             GraphicsDevice(const GraphicsDevice& that) = delete;
 
@@ -196,7 +211,9 @@ namespace Atlas {
             VkPhysicalDeviceVulkan11Features availableFeatures11 = {};
             VkPhysicalDeviceVulkan12Features availableFeatures12 = {};
             VkPhysicalDeviceVulkan13Features availableFeatures13 = {};
+            VkPhysicalDeviceRobustness2FeaturesEXT availableRobustness2Features = {};
 
+            DeviceDesc desc;
             DeviceSupport support;
             std::set<std::string> supportedExtensions;
 
@@ -215,6 +232,7 @@ namespace Atlas {
             Resources<TLAS> tlases;
 
             bool isComplete = false;
+            std::atomic_bool isDeviceLost = false;
 
             static GraphicsDevice* DefaultDevice;
 
@@ -272,7 +290,7 @@ namespace Atlas {
             void GetPhysicalDeviceProperties(VkPhysicalDevice device);
 
             void CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
-                const std::vector<const char*>& extensions, bool enableValidationLayers);
+                const std::vector<const char*>& extensions);
 
             bool CheckForWindowResize();
 

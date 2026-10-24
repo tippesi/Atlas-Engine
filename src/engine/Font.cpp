@@ -2,6 +2,9 @@
 #include "Log.h"
 
 #include "loader/AssetLoader.h"
+#include "jobsystem/JobSystem.h"
+
+#include <cstring>
 
 #include <fstream>
 #include <sstream>
@@ -60,31 +63,33 @@ namespace Atlas {
 
         codepointCount = codepointCount > AE_FONT_GLYPH_COUNT ? AE_FONT_GLYPH_COUNT : codepointCount;
 
-        uint8_t *data[AE_FONT_GLYPH_COUNT];
+        // The distance fields are independent of each other, stb_truetype only reads the font data
+        std::vector<uint8_t*> data(AE_FONT_GLYPH_COUNT, nullptr);
+        std::vector<ivec2> offsets(AE_FONT_GLYPH_COUNT, ivec2(0));
+        std::vector<int32_t> glyphIndices(AE_FONT_GLYPH_COUNT, 0);
 
-        int32_t width = 0, height = 0, depth = 0;
-        ivec2 offset = ivec2(0, 0);
-
-        // Initialize the kern for every glyph possible
-        for (int32_t i = 0; i < AE_FONT_GLYPH_COUNT; i++)
-            glyphs[i].kern.resize(AE_FONT_GLYPH_COUNT);
-
-        // Load the data and calculate the needed resolution for the texture
-        for (int32_t i = font.fontstart; i < codepointCount; i++) {
-
+        JobGroup glyphGroup { "Font glyphs" };
+        JobSystem::ParallelFor(glyphGroup, codepointCount, 64, [&](JobData&, int32_t i) {
             auto glyph = &glyphs[i];
 
             glyph->codepoint = i;
+            glyphIndices[i] = stbtt_FindGlyphIndex(&font, i);
 
-            data[i] = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
-                                            &glyph->width, &glyph->height, &offset.x, &offset.y);
+            data[i] = stbtt_GetGlyphSDF(&font, scale, glyphIndices[i], padding, edgeValue, pixelDistanceScale,
+                &glyph->width, &glyph->height, &offsets[i].x, &offsets[i].y);
 
-            for (int32_t j = 0; j < AE_FONT_GLYPH_COUNT; j++) {
-                glyph->kern[j] = (int32_t) ((float) stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
-            }
+            int32_t advance;
+            stbtt_GetGlyphHMetrics(&font, glyphIndices[i], &advance, 0);
+            glyph->advance = (float) advance * scale;
+            });
+        JobSystem::Wait(glyphGroup);
 
-            stbtt_GetCodepointHMetrics(&font, i, &glyph->advance, 0);
-            glyph->advance = (int32_t) ((float) glyph->advance * scale);
+        int32_t width = 0, height = 0, depth = 0;
+
+        // Texture layers are assigned in codepoint order such that the result doesn't depend on the job order
+        for (int32_t i = 0; i < codepointCount; i++) {
+
+            auto glyph = &glyphs[i];
 
             if (!data[i]) {
                 glyph->height = 0;
@@ -95,8 +100,7 @@ namespace Atlas {
                 continue;
             }
 
-            glyph->offset.x = (float) offset.x;
-            glyph->offset.y = (float) offset.y;
+            glyph->offset = vec2(offsets[i]);
 
             width = glyph->width > width ? glyph->width : width;
             height = glyph->height > height ? glyph->height : height;
@@ -104,22 +108,43 @@ namespace Atlas {
 
         }
 
+        // Only pairs with a kerning value are stored. The lookups use glyph indices and run in parallel,
+        // one row of pairs per job.
+        std::vector<int32_t> kernCodepoints;
+        for (int32_t i = 0; i < codepointCount; i++)
+            if (glyphIndices[i])
+                kernCodepoints.push_back(i);
+
+        std::vector<std::vector<std::pair<uint32_t, float>>> kernRows(kernCodepoints.size());
+        JobGroup kernGroup { "Font kerning" };
+        JobSystem::ParallelFor(kernGroup, int32_t(kernCodepoints.size()), 64, [&](JobData&, int32_t idx) {
+            auto first = kernCodepoints[idx];
+            for (auto second : kernCodepoints) {
+                auto kern = stbtt_GetGlyphKernAdvance(&font, glyphIndices[first], glyphIndices[second]);
+                if (kern)
+                    kernRows[idx].emplace_back(KerningKey(first, second), (float) kern * scale);
+            }
+            });
+        JobSystem::Wait(kernGroup);
+
+        for (const auto& row : kernRows)
+            for (const auto& [key, kern] : row)
+                kerning[key] = kern;
+
         depth = AE_GPU_GLYPH_COUNT < depth ? AE_GPU_GLYPH_COUNT : depth;
 
-        // Create texture and process texture data
-        glyphTexture = Texture::Texture2DArray(width, height, depth, VK_FORMAT_R8_UNORM,
+        // Create texture and upload all layers at once
+        glyphTexture = Texture::Texture2DArray(width, height, std::max(depth, 1), VK_FORMAT_R8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-        std::vector<uint8_t> glyphData(width * height);
+        std::vector<uint8_t> glyphData(size_t(width) * size_t(height) * size_t(std::max(depth, 1)), 0);
 
-        for (int32_t i = font.fontstart; i < codepointCount; i++) {
+        for (int32_t i = 0; i < codepointCount; i++) {
 
             if (!data[i])
                 continue;
 
             auto glyph = &glyphs[i];
-
-            std::memset(glyphData.data(), 0, glyphData.size());
 
             glyph->textureScale.x = (float) glyph->width / (float) width;
             glyph->textureScale.y = (float) glyph->height / (float) height;
@@ -128,16 +153,14 @@ namespace Atlas {
             // This still supports all the latin characters of UTF-8
             if (glyph->texArrayIndex < depth) {
 
-                for (int32_t x = 0; x < glyph->width; x++) {
-                    for (int32_t y = 0; y < glyph->height; y++) {
-                        glyphData[y * width + x] = data[i][y * glyph->width + x];
-                    }
+                auto layer = glyphData.data() + size_t(glyph->texArrayIndex) * size_t(width) * size_t(height);
+                for (int32_t y = 0; y < glyph->height; y++) {
+                    std::memcpy(layer + size_t(y) * size_t(width), data[i] + size_t(y) * size_t(glyph->width),
+                        size_t(glyph->width));
                 }
 
                 glyphInfo[glyph->texArrayIndex].scale = glyph->textureScale;
                 glyphInfo[glyph->texArrayIndex].size = vec2((float) glyph->width, (float) glyph->height);
-
-                glyphTexture.SetData(glyphData, glyph->texArrayIndex);
 
             } else {
 
@@ -145,9 +168,12 @@ namespace Atlas {
 
             }
 
-            delete[] data[i];
+            stbtt_FreeSDF(data[i], nullptr);
 
         }
+
+        if (depth > 0)
+            glyphTexture.SetData(glyphData, 0, depth);
 
         glyphBuffer.SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT);
 
@@ -205,9 +231,22 @@ namespace Atlas {
             auto glyph = nextGlyph;
             nextGlyph = GetGlyphUTF8(ctext);
 
-            *width += ((float) (glyph->advance + glyph->kern[nextGlyph->codepoint]) * scale);
+            *width += (glyph->advance + GetKerning(glyph->codepoint, nextGlyph->codepoint)) * scale;
 
         }
+
+    }
+
+    float Font::GetKerning(int32_t first, int32_t second) const {
+
+        auto iter = kerning.find(KerningKey(first, second));
+        return iter != kerning.end() ? iter->second : 0.0f;
+
+    }
+
+    uint32_t Font::KerningKey(int32_t first, int32_t second) {
+
+        return (uint32_t(first) << 16) | uint32_t(second);
 
     }
 

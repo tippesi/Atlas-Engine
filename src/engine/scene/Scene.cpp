@@ -3,6 +3,7 @@
 #include "SceneSerializer.h"
 #include "components/Components.h"
 #include "components/LuaScriptComponent.h"
+#include "raytracing/RayTracingManager.h"
 
 namespace Atlas {
 
@@ -88,14 +89,45 @@ namespace Atlas {
 
         }
 
-        void Scene::Update(float deltaTime) {
+        mat4 Scene::GetGlobalMatrix(Entity entity) {
 
-            this->deltaTime = deltaTime;
+            if (!entity.IsValid())
+                return mat4(1.0f);
+
+            if (auto transformComponent = entity.TryGetComponent<TransformComponent>())
+                return transformComponent->globalMatrix;
+
+            if (auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>())
+                return hierarchyComponent->globalMatrix;
+
+            return mat4(1.0f);
+
+        }
+
+        void Scene::Update(float deltaTime, Entity mainCameraOverride) {
+
+            AE_ASSERT((!mainCameraOverride.IsValid() || mainCameraOverride.HasComponent<CameraComponent>()) &&
+                "Main camera override needs a camera component");
+
+            this->deltaTime = paused ? 0.0f : deltaTime;
+            time += this->deltaTime;
 
             WaitForAsyncWorkCompletion();
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
+
+            // Motion vectors use the matrix of the last frame, SetGlobal before the update already stored it
+            {
+                auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+                JobGroup historyJobGroup{ "Transform history", JobPriority::High };
+                JobSystem::ParallelFor(historyJobGroup, int32_t(transformComponentPool.GetCount()), 64, [&](JobData&, int32_t idx) {
+                    auto& transformComponent = transformComponentPool.GetByIndex(idx);
+                    if (!transformComponent.lastGlobalMatrixSet)
+                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                    });
+                JobSystem::Wait(historyJobGroup);
+            }
 
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
@@ -133,10 +165,14 @@ namespace Atlas {
 
                 if (ocean) {
                     JobSystem::Execute(terrainOceanJobGroup, [&](JobData&) {
-                        ocean->Update(mainCamera, deltaTime);
+                        ocean->Update(mainCamera, this->deltaTime);
                         });
                 }
             }
+
+            auto rtDataNeeded = IsRtDataNeeded();
+            if (rtDataNeeded)
+                RayTracing::RayTracingManager::RequestMeshBVHs();
 
             // Kick of all the jobs while we find the changed transforms
             FindChangedTransforms([&]() {
@@ -145,7 +181,7 @@ namespace Atlas {
                 // Can only update after scripts were runxx
                 renderState.NewFrame();
                 if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
-                    renderState.UpdateBlasBindlessData();
+                    renderState.UpdateBlasBindlessData(rtDataNeeded);
                     renderState.UpdateTextureBindlessData();
                     renderState.UpdateOtherTextureBindlessData();
                 }
@@ -204,6 +240,8 @@ namespace Atlas {
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
 
+                auto simulate = !physicsWorld->pauseSimulation && !paused;
+
                 // This part (updating physics transforms) is required regardless of the simulation running
                 auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
                 for (auto entity : playerSubset) {
@@ -212,6 +250,8 @@ namespace Atlas {
                     // Might happen if there was no transform at the creation of rigid body component
                     if (!playerComponent.IsValid()) {
                         playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
+                        if (playerComponent.IsValid())
+                            playerComponent.SetUserData(entity);
                     }
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
@@ -222,7 +262,8 @@ namespace Atlas {
                         playerComponent.SetPosition(decomposition.translation);
                     }
 
-                    playerComponent.Update(deltaTime);
+                    if (simulate)
+                        playerComponent.Update(deltaTime);
 
                     auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
                     if (hierarchyComponent) {
@@ -247,7 +288,7 @@ namespace Atlas {
                     // Kinematic bodies follow their transform through velocities, such that simulated bodies
                     // are pushed instead of penetrated. A teleport is still needed if no simulation step follows.
                     auto moveKinematic = rigidBodyComponent.layer == Physics::Layers::Kinematic &&
-                        !physicsWorld->pauseSimulation && deltaTime > 0.0f;
+                        simulate && deltaTime > 0.0f;
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
                     if (transformComponent.changed) {
@@ -263,7 +304,7 @@ namespace Atlas {
                 }
 
                 // This part only needs to be executed if the simulation is running
-                if (!physicsWorld->pauseSimulation) {
+                if (simulate) {
 
                     physicsWorld->Update(deltaTime);
 
@@ -353,7 +394,7 @@ namespace Atlas {
             // Do camera update while we find changed meshes
             FindChangedMeshes([&]() {
                 // Don't do anything in parallel here, we don't expect to have many cameras
-                mainCameraEntity = Entity();
+                mainCameraEntity = mainCameraOverride;
                 auto cameraSubset = entityManager.GetSubset<CameraComponent>();
                 // Attempt to find a main camera
                 for (auto entity : cameraSubset) {
@@ -420,20 +461,16 @@ namespace Atlas {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             if (device->support.bindless) {
                 auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
-                    // Check if any rt effects are running (pathtracing checked by rayTracingWorld->includeObjectHistory)
-                    auto rtUpdateNeeded = (irradianceVolume && irradianceVolume->enable) ||
-                        (reflection && reflection->enable && reflection->rt) ||
-                        (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
-                        (rtgi && rtgi->enable);
+                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset, rtDataNeeded](JobData&) {
                     // Need to wait before updating graphic resources
                     Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
-                    if (rayTracingWorld && rtUpdateNeeded) {
+                    if (rayTracingWorld && rtDataNeeded) {
                         rayTracingWorld->scene = this;
                         // Don't update triangle lights for now (second argument)
                         rayTracingWorld->Update(rayTracingSubset, false);
                     }
-                    rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+                    // The bindless blas data isn't updated without any rt effects running
+                    rtDataValid = rtDataNeeded && rayTracingWorld != nullptr && rayTracingWorld->IsValid();
                 });
             }
 
@@ -474,6 +511,7 @@ namespace Atlas {
                     transformComponent.changed = false;
                     transformComponent.updated = false;
                 }
+                transformComponent.lastGlobalMatrixSet = false;
                 });
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
@@ -580,55 +618,109 @@ namespace Atlas {
 
         }
 
-        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents) {
+        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents,
+            const std::function<bool(const Entity&)>& ignore) {
 
             Volume::RayResult<Entity> result;
             result.hitDistance = ray.tMax;
 
-            // Most accurate method if it works
+            auto isIgnored = [&](const Entity& entity) {
+                return ignore && entity.IsValid() && ignore(entity);
+            };
+
             if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
-                auto bodyResult = physicsWorld->CastRay(ray);
+                auto bodyResult = physicsWorld->CastRay(ray, [&](const Physics::Body& body) {
+                    return isIgnored({ body.GetUserData(), &entityManager });
+                });
 
                 if (bodyResult.valid) {
-                    auto userData = bodyResult.data.GetUserData();
-
                     result.valid = true;
                     result.hitDistance = bodyResult.hitDistance;
                     result.normal = bodyResult.normal;
-                    result.data = { userData, &entityManager };
+                    result.data = { bodyResult.data.GetUserData(), &entityManager };
                 }
             }
 
-            // This isn't really optimized, we could use hierarchical data structures
+            // Meshes with a mesh shape body of the same mesh were already hit exactly by the physics query above.
             if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
-                auto meshSubset = entityManager.GetSubset<MeshComponent>();
+                auto queriedBodies = physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit);
 
-                for (auto entity : meshSubset) {
-                    const auto& meshComp = meshSubset.Get(entity);
+                auto hasMeshBody = [&](ECS::Entity entity, const MeshComponent& meshComp) {
+                    auto rigidBodyComp = entityManager.TryGet<RigidBodyComponent>(entity);
+                    if (!rigidBodyComp || !rigidBodyComp->IsValid() || !rigidBodyComp->creationSettings)
+                        return false;
 
-                    auto dist = 0.0f;
-                    ray.tMax = result.hitDistance;
-                    if (ray.Intersects(meshComp.aabb, dist)) {
-                        auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
-                        // This means we already found a more accurate hit
-                        if (result.valid && entityManager.Contains<RigidBodyComponent>(entity))
-                            continue;
+                    const auto& shape = rigidBodyComp->creationSettings->shape;
+                    if (!shape || shape->type != Physics::ShapeType::Mesh || !shape->settings)
+                        return false;
 
-                        // Accept all hits greater equal if they were within the updated hit distance
-                        if (dist > 0.0f) {
-                            result.valid = true;
-                            result.data = { entity, &entityManager };
-                            result.hitDistance = dist;
-                            result.normal = vec3(0.0f);
-                        }
+                    auto meshSettings = static_cast<Physics::MeshShapeSettings*>(shape->settings.get());
+                    return meshSettings->mesh == meshComp.mesh;
+                };
 
-                        // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
-                        if (!result.valid) {
-                            result.valid = true;
-                            result.data = { entity, &entityManager };
-                            result.normal = vec3(0.0f);
+                // Candidates are the meshes in the octree nodes along the ray, Update inserts them with their bounds
+                std::vector<Entity> candidates;
+                auto octreeRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
+                renderableStaticEntityOctree.QueryRay(candidates, octreeRay);
+                renderableMovableEntityOctree.QueryRay(candidates, octreeRay);
+
+                // The bounds test comes first, most candidates are rejected by it
+                for (auto sceneEntity : candidates) {
+                    auto meshCompPtr = entityManager.TryGet<MeshComponent>(sceneEntity);
+                    if (!meshCompPtr)
+                        continue;
+
+                    const auto& meshComp = *meshCompPtr;
+                    auto boxRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
+                    auto boxDistance = 0.0f;
+                    if (!boxRay.Intersects(meshComp.aabb, boxDistance))
+                        continue;
+
+                    auto transformCompPtr = entityManager.TryGet<TransformComponent>(sceneEntity);
+                    if (!transformCompPtr || !meshComp.mesh.IsLoaded() || (queriedBodies && hasMeshBody(sceneEntity, meshComp)))
+                        continue;
+
+                    const auto& transformComp = *transformCompPtr;
+
+                    if (isIgnored(sceneEntity))
+                        continue;
+
+                    auto& data = meshComp.mesh->data;
+                    auto& vertices = data.vertices.Get();
+                    auto& indices = data.indices.Get();
+                    if (vertices.empty() || indices.size() < 3)
+                        continue;
+
+                    // The ray parameter stays the same in local space as long as the direction isn't normalized
+                    auto inverseMatrix = glm::inverse(transformComp.globalMatrix);
+                    auto localRay = Volume::Ray(vec3(inverseMatrix * vec4(ray.origin, 1.0f)),
+                        vec3(inverseMatrix * vec4(ray.direction, 0.0f)), ray.tMin, result.hitDistance);
+
+                    int32_t hitTriangle = -1;
+                    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+                        auto t = 0.0f;
+                        if (localRay.IntersectsTriangle(vertices[indices[i]], vertices[indices[i + 1]],
+                            vertices[indices[i + 2]], t)) {
+                            localRay.tMax = t;
+                            hitTriangle = int32_t(i / 3);
                         }
                     }
+
+                    if (hitTriangle < 0)
+                        continue;
+
+                    const auto& v0 = vertices[indices[hitTriangle * 3]];
+                    const auto& v1 = vertices[indices[hitTriangle * 3 + 1]];
+                    const auto& v2 = vertices[indices[hitTriangle * 3 + 2]];
+                    auto normalMatrix = glm::transpose(glm::inverse(mat3(transformComp.globalMatrix)));
+                    auto normal = glm::normalize(normalMatrix * glm::cross(v1 - v0, v2 - v0));
+
+                    result.valid = true;
+                    result.data = sceneEntity;
+                    result.hitDistance = localRay.tMax;
+                    // Report the side the ray hit
+                    result.normal = glm::dot(normal, ray.direction) > 0.0f ? -normal : normal;
+                    result.triangleIndex = hitTriangle;
                 }
             }
 
@@ -637,6 +729,9 @@ namespace Atlas {
 
                 for (auto entity : textSubset) {
                     const auto& textComp = textSubset.Get(entity);
+
+                    if (isIgnored({ entity, &entityManager }))
+                        continue;
 
                     auto dist = 0.0f;
                     ray.tMax = result.hitDistance;
@@ -797,13 +892,20 @@ namespace Atlas {
 
         bool Scene::IsFullyLoaded() {
 
+            auto isDone = [](const auto& handle) {
+                return handle.IsLoaded() || (handle.IsValid() && handle.GetResource()->errorOnLoad);
+            };
+
             bool loaded = true;
 
             auto meshes = GetMeshes();
 
             for (const auto& mesh : meshes) {
-                loaded &= mesh.IsLoaded();
+                loaded &= isDone(mesh);
             }
+
+            if (terrain.IsValid())
+                loaded &= isDone(terrain);
 
             return loaded;
 
@@ -812,6 +914,16 @@ namespace Atlas {
         bool Scene::IsRtDataValid() const {
 
             return rtDataValid;
+
+        }
+
+        bool Scene::IsRtDataNeeded() const {
+
+            // Path tracing is checked by rayTracingWorld->includeObjectHistory
+            return (irradianceVolume && irradianceVolume->enable) ||
+                (reflection && reflection->enable && reflection->rt) ||
+                (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
+                (rtgi && rtgi->enable);
 
         }
 
@@ -891,6 +1003,9 @@ namespace Atlas {
 
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.InsertIntoPhysicsWorld(*transformComp, physicsWorld.get());
+                    // Ray hits on the character body have to map back to the entity
+                    if (rigidBodyComponent.IsValid())
+                        rigidBodyComponent.SetUserData(entity);
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,

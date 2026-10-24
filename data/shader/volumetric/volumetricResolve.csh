@@ -162,8 +162,8 @@ void main() {
     if (uniforms.downsampled2x > 0) LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(resolveImage));

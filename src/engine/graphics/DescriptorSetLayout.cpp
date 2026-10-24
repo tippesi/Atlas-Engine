@@ -43,6 +43,8 @@ namespace Atlas {
                     size.storageImageCount += layoutBinding.descriptorCount; break;
                 case VK_DESCRIPTOR_TYPE_SAMPLER: 
                     size.samplerCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                    size.accelerationStructureCount += layoutBinding.descriptorCount; break;
                 default: break;
                 }
 

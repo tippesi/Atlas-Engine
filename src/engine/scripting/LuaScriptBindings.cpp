@@ -42,6 +42,7 @@ namespace Atlas::Scripting {
         Bindings::GenerateVolumeBindings(atlasNs);
         Bindings::GenerateLightingBindings(atlasNs);
         Bindings::GenerateKeyboardBindings(atlasNs);
+        Bindings::GenerateControllerBindings(atlasNs);
         Bindings::GenerateGraphicBindings(atlasNs);
         Bindings::GenerateResourceManagerBindings(atlasNs);
 

@@ -143,10 +143,11 @@ namespace Atlas {
 
         Pipeline::~Pipeline() {
 
-            if (!isComplete) return;
-
-            vkDestroyPipeline(device->device, pipeline, nullptr);
-            vkDestroyPipelineLayout(device->device, layout, nullptr);
+            // The layout is created before the pipeline, a failed pipeline creation still owns it
+            if (pipeline != VK_NULL_HANDLE)
+                vkDestroyPipeline(device->device, pipeline, nullptr);
+            if (layout != VK_NULL_HANDLE)
+                vkDestroyPipelineLayout(device->device, layout, nullptr);
 
         }
 

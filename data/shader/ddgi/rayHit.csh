@@ -7,6 +7,8 @@
 #define SHADOW_FILTER_1x1
 #endif
 
+#define LOCAL_STACK
+
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
 #include <../raytracer/direct.hsh>
@@ -104,6 +106,8 @@ vec3 EvaluateHit(inout Ray ray) {
     // Evaluate direct light
     radiance += EvaluateDirectLight(surface);    
 
+    // Without RADIANCE_VOLUME the probe radiance falls back to the irradiance, the large radiance
+    // probes are too expensive to sample at incoherent hits for the small specular part of the bounce
     vec4 probeIrradiance, probeRadiance;
     GetLocalProbeLighting(surface.P, surface.V, surface.N, surface.N, surface.geometryNormal, probeIrradiance, probeRadiance);
 

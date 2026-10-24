@@ -13,3 +13,4 @@
 #include "panels/GPUProfilerPanel.h"
 #include "panels/WindPanel.h"
 #include "panels/SkyPanel.h"
+#include "panels/OceanPanel.h"

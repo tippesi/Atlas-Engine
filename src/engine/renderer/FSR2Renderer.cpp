@@ -2,7 +2,6 @@
 
 #include "graphics/Format.h"
 
-#include "Clock.h"
 #include "loader/ShaderLoader.h"
 
 #include <string.h>
@@ -852,7 +851,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.reset = !target->HasHistory();
 		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
-		dispatchParameters.frameTimeDelta = Clock::GetDelta() * 1000.0f;
+		dispatchParameters.frameTimeDelta = scene->GetDeltaTime() * 1000.0f;
 		dispatchParameters.preExposure = 1.0f;
 		dispatchParameters.renderSize.width = uint32_t(target->GetScaledWidth());
 		dispatchParameters.renderSize.height = uint32_t(target->GetScaledHeight());

@@ -40,14 +40,25 @@ namespace Atlas {
 
 			}
 
+			void TransformComponent::SetGlobal(const glm::mat4& matrix, const Entity& parentEntity) {
+
+                // Motion vectors need the matrix from before the first change in this frame
+                if (!lastGlobalMatrixSet) {
+                    lastGlobalMatrix = globalMatrix;
+                    lastGlobalMatrixSet = true;
+                }
+
+                globalMatrix = matrix;
+                ReconstructLocalMatrix(parentEntity);
+
+			}
+
 			void TransformComponent::ReconstructLocalMatrix(const Entity& parentEntity) {
 
+                // Uses the parent transform if possible, it already contains changes made through SetGlobal
                 mat4 parentGlobalMatrix = mat4(1.0f);
-
-                if (parentEntity.IsValid()) {
-                    const auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
-                    parentGlobalMatrix = parentHierarchy.globalMatrix;
-                }
+                if (parentEntity.IsValid())
+                    parentGlobalMatrix = parentEntity.GetScene()->GetGlobalMatrix(parentEntity);
 
                 auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
                 Set(inverseParentMatrix * globalMatrix);
@@ -61,10 +72,6 @@ namespace Atlas {
 				changed |= parentChanged;
 
 				if (changed) {
-
-					// A transform can be updated multiple times per frame, keep the matrix of the last frame
-					if (!updated)
-						lastGlobalMatrix = globalMatrix;
 
 					globalMatrix = parentMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));

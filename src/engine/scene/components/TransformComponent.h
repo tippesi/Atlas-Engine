@@ -36,6 +36,9 @@ namespace Atlas {
 
                 void Set(const glm::mat4& matrix);
 
+                // Sets the world matrix immediately and derives the local matrix relative to the parent
+                void SetGlobal(const glm::mat4& matrix, const Entity& parentEntity);
+
                 void ReconstructLocalMatrix(const Entity& parentEntity);
 
                 bool IsStatic() const;
@@ -65,6 +68,7 @@ namespace Atlas {
                 bool updated = false;
                 bool wasStatic = true;
                 bool initialized = false;
+                bool lastGlobalMatrixSet = false;
 
             };
 

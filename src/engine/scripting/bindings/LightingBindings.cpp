@@ -59,6 +59,7 @@ namespace Atlas::Scripting::Bindings {
             "mieScatteringCoeff", &Lighting::Atmosphere::mieScatteringCoeff,
             "rayleighHeightScale", &Lighting::Atmosphere::rayleighHeightScale,
             "mieHeightScale", &Lighting::Atmosphere::mieHeightScale,
+            "sunDiskSize", &Lighting::Atmosphere::sunDiskSize,
             "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 
@@ -118,6 +119,10 @@ namespace Atlas::Scripting::Bindings {
             "ambientFactor", &Lighting::Fog::ambientFactor,
             "rayMarching", &Lighting::Fog::rayMarching,
             "rayMarchStepCount", &Lighting::Fog::rayMarchStepCount,
+            "froxels", &Lighting::Fog::froxels,
+            "froxelTileSize", &Lighting::Fog::froxelTileSize,
+            "froxelSliceCount", &Lighting::Fog::froxelSliceCount,
+            "froxelFilter", &Lighting::Fog::froxelFilter,
             "volumetricIntensity", &Lighting::Fog::volumetricIntensity
         );
 

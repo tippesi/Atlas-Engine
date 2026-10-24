@@ -17,10 +17,11 @@ namespace Atlas {
         public:
             Ocean() = default;
 
-            Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f),
-                int32_t N = 512, int32_t L = 4000);
+            Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f), int32_t N = 512);
 
             void Update(const CameraComponent& camera, float deltaTime);
+
+            int32_t GetLoDCount() const;
 
             /**
              * Sets the distance of a specific level of detail.
@@ -43,10 +44,10 @@ namespace Atlas {
             vec3 scatterColor = vec3(0.3f, 0.7f, 0.6f);
             vec2 waterColorIntensity = vec2(0.1f, 0.2f);
 
-            float displacementScale = 0.011f;
-            float choppynessScale = 0.021f;
+            float displacementScale = 1.0f;
+            float choppynessScale = 1.5f;
 
-            float tiling = 64.0f;
+            float tiling = 32.0f;
 
             float shoreWaveDistanceOffset = 100.0f;
             float shoreWaveDistanceScale = 30.0f;

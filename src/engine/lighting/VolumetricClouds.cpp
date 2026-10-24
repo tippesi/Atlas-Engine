@@ -7,6 +7,9 @@ namespace Atlas {
 
     namespace Lighting {
 
+        std::unordered_map<int32_t, std::vector<float16>> VolumetricClouds::coverageDataCache;
+        std::mutex VolumetricClouds::coverageDataCacheMutex;
+
         VolumetricClouds::VolumetricClouds(int32_t coverageResolution, int32_t shapeResolution,
             int32_t detailResolution, int32_t shadowResolution) :
             coverageTexture(coverageResolution, coverageResolution,
@@ -78,6 +81,14 @@ namespace Atlas {
         }
 
         void VolumetricClouds::GenerateCoverageTexture() {
+
+            {
+                std::scoped_lock lock(coverageDataCacheMutex);
+                if (coverageDataCache.contains(coverageTexture.width)) {
+                    coverageTexture.SetData(coverageDataCache[coverageTexture.width]);
+                    return;
+                }
+            }
 
             auto perlin = [](vec2 pos, float scale) -> float {
                 return (0.5f * glm::perlin(pos, vec2(scale)) + 0.5) * 0.99f;
@@ -164,6 +175,9 @@ namespace Atlas {
 
             auto data = noiseImage.ConvertData<float16>();
             coverageTexture.SetData(data);
+
+            std::scoped_lock lock(coverageDataCacheMutex);
+            coverageDataCache[coverageTexture.width] = data;
 
         }
 

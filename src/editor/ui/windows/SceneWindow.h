@@ -31,6 +31,8 @@ namespace Atlas::Editor::UI {
 
         void StartPlaying();
 
+        void TogglePause();
+
         void StopPlaying();
 
         void SaveSceneState();
@@ -85,8 +87,6 @@ namespace Atlas::Editor::UI {
         float cameraSpeedChangeTime = -1000.0f;
 
         void PerformEntitySelection();
-
-        mat4 GetGlobalMatrix(Scene::Entity entity);
 
         std::vector<uint8_t> sceneState;
         std::vector<uint8_t> cameraState;

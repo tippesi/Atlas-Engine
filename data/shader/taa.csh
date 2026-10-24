@@ -15,6 +15,7 @@ layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
 
 #ifndef PATHTRACE
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
+layout(set = 3, binding = 7) uniform usampler2D lastStencilTexture;
 #endif
 
 layout(push_constant) uniform constants {
@@ -313,8 +314,8 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     LoadLocalData();
@@ -356,6 +357,21 @@ void main() {
     float velocityBlend = saturate(600.0 * max(length(velocity), length(lastVelocity)));
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * PushConstants.invResolution + velocity;
+
+#ifndef PATHTRACE
+    StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
+    bool rejectHistory = features.noTemporalAccumulation;
+    if (PushConstants.resetHistory == 0) {
+        ivec2 historyPixel = clamp(ivec2(uv * PushConstants.resolution), ivec2(0), ivec2(PushConstants.resolution) - 1);
+        StencilFeatures historyFeatures = DecodeStencilFeatures(texelFetch(lastStencilTexture, historyPixel, 0).r);
+        StencilFeatures previousFeatures = DecodeStencilFeatures(texelFetch(lastStencilTexture, pixel, 0).r);
+        rejectHistory = rejectHistory || historyFeatures.noTemporalAccumulation || previousFeatures.noTemporalAccumulation;
+    }
+    if (rejectHistory) {
+        imageStore(resolveImage, pixel, vec4(texelFetch(currentTexture, pixel, 0).rgb, 0.0));
+        return;
+    }
+#endif
 
     // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
@@ -408,7 +424,6 @@ void main() {
 #endif
 
 #ifndef PATHTRACE
-    StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
 #endif    
 

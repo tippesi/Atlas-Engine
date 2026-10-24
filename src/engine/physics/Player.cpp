@@ -175,6 +175,17 @@ namespace Atlas::Physics {
 
     }
 
+    void Player::SetUserData(uint64_t userData) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        character->SetUserData(userData);
+
+        auto innerBodyId = character->GetInnerBodyID();
+        if (!innerBodyId.IsInvalid())
+            world->system->GetBodyInterface().SetUserData(innerBodyId, userData);
+
+    }
+
     void Player::OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::BodyID &inBodyID2, const JPH::SubShapeID &inSubShapeID2, 
 			JPH::RVec3Arg inContactPosition, JPH::Vec3Arg inContactNormal, JPH::CharacterContactSettings &ioSettings) {
 

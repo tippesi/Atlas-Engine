@@ -162,6 +162,42 @@ namespace Atlas::Scene {
                 materialMap[impostor.Get().get()] = idx++;
             }
 
+            // The reflections start on the ocean surface, which is a perfect mirror for them
+            if (scene->ocean) {
+                Renderer::PackedMaterial packed;
+
+                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
+                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
+
+                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(0.0f, 1.0f));
+
+                vec4 data0, data1, data2;
+
+                data0.x = 1.0f;
+                data0.y = 0.0f;
+                data0.z = 0.0f;
+
+                data1.x = 1.0f;
+                data1.y = 0.0f;
+                data1.z = 0.0f;
+
+                // F0 of water is 0.02
+                data2.x = sqrtf(0.02f / 0.16f);
+                data2.y = 0.0f;
+                data2.z = 0.0f;
+
+                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
+                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
+                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
+
+                packed.features = 0;
+
+                materials.push_back(packed);
+
+                materialMap[scene->ocean.get()] = idx++;
+            }
+
             if (materials.size() > materialBuffer.GetElementCount()) {
                 materialBuffer.SetSize(materials.size());
             }
@@ -172,13 +208,26 @@ namespace Atlas::Scene {
 
     }
 
-    void SceneRenderState::UpdateBlasBindlessData() {
+    void SceneRenderState::UpdateBlasBindlessData(bool rayTracing) {
 
         terrainLeafNodes.clear();
         if (scene->terrain.IsLoaded()) {
             auto& leafNodes = scene->terrain->leafList;
             terrainLeafNodes.reserve(leafNodes.size());
             std::copy(leafNodes.begin(), leafNodes.end(), std::back_inserter(terrainLeafNodes));
+        }
+
+        JobSystem::Wait(bindlessBlasMapUpdateJob);
+        JobSystem::Wait(prepareBindlessBlasesJob);
+
+        // Nothing reads these buffers without any rt effects running
+        if (!rayTracing) {
+            blasToBindlessIdx.clear();
+            blasBuffers.clear();
+            triangleBuffers.clear();
+            bvhTriangleBuffers.clear();
+            triangleOffsetBuffers.clear();
+            return;
         }
 
         auto bindlessBlasBuffersUpdate = [&](JobData&) {
@@ -230,9 +279,6 @@ namespace Atlas::Scene {
                 blasToBindlessIdx[leafCell->blas] = bufferIdx++;
             }
             };
-
-        JobSystem::Wait(bindlessBlasMapUpdateJob);
-        JobSystem::Wait(prepareBindlessBlasesJob);
 
         JobSystem::Execute(bindlessBlasMapUpdateJob, bindlessBlasMapUpdate);
         JobSystem::Execute(prepareBindlessBlasesJob, bindlessBlasBuffersUpdate);

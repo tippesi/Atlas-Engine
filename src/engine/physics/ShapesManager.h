@@ -38,6 +38,9 @@ namespace Atlas::Physics {
         static std::unordered_map<Hash, CacheItem<Mesh::Mesh>> meshShapeCache;
         static std::mutex meshShapeCacheMutex;
 
+        static std::unordered_map<Hash, ShapeRef> heightFieldShapeCache;
+        static std::mutex heightFieldShapeCacheMutex;
+
         static const float epsilon;
 
         friend Shape;

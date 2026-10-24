@@ -18,6 +18,9 @@ namespace Atlas {
         std::unordered_map<Hash, ShapesManager::CacheItem<Mesh::Mesh>> ShapesManager::meshShapeCache;
         std::mutex ShapesManager::meshShapeCacheMutex;
 
+        std::unordered_map<Hash, ShapeRef> ShapesManager::heightFieldShapeCache;
+        std::mutex ShapesManager::heightFieldShapeCacheMutex;
+
         const float ShapesManager::epsilon = 0.00001f;
 
         bool ShapesManager::TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings) {
@@ -182,6 +185,22 @@ namespace Atlas {
             const auto& translation = settings.translation;
             const auto& scale = settings.scale;
 
+            // Restoring a scene backup recreates the same height field, building it again is expensive
+            Hash hash = std::hash<std::string_view>()(std::string_view(
+                reinterpret_cast<const char*>(heightData.data()), heightData.size() * sizeof(float)));
+            for (int32_t i = 0; i < 3; i++) {
+                HashCombine(hash, translation[i]);
+                HashCombine(hash, scale[i]);
+            }
+
+            {
+                std::scoped_lock lock(heightFieldShapeCacheMutex);
+                if (heightFieldShapeCache.contains(hash)) {
+                    shape->ref = heightFieldShapeCache[hash];
+                    return true;
+                }
+            }
+
             auto sampleCount = std::sqrt(heightData.size());
 
             JPH::HeightFieldShapeSettings heightFieldShapeSettings(heightData.data(), VecToJPHVec(translation),
@@ -194,14 +213,23 @@ namespace Atlas {
 
             shape->ref = result.Get();
 
+            std::scoped_lock lock(heightFieldShapeCacheMutex);
+            heightFieldShapeCache[hash] = shape->ref;
+
             return true;
 
         }
 
         void ShapesManager::Update() {
 
-            std::scoped_lock lock(meshShapeCacheMutex);
-            std::erase_if(meshShapeCache, [](auto& item) { return item.second.resource.expired(); } );
+            {
+                std::scoped_lock lock(meshShapeCacheMutex);
+                std::erase_if(meshShapeCache, [](auto& item) { return item.second.resource.expired(); } );
+            }
+
+            // Height fields aren't owned by a resource, they are unused when only the cache references them
+            std::scoped_lock lock(heightFieldShapeCacheMutex);
+            std::erase_if(heightFieldShapeCache, [](auto& item) { return item.second->GetRefCount() == 1; });
 
         }
 

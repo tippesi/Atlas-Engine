@@ -15,6 +15,7 @@ namespace Atlas::Editor::UI {
         bool rtgi = false;
         bool sss = false;
         bool irradianceVolume = false;
+        bool ocean = false;
         bool wind = false;
         bool sky = false;
         bool postProcessing = false;
@@ -112,6 +113,8 @@ namespace Atlas::Editor::UI {
             ECS::Pool<CameraComponent> cameraPool;
             ECS::Pool<LuaScriptComponent> scriptPool;
             ECS::Pool<LightComponent> lightPool;
+            std::string search;
+            HierarchyFilter filter;
         };        
 
         void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
@@ -135,7 +138,6 @@ namespace Atlas::Editor::UI {
         JobGroup searchJob{ "Scene hierarchy search", JobPriority::Low };
 
         std::string entitySearch;
-        std::string transformedEntitySearch;
         std::unordered_set<ECS::Entity> matchSet;
         std::unordered_set<ECS::Entity> newMatchSet;
         std::unordered_set<ECS::Entity> nodeInvisibleSet;

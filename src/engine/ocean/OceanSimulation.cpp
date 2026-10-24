@@ -1,6 +1,5 @@
 #include "OceanSimulation.h"
 #include "../Clock.h"
-#include "../buffer/Buffer.h"
 #include "../graphics/Profiler.h"
 #include "../pipeline/PipelineManager.h"
 #include "../common/NoiseGenerator.h"
@@ -13,7 +12,7 @@ namespace Atlas {
 
     namespace Ocean {
 
-        OceanSimulation::OceanSimulation(int32_t N, int32_t L, int32_t C) : N(N), L(L), C(C) {
+        OceanSimulation::OceanSimulation(int32_t N, int32_t C) : N(N), C(C) {
 
             noise0 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
             noise1 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
@@ -46,20 +45,18 @@ namespace Atlas {
 
             h0K = Texture::Texture2DArray(N, N, C, VK_FORMAT_R32G32_SFLOAT);
 
-            twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, VK_FORMAT_R32G32_SFLOAT);
             hTD = Texture::Texture2DArray(N, N, C, VK_FORMAT_R32G32B32A32_SFLOAT);
-            hTDPingpong = Texture::Texture2DArray(N, N, C, VK_FORMAT_R32G32B32A32_SFLOAT);
 
             h0Config = PipelineConfig("ocean/h0.csh");
-            htConfig = PipelineConfig("ocean/ht.csh");
-            twiddleConfig = PipelineConfig("ocean/twiddleIndices.csh");
-            horizontalButterflyConfig = PipelineConfig("ocean/butterfly.csh");
-            verticalButterflyConfig = PipelineConfig("ocean/butterfly.csh");
-            inversionConfig = PipelineConfig("ocean/inversion.csh");
+            horizontalFFTConfig = PipelineConfig("ocean/fft.csh");
+            verticalFFTConfig = PipelineConfig("ocean/fft.csh");
             normalConfig = PipelineConfig("ocean/normal.csh");
 
-            horizontalButterflyConfig.AddMacro("HORIZONTAL");
-            verticalButterflyConfig.AddMacro("VERTICAL");
+            // Each work group transforms a whole row/column in shared memory
+            horizontalFFTConfig.AddMacro("HORIZONTAL");
+            horizontalFFTConfig.AddMacro("FFT_SIZE " + std::to_string(N));
+            verticalFFTConfig.AddMacro("VERTICAL");
+            verticalFFTConfig.AddMacro("FFT_SIZE " + std::to_string(N));
 
             CalculatePerlinNoiseTexture();
 
@@ -82,9 +79,10 @@ namespace Atlas {
         void OceanSimulation::ComputeSpectrum(Graphics::CommandList* commandList) {
 
             struct alignas(16) PushConstants {
-                ivec4 L;
+                vec4 L;
                 vec2 w = vec2(1.0f);
                 int N = 1;
+                int C = 1;
                 float A = 1.0f;
                 float windSpeed = 1.0f;
                 float windDependency = 1.0f;
@@ -97,9 +95,10 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             PushConstants constants{
-                .L = ivec4(L, L * 2, L * 4, L * 8),
+                .L = spectrumPatchSizes,
                 .w = windDirection,
                 .N = N,
+                .C = C,
                 .A = waveAmplitude,
                 .windSpeed = windSpeed,
                 .windDependency = windDependency,
@@ -125,67 +124,55 @@ namespace Atlas {
 
         }
 
-        void OceanSimulation::ComputeTwiddleIndices(Graphics::CommandList* commandList) {
-
-            auto bitCount = (int32_t)log2f((float)N);
-            std::vector<int32_t> indices(N);
-
-            for (int32_t i = 0; i < N; i++) {
-                indices[i] = ReverseBits(i, bitCount);
-            }
-
-            auto usage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HostAccessBit;
-            Buffer::Buffer buffer(usage, sizeof(int32_t), indices.size(), indices.data());
-
-            auto pipeline = PipelineManager::GetPipeline(twiddleConfig);
-            commandList->BindPipeline(pipeline);
-
-            commandList->ImageMemoryBarrier(twiddleIndices.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
-
-            commandList->BindImage(twiddleIndices.image, 3, 0);
-            buffer.Bind(commandList, 3, 1);
-
-            commandList->Dispatch(bitCount, N / 16, 1);
-
-            commandList->ImageMemoryBarrier(twiddleIndices.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT);
-
-        }
-
         void OceanSimulation::Compute(Graphics::CommandList* commandList) {
+
+            // The spectrum of each cascade is generated for the size its tile has in the world
+            auto patchSizes = tiling * spectrumTilingFactors;
+            if (patchSizes != spectrumPatchSizes) {
+                spectrumPatchSizes = patchSizes;
+                updateSpectrum = true;
+            }
 
             if (updateSpectrum) {
                 ComputeSpectrum(commandList);
                 updateSpectrum = false;
             }
 
-            if (updateTwiddleIndices) {
-                ComputeTwiddleIndices(commandList);
-                updateTwiddleIndices = false;
-            }
-
             Graphics::Profiler::BeginQuery("Compute ocean simulation");
-
-            
 
             // displacementMapPrev.Copy(displacementMap);
 
+            struct alignas(16) PushConstants {
+                vec4 L;
+                vec4 spectrumScaling;
+                float time = 1.0f;
+                float choppyScale = 1.0f;
+                float displacementScale = 1.0f;
+            };
+
+            PushConstants constants = {
+                .L = spectrumPatchSizes,
+                .spectrumScaling = spectrumWeights,
+                .time = simulationSpeed * time,
+                .choppyScale = choppinessScale,
+                .displacementScale = displacementScale
+            };
+
+            // The normal map can be calculated by the FFT directly instead of finite differences
+            horizontalFFTConfig.ManageMacro("NORMALS", fftNormals);
+            verticalFFTConfig.ManageMacro("NORMALS", fftNormals);
+
+            if (fftNormals && !hTDSlopes.IsValid())
+                hTDSlopes = Texture::Texture2DArray(N, N, C, VK_FORMAT_R32G32B32A32_SFLOAT);
+            if (!fftNormals && hTDSlopes.IsValid())
+                hTDSlopes = Texture::Texture2DArray();
+
             {
-                struct alignas(16) PushConstants {
-                    ivec4 L;
-                    int N = 1;
-                    float time = 1.0f;
-                };
+                Graphics::Profiler::BeginQuery("Compute h(t) and horizontal iFFT");
 
-                Graphics::Profiler::BeginQuery("Compute h(t)");
-
-                auto pipeline = PipelineManager::GetPipeline(htConfig);
+                auto pipeline = PipelineManager::GetPipeline(horizontalFFTConfig);
                 commandList->BindPipeline(pipeline);
 
-                PushConstants constants = {
-                    .L = ivec4(L, L * 2, L * 4, L * 8),
-                    .N = N,
-                    .time = simulationSpeed * time
-                };
                 commandList->PushConstants("constants", &constants);
 
                 Graphics::ImageBarrier imageBarriers[] = {
@@ -196,109 +183,50 @@ namespace Atlas {
 
                 commandList->BindImage(hTD.image, 3, 0);
                 commandList->BindImage(h0K.image, 3, 1);
+                if (fftNormals) {
+                    commandList->ImageMemoryBarrier(hTDSlopes.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+                    commandList->BindImage(hTDSlopes.image, 3, 2);
+                }
 
-                commandList->Dispatch(N / 16, N / 16, C);
+                commandList->Dispatch(1, N, C);
 
                 Graphics::Profiler::EndQuery();
             }
 
-            int32_t pingpong = 0;
-            int32_t log2n = (int32_t)log2f((float)N);
-
-            Graphics::Profiler::BeginQuery("Perform iFFT");
-
-            commandList->BindImage(twiddleIndices.image, 3, 0);
-
-            for (uint8_t j = 0; j < 2; j++) {
-
-                struct alignas(16) PushConstants {
-                    int stage = 1;
-                    int pingpong = 1;
-                    int N = 1;
-                    float preTwiddle = 1.0f;
-                };
-
-                // The first two passes calculate the height,
-                // while the second two passes calculate choppyness.
-                Ref<Graphics::Pipeline> pipeline;
-                switch (j) {
-                    case 0: pipeline = PipelineManager::GetPipeline(horizontalButterflyConfig); break;
-                    case 1: pipeline = PipelineManager::GetPipeline(verticalButterflyConfig); break;
-                    default: break;
-                }
-
-                commandList->BindPipeline(pipeline);
-
-                for (int32_t i = 0; i < log2n; i++) {
-
-                    if (!pingpong) {
-                        Graphics::ImageBarrier imageBarriers[] = {
-                            {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
-                            {hTDPingpong.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
-                        };
-                        commandList->BindImage(hTD.image, 3, 1);
-                        commandList->BindImage(hTDPingpong.image, 3, 2);
-                        commandList->PipelineBarrier(imageBarriers, {});
-                    }
-                    else {
-                        Graphics::ImageBarrier imageBarriers[] = {
-                            {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                            {hTDPingpong.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT}
-                        };
-                        commandList->BindImage(hTDPingpong.image, 3, 1);
-                        commandList->BindImage(hTD.image, 3, 2);
-                        commandList->PipelineBarrier(imageBarriers, {});
-                    }                   
-
-                    auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
-
-                    PushConstants constants = {
-                        .stage = i,
-                        .pingpong = pingpong,
-                        .N = N,
-                        .preTwiddle = preTwiddle
-                    };
-                    commandList->PushConstants("constants", &constants);
-
-                    commandList->Dispatch(N / 8, N / 8, C);
-
-                    pingpong = (pingpong + 1) % 2;
-                }
-            }
-
-            Graphics::Profiler::EndQuery();
-
             {
-                Graphics::Profiler::BeginQuery("Compute heightfield/displacement");
+                Graphics::Profiler::BeginQuery("Compute vertical iFFT and displacement");
 
-                auto pipeline = PipelineManager::GetPipeline(inversionConfig);
+                auto pipeline = PipelineManager::GetPipeline(verticalFFTConfig);
                 commandList->BindPipeline(pipeline);
 
-                Ref<Graphics::Image> image;
-                if (pingpong == 0) {
-                    image = hTD.image;
-                }
-                else {
-                    image = hTDPingpong.image;
-                }
+                commandList->PushConstants("constants", &constants);
 
                 Graphics::ImageBarrier imageBarriers[] = {
                     {displacementMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                    {image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
+                    {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(displacementMap.image, 3, 0);
-                commandList->BindImage(image, 3, 1);
+                commandList->BindImage(hTD.image, 3, 1);
+                if (fftNormals) {
+                    Graphics::ImageBarrier normalBarriers[] = {
+                        {normalMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                        {hTDSlopes.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
+                    };
+                    commandList->PipelineBarrier(normalBarriers, {});
 
-                commandList->Dispatch(N / 16, N / 16, C);
+                    commandList->BindImage(normalMap.image, 3, 2);
+                    commandList->BindImage(hTDSlopes.image, 3, 3);
+                }
+
+                commandList->Dispatch(N, 1, C);
 
                 Graphics::Profiler::EndQuery();
             }
 
-            {
+            if (!fftNormals) {
                 struct alignas(16) PushConstants {
-                    ivec4 L;
                     vec4 tilingFactors;
                     vec4 spectrumScaling;
                     int N = 1;
@@ -308,8 +236,6 @@ namespace Atlas {
 
                     float temporalWeight = 1.0f;
                     float temporalThreshold = 1.0f;
-
-                    float foamOffset = 1.0f;
                 };
 
                 Graphics::Profiler::BeginQuery("Compute normal map");
@@ -318,7 +244,6 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 PushConstants constants = {
-                    .L = ivec4(L, L * 2, L * 4, L * 8),
                     .tilingFactors = spectrumTilingFactors,
                     .spectrumScaling = spectrumWeights,
                     .N = N,
@@ -327,9 +252,7 @@ namespace Atlas {
                     .tiling = tiling,
 
                     .temporalWeight = foamTemporalWeight,
-                    .temporalThreshold = foamTemporalThreshold,
-
-                    .foamOffset = foamOffset
+                    .temporalThreshold = foamTemporalThreshold
                 };
                 commandList->PushConstants("constants", &constants);
 
@@ -375,19 +298,6 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();
-
-        }
-
-        int32_t OceanSimulation::ReverseBits(int32_t data, int32_t bitCount) {
-
-            int32_t reversed = 0;
-
-            for (int32_t i = 0; i < bitCount; i++) {
-                if (data & (1 << i))
-                    reversed |= (1 << ((bitCount - 1) - i));
-            }
-
-            return reversed;
 
         }
 
