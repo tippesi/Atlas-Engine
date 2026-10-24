@@ -3,6 +3,7 @@
 #include "SceneSerializer.h"
 #include "components/Components.h"
 #include "components/LuaScriptComponent.h"
+#include "raytracing/RayTracingManager.h"
 
 namespace Atlas {
 
@@ -169,6 +170,10 @@ namespace Atlas {
                 }
             }
 
+            auto rtDataNeeded = IsRtDataNeeded();
+            if (rtDataNeeded)
+                RayTracing::RayTracingManager::RequestMeshBVHs();
+
             // Kick of all the jobs while we find the changed transforms
             FindChangedTransforms([&]() {
                 JobSystem::WaitSpin(terrainOceanJobGroup);
@@ -176,7 +181,7 @@ namespace Atlas {
                 // Can only update after scripts were runxx
                 renderState.NewFrame();
                 if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
-                    renderState.UpdateBlasBindlessData();
+                    renderState.UpdateBlasBindlessData(rtDataNeeded);
                     renderState.UpdateTextureBindlessData();
                     renderState.UpdateOtherTextureBindlessData();
                 }
@@ -456,20 +461,16 @@ namespace Atlas {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             if (device->support.bindless) {
                 auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
-                    // Check if any rt effects are running (pathtracing checked by rayTracingWorld->includeObjectHistory)
-                    auto rtUpdateNeeded = (irradianceVolume && irradianceVolume->enable) ||
-                        (reflection && reflection->enable && reflection->rt) ||
-                        (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
-                        (rtgi && rtgi->enable);
+                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset, rtDataNeeded](JobData&) {
                     // Need to wait before updating graphic resources
                     Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
-                    if (rayTracingWorld && rtUpdateNeeded) {
+                    if (rayTracingWorld && rtDataNeeded) {
                         rayTracingWorld->scene = this;
                         // Don't update triangle lights for now (second argument)
                         rayTracingWorld->Update(rayTracingSubset, false);
                     }
-                    rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+                    // The bindless blas data isn't updated without any rt effects running
+                    rtDataValid = rtDataNeeded && rayTracingWorld != nullptr && rayTracingWorld->IsValid();
                 });
             }
 
@@ -913,6 +914,16 @@ namespace Atlas {
         bool Scene::IsRtDataValid() const {
 
             return rtDataValid;
+
+        }
+
+        bool Scene::IsRtDataNeeded() const {
+
+            // Path tracing is checked by rayTracingWorld->includeObjectHistory
+            return (irradianceVolume && irradianceVolume->enable) ||
+                (reflection && reflection->enable && reflection->rt) ||
+                (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
+                (rtgi && rtgi->enable);
 
         }
 

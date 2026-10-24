@@ -149,6 +149,8 @@ namespace Atlas {
 
             bool IsRtDataValid() const;
 
+            bool IsRtDataNeeded() const;
+
             void Clear();
 
             SceneIterator begin();

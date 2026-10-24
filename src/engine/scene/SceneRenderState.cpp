@@ -208,13 +208,26 @@ namespace Atlas::Scene {
 
     }
 
-    void SceneRenderState::UpdateBlasBindlessData() {
+    void SceneRenderState::UpdateBlasBindlessData(bool rayTracing) {
 
         terrainLeafNodes.clear();
         if (scene->terrain.IsLoaded()) {
             auto& leafNodes = scene->terrain->leafList;
             terrainLeafNodes.reserve(leafNodes.size());
             std::copy(leafNodes.begin(), leafNodes.end(), std::back_inserter(terrainLeafNodes));
+        }
+
+        JobSystem::Wait(bindlessBlasMapUpdateJob);
+        JobSystem::Wait(prepareBindlessBlasesJob);
+
+        // Nothing reads these buffers without any rt effects running
+        if (!rayTracing) {
+            blasToBindlessIdx.clear();
+            blasBuffers.clear();
+            triangleBuffers.clear();
+            bvhTriangleBuffers.clear();
+            triangleOffsetBuffers.clear();
+            return;
         }
 
         auto bindlessBlasBuffersUpdate = [&](JobData&) {
@@ -266,9 +279,6 @@ namespace Atlas::Scene {
                 blasToBindlessIdx[leafCell->blas] = bufferIdx++;
             }
             };
-
-        JobSystem::Wait(bindlessBlasMapUpdateJob);
-        JobSystem::Wait(prepareBindlessBlasesJob);
 
         JobSystem::Execute(bindlessBlasMapUpdateJob, bindlessBlasMapUpdate);
         JobSystem::Execute(prepareBindlessBlasesJob, bindlessBlasBuffersUpdate);
