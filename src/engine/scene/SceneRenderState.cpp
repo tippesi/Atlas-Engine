@@ -30,7 +30,7 @@ namespace Atlas::Scene {
         meshes = scene->GetMeshes();
 
         JobSystem::Execute(newFrameRenderListJob, [&](JobData&) {
-            renderList.NewFrame(scene);
+            renderList.NewFrame(scene, meshes);
 
             for (auto& pass : renderList.passes) {
                 pass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);

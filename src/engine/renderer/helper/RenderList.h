@@ -99,7 +99,7 @@ namespace Atlas {
 
         ~RenderList();
 
-        void NewFrame(Scene::Scene* scene);
+        void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
 
         // Note: The expected behaviour is to first create and process all shadow passes and then finally do the main pass last
         Ref<Pass> NewMainPass();

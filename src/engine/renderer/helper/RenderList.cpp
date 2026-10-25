@@ -21,7 +21,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewFrame(Scene::Scene* scene) {
+    void RenderList::NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
 
         std::scoped_lock lock(mutex);
         this->scene = scene;
@@ -32,7 +32,6 @@ namespace Atlas {
         JobSystem::WaitSpin(clearJob);
         wasCleared = false;
 
-        auto meshes = scene->GetMeshes();
         meshIdToMeshMap.reserve(meshes.size());
 
         // Fill in missing meshes since they are cleared at the end of each frame

@@ -1076,8 +1076,7 @@ namespace Atlas {
 				cloudShadowUniformBuffer->SetData(&cloudShadowUniform, 0, sizeof(CloudShadow));
 			}
 
-			auto meshes = scene->GetMeshes();
-			for (auto& mesh : meshes) {
+			for (auto& mesh : scene->renderState.meshes) {
 				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated) continue;
 
 				auto& impostor = mesh->impostor;
