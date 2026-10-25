@@ -587,17 +587,9 @@ namespace Atlas {
 
             }
 
-            auto meshes = GetMeshes();
-            if (clutter) {
-                auto vegMeshes = clutter->GetMeshes();
-                meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
-            }
-
-            materials.reserve(materials.size() + meshes.size());
-
-            for (const auto& mesh : meshes) {
+            auto addMeshMaterials = [&](const ResourceHandle<Mesh::Mesh>& mesh) {
                 if (!mesh.IsLoaded())
-                    continue;
+                    return;
                 for (auto& material : mesh->data.materials) {
                     if (!material.IsLoaded())
                         continue;
@@ -605,6 +597,15 @@ namespace Atlas {
                     material->usage |= MaterialUsageBits::MeshBit;
                     materials.push_back(material);
                 }
+                };
+
+            // Iterate the registered meshes directly, copying all the mesh handles is expensive
+            for (const auto& [meshId, registeredMesh] : registeredMeshes)
+                addMeshMaterials(registeredMesh.resource);
+
+            if (clutter) {
+                for (const auto& mesh : clutter->GetMeshes())
+                    addMeshMaterials(mesh);
             }
 
             return materials;

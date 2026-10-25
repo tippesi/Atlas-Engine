@@ -16,7 +16,7 @@ namespace Atlas {
 
             void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
                 Graphics::CommandList* commandList, RenderList* renderList,
-                std::unordered_map<void*, uint16_t> materialMap);
+                std::unordered_map<void*, uint16_t>& materialMap);
 
             void Generate(const std::vector<mat4>& viewMatrices,
                 mat4 projectionMatrix, float distToCenter, Mesh::Mesh* mesh, Mesh::Impostor* impostor);

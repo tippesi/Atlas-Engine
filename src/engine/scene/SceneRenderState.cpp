@@ -63,7 +63,7 @@ namespace Atlas::Scene {
                 materialMap.clear();
             }
 
-            for (auto material : sceneMaterials) {
+            for (const auto& material : sceneMaterials) {
                 // Might happen due to the scene giving back materials on a mesh basis
                 if (materialMap.contains(material.Get().get()))
                     continue;
@@ -117,7 +117,7 @@ namespace Atlas::Scene {
                 materialMap[material.Get().get()] = idx++;
             }
 
-            for (auto mesh : meshes) {
+            for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
                     continue;
 

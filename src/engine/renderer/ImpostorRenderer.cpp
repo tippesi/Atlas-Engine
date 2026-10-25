@@ -15,7 +15,7 @@ namespace Atlas {
 
         void ImpostorRenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList, RenderList* renderList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+            std::unordered_map<void*, uint16_t>& materialMap) {
 
             struct alignas(16) PushConstants {
                 uint32_t materialIdx;

@@ -20,7 +20,7 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
-                RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap);
+                RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap);
 
         private:
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
