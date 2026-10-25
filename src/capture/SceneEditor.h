@@ -28,6 +28,9 @@ namespace Atlas::Capture {
     // scenes can only reference .aemesh files
     ResourceHandle<Mesh::Mesh> LoadMeshForScene(const std::string& path);
 
+    // An animation file or the name of an animation of the model file
+    ResourceHandle<Animation::Animation> LoadAnimationForScene(const std::string& animation, const std::string& modelPath);
+
     // The root of the hierarchy, invalid for scenes without one (their entities are all top level)
     Scene::Entity FindRoot(Scene::Scene& scene);
 

@@ -116,7 +116,7 @@ namespace Atlas::Capture {
     }
 
     static const std::set<std::string> eventTypes = { "capture", "key", "look", "teleport", "log", "expect",
-        "resetScripts", "pause" };
+        "resetScripts", "pause", "animation" };
 
     CameraSpec ParseCamera(const json& j) {
 
@@ -178,7 +178,7 @@ namespace Atlas::Capture {
     Job ParseJob(const json& j, const fs::path& baseDirectory) {
 
         CheckKeys(j,
-            { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow",
+            { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow", "pathTrace",
                 "settings", "variants", "inspect", "queries", "edit", "shots", "play", "duration", "timeline", "strips", "observer",
                 "scripts", "track", "overlay", "checks", "profile", "$schema", "description" },
             "job");
@@ -214,6 +214,7 @@ namespace Atlas::Capture {
         job.loadTimeout = j.value("loadTimeout", job.loadTimeout);
         job.fixedDeltaTime = j.value("fixedDt", job.fixedDeltaTime);
         job.showWindow = j.value("showWindow", job.showWindow);
+        job.pathTrace = j.value("pathTrace", job.pathTrace);
 
         if (job.fixedDeltaTime <= 0.0f)
             throw std::runtime_error("fixedDt must be positive");
@@ -290,7 +291,7 @@ namespace Atlas::Capture {
                     }
                 }
                 if (spec.type.empty())
-                    throw std::runtime_error("Timeline event without a known type (capture, key, look, teleport, log, expect, resetScripts, pause): " +
+                    throw std::runtime_error("Timeline event without a known type (capture, key, look, teleport, log, expect, resetScripts, pause, animation): " +
                         event.dump());
                 if (spec.type == "pause" && !event["pause"].is_boolean())
                     throw std::runtime_error("A pause event needs true or false: " + event.dump());

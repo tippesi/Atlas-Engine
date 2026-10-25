@@ -59,9 +59,12 @@ namespace Atlas::Capture {
     }
 
     void CaptureRenderer::Render(const Ref<Scene::Scene>& scene, const std::vector<std::string>& passes,
-        std::span<Ref<Renderer::PrimitiveBatch>> primitiveBatches) {
+        std::span<Ref<Renderer::PrimitiveBatch>> primitiveBatches, bool pathTrace) {
 
-        mainRenderer->RenderScene(viewport, renderTarget, scene, primitiveBatches, outputTexture.get());
+        if (pathTrace)
+            mainRenderer->PathTraceScene(viewport, renderTarget, scene, outputTexture.get(), primitiveBatches);
+        else
+            mainRenderer->RenderScene(viewport, renderTarget, scene, primitiveBatches, outputTexture.get());
         hasFrame = true;
 
         float exposure = scene->HasMainCamera() ? scene->GetMainCamera().exposure : 1.0f;

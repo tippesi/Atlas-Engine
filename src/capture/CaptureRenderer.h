@@ -33,7 +33,7 @@ namespace Atlas::Capture {
         void Resize(ivec2 resolution);
 
         void Render(const Ref<Scene::Scene>& scene, const std::vector<std::string>& passes,
-            std::span<Ref<Renderer::PrimitiveBatch>> primitiveBatches = {});
+            std::span<Ref<Renderer::PrimitiveBatch>> primitiveBatches = {}, bool pathTrace = false);
 
         // Shows the last rendered frame in the (possibly hidden) window. This also keeps
         // the swap chain acquire/present cycle going. Text lines are shown in a panel below the frame

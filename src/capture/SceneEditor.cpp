@@ -8,6 +8,7 @@
 #include "loader/AssetReferences.h"
 #include "loader/MaterialLoader.h"
 #include "loader/MeshLoader.h"
+#include "loader/AnimationLoader.h"
 #include "loader/ModelImporter.h"
 #include "mesh/MeshSerializer.h"
 #include "physics/ShapesManager.h"
@@ -108,7 +109,11 @@ namespace Atlas::Capture {
             return decomposition.Compose();
 
         decomposition.translation = ToVec3(operation["localPosition"]);
-        return scene.GetGlobalMatrix(parent) * decomposition.Compose();
+        auto parentMatrix = scene.GetGlobalMatrix(parent);
+        auto animationComponent = parent.IsValid() ? parent.TryGetComponent<AnimationComponent>() : nullptr;
+        if (animationComponent && operation.contains("parentJoint"))
+            parentMatrix = parentMatrix * animationComponent->GetJointMatrix(operation["parentJoint"].get<int32_t>());
+        return parentMatrix * decomposition.Compose();
 
     }
 
@@ -185,6 +190,34 @@ namespace Atlas::Capture {
             throw std::runtime_error("Couldn't load mesh " + meshPath);
 
         return mesh;
+
+    }
+
+    ResourceHandle<Animation::Animation> LoadAnimationForScene(const std::string& animation, const std::string& modelPath) {
+
+        auto animationPath = ToAssetPath(animation);
+        if (Common::Path::GetFileType(animationPath) != "aeanimation") {
+            auto path = ToAssetPath(modelPath);
+            auto imported = Loader::ModelImporter::ImportAnimations(path, true);
+
+            auto match = std::find_if(imported.begin(), imported.end(),
+                [&](const auto& item) { return item->name == animation; });
+            if (match == imported.end()) {
+                std::string names;
+                for (const auto& item : imported)
+                    names += (names.empty() ? "" : ", ") + item->name;
+                throw std::runtime_error("No animation " + animation + " in " + path + " (" + names + ")");
+            }
+
+            animationPath = Loader::ModelImporter::GetAnimationFilename(path, (*match)->name);
+        }
+
+        auto handle = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoader(
+            animationPath, ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
+        if (!handle.IsLoaded())
+            throw std::runtime_error("Couldn't load animation " + animationPath);
+
+        return handle;
 
     }
 
@@ -467,6 +500,8 @@ namespace Atlas::Capture {
                     entity.AddComponent<TransformComponent>(global, !hasScript);
                 }
                 entity.AddComponent<NameComponent>(name);
+                // Follows a joint of the animated parent, the position is then relative to the joint
+                GetTransform(entity).parentJoint = operation.value("parentJoint", -1);
                 Place(entity, parent, global);
 
                 json added = { { "entity", GetEntityLabel(entity) } };
@@ -481,6 +516,17 @@ namespace Atlas::Capture {
                 }
                 else if (operation.contains("body")) {
                     throw std::runtime_error("add: a body requires a mesh");
+                }
+
+                if (operation.contains("animation")) {
+                    if (!mesh.IsValid())
+                        throw std::runtime_error("add: an animation requires a mesh");
+                    auto animation = LoadAnimationForScene(operation["animation"].get<std::string>(),
+                        operation["mesh"].get<std::string>());
+                    auto& animationComponent = entity.AddComponent<AnimationComponent>(animation);
+                    animationComponent.speed = operation.value("animationSpeed", 1.0f);
+                    animationComponent.time = operation.value("animationTime", 0.0f);
+                    added["animation"] = animation.GetResource()->path;
                 }
 
                 // Main camera looking along +Z, the editor needs one to start playing

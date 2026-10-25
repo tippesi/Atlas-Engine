@@ -65,7 +65,7 @@ namespace Atlas::Capture {
     struct EventSpec {
 
         float time = 0.0f;
-        // capture, key, look, teleport, log, expect, resetScripts, pause
+        // capture, key, look, teleport, log, expect, resetScripts, pause, animation
         std::string type;
         json data;
 
@@ -189,6 +189,8 @@ namespace Atlas::Capture {
         float fixedDeltaTime = 1.0f / 60.0f;
         // Shows the frames and the output while running, playback then runs in real time
         bool showWindow = true;
+        // Renders with the path tracer, which accumulates over the settle frames
+        bool pathTrace = false;
 
         json settings = json::object();
         std::vector<VariantSpec> variants;

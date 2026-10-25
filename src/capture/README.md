@@ -134,6 +134,7 @@ All keys are optional except `scene`. Unknown keys are rejected to catch typos.
     "loadTimeout": 300,                    // seconds
     "fixedDt": 0.016667,
     "showWindow": true,                    // false or --hidden: no window, no real time playback
+    "pathTrace": false,                    // render with the path tracer, it accumulates over the settle frames
 
     "settings": { "fog": { "density": 0.02 } },     // merged into the scene settings (see below)
     "variants": [ { "name": "noFog", "settings": { "fog": { "enable": false } } } ],
@@ -251,6 +252,7 @@ Timeline events, each with a time `t` in seconds:
 { "t": 1.0, "capture": { "name": "side", "camera": { ... }, "passes": [...] } }   // still
 { "t": 2.0, "expect": { "entity": "Crate", "property": "bottom.y", "op": "<", "value": 0.1 } }
 { "t": 2.0, "log": "message" }
+{ "t": 2.5, "animation": { "entity": "Fox", "animation": "Walk", "model": "skinning/Fox/Fox.gltf", "blendTime": 0.4 } }   // or an .aeanimation file
 { "t": 3.0, "pause": true }          // pauses scripts, physics and players, the job time continues
 { "t": 4.0, "pause": false }         // resumes
 { "t": 5.0, "resetScripts": true }   // discards non-permanent script environments like leaving play mode does
@@ -450,6 +452,7 @@ enabled before the job is read.
           "light": { "type": "spot", "color": [1, 0.2, 0.6], "intensity": 180, "radius": 18, "direction": [0, -1, 0], "innerAngle": 20, "outerAngle": 35 } },
         { "op": "add", "name": "Game", "script": "skate/skate.lua" },
         { "op": "add", "name": "Blades", "parent": "Windmill", "mesh": "...", "localPosition": [0, 0.5, 0.55], "visible": false },
+        { "op": "add", "name": "Fox", "mesh": "skinning/Fox.glb", "animation": "Run", "animationSpeed": 1.0, "animationTime": 0.0 },
         { "op": "scatter", "group": "Forest", ... },                                     // see below
         { "op": "clearArea", "entities": ["Grass*"], "area": { "center": [x, z], "radius": 20 } },
         { "op": "terrainCopy", "path": "terrains/x/x.aeterrain", "overwrite": false },
@@ -472,10 +475,14 @@ mesh shape, such that the piece collides and is found by physics queries. Lights
 lights at the entity origin (`radius`, `intensity`, `color`, `volumetric` (off by default), `shadow`;
 spots also `direction` in entity space and the cone half angles in degrees). Spot lights with `shadow` currently
 stay dark when created this way.
+`animation` adds an animation component to a skinned mesh: either an `.aeanimation` file or the name
+of an animation in the model file, whose animations are then imported into `animations/` next to it
+(`animationSpeed`, `animationTime` in seconds).
 
 `add`, `prefab` and `scatter` put new entities below the root of the scene (or `parent`); scenes
 without a root get top level entities. `localPosition` places an added entity or prefab (with
-`rotation` and `scale`) in the space of its parent, `"visible": false` adds a hidden mesh, e.g. one a
+`rotation` and `scale`) in the space of its parent (with `"parentJoint": <index>` in the space of a joint of an
+animated parent, which the entity then follows), `"visible": false` adds a hidden mesh, e.g. one a
 script shows.
 
 `edit.dryRun` applies the operations and runs the checks and shots on the edited scene without

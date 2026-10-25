@@ -722,7 +722,7 @@ namespace Atlas::Capture {
 
         try {
             BuildOverlay();
-            captureRenderer.Render(scene, passes, overlay->GetBatches());
+            captureRenderer.Render(scene, passes, overlay->GetBatches(), job.pathTrace);
         }
         catch (const std::exception& e) {
             // E.g. validation errors, which the engine throws in non-release builds
@@ -1392,6 +1392,32 @@ namespace Atlas::Capture {
                     Print(FormatTime(playTime) + " teleported " + GetEntityLabel(entity) + " to " + FormatVec3(position));
                 }
             }
+            else if (event.type == "animation") {
+                const auto& spec = data["animation"];
+                auto entities = FindTopmostEntities(*scene, spec.at("entity").get<std::string>());
+                if (entities.empty())
+                    Warn(FormatTime(playTime) + " animation: no entity matches " + spec["entity"].dump());
+
+                ResourceHandle<Animation::Animation> animation;
+                try {
+                    animation = LoadAnimationForScene(spec.at("animation").get<std::string>(), spec.value("model", std::string()));
+                }
+                catch (const std::exception& e) {
+                    Warn(FormatTime(playTime) + " animation: " + e.what());
+                    entities.clear();
+                }
+
+                auto blendTime = spec.value("blendTime", 0.0f);
+                for (auto entity : entities) {
+                    auto animationComponent = entity.TryGetComponent<AnimationComponent>();
+                    if (!animationComponent) {
+                        Warn(FormatTime(playTime) + " animation: " + GetEntityLabel(entity) + " has no animation component");
+                        continue;
+                    }
+                    animationComponent->Play(animation, blendTime);
+                    Print(FormatTime(playTime) + " playing " + animation.GetResource()->path + " on " + GetEntityLabel(entity));
+                }
+            }
             else if (event.type == "look") {
                 const auto& look = data["look"];
                 auto entities = FindTopmostEntities(*scene, look.at("entity").get<std::string>());
@@ -1934,6 +1960,10 @@ namespace Atlas::Capture {
         bool useCaptureCamera = UsesCaptureCamera(spec);
         if (useCaptureCamera)
             ApplyCameraSpec(spec);
+
+        // Path tracing needs the ray tracing data, which the scene only builds when an effect uses it
+        if (scene->rayTracingWorld)
+            scene->rayTracingWorld->includeObjectHistory = job.pathTrace;
 
         scene->Update(deltaTime < 0.0f ? job.fixedDeltaTime : deltaTime, useCaptureCamera ? captureCameraEntity : Scene::Entity());
 
