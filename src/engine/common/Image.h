@@ -136,7 +136,7 @@ namespace Atlas {
              * @param mipLevel The mipmap level which should be returned.
              * @return The mipmap level structure at level mipLevel.
              */
-            MipLevel<T>& GetMipLevel(int32_t mipLevel) const;
+            const MipLevel<T>& GetMipLevel(int32_t mipLevel) const;
 
             /**
              * Returns the selected channel data of the whole image.
@@ -501,7 +501,7 @@ namespace Atlas {
         }
 
         template<typename T>
-        typename Image<T>::template MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) const {
+        const typename Image<T>::template MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) const {
 
             return mipLevels[mipLevel];
 
@@ -567,9 +567,8 @@ namespace Atlas {
             for (int32_t i = 0; i < int32_t(mipLevels.size()); i++) {
                 mipLevels[i].width = dim.x;
                 mipLevels[i].height = dim.y;
-                mipLevels[i].data.resize(dim.x * dim.y * channels);
-                dim.x /= 2;
-                dim.y /= 2;
+                mipLevels[i].data.resize(size_t(dim.x) * size_t(dim.y) * size_t(channels));
+                dim = glm::max(dim / 2, ivec2(1));
             }
 
             stbir_pixel_layout pixelLayout = STBIR_RGBA;
@@ -580,30 +579,21 @@ namespace Atlas {
             default: pixelLayout = STBIR_RGBA; break;
             }
 
+            stbir_datatype dataType = STBIR_TYPE_UINT8;
+            if constexpr (std::is_same_v<T, uint16_t>) {
+                dataType = STBIR_TYPE_UINT16;
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+                dataType = STBIR_TYPE_FLOAT;
+            }
+
             for (int32_t i = 1; i < int32_t(mipLevels.size()); i++) {
-                dim.x /= 2;
-                dim.y /= 2;
-                if constexpr (std::is_same_v<T, uint8_t>) {
-                    stbir_resize_uint8_generic(mipLevels[i - 1].data.data(), dim.x * 2,
-                        dim.y * 2, dim.x * 2 * channels,
-                        mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * channels, channels, pixelLayout,
-                        STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
-                }
-                else if constexpr (std::is_same_v<T, uint16_t>) {
-                    stbir_resize_uint16_generic(mipLevels[i - 1].data.data(), dim.x * 2,
-                        dim.y * 2, dim.x * 4 * channels,
-                        mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * 2 * channels, channels, pixelLayout,
-                        STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
-                }
-                else if constexpr (std::is_same_v<T, float>) {
-                    stbir_resize_float_generic(mipLevels[i - 1].data.data(), dim.x * 2,
-                        dim.y * 2, dim.x * 8 * channels,
-                        mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * 4 * channels, channels, pixelLayout,
-                        STBIR_TYPE_FLOAT, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
-                }
+                auto& previousLevel = mipLevels[i - 1];
+                auto& level = mipLevels[i];
+                stbir_resize(previousLevel.data.data(), previousLevel.width, previousLevel.height,
+                    int32_t(previousLevel.width * channels * sizeof(T)), level.data.data(), level.width,
+                    level.height, int32_t(level.width * channels * sizeof(T)), pixelLayout, dataType,
+                    STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
             }
 
         }
