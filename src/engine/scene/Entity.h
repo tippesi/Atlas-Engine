@@ -99,6 +99,8 @@ namespace Atlas {
 
             }
 
+            void MarkDirty() const;
+
             operator ECS::Entity() const { return entity; }
 
             static std::vector<uint8_t> Backup(const Ref<Scene>& scene, const Entity& entity);

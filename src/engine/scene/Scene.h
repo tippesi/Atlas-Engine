@@ -36,6 +36,7 @@
 #include <type_traits>
 #include <map>
 #include <functional>
+#include <mutex>
 
 namespace Atlas {
 
@@ -186,6 +187,9 @@ namespace Atlas {
             SceneRenderState renderState;
             ECS::EntityManager entityManager = ECS::EntityManager(this);
 
+        protected:
+            void MarkEntityDirty(const Entity& entity);
+
         private:
             struct ThreadContext {
                 std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
@@ -213,6 +217,8 @@ namespace Atlas {
 
             void FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
 
+            void CollectDirtyEntities();
+
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
@@ -229,6 +235,11 @@ namespace Atlas {
 
             std::vector<std::pair<ECS::Entity, int32_t>> changedTransformSet;
             std::vector<ECS::Entity> changedMeshSet;
+
+            std::mutex dirtyEntitiesMutex;
+            std::vector<ECS::Entity> dirtyEntities;
+            std::vector<ECS::Entity> frameDirtyEntities;
+            std::vector<ECS::Entity> lastFrameDirtyEntities;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 

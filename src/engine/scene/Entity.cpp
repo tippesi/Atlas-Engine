@@ -4,6 +4,13 @@
 
 namespace Atlas::Scene {
 
+	void Entity::MarkDirty() const {
+
+		AE_ASSERT(IsValid() && "Entity is not valid and doesn't belong to any scene");
+		GetScene()->MarkEntityDirty(*this);
+
+	}
+
 	std::vector<uint8_t> Entity::Backup(const Ref<Scene>& scene, const Entity& entity) {
 
 		json j;

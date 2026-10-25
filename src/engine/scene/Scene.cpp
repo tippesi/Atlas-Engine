@@ -117,14 +117,17 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
+            lastFrameDirtyEntities.swap(frameDirtyEntities);
+            frameDirtyEntities.clear();
+
             // Motion vectors use the matrix of the last frame, SetGlobal before the update already stored it
             {
                 auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
                 JobGroup historyJobGroup{ "Transform history", JobPriority::High };
-                JobSystem::ParallelFor(historyJobGroup, int32_t(transformComponentPool.GetCount()), 64, [&](JobData&, int32_t idx) {
-                    auto& transformComponent = transformComponentPool.GetByIndex(idx);
-                    if (!transformComponent.lastGlobalMatrixSet)
-                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                JobSystem::ParallelFor(historyJobGroup, int32_t(lastFrameDirtyEntities.size()), 64, [&](JobData&, int32_t idx) {
+                    auto transformComponent = transformComponentPool.TryGet(lastFrameDirtyEntities[idx]);
+                    if (transformComponent && !transformComponent->lastGlobalMatrixSet)
+                        transformComponent->lastGlobalMatrix = transformComponent->globalMatrix;
                     });
                 JobSystem::Wait(historyJobGroup);
             }
@@ -317,10 +320,14 @@ namespace Atlas {
                             rigidBodyComponent.layer == Physics::Layers::Kinematic)
                             continue;
 
+                        // Bodies at rest are marked dirty every frame as well, could be skipped if the body isn't active
+
                         // This happens if no change was triggered by the user, then we still need
                         // to update the last global matrix, since it might have changed due to physics simulation
-                        if (!transformComponent.changed)
+                        if (!transformComponent.changed) {
                             transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                            MarkEntityDirty(ToSceneEntity(entity));
+                        }
 
                         // Need to set changed to true such that the space partitioning is updated
                         transformComponent.changed = true;
@@ -341,8 +348,10 @@ namespace Atlas {
 
                         // This happens if no change was triggered by the user, then we still need
                         // to update the last global matrix, since it might have changed due to physics simulation
-                        if (!transformComponent.changed)
+                        if (!transformComponent.changed) {
                             transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                            MarkEntityDirty(ToSceneEntity(entity));
+                        }
 
                         // Need to set changed to true such that the space partitioning is updated
                         transformComponent.changed = true;
@@ -504,14 +513,22 @@ namespace Atlas {
             }
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
-                auto& transformComponent = transformComponentPool.GetByIndex(idx);
+            JobSystem::ParallelFor(jobGroup, int32_t(frameDirtyEntities.size()), 8, [&](JobData&, int32_t idx) {
+                auto entity = frameDirtyEntities[idx];
+                auto transformComponent = transformComponentPool.TryGet(entity);
+                if (!transformComponent)
+                    return;
 
-                if (transformComponent.updated) {
-                    transformComponent.changed = false;
-                    transformComponent.updated = false;
+                if (transformComponent->updated) {
+                    transformComponent->changed = false;
+                    transformComponent->updated = false;
                 }
-                transformComponent.lastGlobalMatrixSet = false;
+                transformComponent->lastGlobalMatrixSet = false;
+
+                // Entities which couldn't be updated, e.g. because their mesh isn't loaded yet, stay dirty
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                if (transformComponent->changed || (meshComponent && !meshComponent->inserted))
+                    MarkEntityDirty(ToSceneEntity(entity));
                 });
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
@@ -932,6 +949,10 @@ namespace Atlas {
             ClearRTStructures();
             entityManager.Clear();
 
+            dirtyEntities.clear();
+            frameDirtyEntities.clear();
+            lastFrameDirtyEntities.clear();
+
             CleanupUnusedResources();
 
             registeredMeshes.clear();
@@ -965,10 +986,18 @@ namespace Atlas {
 
         void Scene::RegisterSubscribers() {
 
+            // New transforms and meshes need to be inserted into the space partitioning
+            entityManager.SubscribeToTopic<TransformComponent>(ECS::Topic::ComponentEmplace,
+                [this](const ECS::Entity entity, TransformComponent& transformComponent) {
+                    transformComponent.changed = true;
+                    MarkEntityDirty(ToSceneEntity(entity));
+                });
+
             // Each resource type needs to count references
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentEmplace,
                 [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     RegisterResource(registeredMeshes, meshComponent.mesh);
+                    MarkEntityDirty(ToSceneEntity(entity));
                 });
 
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentErase,
@@ -1161,12 +1190,14 @@ namespace Atlas {
                 context.changedTransforms.clear();
             }
 
-            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
-                auto& transformComponent = transformComponentPool.GetByIndex(idx);
-                if (!transformComponent.changed)
+            CollectDirtyEntities();
+
+            JobSystem::ParallelFor(jobGroup, int32_t(frameDirtyEntities.size()), 8, [&](JobData& data, int32_t idx) {
+                auto entity = frameDirtyEntities[idx];
+                auto transformComponent = transformComponentPool.TryGet(entity);
+                if (!transformComponent || !transformComponent->changed)
                     return;
 
-                auto entity = transformComponentPool[idx];
                 auto hierarchy = hierarchyComponentPool.TryGet(entity);
 
                 int32_t level = hierarchy ? hierarchy->level : -1;
@@ -1208,20 +1239,23 @@ namespace Atlas {
             auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
             auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
 
-            JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
-                auto entity = meshComponentPool[idx];
+            // Physics and hierarchy updates mark more entities dirty
+            CollectDirtyEntities();
+
+            JobSystem::ParallelFor(jobGroup, int32_t(frameDirtyEntities.size()), 8, [&](JobData& data, int32_t idx) {
+                auto entity = frameDirtyEntities[idx];
                 auto transformComponent = transformComponentPool.TryGet(entity);
-                if (!transformComponent)
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                if (!transformComponent || !meshComponent)
                     return;
 
-                auto& meshComponent = meshComponentPool.GetByIndex(idx);
-                if (!meshComponent.mesh.IsLoaded()) {
+                if (!meshComponent->mesh.IsLoaded()) {
                     // We can't update the transform yet
                     transformComponent->updated = false;
                     return;
                 }
 
-                if (!transformComponent->changed && meshComponent.inserted)
+                if (!transformComponent->changed && meshComponent->inserted)
                     return;
 
                 threadContexts[data.idx].changedMeshes.push_back(entity);
@@ -1235,6 +1269,27 @@ namespace Atlas {
             for (const auto& context : threadContexts) {
                 changedMeshSet.insert(changedMeshSet.end(), context.changedMeshes.begin(), context.changedMeshes.end());
             }
+
+        }
+
+        void Scene::MarkEntityDirty(const Entity& entity) {
+
+            std::scoped_lock lock(dirtyEntitiesMutex);
+            dirtyEntities.push_back(entity);
+
+        }
+
+        void Scene::CollectDirtyEntities() {
+
+            {
+                std::scoped_lock lock(dirtyEntitiesMutex);
+                frameDirtyEntities.insert(frameDirtyEntities.end(), dirtyEntities.begin(), dirtyEntities.end());
+                dirtyEntities.clear();
+            }
+
+            // An entity is marked again when its components are removed and added in the same frame
+            std::sort(frameDirtyEntities.begin(), frameDirtyEntities.end());
+            frameDirtyEntities.erase(std::unique(frameDirtyEntities.begin(), frameDirtyEntities.end()), frameDirtyEntities.end());
 
         }
 

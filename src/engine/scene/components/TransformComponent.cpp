@@ -22,6 +22,8 @@ namespace Atlas {
 			void TransformComponent::Set(const glm::mat4& matrix) {
 
 				this->matrix = matrix;
+				if (!changed)
+					entity.MarkDirty();
 				changed = true;
                 updated = false;
 
@@ -30,6 +32,8 @@ namespace Atlas {
 			void TransformComponent::Translate(glm::vec3 translation) {
 
 				this->matrix = glm::translate(matrix, translation);
+				if (!changed)
+					entity.MarkDirty();
 				changed = true;
                 updated = false;
 
@@ -69,6 +73,8 @@ namespace Atlas {
 
                 wasStatic = isStatic;
 
+				if (parentChanged && !changed)
+					entity.MarkDirty();
 				changed |= parentChanged;
 
 				if (changed) {
