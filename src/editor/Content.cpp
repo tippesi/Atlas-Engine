@@ -20,6 +20,7 @@ namespace Atlas::Editor {
         { "jpg", ContentType::Texture },
         { "png", ContentType::Texture },
         { "hdr", ContentType::EnvironmentTexture },
+        { "aeanimation", ContentType::Animation },
     };
 
 }

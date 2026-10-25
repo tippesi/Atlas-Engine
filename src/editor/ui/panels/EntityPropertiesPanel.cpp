@@ -43,6 +43,11 @@ namespace Atlas::Editor::UI {
                 entity.AddComponent<MeshComponent>(comp);
             }
 
+            if (entity.HasComponent<AnimationComponent>()) {
+                RenderComponentPanel("Animation", scene, entity,
+                    animationComponentPanel, entity.GetComponent<AnimationComponent>());
+            }
+
             if (entity.HasComponent<LightComponent>()) {
                 RenderComponentPanel("Light", scene, entity,
                     lightComponentPanel, entity.GetComponent<LightComponent>());
@@ -141,6 +146,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
                 if (!entity.HasComponent<MeshComponent>() && matches("Mesh") && ImGui::MenuItem("Mesh"))
                     entity.AddComponent<MeshComponent>();
+                if (!entity.HasComponent<AnimationComponent>() && matches("Animation") && ImGui::MenuItem("Animation"))
+                    entity.AddComponent<AnimationComponent>();
                 if (!entity.HasComponent<LightComponent>() && matches("Light") && ImGui::MenuItem("Light"))
                     entity.AddComponent<LightComponent>(LightType::PointLight);
                 if (!entity.HasComponent<AudioComponent>() && matches("Audio") && ImGui::MenuItem("Audio"))
@@ -199,6 +206,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<TransformComponent>();
                 if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Mesh"))
                     entity.RemoveComponent<MeshComponent>();
+                if (entity.HasComponent<AnimationComponent>() && ImGui::MenuItem("Animation"))
+                    entity.RemoveComponent<AnimationComponent>();
                 if (entity.HasComponent<LightComponent>() && ImGui::MenuItem("Light"))
                     entity.RemoveComponent<LightComponent>();
                 if (entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Audio"))
@@ -227,6 +236,7 @@ namespace Atlas::Editor::UI {
             if (ImGui::MenuItem("Paste")) {
                 if (HandleComponentPaste<TransformComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<MeshComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<AnimationComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<LightComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioVolumeComponent>(scene, entity)) {}
