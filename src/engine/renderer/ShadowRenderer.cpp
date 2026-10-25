@@ -166,6 +166,10 @@ namespace Atlas {
                 if (!bindlessTextures && material->HasOpacityMap())
                     commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
 
+                auto materialIdx = uint32_t(sceneState->materialMap[material.Get().get()]);
+                auto opacityTextureIdx = bindlessTextures && materialIdx < sceneState->materialTextureIndices.size() ?
+                    sceneState->materialTextureIndices[materialIdx].opacity : 0u;
+
                 auto pushConstants = PushConstants{
                     .lightSpaceMatrix = lightSpaceMatrix,
                     .vegetation = mesh->vegetation ? 1u : 0u,
@@ -173,7 +177,7 @@ namespace Atlas {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .textureID = material->HasOpacityMap() ? sceneState->textureToBindlessIdx[material->opacityMap.Get()] : 0
+                    .textureID = opacityTextureIdx
                 };
                 commandList->PushConstants("constants", &pushConstants);
 

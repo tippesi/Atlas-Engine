@@ -234,6 +234,8 @@ namespace Atlas {
             bool isComplete = false;
             std::atomic_bool isDeviceLost = false;
 
+            std::atomic_uint64_t resourceIdCounter = 1;
+
             static GraphicsDevice* DefaultDevice;
 
         private:

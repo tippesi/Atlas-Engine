@@ -93,6 +93,8 @@ namespace Atlas {
             ImageDomain domain;
             ImageType type;
 
+            const uint64_t id;
+
         private:
             GraphicsDevice* device;
             MemoryManager* memoryManager;

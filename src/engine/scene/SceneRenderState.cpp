@@ -59,6 +59,7 @@ namespace Atlas::Scene {
 
             if (!materials.empty()) {
                 materials.clear();
+                uniqueMaterials.clear();
                 materialMap.clear();
             }
 
@@ -66,6 +67,8 @@ namespace Atlas::Scene {
                 // Might happen due to the scene giving back materials on a mesh basis
                 if (materialMap.contains(material.Get().get()))
                     continue;
+
+                uniqueMaterials.push_back(material.Get());
 
                 auto usage = material->usage.load();
 
@@ -204,11 +207,17 @@ namespace Atlas::Scene {
 
             if (!materials.empty())
                 materialBuffer.SetData(materials.data(), 0, materials.size());
+
+            if (Graphics::GraphicsDevice::DefaultDevice->support.bindless)
+                UpdateTextureBindlessData();
             });
 
     }
 
     void SceneRenderState::UpdateBlasBindlessData(bool rayTracing) {
+
+        // The material update reads the terrain leaf nodes
+        JobSystem::Wait(materialUpdateJob);
 
         terrainLeafNodes.clear();
         if (scene->terrain.IsLoaded()) {
@@ -287,64 +296,125 @@ namespace Atlas::Scene {
 
     void SceneRenderState::UpdateTextureBindlessData() {
 
-        auto bindlessTextureMapUpdate = [&](JobData&) {
-            textureToBindlessIdx.clear();
-            textures.clear();
+        if (textureSlots.empty())
+            CreateDefaultBindlessTextures();
 
-            std::set<Ref<Material>> materialSet;
-            std::set<Ref<Texture::Texture2D>> textureSet;
+        textureFrameCount++;
+        newTextureSlotCount = 0;
 
-            uint32_t textureIdx = 0;
-            for (const auto& mesh : meshes) {
-                if (!mesh.IsLoaded()) continue;
-
-                for (auto& material : mesh->data.materials)
-                    if (material.IsLoaded())
-                        materialSet.insert(material.Get());
-            }
-
-            for (const auto leafNode : terrainLeafNodes) {
-                auto leafCell = leafNode->cell;
-                if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
-                    continue;
-
-                textureSet.insert(leafCell->normalMap);
-
-                for (auto& material : leafCell->blas->materials)
-                    if (material.IsLoaded())
-                        materialSet.insert(material.Get());
-            }
-
-            for (const auto& material : materialSet) {
-                if (material->HasBaseColorMap())
-                    textureSet.insert(material->baseColorMap.Get());
-                if (material->HasOpacityMap())
-                    textureSet.insert(material->opacityMap.Get());
-                if (material->HasNormalMap())
-                    textureSet.insert(material->normalMap.Get());
-                if (material->HasRoughnessMap())
-                    textureSet.insert(material->roughnessMap.Get());
-                if (material->HasMetalnessMap())
-                    textureSet.insert(material->metalnessMap.Get());
-                if (material->HasAoMap())
-                    textureSet.insert(material->aoMap.Get());
-                if (material->HasDisplacementMap())
-                    textureSet.insert(material->displacementMap.Get());
-                if (material->HasEmissiveMap())
-                    textureSet.insert(material->emissiveMap.Get());
-            }
-
-            for (const auto& texture : textureSet) {
-
-                textureToBindlessIdx[texture] = textureIdx++;
-                textures.push_back(texture->image);
-
-            }
+        auto requestTexture = [&](const ResourceHandle<Texture::Texture2D>& texture, DefaultTextureSlot defaultSlot) {
+            return texture.IsLoaded() ? RequestBindlessTexture(texture.Get(), defaultSlot) : uint32_t(defaultSlot);
             };
 
-        JobSystem::Wait(bindlessTextureMapUpdateJob);
+        materialTextureIndices.resize(uniqueMaterials.size());
+        for (size_t i = 0; i < uniqueMaterials.size(); i++) {
+            const auto& material = uniqueMaterials[i];
+            auto& indices = materialTextureIndices[i];
 
-        JobSystem::Execute(bindlessTextureMapUpdateJob, bindlessTextureMapUpdate);
+            indices.baseColor = requestTexture(material->baseColorMap, DefaultTextureSlot::White);
+            indices.opacity = requestTexture(material->opacityMap, DefaultTextureSlot::White);
+            indices.normal = requestTexture(material->normalMap, DefaultTextureSlot::Normal);
+            indices.roughness = requestTexture(material->roughnessMap, DefaultTextureSlot::White);
+            indices.metalness = requestTexture(material->metalnessMap, DefaultTextureSlot::Black);
+            indices.ao = requestTexture(material->aoMap, DefaultTextureSlot::White);
+            indices.height = requestTexture(material->displacementMap, DefaultTextureSlot::Black);
+            indices.emissive = requestTexture(material->emissiveMap, DefaultTextureSlot::Black);
+        }
+
+        for (const auto leafNode : terrainLeafNodes) {
+            auto leafCell = leafNode->cell;
+            if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
+                continue;
+
+            if (leafCell->normalMap)
+                RequestBindlessTexture(leafCell->normalMap, DefaultTextureSlot::Normal);
+        }
+
+        EvictUnusedBindlessTextures();
+
+    }
+
+    uint32_t SceneRenderState::GetBindlessTextureIdx(const Ref<Texture::Texture2D>& texture) const {
+
+        auto it = textureToBindlessIdx.find(texture);
+        return it != textureToBindlessIdx.end() ? it->second : uint32_t(DefaultTextureSlot::White);
+
+    }
+
+    uint32_t SceneRenderState::RequestBindlessTexture(const Ref<Texture::Texture2D>& texture, DefaultTextureSlot defaultSlot) {
+
+        auto it = textureToBindlessIdx.find(texture);
+        if (it != textureToBindlessIdx.end()) {
+            auto slotIdx = it->second;
+            textureSlots[slotIdx].lastUsedFrame = textureFrameCount;
+            if (textures[slotIdx] != texture->image)
+                textures[slotIdx] = texture->image;
+            return slotIdx;
+        }
+
+        // Slots which can't be assigned this frame use a default until the next frames
+        if (newTextureSlotCount >= maxNewTextureSlotsPerFrame)
+            return uint32_t(defaultSlot);
+
+        uint32_t slotIdx;
+        if (!freeTextureSlots.empty()) {
+            slotIdx = freeTextureSlots.back();
+            freeTextureSlots.pop_back();
+        }
+        else if (textureSlots.size() < BINDLESS_TEXTURE_COUNT) {
+            slotIdx = uint32_t(textureSlots.size());
+            textureSlots.emplace_back();
+            textures.emplace_back();
+        }
+        else {
+            return uint32_t(defaultSlot);
+        }
+
+        textureSlots[slotIdx] = { texture, textureFrameCount };
+        textures[slotIdx] = texture->image;
+        textureToBindlessIdx[texture] = slotIdx;
+        newTextureSlotCount++;
+
+        return slotIdx;
+
+    }
+
+    void SceneRenderState::CreateDefaultBindlessTextures() {
+
+        std::vector<std::vector<uint8_t>> defaultData = {
+            { 255, 255, 255, 255 },
+            { 0, 0, 0, 255 },
+            { 128, 128, 255, 255 }
+        };
+
+        for (auto& data : defaultData) {
+            auto texture = CreateRef<Texture::Texture2D>(1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Nearest);
+            texture->SetData(data);
+
+            RequestBindlessTexture(texture, DefaultTextureSlot::White);
+        }
+
+    }
+
+    void SceneRenderState::EvictUnusedBindlessTextures() {
+
+        auto slotCount = uint32_t(textureSlots.size());
+        auto checkCount = std::min(slotCount, textureEvictionChecksPerFrame);
+
+        for (uint32_t i = 0; i < checkCount; i++) {
+            textureEvictionIdx = (textureEvictionIdx + 1) % slotCount;
+            auto& slot = textureSlots[textureEvictionIdx];
+
+            if (textureEvictionIdx < uint32_t(DefaultTextureSlot::Count) || !slot.texture ||
+                textureFrameCount - slot.lastUsedFrame < textureEvictionFrameCount)
+                continue;
+
+            textureToBindlessIdx.erase(slot.texture);
+            slot.texture.reset();
+            textures[textureEvictionIdx].reset();
+            freeTextureSlots.push_back(textureEvictionIdx);
+        }
 
     }
 
@@ -663,7 +733,6 @@ namespace Atlas::Scene {
 
         JobSystem::Wait(newFrameRenderListJob);
         JobSystem::Wait(bindlessBlasMapUpdateJob);
-        JobSystem::Wait(bindlessTextureMapUpdateJob);
         JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
         JobSystem::Wait(materialUpdateJob);
         JobSystem::Wait(rayTracingWorldUpdateJob);

@@ -182,9 +182,9 @@ namespace Atlas {
                 renderState.NewFrame();
                 if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
                     renderState.UpdateBlasBindlessData(rtDataNeeded);
-                    renderState.UpdateTextureBindlessData();
                     renderState.UpdateOtherTextureBindlessData();
                 }
+                // Also updates the bindless textures of the materials
                 renderState.PrepareMaterials();
 
                 });

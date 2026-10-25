@@ -72,6 +72,8 @@ namespace Atlas {
 
             BufferDomain domain;
 
+            const uint64_t id;
+
             const size_t size = 0;
             const size_t alignment = 0;
 

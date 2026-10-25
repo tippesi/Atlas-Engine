@@ -130,7 +130,7 @@ namespace Atlas {
             auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
             auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
 
-            JobSystem::Wait(renderState->bindlessTextureMapUpdateJob);
+            JobSystem::Wait(renderState->materialUpdateJob);
 
             UpdateMaterials();
 
@@ -371,35 +371,35 @@ namespace Atlas {
                         gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
                         if (material->HasBaseColorMap()) {
-                            gpuMaterial.baseColorTexture = sceneState->textureToBindlessIdx[material->baseColorMap.Get()];
+                            gpuMaterial.baseColorTexture = sceneState->GetBindlessTextureIdx(material->baseColorMap.Get());
                         }
 
                         if (material->HasOpacityMap()) {
-                            gpuMaterial.opacityTexture = sceneState->textureToBindlessIdx[material->opacityMap.Get()];
+                            gpuMaterial.opacityTexture = sceneState->GetBindlessTextureIdx(material->opacityMap.Get());
                         }
 
                         if (material->HasNormalMap()) {
-                            gpuMaterial.normalTexture = sceneState->textureToBindlessIdx[material->normalMap.Get()];
+                            gpuMaterial.normalTexture = sceneState->GetBindlessTextureIdx(material->normalMap.Get());
                         }
 
                         if (material->HasRoughnessMap()) {
-                            gpuMaterial.roughnessTexture = sceneState->textureToBindlessIdx[material->roughnessMap.Get()];
+                            gpuMaterial.roughnessTexture = sceneState->GetBindlessTextureIdx(material->roughnessMap.Get());
                         }
 
                         if (material->HasMetalnessMap()) {
-                            gpuMaterial.metalnessTexture = sceneState->textureToBindlessIdx[material->metalnessMap.Get()];
+                            gpuMaterial.metalnessTexture = sceneState->GetBindlessTextureIdx(material->metalnessMap.Get());
                         }
 
                         if (material->HasAoMap()) {
-                            gpuMaterial.aoTexture = sceneState->textureToBindlessIdx[material->aoMap.Get()];
+                            gpuMaterial.aoTexture = sceneState->GetBindlessTextureIdx(material->aoMap.Get());
                         }
 
                         if (material->HasEmissiveMap()) {
-                            gpuMaterial.emissiveTexture = sceneState->textureToBindlessIdx[material->emissiveMap.Get()];
+                            gpuMaterial.emissiveTexture = sceneState->GetBindlessTextureIdx(material->emissiveMap.Get());
                         }
 
                         if (blasInfo.node) {
-                            gpuMaterial.terrainNormalTexture = sceneState->textureToBindlessIdx[blasInfo.node->cell->normalMap];
+                            gpuMaterial.terrainNormalTexture = sceneState->GetBindlessTextureIdx(blasInfo.node->cell->normalMap);
                         }
                     }
 

@@ -8,7 +8,7 @@ namespace Atlas {
 
         Image::Image(GraphicsDevice *device, const ImageDesc &desc) : aspectFlags(desc.aspectFlags),
             width(desc.width), height(desc.height), depth(desc.depth), layers(desc.layers), format(desc.format),
-            domain(desc.domain), type(desc.type), device(device), memoryManager(device->memoryManager) {
+            domain(desc.domain), type(desc.type), id(device->resourceIdCounter++), device(device), memoryManager(device->memoryManager) {
 
             VkExtent3D imageExtent;
             imageExtent.width = desc.width;
