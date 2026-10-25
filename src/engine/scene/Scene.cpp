@@ -177,6 +177,39 @@ namespace Atlas {
             if (rtDataNeeded)
                 RayTracing::RayTracingManager::RequestMeshBVHs();
 
+            // Animations are updated before the transforms, such that entities attached to joints follow them
+            JobGroup animationJobGroup{ "Animation update", JobPriority::High };
+            auto& animationComponentPool = entityManager.GetPool<AnimationComponent>();
+            JobSystem::ParallelFor(animationJobGroup, int32_t(animationComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto entity = animationComponentPool[idx];
+                auto& animationComponent = animationComponentPool.GetByIndex(idx);
+                auto meshComponent = meshComponentPool.TryGet(entity);
+
+                if (!meshComponent || !meshComponent->mesh.IsLoaded() || !meshComponent->mesh->data.IsSkinned())
+                    return;
+
+                animationComponent.Update(meshComponent->mesh->data.skeleton, this->deltaTime);
+                });
+
+            JobSystem::Wait(animationJobGroup);
+
+            for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
+                auto hierarchyComponent = hierarchyComponentPool.TryGet(animationComponentPool[i]);
+                if (!hierarchyComponent)
+                    continue;
+
+                for (auto entity : hierarchyComponent->GetChildren()) {
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+                    if (!transformComponent || transformComponent->parentJoint < 0)
+                        continue;
+
+                    if (!transformComponent->changed)
+                        MarkEntityDirty(entity);
+                    transformComponent->changed = true;
+                    transformComponent->updated = false;
+                }
+            }
+
             // Kick of all the jobs while we find the changed transforms
             FindChangedTransforms([&]() {
                 JobSystem::WaitSpin(terrainOceanJobGroup);
@@ -205,13 +238,13 @@ namespace Atlas {
                     continue;
 
                 glm::mat4 parentMatrix(1.0f);
+                auto& transformComponent = transformComponentPool.Get(entity);
                 auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
                 if (parentEntity.IsValid()) {
                     const auto& parentHierarchyComponent = hierarchyComponentPool.Get(parentEntity);
-                    parentMatrix = parentHierarchyComponent.globalMatrix;
+                    parentMatrix = parentHierarchyComponent.GetParentMatrix(transformComponent);
                 }
-                
-                auto& transformComponent = transformComponentPool.Get(entity);
+
                 transformComponent.Update(parentMatrix, true);
                 hierarchyComponent.Update(jobGroup, transformComponent, true,
                     transformComponentPool, hierarchyComponentPool, cameraComponentPool);
@@ -232,7 +265,7 @@ namespace Atlas {
                 auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
                 if (parentEntity.IsValid()) {
                     const auto& hierarchyComponent = hierarchyComponentPool.Get(parentEntity);
-                    parentMatrix = hierarchyComponent.globalMatrix;
+                    parentMatrix = hierarchyComponent.GetParentMatrix(transformComponent);
                 }
 
                 transformComponent.Update(parentMatrix, true);
@@ -436,6 +469,22 @@ namespace Atlas {
 
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
+            }
+
+            // Animated meshes change their bounds every frame
+            for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
+                auto entity = animationComponentPool[i];
+                const auto& animationComponent = animationComponentPool.GetByIndex(i);
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                auto transformComponent = transformComponentPool.TryGet(entity);
+
+                if (!meshComponent || !transformComponent || !meshComponent->inserted ||
+                    animationComponent.jointMatrices.empty())
+                    continue;
+
+                SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), *meshComponent);
+                meshComponent->aabb = animationComponent.aabb.Transform(transformComponent->globalMatrix);
+                SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), *meshComponent);
             }
 
             renderState.FillMainRenderPass();
@@ -1175,6 +1224,10 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<TextComponent>();
                 auto& comp = dstEntity.AddComponent<TextComponent>(otherComp.font, otherComp.text);
                 comp = otherComp;
+            }
+            if (srcEntity.HasComponent<AnimationComponent>()) {
+                auto otherComp = srcEntity.GetComponent<AnimationComponent>();
+                dstEntity.AddComponent<AnimationComponent>(otherComp);
             }
 
         }

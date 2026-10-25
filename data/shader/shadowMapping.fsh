@@ -12,6 +12,9 @@ layout(push_constant) uniform constants {
     float windBendScale;
     float windWiggleScale;
     uint textureID;
+    uint jointOffset;
+    uint jointCount;
+    uint instanceOffset;
 } PushConstants;
 
 void main() {

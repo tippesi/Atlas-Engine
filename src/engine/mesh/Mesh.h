@@ -85,6 +85,10 @@ namespace Atlas {
             Buffer::VertexBuffer texCoordBuffer;
             Buffer::VertexBuffer tangentBuffer;
             Buffer::VertexBuffer colorBuffer;
+            Buffer::VertexBuffer jointBuffer;
+            Buffer::VertexBuffer weightBuffer;
+            // Rest pose vertices of skinned meshes for the hardware ray tracing BLAS
+            Buffer::VertexBuffer restVertexBuffer;
 
             Ref<RayTracing::BLAS> blas = nullptr;
             ResourceHandle<Impostor> impostor;

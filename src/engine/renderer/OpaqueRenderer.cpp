@@ -31,6 +31,8 @@ namespace Atlas {
             commandList->BindBuffer(mainPass->currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(mainPass->lastMatricesBuffer, 1, 2);
             commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
+            commandList->BindBuffer(mainPass->currentJointMatricesBuffer, 1, 4);
+            commandList->BindBuffer(mainPass->lastJointMatricesBuffer, 1, 5);
 
             // Bind wind map
             scene->wind.noiseMap.Bind(commandList, 3, 8);
@@ -138,6 +140,9 @@ namespace Atlas {
                     .aoTextureIdx = textureIndices.ao,
                     .heightTextureIdx = textureIndices.height,
                     .emissiveTextureIdx = textureIndices.emissive,
+                    .jointOffset = uint32_t(instances.jointOffset),
+                    .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
+                    .instanceOffset = uint32_t(instances.offset),
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
@@ -225,6 +230,9 @@ namespace Atlas {
             }
             if (mesh->data.colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
+            }
+            if (mesh->data.IsSkinned()) {
+                macros.push_back("SKINNED");
             }
 
             if (device->support.bindless) {

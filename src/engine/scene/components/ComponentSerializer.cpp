@@ -7,8 +7,36 @@
 #include "resource/ResourceManager.h"
 #include "audio/AudioManager.h"
 #include "loader/MeshLoader.h"
+#include "loader/AnimationLoader.h"
 
 namespace Atlas::Scene::Components {
+
+    void to_json(json& j, const AnimationComponent& p) {
+        j = json {
+            {"time", p.time},
+            {"speed", p.speed},
+            {"loop", p.loop},
+            {"playing", p.playing},
+        };
+
+        if (p.animation.IsValid() && !p.animation.IsGenerated())
+            j["resourcePath"] = p.animation.GetResource()->path;
+    }
+
+    void from_json(const json& j, AnimationComponent& p) {
+        j.at("time").get_to(p.time);
+        j.at("speed").get_to(p.speed);
+        j.at("loop").get_to(p.loop);
+        j.at("playing").get_to(p.playing);
+
+        if (j.contains("resourcePath")) {
+            std::string resourcePath;
+            j.at("resourcePath").get_to(resourcePath);
+
+            p.animation = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
+        }
+    }
 
     void to_json(json& j, const AudioComponent& p) {
         j = json {
@@ -217,12 +245,14 @@ namespace Atlas::Scene::Components {
         j = json {
             {"matrix", p.matrix},
             {"isStatic", p.isStatic},
+            {"parentJoint", p.parentJoint},
         };
     }
 
     void from_json(const json& j, TransformComponent& p) {
         j.at("matrix").get_to(p.matrix);
         j.at("isStatic").get_to(p.isStatic);
+        try_get_json(j, "parentJoint", p.parentJoint);
 
         // Reconstruct some immediate values, don't need to be true.
         // Just that a call to p.ReconstructLocalMatrix() before a scene updates 

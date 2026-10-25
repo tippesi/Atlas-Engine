@@ -5,6 +5,7 @@
 #include "Material.h"
 #include "Serializer.h"
 #include "mesh/Mesh.h"
+#include "animation/Animation.h"
 #include "scene/Scene.h"
 #include "scripting/Script.h"
 #include "terrain/Terrain.h"
@@ -14,6 +15,7 @@
 #include "loader/AssetLoader.h"
 #include "loader/MaterialLoader.h"
 #include "loader/MeshLoader.h"
+#include "loader/AnimationLoader.h"
 #include "loader/ModelImporter.h"
 #include "loader/TerrainLoader.h"
 #include "common/Path.h"
@@ -117,6 +119,19 @@ namespace Atlas::Scripting::Bindings {
 
         type.set_function("ImportMesh", importMeshOverload);
 
+        auto importAnimationsOverload = sol::overload(
+            [](const std::string& filename) {
+                return Loader::ModelImporter::ImportAnimations(filename);
+            },
+            [](const std::string& filename, bool saveToDisk) -> std::vector<Ref<Animation::Animation>> {
+                if (saveToDisk && !IsSafePath(filename))
+                    return {};
+                return Loader::ModelImporter::ImportAnimations(filename, saveToDisk);
+            }
+        );
+
+        type.set_function("ImportAnimations", importAnimationsOverload);
+
         type.set_function("ImportScene", [](const std::string& filename, vec3 min, vec3 max, int32_t depth,
             sol::optional<bool> saveToDisk, sol::optional<bool> makeMeshesStatic, sol::optional<bool> invertUVs,
             sol::optional<int32_t> maxTextureResolution) -> Ref<Scene::Scene> {
@@ -135,6 +150,7 @@ namespace Atlas::Scripting::Bindings {
         GenerateResourceBinding<Texture::Texture2D>(ns, "Texture2DResourceHandle");
         GenerateResourceBinding<Texture::Cubemap>(ns, "CubemapResourceHandle");
         GenerateResourceBinding<Mesh::Mesh>(ns, "MeshResourceHandle");
+        GenerateResourceBinding<Animation::Animation>(ns, "AnimationResourceHandle");
         GenerateResourceBinding<Scripting::Script>(ns, "ScriptResourceHandle");
         GenerateResourceBinding<Font>(ns, "FontResourceHandle");
         GenerateResourceBinding<Scene::Scene>(ns, "SceneResourceHandle");
@@ -198,6 +214,36 @@ namespace Atlas::Scripting::Bindings {
             });
         type.set_function("AddMesh", [](const std::string& filename, Ref<Mesh::Mesh> mesh) {
                 return ResourceManager<Mesh::Mesh>::AddResource(filename, mesh);
+            });
+
+        auto getOrLoadAnimationOverload = sol::overload(
+            [](const std::string& filename) -> ResourceHandle<Animation::Animation> {
+                return ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoader(filename, Loader::AnimationLoader::LoadAnimation, true);
+            },
+            [](const std::string& filename, bool binaryJson) -> ResourceHandle<Animation::Animation> {
+                return ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoader(filename, Loader::AnimationLoader::LoadAnimation, binaryJson);
+            }
+        );
+
+        auto getOrLoadAnimationAsyncOverload = sol::overload(
+            [](const std::string& filename) -> ResourceHandle<Animation::Animation> {
+                return ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(filename, Loader::AnimationLoader::LoadAnimation, true);
+            },
+            [](const std::string& filename, bool binaryJson) -> ResourceHandle<Animation::Animation> {
+                return ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(filename, Loader::AnimationLoader::LoadAnimation, binaryJson);
+            }
+        );
+
+        type.set_function("GetOrLoadAnimation", getOrLoadAnimationOverload);
+        type.set_function("GetOrLoadAnimationAsync", getOrLoadAnimationAsyncOverload);
+        type.set_function("GetAnimation", [](const std::string& filename) {
+                return ResourceManager<Animation::Animation>::GetResource(filename);
+            });
+        type.set_function("GetAnimations", []() {
+                return ResourceManager<Animation::Animation>::GetResources();
+            });
+        type.set_function("AddAnimation", [](const std::string& filename, Ref<Animation::Animation> animation) {
+                return ResourceManager<Animation::Animation>::AddResource(filename, animation);
             });
 
         auto getOrLoadMaterialOverload = sol::overload(

@@ -64,6 +64,10 @@ namespace Atlas {
                 if (parentEntity.IsValid())
                     parentGlobalMatrix = parentEntity.GetScene()->GetGlobalMatrix(parentEntity);
 
+                auto animationComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<AnimationComponent>() : nullptr;
+                if (parentJoint >= 0 && animationComponent)
+                    parentGlobalMatrix = parentGlobalMatrix * animationComponent->GetJointMatrix(parentJoint);
+
                 auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
                 Set(inverseParentMatrix * globalMatrix);
 

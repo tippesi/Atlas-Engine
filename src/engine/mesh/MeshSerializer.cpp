@@ -103,6 +103,12 @@ namespace Atlas::Mesh {
         to_json(j["tangents"], p.tangents, binary);
         to_json(j["colors"], p.colors, binary);
 
+        if (p.IsSkinned()) {
+            j["skeleton"] = p.skeleton;
+            to_json(j["joints"], p.joints, binary);
+            to_json(j["weights"], p.weights, binary);
+        }
+
         for (size_t i = 0; i < p.materials.size(); i++) {
             auto& material = p.materials[i];
             auto path = material.GetResource()->path;
@@ -135,6 +141,12 @@ namespace Atlas::Mesh {
         from_json(j["normals"], p.normals, binary);
         from_json(j["tangents"], p.tangents, binary);
         from_json(j["colors"], p.colors, binary);
+
+        if (j.contains("skeleton")) {
+            j.at("skeleton").get_to(p.skeleton);
+            from_json(j["joints"], p.joints, binary);
+            from_json(j["weights"], p.weights, binary);
+        }
 
         if (j.contains("materials")) {
             for (auto& path : j["materials"]) {
@@ -169,6 +181,50 @@ namespace Atlas::Mesh {
         j.at("indicesCount").get_to(p.indicesCount);
         j.at("materialIdx").get_to(p.materialIdx);
         j.at("aabb").get_to(p.aabb);
+
+    }
+
+    void to_json(json& j, const Joint& p) {
+
+        j = json{
+            {"name", p.name},
+            {"parentIdx", p.parentIdx},
+            {"inverseBindMatrix", p.inverseBindMatrix},
+            {"position", p.position},
+            {"rotation", p.rotation},
+            {"scale", p.scale},
+            {"aabb", p.aabb},
+            {"hasVertices", p.hasVertices},
+        };
+
+    }
+
+    void from_json(const json& j, Joint& p) {
+
+        j.at("name").get_to(p.name);
+        j.at("parentIdx").get_to(p.parentIdx);
+        j.at("inverseBindMatrix").get_to(p.inverseBindMatrix);
+        j.at("position").get_to(p.position);
+        j.at("rotation").get_to(p.rotation);
+        j.at("scale").get_to(p.scale);
+        j.at("aabb").get_to(p.aabb);
+        j.at("hasVertices").get_to(p.hasVertices);
+
+    }
+
+    void to_json(json& j, const Skeleton& p) {
+
+        j = json{
+            {"joints", p.joints},
+        };
+
+    }
+
+    void from_json(const json& j, Skeleton& p) {
+
+        j.at("joints").get_to(p.joints);
+
+        p.UpdateRestPose();
 
     }
 

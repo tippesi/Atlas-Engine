@@ -7,6 +7,10 @@
 
 namespace Atlas::Scene::Components {
 
+    void to_json(json& j, const AnimationComponent& p);
+
+    void from_json(const json& j, AnimationComponent& p);
+
     void to_json(json& j, const AudioComponent& p);
 
     void from_json(const json& j, AudioComponent& p);

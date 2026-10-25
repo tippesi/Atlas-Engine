@@ -1,0 +1,28 @@
+struct SkinVertex {
+    // Position and the packed normal in w
+    vec4 position;
+    // Packed joint indices (x, y) and weights (z)
+    uvec4 skin;
+};
+
+layout(std430, set = 3, binding = 0) readonly buffer SkinVertices {
+    SkinVertex skinVertices[];
+};
+
+layout(std430, set = 3, binding = 1) readonly buffer JointMatrices {
+    mat3x4 jointMatrices[];
+};
+
+mat3x4 GetSkinMatrix(uint vertexIdx, uint jointOffset) {
+
+    uvec4 skin = skinVertices[vertexIdx].skin;
+    uvec4 joints = uvec4(skin.x & 0xFFFF, skin.x >> 16, skin.y & 0xFFFF, skin.y >> 16);
+    vec4 weights = unpackUnorm4x8(skin.z);
+    weights /= dot(weights, vec4(1.0));
+
+    return weights.x * jointMatrices[jointOffset + joints.x] +
+        weights.y * jointMatrices[jointOffset + joints.y] +
+        weights.z * jointMatrices[jointOffset + joints.z] +
+        weights.w * jointMatrices[jointOffset + joints.w];
+
+}

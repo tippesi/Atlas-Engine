@@ -280,6 +280,13 @@ namespace Atlas::Scene {
                 blasToBindlessIdx[mesh->blas] = bufferIdx++;
             }
 
+            if (scene->rayTracingWorld) {
+                for (const auto& [entity, skinnedBlas] : scene->rayTracingWorld->skinnedBlases) {
+                    if (skinnedBlas.blas->IsBuilt())
+                        blasToBindlessIdx[skinnedBlas.blas] = bufferIdx++;
+                }
+            }
+
             for (const auto leafNode : terrainLeafNodes) {
                 auto leafCell = leafNode->cell;
                 if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())

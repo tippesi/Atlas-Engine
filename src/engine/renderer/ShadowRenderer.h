@@ -41,6 +41,9 @@ namespace Atlas {
                 float windBendScale;
                 float windWiggleScale;
                 uint32_t textureID;
+                uint32_t jointOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
             };
 
             LightMap prevLightMap;

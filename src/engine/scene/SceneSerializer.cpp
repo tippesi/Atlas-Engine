@@ -63,6 +63,9 @@ namespace Atlas::Scene {
         if (p.HasComponent<SplineComponent>()) {
             j["spline"] = p.GetComponent<SplineComponent>();
         }
+        if (p.HasComponent<AnimationComponent>()) {
+            j["animation"] = p.GetComponent<AnimationComponent>();
+        }
         if (p.HasComponent<HierarchyComponent>()) {
             // Need to check how to get this to work
             auto& hierarchyComponent = p.GetComponent<HierarchyComponent>();
@@ -125,6 +128,10 @@ namespace Atlas::Scene {
         if (j.contains("spline")) {
             SplineComponent comp = j["spline"];
             p.AddComponent<SplineComponent>(comp);
+        }
+        if (j.contains("animation")) {
+            AnimationComponent comp = j["animation"];
+            p.AddComponent<AnimationComponent>(comp);
         }
         if (j.contains("entities")) {
             // We need to first push back to a temporary vector to not invalidate

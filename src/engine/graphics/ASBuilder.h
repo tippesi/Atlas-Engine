@@ -29,6 +29,12 @@ namespace Atlas {
                 size_t vertexCount, size_t vertexSize, size_t indexSize, std::span<ASGeometryRegion> regions);
 
             int32_t BuildBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList = nullptr);
+
+            /**
+             * Refits built BLASes which allow updates to the current state of their vertices
+             * @note The topology has to stay the same, only the vertex positions can change
+             */
+            void UpdateBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList);
             
             Buffer* BuildTLAS(Ref<TLAS>& tlas, std::span<VkAccelerationStructureInstanceKHR> instances, CommandList* commandList = nullptr);
 

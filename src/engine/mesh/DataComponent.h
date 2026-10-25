@@ -246,6 +246,7 @@ namespace Atlas {
                 switch(format) {
                     case ComponentFormat::Float: return VK_FORMAT_R32G32B32A32_SFLOAT;
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
+                    case ComponentFormat::UnsignedShort: return VK_FORMAT_R16G16B16A16_UINT;
                     case ComponentFormat::PackedNormal: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
                     case ComponentFormat::PackedColor: return VK_FORMAT_R8G8B8A8_UNORM;
                     default: AE_ASSERT(0 && "Invalid combination of formats"); 
@@ -376,6 +377,13 @@ namespace Atlas {
                     std::vector<uint16_t> convertedData(data.size() * stride);
                     std::transform(data.begin(), data.end(), convertedData.begin(),
                                    [](auto x) { return uint16_t(x); });
+                    std::memcpy(converted.data(), convertedData.data(), sizeInBytes);
+                }
+                if constexpr(std::is_same_v<T, vec4>) {
+                    std::vector<uint16_t> convertedData(data.size() * stride);
+                    float* floatData = static_cast<float*>(glm::value_ptr(data.front()));
+                    for (size_t i = 0; i < convertedData.size(); i++)
+                        convertedData[i] = uint16_t(floatData[i]);
                     std::memcpy(converted.data(), convertedData.data(), sizeInBytes);
                 }
             }

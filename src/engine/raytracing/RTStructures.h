@@ -20,6 +20,15 @@ namespace Atlas {
         vec4 d2;
     };
 
+    struct GPUSkinVertex {
+        // The packed normal is stored in w
+        vec4 position;
+        uint32_t joints01 = 0;
+        uint32_t joints23 = 0;
+        uint32_t weights = 0;
+        uint32_t padding = 0;
+    };
+
     struct GPUBVHTriangle {
         vec4 v0;
         vec4 v1;

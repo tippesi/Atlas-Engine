@@ -55,6 +55,9 @@ namespace Atlas {
 
                 bool isStatic = true;
 
+                // Joint of the parent's animated mesh which the transform is relative to, -1 for the parent itself
+                int32_t parentJoint = -1;
+
                 mat4 globalMatrix = mat4{ 1.0f };
                 mat4 lastGlobalMatrix = mat4{ 1.0f };
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };

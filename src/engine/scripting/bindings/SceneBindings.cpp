@@ -250,6 +250,7 @@ namespace Atlas::Scripting::Bindings {
             "GetID", &Scene::Entity::GetID,
             "GetVersion", &Scene::Entity::GetVersion,
             // Add components
+            "AddAnimationComponent", &AddComponentRef<AnimationComponent, ResourceHandle<Animation::Animation>&>,
             "AddAudioComponent", &AddComponentRef<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
             "AddAudioVolumeComponent", &AddComponentRef<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
             "AddCameraComponent", &AddComponentRef<CameraComponent, float, float, float, float, glm::vec3&, glm::vec2&>,
@@ -265,6 +266,7 @@ namespace Atlas::Scripting::Bindings {
             "AddSplineComponent", &AddComponentRef<SplineComponent>,
 
             // Remove components
+            "RemoveAnimationComponent", &Scene::Entity::RemoveComponent<AnimationComponent>,
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
             "RemoveAudioVolumeComponent", &Scene::Entity::RemoveComponent<AudioVolumeComponent>,
             "RemoveCameraComponent", &Scene::Entity::RemoveComponent<CameraComponent>,
@@ -280,6 +282,7 @@ namespace Atlas::Scripting::Bindings {
             "RemoveSplineComponent", &Scene::Entity::RemoveComponent<SplineComponent>,
 
             // Get components
+            "GetAnimationComponent", &GetComponentRef<AnimationComponent>,
             "GetAudioComponent", &GetComponentRef<AudioComponent>,
             "GetAudioVolumeComponent", &GetComponentRef<AudioVolumeComponent>,
             "GetCameraComponent", &GetComponentRef<CameraComponent>,
@@ -298,6 +301,26 @@ namespace Atlas::Scripting::Bindings {
     }
 
     void GenerateComponentBindings(sol::table* ns) {
+
+        auto playOverload = sol::overload(
+            [](AnimationComponent& animationComponent, const ResourceHandle<Animation::Animation>& animation) {
+                animationComponent.Play(animation);
+            },
+            [](AnimationComponent& animationComponent, const ResourceHandle<Animation::Animation>& animation, float blendTime) {
+                animationComponent.Play(animation, blendTime);
+            }
+        );
+
+        ns->new_usertype<AnimationComponent>("AnimationComponent",
+            "Play", playOverload,
+            "GetJointMatrix", &AnimationComponent::GetJointMatrix,
+            "animation", &AnimationComponent::animation,
+            "time", &AnimationComponent::time,
+            "speed", &AnimationComponent::speed,
+            "loop", &AnimationComponent::loop,
+            "playing", &AnimationComponent::playing,
+            "aabb", &AnimationComponent::aabb
+        );
 
         ns->new_usertype<AudioComponent>("AudioComponent",
             "falloffFactor", &AudioComponent::falloffFactor,
@@ -427,7 +450,8 @@ namespace Atlas::Scripting::Bindings {
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix,
-            "isStatic", &TransformComponent::isStatic
+            "isStatic", &TransformComponent::isStatic,
+            "parentJoint", &TransformComponent::parentJoint
         );
 
         ns->new_usertype<RigidBodyComponent>("RigidBodyComponent",
@@ -537,6 +561,7 @@ namespace Atlas::Scripting::Bindings {
             "bakeMode", &SplineComponent::bakeMode
         );
 
+        GenerateComponentRefBindings<AnimationComponent>(ns, "AnimationComponent");
         GenerateComponentRefBindings<AudioComponent>(ns, "AudioComponent");
         GenerateComponentRefBindings<AudioVolumeComponent>(ns, "AudioVolumeComponent");
         GenerateComponentRefBindings<CameraComponent>(ns, "CameraComponent");

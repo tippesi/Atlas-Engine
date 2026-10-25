@@ -167,6 +167,14 @@ namespace Atlas {
         impostorMatrices.clear();
         if (lastSize) impostorMatrices.reserve(lastSize);
 
+        lastSize = currentJointMatrices.size();
+        currentJointMatrices.clear();
+        if (lastSize) currentJointMatrices.reserve(lastSize);
+
+        lastSize = lastJointMatrices.size();
+        lastJointMatrices.clear();
+        if (lastSize) lastJointMatrices.reserve(lastSize);
+
         std::erase_if(meshToEntityMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
         std::erase_if(meshToInstancesMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
 
@@ -219,6 +227,7 @@ namespace Atlas {
     void RenderList::Pass::Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap) {
 
         auto& transformPool = scene->entityManager.GetPool<TransformComponent>();
+        auto& animationPool = scene->entityManager.GetPool<AnimationComponent>();
         for (auto& [meshId, batch] : meshToEntityMap) {
             auto item = meshIdToMeshMap.find(meshId);
             // This happens when meshes are loaded async
@@ -228,7 +237,9 @@ namespace Atlas {
             if (!batch.count) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
-            auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated;
+            auto isSkinned = mesh->data.IsSkinned();
+            auto jointCount = size_t(mesh->data.skeleton.GetJointCount());
+            auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated && !isSkinned;
             auto needsHistory = mesh->mobility != Mesh::MeshMobility::Stationary
                 && type != RenderPassType::Shadow;
 
@@ -239,6 +250,7 @@ namespace Atlas {
             MeshInstances instances{};
             instances.offset = currentEntityMatrices.size();
             instances.impostorOffset = impostorMatrices.size();
+            instances.jointOffset = currentJointMatrices.size();
 
             auto reversedWindingBegin = Common::PartitionByWinding(batch.entities.begin(),
                 batch.entities.begin() + batch.count, [&](ECS::Entity entity) -> const mat4& {
@@ -262,6 +274,25 @@ namespace Atlas {
                 }
                 else if (type != RenderPassType::Shadow) {
                     lastEntityMatrices.push_back(currentEntityMatrices.back());
+                }
+
+                if (!isSkinned)
+                    continue;
+
+                // Without an animation the mesh is rendered in its rest pose
+                auto animationComponent = animationPool.TryGet(batch.entities[i]);
+                if (animationComponent && animationComponent->jointMatrices.size() == jointCount) {
+                    currentJointMatrices.insert(currentJointMatrices.end(), animationComponent->jointMatrices.begin(),
+                        animationComponent->jointMatrices.end());
+                    if (type != RenderPassType::Shadow)
+                        lastJointMatrices.insert(lastJointMatrices.end(), animationComponent->lastJointMatrices.begin(),
+                            animationComponent->lastJointMatrices.end());
+                }
+                else {
+                    const auto& restJointMatrices = mesh->data.skeleton.restJointMatrices;
+                    currentJointMatrices.insert(currentJointMatrices.end(), restJointMatrices.begin(), restJointMatrices.end());
+                    if (type != RenderPassType::Shadow)
+                        lastJointMatrices.insert(lastJointMatrices.end(), restJointMatrices.begin(), restJointMatrices.end());
                 }
             }
             if (defaultWindingEntityCount == batch.count)
@@ -306,6 +337,20 @@ namespace Atlas {
             if (newSize > 0) impostorMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
         }
 
+        if (!currentJointMatricesBuffer || currentJointMatricesBuffer->size < sizeof(mat3x4) * currentJointMatrices.size()) {
+            auto newSize = currentJointMatricesBuffer != nullptr ? currentJointMatricesBuffer->size * 2 :
+                           sizeof(mat3x4) * currentJointMatrices.size();
+            newSize = std::max(std::max(newSize, size_t(1)), sizeof(mat3x4) * currentJointMatrices.size());
+            auto bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .domain = Graphics::BufferDomain::Host,
+                .size = newSize
+            };
+            if (newSize > 0) currentJointMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
+            // Only main pass needs the history
+            if (newSize > 0 && type != RenderPassType::Shadow) lastJointMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
+        }
+
         // Probably better to use a device local buffer since we upload once per frame
         if (currentEntityMatrices.size() > 0)
             currentMatricesBuffer->SetData(currentEntityMatrices.data(), 0, currentEntityMatrices.size() * sizeof(mat3x4));
@@ -313,6 +358,10 @@ namespace Atlas {
             lastMatricesBuffer->SetData(lastEntityMatrices.data(), 0, lastEntityMatrices.size() * sizeof(mat3x4));
         if (impostorMatrices.size() > 0)
             impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat3x4));
+        if (currentJointMatrices.size() > 0)
+            currentJointMatricesBuffer->SetData(currentJointMatrices.data(), 0, currentJointMatrices.size() * sizeof(mat3x4));
+        if (lastJointMatrices.size() > 0)
+            lastJointMatricesBuffer->SetData(lastJointMatrices.data(), 0, lastJointMatrices.size() * sizeof(mat3x4));
 
     }
 

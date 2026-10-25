@@ -32,6 +32,9 @@ namespace Atlas {
 
             size_t impostorOffset;
             size_t impostorCount;
+
+            // Skinned meshes have the joint matrices of each instance one after another
+            size_t jointOffset = 0;
         };
 
         enum class RenderPassType {
@@ -72,10 +75,14 @@ namespace Atlas {
             std::vector<mat3x4> currentEntityMatrices;
             std::vector<mat3x4> lastEntityMatrices;
             std::vector<mat3x4> impostorMatrices;
+            std::vector<mat3x4> currentJointMatrices;
+            std::vector<mat3x4> lastJointMatrices;
 
             Ref<Graphics::MultiBuffer> currentMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
             Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
+            Ref<Graphics::MultiBuffer> currentJointMatricesBuffer;
+            Ref<Graphics::MultiBuffer> lastJointMatricesBuffer;
 
             RenderPassThreadContext contexts[8];
 

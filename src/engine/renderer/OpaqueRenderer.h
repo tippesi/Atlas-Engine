@@ -50,6 +50,9 @@ namespace Atlas {
                 uint32_t aoTextureIdx;
                 uint32_t heightTextureIdx;
                 uint32_t emissiveTextureIdx;
+                uint32_t jointOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
             };
 
 

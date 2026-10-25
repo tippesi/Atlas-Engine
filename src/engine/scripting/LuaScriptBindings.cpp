@@ -12,6 +12,7 @@
 #include "bindings/LightingBindings.h"
 #include "bindings/MathBindings.h"
 #include "bindings/MeshBindings.h"
+#include "bindings/AnimationBindings.h"
 #include "bindings/PhysicsBindings.h"
 #include "bindings/ResourceBindings.h"
 #include "bindings/SceneBindings.h"
@@ -38,6 +39,7 @@ namespace Atlas::Scripting {
         Bindings::GenerateMaterialBindings(atlasNs);
         Bindings::GenerateAudioBindings(atlasNs);
         Bindings::GenerateMeshBindings(atlasNs);
+        Bindings::GenerateAnimationBindings(atlasNs);
         Bindings::GeneratePhysicsBindings(atlasNs);
         Bindings::GenerateVolumeBindings(atlasNs);
         Bindings::GenerateLightingBindings(atlasNs);

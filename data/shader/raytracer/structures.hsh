@@ -207,14 +207,3 @@ struct PackedBVHTriangle {
     vec4 v1;
     vec4 v2;
 };
-
-layout(push_constant) uniform constants {
-    int lightCount;
-    uint rayBufferOffset;
-    uint rayPayloadBufferOffset;
-    uint rayBufferSize;
-    int useRayBinning;
-    int padding0;
-    int padding1;
-    int padding2;
-} PushConstants;

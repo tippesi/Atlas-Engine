@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AnimationComponent.h"
 #include "AudioComponent.h"
 #include "AudioVolumeComponent.h"
 #include "CameraComponent.h"

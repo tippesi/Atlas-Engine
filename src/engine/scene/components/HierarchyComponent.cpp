@@ -1,5 +1,6 @@
 #include "HierarchyComponent.h"
 #include "CameraComponent.h"
+#include "AnimationComponent.h"
 
 #include "../Scene.h"
 
@@ -16,6 +17,9 @@ namespace Atlas {
 
 				scene->childToParentMap[entity] = owningEntity;
 				entities.push_back(entity);
+
+				// The matrix is otherwise only set when the owner changes, but the child needs it right away
+				globalMatrix = scene->GetGlobalMatrix(owningEntity);
 
 				auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
 				if (hierarchyComponent) {
@@ -45,6 +49,19 @@ namespace Atlas {
 
 			}
 
+			mat4 HierarchyComponent::GetParentMatrix(const TransformComponent& transform) const {
+
+				if (transform.parentJoint < 0)
+					return globalMatrix;
+
+				auto animationComponent = owningEntity.TryGetComponent<AnimationComponent>();
+				if (!animationComponent)
+					return globalMatrix;
+
+				return globalMatrix * animationComponent->GetJointMatrix(transform.parentJoint);
+
+			}
+
 			void HierarchyComponent::Update(const TransformComponent& transform, bool parentChanged,
 				ECS::Pool<TransformComponent>& transformComponentPool,
 				ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool) {
@@ -62,7 +79,7 @@ namespace Atlas {
 
 					if (transformComponent) {
 						transformChanged |= transformComponent->changed;
-						transformComponent->Update(globalMatrix, parentChanged);
+						transformComponent->Update(GetParentMatrix(*transformComponent), parentChanged);
 					}
 
 					if (hierarchyComponent) {
@@ -93,7 +110,7 @@ namespace Atlas {
 
 						if (transformComponent) {
 							transformChanged |= transformComponent->changed;
-							transformComponent->Update(globalMatrix, parentChanged);
+							transformComponent->Update(GetParentMatrix(*transformComponent), parentChanged);
 						}
 
 						if (hierarchyComponent) {
@@ -115,7 +132,7 @@ namespace Atlas {
 
 							if (transformComponent) {
 								transformChanged |= transformComponent->changed;
-								transformComponent->Update(globalMatrix, parentChanged);
+								transformComponent->Update(GetParentMatrix(*transformComponent), parentChanged);
 							}
 
 							if (hierarchyComponent) {

@@ -10,6 +10,8 @@
 #include "terrain/TerrainNode.h"
 #include "scene/components/MeshComponent.h"
 #include "scene/components/TransformComponent.h"
+#include "buffer/VertexBuffer.h"
+#include "pipeline/PipelineConfig.h"
 
 #include "texture/TextureAtlas.h"
 
@@ -26,6 +28,7 @@ namespace Atlas {
     namespace Scene {
 
         class Scene;
+        class SceneRenderState;
 
     }
 
@@ -35,6 +38,7 @@ namespace Atlas {
 
             friend Renderer::Helper::RayTracingHelper;
             friend Scene::Scene;
+            friend Scene::SceneRenderState;
 
         public:
             RayTracingWorld();
@@ -49,6 +53,10 @@ namespace Atlas {
 
             bool includeObjectHistory = false;
 
+            // Hardware ray tracing refits the BLASes of animated meshes instead of building them every frame.
+            // Software ray tracing always refits them.
+            bool refitSkinnedBlases = false;
+
         private:
             struct BlasInfo {
                 ResourceHandle<Mesh::Mesh> mesh;
@@ -62,6 +70,33 @@ namespace Atlas {
                 int32_t idx = 0;
 
                 std::vector<GPULight> triangleLights;
+            };
+
+            // Animated meshes have a BLAS per entity which is skinned on the GPU
+            struct SkinnedBlas {
+                ResourceHandle<Mesh::Mesh> mesh;
+                Ref<BLAS> blas;
+
+                Buffer::Buffer triangleVertexBuffer;
+                Buffer::Buffer levelNodeBuffer;
+                Buffer::Buffer nodeBoundsBuffer;
+                Buffer::VertexBuffer vertexBuffer;
+
+                // The nodes of each tree level are levelOffsets[i] to levelOffsets[i + 1] in the level node buffer
+                std::vector<uint32_t> levelOffsets;
+
+                uint32_t jointOffset = 0;
+                bool used = false;
+            };
+
+            struct alignas(16) SkinPushConstants {
+                uint32_t elementCount;
+                uint32_t jointOffset;
+            };
+
+            struct alignas(16) RefitPushConstants {
+                uint32_t nodeOffset;
+                uint32_t nodeCount;
             };
 
             struct JobContext {
@@ -79,6 +114,12 @@ namespace Atlas {
             void UpdateForHardwareRayTracing(Scene::Subset<MeshComponent,
                 TransformComponent>& entitySubset, size_t instanceCount);
 
+            void UpdateSkinnedBlases(int32_t& meshCount);
+
+            void SkinBlases(Graphics::CommandList* commandList);
+
+            SkinnedBlas CreateSkinnedBlas(const ResourceHandle<Mesh::Mesh>& mesh);
+
             void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
 
             void UpdateTriangleLights();
@@ -89,6 +130,7 @@ namespace Atlas {
             Ref<Graphics::TLAS> tlas;
 
             std::vector<Ref<Graphics::BLAS>> buildBlases;
+            std::vector<Ref<Graphics::BLAS>> refitBlases;
 
             Buffer::Buffer materialBuffer;
             Buffer::Buffer bvhInstanceBuffer;
@@ -101,6 +143,16 @@ namespace Atlas {
             std::vector<mat3x4> lastMatrices;
 
             std::vector<GPULight> triangleLights;
+
+            std::unordered_map<ECS::Entity, SkinnedBlas> skinnedBlases;
+            std::unordered_map<size_t, Buffer::Buffer> skinVertexBuffers;
+
+            std::vector<mat3x4> jointMatrices;
+            Buffer::Buffer jointMatricesBuffer;
+
+            PipelineConfig skinTrianglesPipelineConfig;
+            PipelineConfig skinVerticesPipelineConfig;
+            PipelineConfig refitBVHPipelineConfig;
 
             std::unordered_map<Ref<BLAS>, BlasInfo> blasInfos;
             std::unordered_map<Ref<BLAS>, BlasInfo> prevBlasInfos;

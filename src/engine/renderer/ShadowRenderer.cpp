@@ -96,6 +96,7 @@ namespace Atlas {
 
             commandList->BindBuffer(shadowPass->currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(shadowPass->impostorMatricesBuffer, 1, 3);
+            commandList->BindBuffer(shadowPass->currentJointMatricesBuffer, 1, 4);
 
             commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 
@@ -177,7 +178,10 @@ namespace Atlas {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .textureID = opacityTextureIdx
+                    .textureID = opacityTextureIdx,
+                    .jointOffset = uint32_t(instances.jointOffset),
+                    .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
+                    .instanceOffset = uint32_t(instances.offset),
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
@@ -280,6 +284,9 @@ namespace Atlas {
             std::vector<std::string> macros;
             if (hasOpacityMap) {
                 macros.push_back("OPACITY_MAP");
+            }
+            if (mesh->data.IsSkinned()) {
+                macros.push_back("SKINNED");
             }
 
             if (device->support.bindless) {

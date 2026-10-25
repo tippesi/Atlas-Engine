@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
+#include "../animation/Animation.h"
 #include "../scene/Scene.h"
 
 #include <assimp/Importer.hpp>
@@ -30,6 +31,11 @@ namespace Atlas {
                 int32_t depth, bool saveToDisk = true, bool makeMeshesStatic = false,
                 bool invertUVs = false, int32_t maxTextureResolution = 4096);
 
+            static std::vector<Ref<Animation::Animation>> ImportAnimations(const std::string& filename,
+                bool saveToDisk = false);
+
+            static std::string GetAnimationFilename(const std::string& filename, const std::string& animationName);
+
         private:
             struct Paths {
                 std::string filename;
@@ -37,6 +43,7 @@ namespace Atlas {
                 std::string meshPath;
                 std::string materialPath;
                 std::string texturePath;
+                std::string animationPath;
             };
 
             enum class MaterialImageType {
@@ -133,6 +140,15 @@ namespace Atlas {
                 bool isObj;
             };
 
+            static void ImportSkeleton(ImporterState& state, Mesh::Skeleton& skeleton, bool rigidMeshJoints);
+
+            static void ImportVertexWeights(const aiMesh* mesh, const Mesh::Skeleton& skeleton, int32_t defaultJointIdx,
+                std::vector<vec4>& joints, std::vector<vec4>& weights);
+
+            static mat4 GetBindSpaceMatrix(const aiMesh* mesh, const Mesh::Skeleton& skeleton);
+
+            static void ImportJointBounds(Mesh::MeshData& meshData);
+
             static void InitImporterState(ImporterState& state, const std::string& filename, bool optimizeMeshes);
 
             static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution, bool saveToDisk);
@@ -141,6 +157,11 @@ namespace Atlas {
 
             static void LoadMaterialImages(ImporterState& state, aiMaterial* material, bool hasTangents,
                 int32_t maxTextureResolution);
+
+            static std::string GetMaterialImagePath(const ImporterState& state, const aiString& aiPath);
+
+            static Ref<Common::Image<uint8_t>> LoadMaterialImage(const ImporterState& state, const aiString& aiPath,
+                bool colorSpaceConversion, int32_t forceChannels, int32_t maxTextureResolution);
 
             static std::vector<Ref<Common::Image<uint8_t>>> ImagesToTextures(ImporterState& state);
 

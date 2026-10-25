@@ -16,9 +16,31 @@ namespace Atlas::Scripting::Bindings {
             { "HostAccessBit", Mesh::MeshUsageBits::HostAccessBit },
         });
 
+        ns->new_usertype<Mesh::Joint>("Joint",
+            "name", &Mesh::Joint::name,
+            "parentIdx", &Mesh::Joint::parentIdx,
+            "inverseBindMatrix", &Mesh::Joint::inverseBindMatrix,
+            "position", &Mesh::Joint::position,
+            "rotation", &Mesh::Joint::rotation,
+            "scale", &Mesh::Joint::scale,
+            "aabb", &Mesh::Joint::aabb,
+            "hasVertices", &Mesh::Joint::hasVertices
+            );
+
+        ns->new_usertype<Mesh::Skeleton>("Skeleton",
+            "GetJointIndex", &Mesh::Skeleton::GetJointIndex,
+            "GetJointCount", &Mesh::Skeleton::GetJointCount,
+            "UpdateRestPose", &Mesh::Skeleton::UpdateRestPose,
+            "joints", &Mesh::Skeleton::joints,
+            "restJointMatrices", &Mesh::Skeleton::restJointMatrices,
+            "restAABB", &Mesh::Skeleton::restAABB
+            );
+
         ns->new_usertype<Mesh::MeshData>("MeshData",
+            "IsSkinned", &Mesh::MeshData::IsSkinned,
             "filename", &Mesh::MeshData::name,
             "materials", &Mesh::MeshData::materials,
+            "skeleton", &Mesh::MeshData::skeleton,
             "primitiveType", &Mesh::MeshData::primitiveType,
             "aabb", &Mesh::MeshData::aabb,
             "radius", &Mesh::MeshData::radius

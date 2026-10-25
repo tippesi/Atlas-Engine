@@ -6,6 +6,7 @@
 #include "volume/BVH.h"
 #include "graphics/ASBuilder.h"
 #include "graphics/Profiler.h"
+#include "pipeline/PipelineManager.h"
 #include "common/ColorConverter.h"
 #include "common/Packing.h"
 
@@ -31,6 +32,15 @@ namespace Atlas {
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
             tlasNodeBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHNode));
             lastMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4x3));
+            jointMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat3x4));
+
+            std::vector<std::string> skinTrianglesMacros;
+            if (hardwareRayTracing)
+                skinTrianglesMacros.push_back("HARDWARE_RAYTRACING");
+
+            skinTrianglesPipelineConfig = PipelineConfig("raytracer/skinTriangles.csh", skinTrianglesMacros);
+            skinVerticesPipelineConfig = PipelineConfig("raytracer/skinVertices.csh");
+            refitBVHPipelineConfig = PipelineConfig("raytracer/refitBVH.csh");
 
             jobContexts.resize(6);
 
@@ -46,6 +56,7 @@ namespace Atlas {
             auto renderState = &scene->renderState;
 
             buildBlases.clear();
+            refitBlases.clear();
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
@@ -104,15 +115,22 @@ namespace Atlas {
                 blasInfo.cullingDistanceSqr = 100000000000.0f;
             }
 
-            if (hardwareRayTracing) {              
-                Graphics::ASBuilder asBuilder;
-                if (!buildBlases.empty()) {
-                    auto commandList = device->GetCommandList();
-                    commandList->BeginCommands();
-                    asBuilder.BuildBLAS(buildBlases, commandList);
-                    commandList->EndCommands();
-                    device->SubmitCommandList(commandList);
+            UpdateSkinnedBlases(meshCount);
+
+            // Skinning has to be done before the dynamic BLASes are built
+            if (!skinnedBlases.empty() || hardwareRayTracing && !buildBlases.empty()) {
+                auto commandList = device->GetCommandList();
+                commandList->BeginCommands();
+                SkinBlases(commandList);
+                if (hardwareRayTracing) {
+                    Graphics::ASBuilder asBuilder;
+                    if (!buildBlases.empty())
+                        asBuilder.BuildBLAS(buildBlases, commandList);
+                    if (!refitBlases.empty())
+                        asBuilder.UpdateBLAS(refitBlases, commandList);
                 }
+                commandList->EndCommands();
+                device->SubmitCommandList(commandList);
             }
 
             hardwareInstances.clear();
@@ -151,17 +169,24 @@ namespace Atlas {
 
                     if (!meshComponent.visible)
                         return;
-                    if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->rayTrace ||
-                        !renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
+                    if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->rayTrace)
                         return;
-                    if (hardwareRayTracing && !meshComponent.mesh->blas->blas->isBuilt || meshComponent.mesh->blas->needsBvhRefresh)
+
+                    auto blas = meshComponent.mesh->blas;
+                    auto skinnedBlas = skinnedBlases.find(entity);
+                    if (skinnedBlas != skinnedBlases.end() && renderState->blasToBindlessIdx.contains(skinnedBlas->second.blas))
+                        blas = skinnedBlas->second.blas;
+
+                    if (!renderState->blasToBindlessIdx.contains(blas))
+                        return;
+                    if (hardwareRayTracing && !blas->blas->isBuilt || blas->needsBvhRefresh)
                         return;
 
                     auto transformComponent = transformComponentPool.TryGet(entity);
                     if (!transformComponent)
                         return;
 
-                    auto& blasInfo = blasInfos[meshComponent.mesh->blas];
+                    auto& blasInfo = blasInfos[blas];
                     auto distSqd = glm::distance2(
                         vec3(transformComponent->globalMatrix[3]),
                         cameraLocation);
@@ -196,7 +221,7 @@ namespace Atlas {
 
                         inst.transform = transform;
                         inst.instanceCustomIndex = blasInfo.offset;
-                        inst.accelerationStructureReference = meshComponent.mesh->blas->blas->deviceAddress;
+                        inst.accelerationStructureReference = blas->blas->deviceAddress;
                         inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                         inst.mask = mask;
                         inst.instanceShaderBindingTableRecordOffset = 0;
@@ -424,6 +449,8 @@ namespace Atlas {
         void RayTracingWorld::Clear() {
 
             blasInfos.clear();
+            skinnedBlases.clear();
+            skinVertexBuffers.clear();
 
         }
 
@@ -500,6 +527,272 @@ namespace Atlas {
 
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
+
+        }
+
+        void RayTracingWorld::UpdateSkinnedBlases(int32_t& meshCount) {
+
+            auto renderState = &scene->renderState;
+
+            auto& animationComponentPool = scene->entityManager.GetPool<AnimationComponent>();
+            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
+
+            for (auto& [entity, skinnedBlas] : skinnedBlases)
+                skinnedBlas.used = false;
+
+            jointMatrices.clear();
+
+            for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
+                auto entity = animationComponentPool[i];
+                const auto& animationComponent = animationComponentPool.GetByIndex(i);
+                auto meshComponent = meshComponentPool.TryGet(entity);
+
+                if (!meshComponent || !meshComponent->mesh.IsLoaded() || !meshComponent->mesh->rayTrace ||
+                    !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
+                    continue;
+
+                const auto& mesh = meshComponent->mesh;
+                auto item = skinnedBlases.find(entity);
+                // The hardware BLAS needs to be created again when switching between refits and builds
+                if (item == skinnedBlases.end() || item->second.mesh.GetID() != mesh.GetID() ||
+                    hardwareRayTracing && item->second.blas->blas->allowUpdate != refitSkinnedBlases)
+                    item = skinnedBlases.insert_or_assign(entity, CreateSkinnedBlas(mesh)).first;
+
+                auto& skinnedBlas = item->second;
+                skinnedBlas.used = true;
+                skinnedBlas.jointOffset = uint32_t(jointMatrices.size());
+                jointMatrices.insert(jointMatrices.end(), animationComponent.jointMatrices.begin(),
+                    animationComponent.jointMatrices.end());
+
+                // The BLAS is used once the bindless buffers are updated in the next frame
+                if (!renderState->blasToBindlessIdx.contains(skinnedBlas.blas))
+                    continue;
+
+                if (!prevBlasInfos.contains(skinnedBlas.blas))
+                    blasInfos[skinnedBlas.blas] = BlasInfo{ .mesh = mesh };
+                else
+                    std::swap(blasInfos[skinnedBlas.blas], prevBlasInfos[skinnedBlas.blas]);
+
+                auto& blasInfo = blasInfos[skinnedBlas.blas];
+                blasInfo.offset = int32_t(renderState->blasToBindlessIdx[skinnedBlas.blas]);
+                blasInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
+
+                if (hardwareRayTracing) {
+                    const auto& graphicsBlas = skinnedBlas.blas->blas;
+                    if (graphicsBlas->allowUpdate && graphicsBlas->isBuilt)
+                        refitBlases.push_back(graphicsBlas);
+                    else
+                        buildBlases.push_back(graphicsBlas);
+                    skinnedBlas.blas->needsBvhRefresh = false;
+
+                    blasInfo.idx = meshCount++;
+                }
+            }
+
+            std::erase_if(skinnedBlases, [](const auto& item) { return !item.second.used; });
+            std::erase_if(skinVertexBuffers, [&](const auto& item) {
+                return std::none_of(skinnedBlases.begin(), skinnedBlases.end(),
+                    [&](const auto& skinnedBlas) { return skinnedBlas.second.mesh.GetID() == item.first; });
+                });
+
+            if (jointMatrices.empty())
+                return;
+
+            if (jointMatricesBuffer.GetElementCount() < jointMatrices.size())
+                jointMatricesBuffer.SetSize(jointMatrices.size());
+            jointMatricesBuffer.SetData(jointMatrices.data(), 0, jointMatrices.size());
+
+        }
+
+        void RayTracingWorld::SkinBlases(Graphics::CommandList* commandList) {
+
+            if (skinnedBlases.empty())
+                return;
+
+            Graphics::Profiler::BeginThread("Skinning", commandList);
+            Graphics::Profiler::BeginQuery("Skin BLASes");
+
+            // The buffers might still be read by the previous frame
+            commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            auto pipeline = PipelineManager::GetPipeline(skinTrianglesPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            jointMatricesBuffer.Bind(commandList, 3, 1);
+
+            for (auto& [entity, skinnedBlas] : skinnedBlases) {
+                auto& blas = skinnedBlas.blas;
+                auto triangleCount = uint32_t(blas->triangleIndices.size());
+
+                skinVertexBuffers[skinnedBlas.mesh.GetID()].Bind(commandList, 3, 0);
+                skinnedBlas.triangleVertexBuffer.Bind(commandList, 3, 2);
+                blas->triangleBuffer.Bind(commandList, 3, 3);
+                if (!hardwareRayTracing)
+                    blas->bvhTriangleBuffer.Bind(commandList, 3, 4);
+
+                auto constants = SkinPushConstants {
+                    .elementCount = triangleCount,
+                    .jointOffset = skinnedBlas.jointOffset
+                };
+                commandList->PushConstants("constants", &constants);
+
+                commandList->Dispatch((triangleCount + 63) / 64, 1, 1);
+            }
+
+            if (hardwareRayTracing) {
+                pipeline = PipelineManager::GetPipeline(skinVerticesPipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                for (auto& [entity, skinnedBlas] : skinnedBlases) {
+                    auto vertexCount = uint32_t(skinnedBlas.vertexBuffer.elementCount);
+
+                    skinVertexBuffers[skinnedBlas.mesh.GetID()].Bind(commandList, 3, 0);
+                    commandList->BindBuffer(skinnedBlas.vertexBuffer.buffer, 3, 2);
+
+                    auto constants = SkinPushConstants {
+                        .elementCount = vertexCount,
+                        .jointOffset = skinnedBlas.jointOffset
+                    };
+                    commandList->PushConstants("constants", &constants);
+
+                    commandList->Dispatch((vertexCount + 63) / 64, 1, 1);
+                }
+
+                commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+            }
+            else {
+                commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                pipeline = PipelineManager::GetPipeline(refitBVHPipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                size_t levelCount = 0;
+                for (const auto& [entity, skinnedBlas] : skinnedBlases)
+                    levelCount = std::max(levelCount, skinnedBlas.levelOffsets.size() - 1);
+
+                // The levels of all BLASes are updated together, starting with the deepest one
+                for (int32_t level = int32_t(levelCount) - 1; level >= 0; level--) {
+                    for (auto& [entity, skinnedBlas] : skinnedBlases) {
+                        const auto& levelOffsets = skinnedBlas.levelOffsets;
+                        if (level + 1 >= int32_t(levelOffsets.size()))
+                            continue;
+
+                        auto& blas = skinnedBlas.blas;
+                        blas->blasNodeBuffer.Bind(commandList, 3, 0);
+                        blas->bvhTriangleBuffer.Bind(commandList, 3, 1);
+                        skinnedBlas.levelNodeBuffer.Bind(commandList, 3, 2);
+                        skinnedBlas.nodeBoundsBuffer.Bind(commandList, 3, 3);
+
+                        auto constants = RefitPushConstants {
+                            .nodeOffset = levelOffsets[level],
+                            .nodeCount = levelOffsets[level + 1] - levelOffsets[level]
+                        };
+                        commandList->PushConstants("constants", &constants);
+
+                        commandList->Dispatch((constants.nodeCount + 63) / 64, 1, 1);
+                    }
+
+                    commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                }
+            }
+
+            commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndThread();
+
+        }
+
+        RayTracingWorld::SkinnedBlas RayTracingWorld::CreateSkinnedBlas(const ResourceHandle<Mesh::Mesh>& mesh) {
+
+            auto& data = mesh->data;
+            auto vertexCount = size_t(data.GetVertexCount());
+
+            if (!skinVertexBuffers.contains(mesh.GetID())) {
+                std::vector<GPUSkinVertex> skinVertices(vertexCount);
+                for (size_t i = 0; i < vertexCount; i++) {
+                    auto packedNormal = Common::Packing::PackSignedVector3x10_1x2(vec4(vec3(data.normals[i]), 0.0f));
+                    auto joints = glm::uvec4(data.joints[i]);
+
+                    skinVertices[i].position = vec4(data.vertices[i], reinterpret_cast<float&>(packedNormal));
+                    skinVertices[i].joints01 = joints.x | (joints.y << 16);
+                    skinVertices[i].joints23 = joints.z | (joints.w << 16);
+                    skinVertices[i].weights = glm::packUnorm4x8(data.weights[i]);
+                }
+
+                skinVertexBuffers[mesh.GetID()] = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
+                    sizeof(GPUSkinVertex), skinVertices.size(), skinVertices.data());
+            }
+
+            SkinnedBlas skinnedBlas = {
+                .mesh = mesh,
+                .blas = CreateRef<BLAS>()
+            };
+
+            std::vector<BLAS::Triangle> triangles;
+            data.BuildBVHData(triangles);
+
+            if (hardwareRayTracing) {
+                std::vector<Graphics::ASGeometryRegion> geometryRegions;
+                for (auto& subData : data.subData) {
+                    geometryRegions.emplace_back(Graphics::ASGeometryRegion{
+                        .indexCount = subData.indicesCount,
+                        .indexOffset = subData.indicesOffset,
+                        .opaque = !subData.material->HasOpacityMap() && subData.material->opacity == 1.0f
+                        });
+                }
+
+                skinnedBlas.vertexBuffer = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertexCount,
+                    data.vertices.Get().data());
+                skinnedBlas.blas->isDynamic = true;
+                skinnedBlas.blas->allowUpdate = refitSkinnedBlases;
+                skinnedBlas.blas->Build(triangles, data.materials, skinnedBlas.vertexBuffer, mesh->indexBuffer,
+                    geometryRegions);
+            }
+            else {
+                skinnedBlas.blas->Build(triangles, data.materials);
+
+                // Parents always come before their children
+                const auto& nodeParents = skinnedBlas.blas->nodeParents;
+                std::vector<int32_t> nodeLevels(nodeParents.size(), 0);
+                std::vector<std::vector<int32_t>> levels;
+                for (size_t i = 0; i < nodeParents.size(); i++) {
+                    auto parent = nodeParents[i];
+                    nodeLevels[i] = parent >= 0 ? nodeLevels[parent >> 1] + 1 : 0;
+                    if (nodeLevels[i] >= int32_t(levels.size()))
+                        levels.resize(nodeLevels[i] + 1);
+                    levels[nodeLevels[i]].push_back(int32_t(i));
+                }
+
+                std::vector<int32_t> levelNodes;
+                for (const auto& level : levels) {
+                    skinnedBlas.levelOffsets.push_back(uint32_t(levelNodes.size()));
+                    levelNodes.insert(levelNodes.end(), level.begin(), level.end());
+                }
+                skinnedBlas.levelOffsets.push_back(uint32_t(levelNodes.size()));
+
+                if (!levelNodes.empty()) {
+                    skinnedBlas.levelNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
+                        sizeof(int32_t), levelNodes.size(), levelNodes.data());
+                    skinnedBlas.nodeBoundsBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
+                        2 * sizeof(vec4), levelNodes.size());
+                }
+            }
+
+            const auto& triangleIndices = skinnedBlas.blas->triangleIndices;
+            std::vector<ivec4> triangleVertices(triangleIndices.size());
+            for (size_t i = 0; i < triangleIndices.size(); i++) {
+                auto idx = size_t(triangleIndices[i]) * 3;
+                triangleVertices[i] = ivec4(data.indices[idx], data.indices[idx + 1], data.indices[idx + 2], 0);
+            }
+
+            skinnedBlas.triangleVertexBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
+                sizeof(ivec4), triangleVertices.size(), triangleVertices.data());
+
+            return skinnedBlas;
 
         }
 

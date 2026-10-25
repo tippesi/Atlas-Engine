@@ -25,6 +25,11 @@ layout(location=3) in vec4 vTangent;
 layout(location=4) in vec4 vVertexColors;
 #endif
 
+#ifdef SKINNED
+layout(location=5) in uvec4 vJoints;
+layout(location=6) in vec4 vWeights;
+#endif
+
 layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
@@ -32,6 +37,16 @@ layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
 layout(std430, set = 1, binding = 2) readonly buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
+
+#ifdef SKINNED
+layout(std430, set = 1, binding = 4) readonly buffer CurrentJointMatrices {
+    mat3x4 currentJointMatrices[];
+};
+
+layout(std430, set = 1, binding = 5) readonly buffer LastJointMatrices {
+    mat3x4 lastJointMatrices[];
+};
+#endif
 
 // Vertex out parameters
 layout(location=0) out vec3 positionVS;
@@ -75,6 +90,9 @@ layout(push_constant) uniform constants {
     uint aoTextureIdx;
     uint heightTextureIdx;
     uint emissiveTextureIdx;
+    uint jointOffset;
+    uint jointCount;
+    uint instanceOffset;
 } PushConstants;
 
 // Functions
@@ -93,15 +111,40 @@ void main() {
 
     vec3 position = vPosition;
     vec3 lastPosition = vPosition;
+    vec3 normal = vNormal.xyz;
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+    vec3 tangent = vTangent.xyz;
+#endif
+
+#ifdef SKINNED
+    uint jointOffset = PushConstants.jointOffset + (gl_InstanceIndex - PushConstants.instanceOffset) * PushConstants.jointCount;
+    vec4 weights = vWeights / dot(vWeights, vec4(1.0));
+
+    mat3x4 skinMatrix = weights.x * currentJointMatrices[jointOffset + vJoints.x] +
+        weights.y * currentJointMatrices[jointOffset + vJoints.y] +
+        weights.z * currentJointMatrices[jointOffset + vJoints.z] +
+        weights.w * currentJointMatrices[jointOffset + vJoints.w];
+    mat3x4 lastSkinMatrix = weights.x * lastJointMatrices[jointOffset + vJoints.x] +
+        weights.y * lastJointMatrices[jointOffset + vJoints.y] +
+        weights.z * lastJointMatrices[jointOffset + vJoints.z] +
+        weights.w * lastJointMatrices[jointOffset + vJoints.w];
+
+    position = vec4(vPosition, 1.0) * skinMatrix;
+    lastPosition = vec4(vPosition, 1.0) * lastSkinMatrix;
+    normal = vec4(normal, 0.0) * skinMatrix;
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+    tangent = vec4(tangent, 0.0) * skinMatrix;
+#endif
+#endif
 
     if (PushConstants.vegetation > 0) {
 
         // This is not well optimized and could use some work
         vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
         vec2 windDir = normalize((inverse(mMatrix) * vec4(globalData.windDir.x, 0.0, globalData.windDir.y, 0.0)).xz);
-        position = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
+        position = WindAnimation(windNoiseMap, position, windDir, PushConstants.windBendScale,
             PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
-        lastPosition = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
+        lastPosition = WindAnimation(windNoiseMap, lastPosition, windDir, PushConstants.windBendScale,
             PushConstants.windWiggleScale, PushConstants.windTextureLod,
             globalData.time - globalData.deltaTime, windPosition);
 
@@ -127,18 +170,18 @@ void main() {
     mat3 cofactorMatrix = mat3(cross(modelView[1], modelView[2]),
         cross(modelView[2], modelView[0]), cross(modelView[0], modelView[1]));
     float orientation = dot(modelView[0], cofactorMatrix[0]) < 0.0 ? -1.0 : 1.0;
-    normalVS = orientation * (cofactorMatrix * vNormal.xyz);
+    normalVS = orientation * (cofactorMatrix * normal);
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-    vec3 normal = normalize(normalVS);
+    vec3 normalView = normalize(normalVS);
     float correctionFactor = orientation * vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
-    vec3 tangent = mat3(mvMatrix) * vTangent.xyz;
-    tangent = normalize(tangent - normal * dot(tangent, normal));
+    vec3 tangentView = mat3(mvMatrix) * tangent;
+    tangentView = normalize(tangentView - normalView * dot(tangentView, normalView));
     
     vec3 bitangent = normalize(correctionFactor * 
-        cross(tangent, normal));
+        cross(tangentView, normalView));
 
-    TBN = mat3(tangent, bitangent, normal);
+    TBN = mat3(tangentView, bitangent, normalView);
 #endif
 
 #ifdef VERTEX_COLORS
