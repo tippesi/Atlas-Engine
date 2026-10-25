@@ -8,6 +8,8 @@ namespace Atlas {
 
         void TerrainRenderer::Init(Graphics::GraphicsDevice* device) {
 
+            this->device = device;
+
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
@@ -42,6 +44,13 @@ namespace Atlas {
 
             vec3 cameraLocation = camera.GetLocation();
 
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
+            // Bindless and tesselation with MoltenVK don't seem to properly work and cause crashes
+            bool disableTessellation = device->support.bindless;
+#else
+            bool disableTessellation = false;
+#endif
+
             for (auto node : terrain->renderList) {
                 if (node->cell->LoD >= terrain->LoDCount - terrain->detailNodeIdx) {
                     vec2 nodeMin = vec2(node->location);
@@ -51,15 +60,10 @@ namespace Atlas {
                     auto dy = glm::max(glm::max(nodeMin.y - cameraLocation.z, cameraLocation.z - nodeMax.y), 0.0f);
                     auto dist = glm::sqrt(dx * dx + dy * dy);
 
-#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
-                    // Bindless and tesselation on Mac with MoltenVK don't seem to properly work and cause crashes
-                    detailNodes.push_back(node);
-#else
-                    if (dist < terrain->displacementDistance)
+                    if (dist < terrain->displacementDistance && !disableTessellation)
                         detailDisplacementNodes.push_back(node);
                     else
                         detailNodes.push_back(node);
-#endif
                 }
                 else {
                     distanceNodes.push_back(node);

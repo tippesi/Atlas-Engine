@@ -941,19 +941,19 @@ namespace Atlas {
 				.bindings = {
 					{
 						.bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-						.descriptorCount = 16384, .bindless = true
+						.descriptorCount = BINDLESS_TEXTURE_COUNT, .bindless = true
 					}
 				},
 				.bindingCount = 4

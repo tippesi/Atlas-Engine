@@ -1,3 +1,4 @@
+// Has to match the counts in graphics/Common.h
 #ifdef AE_BINDLESS
 #define TEXTURE_COUNT 16384
 #define CUBEMAP_COUNT 1024
