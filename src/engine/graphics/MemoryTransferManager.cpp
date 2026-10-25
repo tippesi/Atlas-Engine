@@ -193,6 +193,81 @@ namespace Atlas {
 
         }
 
+        void MemoryTransferManager::UploadImageData(const void* data, size_t dataSize, Image* image,
+            const std::vector<VkBufferImageCopy>& copyRegions) {
+
+            bool inTransfer = commandList != nullptr;
+            CommandList* localCommandList = nullptr;
+
+            if (!inTransfer) {
+                localCommandList = device->GetCommandList(GraphicsQueue, true);
+                localCommandList->BeginCommands();
+            }
+            else {
+                localCommandList = commandList;
+            }
+
+            VmaAllocator allocator = memoryManager->allocator;
+
+            auto stagingAllocation = CreateStagingBuffer(dataSize);
+
+            void* destination;
+            vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
+            std::memcpy(destination, data, dataSize);
+            vmaFlushAllocation(allocator, stagingAllocation.allocation, 0, dataSize);
+            vmaUnmapMemory(allocator, stagingAllocation.allocation);
+
+            auto oldLayout = image->layout;
+            bool initializeWholeImage = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED;
+
+            VkImageSubresourceRange range = {};
+            range.aspectMask = image->aspectFlags;
+            range.baseMipLevel = 0;
+            range.levelCount = image->mipLevels;
+            range.baseArrayLayer = 0;
+            range.layerCount = image->layers;
+
+            VkImageMemoryBarrier imageBarrier = {};
+            imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.oldLayout = oldLayout;
+            imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            imageBarrier.image = image->image;
+            imageBarrier.subresourceRange = range;
+            imageBarrier.srcAccessMask = initializeWholeImage ? 0 : image->accessMask;
+            imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+
+            vkCmdCopyBufferToImage(localCommandList->commandBuffer, stagingAllocation.buffer, image->image,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, uint32_t(copyRegions.size()), copyRegions.data());
+
+            auto newLayout = initializeWholeImage ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : oldLayout;
+            auto dstAccessMask = initializeWholeImage ? VK_ACCESS_SHADER_READ_BIT : image->accessMask;
+
+            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            imageBarrier.newLayout = newLayout;
+            imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            imageBarrier.dstAccessMask = dstAccessMask;
+
+            vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+            image->layout = newLayout;
+            image->accessMask = dstAccessMask;
+
+            if (!inTransfer) {
+                localCommandList->EndCommands();
+                device->FlushCommandList(localCommandList);
+                DestroyStagingBuffer(stagingAllocation);
+            }
+            else {
+                allocations.push_back(stagingAllocation);
+            }
+
+        }
+
         void MemoryTransferManager::RetrieveImageData(void *data, Image *image, VkOffset3D offset,
             VkExtent3D extent, uint32_t layerOffset, uint32_t layerCount, bool block) {
 

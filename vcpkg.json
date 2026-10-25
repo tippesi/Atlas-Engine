@@ -40,7 +40,8 @@
     "imguizmo",
     "implot",
     "lua",
-    "sol2"
+    "sol2",
+    "ktx"
   ],
   "overrides": [
     {
@@ -110,6 +111,10 @@
     {
       "name": "sol2",
       "version": "3.5.0#0"
+    },
+    {
+      "name": "ktx",
+      "version": "4.4.2#0"
     }
   ]
 }

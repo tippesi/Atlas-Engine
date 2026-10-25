@@ -19,6 +19,7 @@ namespace Atlas::Editor {
         { "aeprefab", ContentType::Prefab },
         { "jpg", ContentType::Texture },
         { "png", ContentType::Texture },
+        { "ktx2", ContentType::Texture },
         { "hdr", ContentType::EnvironmentTexture },
         { "aeanimation", ContentType::Animation },
     };

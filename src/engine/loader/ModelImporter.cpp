@@ -25,13 +25,28 @@ namespace Atlas {
             bool saveToDisk, int32_t maxTextureResolution) {
 
             return ImportMesh(filename, Mesh::MeshMobility::Stationary, saveToDisk,
-                maxTextureResolution);
+                maxTextureResolution, ImportTextureFormat::Original);
+
+        }
+
+        Ref<Mesh::Mesh> ModelImporter::ImportMesh(const std::string& filename,
+            bool saveToDisk, int32_t maxTextureResolution, ImportTextureFormat textureFormat) {
+
+            return ImportMesh(filename, Mesh::MeshMobility::Stationary, saveToDisk,
+                maxTextureResolution, textureFormat);
+
+        }
+
+        Ref<Mesh::Mesh> ModelImporter::ImportMesh(const std::string& filename,
+            Mesh::MeshMobility mobility, bool saveToDisk, int32_t maxTextureResolution) {
+
+            return ImportMesh(filename, mobility, saveToDisk, maxTextureResolution, ImportTextureFormat::Original);
 
         }
 
         Ref<Mesh::Mesh> ModelImporter::ImportMesh(const std::string& filename,
             Mesh::MeshMobility mobility, bool saveToDisk,
-            int32_t maxTextureResolution) {
+            int32_t maxTextureResolution, ImportTextureFormat textureFormat) {
 
             ImporterState state;
             InitImporterState(state, filename, true);
@@ -142,7 +157,7 @@ namespace Atlas {
             tangents.SetElementCount(hasTangents ? vertexCount : 0);
             colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-            auto materials = ImportMaterials(state, maxTextureResolution, saveToDisk);
+            auto materials = ImportMaterials(state, maxTextureResolution, textureFormat, saveToDisk);
 
             meshData.subData = std::vector<Mesh::MeshSubData>(state.scene->mNumMaterials);
 
@@ -279,12 +294,12 @@ namespace Atlas {
 
         Ref<Scene::Scene> ModelImporter::ImportScene(const std::string& filename, vec3 min, vec3 max,
             int32_t depth, bool saveToDisk, bool makeMeshesStatic,
-            bool invertUVs, int32_t maxTextureResolution) {
+            bool invertUVs, int32_t maxTextureResolution, ImportTextureFormat textureFormat) {
 
             ImporterState state;
             InitImporterState(state, filename, false);
 
-            auto materials = ImportMaterials(state, maxTextureResolution, saveToDisk);
+            auto materials = ImportMaterials(state, maxTextureResolution, textureFormat, saveToDisk);
 
             struct MeshInfo {
                 ResourceHandle<Mesh::Mesh> mesh;
@@ -821,7 +836,8 @@ namespace Atlas {
 
         }
 
-        std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution, bool saveToDisk) {
+        std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution,
+            ImportTextureFormat textureFormat, bool saveToDisk) {
 
             JobGroup group{ "Material import" };
             JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](const JobData& data) {
@@ -829,11 +845,18 @@ namespace Atlas {
                 });
             JobSystem::Wait(group);
 
+            if (textureFormat == ImportTextureFormat::KTX2)
+                ConvertImagesToKtx(state);
+
             auto imagesToSave = ImagesToTextures(state);
 
             if (saveToDisk) {
                 JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](const JobData& data) {
-                    ImageLoader::SaveImage(imagesToSave[data.idx], imagesToSave[data.idx]->fileName);
+                    auto& image = imagesToSave[data.idx];
+                    if (state.images.ktxImages.contains(image))
+                        KtxLoader::SaveImage(state.images.ktxImages.at(image), image->fileName);
+                    else
+                        ImageLoader::SaveImage(image, image->fileName);
                     });
                 JobSystem::Wait(group);
             }
@@ -1226,53 +1249,71 @@ namespace Atlas {
 
         }
 
+        void ModelImporter::ConvertImagesToKtx(ImporterState& state) {
+
+            auto& images = state.images;
+            std::vector<Ref<Common::Image<uint8_t>>> imagesToConvert;
+
+            for (const auto imageMap : { &images.baseColorImages, &images.opacityImages, &images.normalImages,
+                &images.roughnessImages, &images.metallicImages, &images.displacementImages, &images.emissiveImages }) {
+                for (const auto& [path, image] : *imageMap)
+                    imagesToConvert.push_back(image);
+            }
+
+            std::vector<Ref<KtxImage>> ktxImages(imagesToConvert.size());
+
+            JobGroup group{ "Image conversion" };
+            JobSystem::ExecuteMultiple(group, int32_t(imagesToConvert.size()), [&](const JobData& data) {
+                try {
+                    ktxImages[data.idx] = KtxLoader::ConvertImage(imagesToConvert[data.idx]);
+                }
+                catch (const std::exception& exception) {
+                    Log::Error("Couldn't convert image " + imagesToConvert[data.idx]->fileName + ": " + exception.what());
+                }
+                });
+            JobSystem::Wait(group);
+
+            for (size_t i = 0; i < imagesToConvert.size(); i++) {
+                if (ktxImages[i])
+                    images.ktxImages[imagesToConvert[i]] = ktxImages[i];
+            }
+
+        }
+
         std::vector<Ref<Common::Image<uint8_t>>> ModelImporter::ImagesToTextures(ImporterState& state) {
 
             auto& images = state.images;
             std::vector<Ref<Common::Image<uint8_t>>> imagesToSave;
 
-            for (const auto& [path, image] : images.baseColorImages) {
-                auto texture = std::make_shared<Texture::Texture2D>(image);
-                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::BaseColor, path);
-                images.baseColorTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+            auto addTexture = [&](MaterialImageType type, const std::string& path,
+                const Ref<Common::Image<uint8_t>>& image) -> ResourceHandle<Texture::Texture2D> {
+                Ref<Texture::Texture2D> texture;
+                if (images.ktxImages.contains(image)) {
+                    image->fileName = GetMaterialImageImportPath(state, type, path, ImportTextureFormat::KTX2);
+                    texture = std::make_shared<Texture::Texture2D>(images.ktxImages[image]);
+                }
+                else {
+                    image->fileName = GetMaterialImageImportPath(state, type, path, ImportTextureFormat::Original);
+                    texture = std::make_shared<Texture::Texture2D>(image);
+                }
                 imagesToSave.push_back(image);
-            }
-            for (const auto& [path, image] : images.opacityImages) {
-                auto texture = std::make_shared<Texture::Texture2D>(image);
-                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Opacity, path);
-                images.opacityTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
-                imagesToSave.push_back(image);
-            }
-            for (const auto& [path, image] : images.normalImages) {
-                auto texture = std::make_shared<Texture::Texture2D>(image);
-                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Normal, path);
-                images.normalTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
-                imagesToSave.push_back(image);
-            }
-            for (const auto& [path, image] : images.roughnessImages) {
-                auto texture = std::make_shared<Texture::Texture2D>(image);
-                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Roughness, path);
-                images.roughnessTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
-                imagesToSave.push_back(image);
-            }
-            for (const auto& [path, image] : images.metallicImages) {
-                auto texture = std::make_shared<Texture::Texture2D>(image);
-                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Metallic, path);
-                images.metallicTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
-                imagesToSave.push_back(image);
-            }
-            for (const auto& [path, image] : images.displacementImages) {
-                auto texture = std::make_shared<Texture::Texture2D>(image);
-                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Displacement, path);
-                images.displacementTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
-                imagesToSave.push_back(image);
-            }
-            for (const auto& [path, image] : images.emissiveImages) {
-                auto texture = std::make_shared<Texture::Texture2D>(image);
-                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Emissive, path);
-                images.emissiveTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
-                imagesToSave.push_back(image);
-            }
+                return ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                };
+
+            for (const auto& [path, image] : images.baseColorImages)
+                images.baseColorTextures[path] = addTexture(MaterialImageType::BaseColor, path, image);
+            for (const auto& [path, image] : images.opacityImages)
+                images.opacityTextures[path] = addTexture(MaterialImageType::Opacity, path, image);
+            for (const auto& [path, image] : images.normalImages)
+                images.normalTextures[path] = addTexture(MaterialImageType::Normal, path, image);
+            for (const auto& [path, image] : images.roughnessImages)
+                images.roughnessTextures[path] = addTexture(MaterialImageType::Roughness, path, image);
+            for (const auto& [path, image] : images.metallicImages)
+                images.metallicTextures[path] = addTexture(MaterialImageType::Metallic, path, image);
+            for (const auto& [path, image] : images.displacementImages)
+                images.displacementTextures[path] = addTexture(MaterialImageType::Displacement, path, image);
+            for (const auto& [path, image] : images.emissiveImages)
+                images.emissiveTextures[path] = addTexture(MaterialImageType::Emissive, path, image);
 
             return imagesToSave;
 
@@ -1296,7 +1337,8 @@ namespace Atlas {
 
         }
 
-        std::string ModelImporter::GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type, const std::string& filename) {
+        std::string ModelImporter::GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type,
+            const std::string& filename, ImportTextureFormat textureFormat) {
 
             std::string typeName;
             switch (type) {
@@ -1318,7 +1360,7 @@ namespace Atlas {
                 typeName = "Invalid"; break;
             }
 
-            auto extension = Common::Path::GetFileType(filename); 
+            auto extension = textureFormat == ImportTextureFormat::KTX2 ? "ktx2" : Common::Path::GetFileType(filename);
             auto fileNameWithoutExtension = Common::Path::GetFileNameWithoutExtension(filename);
 
             return state.paths.texturePath + fileNameWithoutExtension + "_" + typeName + "." + extension;

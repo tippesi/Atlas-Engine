@@ -86,6 +86,11 @@ namespace Atlas::Scripting::Bindings {
 
     void GenerateModelImporterBindings(sol::table* ns) {
 
+        ns->new_enum<Loader::ImportTextureFormat>("ImportTextureFormat", {
+            { "Original", Loader::ImportTextureFormat::Original },
+            { "KTX2", Loader::ImportTextureFormat::KTX2 }
+            });
+
         auto type = ns->create_named("ModelImporter");
 
         auto importMeshOverload = sol::overload(
@@ -102,6 +107,12 @@ namespace Atlas::Scripting::Bindings {
                     return nullptr;
                 return Loader::ModelImporter::ImportMesh(filename, saveToDisk, maxTextureResolution);
             },
+            [](const std::string& filename, bool saveToDisk, int32_t maxTextureResolution,
+                Loader::ImportTextureFormat textureFormat) -> Ref<Mesh::Mesh> {
+                if (saveToDisk && !IsSafePath(filename))
+                    return nullptr;
+                return Loader::ModelImporter::ImportMesh(filename, saveToDisk, maxTextureResolution, textureFormat);
+            },
             [](const std::string& filename, Mesh::MeshMobility mobility) {
                 return Loader::ModelImporter::ImportMesh(filename, mobility);
             },
@@ -114,6 +125,12 @@ namespace Atlas::Scripting::Bindings {
                 if (saveToDisk && !IsSafePath(filename))
                     return nullptr;
                 return Loader::ModelImporter::ImportMesh(filename, mobility, saveToDisk, maxTextureResolution);
+            },
+            [](const std::string& filename, Mesh::MeshMobility mobility, bool saveToDisk, int32_t maxTextureResolution,
+                Loader::ImportTextureFormat textureFormat) -> Ref<Mesh::Mesh> {
+                if (saveToDisk && !IsSafePath(filename))
+                    return nullptr;
+                return Loader::ModelImporter::ImportMesh(filename, mobility, saveToDisk, maxTextureResolution, textureFormat);
             }
         );
 
@@ -134,11 +151,12 @@ namespace Atlas::Scripting::Bindings {
 
         type.set_function("ImportScene", [](const std::string& filename, vec3 min, vec3 max, int32_t depth,
             sol::optional<bool> saveToDisk, sol::optional<bool> makeMeshesStatic, sol::optional<bool> invertUVs,
-            sol::optional<int32_t> maxTextureResolution) -> Ref<Scene::Scene> {
+            sol::optional<int32_t> maxTextureResolution, sol::optional<Loader::ImportTextureFormat> textureFormat) -> Ref<Scene::Scene> {
                 if (saveToDisk.value_or(true) && !IsSafePath(filename))
                     return nullptr;
                 return Loader::ModelImporter::ImportScene(filename, min, max, depth, saveToDisk.value_or(true),
-                    makeMeshesStatic.value_or(false), invertUVs.value_or(false), maxTextureResolution.value_or(4096));
+                    makeMeshesStatic.value_or(false), invertUVs.value_or(false), maxTextureResolution.value_or(4096),
+                    textureFormat.value_or(Loader::ImportTextureFormat::Original));
             });
 
     }

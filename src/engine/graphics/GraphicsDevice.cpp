@@ -1107,6 +1107,9 @@ namespace Atlas {
             features.features.shaderInt64 = availableFeatures.features.shaderInt64;
             features.features.shaderInt16 = availableFeatures.features.shaderInt16;
             features.features.independentBlend = availableFeatures.features.independentBlend;
+            features.features.textureCompressionBC = availableFeatures.features.textureCompressionBC;
+            features.features.textureCompressionASTC_LDR = availableFeatures.features.textureCompressionASTC_LDR;
+            features.features.textureCompressionETC2 = availableFeatures.features.textureCompressionETC2;
 
             features11.storageBuffer16BitAccess = availableFeatures11.storageBuffer16BitAccess;
             features11.storagePushConstant16 = availableFeatures11.storagePushConstant16;

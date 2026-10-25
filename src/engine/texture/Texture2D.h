@@ -5,6 +5,7 @@
 
 #include "../common/Image.h"
 #include "../loader/ImageLoader.h"
+#include "../loader/KtxLoader.h"
 
 namespace Atlas {
 
@@ -60,6 +61,15 @@ namespace Atlas {
                 Filtering filtering = Filtering::Anisotropic);
 
             /**
+             * Constructs a Texture2D object from a ktx image object.
+             * @param image The ktx image object.
+             * @param wrapping The wrapping of the texture. Controls texture border behaviour.
+             * @param filtering The filtering of the texture.
+             */
+            explicit Texture2D(const Ref<Loader::KtxImage>& image, Wrapping wrapping = Wrapping::Repeat,
+                Filtering filtering = Filtering::Anisotropic, bool dedicatedMemory = false);
+
+            /**
              * Resizes the texture
              * @param width The new width of the texture.
              * @param height The new height of the texture.
@@ -77,6 +87,9 @@ namespace Atlas {
             void Save(std::string& filename, bool flipHorizontally = false);
 
         private:
+            void InitializeInternal(const Ref<Loader::KtxImage>& image, Wrapping wrapping,
+                Filtering filtering, bool dedicatedMemory = false);
+
             template<typename T>
             void InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping,
                 Filtering filtering, bool dedicatedMemory = false, bool usedForRenderTarget = false);

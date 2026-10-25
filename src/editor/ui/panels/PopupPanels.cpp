@@ -96,6 +96,7 @@ namespace Atlas::Editor::UI {
         static bool invertUVs = true;
         static bool addRigidBodies = true;
         static bool makeMeshesStatic = false;
+        static bool convertTexturesToKtx = false;
 
         bool popupNew = false;
 
@@ -127,14 +128,17 @@ namespace Atlas::Editor::UI {
             ImGui::Checkbox("Invert UVs", &invertUVs);
             ImGui::Checkbox("Attach mesh rigid body components", &addRigidBodies);
             ImGui::Checkbox("Make meshes static", &makeMeshesStatic);
+            ImGui::Checkbox("Convert textures to KTX2", &convertTexturesToKtx);
 
             auto confirm = RenderDialogFooter("Import", ValidateSceneName(name));
 
             if (confirm == DialogResult::Confirm) {
                 Singletons::blockingOperation->Block("Importing scene. Please wait...",
                     [&]() {
+                        auto textureFormat = convertTexturesToKtx ? Loader::ImportTextureFormat::KTX2 :
+                            Loader::ImportTextureFormat::Original;
                         auto scene = DataCreator::CreateSceneFromMesh(filename, minSize, maxSize,
-                            octreeDepth, invertUVs, addRigidBodies, makeMeshesStatic);
+                            octreeDepth, invertUVs, addRigidBodies, makeMeshesStatic, textureFormat);
                         scene->name = name;
 
                         bool alreadyExisted;

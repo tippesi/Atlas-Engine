@@ -34,6 +34,9 @@ namespace Atlas {
             void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent,
                 uint32_t layerOffset, uint32_t layerCount);
 
+            void UploadImageData(const void* data, size_t dataSize, Image* image,
+                const std::vector<VkBufferImageCopy>& copyRegions);
+
             // Doesn't work with the multi-transfer yet
             void RetrieveImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent,
                 uint32_t layerOffset, uint32_t layerCount, bool block = true);

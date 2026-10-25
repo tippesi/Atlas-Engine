@@ -4,6 +4,7 @@
 #include "../mesh/MeshData.h"
 #include "../animation/Animation.h"
 #include "../scene/Scene.h"
+#include "KtxLoader.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -17,19 +18,32 @@ namespace Atlas {
 
     namespace Loader {
 
+        enum class ImportTextureFormat {
+            Original = 0,
+            KTX2
+        };
+
         class ModelImporter {
 
         public:
             static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
                 bool saveToDisk = false, int32_t maxTextureResolution = 4096);
 
+            static Ref<Mesh::Mesh> ImportMesh(const std::string& filename, bool saveToDisk,
+                int32_t maxTextureResolution, ImportTextureFormat textureFormat);
+
             static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
                 Mesh::MeshMobility mobility, bool saveToDisk = false,
                 int32_t maxTextureResolution = 4096);
 
+            static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
+                Mesh::MeshMobility mobility, bool saveToDisk,
+                int32_t maxTextureResolution, ImportTextureFormat textureFormat);
+
             static Ref<Scene::Scene> ImportScene(const std::string& filename, vec3 min, vec3 max,
                 int32_t depth, bool saveToDisk = true, bool makeMeshesStatic = false,
-                bool invertUVs = false, int32_t maxTextureResolution = 4096);
+                bool invertUVs = false, int32_t maxTextureResolution = 4096,
+                ImportTextureFormat textureFormat = ImportTextureFormat::Original);
 
             static std::vector<Ref<Animation::Animation>> ImportAnimations(const std::string& filename,
                 bool saveToDisk = false);
@@ -73,6 +87,8 @@ namespace Atlas {
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> normalTextures;
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> displacementTextures;
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> emissiveTextures;
+
+                std::map<Ref<Common::Image<uint8_t>>, Ref<KtxImage>> ktxImages;
 
                 std::mutex mutexes[static_cast<int>(MaterialImageType::Count)];
 
@@ -151,7 +167,8 @@ namespace Atlas {
 
             static void InitImporterState(ImporterState& state, const std::string& filename, bool optimizeMeshes);
 
-            static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution, bool saveToDisk);
+            static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution,
+                ImportTextureFormat textureFormat, bool saveToDisk);
 
             static void LoadMaterial(ImporterState& state, aiMaterial* assimpMaterial, Material& material);
 
@@ -163,11 +180,14 @@ namespace Atlas {
             static Ref<Common::Image<uint8_t>> LoadMaterialImage(const ImporterState& state, const aiString& aiPath,
                 bool colorSpaceConversion, int32_t forceChannels, int32_t maxTextureResolution);
 
+            static void ConvertImagesToKtx(ImporterState& state);
+
             static std::vector<Ref<Common::Image<uint8_t>>> ImagesToTextures(ImporterState& state);
 
             static Paths GetPaths(const std::string& filename);
 
-            static std::string GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type, const std::string& filename);
+            static std::string GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type,
+                const std::string& filename, ImportTextureFormat textureFormat);
 
             static bool IsImageValid(Ref<Common::Image<uint8_t>>& image);
 

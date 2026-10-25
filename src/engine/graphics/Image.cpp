@@ -24,7 +24,8 @@ namespace Atlas {
                 imageInfo.mipLevels = mipLevels;
             }
             if (desc.mipMapping && desc.mipLevels) {
-                imageInfo.mipLevels = desc.mipLevels;
+                mipLevels = desc.mipLevels;
+                imageInfo.mipLevels = mipLevels;
             }
             if (desc.type == ImageType::Image1DArray || desc.type == ImageType::Image2DArray ||
                 desc.type == ImageType::ImageCube) {
@@ -121,6 +122,18 @@ namespace Atlas {
 
                 transferManager->UploadImageData(data, this, offset, extent, 
                     layerOffset, layerCount);
+            }
+
+        }
+
+        void Image::SetData(const void* data, size_t dataSize, const std::vector<VkBufferImageCopy>& copyRegions,
+            MemoryTransferManager* transferManager) {
+
+            if (!transferManager)
+                transferManager = memoryManager->transferManager;
+
+            if (domain == ImageDomain::Device) {
+                transferManager->UploadImageData(data, dataSize, this, copyRegions);
             }
 
         }
