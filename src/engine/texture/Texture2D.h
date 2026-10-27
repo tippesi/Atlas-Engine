@@ -86,6 +86,14 @@ namespace Atlas {
             template<typename T>
             void Save(std::string& filename, bool flipHorizontally = false);
 
+            /**
+             * Reads the texture back into an image. Floating point textures can be read into any image type,
+             * integer types are normalized like Common::Image::ConvertData does. Integer textures need the matching type.
+             * @note Only uint8_t, uint16_t and float are supported typenames.
+             */
+            template<typename T>
+            Ref<Common::Image<T>> GetImage();
+
         private:
             void InitializeInternal(const Ref<Loader::KtxImage>& image, Wrapping wrapping,
                 Filtering filtering, bool dedicatedMemory = false);
@@ -99,42 +107,56 @@ namespace Atlas {
         template<typename T>
         void Texture2D::Save(std::string& filename, bool flipHorizontally) {
 
-            auto image = CreateRef<Common::Image<T>>(width, height, channels);
-
-            std::vector<T> data;
+            auto image = GetImage<T>();
 
             if constexpr (std::is_same_v<T, uint8_t>) {
                 image->fileFormat = Common::ImageFormat::PNG;
                 filename += ".png";
-                data = GetData<T>();
             }
             else if constexpr (std::is_same_v<T, uint16_t>) {
                 image->fileFormat = Common::ImageFormat::PGM;
                 filename += ".pgm";
-                data = GetData<T>();
             }
             else if constexpr (std::is_same_v<T, float>) {
                 image->fileFormat = Common::ImageFormat::HDR;
                 filename += ".hdr";
-                // We have a lot of 16bit float textures, need some care
-                if (this->image->bitDepth < 32) {
-                    auto texData = GetData<float16>();
-                    std::transform(texData.begin(), texData.end(), std::back_inserter(data),
-                        [](float16 x) {
-                            return glm::detail::toFloat32(x);
-                        });
-                }
-                else {
-                    data = GetData<T>();
-                }
             }
-
-            image->SetData(data);
 
             if (flipHorizontally)
                 image->FlipHorizontally();
 
             Loader::ImageLoader::SaveImage(image, filename);
+
+        }
+
+        template<typename T>
+        Ref<Common::Image<T>> Texture2D::GetImage() {
+
+            auto image = CreateRef<Common::Image<T>>(width, height, channels);
+
+            auto halfFloat = format == VK_FORMAT_R16_SFLOAT || format == VK_FORMAT_R16G16_SFLOAT ||
+                format == VK_FORMAT_R16G16B16A16_SFLOAT;
+            auto fullFloat = format == VK_FORMAT_R32_SFLOAT || format == VK_FORMAT_R32G32_SFLOAT ||
+                format == VK_FORMAT_R32G32B32A32_SFLOAT;
+
+            if (!halfFloat && !fullFloat) {
+                AE_ASSERT(this->image->bitDepth == sizeof(T) * 8 && "Integer textures need an image of the same type");
+                image->SetData(GetData<T>());
+                return image;
+            }
+
+            Common::Image<float> floatImage(width, height, channels);
+            if (halfFloat) {
+                auto halfData = GetData<float16>();
+                std::transform(halfData.begin(), halfData.end(), floatImage.GetData().begin(),
+                    [](float16 value) { return glm::detail::toFloat32(value); });
+            }
+            else {
+                floatImage.SetData(GetData<float>());
+            }
+
+            image->SetData(floatImage.ConvertData<T>());
+            return image;
 
         }
 

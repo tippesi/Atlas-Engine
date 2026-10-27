@@ -88,6 +88,7 @@ namespace Atlas {
             float height = float(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
 
             auto instances = CalculateCharacterInstances(font, text, &characterCount);
+            ReserveInstances(characterCount);
             instanceBuffer.SetData(instances.data(), frameCharacterCount, characterCount);
 
             PushConstants constants {
@@ -130,6 +131,7 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             auto instances = CalculateCharacterInstances3D(font, text, halfSize, scale, &characterCount);
+            ReserveInstances(characterCount);
             instanceBuffer.SetData(instances.data(), frameCharacterCount, characterCount);
 
             auto right = glm::mat3_cast(rotation) * glm::vec3(1.0f, 0.0f, 0.0f);
@@ -174,6 +176,16 @@ namespace Atlas {
         void TextRenderer::Update() {
 
             frameCharacterCount = 0;
+
+        }
+
+        void TextRenderer::ReserveInstances(int32_t characterCount) {
+
+            // All texts of a frame share the buffer, writing past its end overwrites other GPU memory.
+            // Draws recorded earlier in the frame keep using the old buffer
+            auto requiredCount = size_t(frameCharacterCount) + size_t(characterCount);
+            if (requiredCount > instanceBuffer.GetElementCount())
+                instanceBuffer.SetSize(2 * requiredCount);
 
         }
 

@@ -19,6 +19,8 @@ namespace Atlas {
             float hitDistance = 10e12f;
             // Index of the hit triangle for mesh hits, -1 otherwise
             int32_t triangleIndex = -1;
+            // Whether a mesh hit is on the side its triangle faces, the normal always faces the ray
+            bool frontFace = true;
             T data;
         };
 

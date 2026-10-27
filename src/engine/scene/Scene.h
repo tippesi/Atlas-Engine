@@ -37,6 +37,7 @@
 #include <map>
 #include <functional>
 #include <mutex>
+#include <optional>
 
 namespace Atlas {
 
@@ -61,12 +62,12 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5), renderState(this)
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 6), renderState(this)
                 { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
-            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
+            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 6),
                 name(name), renderState(this) { RegisterSubscribers(); }
-            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
+            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 6) 
                 : SpacePartitioning(this, min, max, depth), name(name), renderState(this) { RegisterSubscribers(); }
 
             ~Scene();
@@ -79,6 +80,7 @@ namespace Atlas {
             void DestroyEntity(Entity entity, bool removeRecursively = true, 
                 bool parentDeleted = false);
 
+            // The duplicate (with copies of all descendants) has the same parent as the entity
             Entity DuplicateEntity(Entity entity);
 
             size_t GetEntityCount() const;
@@ -87,8 +89,14 @@ namespace Atlas {
 
             Entity GetParentEntity(Entity entity);
 
+            // The entity whose hierarchy is marked as root, invalid if the scene has none
+            Entity GetRootEntity();
+
             // World matrix of the transform, entities without one use the matrix of their hierarchy
             mat4 GetGlobalMatrix(Entity entity);
+
+            // Union of the mesh bounds of the entity and its descendants, empty if none of them has a loaded mesh
+            std::optional<Volume::AABB> GetHierarchyBounds(Entity entity);
 
             template<typename... Comp>
             Subset<Comp...> GetSubset();
@@ -121,6 +129,13 @@ namespace Atlas {
             bool HasMainCamera() const;
 
             LightComponent& GetMainLight();
+
+            /**
+             * Plays audio at a location without an entity, heard from the main camera. The sound pauses
+             * with the scene and is removed once it played to its end.
+             */
+            Ref<Audio::AudioStream> PlayAudio(const ResourceHandle<Audio::AudioData>& data, vec3 location,
+                float volume = 1.0f, float falloffFactor = 0.5f, float falloffPower = 2.0f);
 
             bool HasMainLight() const;
 
@@ -222,6 +237,17 @@ namespace Atlas {
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
+
+            struct PositionalAudio {
+                Ref<Audio::AudioStream> stream;
+                vec3 location;
+                float volume;
+                float falloffFactor;
+                float falloffPower;
+            };
+
+            std::vector<PositionalAudio> positionalAudios;
+            std::mutex positionalAudioMutex;
 
             Entity mainCameraEntity;
             Entity mainLightEntity;

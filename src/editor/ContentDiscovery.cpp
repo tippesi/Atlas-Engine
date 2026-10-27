@@ -104,7 +104,7 @@ namespace Atlas::Editor {
 
 		auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
-		for (const auto& dirEntry : std::filesystem::directory_iterator(directory->path)) {
+		for (const auto& dirEntry : std::filesystem::directory_iterator(directory->path, std::filesystem::directory_options::skip_permission_denied)) {
 			auto path = Common::Path::Normalize(dirEntry.path().string());
 			auto assetPath = Common::Path::GetRelative(dataDirectory, path);
 			if (assetPath.starts_with('/'))

@@ -96,9 +96,8 @@ namespace Atlas::PostProcessing {
 
         try_get_json(j, "dirtStrength", p.dirtStrength);
 
-        if (j.contains("dirtMap"))
-            p.dirtMap = ResourceManager<Texture::Texture2D>::GetOrLoadResource(j["dirtMap"], false,
-                Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0);
+        p.dirtMap = j.contains("dirtMap") ? ResourceManager<Texture::Texture2D>::GetOrLoadResource(j["dirtMap"], false,
+            Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0) : ResourceHandle<Texture::Texture2D>();
     }
 
     void to_json(json& j, const AutoExposure& p) {

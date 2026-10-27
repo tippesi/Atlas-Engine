@@ -50,7 +50,7 @@ namespace Atlas::Editor::UI {
         // Search should be case-insensitive
         std::transform(data.search.begin(), data.search.end(), data.search.begin(), ::tolower);
 
-        auto root = scene->GetEntityByName("Root");
+        auto root = scene->GetRootEntity();
         auto aliveCount = scene->entityManager.Alive();
         // Aquire scene here such that it can't be freed. The job only works on copies, the scene and UI can change meanwhile
         JobSystem::Execute(searchJob, [&, scene = scene, root = root, aliveCount, data = std::move(data)](JobData&) mutable {
@@ -78,7 +78,7 @@ namespace Atlas::Editor::UI {
 
             bool selectionChanged = false;
 
-            auto root = scene->GetEntityByName("Root");
+            auto root = scene->GetRootEntity();
 
             if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
                 // Unselect entity in this case, since this popup could only be opened by clicking on emtpy space
@@ -465,26 +465,13 @@ namespace Atlas::Editor::UI {
         *selectionChanged |= createEntity | deleteEntity | duplicateEntity;
 
         if (droppedEntities) {
-            // No hierarchy component, so create one
-            if (!hierarchyComponent) {
-                entity.AddComponent<HierarchyComponent>();
-                hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
-            }
-
             for (auto ecsEntity : selectedEntities) {
                 Scene::Entity dropEntity(ecsEntity, &scene->entityManager);
 
                 if (entity == dropEntity)
                     continue;
 
-                auto dropParentEntity = scene->GetParentEntity(dropEntity);
-
-                if (dropParentEntity.IsValid()) {
-                    auto& dropParentHierarchy = dropParentEntity.GetComponent<HierarchyComponent>();
-                    dropParentHierarchy.RemoveChild(dropEntity);
-                }
-
-                hierarchyComponent->AddChild(dropEntity);
+                dropEntity.SetParent(entity);
             }
 
         }
@@ -629,26 +616,11 @@ namespace Atlas::Editor::UI {
             if (!entity.IsValid())
                 continue;
 
-            auto parentEntity = scene->GetParentEntity(entity);
-
-            // Create new hierarchy before retrieving other components since they might become
-            // invalid when internal ECS storage resizes
             auto newEntity = scene->DuplicateEntity(entity);
 
-            HierarchyComponent* component;
-            if (parentEntity.IsValid()) {
-                component = parentEntity.TryGetComponent<HierarchyComponent>();
-            }
-            else {
-                auto root = scene->GetEntityByName("Root");
-                component = root.TryGetComponent<HierarchyComponent>();
-            }
-
-            AE_ASSERT(component != nullptr);
-
-            if (component != nullptr) {
-                component->AddChild(newEntity);
-            }
+            // The hierarchy only shows entities below the root
+            if (!scene->GetParentEntity(newEntity).IsValid())
+                newEntity.SetParent(scene->GetRootEntity());
 
             SelectEntity(newEntity, true);
         }
@@ -676,9 +648,9 @@ namespace Atlas::Editor::UI {
         parentMatches |= data.search.empty();
 
         if (data.filter != HierarchyFilterBits::AllBit) {
-            auto checkBit = [&]<class T>(ECS::Pool<T>&pool, HierarchyFilterBits bit) -> bool {
+            auto checkBit = [&](const ECS::Storage& storage, HierarchyFilterBits bit) -> bool {
                 if (data.filter & bit) {
-                    return pool.Contains(entity);
+                    return storage.Contains(entity);
                 }
                 return false;
             };

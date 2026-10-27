@@ -280,6 +280,8 @@ namespace Atlas {
             meshData.name = Common::Path::GetFileNameWithoutExtension(filename);
 
             mesh->name = meshData.name;
+            // Assimp puts the texture coordinate origin at the bottom left
+            mesh->invertUVs = true;
             mesh->UpdateData();
 
             auto meshFilename = state.paths.meshPath + mesh->name + ".aemesh";
@@ -1285,19 +1287,22 @@ namespace Atlas {
             auto& images = state.images;
             std::vector<Ref<Common::Image<uint8_t>>> imagesToSave;
 
+            // Models sharing a texture reuse the loaded one, otherwise importing many models in a row creates a
+            // GPU texture per model that is only released frames later
             auto addTexture = [&](MaterialImageType type, const std::string& path,
                 const Ref<Common::Image<uint8_t>>& image) -> ResourceHandle<Texture::Texture2D> {
-                Ref<Texture::Texture2D> texture;
-                if (images.ktxImages.contains(image)) {
-                    image->fileName = GetMaterialImageImportPath(state, type, path, ImportTextureFormat::KTX2);
-                    texture = std::make_shared<Texture::Texture2D>(images.ktxImages[image]);
-                }
-                else {
-                    image->fileName = GetMaterialImageImportPath(state, type, path, ImportTextureFormat::Original);
-                    texture = std::make_shared<Texture::Texture2D>(image);
-                }
+                auto isKtx = images.ktxImages.contains(image);
+                image->fileName = GetMaterialImageImportPath(state, type, path,
+                    isKtx ? ImportTextureFormat::KTX2 : ImportTextureFormat::Original);
                 imagesToSave.push_back(image);
-                return ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+
+                auto texture = ResourceManager<Texture::Texture2D>::GetResource(image->fileName);
+                if (texture.IsValid())
+                    return texture;
+
+                auto created = isKtx ? std::make_shared<Texture::Texture2D>(images.ktxImages[image]) :
+                    std::make_shared<Texture::Texture2D>(image);
+                return ResourceManager<Texture::Texture2D>::AddResource(image->fileName, created);
                 };
 
             for (const auto& [path, image] : images.baseColorImages)

@@ -4,6 +4,7 @@
 #include "components/Components.h"
 #include "components/LuaScriptComponent.h"
 #include "raytracing/RayTracingManager.h"
+#include "../audio/AudioManager.h"
 
 namespace Atlas {
 
@@ -52,6 +53,7 @@ namespace Atlas {
             auto newEntity = CreateEntity();
 
             DuplicateEntityComponents(entity, newEntity, nullptr);
+            newEntity.SetParent(GetParentEntity(entity));
 
             return newEntity;
 
@@ -89,6 +91,18 @@ namespace Atlas {
 
         }
 
+        Entity Scene::GetRootEntity() {
+
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
+            for (auto entity : hierarchySubset) {
+                if (hierarchySubset.Get(entity).root)
+                    return { entity, &entityManager };
+            }
+
+            return { ECS::EntityConfig::InvalidEntity, &entityManager };
+
+        }
+
         mat4 Scene::GetGlobalMatrix(Entity entity) {
 
             if (!entity.IsValid())
@@ -101,6 +115,33 @@ namespace Atlas {
                 return hierarchyComponent->globalMatrix;
 
             return mat4(1.0f);
+
+        }
+
+        std::optional<Volume::AABB> Scene::GetHierarchyBounds(Entity entity) {
+
+            std::optional<Volume::AABB> bounds;
+
+            std::vector<Entity> entities = { entity };
+            while (!entities.empty()) {
+                auto current = entities.back();
+                entities.pop_back();
+
+                auto meshComponent = current.TryGetComponent<MeshComponent>();
+                if (meshComponent && meshComponent->mesh.IsLoaded()) {
+                    if (bounds)
+                        bounds->Grow(meshComponent->aabb);
+                    else
+                        bounds = meshComponent->aabb;
+                }
+
+                if (auto hierarchyComponent = current.TryGetComponent<HierarchyComponent>()) {
+                    const auto& children = hierarchyComponent->GetChildren();
+                    entities.insert(entities.end(), children.begin(), children.end());
+                }
+            }
+
+            return bounds;
 
         }
 
@@ -549,6 +590,22 @@ namespace Atlas {
                         mainCamera.GetLastLocation(), mainCamera.right);
                     });
 
+                {
+                    std::lock_guard lock(positionalAudioMutex);
+                    auto listener = mainCamera.GetLocation();
+                    auto scenePaused = paused || (physicsWorld && physicsWorld->pauseSimulation);
+                    std::erase_if(positionalAudios, [](const PositionalAudio& audio) { return audio.stream->IsFinished(); });
+                    for (auto& audio : positionalAudios) {
+                        if (scenePaused) {
+                            audio.stream->Pause();
+                            continue;
+                        }
+                        audio.stream->Resume();
+                        audio.stream->Spatialize(audio.location, listener, mainCamera.right, audio.volume, audio.falloffFactor,
+                            audio.falloffPower, 0.001f);
+                    }
+                }
+
                 auto& audioVolumeComponentPool = entityManager.GetPool<AudioVolumeComponent>();
                 JobSystem::ParallelFor(jobGroup, int32_t(audioVolumeComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
                     auto entity = audioVolumeComponentPool[idx];
@@ -674,6 +731,22 @@ namespace Atlas {
 
         }
 
+        Ref<Audio::AudioStream> Scene::PlayAudio(const ResourceHandle<Audio::AudioData>& data, vec3 location,
+            float volume, float falloffFactor, float falloffPower) {
+
+            // Silent until it is placed relative to the listener
+            auto stream = Audio::AudioManager::Play(data, 0.0f);
+            if (HasMainCamera()) {
+                auto& camera = GetMainCamera();
+                stream->Spatialize(location, camera.GetLocation(), camera.right, volume, falloffFactor, falloffPower, 0.001f);
+            }
+
+            std::lock_guard lock(positionalAudioMutex);
+            positionalAudios.push_back({ stream, location, volume, falloffFactor, falloffPower });
+            return stream;
+
+        }
+
         LightComponent& Scene::GetMainLight() {
 
             return mainLightEntity.GetComponent<LightComponent>();
@@ -733,15 +806,25 @@ namespace Atlas {
                 renderableMovableEntityOctree.QueryRay(candidates, octreeRay);
 
                 // The bounds test comes first, most candidates are rejected by it
+                std::vector<Entity> hitCandidates;
                 for (auto sceneEntity : candidates) {
                     auto meshCompPtr = entityManager.TryGet<MeshComponent>(sceneEntity);
-                    if (!meshCompPtr)
-                        continue;
+                    if (meshCompPtr && octreeRay.Intersects(meshCompPtr->aabb))
+                        hitCandidates.push_back(sceneEntity);
+                }
 
-                    const auto& meshComp = *meshCompPtr;
+                // The order in the octree depends on when meshes were (re)inserted, e.g. after loading. Hits at the
+                // same distance go to the first candidate, a fixed order keeps queries reproducible
+                auto entityLess = [](const Entity& a, const Entity& b) { return ECS::Entity(a) < ECS::Entity(b); };
+                auto entityEqual = [](const Entity& a, const Entity& b) { return ECS::Entity(a) == ECS::Entity(b); };
+                std::sort(hitCandidates.begin(), hitCandidates.end(), entityLess);
+                hitCandidates.erase(std::unique(hitCandidates.begin(), hitCandidates.end(), entityEqual), hitCandidates.end());
+
+                for (auto sceneEntity : hitCandidates) {
+                    const auto& meshComp = entityManager.Get<MeshComponent>(sceneEntity);
+                    // Closer hits of earlier candidates shorten the ray
                     auto boxRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
-                    auto boxDistance = 0.0f;
-                    if (!boxRay.Intersects(meshComp.aabb, boxDistance))
+                    if (!boxRay.Intersects(meshComp.aabb))
                         continue;
 
                     auto transformCompPtr = entityManager.TryGet<TransformComponent>(sceneEntity);
@@ -787,7 +870,8 @@ namespace Atlas {
                     result.data = sceneEntity;
                     result.hitDistance = localRay.tMax;
                     // Report the side the ray hit
-                    result.normal = glm::dot(normal, ray.direction) > 0.0f ? -normal : normal;
+                    result.frontFace = glm::dot(normal, ray.direction) <= 0.0f;
+                    result.normal = result.frontFace ? normal : -normal;
                     result.triangleIndex = hitTriangle;
                 }
             }
@@ -809,6 +893,7 @@ namespace Atlas {
                         result.data = { entity, &entityManager };
                         result.hitDistance = dist;
                         result.normal = vec3(0.0f);
+                        result.triangleIndex = -1;
                     }
                 }
             }
@@ -825,6 +910,7 @@ namespace Atlas {
                         result.valid = true;
                         result.hitDistance = hitDistance;
                         result.normal = hitNormal;
+                        result.triangleIndex = -1;
                     }
                 }
             }
@@ -1156,10 +1242,10 @@ namespace Atlas {
                         childEntities.push_back(newEntity);
                     }
 
-                    // Comp might be dereferenced already
-                    comp = dstEntity.GetComponent<HierarchyComponent>();
+                    // Creating the children can move the component, so it's looked up again
+                    auto& newComp = dstEntity.GetComponent<HierarchyComponent>();
                     for (auto entity : childEntities)
-                        comp.AddChild(entity);
+                        newComp.AddChild(entity);
                 }
             }
 

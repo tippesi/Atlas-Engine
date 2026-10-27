@@ -201,6 +201,7 @@ namespace Atlas::Scene::Components {
             typeProperties.at("innerConeAngle").get_to(p.properties.spot.innerConeAngle);
         }
 
+        p.shadow = nullptr;
         if (j.contains("shadow")) {
             p.shadow = CreateRef<Lighting::Shadow>();
             j.at("shadow").get_to(*p.shadow);
@@ -333,6 +334,8 @@ namespace Atlas::Scene::Components {
             {"slowVelocity", p.slowVelocity},
             {"fastVelocity", p.fastVelocity},
             {"jumpVelocity", p.jumpVelocity},
+            {"acceleration", p.acceleration},
+            {"deceleration", p.deceleration},
             {"allowInput", p.allowInput},
         };
 
@@ -345,6 +348,8 @@ namespace Atlas::Scene::Components {
         j.at("fastVelocity").get_to(p.fastVelocity);
         j.at("jumpVelocity").get_to(p.jumpVelocity);
         j.at("allowInput").get_to(p.allowInput);
+        try_get_json(j, "acceleration", p.acceleration);
+        try_get_json(j, "deceleration", p.deceleration);
 
         if (j.contains("creationSettings")) {
             p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();

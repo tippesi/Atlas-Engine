@@ -161,6 +161,21 @@ namespace Atlas {
 
         }
 
+        const MeshSubData* MeshData::GetSubDataOfTriangle(int32_t triangleIndex) const {
+
+            if (triangleIndex < 0)
+                return nullptr;
+
+            auto index = uint32_t(triangleIndex) * 3;
+            for (const auto& sub : subData) {
+                if (index >= sub.indicesOffset && index < sub.indicesOffset + sub.indicesCount)
+                    return &sub;
+            }
+
+            return nullptr;
+
+        }
+
         void MeshData::DeepCopy(const MeshData& that) {
 
             name = that.name;

@@ -624,7 +624,7 @@ namespace Atlas::Editor::UI {
         if (entity.HasComponent<MeshComponent>()) {
             const auto& meshComponent = entity.GetComponent<MeshComponent>();
             auto aabb = meshComponent.aabb;
-            wrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<AudioComponent>()) {
             const auto& audioComponent = entity.GetComponent<AudioComponent>();
@@ -636,29 +636,28 @@ namespace Atlas::Editor::UI {
 
             // After this the audio will be cutoff
             float radius = powf(audioComponent.falloffFactor / audioComponent.cutoff, 1.0f / audioComponent.falloffPower);
-            wrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<AudioVolumeComponent>()) {
             const auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
             auto aabb = audioVolumeComponent.GetTransformedAABB();
-            wrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<CameraComponent>()) {
             const auto& cameraComponent = entity.GetComponent<CameraComponent>();
-            wrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f));
         }
         if (entity.HasComponent<LightComponent>()) {
             const auto& lightComponent = entity.GetComponent<LightComponent>();
             if (lightComponent.shadow) {
                 for (const auto& component : lightComponent.shadow->views)
-                    wrapper.RenderLineFrustum(
-                        Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f), testDepth);
+                    wrapper.GetBatch(testDepth)->AddLineFrustum(Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f));
             }
         }
         if (entity.HasComponent<TextComponent>()) {
             const auto& textComponent = entity.GetComponent<TextComponent>();
             auto rectangle = textComponent.GetRectangle();
-            wrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f));
         }
         if (entity.HasComponent<SplineComponent>()) {
             const auto& splineComponent = entity.GetComponent<SplineComponent>();
@@ -670,7 +669,7 @@ namespace Atlas::Editor::UI {
             lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));
 
             if (!splineComponent.controlPoints.empty())
-                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
+                wrapper.GetBatch(testDepth)->AddLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f));
 
             const int32_t linesPerSegment = 20;
             for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()) - 1; i++) {
@@ -679,13 +678,13 @@ namespace Atlas::Editor::UI {
                     auto splinePoint = splineComponent.GetInterpolatedFromIndex(i, t);
                     splinePoint.position = vec3(globalMatrix * vec4(splinePoint.position, 1.0f));
 
-                    wrapper.RenderLine(lastSplinePoint.position, splinePoint.position, 
-                        vec3(1.0f, 0.15f, 0.0f), testDepth);
+                    wrapper.GetBatch(testDepth)->AddLine(lastSplinePoint.position, splinePoint.position,
+                        vec3(1.0f, 0.15f, 0.0f), vec3(1.0f, 0.15f, 0.0f));
 
                     lastSplinePoint = splinePoint;
                 }
 
-                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
+                wrapper.GetBatch(testDepth)->AddLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f));
             }
         }
 
@@ -695,13 +694,9 @@ namespace Atlas::Editor::UI {
         auto parentEntity = sceneHierarchyPanel.selectedEntity;
 
         if (!parentEntity.IsValid())
-            parentEntity = scene->GetEntityByName("Root");
+            parentEntity = scene->GetRootEntity();
 
-        if (!parentEntity.HasComponent<HierarchyComponent>())
-            parentEntity.AddComponent<HierarchyComponent>();
-
-        auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
-        parentHierarchy.AddChild(entity);
+        entity.SetParent(parentEntity);
 
         // We don't know where this entity came from, so disable root hierarchy in any case to
         // avoid setting the matrices twice and getting unwanted movements
@@ -852,13 +847,13 @@ namespace Atlas::Editor::UI {
             auto x = center.x + offset;
             auto xIndex = int64_t(std::round(x / spacing));
             auto xColor = std::abs(x) < 0.5f * spacing ? zAxisColor : (xIndex % 10 == 0 ? majorColor : minorColor);
-            wrapper.RenderLine(vec3(x, 0.0f, center.y - extent), vec3(x, 0.0f, center.y + extent), xColor, true);
+            wrapper.GetBatch(true)->AddLine(vec3(x, 0.0f, center.y - extent), vec3(x, 0.0f, center.y + extent), xColor, xColor);
 
             // Line parallel to the x axis at this z position
             auto z = center.y + offset;
             auto zIndex = int64_t(std::round(z / spacing));
             auto zColor = std::abs(z) < 0.5f * spacing ? xAxisColor : (zIndex % 10 == 0 ? majorColor : minorColor);
-            wrapper.RenderLine(vec3(center.x - extent, 0.0f, z), vec3(center.x + extent, 0.0f, z), zColor, true);
+            wrapper.GetBatch(true)->AddLine(vec3(center.x - extent, 0.0f, z), vec3(center.x + extent, 0.0f, z), zColor, zColor);
         }
 
     }
@@ -871,7 +866,7 @@ namespace Atlas::Editor::UI {
             return Scene::Entity();
 
         if (!parent.IsValid())
-            parent = scene->GetEntityByName("Root");
+            parent = scene->GetRootEntity();
 
         const char* name = "Entity";
         switch (type) {
@@ -887,9 +882,7 @@ namespace Atlas::Editor::UI {
         auto entity = scene->CreateEntity();
         entity.AddComponent<NameComponent>(name);
 
-        if (!parent.HasComponent<HierarchyComponent>())
-            parent.AddComponent<HierarchyComponent>();
-        parent.GetComponent<HierarchyComponent>().AddChild(entity);
+        entity.SetParent(parent);
 
         // Place it in front of the editor camera, such that it is directly visible
         auto worldPosition = vec3(0.0f);
@@ -956,10 +949,9 @@ namespace Atlas::Editor::UI {
             if (!entity.IsValid())
                 continue;
 
-            // Meshes have proper world space bounds, everything else is treated as a small box around its origin
-            auto meshComponent = entity.TryGetComponent<MeshComponent>();
-            if (meshComponent) {
-                bounds.Grow(meshComponent->aabb);
+            // Meshes of the hierarchy have proper world space bounds, everything else is treated as a small box around its origin
+            if (auto hierarchyBounds = scene->GetHierarchyBounds(entity)) {
+                bounds.Grow(*hierarchyBounds);
             }
             else {
                 auto position = vec3(scene->GetGlobalMatrix(entity)[3]);
@@ -1014,7 +1006,7 @@ namespace Atlas::Editor::UI {
         float brushRadius = terrainPanel.brushSize * scene->terrain->resolution;
 
         auto intersection = ray.Get(result.hitDistance);
-        viewportPanel.primitiveBatchWrapper.RenderLineSphere(intersection, brushRadius, vec3(1.0f), true);
+        viewportPanel.primitiveBatchWrapper.GetBatch(true)->AddLineSphere(intersection, brushRadius, vec3(1.0f));
 
         // Check for right mouse button down
         if (brushTerrain) {

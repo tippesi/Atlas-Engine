@@ -138,7 +138,7 @@ namespace Atlas::Scene::Components {
                 }
             }
             catch (const std::exception& e) {
-                Atlas::Log::Message("Error while compiling lua script "
+                Atlas::Log::Error("Error while compiling lua script "
                     + script.GetResource()->GetFileName() + ": " + std::string(e.what()));
             }
         }
@@ -168,7 +168,7 @@ namespace Atlas::Scene::Components {
         catch (const std::exception& e) {
             updateFunction.reset();
             scriptEnvironment.reset();
-            Atlas::Log::Message("Error while compiling lua script "
+            Atlas::Log::Error("Error while compiling lua script "
                 + script.GetResource()->GetFileName() + ": " + std::string(e.what()));
 
             return false;

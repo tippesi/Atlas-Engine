@@ -104,7 +104,13 @@ namespace Atlas::Scripting::Bindings {
             "KeyRight", Keycode::KeyRight,
             "KeyLeft", Keycode::KeyLeft,
             "KeyDown", Keycode::KeyDown,
-            "KeyUp", Keycode::KeyUp
+            "KeyUp", Keycode::KeyUp,
+            "KeyLeftControl", Keycode::KeyLeftControl,
+            "KeyLeftShift", Keycode::KeyLeftShift,
+            "KeyLeftAlt", Keycode::KeyLeftAlt,
+            "KeyRightControl", Keycode::KeyRightControl,
+            "KeyRightShift", Keycode::KeyRightShift,
+            "KeyRightAlt", Keycode::KeyRightAlt
         );
 
         ns->new_usertype<Input::KeyboardMap>("KeyboardMap",

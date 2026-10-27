@@ -12,6 +12,7 @@ namespace Atlas::Scripting::Bindings {
         float hitDistance = 0.0f;
         vec3 position = vec3(0.0f);
         vec3 normal = vec3(0.0f);
+        bool frontFace = true;
         Scene::Entity entity;
     };
 
@@ -52,6 +53,7 @@ namespace Atlas::Scripting::Bindings {
         hit.hitDistance = result.hitDistance;
         hit.position = ray.Get(result.hitDistance);
         hit.normal = result.normal;
+        hit.frontFace = result.frontFace;
         hit.entity = result.data;
 
         return hit;
@@ -182,6 +184,7 @@ namespace Atlas::Scripting::Bindings {
             "hitDistance", &RayHit::hitDistance,
             "position", &RayHit::position,
             "normal", &RayHit::normal,
+            "frontFace", &RayHit::frontFace,
             "entity", &RayHit::entity
             );
 
@@ -215,6 +218,8 @@ namespace Atlas::Scripting::Bindings {
             "DuplicateEntity", &Scene::Scene::DuplicateEntity,
             "GetEntityByName", &Scene::Scene::GetEntityByName,
             "GetParentEntity", &Scene::Scene::GetParentEntity,
+            "GetRootEntity", &Scene::Scene::GetRootEntity,
+            "GetHierarchyBounds", &Scene::Scene::GetHierarchyBounds,
             "GetGlobalMatrix", &Scene::Scene::GetGlobalMatrix,
             "GetEntityCount", &Scene::Scene::GetEntityCount,
             "GetMainCamera", [](Scene::Scene& scene, sol::this_state state) -> sol::object {
@@ -230,14 +235,20 @@ namespace Atlas::Scripting::Bindings {
             "GetMeshes", &Scene::Scene::GetMeshes,
             "GetTime", &Scene::Scene::GetTime,
             "GetDeltaTime", &Scene::Scene::GetDeltaTime,
+            "PlayAudio", [](Scene::Scene& scene, ResourceHandle<Audio::AudioData>& data, const vec3& location,
+                sol::optional<float> volume, sol::optional<float> falloffFactor) {
+                return scene.PlayAudio(data, location, volume.value_or(1.0f), falloffFactor.value_or(0.5f));
+            },
             "paused", &Scene::Scene::paused,
             "wind", &Scene::Scene::wind,
             "sky", &Scene::Scene::sky,
             "fog", &Scene::Scene::fog,
+            "ocean", &Scene::Scene::ocean,
             "irradianceVolume", &Scene::Scene::irradianceVolume,
             "reflection", &Scene::Scene::reflection,
             "sss", &Scene::Scene::sss,
             "ssgi", &Scene::Scene::ssgi,
+            "rtgi", &Scene::Scene::rtgi,
             "postProcessing", &Scene::Scene::postProcessing
             );
 
@@ -249,6 +260,7 @@ namespace Atlas::Scripting::Bindings {
             "IsValid", &Scene::Entity::IsValid,
             "GetID", &Scene::Entity::GetID,
             "GetVersion", &Scene::Entity::GetVersion,
+            "SetParent", &Scene::Entity::SetParent,
             // Add components
             "AddAnimationComponent", &AddComponentRef<AnimationComponent, ResourceHandle<Animation::Animation>&>,
             "AddAudioComponent", &AddComponentRef<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
@@ -430,13 +442,24 @@ namespace Atlas::Scripting::Bindings {
             "volumetric", &LightComponent::volumetric
         );
 
+        ns->new_usertype<Ocean::Ocean>("Ocean",
+            "displacementScale", &Ocean::Ocean::displacementScale,
+            "choppynessScale", &Ocean::Ocean::choppynessScale,
+            "shoreWaveAmplitude", &Ocean::Ocean::shoreWaveAmplitude,
+            "shoreWaveSpeed", &Ocean::Ocean::shoreWaveSpeed,
+            "waterBodyColor", &Ocean::Ocean::waterBodyColor,
+            "deepWaterBodyColor", &Ocean::Ocean::deepWaterBodyColor,
+            "enable", &Ocean::Ocean::enable
+        );
+
         ns->new_usertype<MeshComponent>("MeshComponent",
             "mesh", &MeshComponent::mesh,
             "visible", sol::property([](MeshComponent& component) { return component.visible; },
                 [](MeshComponent& component, bool visible) { component.SetVisible(visible); }),
             "dontCull", sol::property([](MeshComponent& component) { return component.dontCull; },
                 [](MeshComponent& component, bool dontCull) { component.SetDontCull(dontCull); }),
-            "aabb", &MeshComponent::aabb
+            "aabb", &MeshComponent::aabb,
+            "ChangeResource", &MeshComponent::ChangeResource
         );
 
         ns->new_usertype<NameComponent>("NameComponent",
@@ -486,7 +509,13 @@ namespace Atlas::Scripting::Bindings {
             "GetGroundVelocity", &PlayerComponent::GetGroundVelocity,
             "IsOnGround", &PlayerComponent::IsOnGround,
             "stickToGroundDist", &PlayerComponent::stickToGroundDist,
-            "walkStairsStepUpDist", &PlayerComponent::walkStairsStepUpDist
+            "walkStairsStepUpDist", &PlayerComponent::walkStairsStepUpDist,
+            "slowVelocity", &PlayerComponent::slowVelocity,
+            "fastVelocity", &PlayerComponent::fastVelocity,
+            "jumpVelocity", &PlayerComponent::jumpVelocity,
+            "acceleration", &PlayerComponent::acceleration,
+            "deceleration", &PlayerComponent::deceleration,
+            "allowInput", &PlayerComponent::allowInput
         );
 
         ns->new_usertype<TextComponent>("TextComponent",

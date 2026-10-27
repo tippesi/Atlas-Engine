@@ -6,6 +6,7 @@
 
 #include <stb_image_resize2.h>
 
+#include <algorithm>
 #include <vector>
 #include <type_traits>
 
@@ -130,6 +131,25 @@ namespace Atlas {
              * @param value
              */
             void Fill(T value);
+
+            /**
+             * Fills a rectangle of mipmap level 0 with a pixel value. Parts outside of the image are skipped.
+             * @param value The pixel value in the range of the image type, like the result of Sample()
+             */
+            void FillRect(int32_t x, int32_t y, int32_t width, int32_t height, vec4 value);
+
+            /**
+             * Blends a pixel value into a pixel of mipmap level 0. Positions outside of the image are skipped.
+             * @param value The pixel value in the range of the image type, like the result of Sample()
+             * @param alpha The weight of the value, 1 replaces the pixel.
+             */
+            void BlendPixel(int32_t x, int32_t y, vec4 value, float alpha = 1.0f);
+
+            /**
+             * Copies an image with the same channel count into mipmap level 0 at the given position.
+             * Parts outside of the image are skipped.
+             */
+            void Blit(const Image<T>& source, int32_t x, int32_t y);
 
             /**
              * Returns the mipmap level structure at a given level.
@@ -497,6 +517,57 @@ namespace Atlas {
         void Image<T>::Fill(T value) {
 
             std::fill(GetData().begin(), GetData().end(), value);
+
+        }
+
+        template<typename T>
+        void Image<T>::FillRect(int32_t x, int32_t y, int32_t width, int32_t height, vec4 value) {
+
+            auto& data = mipLevels[0].data;
+            auto maxX = std::min(x + width, this->width);
+            auto maxY = std::min(y + height, this->height);
+
+            for (int32_t py = std::max(y, 0); py < maxY; py++) {
+                for (int32_t px = std::max(x, 0); px < maxX; px++) {
+                    auto index = (py * this->width + px) * channels;
+                    for (int32_t i = 0; i < channels; i++)
+                        data[index + i] = T(value[i]);
+                }
+            }
+
+        }
+
+        template<typename T>
+        void Image<T>::BlendPixel(int32_t x, int32_t y, vec4 value, float alpha) {
+
+            if (x < 0 || y < 0 || x >= width || y >= height)
+                return;
+
+            auto& data = mipLevels[0].data;
+            auto index = (y * width + x) * channels;
+            for (int32_t i = 0; i < channels; i++)
+                data[index + i] = T(glm::mix(float(data[index + i]), value[i], alpha));
+
+        }
+
+        template<typename T>
+        void Image<T>::Blit(const Image<T>& source, int32_t x, int32_t y) {
+
+            AE_ASSERT(source.channels == channels && "Images need the same channel count");
+
+            const auto& sourceData = source.mipLevels[0].data;
+            auto& data = mipLevels[0].data;
+
+            auto minX = std::max(x, 0);
+            auto maxX = std::min(x + source.width, width);
+            if (minX >= maxX)
+                return;
+
+            for (int32_t py = std::max(y, 0); py < std::min(y + source.height, height); py++) {
+                auto sourceIndex = ((py - y) * source.width + minX - x) * channels;
+                std::copy_n(sourceData.begin() + sourceIndex, (maxX - minX) * channels,
+                    data.begin() + (py * width + minX) * channels);
+            }
 
         }
 

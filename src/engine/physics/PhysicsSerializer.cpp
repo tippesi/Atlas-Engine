@@ -1,4 +1,5 @@
 #include "PhysicsSerializer.h"
+#include "loader/MeshLoader.h"
 
 #include <Jolt/Physics/PhysicsScene.h>
 #include <Jolt/ObjectStream/ObjectStreamTextIn.h>
@@ -25,8 +26,13 @@ namespace Atlas::Physics {
             std::string resourcePath;
             j.at("resourcePath").get_to(resourcePath);
 
-            p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
+            // Mesh components load the same mesh file, both have to use the same loader
+            if (resourcePath.ends_with(".aemesh"))
+                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                    ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
+            else
+                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                    ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
         }
     }
 

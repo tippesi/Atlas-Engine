@@ -98,6 +98,14 @@ namespace Atlas {
              */
             void GetRestPoseVertices(std::vector<vec3>& restVertices, std::vector<vec4>& restNormals) const;
 
+
+            /**
+             * Returns the sub data a triangle belongs to, e.g. to get the material of a ray hit
+             * @param triangleIndex Index of the triangle like Volume::RayResult::triangleIndex
+             * @return The sub data or nullptr for invalid indices
+             */
+            const MeshSubData* GetSubDataOfTriangle(int32_t triangleIndex) const;
+
             std::string name;
 
             DataComponent<uint32_t> indices;

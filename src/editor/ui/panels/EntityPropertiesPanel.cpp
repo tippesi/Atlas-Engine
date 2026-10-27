@@ -35,12 +35,8 @@ namespace Atlas::Editor::UI {
             }
 
             if (entity.HasComponent<MeshComponent>()) {
-                // Create a copy here to be able to change the resource
-                auto comp = entity.GetComponent<MeshComponent>();
                 RenderComponentPanel("Mesh", scene,
-                    entity, meshComponentPanel, comp);
-                entity.RemoveComponent<MeshComponent>();
-                entity.AddComponent<MeshComponent>(comp);
+                    entity, meshComponentPanel, entity.GetComponent<MeshComponent>());
             }
 
             if (entity.HasComponent<AnimationComponent>()) {
@@ -103,6 +99,8 @@ namespace Atlas::Editor::UI {
                 newComp.slowVelocity = comp.slowVelocity;
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
+                newComp.acceleration = comp.acceleration;
+                newComp.deceleration = comp.deceleration;
             }
 
             if (entity.HasComponent<SplineComponent>()) {

@@ -101,6 +101,10 @@ namespace Atlas {
 
             void MarkDirty() const;
 
+            // Moves the entity from its current parent to the given one, which gets a hierarchy if needed.
+            // An invalid parent makes it a top level entity. The local transform is kept
+            void SetParent(Entity parent);
+
             operator ECS::Entity() const { return entity; }
 
             static std::vector<uint8_t> Backup(const Ref<Scene>& scene, const Entity& entity);

@@ -478,6 +478,7 @@ namespace Atlas::Lighting {
                 *p.clouds = j["clouds"];
             }
         }
+        p.probe = nullptr;
         if (j.contains("probe")) {
             p.probe = CreateRef<EnvironmentProbe>();
             *p.probe = j["probe"];

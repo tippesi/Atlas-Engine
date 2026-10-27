@@ -100,19 +100,21 @@ namespace Atlas::Editor::UI {
         bool renameFocusPending = false;
         int32_t renameFrameCount = 0;
 
+        // Copies for the search job. The filters only need to know which entities have a component, copies of
+        // components like scripts hold references into other systems, which would be released on the job thread
         struct EntityData {
             ECS::Pool<HierarchyComponent> hierarchyPool;
             ECS::Pool<NameComponent> namePool;
-            ECS::Pool<TransformComponent> transformPool;
-            ECS::Pool<MeshComponent> meshPool;
-            ECS::Pool<TextComponent> textPool;
-            ECS::Pool<AudioComponent> audioPool;
-            ECS::Pool<AudioVolumeComponent> audioVolumePool;
-            ECS::Pool<PlayerComponent> playerPool;
-            ECS::Pool<RigidBodyComponent> rigidBodyPool;
-            ECS::Pool<CameraComponent> cameraPool;
-            ECS::Pool<LuaScriptComponent> scriptPool;
-            ECS::Pool<LightComponent> lightPool;
+            ECS::Storage transformPool;
+            ECS::Storage meshPool;
+            ECS::Storage textPool;
+            ECS::Storage audioPool;
+            ECS::Storage audioVolumePool;
+            ECS::Storage playerPool;
+            ECS::Storage rigidBodyPool;
+            ECS::Storage cameraPool;
+            ECS::Storage scriptPool;
+            ECS::Storage lightPool;
             std::string search;
             HierarchyFilter filter;
         };        

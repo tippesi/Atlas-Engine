@@ -1,5 +1,7 @@
 #include "AABB.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
     namespace Volume {
@@ -15,6 +17,38 @@ namespace Atlas {
             return aabb.min.x <= max.x && aabb.max.x >= min.x &&
                 aabb.min.y <= max.y && aabb.max.y >= min.y &&
                 aabb.min.z <= max.z && aabb.max.z >= min.z;
+
+        }
+
+        bool AABB::IntersectsTriangle(vec3 v0, vec3 v1, vec3 v2) const {
+
+            // Separating axis test with the box faces, the triangle normal and the edge cross products
+            auto center = GetCenter();
+            auto halfSize = GetSize() * 0.5f;
+            v0 -= center;
+            v1 -= center;
+            v2 -= center;
+            vec3 edges[3] = { v1 - v0, v2 - v1, v0 - v2 };
+
+            auto separated = [&](vec3 axis) {
+                if (glm::dot(axis, axis) < 1e-12f)
+                    return false;
+                auto p0 = glm::dot(v0, axis), p1 = glm::dot(v1, axis), p2 = glm::dot(v2, axis);
+                auto radius = glm::dot(halfSize, glm::abs(axis));
+                return std::min({ p0, p1, p2 }) > radius || std::max({ p0, p1, p2 }) < -radius;
+            };
+
+            for (int32_t i = 0; i < 3; i++) {
+                vec3 boxAxis(0.0f);
+                boxAxis[i] = 1.0f;
+                if (separated(boxAxis))
+                    return false;
+                for (const auto& edge : edges)
+                    if (separated(glm::cross(boxAxis, edge)))
+                        return false;
+            }
+
+            return !separated(glm::cross(edges[0], edges[1]));
 
         }
 

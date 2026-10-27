@@ -62,6 +62,7 @@ namespace Atlas::Mesh {
         try_get_json(j, "rayTrace", p.rayTrace);
         try_get_json(j, "rayTraceDistanceCulling", p.rayTraceDistanceCulling);
 
+        p.impostor = ResourceHandle<Impostor>();
         if (j.contains("impostor")) {
             std::string path = j["impostor"];
             p.impostor = ResourceManager<Impostor>::GetOrLoadResourceWithLoaderAsync(
@@ -148,6 +149,7 @@ namespace Atlas::Mesh {
             from_json(j["weights"], p.weights, binary);
         }
 
+        p.materials.clear();
         if (j.contains("materials")) {
             for (auto& path : j["materials"]) {
                 auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(path,
@@ -338,7 +340,6 @@ namespace Atlas {
         j.at("normalScale").get_to(p.normalScale);
         j.at("displacementScale").get_to(p.displacementScale);
         j.at("tiling").get_to(p.tiling);
-        j.at("tiling").get_to(p.tiling);
         j.at("twoSided").get_to(p.twoSided);
         j.at("vertexColors").get_to(p.vertexColors);
         j.at("uvChannel").get_to(p.uvChannel);
@@ -351,27 +352,21 @@ namespace Atlas {
 
         try_get_json(j, "uvAnimation", p.uvAnimation);
 
-        auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion, bool priority = false) -> auto {
-            return ResourceManager<Texture::Texture2D>::GetOrLoadResource(path, colorSpaceConversion,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0, false, priority);
+        // Maps are only written when set, a missing one removes the map
+        auto readMap = [&](const char* key, ResourceHandle<Texture::Texture2D>& map, bool priority = false) {
+            map = j.contains(key) ? ResourceManager<Texture::Texture2D>::GetOrLoadResource(j[key], false,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0, false, priority) :
+                ResourceHandle<Texture::Texture2D>();
             };
 
-        if (j.contains("baseColorMapPath"))
-            p.baseColorMap = getTextureHandle(j["baseColorMapPath"], false);
-        if (j.contains("opacityMapPath"))
-            p.opacityMap = getTextureHandle(j["opacityMapPath"], false, true);
-        if (j.contains("normalMapPath"))
-            p.normalMap = getTextureHandle(j["normalMapPath"], false);
-        if (j.contains("roughnessMapPath"))
-            p.roughnessMap = getTextureHandle(j["roughnessMapPath"], false);
-        if (j.contains("metalnessMapPath"))
-            p.metalnessMap = getTextureHandle(j["metalnessMapPath"], false);
-        if (j.contains("aoMapPath"))
-            p.aoMap = getTextureHandle(j["aoMapPath"], false);
-        if (j.contains("displacementMapPath"))
-            p.displacementMap = getTextureHandle(j["displacementMapPath"], false);
-        if (j.contains("emissiveMapPath"))
-            p.emissiveMap = getTextureHandle(j["emissiveMapPath"], false);
+        readMap("baseColorMapPath", p.baseColorMap);
+        readMap("opacityMapPath", p.opacityMap, true);
+        readMap("normalMapPath", p.normalMap);
+        readMap("roughnessMapPath", p.roughnessMap);
+        readMap("metalnessMapPath", p.metalnessMap);
+        readMap("aoMapPath", p.aoMap);
+        readMap("displacementMapPath", p.displacementMap);
+        readMap("emissiveMapPath", p.emissiveMap);
 
     }
 
