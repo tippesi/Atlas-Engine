@@ -78,6 +78,11 @@ namespace Atlas {
 
             VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo))
 
+            // A new command buffer doesn't have any sets bound
+            for (auto& sets : boundDescriptorSets)
+                for (auto& set : sets)
+                    set = {};
+
             // Shader-read access is not supported by transfer-only queues.
             // This is only effective for the first time it's called.
             if (queueType != TransferQueue) ChangePlaceholderLayouts();
@@ -291,8 +296,12 @@ namespace Atlas {
                 }                
             }
             else {
-                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++)
+                // The layouts have to be known for the next pipeline, otherwise a set of another layout stays in use
+                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                     descriptorBindingData.changed[i] = true;
+                    if (pipeline->shader->sets[i].bindingCount > 0)
+                        descriptorBindingData.layouts[i] = pipeline->shader->sets[i].layout;
+                }
             }
             
 
@@ -1309,9 +1318,28 @@ namespace Atlas {
                 }
 
                 if (descriptorBindingData.sets[i] != nullptr && shader->sets[i].bindingCount > 0) {
+                    // Sets stay bound between draws, they only need to be bound again when they or their offsets
+                    // change or a pipeline with another layout is in use
+                    auto& boundSets = boundDescriptorSets[pipelineInUse->isCompute ? 1 : 0];
+                    auto& bound = boundSets[i];
+                    auto set = descriptorBindingData.sets[i]->set;
+                    if (bound.set == set && bound.layout == pipelineInUse->layout &&
+                        bound.dynamicOffsetCount == dynamicOffsetCounter &&
+                        std::equal(dynamicOffsets, dynamicOffsets + dynamicOffsetCounter, bound.dynamicOffsets))
+                        continue;
+
                     vkCmdBindDescriptorSets(commandBuffer, pipelineInUse->bindPoint,
-                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i]->set,
-                        dynamicOffsetCounter, dynamicOffsets);
+                        pipelineInUse->layout, i, 1, &set, dynamicOffsetCounter, dynamicOffsets);
+
+                    // Binding with another pipeline layout can disturb the other sets
+                    for (auto& otherBound : boundSets)
+                        if (otherBound.layout != pipelineInUse->layout)
+                            otherBound = {};
+
+                    bound.set = set;
+                    bound.layout = pipelineInUse->layout;
+                    bound.dynamicOffsetCount = dynamicOffsetCounter;
+                    std::copy(dynamicOffsets, dynamicOffsets + dynamicOffsetCounter, bound.dynamicOffsets);
                 }
             }
 

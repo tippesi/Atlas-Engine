@@ -322,6 +322,16 @@ namespace Atlas {
             Ref<Buffer> placeholderBuffer = nullptr;
             Ref<Image> placeholderImage = nullptr;
 
+            struct BoundDescriptorSet {
+                VkDescriptorSet set = VK_NULL_HANDLE;
+                VkPipelineLayout layout = VK_NULL_HANDLE;
+                uint32_t dynamicOffsetCount = 0;
+                uint32_t dynamicOffsets[BINDINGS_PER_DESCRIPTOR_SET] = {};
+            };
+
+            // The sets bound in the command buffer for the graphics and the compute bind point
+            BoundDescriptorSet boundDescriptorSets[2][DESCRIPTOR_SET_COUNT];
+
             std::atomic_bool isLocked = true;
             std::atomic_bool isSubmitted = true;
             std::atomic_bool wasSwapChainAccessed = false;
