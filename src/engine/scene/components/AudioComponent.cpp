@@ -2,7 +2,6 @@
 #include "../../audio/AudioManager.h"
 
 #include "../Scene.h"
-#include "common/MathHelper.h"
 
 namespace Atlas {
 
@@ -68,28 +67,11 @@ namespace Atlas {
                 auto objectLocation = vec3(transformComponent.globalMatrix[3]);
                 auto lastObjectLocation = vec3(transformComponent.lastGlobalMatrix[3]);
 
-                auto distance = glm::max(epsilon, glm::distance(objectLocation, listenerLocation));
-
-                // Use quick paths for "normal" powers and do nothing for the power=1 case
-                auto powerDistance = distance;
-                if (falloffPower == 2.0f)
-                    powerDistance *= powerDistance;
-                else if (falloffPower == 3.0f)
-                    powerDistance *= powerDistance * powerDistance;
-                else if (falloffPower != 1.0f)
-                    powerDistance = powf(powerDistance, falloffPower);
-
-                float distanceVolume = glm::min(1.0f, falloffFactor / powerDistance);
-
-                auto audible = distanceVolume > cutoff;
+                auto audible = stream->Spatialize(objectLocation, listenerLocation, listenerRight, volume, falloffFactor,
+                    falloffPower, cutoff);
 
                 if (audible) {
-                    // Sources at the listener (e.g. music attached to the camera) have no stable direction,
-                    // so panning fades in over the first meter instead of flipping between the channels
-                    auto direction = Helper::Math::NormalizeOrZero(objectLocation - listenerLocation);
-                    auto panning = Helper::Math::Saturate(distance);
-                    auto mix = 0.5f * panning * glm::dot(direction, -listenerRight) + 0.5f;
-
+                    auto distance = glm::max(epsilon, glm::distance(objectLocation, listenerLocation));
                     auto lastDistance = glm::distance(lastObjectLocation, lastListenerLocation);
 
                     auto velocity = (lastDistance - distance) / std::max(deltaTime, epsilon);
@@ -103,15 +85,7 @@ namespace Atlas {
                     auto pitch = 1.0 + velocity / 333.3;
                     pitch = pitch >= 0.0 ? pitch : 0.0;
 
-                    stream->SetVolume(distanceVolume * volume);
-
-                    stream->SetChannelVolume(Audio::Channel::Left, mix);
-                    stream->SetChannelVolume(Audio::Channel::Right, 1.0f - mix);
-
                     stream->SetPitch(pitch);
-                }
-                else {
-                    stream->SetVolume(0.0f);
                 }
 
             }

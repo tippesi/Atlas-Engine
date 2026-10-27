@@ -6,6 +6,7 @@
 
 #include <SDL_audio.h>
 
+#include <atomic>
 #include <vector>
 #include <mutex>
 
@@ -30,12 +31,24 @@ namespace Atlas {
 
             static Ref<AudioStream> CreateStream(ResourceHandle<AudioData> data, float volume = 1.0f, bool loop = false);
 
+            /**
+             * Plays audio without an entity. A sound without loop plays to its end even if the returned
+             * stream isn't kept, a looping one stops once the last reference to the stream is dropped.
+             */
+            static Ref<AudioStream> Play(ResourceHandle<AudioData> data, float volume = 1.0f, bool loop = false);
+
+            static void SetMasterVolume(float volume);
+
+            static float GetMasterVolume();
+
+            static bool IsMuted();
+
             static void Update();
 
         private:
             static void Callback(void* userData, uint8_t* stream, int32_t length);
 
-            static void Mix(std::vector<int16_t>& dest, const std::vector<int16_t>& src);
+            static void Mix(std::vector<float>& dest, const std::vector<int16_t>& src);
 
             static SDL_AudioSpec audioSpec;
             static SDL_AudioDeviceID audioDevice;
@@ -43,6 +56,9 @@ namespace Atlas {
             static std::vector<Ref<AudioStream>> audioStreams;
 
             static std::mutex mutex;
+
+            static std::atomic<float> masterVolume;
+            static std::atomic_bool muted;
 
             friend AudioData;
 

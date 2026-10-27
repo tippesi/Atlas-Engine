@@ -14,6 +14,9 @@ namespace Atlas {
         std::vector<Ref<AudioStream>> AudioManager::audioStreams;
 
         std::mutex AudioManager::mutex;
+
+        std::atomic<float> AudioManager::masterVolume = 1.0f;
+        std::atomic_bool AudioManager::muted = false;
         
         bool AudioManager::Configure(int32_t frequency, uint8_t channels, uint32_t samples) {
 
@@ -59,13 +62,31 @@ namespace Atlas {
 
         void AudioManager::Mute() {
 
-
+            muted = true;
 
         }
 
         void AudioManager::Unmute() {
 
+            muted = false;
 
+        }
+
+        bool AudioManager::IsMuted() {
+
+            return muted;
+
+        }
+
+        void AudioManager::SetMasterVolume(float volume) {
+
+            masterVolume = glm::max(0.0f, volume);
+
+        }
+
+        float AudioManager::GetMasterVolume() {
+
+            return masterVolume;
 
         }
 
@@ -92,13 +113,25 @@ namespace Atlas {
 
         }
 
+        Ref<AudioStream> AudioManager::Play(ResourceHandle<AudioData> data, float volume, bool loop) {
+
+            auto stream = CreateRef<AudioStream>(data, volume, loop);
+            stream->keepAlive = !loop;
+
+            std::lock_guard<std::mutex> lock(mutex);
+            audioStreams.push_back(stream);
+
+            return stream;
+
+        }
+
         void AudioManager::Update() {
 
             std::unique_lock<std::mutex> lock(mutex);
 
             for (size_t i = 0; i < audioStreams.size(); i++) {
                 auto& ref = audioStreams[i];
-                if (ref.use_count() == 1) {
+                if (ref.use_count() == 1 && (!ref->keepAlive || ref->IsFinished())) {
                     ref.swap(audioStreams.back());
                     audioStreams.pop_back();
                     i--;
@@ -112,7 +145,7 @@ namespace Atlas {
             // We only use 16 bit audio internally
             length /= 2;
 
-            std::vector<int16_t> dest(length, 0);
+            std::vector<float> dest(length, 0.0f);
             std::vector<int16_t> chunk(length, 0);
 
             std::unique_lock<std::mutex> lock(mutex);
@@ -132,25 +165,24 @@ namespace Atlas {
 
             }
 
-            std::memcpy(streamData, dest.data(), length * 2);
+            // Streams are summed in float, peaks are rounded off softly instead of clipping per stream
+            auto output = reinterpret_cast<int16_t*>(streamData);
+            auto gain = muted ? 0.0f : masterVolume.load() / 32768.0f;
+            const float knee = 0.75f;
+            for (int32_t i = 0; i < length; i++) {
+                auto sample = dest[i] * gain;
+                auto magnitude = glm::abs(sample);
+                if (magnitude > knee)
+                    sample = glm::sign(sample) * (knee + (1.0f - knee) * tanhf((magnitude - knee) / (1.0f - knee)));
+                output[i] = int16_t(glm::clamp(sample, -1.0f, 1.0f) * 32767.0f);
+            }
 
         }
 
-        void AudioManager::Mix(std::vector<int16_t>& dest, const std::vector<int16_t>& src) {
+        void AudioManager::Mix(std::vector<float>& dest, const std::vector<int16_t>& src) {
 
-            const int16_t maxAudioValue = ((1 << (16 - 1)) - 1);
-            const int16_t minAudioValue = -(1 << (16 - 1));
-
-            for (uint64_t i = 0; i < dest.size(); i++) {
-
-                auto sample = dest[i] + src[i];
-            
-                sample = sample > maxAudioValue ? maxAudioValue : sample;
-                sample = sample < minAudioValue ? minAudioValue : sample;
-
-                dest[i] = sample;
-            
-            }
+            for (size_t i = 0; i < dest.size(); i++)
+                dest[i] += float(src[i]);
 
         }
 
