@@ -723,7 +723,7 @@ namespace Atlas::Editor::UI {
 
         auto meshComponent = entity.TryGetComponent<MeshComponent>();
         if (meshComponent) {
-            meshComponent->visible = visible;
+            meshComponent->SetVisible(visible);
         }
 
         auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();

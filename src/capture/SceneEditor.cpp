@@ -428,7 +428,7 @@ namespace Atlas::Capture {
                     for (auto member : hierarchy) {
                         Scene::Entity memberEntity = { member, &scene.entityManager };
                         if (auto mesh = memberEntity.TryGetComponent<MeshComponent>())
-                            mesh->visible = operation.at("visible").get<bool>();
+                            mesh->SetVisible(operation.at("visible").get<bool>());
                     }
                     affected.push_back(GetEntityLabel(entity));
                 }
@@ -508,7 +508,7 @@ namespace Atlas::Capture {
                 if (mesh.IsValid()) {
                     added["mesh"] = mesh.GetResource()->path;
                     // Hidden meshes can be shown by scripts, e.g. a lit and an unlit variant
-                    entity.GetComponent<MeshComponent>().visible = operation.value("visible", true);
+                    entity.GetComponent<MeshComponent>().SetVisible(operation.value("visible", true));
 
                     // Use the world scale for the collision mesh
                     if (operation.value("body", false))

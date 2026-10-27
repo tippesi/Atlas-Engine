@@ -469,6 +469,7 @@ namespace Atlas {
 
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
+                meshComponent.resourceChanged = false;
             }
 
             // Animated meshes change their bounds every frame
@@ -1053,6 +1054,7 @@ namespace Atlas {
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentErase,
                 [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     UnregisterResource(registeredMeshes, meshComponent.mesh);
+                    MarkEntityDirty(ToSceneEntity(entity));
 
                     if (meshComponent.inserted) {
                         SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
@@ -1309,7 +1311,7 @@ namespace Atlas {
                     return;
                 }
 
-                if (!transformComponent->changed && meshComponent->inserted)
+                if (!transformComponent->changed && meshComponent->inserted && !meshComponent->resourceChanged)
                     return;
 
                 threadContexts[data.idx].changedMeshes.push_back(entity);

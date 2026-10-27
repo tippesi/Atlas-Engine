@@ -432,8 +432,10 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<MeshComponent>("MeshComponent",
             "mesh", &MeshComponent::mesh,
-            "visible", &MeshComponent::visible,
-            "dontCull", &MeshComponent::dontCull,
+            "visible", sol::property([](MeshComponent& component) { return component.visible; },
+                [](MeshComponent& component, bool visible) { component.SetVisible(visible); }),
+            "dontCull", sol::property([](MeshComponent& component) { return component.dontCull; },
+                [](MeshComponent& component, bool dontCull) { component.SetDontCull(dontCull); }),
             "aabb", &MeshComponent::aabb
         );
 
