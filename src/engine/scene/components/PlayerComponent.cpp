@@ -41,13 +41,15 @@ namespace Atlas::Scene::Components {
 
         if (IsOnGround()) {
             jumped = false;
+            airTime = 0.0f;
             newVelocity += groundVelocity;
-            if (jump) {
+            if (jumpRequest > 0.0f) {
                 newVelocity += up * jumpVelocity;
                 jumped = true;
+                jumpRequest = 0.0f;
             }
             if (allowInput && !slide)
-                newVelocity += inputVelocity;
+                newVelocity += FollowInput(groundVelocity, up, deltaTime);
 
             if (slide) {
                 // Get difference between ground velocity and actual velocty and dampen this over time
@@ -72,9 +74,17 @@ namespace Atlas::Scene::Components {
             // Add reduced input velocity such that jumping doesn't feel weird
             if (allowInput)
                 newVelocity += inputVelocity * 0.01f;
+            // Just walked off an edge: the jump still counts, the fall so far is cancelled
+            airTime += deltaTime;
+            if (jumpRequest > 0.0f && !jumped && airTime <= coyoteTime) {
+                newVelocity -= up * glm::dot(newVelocity, up);
+                newVelocity += up * jumpVelocity;
+                jumped = true;
+                jumpRequest = 0.0f;
+            }
         }
 
-        jump = false;
+        jumpRequest = glm::max(0.0f, jumpRequest - deltaTime);
 
         lastGravityAcceleration = up * world->GetGravity() * deltaTime;
         newVelocity += lastGravityAcceleration;
@@ -85,6 +95,23 @@ namespace Atlas::Scene::Components {
 
         Player::Update(deltaTime);
         
+    }
+
+    vec3 PlayerComponent::FollowInput(const vec3& groundVelocity, const vec3& up, float deltaTime) const {
+
+        // The horizontal velocity relative to the ground, as the character moved it (pushed or blocked)
+        auto current = GetLinearVelocity() - groundVelocity;
+        current -= up * glm::dot(current, up);
+
+        auto difference = inputVelocity - current;
+        auto distance = glm::length(difference);
+        auto speedingUp = glm::dot(inputVelocity, current) >= 0.0f && glm::dot(inputVelocity, inputVelocity) >= glm::dot(current, current);
+        auto rate = speedingUp ? acceleration : deceleration;
+        if (rate <= 0.0f || distance <= rate * deltaTime)
+            return inputVelocity;
+
+        return current + difference / distance * rate * deltaTime;
+
     }
 
     void PlayerComponent::InsertIntoPhysicsWorld(const TransformComponent& transformComponent,

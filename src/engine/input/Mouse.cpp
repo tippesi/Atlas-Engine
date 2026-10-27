@@ -73,6 +73,7 @@ namespace Atlas {
 
             hideMouse = true;
             SDL_ShowCursor(0);
+            SDL_SetRelativeMouseMode(SDL_TRUE);
 
         }
 
@@ -80,6 +81,7 @@ namespace Atlas {
 
             hideMouse = false;
             SDL_ShowCursor(1);
+            SDL_SetRelativeMouseMode(SDL_FALSE);
 
         }
 
@@ -100,7 +102,8 @@ namespace Atlas {
 
             if (hideMouse) {
 
-
+                // The hidden cursor is in relative mode, every motion turns the camera
+                angularVelocity += glm::vec2(-((float)event.dx), -((float)event.dy)) * sensibility * 0.001f;
 
             }
             else {
