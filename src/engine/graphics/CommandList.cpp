@@ -824,6 +824,19 @@ namespace Atlas {
 
         }
 
+        void CommandList::DrawIndirect(const Ref<Graphics::Buffer>& buffer, size_t offset,
+            uint32_t drawCount, uint32_t stride) {
+
+            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+
+            BindDescriptorSets();
+
+            vkCmdDrawIndirect(commandBuffer, buffer->buffer, offset, drawCount, stride);
+
+        }
+
         void CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 
             AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
@@ -863,6 +876,18 @@ namespace Atlas {
         void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy) {
 
             vkCmdCopyBuffer(commandBuffer, srcBuffer->buffer, dstBuffer->buffer, 1, &copy);
+
+        }
+
+        void CommandList::CopyBuffer(const Ref<MultiBuffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy) {
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer->GetCurrent()->buffer, dstBuffer->buffer, 1, &copy);
+
+        }
+
+        void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<MultiBuffer>& dstBuffer, VkBufferCopy copy) {
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer->buffer, dstBuffer->GetCurrent()->buffer, 1, &copy);
 
         }
 

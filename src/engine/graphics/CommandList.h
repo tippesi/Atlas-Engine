@@ -150,6 +150,9 @@ namespace Atlas {
             void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0,
                 uint32_t firstInstance = 0);
 
+            void DrawIndirect(const Ref<Buffer>& buffer, size_t offset = 0,
+                uint32_t drawCount = 1, uint32_t stride = 0);
+
             void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
             void DispatchIndirect(const Ref<Buffer>& buffer, uint32_t offset = 0);
@@ -157,6 +160,10 @@ namespace Atlas {
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer);
 
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
+
+            void CopyBuffer(const Ref<MultiBuffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
+
+            void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<MultiBuffer>& dstBuffer, VkBufferCopy copy);
 
             void FillBuffer(const Ref<Buffer>& buffer, void* data);
 

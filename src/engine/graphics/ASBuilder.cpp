@@ -187,7 +187,29 @@ namespace Atlas {
             else
                 instanceBuffer->SetData(instances.data(), 0, desc.size);
 
-            tlas->Allocate(instanceBuffer->GetCurrent()->GetDeviceAddress(), uint32_t(instances.size()), false);
+            BuildTLAS(tlas, instanceBuffer->GetCurrent()->GetDeviceAddress(), instances.size(), commandList);
+
+            if (immediateSubmission) {
+                commandList->EndCommands();
+
+                device->SubmitCommandList(commandList);
+            }
+
+            return instanceBuffer->GetCurrent();
+
+        }
+
+        void ASBuilder::BuildTLAS(Ref<TLAS>& tlas, const Ref<Buffer>& instances, size_t instanceCount, CommandList* commandList) {
+
+            BuildTLAS(tlas, instances->GetDeviceAddress(), instanceCount, commandList);
+
+        }
+
+        void ASBuilder::BuildTLAS(Ref<TLAS>& tlas, VkDeviceAddress instanceAddress, size_t instanceCount, CommandList* commandList) {
+
+            auto device = GraphicsDevice::DefaultDevice;
+
+            tlas->Allocate(instanceAddress, uint32_t(instanceCount), false);
 
             commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
@@ -206,14 +228,6 @@ namespace Atlas {
             buildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
 
             commandList->BuildTLAS(tlas, buildInfo);
-
-            if (immediateSubmission) {
-                commandList->EndCommands();
-
-                device->SubmitCommandList(commandList);
-            }
-
-            return instanceBuffer->GetCurrent();
 
         }
 

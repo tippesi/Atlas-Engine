@@ -174,6 +174,9 @@ namespace Atlas {
 
             void SubmitFrame();
 
+            // The index of the frame which is recorded, data of a frame can be reused after FRAME_DATA_COUNT frames
+            int32_t GetFrameIndex() const { return frameIndex; }
+
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
             QueueRef GetAndLockQueue(QueueType queueType);

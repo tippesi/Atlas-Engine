@@ -1095,6 +1095,7 @@ namespace Atlas {
 
             features.features.tessellationShader = availableFeatures.features.tessellationShader;
             features.features.multiDrawIndirect = availableFeatures.features.multiDrawIndirect;
+            features.features.drawIndirectFirstInstance = availableFeatures.features.drawIndirectFirstInstance;
             features.features.depthBounds = availableFeatures.features.depthBounds;
             features.features.wideLines = availableFeatures.features.wideLines;
             features.features.samplerAnisotropy = availableFeatures.features.samplerAnisotropy;
@@ -1217,11 +1218,13 @@ namespace Atlas {
                 deviceProperties12.maxDescriptorSetUpdateAfterBindStorageBuffers >= bindlessStorageBufferCount &&
                 deviceProperties12.maxPerStageUpdateAfterBindResources >= bindlessSampledImageCount + bindlessStorageBufferCount;
 
+            // Bindless comes with GPU culling, its draws select their instances with the first instance
             if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
                 availableFeatures12.descriptorBindingPartiallyBound && availableFeatures12.runtimeDescriptorArray &&
                 availableFeatures12.descriptorBindingSampledImageUpdateAfterBind &&
                 availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind &&
-                availableFeatures12.shaderSampledImageArrayNonUniformIndexing && bindlessLimitsSupported) {
+                availableFeatures12.shaderSampledImageArrayNonUniformIndexing && bindlessLimitsSupported &&
+                availableFeatures.features.drawIndirectFirstInstance) {
 
                 features12.descriptorBindingPartiallyBound = VK_TRUE;
                 features12.runtimeDescriptorArray = VK_TRUE;

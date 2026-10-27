@@ -38,7 +38,12 @@ namespace Atlas {
             
             Buffer* BuildTLAS(Ref<TLAS>& tlas, std::span<VkAccelerationStructureInstanceKHR> instances, CommandList* commandList = nullptr);
 
+            // Builds from instances in a device buffer, e.g. written by a compute shader
+            void BuildTLAS(Ref<TLAS>& tlas, const Ref<Buffer>& instances, size_t instanceCount, CommandList* commandList);
+
         private:
+            void BuildTLAS(Ref<TLAS>& tlas, VkDeviceAddress instanceAddress, size_t instanceCount, CommandList* commandList);
+
             void BuildBLASBatch(const std::span<uint32_t>& batchIndices, std::span<Ref<BLAS>>& blases, 
                 Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool, CommandList* commandList);
 
