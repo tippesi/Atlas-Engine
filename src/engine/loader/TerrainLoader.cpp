@@ -359,14 +359,20 @@ namespace Atlas {
                 cell->splatMap->SetData(splatMapData, &transferManager);
                 cell->materialIdxData = splatMapData;
 
-                cell->heightData.resize(tileResolution * tileResolution);
-                for (uint32_t j = 0; j < uint32_t(cell->heightData.size()); j++) {
+                std::vector<float> heightData(heightFieldData.size());
+                for (size_t j = 0; j < heightData.size(); j++) {
                     if (heightFieldData[j] != 65535) {
-                        cell->heightData[j] = (float)heightFieldData[j] / 65534.0f;
+                        heightData[j] = (float)heightFieldData[j] / 65534.0f;
                     }
                     else {
-                        cell->heightData[j] = FLT_MAX;
+                        heightData[j] = FLT_MAX;
                     }
+                }
+
+                {
+                    // Height queries might read the previous data at the same time
+                    std::scoped_lock lock(cell->heightDataMutex);
+                    cell->heightData = std::move(heightData);
                 }
                 
                 cell->isLoaded = true;

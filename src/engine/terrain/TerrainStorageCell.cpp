@@ -70,6 +70,8 @@ namespace Atlas {
 
             if (!IsLoaded()) return;
 
+            std::shared_lock lock(heightDataMutex);
+
             int32_t heightFieldSideLength = int32_t(sqrtf(float(heightData.size())));
 
             aabb.min = glm::vec3(std::numeric_limits<float>::max());

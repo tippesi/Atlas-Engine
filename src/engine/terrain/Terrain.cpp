@@ -155,31 +155,29 @@ namespace Atlas {
             x /= nodeSideLength;
             z /= nodeSideLength;
 
-            float xPosition = floorf(x);
-            float zPosition = floorf(z);
+            auto cellX = int32_t(floorf(x));
+            auto cellZ = int32_t(floorf(z));
 
-            auto cell = storage->GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
+            auto cell = storage->GetCell(cellX, cellZ, LoDCount - 1);
 
             if (!cell || !cell->IsLoaded())
                 return invalidHeight;
 
-            x -= xPosition;
-            z -= zPosition;
+            // The cell might be unloaded or loaded again on the streaming thread in the meantime
+            std::shared_lock lock(cell->heightDataMutex);
+            const auto& heightData = cell->heightData;
+            auto cellResolution = int32_t(sqrtf(float(heightData.size())));
 
-            // Cells have overlapping edges (last pixels are on next cell)
-            x *= float(cell->heightField->width - 1);
-            z *= float(cell->heightField->height - 1);
+            // Cells have overlapping edges (the last pixels are the first ones of the next cell), so all
+            // samples are in this cell. Rounding can move positions on the edge onto the last pixel.
+            x = (x - float(cellX)) * float(cellResolution - 1);
+            z = (z - float(cellZ)) * float(cellResolution - 1);
 
-            xPosition = floorf(x);
-            zPosition = floorf(z);
+            auto xIndex = std::min(int32_t(x), cellResolution - 2);
+            auto zIndex = std::min(int32_t(z), cellResolution - 2);
 
-            auto xCoord = x - xPosition;
-            auto zCoord = z - zPosition;
-
-            int32_t xIndex = int32_t(xPosition);
-            int32_t zIndex = int32_t(zPosition);
-
-            float height = 0.0f;
+            auto xCoord = x - float(xIndex);
+            auto zCoord = z - float(zIndex);
 
             /*
             topLeft        topRight
@@ -188,69 +186,13 @@ namespace Atlas {
             ####p###########
             c##############c
             bottomLeft     bottomRight
-            p is the point with location (x, z)
-            topLeft is in x direction
-            bottomRight is in z direction
             */
-            float heightBottomLeft = cell->heightData[xIndex + cell->heightField->width * zIndex];
-            float heightBottomRight = 0.0f;
-            float heightTopRight = 0.0f;
-            float heightTopLeft = 0.0f;
+            auto heightBottomLeft = heightData[xIndex + cellResolution * zIndex];
+            auto heightTopLeft = heightData[xIndex + 1 + cellResolution * zIndex];
+            auto heightBottomRight = heightData[xIndex + cellResolution * (zIndex + 1)];
+            auto heightTopRight = heightData[xIndex + 1 + cellResolution * (zIndex + 1)];
 
-            // Check if we must sample from a neighbour node (allows for errors while retrieving the height information at the edge of the terrain)
-            if (zIndex + 1 == cell->heightField->height &&
-                xIndex + 1 == cell->heightField->width) {
-                auto neighbourCell = storage->GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
-
-                if (!neighbourCell) {
-                    heightTopLeft = heightBottomLeft;
-                    heightTopRight = heightBottomLeft;
-                    heightBottomRight = heightBottomLeft;
-                }
-                else {
-                    heightTopLeft = neighbourCell->heightData[1];
-                    heightBottomRight = neighbourCell->heightData[neighbourCell->heightField->width];
-                    heightTopRight = neighbourCell->heightData[neighbourCell->heightField->width + 1];
-                }
-            }
-            else if (zIndex + 1 == cell->heightField->height) {
-
-                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
-
-                auto neighbourCell = storage->GetCell(xIndex, zIndex + 1, LoDCount - 1);
-
-                if (neighbourCell == nullptr) {
-                    heightBottomRight = heightBottomLeft;
-                    heightTopRight = heightTopLeft;
-                }
-                else {
-                    heightBottomRight = neighbourCell->heightData[xIndex];
-                    heightTopRight = neighbourCell->heightData[xIndex + 1];
-                }
-
-            }
-            else if (xIndex + 1 == cell->heightField->width) {
-
-                heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
-
-                auto neighbourCell = storage->GetCell(xIndex + 1, zIndex, LoDCount - 1);
-
-                if (neighbourCell == nullptr) {
-                    heightTopLeft = heightBottomLeft;
-                    heightTopRight = heightBottomRight;
-                }
-                else {
-                    heightTopLeft = neighbourCell->heightData[zIndex * neighbourCell->heightField->width];
-                    heightTopRight = neighbourCell->heightData[(zIndex + 1) *
-                        neighbourCell->heightField->width];
-                }
-
-            }
-            else {
-                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
-                heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
-                heightTopRight = cell->heightData[xIndex + 1 + cell->heightField->width * (zIndex + 1)];
-            }
+            lock.unlock();
 
             if (heightBottomLeft == FLT_MAX || heightBottomRight == FLT_MAX ||
                 heightTopLeft == FLT_MAX || heightTopRight == FLT_MAX)
@@ -261,6 +203,7 @@ namespace Atlas {
             heightTopLeft *= heightScale;
             heightTopRight *= heightScale;
 
+            float height = 0.0f;
             if (xCoord > zCoord) {
                 height = BarryCentric(vec3(0.0f, heightBottomLeft, 0.0f),
                                       vec3(1.0f, heightTopLeft, 0.0f),
