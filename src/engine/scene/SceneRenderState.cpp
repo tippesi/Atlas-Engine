@@ -1,6 +1,7 @@
 #include "SceneRenderState.h"
 #include "Scene.h"
 #include "renderer/helper/CommonStructures.h"
+#include "graphics/Profiler.h"
 
 #include "common/ColorConverter.h"
 #include "common/Packing.h"
@@ -12,7 +13,7 @@
 // Also move rendering related map updates from the scene to here
 namespace Atlas::Scene {
 
-    SceneRenderState::SceneRenderState(Scene* scene) : scene(scene) {
+    SceneRenderState::SceneRenderState(Scene* scene) : scene(scene), gpuScene(scene) {
 
         materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
             Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit, sizeof(Renderer::PackedMaterial));
@@ -459,6 +460,38 @@ namespace Atlas::Scene {
 
     }
 
+    void SceneRenderState::UpdateGPUScene(const std::vector<ECS::Entity>& dirtyEntities,
+        const std::vector<ECS::Entity>& lastDirtyEntities) {
+
+        if (!Graphics::GraphicsDevice::DefaultDevice->support.bindless)
+            return;
+
+        // The buffers are updated in the same job, everything which binds them waits for it
+        JobSystem::Execute(gpuSceneUpdateJob, [&](JobData&) {
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            // The upload buffers belong to the frame which is recorded next
+            device->WaitForPreviousFrameSubmission();
+            gpuScene.Update(dirtyEntities, lastDirtyEntities);
+
+            // The changes of this frame are lost, everything is uploaded again
+            if (!device->swapChain->isComplete) {
+                gpuScene.Invalidate();
+                return;
+            }
+
+            auto commandList = device->GetCommandList();
+            commandList->BeginCommands();
+            Graphics::Profiler::BeginThread("GPU scene", commandList);
+
+            gpuScene.UpdateBuffers(commandList);
+
+            Graphics::Profiler::EndThread();
+            commandList->EndCommands();
+            device->SubmitCommandList(commandList);
+            });
+
+    }
+
     void SceneRenderState::FillMainRenderPass() {
 
         if (!scene->HasMainCamera())
@@ -476,7 +509,14 @@ namespace Atlas::Scene {
                 mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
             }
 
-            scene->GetRenderList(camera.frustum, mainPass);
+            if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
+                JobSystem::Wait(gpuSceneUpdateJob);
+                gpuScene.FillPass(camera.frustum, camera.GetLocation(), mainPass);
+                renderList.AddGPUCulledPass(mainPass);
+            }
+            else {
+                scene->GetRenderList(camera.frustum, mainPass);
+            }
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass, RenderList::RenderPassType::Main);
@@ -495,8 +535,16 @@ namespace Atlas::Scene {
         if (!light.shadow || !light.shadow->update)
             return;
 
-        JobSystem::Execute(fillShadowRenderPassesJob, [&, entity = entity](JobData&) {
+        // The cascades of directional lights cover most of the scene, other lights stay culled on the host.
+        // The renderer waits for the GPU culled passes separately.
+        auto gpuCulled = Graphics::GraphicsDevice::DefaultDevice->support.bindless &&
+            light.type == LightType::DirectionalLight;
+        auto jobGroup = gpuCulled ? &fillGPUShadowRenderPassesJob : &fillShadowRenderPassesJob;
+
+        JobSystem::Execute(*jobGroup, [&, entity = entity, gpuCulled, jobGroup](JobData&) {
             JobSystem::Wait(newFrameRenderListJob);
+            if (gpuCulled)
+                JobSystem::Wait(gpuSceneUpdateJob);
 
             auto& camera = scene->GetMainCamera();
             auto& shadow = light.shadow;
@@ -504,8 +552,8 @@ namespace Atlas::Scene {
             auto componentCount = shadow->longRange ?
                 shadow->viewCount - 1 : shadow->viewCount;
 
-            JobSystem::ExecuteMultiple(fillShadowRenderPassesJob, componentCount,
-                [&, shadow = shadow, entity = entity](JobData& data) {
+            JobSystem::ExecuteMultiple(*jobGroup, componentCount,
+                [&, shadow = shadow, entity = entity, gpuCulled](JobData& data) {
                     auto component = &shadow->views[data.idx];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
@@ -516,7 +564,13 @@ namespace Atlas::Scene {
                         shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
                     }
 
-                    scene->GetRenderList(frustum, shadowPass);
+                    if (gpuCulled) {
+                        gpuScene.FillPass(frustum, camera.GetLocation(), shadowPass);
+                        renderList.AddGPUCulledPass(shadowPass);
+                    }
+                    else {
+                        scene->GetRenderList(frustum, shadowPass);
+                    }
                     shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
                     shadowPass->FillBuffers();
                     renderList.FinishPass(shadowPass, RenderList::RenderPassType::Shadow);
@@ -746,6 +800,8 @@ namespace Atlas::Scene {
         JobSystem::Wait(prepareBindlessBlasesJob);
         JobSystem::Wait(fillMainRenderPassJob);
         JobSystem::Wait(fillShadowRenderPassesJob);
+        JobSystem::Wait(fillGPUShadowRenderPassesJob);
+        JobSystem::Wait(gpuSceneUpdateJob);
         JobSystem::Wait(cullAndSortLightsJob);
 
         if (!renderList.wasCleared)

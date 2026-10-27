@@ -30,6 +30,9 @@ layout(location=5) in uvec4 vJoints;
 layout(location=6) in vec4 vWeights;
 #endif
 
+#ifdef INSTANCE_BUFFER
+#include <../culling/instances.hsh>
+#else
 layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
@@ -37,6 +40,7 @@ layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
 layout(std430, set = 1, binding = 2) readonly buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
+#endif
 
 #ifdef SKINNED
 layout(std430, set = 1, binding = 4) readonly buffer CurrentJointMatrices {
@@ -98,8 +102,14 @@ layout(push_constant) uniform constants {
 // Functions
 void main() {
 
+#ifdef INSTANCE_BUFFER
+    uint instanceIdx = instanceIndices[gl_InstanceIndex];
+    mat4 mMatrix = GetInstanceMatrix(instanceIdx);
+    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : GetLastInstanceMatrix(instanceIdx);
+#else
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
     mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
+#endif
 
 #ifdef TEX_COORDS
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord; 

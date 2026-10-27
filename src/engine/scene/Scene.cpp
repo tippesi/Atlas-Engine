@@ -488,7 +488,28 @@ namespace Atlas {
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), *meshComponent);
             }
 
+            renderState.UpdateGPUScene(frameDirtyEntities, lastFrameDirtyEntities);
+
             renderState.FillMainRenderPass();
+
+            // The ray tracing update doesn't depend on the lights, start it before their update
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            if (device->support.bindless) {
+                auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
+                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset, rtDataNeeded](JobData&) {
+                    // Need to wait before updating graphic resources
+                    Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
+                    // The ray tracing instances are written from the GPU scene
+                    JobSystem::Wait(renderState.gpuSceneUpdateJob);
+                    if (rayTracingWorld && rtDataNeeded) {
+                        rayTracingWorld->scene = this;
+                        // Don't update triangle lights for now (second argument)
+                        rayTracingWorld->Update(rayTracingSubset, false);
+                    }
+                    // The bindless blas data isn't updated without any rt effects running
+                    rtDataValid = rtDataNeeded && rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+                });
+            }
 
             // Clear old state
             mainLightEntity = Entity();
@@ -516,22 +537,6 @@ namespace Atlas {
                 });
 
             JobSystem::Wait(lightJobGroup);
-
-            auto device = Graphics::GraphicsDevice::DefaultDevice;
-            if (device->support.bindless) {
-                auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset, rtDataNeeded](JobData&) {
-                    // Need to wait before updating graphic resources
-                    Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
-                    if (rayTracingWorld && rtDataNeeded) {
-                        rayTracingWorld->scene = this;
-                        // Don't update triangle lights for now (second argument)
-                        rayTracingWorld->Update(rayTracingSubset, false);
-                    }
-                    // The bindless blas data isn't updated without any rt effects running
-                    rtDataValid = rtDataNeeded && rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-                });
-            }
 
             if (HasMainCamera()) {
                 auto& mainCamera = GetMainCamera();
@@ -1003,6 +1008,7 @@ namespace Atlas {
             dirtyEntities.clear();
             frameDirtyEntities.clear();
             lastFrameDirtyEntities.clear();
+            renderState.gpuScene.Invalidate();
 
             CleanupUnusedResources();
 
@@ -1041,6 +1047,12 @@ namespace Atlas {
             entityManager.SubscribeToTopic<TransformComponent>(ECS::Topic::ComponentEmplace,
                 [this](const ECS::Entity entity, TransformComponent& transformComponent) {
                     transformComponent.changed = true;
+                    MarkEntityDirty(ToSceneEntity(entity));
+                });
+
+            // The ray tracing instances of the entity need to be refreshed
+            entityManager.SubscribeToTopic<TransformComponent>(ECS::Topic::ComponentErase,
+                [this](const ECS::Entity entity, TransformComponent&) {
                     MarkEntityDirty(ToSceneEntity(entity));
                 });
 

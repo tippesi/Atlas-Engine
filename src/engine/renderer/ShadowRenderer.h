@@ -51,7 +51,8 @@ namespace Atlas {
 
             ImpostorShadowRenderer impostorRenderer;
 
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+            // Draws culled on the GPU have a draw command
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*>> subDatas;
 
 
         };

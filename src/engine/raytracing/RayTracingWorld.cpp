@@ -42,6 +42,13 @@ namespace Atlas {
             skinVerticesPipelineConfig = PipelineConfig("raytracer/skinVertices.csh");
             refitBVHPipelineConfig = PipelineConfig("raytracer/refitBVH.csh");
 
+            // The hardware instances are written on the GPU
+            if (hardwareRayTracing) {
+                auto deviceBufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit;
+                bvhInstanceBuffer = Buffer::Buffer(deviceBufferUsage, sizeof(GPUBVHInstance));
+                lastMatricesBuffer = Buffer::Buffer(deviceBufferUsage, sizeof(mat3x4));
+            }
+
             jobContexts.resize(6);
 
         }
@@ -102,7 +109,7 @@ namespace Atlas {
                     continue;
 
                 if (!prevBlasInfos.contains(node->cell->blas)) {
-                    blasInfos[node->cell->blas] = {};                   
+                    blasInfos[node->cell->blas] = {};
                 }
                 else {
                     std::swap(blasInfos[node->cell->blas], prevBlasInfos[node->cell->blas]);
@@ -133,192 +140,27 @@ namespace Atlas {
                 device->SubmitCommandList(commandList);
             }
 
-            hardwareInstances.clear();
-            gpuBvhInstances.clear();
-            instanceAABBs.clear();
-            lastMatrices.clear();
-
-            for (auto& jobContext : jobContexts) {
-                jobContext.gpuBvhInstances.clear();
-                jobContext.hardwareInstances.clear();
-                jobContext.instanceAABBs.clear();
-                jobContext.lastMatrices.clear();
-            }
-
-            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
-            auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
-
             JobSystem::Wait(renderState->materialUpdateJob);
 
             UpdateMaterials();
 
-            vec3 cameraLocation;
+            vec3 cameraLocation = vec3(0.0f);
             auto hasCamera = scene->HasMainCamera();
-            if (hasCamera) {
-                auto& camera = scene->GetMainCamera();
-                cameraLocation = camera.GetLocation();
-            }            
+            if (hasCamera)
+                cameraLocation = scene->GetMainCamera().GetLocation();
 
-            JobGroup jobGroup{ "Ray tracing world mesh update", JobPriority::High};
-            JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), int32_t(jobContexts.size()),
-                [&](JobData& data, int32_t idx) {
-                    auto& jobContext = jobContexts[data.idx];
-
-                    auto entity = meshComponentPool[idx];
-                    auto& meshComponent = meshComponentPool.GetByIndex(idx);
-
-                    if (!meshComponent.visible)
-                        return;
-                    if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->rayTrace)
-                        return;
-
-                    auto blas = meshComponent.mesh->blas;
-                    auto skinnedBlas = skinnedBlases.find(entity);
-                    if (skinnedBlas != skinnedBlases.end() && renderState->blasToBindlessIdx.contains(skinnedBlas->second.blas))
-                        blas = skinnedBlas->second.blas;
-
-                    if (!renderState->blasToBindlessIdx.contains(blas))
-                        return;
-                    if (hardwareRayTracing && !blas->blas->isBuilt || blas->needsBvhRefresh)
-                        return;
-
-                    auto transformComponent = transformComponentPool.TryGet(entity);
-                    if (!transformComponent)
-                        return;
-
-                    auto& blasInfo = blasInfos[blas];
-                    auto distSqd = glm::distance2(
-                        vec3(transformComponent->globalMatrix[3]),
-                        cameraLocation);
-                    if (hasCamera && distSqd > blasInfo.cullingDistanceSqr)
-                        return;
-                    
-                    jobContext.instanceAABBs.push_back(meshComponent.aabb);
-                    auto inverseMatrix = mat3x4(glm::transpose(transformComponent->inverseGlobalMatrix));
-
-                    uint32_t mask = InstanceCullMasks::MaskAll;
-                    mask |= meshComponent.mesh->castShadow ? InstanceCullMasks::MaskShadow : 0;
-
-                    GPUBVHInstance gpuBvhInstance = {
-                        .inverseMatrix = inverseMatrix,
-                        .meshOffset = blasInfo.offset,
-                        .materialOffset = blasInfo.materialOffset,
-                        .mask = mask
-                    };
-
-                    jobContext.gpuBvhInstances.emplace_back(gpuBvhInstance);
-
-                    if (includeObjectHistory)
-                        jobContext.lastMatrices.emplace_back(glm::transpose(transformComponent->lastGlobalMatrix));
-
-                    // Some extra path for hardware raytracing, don't want to do work twice
-                    if (hardwareRayTracing) {
-                        VkAccelerationStructureInstanceKHR inst = {};
-                        VkTransformMatrixKHR transform;
-
-                        auto transposed = glm::transpose(transformComponent->globalMatrix);
-                        std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
-
-                        inst.transform = transform;
-                        inst.instanceCustomIndex = blasInfo.offset;
-                        inst.accelerationStructureReference = blas->blas->deviceAddress;
-                        inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                        inst.mask = mask;
-                        inst.instanceShaderBindingTableRecordOffset = 0;
-                        jobContext.hardwareInstances.push_back(inst);
-                    }
-                });
-            
-
-            for (const auto node : renderState->terrainLeafNodes) {
-                if (!node->cell || !node->cell->IsLoaded() || !renderState->blasToBindlessIdx.contains(node->cell->blas))
-                    continue;
-
-                const auto &blasInfo = blasInfos[node->cell->blas];
-                if (hardwareRayTracing && !node->cell->blas->blas->isBuilt || node->cell->blas->needsBvhRefresh)
-                    continue;
-
-                auto nodePosition = vec3(node->location.x, 0.0f, node->location.y) + scene->terrain->translation;
-                mat4 globalMatrix = glm::translate(nodePosition), nodeScale;
-                mat4 inverseGlobalMatrix = glm::inverse(globalMatrix);
-
-                instanceAABBs.push_back(node->cell->aabb.Translate(nodePosition));
-                auto inverseMatrix = mat3x4(glm::transpose(inverseGlobalMatrix));
-
-                uint32_t mask = InstanceCullMasks::MaskAll;
-                mask |= InstanceCullMasks::MaskShadow;
-
-                GPUBVHInstance gpuBvhInstance = {
-                    .inverseMatrix = inverseMatrix,
-                    .meshOffset = blasInfo.offset,
-                    .materialOffset = blasInfo.materialOffset,
-                    .mask = mask
-                };                
-
-                gpuBvhInstances.push_back(gpuBvhInstance);
-
-                if (includeObjectHistory)
-                    lastMatrices.emplace_back(glm::transpose(globalMatrix));
-
-                // Some extra path for hardware raytracing, don't want to do work twice
-                if (hardwareRayTracing) {
-                    VkAccelerationStructureInstanceKHR inst = {};
-                    VkTransformMatrixKHR transform;
-
-                    auto transposed = glm::transpose(globalMatrix);
-                    std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
-
-                    inst.transform = transform;
-                    inst.instanceCustomIndex = blasInfo.offset;
-                    inst.accelerationStructureReference = node->cell->blas->blas->deviceAddress;
-                    inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                    inst.mask = mask;
-                    inst.instanceShaderBindingTableRecordOffset = 0;
-                    hardwareInstances.push_back(inst);
-                }
-            }
-
-            JobSystem::Wait(jobGroup);
-
-            for (auto& jobContext : jobContexts) {
-                hardwareInstances.insert(hardwareInstances.end(), jobContext.hardwareInstances.begin(), jobContext.hardwareInstances.end());
-                gpuBvhInstances.insert(gpuBvhInstances.end(), jobContext.gpuBvhInstances.begin(), jobContext.gpuBvhInstances.end());
-                instanceAABBs.insert(instanceAABBs.end(), jobContext.instanceAABBs.begin(), jobContext.instanceAABBs.end());
-                lastMatrices.insert(lastMatrices.end(), jobContext.lastMatrices.begin(), jobContext.lastMatrices.end());
-            }
-
-            if (gpuBvhInstances.empty()) {
-                // Need to reset the TLAS in this case, since it might contain invalid memory addresses
-                tlas = nullptr;
-                return;
-            }                
-
-            if (hardwareRayTracing) {
-                UpdateForHardwareRayTracing(subset, gpuBvhInstances.size());
-            }
-            else {
-                UpdateForSoftwareRayTracing(gpuBvhInstances, lastMatrices, instanceAABBs);
-            }
+            if (hardwareRayTracing)
+                UpdateForHardwareRayTracing(cameraLocation, hasCamera);
+            else
+                UpdateForSoftwareRayTracing(cameraLocation, hasCamera);
 
             if (updateTriangleLights)
                 UpdateTriangleLights();
 
-            if (bvhInstanceBuffer.GetElementCount() < gpuBvhInstances.size()) {
-                bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
-            }
-
-            if (lastMatricesBuffer.GetElementCount() < lastMatrices.size() && includeObjectHistory)
-                lastMatricesBuffer.SetSize(lastMatrices.size());
-           
-            bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
-
-            if (includeObjectHistory)
-                lastMatricesBuffer.SetData(lastMatrices.data(), 0, lastMatrices.size());
-
         }
 
         void RayTracingWorld::UpdateMaterials() {
-            
+
             UpdateMaterials(materials);
 
         }
@@ -334,7 +176,7 @@ namespace Atlas {
                 materialCount += blas->materials.size();
 
             materials.clear();
-            
+
             std::atomic_int counter = 0;
 
             materials.resize(materialCount);
@@ -343,7 +185,7 @@ namespace Atlas {
                 iterators[i] = blasInfos.begin();
 
             JobGroup jobGroup{ "Ray tracing world material update", JobPriority::High};
-            JobSystem::ParallelFor(jobGroup, int32_t(blasInfos.size()), int32_t(std::size(iterators)), 
+            JobSystem::ParallelFor(jobGroup, int32_t(blasInfos.size()), int32_t(std::size(iterators)),
                 [&](JobData& data, int32_t idx) {
 
                 // First advance
@@ -432,7 +274,7 @@ namespace Atlas {
                 }
                 });
             JobSystem::Wait(jobGroup);
-            
+
 
             if (materials.empty())
                 return;
@@ -451,6 +293,7 @@ namespace Atlas {
             blasInfos.clear();
             skinnedBlases.clear();
             skinVertexBuffers.clear();
+            pendingInstances.reset();
 
         }
 
@@ -462,7 +305,417 @@ namespace Atlas {
 
         }
 
-        void RayTracingWorld::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+        void RayTracingWorld::UpdateForSoftwareRayTracing(vec3 cameraLocation, bool hasCamera) {
+
+            auto renderState = &scene->renderState;
+
+            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
+            auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
+
+            gpuBvhInstances.clear();
+            instanceAABBs.clear();
+            lastMatrices.clear();
+
+            for (auto& jobContext : jobContexts) {
+                jobContext.gpuBvhInstances.clear();
+                jobContext.instanceAABBs.clear();
+                jobContext.lastMatrices.clear();
+            }
+
+            JobGroup jobGroup{ "Ray tracing world mesh update", JobPriority::High};
+            JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), int32_t(jobContexts.size()),
+                [&](JobData& data, int32_t idx) {
+                    auto& jobContext = jobContexts[data.idx];
+
+                    auto entity = meshComponentPool[idx];
+                    auto& meshComponent = meshComponentPool.GetByIndex(idx);
+
+                    if (!meshComponent.visible)
+                        return;
+                    if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->rayTrace)
+                        return;
+
+                    auto blas = meshComponent.mesh->blas;
+                    auto skinnedBlas = skinnedBlases.find(entity);
+                    if (skinnedBlas != skinnedBlases.end() && renderState->blasToBindlessIdx.contains(skinnedBlas->second.blas))
+                        blas = skinnedBlas->second.blas;
+
+                    if (!renderState->blasToBindlessIdx.contains(blas) || blas->needsBvhRefresh)
+                        return;
+
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+                    if (!transformComponent)
+                        return;
+
+                    auto& blasInfo = blasInfos[blas];
+                    auto distSqd = glm::distance2(
+                        vec3(transformComponent->globalMatrix[3]),
+                        cameraLocation);
+                    if (hasCamera && distSqd > blasInfo.cullingDistanceSqr)
+                        return;
+
+                    jobContext.instanceAABBs.push_back(meshComponent.aabb);
+                    auto inverseMatrix = mat3x4(glm::transpose(transformComponent->inverseGlobalMatrix));
+
+                    uint32_t mask = InstanceCullMasks::MaskAll;
+                    mask |= meshComponent.mesh->castShadow ? InstanceCullMasks::MaskShadow : 0;
+
+                    GPUBVHInstance gpuBvhInstance = {
+                        .inverseMatrix = inverseMatrix,
+                        .meshOffset = blasInfo.offset,
+                        .materialOffset = blasInfo.materialOffset,
+                        .mask = mask
+                    };
+
+                    jobContext.gpuBvhInstances.emplace_back(gpuBvhInstance);
+
+                    if (includeObjectHistory)
+                        jobContext.lastMatrices.emplace_back(glm::transpose(transformComponent->lastGlobalMatrix));
+                });
+
+            // The terrain comes first
+            for (const auto node : renderState->terrainLeafNodes) {
+                if (!node->cell || !node->cell->IsLoaded() || !renderState->blasToBindlessIdx.contains(node->cell->blas))
+                    continue;
+
+                const auto &blasInfo = blasInfos[node->cell->blas];
+                if (node->cell->blas->needsBvhRefresh)
+                    continue;
+
+                auto nodePosition = vec3(node->location.x, 0.0f, node->location.y) + scene->terrain->translation;
+                mat4 globalMatrix = glm::translate(nodePosition);
+                mat4 inverseGlobalMatrix = glm::inverse(globalMatrix);
+
+                instanceAABBs.push_back(node->cell->aabb.Translate(nodePosition));
+                auto inverseMatrix = mat3x4(glm::transpose(inverseGlobalMatrix));
+
+                uint32_t mask = InstanceCullMasks::MaskAll;
+                mask |= InstanceCullMasks::MaskShadow;
+
+                GPUBVHInstance gpuBvhInstance = {
+                    .inverseMatrix = inverseMatrix,
+                    .meshOffset = blasInfo.offset,
+                    .materialOffset = blasInfo.materialOffset,
+                    .mask = mask
+                };
+
+                gpuBvhInstances.push_back(gpuBvhInstance);
+
+                if (includeObjectHistory)
+                    lastMatrices.emplace_back(glm::transpose(globalMatrix));
+            }
+
+            JobSystem::Wait(jobGroup);
+
+            for (auto& jobContext : jobContexts) {
+                gpuBvhInstances.insert(gpuBvhInstances.end(), jobContext.gpuBvhInstances.begin(), jobContext.gpuBvhInstances.end());
+                instanceAABBs.insert(instanceAABBs.end(), jobContext.instanceAABBs.begin(), jobContext.instanceAABBs.end());
+                lastMatrices.insert(lastMatrices.end(), jobContext.lastMatrices.begin(), jobContext.lastMatrices.end());
+            }
+
+            if (gpuBvhInstances.empty()) {
+                // Need to reset the TLAS in this case, since it might contain invalid memory addresses
+                tlas = nullptr;
+                return;
+            }
+
+            BuildSoftwareTLAS(gpuBvhInstances, lastMatrices, instanceAABBs);
+
+            if (bvhInstanceBuffer.GetElementCount() < gpuBvhInstances.size()) {
+                bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
+            }
+
+            if (lastMatricesBuffer.GetElementCount() < lastMatrices.size() && includeObjectHistory)
+                lastMatricesBuffer.SetSize(lastMatrices.size());
+
+            bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
+
+            if (includeObjectHistory)
+                lastMatricesBuffer.SetData(lastMatrices.data(), 0, lastMatrices.size());
+
+        }
+
+        void RayTracingWorld::UpdateForHardwareRayTracing(vec3 cameraLocation, bool hasCamera) {
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            auto renderState = &scene->renderState;
+            const auto& gpuScene = renderState->gpuScene;
+
+            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
+            auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
+
+            auto isUsable = [&](const Ref<BLAS>& blas) {
+                return blas && blasInfos.contains(blas) && blas->blas->isBuilt && !blas->needsBvhRefresh;
+            };
+
+            auto getMask = [](bool castShadow) {
+                return uint32_t(InstanceCullMasks::MaskAll) | (castShadow ? uint32_t(InstanceCullMasks::MaskShadow) : 0u);
+            };
+
+            // The instances of the GPU scene reference their mesh by slot
+            size_t gpuInstanceCount = 0;
+            rtMeshes.resize(gpuScene.slots.size());
+            for (size_t i = 0; i < gpuScene.slots.size(); i++) {
+                const auto& slot = gpuScene.slots[i];
+
+                GPURTMesh rtMesh;
+                if (slot.drawable && slot.mesh->rayTrace && isUsable(slot.mesh->blas)) {
+                    const auto& blas = slot.mesh->blas;
+                    const auto& blasInfo = blasInfos[blas];
+                    rtMesh = GPURTMesh {
+                        .blasOffset = uint32_t(blasInfo.offset),
+                        .materialOffset = blasInfo.materialOffset,
+                        .mask = getMask(slot.mesh->castShadow),
+                        .flags = rtMeshUsable,
+                        .cullingDistanceSqr = blasInfo.cullingDistanceSqr,
+                        .blasAddress = blas->blas->deviceAddress
+                    };
+                    gpuInstanceCount += slot.entities.size();
+                }
+                rtMeshes[i] = rtMesh;
+            }
+
+            // The terrain and skinned meshes are written on the host
+            hardwareInstances.clear();
+            gpuBvhInstances.clear();
+            lastMatrices.clear();
+
+            auto addInstance = [&](const Ref<BLAS>& blas, const mat4& globalMatrix, const mat4& lastGlobalMatrix, uint32_t mask) {
+                const auto& blasInfo = blasInfos[blas];
+
+                VkAccelerationStructureInstanceKHR instance = {};
+                auto transposed = glm::transpose(globalMatrix);
+                std::memcpy(&instance.transform, &transposed, sizeof(VkTransformMatrixKHR));
+                instance.instanceCustomIndex = blasInfo.offset;
+                instance.accelerationStructureReference = blas->blas->deviceAddress;
+                instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+                instance.mask = mask;
+                hardwareInstances.push_back(instance);
+
+                gpuBvhInstances.push_back(GPUBVHInstance {
+                    .inverseMatrix = mat3x4(glm::transpose(glm::inverse(globalMatrix))),
+                    .meshOffset = blasInfo.offset,
+                    .materialOffset = blasInfo.materialOffset,
+                    .mask = mask
+                    });
+
+                if (includeObjectHistory)
+                    lastMatrices.push_back(mat3x4(glm::transpose(lastGlobalMatrix)));
+            };
+
+            for (const auto node : renderState->terrainLeafNodes) {
+                if (!node->cell || !node->cell->IsLoaded() || !isUsable(node->cell->blas))
+                    continue;
+
+                auto nodePosition = vec3(node->location.x, 0.0f, node->location.y) + scene->terrain->translation;
+                auto globalMatrix = glm::translate(nodePosition);
+                addInstance(node->cell->blas, globalMatrix, globalMatrix, getMask(true));
+            }
+
+            for (const auto& slot : gpuScene.slots) {
+                if (!slot.skinned || !slot.mesh->rayTrace)
+                    continue;
+
+                for (auto entity : slot.entities) {
+                    const auto& meshComponent = meshComponentPool.Get(entity);
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+                    if (!meshComponent.visible || !transformComponent)
+                        continue;
+
+                    // Entities further away are traced in the rest pose of their mesh
+                    auto blas = slot.mesh->blas;
+                    auto skinnedBlas = skinnedBlases.find(entity);
+                    if (skinnedBlas != skinnedBlases.end() && isUsable(skinnedBlas->second.blas))
+                        blas = skinnedBlas->second.blas;
+                    if (!isUsable(blas))
+                        continue;
+
+                    auto distanceSqr = glm::distance2(vec3(transformComponent->globalMatrix[3]), cameraLocation);
+                    if (hasCamera && distanceSqr > blasInfos[blas].cullingDistanceSqr)
+                        continue;
+
+                    addInstance(blas, transformComponent->globalMatrix, transformComponent->lastGlobalMatrix,
+                        getMask(slot.mesh->castShadow));
+                }
+            }
+
+            auto hostInstanceCount = uint32_t(hardwareInstances.size());
+            auto maxInstanceCount = hostInstanceCount + uint32_t(gpuInstanceCount);
+            if (maxInstanceCount == 0) {
+                // Need to reset the TLAS in this case, since it might contain invalid memory addresses
+                tlas = nullptr;
+                pendingInstances.reset();
+                return;
+            }
+
+            if (!instanceCountReadback) {
+                Graphics::BufferDesc desc = {
+                    .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                    .domain = Graphics::BufferDomain::Host,
+                    .hostAccess = Graphics::BufferHostAccess::Random,
+                    .size = sizeof(uint32_t)
+                };
+                instanceCountReadback = device->CreateMultiBuffer(desc);
+            }
+
+            // The acceleration structure is built for an upper bound of the instances. The readback is from the last
+            // frame which used the buffers of this one, its instances might have been dropped for a frame if the count
+            // went up a lot.
+            auto instanceBound = std::min(maxInstanceCount, hostInstanceCount + initialGPUInstanceBound);
+            if (readbackFrameCount >= FRAME_DATA_COUNT) {
+                auto lastInstanceCount = *static_cast<uint32_t*>(instanceCountReadback->Map());
+                instanceCountReadback->Unmap();
+                instanceBound = std::clamp(lastInstanceCount + lastInstanceCount / 4 + instanceBoundMargin,
+                    hostInstanceCount, maxInstanceCount);
+            }
+            readbackFrameCount++;
+
+            // The scene can be updated several times per frame, the uploads must not overwrite each other
+            auto rtMeshBuffer = uploadBufferPool.Upload(rtMeshes.data(), rtMeshes.size() * sizeof(GPURTMesh));
+            auto hostInstanceBuffer = uploadBufferPool.Upload(hardwareInstances.data(),
+                hardwareInstances.size() * sizeof(VkAccelerationStructureInstanceKHR));
+            auto hostBvhInstanceBuffer = uploadBufferPool.Upload(gpuBvhInstances.data(), gpuBvhInstances.size() * sizeof(GPUBVHInstance));
+            auto hostLastMatricesBuffer = includeObjectHistory ?
+                uploadBufferPool.Upload(lastMatrices.data(), lastMatrices.size() * sizeof(mat3x4)) : nullptr;
+
+            auto tlasInstanceSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceBound;
+            if (!tlasInstanceBuffer || tlasInstanceBuffer->size < tlasInstanceSize) {
+                // Some headroom, the instance count changes with the camera
+                Graphics::BufferDesc desc = {
+                    .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                        VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                    .domain = Graphics::BufferDomain::Device,
+                    .size = tlasInstanceSize + tlasInstanceSize / 4
+                };
+                tlasInstanceBuffer = device->CreateBuffer(desc);
+            }
+
+            if (bvhInstanceBuffer.GetElementCount() < instanceBound)
+                bvhInstanceBuffer.SetSize(instanceBound + instanceBound / 4);
+            if (includeObjectHistory && lastMatricesBuffer.GetElementCount() < instanceBound)
+                lastMatricesBuffer.SetSize(instanceBound + instanceBound / 4);
+
+            if (!instanceCounterBuffer) {
+                Graphics::BufferDesc desc = {
+                    .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                        VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                    .domain = Graphics::BufferDomain::Device,
+                    .size = sizeof(uint32_t)
+                };
+                instanceCounterBuffer = device->CreateBuffer(desc);
+            }
+
+            // The GPU scene writes its instances while culling, after that the acceleration structure is built
+            pendingInstances = PendingInstances {
+                .rtMeshBuffer = rtMeshBuffer,
+                .hostInstanceBuffer = hostInstanceBuffer,
+                .hostBvhInstanceBuffer = hostBvhInstanceBuffer,
+                .hostLastMatricesBuffer = hostLastMatricesBuffer,
+                .hostInstanceCount = hostInstanceCount,
+                .gpuInstanceCount = uint32_t(gpuInstanceCount),
+                .instanceBound = instanceBound,
+                .includeObjectHistory = includeObjectHistory,
+                .frameIndex = device->GetFrameIndex()
+            };
+
+            auto tlasDesc = Graphics::TLASDesc{
+                .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+            };
+            tlas = device->CreateTLAS(tlasDesc);
+
+        }
+
+        const RayTracingWorld::PendingInstances* RayTracingWorld::GetPendingInstances() const {
+
+            // Updates of frames which weren't rendered are dropped
+            auto frameIndex = Graphics::GraphicsDevice::DefaultDevice->GetFrameIndex();
+            if (!pendingInstances.has_value() || pendingInstances->frameIndex != frameIndex)
+                return nullptr;
+
+            return &pendingInstances.value();
+
+        }
+
+        void RayTracingWorld::PrepareInstances(Graphics::CommandList* commandList) {
+
+            AE_ASSERT(pendingInstances.has_value() && "No instances were prepared by the update");
+            if (!pendingInstances.has_value()) return;
+
+            const auto& pending = *pendingInstances;
+
+            // The previous frame might still read the instances
+            commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            // Instances after the written ones stay zero, without an acceleration structure they are inactive
+            uint32_t zero = 0;
+            commandList->FillBuffer(tlasInstanceBuffer, &zero);
+            commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            if (pending.hostInstanceCount > 0) {
+                commandList->CopyBuffer(pending.hostInstanceBuffer, tlasInstanceBuffer,
+                    VkBufferCopy{ .size = pending.hostInstanceCount * sizeof(VkAccelerationStructureInstanceKHR) });
+                commandList->CopyBuffer(pending.hostBvhInstanceBuffer, bvhInstanceBuffer.Get(),
+                    VkBufferCopy{ .size = pending.hostInstanceCount * sizeof(GPUBVHInstance) });
+                if (pending.includeObjectHistory)
+                    commandList->CopyBuffer(pending.hostLastMatricesBuffer, lastMatricesBuffer.Get(),
+                        VkBufferCopy{ .size = pending.hostInstanceCount * sizeof(mat3x4) });
+            }
+            auto hostInstanceCount = pending.hostInstanceCount;
+            commandList->FillBuffer(instanceCounterBuffer, &hostInstanceCount);
+
+        }
+
+        void RayTracingWorld::BindInstanceOutputs(Graphics::CommandList* commandList) {
+
+            AE_ASSERT(pendingInstances.has_value() && "No instances were prepared by the update");
+            if (!pendingInstances.has_value()) return;
+
+            const auto& pending = *pendingInstances;
+
+            commandList->BindBuffer(pending.rtMeshBuffer, 3, 7);
+            commandList->BindBuffer(instanceCounterBuffer, 3, 8);
+            commandList->BindBuffer(tlasInstanceBuffer, 3, 9);
+            commandList->BindBuffer(bvhInstanceBuffer.Get(), 3, 10);
+            // Any buffer works as the target of the last matrices if they aren't written
+            commandList->BindBuffer(pending.includeObjectHistory ? lastMatricesBuffer.Get() : bvhInstanceBuffer.Get(), 3, 11);
+
+        }
+
+        void RayTracingWorld::FinishInstances(Graphics::CommandList* commandList) {
+
+            AE_ASSERT(pendingInstances.has_value() && "No instances were prepared by the update");
+            if (!pendingInstances.has_value()) return;
+
+            const auto& pending = *pendingInstances;
+
+            Graphics::Profiler::BeginQuery("TLAS update");
+
+            // The written and copied instances are read by the build and the readback
+            commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_TRANSFER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+            commandList->CopyBuffer(instanceCounterBuffer, instanceCountReadback, VkBufferCopy{ .size = sizeof(uint32_t) });
+            commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+
+            tlasBuilder.BuildTLAS(tlas, tlasInstanceBuffer, pending.instanceBound, commandList);
+
+            // Ray traced passes of this frame follow in the same command list
+            commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+            Graphics::Profiler::EndQuery();
+
+            pendingInstances.reset();
+
+        }
+
+        void RayTracingWorld::BuildSoftwareTLAS(std::vector<GPUBVHInstance>& gpuBvhInstances,
             std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& instanceAABBs) {
 
             auto bvh = Volume::BVH(instanceAABBs);
@@ -504,32 +757,6 @@ namespace Atlas {
 
         }
 
-        void RayTracingWorld::UpdateForHardwareRayTracing(Scene::Subset<MeshComponent,
-            TransformComponent>& entitySubset, size_t instanceCount) {
-
-            auto device = Graphics::GraphicsDevice::DefaultDevice;
-
-            auto commandList = device->GetCommandList(Graphics::GraphicsQueue);
-            commandList->BeginCommands();
-
-            Graphics::Profiler::BeginThread("Acceleration structures", commandList);
-            Graphics::Profiler::BeginQuery("TLAS update");
-
-            auto tlasDesc = Graphics::TLASDesc{
-                .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-            };
-            tlas = device->CreateTLAS(tlasDesc);
-
-            tlasBuilder.BuildTLAS(tlas, hardwareInstances, commandList);
-
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndThread();
-
-            commandList->EndCommands();
-            device->SubmitCommandList(commandList);
-
-        }
-
         void RayTracingWorld::UpdateSkinnedBlases(int32_t& meshCount) {
 
             auto renderState = &scene->renderState;
@@ -542,17 +769,27 @@ namespace Atlas {
 
             jointMatrices.clear();
 
+            auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
+            auto hasCamera = scene->HasMainCamera();
+            auto cameraLocation = hasCamera ? scene->GetMainCamera().GetLocation() : vec3(0.0f);
+
             for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
                 auto entity = animationComponentPool[i];
                 const auto& animationComponent = animationComponentPool.GetByIndex(i);
                 auto meshComponent = meshComponentPool.TryGet(entity);
+                auto transformComponent = transformComponentPool.TryGet(entity);
 
-                if (!meshComponent || !meshComponent->mesh.IsLoaded() || !meshComponent->mesh->rayTrace ||
-                    !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
+                if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
+                    !meshComponent->mesh->rayTrace || !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
+                    continue;
+
+                auto item = skinnedBlases.find(entity);
+                // Entities which already have a BLAS keep it a little further out, so it isn't recreated at the border
+                auto distance = item != skinnedBlases.end() ? skinnedBlasDistance * 1.25f : skinnedBlasDistance;
+                if (hasCamera && glm::distance2(vec3(transformComponent->globalMatrix[3]), cameraLocation) > distance * distance)
                     continue;
 
                 const auto& mesh = meshComponent->mesh;
-                auto item = skinnedBlases.find(entity);
                 // The hardware BLAS needs to be created again when switching between refits and builds
                 if (item == skinnedBlases.end() || item->second.mesh.GetID() != mesh.GetID() ||
                     hardwareRayTracing && item->second.blas->blas->allowUpdate != refitSkinnedBlases)

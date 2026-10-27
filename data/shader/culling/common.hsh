@@ -1,0 +1,53 @@
+// Has to match the structures in scene/GPUScene.h
+
+#define INSTANCE_VISIBLE 1u
+#define INSTANCE_DONT_CULL 2u
+#define INSTANCE_REVERSED_WINDING 4u
+
+#define INVALID_HISTORY_IDX 0xFFFFFFFFu
+
+#define MESH_DRAWABLE 1u
+#define MESH_CAST_SHADOW 2u
+#define MESH_IMPOSTOR 4u
+
+#define DRAW_DEFAULT_WINDING 0u
+#define DRAW_REVERSED_WINDING 1u
+#define DRAW_IMPOSTOR 2u
+#define DRAW_TYPE_COUNT 3u
+
+struct Instance {
+    // Rows of the global matrix
+    mat3x4 matrix;
+    uint meshIdx;
+    uint flags;
+    uint historyIdx;
+    uint padding0;
+};
+
+struct CullMesh {
+    // The w components are the distance culling of the main and the shadow passes
+    vec4 aabbMin;
+    vec4 aabbMax;
+    float impostorDistance;
+    float impostorShadowDistance;
+    uint flags;
+    uint padding0;
+    uint regionOffset;
+    uint regionCapacity;
+    uint impostorRegionOffset;
+    uint padding1;
+};
+
+struct CullView {
+    vec4 planes[6];
+    uint shadow;
+    uint indexOffset;
+    uint impostorIndexOffset;
+    uint counterOffset;
+};
+
+vec3 GetInstancePosition(mat3x4 matrix) {
+
+    return vec3(matrix[0].w, matrix[1].w, matrix[2].w);
+
+}

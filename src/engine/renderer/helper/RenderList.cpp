@@ -28,6 +28,7 @@ namespace Atlas {
 
         processedMainPasses.clear();
         processedShadowPasses.clear();
+        gpuCulledPasses.clear();
 
         JobSystem::WaitSpin(clearJob);
         wasCleared = false;
@@ -117,6 +118,25 @@ namespace Atlas {
 
     }
 
+    void RenderList::AddGPUCulledPass(const Ref<Pass>& pass) {
+
+        std::scoped_lock lock(mutex);
+
+        pass->gpuCulled = true;
+        gpuCulledPasses.push_back(pass);
+
+    }
+
+    void RenderList::DrawGPUCulled(Graphics::CommandList* commandList, const GPUDraw& draw) const {
+
+        auto offset = draw.command * gpuDrawCommandSize;
+        if (draw.type != GPUDrawType::Impostor)
+            commandList->DrawIndexedIndirect(gpuCommandBuffer, offset, 1, gpuDrawCommandSize);
+        else
+            commandList->DrawIndirect(gpuCommandBuffer, offset, 1, gpuDrawCommandSize);
+
+    }
+
     Ref<RenderList::Pass> RenderList::PopPassFromQueue(RenderPassType type) {
 
         std::scoped_lock lock(mutex);
@@ -139,6 +159,7 @@ namespace Atlas {
         // We can reset the scene now and delete the reference
         wasCleared = true;
         scene = nullptr;
+        gpuCulledPasses.clear();
 
         JobSystem::Execute(clearJob, 
             [&](JobData&) {
@@ -174,6 +195,17 @@ namespace Atlas {
         lastSize = lastJointMatrices.size();
         lastJointMatrices.clear();
         if (lastSize) lastJointMatrices.reserve(lastSize);
+
+        lastSize = instanceIndices.size();
+        instanceIndices.clear();
+        if (lastSize) instanceIndices.reserve(lastSize);
+
+        lastSize = impostorInstanceIndices.size();
+        impostorInstanceIndices.clear();
+        if (lastSize) impostorInstanceIndices.reserve(lastSize);
+
+        gpuCulled = false;
+        gpuDraws.clear();
 
         std::erase_if(meshToEntityMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
         std::erase_if(meshToInstancesMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
@@ -228,6 +260,7 @@ namespace Atlas {
 
         auto& transformPool = scene->entityManager.GetPool<TransformComponent>();
         auto& animationPool = scene->entityManager.GetPool<AnimationComponent>();
+        auto useInstanceBuffer = Graphics::GraphicsDevice::DefaultDevice->support.bindless;
         for (auto& [meshId, batch] : meshToEntityMap) {
             auto item = meshIdToMeshMap.find(meshId);
             // This happens when meshes are loaded async
@@ -247,9 +280,13 @@ namespace Atlas {
                 mesh->impostorShadowDistance : mesh->impostorDistance;
             auto sqdDistance = typeDistance * typeDistance;
 
+            // Skinned meshes need their joint matrices next to the matrices of the instances
+            auto useIndices = useInstanceBuffer && !isSkinned;
+            auto instanceCount = [&]() { return useIndices ? instanceIndices.size() : currentEntityMatrices.size(); };
+
             MeshInstances instances{};
-            instances.offset = currentEntityMatrices.size();
-            instances.impostorOffset = impostorMatrices.size();
+            instances.offset = instanceCount();
+            instances.impostorOffset = useIndices ? impostorInstanceIndices.size() : impostorMatrices.size();
             instances.jointOffset = currentJointMatrices.size();
 
             auto reversedWindingBegin = Common::PartitionByWinding(batch.entities.begin(),
@@ -260,12 +297,19 @@ namespace Atlas {
 
             for (size_t i = 0; i < batch.count; i++) {
                 if (i == defaultWindingEntityCount)
-                    instances.reversedWindingOffset = currentEntityMatrices.size();
+                    instances.reversedWindingOffset = instanceCount();
                 auto& transformComponent = transformPool.Get(batch.entities[i]);
                 const auto distance = hasImpostor ? glm::distance2(
                     vec3(transformComponent.globalMatrix[3]), cameraLocation) : 0.0f;
                 if (hasImpostor && distance >= sqdDistance) {
-                    impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                    if (useIndices)
+                        impostorInstanceIndices.push_back(ECS::EntityToIdx(batch.entities[i]));
+                    else
+                        impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                    continue;
+                }
+                if (useIndices) {
+                    instanceIndices.push_back(ECS::EntityToIdx(batch.entities[i]));
                     continue;
                 }
                 currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
@@ -296,11 +340,12 @@ namespace Atlas {
                 }
             }
             if (defaultWindingEntityCount == batch.count)
-                instances.reversedWindingOffset = currentEntityMatrices.size();
-            instances.reversedWindingCount = currentEntityMatrices.size() - instances.reversedWindingOffset;
+                instances.reversedWindingOffset = instanceCount();
+            instances.reversedWindingCount = instanceCount() - instances.reversedWindingOffset;
 
-            instances.count = currentEntityMatrices.size() - instances.offset;
-            instances.impostorCount = impostorMatrices.size() - instances.impostorOffset;
+            instances.count = instanceCount() - instances.offset;
+            instances.impostorCount = (useIndices ? impostorInstanceIndices.size() : impostorMatrices.size())
+                - instances.impostorOffset;
             meshToInstancesMap[meshId] = instances;
 
         }
@@ -351,6 +396,30 @@ namespace Atlas {
             if (newSize > 0 && type != RenderPassType::Shadow) lastJointMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
         }
 
+        if (device->support.bindless) {
+            auto ensureIndicesBuffer = [&](Ref<Graphics::MultiBuffer>& buffer, size_t count) {
+                if (buffer && buffer->size >= sizeof(uint32_t) * count)
+                    return;
+                auto newSize = buffer != nullptr ? buffer->size * 2 : size_t(0);
+                newSize = std::max(newSize, sizeof(uint32_t) * std::max(count, size_t(1)));
+                auto bufferDesc = Graphics::BufferDesc {
+                    .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                    .domain = Graphics::BufferDomain::Host,
+                    .size = newSize
+                };
+                buffer = device->CreateMultiBuffer(bufferDesc);
+            };
+
+            ensureIndicesBuffer(instanceIndicesBuffer, instanceIndices.size());
+            ensureIndicesBuffer(impostorInstanceIndicesBuffer, impostorInstanceIndices.size());
+
+            if (instanceIndices.size() > 0)
+                instanceIndicesBuffer->SetData(instanceIndices.data(), 0, instanceIndices.size() * sizeof(uint32_t));
+            if (impostorInstanceIndices.size() > 0)
+                impostorInstanceIndicesBuffer->SetData(impostorInstanceIndices.data(), 0,
+                    impostorInstanceIndices.size() * sizeof(uint32_t));
+        }
+
         // Probably better to use a device local buffer since we upload once per frame
         if (currentEntityMatrices.size() > 0)
             currentMatricesBuffer->SetData(currentEntityMatrices.data(), 0, currentEntityMatrices.size() * sizeof(mat3x4));
@@ -378,6 +447,9 @@ namespace Atlas {
 
         for (auto& context : contexts)
             context.entities.clear();
+
+        gpuCulled = false;
+        gpuDraws.clear();
 
         wasUsed = false;
         scene = nullptr;

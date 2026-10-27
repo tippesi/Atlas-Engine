@@ -162,6 +162,14 @@ namespace Atlas {
 
 			JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
 
+			// The main and directional shadow passes are culled together
+			if (device->support.bindless) {
+				JobSystem::WaitSpin(renderState->fillGPUShadowRenderPassesJob);
+				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
+				renderState->gpuScene.Cull(renderState->renderList, scene->GetMainCamera().GetLocation(), commandList);
+				renderState->gpuScene.Bind(commandList);
+			}
+
 			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
 			// Better orders are: Shadow, DDGI, Main or. DDGI, Shadow, Main or DDGI Main, Shadow
 			{
@@ -202,6 +210,11 @@ namespace Atlas {
 			UpdateShadowImageLayouts(scene, commandList);
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
+
+			// Written separately from the culling, so the main pass doesn't wait for the ray tracing world update
+			if (device->support.bindless && scene->rayTracingWorld)
+				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, scene->GetMainCamera().GetLocation(),
+					commandList);
 
 			renderState->lightBuffer.Bind(commandList, 1, 18);
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
@@ -449,6 +462,12 @@ namespace Atlas {
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
 			JobSystem::WaitSpin(renderState->materialUpdateJob);
+
+			// Writes the hardware ray tracing instances and builds the acceleration structure
+			if (device->support.bindless && scene->rayTracingWorld) {
+				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
+				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, camera.GetLocation(), commandList);
+			}
 
 			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);

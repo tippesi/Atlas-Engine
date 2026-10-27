@@ -48,46 +48,67 @@ namespace Atlas {
                         continue;
 
                     if (subDataCount < subDatas.size())
-                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
+                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get(), nullptr };
                     else
-                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get() });
+                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get(), nullptr });
                     subDataCount++;
                 }
             }
 
+            for (const auto& draw : mainPass->gpuDraws) {
+                if (!draw.subData)
+                    continue;
+
+                if (subDataCount < subDatas.size())
+                    subDatas[subDataCount] = { draw.subData, draw.meshId, draw.mesh, &draw };
+                else
+                    subDatas.push_back({ draw.subData, draw.meshId, draw.mesh, &draw });
+                subDataCount++;
+            }
+
             // Check whether materials have pipeline configs
             for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, _, mesh] = subDatas[i];
+                auto& [subData, _, mesh, gpuDraw] = subDatas[i];
                 const auto& material = subData->material;
                 if (subData->mainConfig.IsValid()) continue;
 
                 subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
                 subData->mainReversedWindingConfig = subData->mainConfig.GetReversedWindingVariant();
+                subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+                subData->mainReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
             }
+
+            auto getConfig = [](const auto& entry) -> PipelineConfig& {
+                const auto& [subData, meshID, mesh, gpuDraw] = entry;
+                return gpuDraw && gpuDraw->type == RenderList::GPUDrawType::ReversedWinding ?
+                    subData->mainReversedWindingConfig : subData->mainConfig;
+            };
 
             // Sort materials by hash
             std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
-                [](auto& subData0, auto& subData1) {
-                    return std::get<0>(subData0)->mainConfig.variantHash <
-                        std::get<0>(subData1)->mainConfig.variantHash;
+                [&](auto& subData0, auto& subData1) {
+                    return getConfig(subData0).variantHash < getConfig(subData1).variantHash;
                 });
 
             Hash prevMesh = 0;
             Hash prevHash = 0;
             Ref<Graphics::Pipeline> currentPipeline;
             for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, meshID, mesh] = subDatas[i];
-                const auto& instances = mainPass->meshToInstancesMap[meshID];
+                auto& [subData, meshID, mesh, gpuDraw] = subDatas[i];
+                auto instances = gpuDraw ? RenderList::MeshInstances{} : mainPass->meshToInstancesMap[meshID];
 
-                const auto material = subData->material;
+                const auto& material = subData->material;
 
-                // Overwrite material config frame buffer (and assume these have the same format)
-                subData->mainConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
+                auto& config = getConfig(subDatas[i]);
 
-                if (subData->mainConfig.variantHash != prevHash) {
-                    currentPipeline = PipelineManager::GetPipeline(subData->mainConfig);
+                if (config.variantHash != prevHash) {
+                    // The frame buffer is only needed to create the pipeline (assume these have the same format),
+                    // it isn't kept in the config to let it be able to be deleted
+                    config.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
+                    currentPipeline = PipelineManager::GetPipeline(config);
+                    config.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
-                    prevHash = subData->mainConfig.variantHash;
+                    prevHash = config.variantHash;
                 }
 
                 if (meshID != prevMesh) {
@@ -146,6 +167,11 @@ namespace Atlas {
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
+                if (gpuDraw) {
+                    renderList->DrawGPUCulled(commandList, *gpuDraw);
+                    continue;
+                }
+
                 const auto defaultWindingCount = instances.count - instances.reversedWindingCount;
                 if (defaultWindingCount) {
                     commandList->DrawIndexed(subData->indicesCount, defaultWindingCount, subData->indicesOffset,
@@ -155,16 +181,13 @@ namespace Atlas {
                     auto& reversedWindingConfig = subData->mainReversedWindingConfig;
                     reversedWindingConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
+                    reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
                     commandList->PushConstants("constants", &pushConstants);
                     commandList->DrawIndexed(subData->indicesCount, instances.reversedWindingCount, subData->indicesOffset,
                         0, instances.reversedWindingOffset);
                     prevHash = reversedWindingConfig.variantHash;
                 }
-
-                // Reset the frame buffer here to let it be able to be deleted
-                subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
-                subData->mainReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
             }
 
@@ -237,6 +260,8 @@ namespace Atlas {
 
             if (device->support.bindless) {
                 macros.push_back("BINDLESS_TEXTURES");
+                if (!mesh->data.IsSkinned())
+                    macros.push_back("INSTANCE_BUFFER");
             }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);

@@ -14,9 +14,13 @@ layout(location=6) in vec4 vWeights;
 layout(location=0) out vec2 texCoordVS;
 #endif
 
+#ifdef INSTANCE_BUFFER
+#include <culling/instances.hsh>
+#else
 layout(std430, set = 1, binding = 1) readonly buffer Matrices {
     mat3x4 matrices[];
 };
+#endif
 
 #ifdef SKINNED
 layout(std430, set = 1, binding = 4) readonly buffer JointMatrices {
@@ -41,7 +45,11 @@ layout(push_constant) uniform constants {
 
 void main() {
 
+#ifdef INSTANCE_BUFFER
+    mat4 mMatrix = GetInstanceMatrix(instanceIndices[gl_InstanceIndex]);
+#else
     mat4 mMatrix = mat4(transpose(matrices[gl_InstanceIndex]));
+#endif
     
 #ifdef OPACITY_MAP
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;

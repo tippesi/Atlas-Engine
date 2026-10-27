@@ -6,6 +6,7 @@
 #include "scene/components/MeshComponent.h"
 
 #include "graphics/Buffer.h"
+#include "volume/Frustum.h"
 
 #include <unordered_map>
 #include <vector>
@@ -59,6 +60,26 @@ namespace Atlas {
             std::vector<std::pair<ECS::Entity, Hash>> entities;
         };
 
+        enum class GPUDrawType : uint32_t {
+            DefaultWinding = 0,
+            ReversedWinding = 1,
+            Impostor = 2
+        };
+
+        // Indexed and non-indexed draw commands have the same stride
+        static constexpr uint32_t gpuDrawCommandSize = 5 * sizeof(uint32_t);
+
+        // A draw of the instances which are culled on the GPU, its command is written there
+        struct GPUDraw {
+            // Impostor draws don't have sub data
+            Mesh::MeshSubData* subData = nullptr;
+            Mesh::Mesh* mesh = nullptr;
+            Hash meshId = 0;
+            uint32_t slot = 0;
+            GPUDrawType type = GPUDrawType::DefaultWinding;
+            uint32_t command = 0;
+        };
+
         struct Pass {
             RenderPassType type;
 
@@ -78,11 +99,22 @@ namespace Atlas {
             std::vector<mat3x4> currentJointMatrices;
             std::vector<mat3x4> lastJointMatrices;
 
+            // With the instance buffer entities which aren't skinned are referenced by their index
+            std::vector<uint32_t> instanceIndices;
+            std::vector<uint32_t> impostorInstanceIndices;
+
+            // Passes culled on the GPU only have the skinned meshes in the lists above
+            bool gpuCulled = false;
+            Volume::Frustum frustum;
+            std::vector<GPUDraw> gpuDraws;
+
             Ref<Graphics::MultiBuffer> currentMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
             Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
             Ref<Graphics::MultiBuffer> currentJointMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastJointMatricesBuffer;
+            Ref<Graphics::MultiBuffer> instanceIndicesBuffer;
+            Ref<Graphics::MultiBuffer> impostorInstanceIndicesBuffer;
 
             RenderPassThreadContext contexts[8];
 
@@ -119,6 +151,11 @@ namespace Atlas {
 
         void FinishPass(const Ref<Pass>& pass, RenderPassType type);
 
+        void AddGPUCulledPass(const Ref<Pass>& pass);
+
+        // Draws with the command written by the GPU culling, empty draws are skipped on the GPU
+        void DrawGPUCulled(Graphics::CommandList* commandList, const GPUDraw& draw) const;
+
         Ref<Pass> PopPassFromQueue(RenderPassType type);
 
         void Clear();
@@ -129,6 +166,10 @@ namespace Atlas {
 
         std::deque<Ref<Pass>> processedMainPasses;
         std::deque<Ref<Pass>> processedShadowPasses;
+
+        // Passes of the current frame which are culled on the GPU and the buffer with their draw commands
+        std::vector<Ref<Pass>> gpuCulledPasses;
+        Ref<Graphics::Buffer> gpuCommandBuffer;
 
         std::mutex mutex;
         std::atomic_bool wasCleared = false;

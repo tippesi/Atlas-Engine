@@ -11,11 +11,13 @@
 #include "scene/components/MeshComponent.h"
 #include "scene/components/TransformComponent.h"
 #include "buffer/VertexBuffer.h"
+#include "graphics/UploadBufferPool.h"
 #include "pipeline/PipelineConfig.h"
 
 #include "texture/TextureAtlas.h"
 
 #include <vector>
+#include <optional>
 #include <unordered_map>
 
 namespace Atlas {
@@ -41,11 +43,35 @@ namespace Atlas {
             friend Scene::SceneRenderState;
 
         public:
+            // Instances prepared by the update, the GPU scene writes its own ones while culling
+            struct PendingInstances {
+                Ref<Graphics::Buffer> rtMeshBuffer;
+                Ref<Graphics::Buffer> hostInstanceBuffer;
+                Ref<Graphics::Buffer> hostBvhInstanceBuffer;
+                Ref<Graphics::Buffer> hostLastMatricesBuffer;
+                uint32_t hostInstanceCount = 0;
+                uint32_t gpuInstanceCount = 0;
+                uint32_t instanceBound = 0;
+                bool includeObjectHistory = false;
+                // The upload buffers are only valid in the frame of the update
+                int32_t frameIndex = -1;
+            };
+
             RayTracingWorld();
 
             void Update(Scene::Subset<MeshComponent, TransformComponent> subset, bool updateTriangleLights);
 
             void UpdateMaterials();
+
+            // The GPU scene writes its hardware ray tracing instances next to the ones prepared by the update and builds
+            // the acceleration structure with the methods below. Returns nullptr if the current frame has no update.
+            const PendingInstances* GetPendingInstances() const;
+
+            void PrepareInstances(Graphics::CommandList* commandList);
+
+            void BindInstanceOutputs(Graphics::CommandList* commandList);
+
+            void FinishInstances(Graphics::CommandList* commandList);
 
             bool IsValid();
 
@@ -56,6 +82,10 @@ namespace Atlas {
             // Hardware ray tracing refits the BLASes of animated meshes instead of building them every frame.
             // Software ray tracing always refits them.
             bool refitSkinnedBlases = false;
+
+            // Animated meshes further away from the camera are traced in their rest pose, skinning and building
+            // a BLAS for every animated entity of a large scene each frame is too expensive
+            float skinnedBlasDistance = 60.0f;
 
         private:
             struct BlasInfo {
@@ -99,8 +129,25 @@ namespace Atlas {
                 uint32_t nodeCount;
             };
 
+            // Has to match RT_MESH_USABLE in culling/rtinstances.hsh
+            static constexpr uint32_t rtMeshUsable = 1;
+
+            // Until the instance count is read back, at most this many GPU instances are added to the host ones
+            static constexpr uint32_t initialGPUInstanceBound = 1u << 18;
+            static constexpr uint32_t instanceBoundMargin = 1024;
+
+            // Ray tracing data of the mesh slots of the GPU scene, has to match culling/rtinstances.hsh
+            struct alignas(16) GPURTMesh {
+                uint32_t blasOffset = 0;
+                int32_t materialOffset = 0;
+                uint32_t mask = 0;
+                uint32_t flags = 0;
+                float cullingDistanceSqr = 0.0f;
+                uint32_t padding0 = 0;
+                VkDeviceAddress blasAddress = 0;
+            };
+
             struct JobContext {
-                std::vector<VkAccelerationStructureInstanceKHR> hardwareInstances;
                 std::vector<GPUBVHInstance> gpuBvhInstances;
                 std::vector<Volume::AABB> instanceAABBs;
                 std::vector<mat3x4> lastMatrices;
@@ -108,11 +155,12 @@ namespace Atlas {
 
             void UpdateMaterials(std::vector<GPUMaterial>& materials);
 
-            void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
-                std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& instanceAABBs);
+            void UpdateForSoftwareRayTracing(vec3 cameraLocation, bool hasCamera);
 
-            void UpdateForHardwareRayTracing(Scene::Subset<MeshComponent,
-                TransformComponent>& entitySubset, size_t instanceCount);
+            void UpdateForHardwareRayTracing(vec3 cameraLocation, bool hasCamera);
+
+            void BuildSoftwareTLAS(std::vector<GPUBVHInstance>& gpuBvhInstances,
+                std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& instanceAABBs);
 
             void UpdateSkinnedBlases(int32_t& meshCount);
 
@@ -153,6 +201,16 @@ namespace Atlas {
             PipelineConfig skinTrianglesPipelineConfig;
             PipelineConfig skinVerticesPipelineConfig;
             PipelineConfig refitBVHPipelineConfig;
+
+            // Hardware instances are written on the GPU, the ones of the host first
+            std::vector<GPURTMesh> rtMeshes;
+            std::optional<PendingInstances> pendingInstances;
+            Ref<Graphics::Buffer> tlasInstanceBuffer;
+            Ref<Graphics::Buffer> instanceCounterBuffer;
+            Ref<Graphics::MultiBuffer> instanceCountReadback;
+            // The readback holds a count once every frame slot was written
+            uint32_t readbackFrameCount = 0;
+            Graphics::UploadBufferPool uploadBufferPool;
 
             std::unordered_map<Ref<BLAS>, BlasInfo> blasInfos;
             std::unordered_map<Ref<BLAS>, BlasInfo> prevBlasInfos;

@@ -1,0 +1,100 @@
+// Writes the hardware ray tracing instances of the scene instances within the ray tracing distance of their meshes.
+// The instances written on the host (terrain and animated meshes) come first. RTMesh has to match GPURTMesh in
+// RayTracingWorld.h, TLASInstance VkAccelerationStructureInstanceKHR and BVHInstance GPUBVHInstance in RTStructures.h
+
+#define RT_MESH_USABLE 1u
+
+struct RTMesh {
+    uint blasOffset;
+    int materialOffset;
+    uint mask;
+    uint flags;
+    float cullingDistanceSqr;
+    uint padding0;
+    uvec2 blasAddress;
+};
+
+struct TLASInstance {
+    vec4 transform[3];
+    uint customIndexAndMask;
+    uint bindingOffsetAndFlags;
+    uvec2 blasAddress;
+};
+
+struct BVHInstance {
+    mat3x4 inverseMatrix;
+    int meshOffset;
+    int materialOffset;
+    int nextInstance;
+    uint mask;
+};
+
+layout(std430, set = 3, binding = 6) readonly buffer InstanceHistory {
+    mat3x4 instanceHistory[];
+};
+
+layout(std430, set = 3, binding = 7) readonly buffer RTMeshes {
+    RTMesh rtMeshes[];
+};
+
+layout(std430, set = 3, binding = 8) buffer RTInstanceCounter {
+    uint rtInstanceCounter;
+};
+
+layout(std430, set = 3, binding = 9) writeonly buffer TLASInstances {
+    TLASInstance tlasInstances[];
+};
+
+layout(std430, set = 3, binding = 10) writeonly buffer BVHInstances {
+    BVHInstance bvhInstances[];
+};
+
+layout(std430, set = 3, binding = 11) writeonly buffer LastMatrices {
+    mat3x4 lastMatrices[];
+};
+
+// VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR
+const uint cullDisableFlag = 1u;
+
+void WriteRayTracingInstance(Instance instance, float distanceSqr, uint maxInstanceCount, bool includeObjectHistory) {
+
+    RTMesh mesh = rtMeshes[instance.meshIdx];
+    if ((mesh.flags & RT_MESH_USABLE) == 0u || distanceSqr > mesh.cullingDistanceSqr)
+        return;
+
+    uint instanceIdx = atomicAdd(rtInstanceCounter, 1u);
+    if (instanceIdx >= maxInstanceCount)
+        return;
+
+    mat3x4 matrix = instance.matrix;
+
+    TLASInstance tlasInstance;
+    tlasInstance.transform[0] = matrix[0];
+    tlasInstance.transform[1] = matrix[1];
+    tlasInstance.transform[2] = matrix[2];
+    tlasInstance.customIndexAndMask = (mesh.blasOffset & 0xFFFFFFu) | (mesh.mask << 24u);
+    tlasInstance.bindingOffsetAndFlags = cullDisableFlag << 24u;
+    tlasInstance.blasAddress = mesh.blasAddress;
+    tlasInstances[instanceIdx] = tlasInstance;
+
+    vec3 position = GetInstancePosition(matrix);
+    mat3 rotationScale = transpose(mat3(matrix[0].xyz, matrix[1].xyz, matrix[2].xyz));
+    mat3 inverseRotationScale = inverse(rotationScale);
+    vec3 inverseTranslation = -(inverseRotationScale * position);
+    mat3 inverseRows = transpose(inverseRotationScale);
+
+    BVHInstance bvhInstance;
+    bvhInstance.inverseMatrix = mat3x4(vec4(inverseRows[0], inverseTranslation.x),
+        vec4(inverseRows[1], inverseTranslation.y), vec4(inverseRows[2], inverseTranslation.z));
+    bvhInstance.meshOffset = int(mesh.blasOffset);
+    bvhInstance.materialOffset = mesh.materialOffset;
+    bvhInstance.nextInstance = 0;
+    bvhInstance.mask = mesh.mask;
+    bvhInstances[instanceIdx] = bvhInstance;
+
+    if (includeObjectHistory) {
+        lastMatrices[instanceIdx] = instance.historyIdx != INVALID_HISTORY_IDX ?
+            instanceHistory[instance.historyIdx] : matrix;
+    }
+
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Entity.h"
+#include "GPUScene.h"
 #include "jobsystem/JobGroup.h"
 #include "texture/Texture2D.h"
 #include "texture/Texture2DArray.h"
@@ -50,6 +51,9 @@ namespace Atlas::Scene {
 
         void UpdateOtherTextureBindlessData();
 
+        // Bindless devices keep the instances on the GPU and cull them there
+        void UpdateGPUScene(const std::vector<ECS::Entity>& dirtyEntities, const std::vector<ECS::Entity>& lastDirtyEntities);
+
         void FillMainRenderPass();
 
         void FillShadowRenderPass(Entity entity);
@@ -60,6 +64,7 @@ namespace Atlas::Scene {
 
         Scene* scene;
         RenderList renderList;
+        GPUScene gpuScene;
 
         Buffer::Buffer materialBuffer;
         Buffer::Buffer lightBuffer;
@@ -98,6 +103,8 @@ namespace Atlas::Scene {
         JobGroup newFrameRenderListJob { "New frame render list", JobPriority::High};
         JobGroup fillMainRenderPassJob{ "Main render pass update", JobPriority::High};
         JobGroup fillShadowRenderPassesJob{ "Shadow render pass update", JobPriority::High};
+        JobGroup fillGPUShadowRenderPassesJob{ "GPU shadow render pass update", JobPriority::High};
+        JobGroup gpuSceneUpdateJob{ "GPU scene update", JobPriority::High };
         JobGroup cullAndSortLightsJob{ "Cull and sort lights", JobPriority::High};
 
     private:

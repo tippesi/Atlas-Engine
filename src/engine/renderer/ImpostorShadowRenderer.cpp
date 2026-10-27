@@ -30,17 +30,10 @@ namespace Atlas {
 
             auto lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
 
-            for (const auto& item : renderPass->meshToInstancesMap) {
-                auto meshId = item.first;
-                auto instance = item.second;
-
-                 // If there aren't any impostors there won't be a buffer
-                if (!instance.impostorCount)
-                    continue;
-
-                const auto& mesh = renderList->meshIdToMeshMap[meshId];
-
-                auto config = GetPipelineConfig(frameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
+            // With bindless the instances are read from the instance buffer, except the ones of skinned meshes
+            auto bindImpostor = [&](Mesh::Mesh* mesh, bool useInstanceBuffer) {
+                auto config = GetPipelineConfig(frameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset,
+                    useInstanceBuffer);
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
@@ -58,14 +51,34 @@ namespace Atlas {
                     .lightRight = glm::transpose(lightViewMatrix)[0]
                 };
                 commandList->PushConstants("constants", &constants);
+            };
 
+            for (const auto& item : renderPass->meshToInstancesMap) {
+                auto meshId = item.first;
+                auto instance = item.second;
+
+                 // If there aren't any impostors there won't be a buffer
+                if (!instance.impostorCount)
+                    continue;
+
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
+
+                bindImpostor(mesh.Get().get(), device->support.bindless && !mesh->data.IsSkinned());
                 commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
+            }
+
+            for (const auto& draw : renderPass->gpuDraws) {
+                if (draw.type != RenderList::GPUDrawType::Impostor)
+                    continue;
+
+                bindImpostor(draw.mesh, true);
+                renderList->DrawGPUCulled(commandList, draw);
             }
 
         }
 
         PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
-            bool interpolation, bool pixelDepthOffset) {
+            bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer) {
 
             auto shaderConfig = ShaderConfig {
                 {"impostor/impostorShadow.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -82,6 +95,7 @@ namespace Atlas {
             std::vector<std::string> macros;
             if (interpolation) macros.push_back("INTERPOLATION");
             if (pixelDepthOffset) macros.push_back("PIXEL_DEPTH_OFFSET");
+            if (useInstanceBuffer) macros.push_back("INSTANCE_BUFFER");
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
