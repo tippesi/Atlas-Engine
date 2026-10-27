@@ -49,9 +49,7 @@ namespace Atlas {
                 VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
                 VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
                 VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
-#ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
-#endif
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
@@ -1205,7 +1203,6 @@ namespace Atlas {
                 support.extendedDynamicState = true;
             }
 
-#ifdef AE_BINDLESS
             // Ray tracing accesses all buffer arrays and direct lighting all sampled image arrays in one stage
             const uint32_t bindlessSampledImageCount = BINDLESS_TEXTURE_COUNT + BINDLESS_CUBEMAP_COUNT + BINDLESS_TEXTURE_ARRAY_COUNT;
             const uint32_t bindlessStorageBufferCount = 3 * BINDLESS_BUFFER_COUNT;
@@ -1218,23 +1215,17 @@ namespace Atlas {
                 deviceProperties12.maxDescriptorSetUpdateAfterBindStorageBuffers >= bindlessStorageBufferCount &&
                 deviceProperties12.maxPerStageUpdateAfterBindResources >= bindlessSampledImageCount + bindlessStorageBufferCount;
 
-            // Bindless comes with GPU culling, its draws select their instances with the first instance
-            if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
-                availableFeatures12.descriptorBindingPartiallyBound && availableFeatures12.runtimeDescriptorArray &&
+            bool bindlessSupported = availableFeatures12.descriptorBindingPartiallyBound &&
+                availableFeatures12.runtimeDescriptorArray &&
                 availableFeatures12.descriptorBindingSampledImageUpdateAfterBind &&
                 availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind &&
-                availableFeatures12.shaderSampledImageArrayNonUniformIndexing && bindlessLimitsSupported &&
-                availableFeatures.features.drawIndirectFirstInstance) {
+                availableFeatures12.shaderSampledImageArrayNonUniformIndexing && bindlessLimitsSupported;
+            // The draws of the GPU culling select their instances with the first instance
+            AE_ASSERT(bindlessSupported && availableFeatures.features.drawIndirectFirstInstance &&
+                "The device doesn't support bindless resources or indirect draws with a first instance");
 
-                features12.descriptorBindingPartiallyBound = VK_TRUE;
-                features12.runtimeDescriptorArray = VK_TRUE;
-
-                support.bindless = true;
-            }
-            else if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
-                Log::Warning("Bindless resources are not supported by the device limits or features, using the non-bindless path");
-            }
-#endif
+            features12.descriptorBindingPartiallyBound = VK_TRUE;
+            features12.runtimeDescriptorArray = VK_TRUE;
 
             support.wideLines = features.features.wideLines;
 

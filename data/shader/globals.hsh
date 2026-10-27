@@ -1,13 +1,7 @@
 // Has to match the counts in graphics/Common.h
-#ifdef AE_BINDLESS
 #define TEXTURE_COUNT 16384
 #define CUBEMAP_COUNT 1024
 #define TEXTURE_ARRAY_COUNT 128
-#else
-#define TEXTURE_COUNT 1
-#define CUBEMAP_COUNT 1
-#define TEXTURE_ARRAY_COUNT 1
-#endif
 
 layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     vec4 frustumPlanes[6];

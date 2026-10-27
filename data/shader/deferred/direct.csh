@@ -33,9 +33,6 @@ layout(std430, set = 3, binding = 6) buffer LightBucketsBuffer {
     int lightBuckets[];
 };
 
-layout(set = 3, binding = 7) uniform texture2DArray cascadeMaps[8];
-layout(set = 3, binding = 15) uniform textureCube cubeMaps[8];
-
 layout(push_constant) uniform constants {
     int lightCount;
     int lightBucketCount;
@@ -102,9 +99,6 @@ void main() {
 
                 Light light = lights[offsetIdx + j];
 
-#ifndef AE_BINDLESS
-                light.shadow.mapIdx = int(offsetIdx + j);
-#endif
                 bool isMain = i + j == 0u ? true : false;
                 direct += EvaluateLight(light, surface, geometryNormal, isMain);
             }
@@ -208,35 +202,18 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
             -geometryNormal : geometryNormal : geometryNormal;
 
     if (lightType == DIRECTIONAL_LIGHT) {
-#ifdef AE_BINDLESS
         shadowFactor = CalculateCascadedShadow(light.shadow, bindlessTextureArrays[nonuniformEXT(light.shadow.mapIdx)], 
             shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
-#else
-        shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps[nonuniformEXT(light.shadow.mapIdx)], 
-            shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
-            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
-#endif
     }
     else if (lightType == POINT_LIGHT) {
-#ifdef AE_BINDLESS
         shadowFactor = CalculatePointShadow(light.shadow, bindlessCubemaps[nonuniformEXT(light.shadow.mapIdx)],
             shadowSampler, surface.P, shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
-#else
-        shadowFactor = CalculatePointShadow(light.shadow, cubeMaps[nonuniformEXT(light.shadow.mapIdx)],
-            shadowSampler, surface.P, shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
-#endif
     }
     else if (lightType == SPOT_LIGHT) {
-#ifdef AE_BINDLESS
         shadowFactor = CalculateSpotShadow(light.shadow, bindlessTextureArrays[nonuniformEXT(light.shadow.mapIdx)], 
             shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
-#else
-        shadowFactor = CalculateSpotShadow(light.shadow, cascadeMaps[nonuniformEXT(light.shadow.mapIdx)], 
-            shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
-            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
-#endif
     }
 
     if (isMain) {

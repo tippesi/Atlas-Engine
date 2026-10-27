@@ -260,7 +260,6 @@ namespace Atlas {
 
         auto& transformPool = scene->entityManager.GetPool<TransformComponent>();
         auto& animationPool = scene->entityManager.GetPool<AnimationComponent>();
-        auto useInstanceBuffer = Graphics::GraphicsDevice::DefaultDevice->support.bindless;
         for (auto& [meshId, batch] : meshToEntityMap) {
             auto item = meshIdToMeshMap.find(meshId);
             // This happens when meshes are loaded async
@@ -281,7 +280,7 @@ namespace Atlas {
             auto sqdDistance = typeDistance * typeDistance;
 
             // Skinned meshes need their joint matrices next to the matrices of the instances
-            auto useIndices = useInstanceBuffer && !isSkinned;
+            auto useIndices = !isSkinned;
             auto instanceCount = [&]() { return useIndices ? instanceIndices.size() : currentEntityMatrices.size(); };
 
             MeshInstances instances{};
@@ -396,29 +395,27 @@ namespace Atlas {
             if (newSize > 0 && type != RenderPassType::Shadow) lastJointMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
         }
 
-        if (device->support.bindless) {
-            auto ensureIndicesBuffer = [&](Ref<Graphics::MultiBuffer>& buffer, size_t count) {
-                if (buffer && buffer->size >= sizeof(uint32_t) * count)
-                    return;
-                auto newSize = buffer != nullptr ? buffer->size * 2 : size_t(0);
-                newSize = std::max(newSize, sizeof(uint32_t) * std::max(count, size_t(1)));
-                auto bufferDesc = Graphics::BufferDesc {
-                    .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    .domain = Graphics::BufferDomain::Host,
-                    .size = newSize
-                };
-                buffer = device->CreateMultiBuffer(bufferDesc);
+        auto ensureIndicesBuffer = [&](Ref<Graphics::MultiBuffer>& buffer, size_t count) {
+            if (buffer && buffer->size >= sizeof(uint32_t) * count)
+                return;
+            auto newSize = buffer != nullptr ? buffer->size * 2 : size_t(0);
+            newSize = std::max(newSize, sizeof(uint32_t) * std::max(count, size_t(1)));
+            auto bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .domain = Graphics::BufferDomain::Host,
+                .size = newSize
             };
+            buffer = device->CreateMultiBuffer(bufferDesc);
+        };
 
-            ensureIndicesBuffer(instanceIndicesBuffer, instanceIndices.size());
-            ensureIndicesBuffer(impostorInstanceIndicesBuffer, impostorInstanceIndices.size());
+        ensureIndicesBuffer(instanceIndicesBuffer, instanceIndices.size());
+        ensureIndicesBuffer(impostorInstanceIndicesBuffer, impostorInstanceIndices.size());
 
-            if (instanceIndices.size() > 0)
-                instanceIndicesBuffer->SetData(instanceIndices.data(), 0, instanceIndices.size() * sizeof(uint32_t));
-            if (impostorInstanceIndices.size() > 0)
-                impostorInstanceIndicesBuffer->SetData(impostorInstanceIndices.data(), 0,
-                    impostorInstanceIndices.size() * sizeof(uint32_t));
-        }
+        if (instanceIndices.size() > 0)
+            instanceIndicesBuffer->SetData(instanceIndices.data(), 0, instanceIndices.size() * sizeof(uint32_t));
+        if (impostorInstanceIndices.size() > 0)
+            impostorInstanceIndicesBuffer->SetData(impostorInstanceIndices.data(), 0,
+                impostorInstanceIndices.size() * sizeof(uint32_t));
 
         // Probably better to use a device local buffer since we upload once per frame
         if (currentEntityMatrices.size() > 0)

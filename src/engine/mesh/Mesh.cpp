@@ -113,11 +113,10 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             bool hardwareRayTracing = device->support.hardwareRayTracing;
-            bool bindless = device->support.bindless;
 
             AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
-            if (data.indexCount == 0 || !bindless || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
+            if (data.indexCount == 0 || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
 
             std::vector<RayTracing::BLAS::Triangle> triangles;
             data.BuildBVHData(triangles);
@@ -161,11 +160,10 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             bool hardwareRayTracing = device->support.hardwareRayTracing;
-            bool bindless = device->support.bindless;
 
             AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
-            if (data.indexCount == 0 || !bindless) return;
+            if (data.indexCount == 0) return;
 
             data.gpuTriangles.clear();
             data.gpuTriangles.shrink_to_fit();

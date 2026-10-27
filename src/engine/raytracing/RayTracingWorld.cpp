@@ -299,9 +299,7 @@ namespace Atlas {
 
         bool RayTracingWorld::IsValid() {
 
-            auto device = Graphics::GraphicsDevice::DefaultDevice;
-
-            return materialBuffer.GetSize() > 0 && device->support.bindless && !blasInfos.empty();
+            return materialBuffer.GetSize() > 0 && !blasInfos.empty();
 
         }
 

@@ -62,8 +62,6 @@ namespace Atlas {
         void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             RenderList* renderList, Ref<RenderList::Pass> shadowPass) {
 
-            bool bindlessTextures = device->support.bindless;
-
             Graphics::Profiler::BeginQuery("Entity pass " + std::to_string(shadowPass->lightEntity) + " layer " + std::to_string(shadowPass->layer));
 
             auto lightEntity = shadowPass->lightEntity;
@@ -100,15 +98,13 @@ namespace Atlas {
 
             // Passes culled on the host have their own instance indices
             auto& gpuScene = scene->renderState.gpuScene;
-            if (bindlessTextures) {
-                if (shadowPass->gpuCulled) {
-                    commandList->BindBuffer(gpuScene.indexBuffer, 1, 22);
-                    commandList->BindBuffer(gpuScene.impostorIndexBuffer, 1, 23);
-                }
-                else {
-                    commandList->BindBuffer(shadowPass->instanceIndicesBuffer, 1, 22);
-                    commandList->BindBuffer(shadowPass->impostorInstanceIndicesBuffer, 1, 23);
-                }
+            if (shadowPass->gpuCulled) {
+                commandList->BindBuffer(gpuScene.indexBuffer, 1, 22);
+                commandList->BindBuffer(gpuScene.impostorIndexBuffer, 1, 23);
+            }
+            else {
+                commandList->BindBuffer(shadowPass->instanceIndicesBuffer, 1, 22);
+                commandList->BindBuffer(shadowPass->impostorInstanceIndicesBuffer, 1, 23);
             }
 
             commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
@@ -198,11 +194,8 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-                if (!bindlessTextures && material->HasOpacityMap())
-                    commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
-
                 auto materialIdx = uint32_t(sceneState->materialMap[material.Get().get()]);
-                auto opacityTextureIdx = bindlessTextures && materialIdx < sceneState->materialTextureIndices.size() ?
+                auto opacityTextureIdx = materialIdx < sceneState->materialTextureIndices.size() ?
                     sceneState->materialTextureIndices[materialIdx].opacity : 0u;
 
                 auto pushConstants = PushConstants{
@@ -325,10 +318,8 @@ namespace Atlas {
                 macros.push_back("SKINNED");
             }
 
-            if (device->support.bindless) {
-                macros.push_back("BINDLESS_TEXTURES");
-                if (!mesh->data.IsSkinned())
-                    macros.push_back("INSTANCE_BUFFER");
+            if (!mesh->data.IsSkinned()) {
+                macros.push_back("INSTANCE_BUFFER");
             }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);

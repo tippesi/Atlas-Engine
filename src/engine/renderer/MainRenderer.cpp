@@ -163,12 +163,10 @@ namespace Atlas {
 			JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
 
 			// The main and directional shadow passes are culled together
-			if (device->support.bindless) {
-				JobSystem::WaitSpin(renderState->fillGPUShadowRenderPassesJob);
-				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
-				renderState->gpuScene.Cull(renderState->renderList, scene->GetMainCamera().GetLocation(), commandList);
-				renderState->gpuScene.Bind(commandList);
-			}
+			JobSystem::WaitSpin(renderState->fillGPUShadowRenderPassesJob);
+			JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
+			renderState->gpuScene.Cull(renderState->renderList, scene->GetMainCamera().GetLocation(), commandList);
+			renderState->gpuScene.Bind(commandList);
 
 			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
 			// Better orders are: Shadow, DDGI, Main or. DDGI, Shadow, Main or DDGI Main, Shadow
@@ -212,7 +210,7 @@ namespace Atlas {
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
 			// Written separately from the culling, so the main pass doesn't wait for the ray tracing world update
-			if (device->support.bindless && scene->rayTracingWorld)
+			if (scene->rayTracingWorld)
 				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, scene->GetMainCamera().GetLocation(),
 					commandList);
 
@@ -464,7 +462,7 @@ namespace Atlas {
 			JobSystem::WaitSpin(renderState->materialUpdateJob);
 
 			// Writes the hardware ray tracing instances and builds the acceleration structure
-			if (device->support.bindless && scene->rayTracingWorld) {
+			if (scene->rayTracingWorld) {
 				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
 				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, camera.GetLocation(), commandList);
 			}
@@ -922,9 +920,6 @@ namespace Atlas {
 		}
 
 		void MainRenderer::CreateGlobalDescriptorSetLayout() {
-
-			if (!device->support.bindless)
-				return;
 
 			auto samplerDesc = Graphics::SamplerDesc{
 				.filter = VK_FILTER_LINEAR,

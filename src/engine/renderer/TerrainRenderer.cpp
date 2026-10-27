@@ -46,7 +46,7 @@ namespace Atlas {
 
 #if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
             // Bindless and tesselation with MoltenVK don't seem to properly work and cause crashes
-            bool disableTessellation = device->support.bindless;
+            bool disableTessellation = true;
 #else
             bool disableTessellation = false;
 #endif

@@ -9,14 +9,14 @@ namespace Atlas {
 		DescriptorSetLayout::DescriptorSetLayout(GraphicsDevice* device, const DescriptorSetLayoutDesc& desc) :
             device(device) {
 
-            // We need this flag to support arrays of descriptors even in non-bindless mode (e.g. array of textures, where only one index is bound)
+            // Arrays of descriptors don't need to be fully bound, e.g. an array of textures where only one index is bound
             VkDescriptorBindingFlags defaultBindingFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 
             bindings.resize(desc.bindingCount);
             layoutBindings.resize(desc.bindingCount);
             layoutBindingFlags.resize(desc.bindingCount, defaultBindingFlags);
 
-            bool bindlessAllowed = device->support.bindless;
+            bool bindlessAllowed = true;
             bool bindlessNeeded = false;
 
             for (uint32_t i = 0; i < desc.bindingCount; i++) {

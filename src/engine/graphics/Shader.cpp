@@ -66,10 +66,6 @@ namespace Atlas {
                 macros.push_back("AE_HARDWARE_RAYTRACING");
             }
 
-            if (device->support.bindless) {
-                macros.push_back("AE_BINDLESS");
-            }
-
             if (device->support.shaderFloat16) {
                 macros.push_back("AE_HALF_FLOAT");
             }
@@ -419,7 +415,7 @@ namespace Atlas {
                     binding.binding.size = descriptorBinding->block.size;
                     binding.binding.arrayElement = 0;
                     binding.binding.stageFlags = VK_SHADER_STAGE_ALL;
-                    binding.binding.bindless = device->support.bindless;
+                    binding.binding.bindless = true;
 
                     binding.binding.descriptorType =
                         binding.binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?

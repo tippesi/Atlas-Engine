@@ -55,7 +55,6 @@ initialize the engine yourself
 - **ATLAS_IMGUI** Enables the [ImGui](https://github.com/ocornut/imgui) integration. Is enabled by default if the demo project is build.
 - **ATLAS_ASSIMP** Enables the [Assimp](https://github.com/assimp/assimp) integration. Is enabled by default.
 - **ATLAS_HEADLESS** Enables the headless support, which means no window needs to be created. Is disabled by default.
-- **ATLAS_BINDLESS** Enables support for bindless resources. Might be problematic on MacOS. Enabled by default.
 - **ATLAS_TESTS** Generates the testing project and allows to target it.
 - **ATLAS_BUNDLE** Allows the applications to be bundled and installed on MacOS. Disabled by default
 ## Documentation

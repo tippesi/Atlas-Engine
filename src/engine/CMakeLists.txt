@@ -156,10 +156,6 @@ if (ATLAS_HEADLESS)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_HEADLESS)
 endif()
 
-if (ATLAS_BINDLESS)
-set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BINDLESS)
-endif()
-
 # Precompile otherwise slow headers ###############################################################
 target_precompile_headers(${PROJECT_NAME}
   PUBLIC

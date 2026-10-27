@@ -18,8 +18,6 @@ namespace Atlas {
         void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
             RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap) {
 
-            bool bindlessTextures = device->support.bindless;
-
             Graphics::Profiler::BeginQuery("Opaque geometry");
 
             auto mainPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
@@ -116,27 +114,8 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-                if (!bindlessTextures) {
-                    if (material->HasBaseColorMap())
-                        material->baseColorMap->Bind(commandList, 3, 0);
-                    if (material->HasOpacityMap())
-                        material->opacityMap->Bind(commandList, 3, 1);
-                    if (material->HasNormalMap())
-                        material->normalMap->Bind(commandList, 3, 2);
-                    if (material->HasRoughnessMap())
-                        material->roughnessMap->Bind(commandList, 3, 3);
-                    if (material->HasMetalnessMap())
-                        material->metalnessMap->Bind(commandList, 3, 4);
-                    if (material->HasAoMap())
-                        material->aoMap->Bind(commandList, 3, 5);
-                    if (material->HasDisplacementMap())
-                        material->displacementMap->Bind(commandList, 3, 6);
-                    if (material->HasEmissiveMap())
-                        material->emissiveMap->Bind(commandList, 3, 7);
-                }
-
                 auto materialIdx = uint32_t(materialMap[material.Get().get()]);
-                auto textureIndices = bindlessTextures && materialIdx < sceneState->materialTextureIndices.size() ?
+                auto textureIndices = materialIdx < sceneState->materialTextureIndices.size() ?
                     sceneState->materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
 
                 auto pushConstants = PushConstants {
@@ -258,10 +237,8 @@ namespace Atlas {
                 macros.push_back("SKINNED");
             }
 
-            if (device->support.bindless) {
-                macros.push_back("BINDLESS_TEXTURES");
-                if (!mesh->data.IsSkinned())
-                    macros.push_back("INSTANCE_BUFFER");
+            if (!mesh->data.IsSkinned()) {
+                macros.push_back("INSTANCE_BUFFER");
             }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);

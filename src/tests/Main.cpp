@@ -162,11 +162,9 @@ auto testingValues = testing::Values(
     AppConfiguration { .taa = false },
     AppConfiguration { .ssgi = false },
     AppConfiguration { .ocean = false },
-#ifdef AE_BINDLESS
     AppConfiguration { .ddgi = false },
     AppConfiguration { .rtgi = false },
     AppConfiguration { .reflection = false },
-#endif
     AppConfiguration { .volumetric = false },
     AppConfiguration { .localVolumetric = false },
     AppConfiguration { .sharpen = false },
@@ -182,7 +180,7 @@ INSTANTIATE_TEST_SUITE_P(DemoTestSuite, EngineEndToEndTest, testingValues);
 
 int main(int argc, char** argv) {
 
-#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
+#ifdef AE_OS_MACOS
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
 #endif
 

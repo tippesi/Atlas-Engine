@@ -69,7 +69,6 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Render volumetric");
 
             auto renderState = &scene->renderState;
-            bool bindless = device->support.bindless;
             auto& camera = scene->GetMainCamera();
             auto fog = scene->fog;
 
@@ -117,9 +116,7 @@ namespace Atlas {
             auto useFroxels = fog && fog->froxels;
 
             CullingPushConstants cullingPushConstants;
-            cullingPushConstants.lightCount = bindless ?
-                std::min(4096, int32_t(renderState->volumetricLights.size())) :
-                std::min(8, int32_t(renderState->volumetricLights.size()));
+            cullingPushConstants.lightCount = std::min(4096, int32_t(renderState->volumetricLights.size()));
 
             lightCullingBuffer.Bind(commandList, 3, 10);
 
@@ -198,30 +195,6 @@ namespace Atlas {
             
             commandList->BindSampler(shadowSampler, 3, 6);
             commandList->BindSampler(shadowDepthSampler, 3, 12);
-
-            if (!bindless) {
-                std::vector<Ref<Graphics::Image>> cascadeMaps;
-                std::vector<Ref<Graphics::Image>> cubeMaps;
-
-                uniforms.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
-                uniforms.directionalLightCount = std::min(8, uniforms.directionalLightCount);
-                for (int32_t i = 0; i < uniforms.lightCount; i++) {
-                    const auto& comp = renderState->lightEntities[i].comp;
-
-                    if (comp.shadow) {
-                        const auto& shadow = comp.shadow;
-                        if (shadow->useCubemap) {
-                            cubeMaps.push_back(shadow->cubemap->image);
-                        }
-                        else {
-                            cascadeMaps.push_back(shadow->maps->image);
-                        }
-                    }
-                }
-
-                commandList->BindSampledImages(cascadeMaps, 3, 11);
-                commandList->BindSampledImages(cubeMaps, 3, 19);
-            }
 
             volumetricUniformBuffer.SetData(&uniforms, 0);
             commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);

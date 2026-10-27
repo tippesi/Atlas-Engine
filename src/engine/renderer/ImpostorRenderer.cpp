@@ -27,7 +27,7 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            // With bindless the instances are read from the instance buffer, except the ones of skinned meshes
+            // The instances are read from the instance buffer, except the ones of skinned meshes
             auto bindImpostor = [&](Mesh::Mesh* mesh, bool useInstanceBuffer) {
                 auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset,
                     useInstanceBuffer);
@@ -61,7 +61,7 @@ namespace Atlas {
 
                 const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
-                bindImpostor(mesh.Get().get(), device->support.bindless && !mesh->data.IsSkinned());
+                bindImpostor(mesh.Get().get(), !mesh->data.IsSkinned());
                 commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
             }
 

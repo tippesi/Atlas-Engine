@@ -14,10 +14,6 @@ namespace Atlas::RayTracing {
 
 	void RayTracingManager::Update() {
 
-        auto device = Graphics::GraphicsDevice::DefaultDevice;
-        if (!device->support.bindless)
-            return;
-
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
         auto buildRTStructure = [](JobData) {

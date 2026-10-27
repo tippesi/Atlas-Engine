@@ -209,8 +209,7 @@ namespace Atlas::Scene {
             if (!materials.empty())
                 materialBuffer.SetData(materials.data(), 0, materials.size());
 
-            if (Graphics::GraphicsDevice::DefaultDevice->support.bindless)
-                UpdateTextureBindlessData();
+            UpdateTextureBindlessData();
             });
 
     }
@@ -463,9 +462,6 @@ namespace Atlas::Scene {
     void SceneRenderState::UpdateGPUScene(const std::vector<ECS::Entity>& dirtyEntities,
         const std::vector<ECS::Entity>& lastDirtyEntities) {
 
-        if (!Graphics::GraphicsDevice::DefaultDevice->support.bindless)
-            return;
-
         // The buffers are updated in the same job, everything which binds them waits for it
         JobSystem::Execute(gpuSceneUpdateJob, [&](JobData&) {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
@@ -509,14 +505,9 @@ namespace Atlas::Scene {
                 mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
             }
 
-            if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
-                JobSystem::Wait(gpuSceneUpdateJob);
-                gpuScene.FillPass(camera.frustum, camera.GetLocation(), mainPass);
-                renderList.AddGPUCulledPass(mainPass);
-            }
-            else {
-                scene->GetRenderList(camera.frustum, mainPass);
-            }
+            JobSystem::Wait(gpuSceneUpdateJob);
+            gpuScene.FillPass(camera.frustum, camera.GetLocation(), mainPass);
+            renderList.AddGPUCulledPass(mainPass);
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass, RenderList::RenderPassType::Main);
@@ -537,8 +528,7 @@ namespace Atlas::Scene {
 
         // The cascades of directional lights cover most of the scene, other lights stay culled on the host.
         // The renderer waits for the GPU culled passes separately.
-        auto gpuCulled = Graphics::GraphicsDevice::DefaultDevice->support.bindless &&
-            light.type == LightType::DirectionalLight;
+        auto gpuCulled = light.type == LightType::DirectionalLight;
         auto jobGroup = gpuCulled ? &fillGPUShadowRenderPassesJob : &fillShadowRenderPassesJob;
 
         JobSystem::Execute(*jobGroup, [&, entity = entity, gpuCulled, jobGroup](JobData&) {
