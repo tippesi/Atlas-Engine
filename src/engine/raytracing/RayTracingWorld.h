@@ -55,6 +55,8 @@ namespace Atlas {
                 bool includeObjectHistory = false;
                 // The upload buffers are only valid in the frame of the update
                 int32_t frameIndex = -1;
+                // Replaces the TLAS of the world once it is built, an update that isn't rendered keeps the last one
+                Ref<Graphics::TLAS> tlas;
             };
 
             RayTracingWorld();

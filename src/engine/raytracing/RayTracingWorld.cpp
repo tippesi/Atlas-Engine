@@ -604,6 +604,10 @@ namespace Atlas {
                 instanceCounterBuffer = device->CreateBuffer(desc);
             }
 
+            auto tlasDesc = Graphics::TLASDesc{
+                .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+            };
+
             // The GPU scene writes its instances while culling, after that the acceleration structure is built
             pendingInstances = PendingInstances {
                 .rtMeshBuffer = rtMeshBuffer,
@@ -614,13 +618,9 @@ namespace Atlas {
                 .gpuInstanceCount = uint32_t(gpuInstanceCount),
                 .instanceBound = instanceBound,
                 .includeObjectHistory = includeObjectHistory,
-                .frameIndex = device->GetFrameIndex()
+                .frameIndex = device->GetFrameIndex(),
+                .tlas = device->CreateTLAS(tlasDesc)
             };
-
-            auto tlasDesc = Graphics::TLASDesc{
-                .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-            };
-            tlas = device->CreateTLAS(tlasDesc);
 
         }
 
@@ -688,7 +688,7 @@ namespace Atlas {
             AE_ASSERT(pendingInstances.has_value() && "No instances were prepared by the update");
             if (!pendingInstances.has_value()) return;
 
-            const auto& pending = *pendingInstances;
+            auto& pending = *pendingInstances;
 
             Graphics::Profiler::BeginQuery("TLAS update");
 
@@ -701,7 +701,8 @@ namespace Atlas {
             commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
 
-            tlasBuilder.BuildTLAS(tlas, tlasInstanceBuffer, pending.instanceBound, commandList);
+            tlasBuilder.BuildTLAS(pending.tlas, tlasInstanceBuffer, pending.instanceBound, commandList);
+            tlas = pending.tlas;
 
             // Ray traced passes of this frame follow in the same command list
             commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
