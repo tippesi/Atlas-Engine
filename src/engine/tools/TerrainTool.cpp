@@ -693,7 +693,7 @@ namespace Atlas::Tools {
     }
 
     void TerrainTool::FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, 
-        vec2 position, float flattenHeight, bool circularBrush) {
+        vec2 position, float flattenHeight, bool circularBrush, int32_t falloff) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
 
@@ -726,18 +726,88 @@ namespace Atlas::Tools {
 
         strength = Helper::Math::Saturate(strength);
         flattenHeight = Helper::Math::Saturate((flattenHeight - terrain->translation.y) / terrain->heightScale);
-        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
-            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
-                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+        auto outerRadius = sizeRadius + std::max(falloff, 0);
+        for (int32_t i = -outerRadius; i <= outerRadius; i++) {
+            for (int32_t j = -outerRadius; j <= outerRadius; j++) {
+                auto distance = circularBrush ? sqrtf(float(i * i + j * j)) : float(std::max(std::abs(i), std::abs(j)));
+                if (distance > float(outerRadius))
                     continue;
+                auto weight = 1.0f;
+                if (distance > float(sizeRadius))
+                    weight = 1.0f - glm::smoothstep(float(sizeRadius), float(outerRadius), distance);
                 int32_t xTranslated = x + i;
                 int32_t yTranslated = y + j;
                 int32_t index = yTranslated * width * 3 + xTranslated;
                 // Skip holes
                 if (data[index] == FLT_MAX)
                     continue;
-                data[index] = glm::mix(data[index], flattenHeight, strength);
+                data[index] = glm::mix(data[index], flattenHeight, strength * weight);
             }
+        }
+
+        ApplyDataToNearbyStorage(terrain, cells, data, {});
+
+    }
+
+    void TerrainTool::FillHoles(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, bool circularBrush) {
+
+        position -= vec2(terrain->translation.x, terrain->translation.z);
+
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
+
+        auto center = cells[4];
+
+        int32_t width = center->heightField->width - 1;
+        int32_t height = center->heightField->height - 1;
+
+        std::vector<float> data(width * height * 9);
+        std::fill(data.begin(), data.end(), -1.0f);
+
+        ExtractNearbyStorageData(terrain, cells, data, {});
+
+        position -= center->position;
+
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution) + width;
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution) + height;
+        int32_t sizeRadius = (size - 1) / 2;
+
+        std::vector<int32_t> holes;
+        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+                    continue;
+                auto index = (y + j) * width * 3 + x + i;
+                if (data[index] == FLT_MAX)
+                    holes.push_back(index);
+            }
+        }
+
+        // Grows inwards from the edge of the holes, each pass fills the hole texels next to valid ones
+        while (!holes.empty()) {
+            std::vector<std::pair<int32_t, float>> filled;
+            std::vector<int32_t> remaining;
+            for (auto index : holes) {
+                float sum = 0.0f;
+                int32_t count = 0;
+                for (auto offset : { -1, 1, -width * 3, width * 3 }) {
+                    auto neighbor = index + offset;
+                    if (neighbor < 0 || neighbor >= int32_t(data.size()) || data[neighbor] == FLT_MAX || data[neighbor] < 0.0f)
+                        continue;
+                    sum += data[neighbor];
+                    count++;
+                }
+                if (count > 0)
+                    filled.emplace_back(index, sum / float(count));
+                else
+                    remaining.push_back(index);
+            }
+            if (filled.empty())
+                break;
+            for (const auto& [index, value] : filled)
+                data[index] = value;
+            holes = std::move(remaining);
         }
 
         ApplyDataToNearbyStorage(terrain, cells, data, {});
@@ -838,11 +908,27 @@ namespace Atlas::Tools {
 
     }
 
-    Texture::Texture2D TerrainTool::GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution) {
+    Ref<Common::Image<uint8_t>> TerrainTool::GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, const std::string& filename,
+        float oceanHeight, int32_t resolution) {
 
         int32_t tileResolution = 8 * terrain->patchSizeFactor;
         int32_t tileResolutionSquared = tileResolution * tileResolution;
-        int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
+        // The coarsest level of detail that still has the resolution of the map, the streaming may have unloaded its cells
+        int32_t LoD = 0;
+        while (LoD < terrain->LoDCount - 1 && (int32_t)sqrtf((float)terrain->storage->GetCellCount(LoD)) * tileResolution < resolution)
+            LoD++;
+
+        Terrain::TerrainManager::enable = false;
+        Terrain::TerrainManager::WaitForJobCompletion();
+        std::vector<Terrain::TerrainStorageCell*> missingCells;
+        for (auto& cell : terrain->storage->cells[LoD])
+            if (!cell.IsLoaded())
+                missingCells.push_back(&cell);
+        if (!missingCells.empty())
+            Loader::TerrainLoader::LoadStorageCells(terrain, missingCells, filename);
+        Terrain::TerrainManager::enable = true;
+
+        int32_t tileCount = terrain->storage->GetCellCount(LoD);
 
         int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
 
@@ -854,7 +940,7 @@ namespace Atlas::Tools {
         // i is in x direction, j in z direction
         for (int32_t i = 0; i < tileSideCount; i++) {
             for (int32_t j = 0; j < tileSideCount; j++) {
-                auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
+                auto cell = terrain->storage->GetCell(i, j, LoD);
                 auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
                 // Now copy a tile of the original image
@@ -878,53 +964,59 @@ namespace Atlas::Tools {
             heightDataResolution * 4, resizedHeightData.data(), resolution, resolution, resolution * 4,
             STBIR_1CHANNEL, STBIR_TYPE_FLOAT, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
 
-        Common::Image<uint8_t> image(resolution, resolution, 4);
-        auto maxDistance = 2.0f * (float)heightDataResolution * (float)heightDataResolution;
+        // Offset of every texel to its nearest land texel, propagated in a forward and a backward sweep
+        std::vector<ivec2> nearest(resolution * resolution);
+        for (int32_t i = 0; i < resolution * resolution; i++)
+            nearest[i] = resizedHeightData[i] >= oceanHeight ? ivec2(0) : ivec2(4 * resolution);
+
+        auto lengthSquared = [](ivec2 v) { return v.x * v.x + v.y * v.y; };
+        auto propagate = [&](int32_t x, int32_t y, int32_t dx, int32_t dy) {
+            if (x + dx < 0 || x + dx >= resolution || y + dy < 0 || y + dy >= resolution)
+                return;
+            auto candidate = nearest[(y + dy) * resolution + x + dx] + ivec2(dx, dy);
+            auto& current = nearest[y * resolution + x];
+            if (lengthSquared(candidate) < lengthSquared(current))
+                current = candidate;
+        };
 
         for (int32_t y = 0; y < resolution; y++) {
             for (int32_t x = 0; x < resolution; x++) {
+                propagate(x, y, -1, 0);
+                propagate(x, y, 0, -1);
+                propagate(x, y, -1, -1);
+                propagate(x, y, 1, -1);
+            }
+            for (int32_t x = resolution - 1; x >= 0; x--)
+                propagate(x, y, 1, 0);
+        }
+        for (int32_t y = resolution - 1; y >= 0; y--) {
+            for (int32_t x = resolution - 1; x >= 0; x--) {
+                propagate(x, y, 1, 0);
+                propagate(x, y, 0, 1);
+                propagate(x, y, -1, 1);
+                propagate(x, y, 1, 1);
+            }
+            for (int32_t x = 0; x < resolution; x++)
+                propagate(x, y, -1, 0);
+        }
 
-                auto shoreDistance = maxDistance;
-                vec3 shortest = vec3(0.0f);
+        // Distances are normalized to this many texels, beyond it there are no shore waves
+        const float window = 20.0f;
 
-                const int32_t window = 20;
-
-                // i is in x direction, j in y direction
-                for (int32_t j = 0; j < 2 * window + 1; j++) {
-                    for (int32_t i = 0; i < 2 * window + 1; i++) {
-                        ivec2 pixel = ivec2(x + i, y + j) - ivec2(window);
-
-                        if (pixel.x < 0 || pixel.x >= heightDataResolution ||
-                            pixel.y < 0 || pixel.y >= heightDataResolution)
-                            continue;
-
-                        auto heightOffset = pixel.y * heightDataResolution + pixel.x;
-                        auto height = heightData[heightOffset];
-
-                        if (height < oceanHeight)
-                            continue;
-
-                        auto offX = (float)(i - window);
-                        auto offY = (float)(j - window);
-
-                        auto distance = offX * offX + offY * offY;
-
-                        if (distance < shoreDistance) {
-                            shoreDistance = distance;
-                            shortest = vec3(offX, height, offY);
-                        }
-                    }
-                }
+        auto image = CreateRef<Common::Image<uint8_t>>(resolution, resolution, 4);
+        for (int32_t y = 0; y < resolution; y++) {
+            for (int32_t x = 0; x < resolution; x++) {
 
                 auto offset = y * resolution + x;
+                auto direction = vec2(nearest[offset]);
 
-                vec2 vector = 0.5f * glm::normalize(vec2(shortest.x, shortest.z)) + 0.5f;
+                // On land the shore is the texel itself and has no direction
+                vec2 vector = glm::length(direction) > 0.0f ? 0.5f * glm::normalize(direction) + 0.5f : vec2(0.5f);
 
-                image.SetData(x, y, 0, (uint8_t)(resizedHeightData[offset] / terrain->heightScale * 255.0f));
-                image.SetData(x, y, 1, (uint8_t)glm::clamp(sqrtf(shoreDistance) /
-                    sqrtf(2.0f * (float)window * (float)window) * 255.0f, 0.0f, 255.0f));
-                image.SetData(x, y, 2, (uint8_t)(vector.x * 255.0f));
-                image.SetData(x, y, 3, (uint8_t)(vector.y * 255.0f));
+                image->SetData(x, y, 0, (uint8_t)glm::clamp(resizedHeightData[offset] / terrain->heightScale * 255.0f, 0.0f, 255.0f));
+                image->SetData(x, y, 1, (uint8_t)(Helper::Math::Saturate(glm::length(direction) / (sqrtf(2.0f) * window)) * 255.0f));
+                image->SetData(x, y, 2, (uint8_t)(vector.x * 255.0f));
+                image->SetData(x, y, 3, (uint8_t)(vector.y * 255.0f));
 
             }
 
@@ -933,14 +1025,9 @@ namespace Atlas::Tools {
         Atlas::Filter filter;
         filter.CalculateGaussianFilter(31.0f / 6.0f, 31);
 
-        image.ApplyFilter(filter);
+        image->ApplyFilter(filter);
 
-        //Texture::Texture2D shoreTexture(resolution, resolution, AE_RGBA8,
-        //    GL_CLAMP_TO_BORDER, GL_LINEAR);
-
-        //shoreTexture.SetData(image.GetData());
-
-        return Texture::Texture2D();
+        return image;
 
     }
 

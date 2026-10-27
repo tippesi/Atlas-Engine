@@ -9,7 +9,7 @@ namespace Atlas {
     namespace Terrain {
 
         Terrain::Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution,
-            float heightScale) : rootNodeSideCount(rootNodeSideCount), LoDCount(LoDCount), 
+            float heightScale, int32_t materialCount) : rootNodeSideCount(rootNodeSideCount), LoDCount(LoDCount), 
             patchSizeFactor(patchSizeFactor), resolution(resolution), heightScale(heightScale) {
 
             translation = vec3(0.0f);
@@ -31,7 +31,7 @@ namespace Atlas {
                          patchSizeFactor * 8.0f;
             float ratio = sideLength / (float)rootNodeSideCount;
 
-            storage = CreateRef<TerrainStorage>(rootNodeCount, LoDCount, sideLength, 1024, 32);
+            storage = CreateRef<TerrainStorage>(rootNodeCount, LoDCount, sideLength, 1024, materialCount);
             LoDDistances = std::vector<float>(LoDCount);
             LoDImage = Common::Image<uint8_t>(leafNodesSideCount, leafNodesSideCount, 1);
 
@@ -203,26 +203,24 @@ namespace Atlas {
             heightTopLeft *= heightScale;
             heightTopRight *= heightScale;
 
+            auto bottomLeft = vec3(0.0f, heightBottomLeft, 0.0f);
+            auto topLeft = vec3(1.0f, heightTopLeft, 0.0f);
+            auto topRight = vec3(1.0f, heightTopRight, 1.0f);
+            auto bottomRight = vec3(0.0f, heightBottomRight, 1.0f);
+
+            // The texels are resolution apart, the directions need world units
+            auto texelScale = vec3(resolution, 1.0f, resolution);
+
             float height = 0.0f;
             if (xCoord > zCoord) {
-                height = BarryCentric(vec3(0.0f, heightBottomLeft, 0.0f),
-                                      vec3(1.0f, heightTopLeft, 0.0f),
-                                      vec3(1.0f, heightTopRight, 1.0f),
-                                      vec2(xCoord, zCoord));
-                forward = -glm::normalize(vec3(0.0f, heightBottomLeft, 0.0f) -
-                    vec3(1.0f, heightTopLeft, 0.0f));
-                auto right = glm::normalize(vec3(1.0f, heightTopRight, 1.0f) -
-                    vec3(1.0f, heightTopLeft, 0.0f));
+                height = BarryCentric(bottomLeft, topLeft, topRight, vec2(xCoord, zCoord));
+                forward = glm::normalize((topLeft - bottomLeft) * texelScale);
+                auto right = glm::normalize((topRight - topLeft) * texelScale);
                 normal = -glm::normalize(glm::cross(forward, right));
             } else {
-                height = BarryCentric(vec3(0.0f, heightBottomLeft, 0.0f),
-                                      vec3(1.0f, heightTopRight, 1.0f),
-                                      vec3(0.0f, heightBottomRight, 1.0f),
-                                      vec2(xCoord, zCoord));
-                forward = glm::normalize(vec3(1.0f, heightTopRight, 1.0f) -
-                    vec3(0.0f, heightBottomRight, 1.0f));
-                auto right = -glm::normalize(vec3(0.0f, heightBottomLeft, 0.0f) -
-                    vec3(0.0f, heightBottomRight, 1.0f));
+                height = BarryCentric(bottomLeft, topRight, bottomRight, vec2(xCoord, zCoord));
+                forward = glm::normalize((topRight - bottomRight) * texelScale);
+                auto right = glm::normalize((bottomRight - bottomLeft) * texelScale);
                 normal = -glm::normalize(glm::cross(forward, right));
             }
 

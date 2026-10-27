@@ -2,6 +2,7 @@
 #include "AssetLoader.h"
 #include "AssetReferences.h"
 #include "MaterialLoader.h"
+#include "ImageLoader.h"
 #include "resource/ResourceManager.h"
 #include "../Log.h"
 
@@ -41,7 +42,10 @@ namespace Atlas {
             header.append(std::to_string(terrain->translation.x) + " ");
             header.append(std::to_string(terrain->translation.y) + " ");
             header.append(std::to_string(terrain->translation.z) + " ");
-            header.append(std::to_string(terrain->bakeResolution) + "\n");
+            header.append(std::to_string(terrain->bakeResolution));
+            if (!terrain->shoreLinePath.empty())
+                header.append(" " + AssetReferences::MakeReference(filename, terrain->shoreLinePath));
+            header.append("\n");
 
             fileStream << header;
 
@@ -142,7 +146,11 @@ namespace Atlas {
             translation.x = ReadFloat(" ", header, offset);
             translation.y = ReadFloat(" ", header, offset);
             translation.z = ReadFloat(" ", header, offset);
-            auto bakeResolution = ReadInt("\r\n", header, offset);
+            auto bakeResolution = ReadInt(" \r\n", header, offset);
+            // The optional shore line map is the rest of the header
+            std::string shoreLinePath;
+            if (offset > 0 && offset < header.size())
+                shoreLinePath = header.substr(offset, header.find_last_not_of("\r\n") + 1 - offset);
 
             std::getline(fileStream, line);
 
@@ -154,13 +162,23 @@ namespace Atlas {
             auto displacementDistance = ReadFloat("\r\n", line, offset);
 
             auto terrain = std::make_shared<Terrain::Terrain>(rootNodeSideCount, LoDCount,
-                patchSizeFactor, resolution, heightScale);
+                patchSizeFactor, resolution, heightScale, std::max(materialCount, 1));
 
             terrain->translation = translation;
             terrain->SetTessellationFunction(tessFactor, tessSlope, tessShift, tessMaxLevel);
             terrain->SetDisplacementDistance(displacementDistance);
 
             terrain->bakeResolution = bakeResolution;
+
+            if (!shoreLinePath.empty()) {
+                terrain->shoreLinePath = AssetReferences::ResolveReference(filename, shoreLinePath);
+                auto image = ImageLoader::LoadImage<uint8_t>(terrain->shoreLinePath, false, 4);
+                if (image->HasData()) {
+                    terrain->shoreLine = Texture::Texture2D(image->width, image->height, VK_FORMAT_R8G8B8A8_UNORM,
+                        Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                    terrain->shoreLine.SetData(image->GetData());
+                }
+            }
 
             std::getline(fileStream, line);
 
