@@ -82,8 +82,10 @@ void main() {
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
-        vec2 recontructTexCoord = (2.0 * vec2(pixel) + pixelOffset + vec2(0.5)) / (2.0 * vec2(resolution));
-        vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
+        // The downsampled data belongs to one pixel of the 2x2 block
+        vec2 recontructTexCoord = uniforms.downsampled2x > 0 ?
+            (2.0 * vec2(pixel) + pixelOffset + vec2(0.5)) / (2.0 * vec2(resolution)) : texCoord;
+        vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
         vec3 viewNorm = normalize(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg));

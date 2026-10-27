@@ -102,7 +102,6 @@ void main() {
         vec4 reflection = vec4(0.0);
 #endif
 
-        // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
 #ifdef UPSCALE
         ivec2 offset = pixelOffsets[globalData.frameCount % 4];
@@ -117,7 +116,8 @@ void main() {
             recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
             highResPixel = 2 * pixel + offset;
 #else
-            recontructTexCoord = (vec2(pixel) + 0.5) / vec2(resolution);
+            // The downsampled data belongs to one pixel of the 2x2 block
+            recontructTexCoord = (2.0 * vec2(pixel) + pixelOffsets[offsetIdx] + 0.5) / (2.0 * vec2(resolution));
             highResPixel = pixel;
 #endif
         }
@@ -202,7 +202,8 @@ void main() {
 #else
                         HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
 #endif
-                        hitDistance = ray.hitDistance;
+                        // Misses have an infinite distance, which breaks the virtual reprojection of the temporal pass
+                        hitDistance = ray.hitID != -1 ? ray.hitDistance : 0.0;
                         radiance = EvaluateHit(ray, blueNoiseVec.z);
                     }
                     else {
