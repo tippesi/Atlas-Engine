@@ -6,16 +6,16 @@
 #include "SceneTools.h"
 #include "Overlay.h"
 #include "Pipeline.h"
+#include "Report.h"
 #include "SceneEditor.h"
+#include "Server.h"
+#include "Timeline.h"
 
 #include "EngineInstance.h"
 #include "input/PlayerInput.h"
 
 #include <chrono>
-#include <deque>
-#include <fstream>
 #include <map>
-#include <mutex>
 #include <set>
 
 namespace Atlas::Capture {
@@ -76,15 +76,6 @@ namespace Atlas::Capture {
 
         };
 
-        struct Trigger {
-
-            EventSpec event;
-            bool logMatched = false;
-            std::optional<float> metTime;
-            bool fired = false;
-
-        };
-
         struct StillState {
 
             bool active = false;
@@ -93,14 +84,6 @@ namespace Atlas::Capture {
             int32_t settleFrames = 0;
             int32_t settledFrames = 0;
             bool requested = false;
-
-        };
-
-        struct ValidationMessage {
-
-            std::string severity;
-            std::string message;
-            int32_t count = 0;
 
         };
 
@@ -127,6 +110,20 @@ namespace Atlas::Capture {
         // Server mode: reads the next command file, runs commands that don't need frames immediately
         void ProcessNextCommand();
 
+        void LoadSceneCommand(const json& command);
+
+        void ReloadSceneCommand(const json& command);
+
+        // Loads a scene without a job, it stays loaded for the following jobs. The path is a copy, it can be the
+        // path of the loaded scene, which is unloaded first
+        void LoadSceneForCommand(std::string path, const json& command);
+
+        void UnloadSceneCommand(const json& command);
+
+        void RunCommand(const json& command);
+
+        void StopCommand(const json& command);
+
         // Server mode: writes <command>.result.json, the result of the current command
         void CompleteCommand(const json& result);
 
@@ -135,12 +132,12 @@ namespace Atlas::Capture {
 
         void StartPipelineStep();
 
+        // A pipeline step continues with the scene in memory if it reads the scene the step before saved
+        bool StepReadsScene(size_t step, const std::string& scene);
+
         void Fail(const std::string& message);
 
-        void Warn(const std::string& message);
-
-        void Print(const std::string& message);
-
+        // Engine log entries can fail the checks and meet the log conditions of the timeline
         void CollectLog();
 
         bool IsSceneReady();
@@ -156,18 +153,6 @@ namespace Atlas::Capture {
         void UpdatePlay();
 
         void UpdateStill();
-
-        // Whether a time of the timeline is reached, tolerates the rounding of the fixed time steps
-        bool IsDue(float time) const;
-
-        // Checks the conditions of conditional events and queues the events that are due
-        void UpdateTriggers();
-
-        // Writes the GPU timings averaged over the last frames to profile.json and prints the most expensive ones
-        void WriteProfile();
-
-        // Writes the validation messages grouped by their id to validation.json
-        void WriteValidationReport();
 
         void Finish();
 
@@ -189,15 +174,28 @@ namespace Atlas::Capture {
 
         void AddToSheet(const std::string& group, const Ref<Image>& image, const std::string& label);
 
-        void WriteJson(const std::string& fileName, const json& j);
+        // Timeline events, captures are handled by UpdatePlay
+        void RunEvent(const InputEvent& input);
 
-        void RunExpectation(const EventSpec& event);
+        void RunEvent(const LookEvent& look);
 
-        void FireKey(const std::string& key, bool down);
+        void RunEvent(const TeleportEvent& teleport);
+
+        void RunEvent(const AnimationEvent& animation);
+
+        void RunEvent(const LogEvent& log);
+
+        void RunEvent(const ExpectEvent& expect);
+
+        void RunEvent(const PauseEvent& pause);
+
+        void RunEvent(const ResetScriptsEvent&);
+
+        void RunEvent(const EndEvent&);
 
         void BuildOverlay();
 
-        void SetLookDirection(Scene::Entity entity, const json& look);
+        void SetLookDirection(Scene::Entity entity, std::optional<float> yaw, std::optional<float> pitch);
 
         // Presents the frame, in a shown window with a status line and the latest output below it
         void PresentWindow();
@@ -206,9 +204,6 @@ namespace Atlas::Capture {
 
         // Render scale and upscaler, e.g. ", render scale 0.75 (FSR2)"
         std::string GetRenderDescription() const;
-
-        static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-            VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* data, void* userData);
 
         Mode mode = Mode::Job;
         // Options of the command line which are passed on to every job of a server or pipeline
@@ -226,18 +221,15 @@ namespace Atlas::Capture {
         bool keepScene = false;
         // Set while a loadScene command waits for the scene to finish loading
         bool loadingForCommand = false;
+        // The meshes of a reloaded scene, with their materials and textures, stay loaded until it is ready again
+        std::vector<ResourceHandle<Mesh::Mesh>> retainedMeshes;
         Scene::Entity captureCameraEntity;
+        // Set by a scene update, the next render uses it
+        bool sceneUpdated = false;
         std::chrono::steady_clock::time_point loadStartTime;
 
-        fs::path serverDirectory;
-        // File name of the current command and the time it started
-        std::string commandName;
-        std::chrono::steady_clock::time_point commandStartTime;
-        std::chrono::steady_clock::time_point nextPollTime;
-
+        std::optional<Server> server;
         std::optional<Pipeline> pipeline;
-        size_t pipelineStep = 0;
-        int32_t pipelineExitCode = 0;
 
         bool rendererInitialized = false;
         float defaultRenderScale = 1.0f;
@@ -263,11 +255,7 @@ namespace Atlas::Capture {
         std::map<std::string, std::pair<std::string, std::string>> variantCaptures;
         std::map<std::string, CameraSpec> stripCameras;
 
-        float playTime = 0.0f;
-        size_t nextEvent = 0;
-        std::vector<EventSpec> events;
-        std::vector<Trigger> triggers;
-        std::vector<std::pair<float, std::string>> pendingKeyReleases;
+        Timeline timeline;
         float nextCheckTime = 0.0f;
         float nextTrackTime = 0.0f;
 
@@ -278,21 +266,7 @@ namespace Atlas::Capture {
         std::unique_ptr<CheckRunner> checkRunner;
         std::unique_ptr<Tracker> tracker;
 
-        json report;
-        json outputs = json::array();
-        json expectations = json::array();
-        std::vector<std::string> errors;
-        std::vector<std::string> warnings;
-        bool expectationFailed = false;
-
-        std::ofstream logFile;
-        size_t logIndex = 0;
-        int32_t logErrorCount = 0;
-
-        // Message id -> message, the validation layers call back from any thread
-        VkDebugUtilsMessengerEXT validationMessenger = VK_NULL_HANDLE;
-        std::map<std::string, ValidationMessage> validationMessages;
-        std::mutex validationMutex;
+        Report report;
 
         int32_t frameCount = 0;
         int32_t readyFrame = -1;
@@ -303,7 +277,6 @@ namespace Atlas::Capture {
         // Shown window: output panel and playback in real time
         static constexpr size_t outputLineCount = 12;
         Ref<Font> font;
-        std::deque<CaptureRenderer::TextLine> outputLines;
         std::chrono::steady_clock::time_point playStartTime;
 
     };

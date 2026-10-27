@@ -6,36 +6,6 @@ namespace Atlas::Capture {
 
     using namespace Scene::Components;
 
-    // Separating axis test against the box faces, triangle normal and edge cross products
-    static bool TriangleIntersectsBox(vec3 center, vec3 halfSize, vec3 a, vec3 b, vec3 c) {
-
-        auto v0 = a - center, v1 = b - center, v2 = c - center;
-        vec3 edges[3] = { v1 - v0, v2 - v1, v0 - v2 };
-
-        auto separated = [&](vec3 axis) {
-
-            if (glm::dot(axis, axis) < 1e-12f)
-                return false;
-            auto p0 = glm::dot(v0, axis), p1 = glm::dot(v1, axis), p2 = glm::dot(v2, axis);
-            auto radius = glm::dot(halfSize, glm::abs(axis));
-            return std::min({ p0, p1, p2 }) > radius || std::max({ p0, p1, p2 }) < -radius;
-
-        };
-
-        for (int32_t i = 0; i < 3; i++) {
-            vec3 boxAxis(0.0f);
-            boxAxis[i] = 1.0f;
-            if (separated(boxAxis))
-                return false;
-            for (const auto& edge : edges)
-                if (separated(glm::cross(boxAxis, edge)))
-                    return false;
-        }
-
-        return !separated(glm::cross(edges[0], edges[1]));
-
-    }
-
     // Counts the triangles of a mesh that intersect the given world space box
     static int32_t CountIntrudingTriangles(const MeshComponent& meshComponent, const TransformComponent& transform,
         const Volume::AABB& box) {
@@ -49,7 +19,6 @@ namespace Atlas::Capture {
 
         // Cheap rejection in local space with the conservatively transformed box
         auto localBox = box.Transform(glm::inverse(transform.globalMatrix));
-        auto center = box.GetCenter(), halfSize = box.GetSize() * 0.5f;
 
         int32_t count = 0;
         for (size_t i = 0; i + 2 < indices.size(); i += 3) {
@@ -64,7 +33,7 @@ namespace Atlas::Capture {
             auto worldA = vec3(transform.globalMatrix * vec4(a, 1.0f));
             auto worldB = vec3(transform.globalMatrix * vec4(b, 1.0f));
             auto worldC = vec3(transform.globalMatrix * vec4(c, 1.0f));
-            if (TriangleIntersectsBox(center, halfSize, worldA, worldB, worldC))
+            if (box.IntersectsTriangle(worldA, worldB, worldC))
                 count++;
         }
 
@@ -124,12 +93,17 @@ namespace Atlas::Capture {
 
     void CheckRunner::CheckGrounded(Scene::Scene& scene, float time) {
 
-        auto entities = FindTopmostEntities(scene, spec.grounded->entities);
+        auto entities = spec.grounded->entities.empty() ? std::vector<Scene::Entity>() : FindTopmostEntities(scene, spec.grounded->entities);
+        auto meshInstances = FindMeshInstances(scene, spec.grounded->meshes);
+        entities.insert(entities.end(), meshInstances.begin(), meshInstances.end());
         runCounts["grounded"] += int32_t(entities.size());
+
+        if (!groundedIgnored)
+            groundedIgnored = spec.grounded->ignore.empty() ? EntitySet() : CollectHierarchies(scene, spec.grounded->ignore);
 
         for (auto entity : entities) {
             // Skip entities whose hierarchy has no loaded mesh bounds
-            auto [bounds, hasMesh, ground] = GroundBelowEntity(scene, entity);
+            auto [bounds, hasMesh, ground] = GroundBelowEntity(scene, entity, 0.5f, *groundedIgnored);
             if (!hasMesh)
                 continue;
 

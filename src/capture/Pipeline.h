@@ -29,22 +29,30 @@ namespace Atlas::Capture {
         // Parses the pipeline file, --from <step> and --force are options of the command line
         static Pipeline Load(const fs::path& file, const std::string& from, bool force);
 
-        // Determines the first step to run and restores the state it starts from. Returns
-        // the number of steps, i.e. nothing to run, if all snapshots are up to date
-        size_t Prepare(const std::function<void(const std::string&)>& print);
+        // Determines the first step to run and restores the state it starts from. All steps are finished
+        // if all snapshots are up to date
+        void Prepare(const std::function<void(const std::string&)>& print);
 
-        // Stores the state after a successfully finished step. Scenes and terrains saved by the job and
-        // materials it changed become part of the state of this and all following steps
-        void Complete(size_t index, const json& report);
+        // Stores the state after the current step finished successfully and continues with the next one. Scenes and
+        // terrains saved by the job and materials it changed become part of the state of this and all following steps
+        void CompleteStep(const json& report);
 
-        // A failed step and all following ones have no valid snapshot anymore
-        void Fail(size_t index);
+        // A failed step and all following ones have no valid snapshot anymore, the pipeline stops with the exit code
+        void FailStep(int32_t exitCode);
+
+        bool IsFinished() const;
+
+        // Writes pipeline.json with the result of each step next to the snapshots and returns its path
+        fs::path WriteSummary() const;
 
         json GetSummary() const;
 
         std::string name;
         std::vector<Step> steps;
         fs::path snapshotDirectory;
+
+        size_t currentStep = 0;
+        int32_t exitCode = 0;
 
     private:
         struct Snapshot {
@@ -63,6 +71,10 @@ namespace Atlas::Capture {
         void Restore(const Snapshot& snapshot, const std::function<void(const std::string&)>& print);
 
         std::string StoreFile(const std::string& assetPath);
+
+        void Complete(size_t index, const json& report);
+
+        void Fail(size_t index);
 
         void Invalidate(size_t index);
 

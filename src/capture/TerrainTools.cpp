@@ -2,6 +2,8 @@
 
 #include "Filter.h"
 #include "common/MathHelper.h"
+#include "loader/ImageLoader.h"
+#include "loader/MaterialLoader.h"
 #include "loader/TerrainLoader.h"
 #include "physics/ShapesManager.h"
 #include "resource/ResourceManager.h"
@@ -287,24 +289,12 @@ namespace Atlas::Capture {
 
     }
 
-    static void BlendPixel(Image& image, int32_t x, int32_t y, u8vec4 color, float alpha) {
-
-        if (x < 0 || y < 0 || x >= image.width || y >= image.height)
-            return;
-
-        auto& data = image.GetData();
-        auto offset = (size_t(y) * image.width + x) * 4;
-        for (int32_t i = 0; i < 3; i++)
-            data[offset + i] = uint8_t(glm::mix(float(data[offset + i]), float(color[i]), alpha));
-
-    }
-
     static void DrawLine(Image& image, vec2 a, vec2 b, u8vec4 color, float alpha = 1.0f) {
 
         auto steps = int32_t(std::max(std::abs(b.x - a.x), std::abs(b.y - a.y))) + 1;
         for (int32_t i = 0; i <= steps; i++) {
             auto point = glm::mix(a, b, float(i) / float(steps));
-            BlendPixel(image, int32_t(point.x), int32_t(point.y), color, alpha);
+            image.BlendPixel(int32_t(point.x), int32_t(point.y), vec4(color), alpha);
         }
 
     }
@@ -396,7 +386,7 @@ namespace Atlas::Capture {
                 if (highlighted.contains(entityId)) {
                     for (auto py = int32_t(min.y); py <= int32_t(max.y); py++)
                         for (auto px = int32_t(min.x); px <= int32_t(max.x); px++)
-                            BlendPixel(*image, px, py, u8vec4(0, 230, 255, 255), 0.25f);
+                            image->BlendPixel(px, py, vec4(0, 230, 255, 255), 0.25f);
                     continue;
                 }
                 if (!spec.value("meshes", true))
@@ -434,7 +424,7 @@ namespace Atlas::Capture {
 
                 for (auto py = int32_t(min.y); py <= int32_t(max.y); py++)
                     for (auto px = int32_t(min.x); px <= int32_t(max.x); px++)
-                        BlendPixel(*image, px, py, color, alpha);
+                        image->BlendPixel(px, py, vec4(color), alpha);
             }
         }
 
@@ -804,6 +794,116 @@ namespace Atlas::Capture {
 
     }
 
+    // Each brush changes the terrain and returns what it did, besides its type
+    using TerrainBrush = json(*)(const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush);
+
+    static json BrushFlatten(const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush) {
+
+        // The falloff blends towards the target height with a smooth curve outside of the radius
+        auto position = ToVec2(brush.at("position"));
+        auto radius = brush.at("radius").get<float>();
+        auto targetHeight = brush.at("height").get<float>();
+        auto strength = brush.value("strength", 1.0f);
+        auto falloff = brush.value("falloff", 0.0f);
+        auto before = SampleTerrain(terrain, position);
+
+        Tools::TerrainTool::FlattenHeight(terrain, GetBrushSize(grid, radius), strength, position, targetHeight, true,
+            int32_t(std::ceil(falloff / grid.texelSize)));
+        return { { "heightBefore", before.height }, { "heightAfter", SampleTerrain(terrain, position).height } };
+
+    }
+
+    static json BrushRaise(const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush) {
+
+        // Gaussian mound (or dip with a negative amount) of the given height in meters at its center
+        auto position = ToVec2(brush.at("position"));
+        auto radius = brush.at("radius").get<float>();
+        auto amount = brush.at("amount").get<float>();
+        auto halfSize = (GetBrushSize(grid, radius) - 1) / 2;
+
+        Filter filter;
+        filter.CalculateGaussianFilter(float(halfSize) / 2.5f, uint32_t(halfSize));
+        std::vector<std::vector<float>> weights;
+        std::vector<std::vector<ivec2>> offsets;
+        filter.Get(&weights, &offsets);
+        auto centerWeight = weights[halfSize][halfSize];
+
+        auto before = SampleTerrain(terrain, position);
+        Tools::TerrainTool::BrushHeight(terrain, &filter, amount / centerWeight, position);
+        return { { "heightBefore", before.height }, { "heightAfter", SampleTerrain(terrain, position).height } };
+
+    }
+
+    static json BrushSmooth(const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush) {
+
+        auto radius = brush.at("radius").get<float>();
+        auto size = GetBrushSize(grid, radius);
+        auto points = brush.contains("points") ? SamplePolyline(brush["points"], radius * 0.5f) :
+            std::vector<vec2> { ToVec2(brush.at("position")) };
+        auto iterations = brush.value("iterations", 1);
+        for (int32_t i = 0; i < iterations; i++)
+            for (auto point : points)
+                Tools::TerrainTool::SmoothHeight(terrain, size, brush.value("contributing", 2),
+                    brush.value("strength", 0.5f), point);
+        return { { "stamps", points.size() * iterations } };
+
+    }
+
+    static json BrushHole(const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush) {
+
+        auto position = ToVec2(brush.at("position"));
+        Tools::TerrainTool::BrushHole(terrain, position, GetBrushSize(grid, brush.at("radius").get<float>()));
+        return json::object();
+
+    }
+
+    static json BrushFill(const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush) {
+
+        // Closes holes again, at a position or at each of a list of points
+        auto size = GetBrushSize(grid, brush.at("radius").get<float>());
+        auto points = brush.contains("points") ? std::vector<vec2>() : std::vector<vec2> { ToVec2(brush.at("position")) };
+        for (const auto& point : brush.value("points", json::array()))
+            points.push_back(ToVec2(point));
+        for (auto point : points)
+            Tools::TerrainTool::FillHoles(terrain, point, size);
+        return { { "stamps", points.size() } };
+
+    }
+
+    // Paints a material at a position or, as a path, along a polyline whose ground can be leveled with a smoothing pass
+    static json PaintMaterial(const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush, bool path) {
+
+        auto radius = path ? brush.at("width").get<float>() * 0.5f : brush.at("radius").get<float>();
+        auto slot = brush.at("slot").get<int32_t>();
+        if (slot < 0 || slot >= int32_t(terrain->storage->materials.size()) ||
+            !terrain->storage->materials[slot].IsValid())
+            throw std::runtime_error("Terrain material slot " + std::to_string(slot) + " is empty");
+
+        auto points = path ? SamplePolyline(brush.at("points"), brush.value("spacing", radius * 0.5f)) :
+            std::vector<vec2> { ToVec2(brush.at("position")) };
+        auto size = GetBrushSize(grid, radius);
+        auto smooth = brush.value("smooth", 0.0f);
+        for (auto point : points) {
+            if (smooth > 0.0f)
+                Tools::TerrainTool::SmoothHeight(terrain, size, 3, smooth, point);
+            Tools::TerrainTool::BrushMaterial(terrain, point, size, slot);
+        }
+        return { { "stamps", points.size() } };
+
+    }
+
+    static const std::map<std::string, TerrainBrush> terrainBrushes = {
+        { "flatten", BrushFlatten },
+        { "raise", BrushRaise },
+        { "smooth", BrushSmooth },
+        { "hole", BrushHole },
+        { "fill", BrushFill },
+        { "material", [](const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush) {
+            return PaintMaterial(terrain, grid, brush, false); } },
+        { "path", [](const Ref<Terrain::Terrain>& terrain, const TexelGrid& grid, const json& brush) {
+            return PaintMaterial(terrain, grid, brush, true); } }
+    };
+
     json ApplyTerrainBrushes(Scene::Scene& scene, const json& brushes) {
 
         const auto& terrain = GetCompleteTerrain(scene);
@@ -812,86 +912,16 @@ namespace Atlas::Capture {
 
         for (const auto& brush : brushes) {
             auto type = brush.at("type").get<std::string>();
+            auto handler = terrainBrushes.find(type);
+            if (handler == terrainBrushes.end()) {
+                std::string known;
+                for (const auto& [name, _] : terrainBrushes)
+                    known += (known.empty() ? "" : ", ") + name;
+                throw std::runtime_error("Unknown terrain brush '" + type + "' (" + known + ")");
+            }
+
             json entry = { { "type", type } };
-
-            if (type == "flatten") {
-                // A falloff ring blends towards the target height with decreasing strength
-                auto position = ToVec2(brush.at("position"));
-                auto radius = brush.at("radius").get<float>();
-                auto targetHeight = brush.at("height").get<float>();
-                auto strength = brush.value("strength", 1.0f);
-                auto falloff = brush.value("falloff", 0.0f);
-                auto before = SampleTerrain(terrain, position);
-
-                Tools::TerrainTool::FlattenHeight(terrain, GetBrushSize(grid, radius), strength, position, targetHeight);
-                auto rings = int32_t(std::ceil(falloff / std::max(grid.texelSize * 2.0f, 0.5f)));
-                for (int32_t ring = 1; ring <= rings; ring++) {
-                    auto fraction = float(ring) / float(rings + 1);
-                    auto ringStrength = strength * (1.0f - fraction) / float(rings) * 2.0f;
-                    Tools::TerrainTool::FlattenHeight(terrain, GetBrushSize(grid, radius + falloff * float(ring) / float(rings)),
-                        Helper::Math::Saturate(ringStrength), position, targetHeight);
-                }
-                entry["heightBefore"] = before.height;
-                entry["heightAfter"] = SampleTerrain(terrain, position).height;
-            }
-            else if (type == "raise") {
-                // Gaussian mound (or dip with a negative amount) of the given height in meters at its center
-                auto position = ToVec2(brush.at("position"));
-                auto radius = brush.at("radius").get<float>();
-                auto amount = brush.at("amount").get<float>();
-                auto halfSize = (GetBrushSize(grid, radius) - 1) / 2;
-
-                Filter filter;
-                filter.CalculateGaussianFilter(float(halfSize) / 2.5f, uint32_t(halfSize));
-                std::vector<std::vector<float>> weights;
-                std::vector<std::vector<ivec2>> offsets;
-                filter.Get(&weights, &offsets);
-                auto centerWeight = weights[halfSize][halfSize];
-
-                auto before = SampleTerrain(terrain, position);
-                Tools::TerrainTool::BrushHeight(terrain, &filter, amount / centerWeight, position);
-                entry["heightBefore"] = before.height;
-                entry["heightAfter"] = SampleTerrain(terrain, position).height;
-            }
-            else if (type == "smooth") {
-                auto radius = brush.at("radius").get<float>();
-                auto size = GetBrushSize(grid, radius);
-                auto points = brush.contains("points") ? SamplePolyline(brush["points"], radius * 0.5f) :
-                    std::vector<vec2> { ToVec2(brush.at("position")) };
-                auto iterations = brush.value("iterations", 1);
-                for (int32_t i = 0; i < iterations; i++)
-                    for (auto point : points)
-                        Tools::TerrainTool::SmoothHeight(terrain, size, brush.value("contributing", 2),
-                            brush.value("strength", 0.5f), point);
-                entry["stamps"] = points.size() * iterations;
-            }
-            else if (type == "hole") {
-                auto position = ToVec2(brush.at("position"));
-                Tools::TerrainTool::BrushHole(terrain, position, GetBrushSize(grid, brush.at("radius").get<float>()));
-            }
-            else if (type == "material" || type == "path") {
-                // A path paints the material along a polyline and can level its ground with a smoothing pass
-                auto radius = type == "path" ? brush.at("width").get<float>() * 0.5f : brush.at("radius").get<float>();
-                auto slot = brush.at("slot").get<int32_t>();
-                if (slot < 0 || slot >= int32_t(terrain->storage->materials.size()) ||
-                    !terrain->storage->materials[slot].IsValid())
-                    throw std::runtime_error("Terrain material slot " + std::to_string(slot) + " is empty");
-
-                auto points = type == "path" ? SamplePolyline(brush.at("points"), brush.value("spacing", radius * 0.5f)) :
-                    std::vector<vec2> { ToVec2(brush.at("position")) };
-                auto size = GetBrushSize(grid, radius);
-                auto smooth = brush.value("smooth", 0.0f);
-                for (auto point : points) {
-                    if (smooth > 0.0f)
-                        Tools::TerrainTool::SmoothHeight(terrain, size, 3, smooth, point);
-                    Tools::TerrainTool::BrushMaterial(terrain, point, size, slot);
-                }
-                entry["stamps"] = points.size();
-            }
-            else {
-                throw std::runtime_error("Unknown terrain brush '" + type + "' (flatten, raise, smooth, hole, material, path)");
-            }
-
+            entry.update(handler->second(terrain, grid, brush));
             log.push_back(entry);
         }
 
@@ -956,6 +986,135 @@ namespace Atlas::Capture {
 
         scene.terrain = copy;
         GetCompleteTerrain(scene);
+
+    }
+
+    json CreateSceneTerrain(Scene::Scene& scene, const json& spec) {
+
+        auto path = ToAssetPath(spec.at("path").get<std::string>());
+        auto target = GetAssetDirectory() / path;
+        if (fs::exists(target) && !spec.value("overwrite", false))
+            throw std::runtime_error("terrainCreate: " + path + " already exists, set \"overwrite\": true");
+
+        auto heightMapPath = ToAssetPath(spec.at("heightMap").get<std::string>());
+        auto heightImage = Loader::ImageLoader::LoadImage<uint16_t>(heightMapPath, false, 1);
+        if (!heightImage || heightImage->width == 0)
+            throw std::runtime_error("terrainCreate: couldn't load the height map " + heightMapPath);
+
+        Ref<Common::Image<uint8_t>> splatImage;
+        if (spec.contains("splatMap")) {
+            auto splatMapPath = ToAssetPath(spec["splatMap"].get<std::string>());
+            splatImage = Loader::ImageLoader::LoadImage<uint8_t>(splatMapPath, false, 1);
+            if (!splatImage || splatImage->width == 0)
+                throw std::runtime_error("terrainCreate: couldn't load the splat map " + splatMapPath);
+        }
+        else {
+            splatImage = CreateRef<Common::Image<uint8_t>>(heightImage->width, heightImage->height, 1);
+        }
+
+        std::vector<ResourceHandle<Material>> materials;
+        for (const auto& materialPath : spec.at("materials").get<std::vector<std::string>>()) {
+            auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(ToAssetPath(materialPath),
+                ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+            material.WaitForLoad();
+            if (!material.IsLoaded())
+                throw std::runtime_error("terrainCreate: couldn't load the material " + materialPath);
+            materials.push_back(material);
+        }
+        if (materials.empty())
+            throw std::runtime_error("terrainCreate: at least one material is needed");
+
+        auto LoDCount = spec.value("LoDCount", 6);
+        auto patchSize = spec.value("patchSize", 16);
+        auto resolution = spec.value("resolution", 1.0f);
+        auto height = spec.at("height").get<float>();
+
+        auto terrain = Tools::TerrainTool::GenerateTerrain(*heightImage, *splatImage, 1, LoDCount, patchSize,
+            resolution, height, materials);
+        if (!terrain)
+            throw std::runtime_error("terrainCreate: couldn't generate the terrain, the height map has to be square");
+
+        // Centered on the origin unless placed explicitly
+        terrain->translation = vec3(-terrain->sideLength * 0.5f, 0.0f, -terrain->sideLength * 0.5f);
+        if (spec.contains("translation"))
+            terrain->translation = ToVec3(spec["translation"]);
+        terrain->filename = fs::path(path).stem().string();
+        if (spec.contains("displacementDistance"))
+            terrain->SetDisplacementDistance(spec["displacementDistance"].get<float>());
+        if (spec.contains("tessellation")) {
+            const auto& tessellation = spec["tessellation"];
+            terrain->SetTessellationFunction(tessellation.value("factor", terrain->tessellationFactor),
+                tessellation.value("slope", terrain->tessellationSlope), tessellation.value("shift", terrain->tessellationShift),
+                tessellation.value("maxLevel", terrain->maxTessellationLevel));
+        }
+        // Generated cells have no file to stream them from until the terrain is saved
+        terrain->storage->inEditing = true;
+        Tools::TerrainTool::BakeTerrain(terrain);
+
+        fs::create_directories(target.parent_path());
+        Loader::TerrainLoader::SaveTerrain(terrain, path);
+
+        auto existing = ResourceManager<Terrain::Terrain>::GetResource(path);
+        if (existing.IsValid())
+            throw std::runtime_error("terrainCreate: " + path + " is already loaded, use another path");
+        scene.terrain = ResourceManager<Terrain::Terrain>::AddResource(path, terrain);
+
+        // A height field body like the editor creates it, replacing the body of a previous terrain
+        auto heightField = terrain->GetHeightField(LoDCount - 1);
+        Physics::HeightFieldShapeSettings shapeSettings {
+            .heightData = heightField.GetData(),
+            .translation = terrain->translation,
+            .scale = vec3(terrain->resolution, terrain->heightScale, terrain->resolution)
+        };
+        auto shape = Physics::ShapesManager::CreateShape(shapeSettings);
+
+        Scene::Entity bodyEntity;
+        auto rigidBodySubset = scene.GetSubset<RigidBodyComponent>();
+        for (auto entity : rigidBodySubset) {
+            auto& rigidBody = rigidBodySubset.Get(entity);
+            if (rigidBody.IsValid() && rigidBody.GetShape()->type == Physics::ShapeType::HeightField) {
+                bodyEntity = { entity, &scene.entityManager };
+                break;
+            }
+        }
+        if (bodyEntity.IsValid()) {
+            bodyEntity.RemoveComponent<RigidBodyComponent>();
+        }
+        else {
+            bodyEntity = scene.CreateEntity();
+            bodyEntity.AddComponent<NameComponent>(terrain->filename);
+            // Bodies only enter the physics world together with a transform
+            bodyEntity.AddComponent<TransformComponent>(mat4(1.0f), true);
+            bodyEntity.SetParent(scene.GetRootEntity());
+        }
+        bodyEntity.AddComponent<RigidBodyComponent>(Physics::BodyCreationSettings { .shape = shape });
+
+        return { { "terrain", path }, { "sideLength", terrain->sideLength }, { "height", height },
+            { "translation", FromVec3(terrain->translation) }, { "materials", materials.size() },
+            { "body", GetEntityLabel(bodyEntity) } };
+
+    }
+
+    json BakeShoreLine(Scene::Scene& scene, const json& spec) {
+
+        const auto& terrain = GetCompleteTerrain(scene);
+        const auto& terrainPath = scene.terrain.GetResource()->path;
+
+        auto oceanHeight = spec.value("oceanHeight", scene.ocean ? scene.ocean->translation.y : 0.0f);
+        auto resolution = spec.value("resolution", 2048);
+        auto path = (fs::path(terrainPath).parent_path() / (fs::path(terrainPath).stem().string() + "_shoreline.png"))
+            .generic_string();
+
+        // The map compares the water level with the terrain heights, which start at the terrain translation
+        auto image = Tools::TerrainTool::GenerateTerrainOceanMap(terrain, terrainPath, oceanHeight - terrain->translation.y, resolution);
+        Loader::ImageLoader::SaveImage(image, path);
+
+        terrain->shoreLinePath = path;
+        terrain->shoreLine = Texture::Texture2D(resolution, resolution, VK_FORMAT_R8G8B8A8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        terrain->shoreLine.SetData(image->GetData());
+
+        return { { "shoreLine", path }, { "oceanHeight", oceanHeight }, { "resolution", resolution } };
 
     }
 

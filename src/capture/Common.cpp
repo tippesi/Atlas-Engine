@@ -2,6 +2,7 @@
 
 #include "loader/AssetLoader.h"
 
+#include <fstream>
 #include <sstream>
 #include <iomanip>
 
@@ -54,39 +55,10 @@ namespace Atlas::Capture {
 
     }
 
-    bool MatchPattern(const std::string& pattern, const std::string& text) {
-
-        // Iterative wildcard matching with backtracking to the last star
-        size_t p = 0, t = 0, starIdx = std::string::npos, matchIdx = 0;
-        while (t < text.size()) {
-            if (p < pattern.size() && (pattern[p] == '?' || pattern[p] == text[t])) {
-                p++;
-                t++;
-            }
-            else if (p < pattern.size() && pattern[p] == '*') {
-                starIdx = p++;
-                matchIdx = t;
-            }
-            else if (starIdx != std::string::npos) {
-                p = starIdx + 1;
-                t = ++matchIdx;
-            }
-            else {
-                return false;
-            }
-        }
-
-        while (p < pattern.size() && pattern[p] == '*')
-            p++;
-
-        return p == pattern.size();
-
-    }
-
     bool MatchAnyPattern(const std::vector<std::string>& patterns, const std::string& text) {
 
         for (const auto& pattern : patterns)
-            if (MatchPattern(pattern, text))
+            if (Helper::String::MatchWildcard(pattern, text))
                 return true;
 
         return false;
@@ -145,6 +117,12 @@ namespace Atlas::Capture {
 
     }
 
+    std::string FormatTime(float time) {
+
+        return "t=" + FormatFloat(time, 2) + "s";
+
+    }
+
     std::string SanitizeFileName(const std::string& name) {
 
         std::string result;
@@ -156,6 +134,23 @@ namespace Atlas::Capture {
         }
 
         return result.empty() ? "unnamed" : result;
+
+    }
+
+    bool WriteFileAtomic(const fs::path& path, const std::string& content) {
+
+        auto temporary = path;
+        temporary += ".tmp";
+        {
+            std::ofstream stream(temporary, std::ios::binary);
+            if (!stream.is_open())
+                return false;
+            stream << content;
+        }
+
+        std::error_code error;
+        fs::rename(temporary, path, error);
+        return !error;
 
     }
 

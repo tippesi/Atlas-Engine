@@ -4,35 +4,16 @@
 
 #include "Serializer.h"
 #include "loader/ImageLoader.h"
-#include "Log.h"
 #include "resource/ResourceManager.h"
 #include "scripting/Script.h"
 #include "scene/components/LuaScriptComponent.h"
-#include "events/EventManager.h"
 #include "graphics/GraphicsDevice.h"
-#include "graphics/Instance.h"
 #include "graphics/Profiler.h"
+#include "audio/AudioManager.h"
 
 #include <SDL.h>
 
 #include <cstdio>
-#include <cstdlib>
-#include <csignal>
-#include <exception>
-#if __has_include(<stacktrace>)
-#include <stacktrace>
-#endif
-
-#ifdef AE_OS_WINDOWS
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <Windows.h>
-// Collides with Loader::ImageLoader::LoadImage
-#undef LoadImage
-#else
-#include <unistd.h>
-#endif
 
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../data",
@@ -42,113 +23,6 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 namespace Atlas::Capture {
 
     using namespace Scene::Components;
-
-    static int32_t jobExitCode = 0;
-    // Preserve the job result if shutdown crashes after the report was written
-    static bool reportWritten = false;
-
-    // Known to the crash handlers, which write the report of a crashed run
-    static std::string runId;
-    static std::string runJobName;
-    static fs::path reportPath;
-    static fs::path lockPath;
-
-    static uint32_t CurrentProcessId() {
-
-#ifdef AE_OS_WINDOWS
-        return uint32_t(::GetCurrentProcessId());
-#else
-        return uint32_t(getpid());
-#endif
-
-    }
-
-    static bool IsProcessRunning(uint32_t processId) {
-
-#ifdef AE_OS_WINDOWS
-        auto process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
-        if (!process)
-            return false;
-        DWORD code = 0;
-        bool running = GetExitCodeProcess(process, &code) && code == STILL_ACTIVE;
-        CloseHandle(process);
-        return running;
-#else
-        return kill(pid_t(processId), 0) == 0;
-#endif
-
-    }
-
-    // Write next to the target, then rename; a failed rename leaves the target unchanged
-    static bool WriteFileAtomic(const fs::path& path, const std::string& content) {
-
-        auto temporary = path;
-        temporary += ".tmp";
-        {
-            std::ofstream stream(temporary, std::ios::binary);
-            if (!stream.is_open())
-                return false;
-            stream << content;
-        }
-
-        std::error_code error;
-        fs::rename(temporary, path, error);
-        return !error;
-
-    }
-
-    // Prevent concurrent runs from mixing outputs
-    static std::string AcquireLock(const fs::path& directory) {
-
-        auto path = directory / "capture.lock";
-        for (int32_t attempt = 0; attempt < 2; attempt++) {
-            // Exclusive creation, only one process can succeed
-            if (auto file = std::fopen(path.string().c_str(), "wx")) {
-                auto content = json{ { "pid", CurrentProcessId() }, { "job", runJobName }, { "runId", runId } }.dump();
-                std::fputs(content.c_str(), file);
-                std::fclose(file);
-                lockPath = path;
-                return {};
-            }
-
-            std::ifstream stream(path);
-            auto lock = json::parse(stream, nullptr, false);
-            stream.close();
-            auto processId = lock.is_object() ? lock.value("pid", uint32_t(0)) : uint32_t(0);
-            if (processId != 0 && IsProcessRunning(processId))
-                return "The output directory " + directory.string() + " is used by capture process " +
-                    std::to_string(processId) + " (job '" + lock.value("job", std::string()) + "', run " +
-                    lock.value("runId", std::string()) + "). Wait for it or choose another directory with --out";
-
-            // Left behind by a process that crashed or was killed
-            std::error_code error;
-            fs::remove(path, error);
-        }
-
-        return "Couldn't create the lock file " + path.string();
-
-    }
-
-    static void ReleaseLock() {
-
-        if (lockPath.empty())
-            return;
-        std::error_code error;
-        fs::remove(lockPath, error);
-        lockPath.clear();
-
-    }
-
-    static void WriteCrashReport(const std::string& reason) {
-
-        if (reportWritten || reportPath.empty())
-            return;
-
-        json report = { { "job", runJobName }, { "runId", runId }, { "status", "crashed" }, { "exitCode", 3 },
-            { "reason", reason } };
-        WriteFileAtomic(reportPath, report.dump(2));
-
-    }
 
     struct ViewAngles {
 
@@ -180,74 +54,14 @@ namespace Atlas::Capture {
 
     }
 
-    // Record crashes in the job output
-    static void PrintCrash(const std::string& reason) {
-
-        auto message = "[capture] CRASH: " + reason;
-#if defined(__cpp_lib_stacktrace) && __cpp_lib_stacktrace >= 202011L
-        message += "\nStack trace:\n" + std::to_string(std::stacktrace::current());
-#endif
-        std::fprintf(stderr, "%s\n", message.c_str());
-        std::fprintf(stdout, "%s\n", message.c_str());
-        std::fflush(stderr);
-        std::fflush(stdout);
-
-        WriteCrashReport(reason);
-        ReleaseLock();
-
-    }
-
-    static void InstallCrashHandlers() {
-
-        std::set_terminate([]() {
-
-            std::string reason = "std::terminate";
-            if (auto exception = std::current_exception()) {
-                try {
-                    std::rethrow_exception(exception);
-                }
-                catch (const std::exception& e) {
-                    reason += " with uncaught exception: " + std::string(e.what());
-                }
-                catch (...) {
-                    reason += " with an unknown exception";
-                }
-            }
-            PrintCrash(reason);
-            std::_Exit(reportWritten ? jobExitCode : 3);
-
-        });
-
-        std::signal(SIGABRT, [](int32_t) {
-
-            PrintCrash("abort");
-            std::_Exit(reportWritten ? jobExitCode : 3);
-
-        });
-
-#ifdef AE_OS_WINDOWS
-        SetUnhandledExceptionFilter([](EXCEPTION_POINTERS* info) -> LONG {
-
-            char code[32];
-            std::snprintf(code, sizeof(code), "0x%08lX", info->ExceptionRecord->ExceptionCode);
-            PrintCrash(std::string("unhandled exception ") + code);
-            std::_Exit(reportWritten ? jobExitCode : 3);
-
-        });
-#endif
-
-    }
-
     // Keep scripts active with a minimal time step while waiting for real-time playback
     static constexpr float freezeDeltaTime = 1e-5f;
 
-    // Accumulated fixed time steps don't exactly hit the times of the timeline
-    static constexpr float timeTolerance = 1e-4f;
-
-    static bool RunCompose(const std::vector<std::string>& args) {
+    // Returns the exit code if the command line composes images instead of running a job
+    static std::optional<int32_t> RunCompose(const std::vector<std::string>& args) {
 
         if (args.size() < 3 || args[1] != "--compose")
-            return false;
+            return std::nullopt;
 
         auto output = ResolveUserPath(args[2]);
         std::string title;
@@ -272,61 +86,27 @@ namespace Atlas::Capture {
             auto image = Loader::ImageLoader::LoadImage<uint8_t>(path.string(), false, 4);
             if (!image || !image->HasData()) {
                 std::printf("Couldn't load %s\n", path.string().c_str());
-                jobExitCode = 2;
-                return true;
+                return 2;
             }
             images.push_back(image);
             labels.push_back(label);
         }
 
         auto sheet = ComposeSheet(images, labels, columns, title);
-        jobExitCode = WritePng(sheet, output) ? 0 : 2;
+        auto written = WritePng(sheet, output);
         std::printf("[capture] Composed %zu images into %s\n", images.size(), output.string().c_str());
-        return true;
-
-    }
-
-    // Remove only outputs listed in the previous report
-    static void RemovePreviousOutputs(const fs::path& directory) {
-
-        std::ifstream stream(directory / "report.json");
-        if (!stream.is_open())
-            return;
-
-        auto previousReport = json::parse(stream, nullptr, false);
-        stream.close();
-        if (previousReport.is_discarded() || !previousReport.contains("outputs"))
-            return;
-
-        std::error_code error;
-        for (const auto& output : previousReport["outputs"]) {
-            auto path = (directory / output.get<std::string>()).lexically_normal();
-            if (path.lexically_relative(directory).string().starts_with(".."))
-                continue;
-
-            fs::remove(path, error);
-            // Directories of strips and variants
-            auto parent = path.parent_path();
-            if (parent != directory && fs::is_empty(parent, error))
-                fs::remove(parent, error);
-        }
-
-    }
-
-    static std::string FormatTime(float time) {
-
-        return "t=" + FormatFloat(time, 2) + "s";
+        return written ? 0 : 2;
 
     }
 
     void App::LoadContent() {
 
         startTime = std::chrono::steady_clock::now();
-        InstallCrashHandlers();
+        report.InstallCrashHandlers();
 
-        if (RunCompose(args)) {
+        if (auto composeExitCode = RunCompose(args)) {
             phase = Phase::Done;
-            Exit(jobExitCode);
+            Exit(*composeExitCode);
             return;
         }
 
@@ -346,11 +126,13 @@ namespace Atlas::Capture {
                 jobArguments.push_back(args[i]);
         }
 
+        // Muted until a job asks for the sound
+        Audio::AudioManager::Mute();
+
         try {
             if (!serve.empty()) {
                 mode = Mode::Server;
-                serverDirectory = ResolveUserPath(serve);
-                fs::create_directories(serverDirectory / "done");
+                server.emplace(ResolveUserPath(serve));
 
                 // Scenes can be loaded before the first job, which sets up the renderer for its resolution
                 captureRenderer.Init(mainRenderer, job.resolution);
@@ -366,16 +148,16 @@ namespace Atlas::Capture {
                     SDL_RaiseWindow(window.GetSDLWindow());
                 }
 
-                Print("Serving commands from " + serverDirectory.string());
+                report.Print("Serving commands from " + server->directory.string());
                 phase = Phase::Idle;
                 return;
             }
             if (!pipelineFile.empty()) {
                 mode = Mode::Pipeline;
                 pipeline = Pipeline::Load(ResolveUserPath(pipelineFile), from, force);
-                Print("Pipeline '" + pipeline->name + "' with " + std::to_string(pipeline->steps.size()) + " steps, snapshots in " +
+                report.Print("Pipeline '" + pipeline->name + "' with " + std::to_string(pipeline->steps.size()) + " steps, snapshots in " +
                     pipeline->snapshotDirectory.string());
-                pipelineStep = pipeline->Prepare([&](const std::string& message) { Print(message); });
+                pipeline->Prepare([&](const std::string& message) { report.Print(message); });
                 StartPipelineStep();
                 return;
             }
@@ -384,9 +166,8 @@ namespace Atlas::Capture {
         catch (const std::exception& e) {
             std::string message = e.what();
             std::printf("%s\n", message.c_str());
-            jobExitCode = message.starts_with("Usage:") ? 0 : 2;
             phase = Phase::Done;
-            Exit(jobExitCode);
+            Exit(message.starts_with("Usage:") ? 0 : 2);
             return;
         }
 
@@ -421,11 +202,7 @@ namespace Atlas::Capture {
         variantCaptures.clear();
         stripCameras.clear();
 
-        playTime = 0.0f;
-        nextEvent = 0;
-        events.clear();
-        triggers.clear();
-        pendingKeyReleases.clear();
+        timeline.Reset(job.timeline);
         nextCheckTime = 0.0f;
         nextTrackTime = 0.0f;
 
@@ -433,55 +210,29 @@ namespace Atlas::Capture {
         checkRunner.reset();
         tracker.reset();
 
-        report = json();
-        outputs = json::array();
-        expectations = json::array();
-        errors.clear();
-        warnings.clear();
-        expectationFailed = false;
-        logErrorCount = 0;
-        {
-            std::lock_guard lock(validationMutex);
-            validationMessages.clear();
-        }
+        report.Reset(job);
 
         frameCount = 0;
         readyFrame = -1;
         rtWaitFrames = 0;
         loadSeconds = 0.0f;
 
-        jobExitCode = 0;
-        reportWritten = false;
-
     }
 
     void App::StartJob(const Job& nextJob) {
 
-        ResetJobState();
         job = nextJob;
+        ResetJobState();
         startTime = std::chrono::steady_clock::now();
 
-        fs::create_directories(job.outputDirectory);
-
-        runId = std::to_string(std::chrono::system_clock::now().time_since_epoch() / std::chrono::seconds(1)) + "-" +
-            std::to_string(CurrentProcessId());
-        runJobName = job.name;
-        if (auto error = AcquireLock(job.outputDirectory); !error.empty()) {
-            Print("ERROR: " + error);
-            Print("Status: error (" + error + ")");
-            errors.push_back(error);
-            jobExitCode = 2;
-            report = { { "job", job.name }, { "status", "error" }, { "exitCode", 2 }, { "reason", error } };
+        if (auto error = report.Begin(); !error.empty()) {
+            report.Error(error);
+            report.Print("Status: error (" + error + ")");
+            report.exitCode = 2;
+            report.data = { { "job", job.name }, { "status", "error" }, { "exitCode", 2 }, { "reason", error } };
             FinishJob();
             return;
         }
-
-        // Clear stale outputs before recording the running state
-        RemovePreviousOutputs(job.outputDirectory);
-        reportPath = job.outputDirectory / "report.json";
-        json runningReport = { { "job", job.name }, { "runId", runId }, { "status", "running" }, { "pid", CurrentProcessId() } };
-        WriteFileAtomic(reportPath, runningReport.dump(2));
-        logFile.open(job.outputDirectory / "log.txt");
 
         if (job.showWindow) {
             if (!font)
@@ -502,26 +253,18 @@ namespace Atlas::Capture {
         // The profiler is disabled by default in release builds
         Graphics::Profiler::enable = job.profileFrames > 0;
 
-        Print("Job '" + job.name + "' with scene " + job.scene + " (run " + runId + ")");
+        if (job.sound)
+            Audio::AudioManager::Unmute();
+        else
+            Audio::AudioManager::Mute();
 
-        if (job.validation && validationMessenger == VK_NULL_HANDLE) {
-            auto instance = Graphics::Instance::DefaultInstance;
-            if (!instance->extendedValidationEnabled) {
-                Fail("Validation layers aren't available, they are part of the Vulkan SDK");
-                return;
-            }
+        report.Print("Job '" + job.name + "' with scene " + job.scene + " (run " + report.runId + ")");
 
-            VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
-            createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-            createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-            createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-            createInfo.pfnUserCallback = ValidationCallback;
-            createInfo.pUserData = this;
-            VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance->GetNativeInstance(), &createInfo, nullptr, &validationMessenger))
-
-            Print("Validation: GPU assisted, synchronization and best practices validation enabled");
+        if (job.validation && !report.EnableValidation()) {
+            Fail("Validation layers aren't available, they are part of the Vulkan SDK");
+            return;
         }
-        Print("Output directory: " + job.outputDirectory.string());
+        report.Print("Output directory: " + job.outputDirectory.string());
 
         if (!rendererInitialized) {
             captureRenderer.Init(mainRenderer, job.resolution);
@@ -544,14 +287,17 @@ namespace Atlas::Capture {
         if (job.track)
             tracker = std::make_unique<Tracker>(*job.track);
 
-        // Load with the camera of the first shot such that streaming and probes start in the right area
-        if (!job.shots.empty())
+        // Load with the camera of the first shot such that streaming and probes start in the right area. Entities an
+        // edit adds don't exist yet, such shots are framed once the edit is done
+        if (!job.shots.empty() && !(job.edit && job.shots.front().camera.mode == "focus"))
             activeCamera = job.shots.front().camera;
+        else if (job.edit && !job.shots.empty())
+            activeCamera = CameraSpec { .mode = "overview" };
         else
             activeCamera = job.observer.value_or(CameraSpec {});
 
         // Capture errors that happen while loading
-        logIndex = Log::GetEntryCount();
+        report.SkipLog();
 
         if (scene && scenePath == job.scene) {
             // The scene starts each job with the settings it was loaded with, out of play mode
@@ -559,7 +305,7 @@ namespace Atlas::Capture {
             scene->physicsWorld->pauseSimulation = true;
             scene->paused = false;
             captureRenderer.InvalidateHistory();
-            Print("Using the loaded scene");
+            report.Print("Using the loaded scene");
             phase = Phase::Prepare;
             return;
         }
@@ -620,15 +366,11 @@ namespace Atlas::Capture {
             Fail("The window was closed before the job finished");
             Finish();
         }
-        ReleaseLock();
+        report.End();
 
         graphicsDevice->WaitForIdle();
-
-        if (validationMessenger != VK_NULL_HANDLE)
-            vkDestroyDebugUtilsMessengerEXT(Graphics::Instance::DefaultInstance->GetNativeInstance(), validationMessenger, nullptr);
-
+        report.DestroyValidation();
         scene.reset();
-        logFile.close();
 
     }
 
@@ -637,7 +379,9 @@ namespace Atlas::Capture {
         if (phase == Phase::Done)
             return;
 
+        report.BeginFrame(job.profileFrames);
         graphicsDevice->WaitForPreviousFrameSubmission();
+        report.currentCpuTimes.wait = report.GetFrameMilliseconds();
 
         try {
             ProcessReadback();
@@ -655,17 +399,18 @@ namespace Atlas::Capture {
                 if (IsSceneReady()) {
                     for (const auto& mesh : scene->GetMeshes())
                         if (mesh.IsValid() && !mesh.IsLoaded())
-                            Warn("Mesh " + mesh.GetResource()->path + " failed to load");
+                            report.Warn("Mesh " + mesh.GetResource()->path + " failed to load");
 
                     loadSeconds = elapsed;
                     sceneSettings = ExportSettings(*scene);
-                    Print("Scene ready after " + FormatFloat(loadSeconds, 1) + "s (" + std::to_string(frameCount) +
+                    report.Print("Scene ready after " + FormatFloat(loadSeconds, 1) + "s (" + std::to_string(frameCount) +
                         " frames, " + std::to_string(scene->GetEntityCount() - 1) + " entities)");
+                    retainedMeshes.clear();
                     if (loadingForCommand) {
                         loadingForCommand = false;
                         phase = Phase::Idle;
                         CompleteCommand({ { "status", "ok" }, { "loadSeconds", loadSeconds },
-                            { "entities", scene->GetEntityCount() - 1 }, { "warnings", warnings } });
+                            { "entities", scene->GetEntityCount() - 1 }, { "warnings", report.warnings } });
                     }
                     else {
                         phase = Phase::Prepare;
@@ -704,9 +449,12 @@ namespace Atlas::Capture {
 
     void App::Render(float deltaTime) {
 
-        // While finishing the scene isn't updated anymore, rendering it without an update shows garbage
-        auto finished = phase == Phase::Done || phase == Phase::Idle || (phase == Phase::Finish && captureRequests.empty());
-        if (finished || !scene) {
+        // Only a scene updated in this frame is rendered, e.g. not while finishing, waiting for commands or in the frame a
+        // job starts on a loaded scene. The renderer would use the per frame data of an older update, like an
+        // acceleration structure that was never built because its frame wasn't rendered
+        auto updated = sceneUpdated;
+        sceneUpdated = false;
+        if (!scene || !updated) {
             // Scene updates can enqueue GPU work even when no scene frame is rendered
             if (scene)
                 scene->WaitForAsyncWorkCompletion();
@@ -721,8 +469,10 @@ namespace Atlas::Capture {
                     passes.push_back(pass);
 
         try {
+            auto renderStart = std::chrono::steady_clock::now();
             BuildOverlay();
             captureRenderer.Render(scene, passes, overlay->GetBatches(), job.pathTrace);
+            report.currentCpuTimes.render = std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - renderStart).count();
         }
         catch (const std::exception& e) {
             // E.g. validation errors, which the engine throws in non-release builds
@@ -747,6 +497,7 @@ namespace Atlas::Capture {
         }
 
         std::vector<CaptureRenderer::TextLine> lines = { { GetStatusLine(), vec4(0.55f, 0.8f, 1.0f, 1.0f) } };
+        const auto& outputLines = report.outputLines;
         auto first = outputLines.size() > outputLineCount ? outputLines.size() - outputLineCount : 0;
         lines.insert(lines.end(), outputLines.begin() + first, outputLines.end());
 
@@ -774,7 +525,7 @@ namespace Atlas::Capture {
             line += "shots";
             break;
         case Phase::Play:
-            line += "playing  " + FormatFloat(playTime, 2) + " / " + FormatFloat(job.duration, 2) + " s";
+            line += "playing  " + FormatFloat(timeline.time, 2) + " / " + FormatFloat(job.duration, 2) + " s";
             if (scene && scene->paused)
                 line += "  (paused)";
             break;
@@ -782,7 +533,7 @@ namespace Atlas::Capture {
             line += "writing outputs";
             break;
         case Phase::Done:
-            line += jobExitCode == 0 ? "passed" : jobExitCode == 1 ? "failed" : "error";
+            line += report.exitCode == 0 ? "passed" : report.exitCode == 1 ? "failed" : "error";
             break;
         }
 
@@ -792,13 +543,13 @@ namespace Atlas::Capture {
 
     void App::Fail(const std::string& message) {
 
-        errors.push_back(message);
+        report.Error(message);
         fatal = true;
-        Print("ERROR: " + message);
 
         // A scene loaded by a command has no job and no report
         if (loadingForCommand) {
             loadingForCommand = false;
+            retainedMeshes.clear();
             UnloadScene();
             phase = Phase::Idle;
             CompleteCommand({ { "status", "error" }, { "reason", message } });
@@ -810,66 +561,13 @@ namespace Atlas::Capture {
 
     }
 
-    void App::Warn(const std::string& message) {
-
-        warnings.push_back(message);
-        Print("WARNING: " + message);
-
-    }
-
-    void App::Print(const std::string& message) {
-
-        std::printf("[capture] %s\n", message.c_str());
-        std::fflush(stdout);
-
-        if (job.showWindow) {
-            auto color = vec4(0.85f, 0.85f, 0.85f, 1.0f);
-            if (message.starts_with("ERROR") || message.starts_with("FAILED"))
-                color = vec4(1.0f, 0.4f, 0.35f, 1.0f);
-            else if (message.starts_with("WARNING"))
-                color = vec4(1.0f, 0.8f, 0.3f, 1.0f);
-            else if (message.starts_with("Status: passed"))
-                color = vec4(0.45f, 0.9f, 0.45f, 1.0f);
-            outputLines.push_back({ message, color });
-            if (outputLines.size() > 200)
-                outputLines.pop_front();
-        }
-
-        if (logFile.is_open())
-            logFile << "[capture] " << message << "\n";
-
-    }
-
     void App::CollectLog() {
 
-        auto entries = Log::GetEntriesSince(logIndex);
-        logIndex += entries.size();
-
-        for (const auto& entry : entries) {
-            // Log conditions: a text without wildcards matches when the message contains it
-            for (auto& trigger : triggers) {
-                if (trigger.logMatched || !IsDue(trigger.event.time) || !trigger.event.when->contains("log"))
-                    continue;
-                auto pattern = (*trigger.event.when)["log"].get<std::string>();
-                if (pattern.find_first_of("*?") == std::string::npos)
-                    pattern = "*" + pattern + "*";
-                trigger.logMatched = MatchPattern(pattern, entry.message);
-            }
-
-            std::string type = entry.type == Log::TYPE_ERROR ? "ERROR" : (entry.type == Log::TYPE_WARNING ? "WARNING" : "INFO");
-            if (logFile.is_open())
-                logFile << "[" << FormatFloat(entry.time, 2) << "] " << type << ": " << entry.message << "\n";
-
-            if (entry.type == Log::TYPE_ERROR) {
-                logErrorCount++;
-                std::printf("[engine] ERROR: %s\n", entry.message.c_str());
-                if (checkRunner && job.checks.logErrors && !MatchAnyPattern(job.checks.logIgnore, entry.message))
-                    checkRunner->AddFailure({ "log", entry.message.substr(0, 160), playTime, entry.message });
-            }
+        for (const auto& entry : report.CollectLog()) {
+            timeline.MatchLog(entry.message);
+            if (entry.type == Log::TYPE_ERROR && checkRunner && job.checks.logErrors && !MatchAnyPattern(job.checks.logIgnore, entry.message))
+                checkRunner->AddFailure({ "log", entry.message.substr(0, 160), timeline.time, entry.message });
         }
-
-        if (logFile.is_open())
-            logFile.flush();
 
     }
 
@@ -884,7 +582,7 @@ namespace Atlas::Capture {
             return false;
 
         // Ray tracing structures are built asynchronously, but not every device/scene builds them
-        if (scene->rayTracingWorld && !scene->IsRtDataValid() && rtWaitFrames++ < 300)
+        if (scene->IsRtDataNeeded() && !scene->IsRtDataValid() && rtWaitFrames++ < 300)
             return false;
 
         return true;
@@ -899,14 +597,14 @@ namespace Atlas::Capture {
         if (!job.settings.empty())
             ApplySettings(*scene, job.settings);
         baseSettings = ExportSettings(*scene);
-        Print("Rendering at " + std::to_string(job.resolution.x) + "x" + std::to_string(job.resolution.y) + GetRenderDescription());
+        report.Print("Rendering at " + std::to_string(job.resolution.x) + "x" + std::to_string(job.resolution.y) + GetRenderDescription());
 
         EntitySet excluded = { captureCameraEntity };
 
         if (job.inspect) {
             auto inspection = InspectScene(*scene, job.inspect->filter, job.inspect->detail, excluded);
-            WriteJson(job.inspect->file, inspection);
-            Print("Inspection: " + std::to_string(inspection["entities"].size()) + " entities written to " + job.inspect->file);
+            report.WriteJson(job.inspect->file, inspection);
+            report.Print("Inspection: " + std::to_string(inspection["entities"].size()) + " entities written to " + job.inspect->file);
         }
 
         if (!job.queries.empty()) {
@@ -923,22 +621,25 @@ namespace Atlas::Capture {
             };
 
             auto results = RunQueries(*scene, job.queries, pickRay, job.outputDirectory);
-            WriteJson("queries.json", results);
+            report.WriteJson("queries.json", results);
             queryResults = results;
             for (const auto& result : results) {
                 auto text = result.contains("error") ? "error: " + result["error"].get<std::string>() : result["result"].dump();
                 if (text.size() > 400)
                     text = text.substr(0, 400) + "... (see queries.json)";
-                Print("Query " + result["query"].dump() + " -> " + text);
+                report.Print("Query " + result["query"].dump() + " -> " + text);
             }
         }
 
         if (job.edit) {
-            report["edit"]["before"] = InspectScene(*scene, {}, {}, excluded);
+            report.data["edit"]["before"] = InspectScene(*scene, {}, {}, excluded);
             editState.loadedTerrain = scene->terrain.IsValid() ? scene->terrain.GetResource()->path : "";
             editState.dryRun = job.edit->dryRun;
-            report["edit"]["operations"] = ApplyEditOperations(scene, job.edit->operations, editState);
-            Print("Applied " + std::to_string(job.edit->operations.size()) + " edit operations");
+            editState.textureFormat = job.edit->textureFormat == "ktx2" ? Loader::ImportTextureFormat::KTX2 :
+                Loader::ImportTextureFormat::Original;
+            scene->WaitForAsyncWorkCompletion();
+            report.data["edit"]["operations"] = ApplyEditOperations(scene, job.edit->operations, editState);
+            report.Print("Applied " + std::to_string(job.edit->operations.size()) + " edit operations");
             phase = Phase::EditSave;
             return;
         }
@@ -964,24 +665,24 @@ namespace Atlas::Capture {
             return;
 
         EntitySet excluded = { captureCameraEntity };
-        auto& edit = report["edit"];
+        auto& edit = report.data["edit"];
 
         auto after = InspectScene(*scene, {}, {}, excluded);
         auto diff = DiffInspections(edit["before"], after);
         edit.erase("before");
-        WriteJson("edit_diff.json", diff);
+        report.WriteJson("edit_diff.json", diff);
         edit["diff"] = diff["summary"];
-        Print("Edit diff: " + diff["summary"].get<std::string>() + " (see edit_diff.json)");
+        report.Print("Edit diff: " + diff["summary"].get<std::string>() + " (see edit_diff.json)");
 
         // Queries of the edited scene, e.g. to verify placements
         if (!job.edit->queries.empty()) {
             auto results = RunQueries(*scene, job.edit->queries, {}, job.outputDirectory);
-            WriteJson("edit_queries.json", results);
+            report.WriteJson("edit_queries.json", results);
             for (const auto& result : results) {
                 auto text = result.contains("error") ? "error: " + result["error"].get<std::string>() : result["result"].dump();
                 if (text.size() > 400)
                     text = text.substr(0, 400) + "... (see edit_queries.json)";
-                Print("Edit query " + result["query"].value("type", "") + " -> " + text);
+                report.Print("Edit query " + result["query"].value("type", "") + " -> " + text);
             }
         }
 
@@ -994,7 +695,7 @@ namespace Atlas::Capture {
 
         if (job.edit->dryRun) {
             edit["saved"] = false;
-            Print("Dry run, neither the scene nor materials are saved");
+            report.Print("Dry run, neither the scene nor materials are saved");
             phase = job.shots.empty() ? Phase::Finish : Phase::Shots;
             return;
         }
@@ -1023,12 +724,12 @@ namespace Atlas::Capture {
 
         if (!editState.changedMaterials.empty()) {
             edit["materials"] = SaveMaterials(editState.changedMaterials);
-            Print("Saved " + std::to_string(editState.changedMaterials.size()) + " edited materials");
+            report.Print("Saved " + std::to_string(editState.changedMaterials.size()) + " edited materials");
         }
 
         if (!sceneChanged) {
             edit["saved"] = false;
-            Print("The scene itself didn't change, it is not saved");
+            report.Print("The scene itself didn't change, it is not saved");
             phase = job.shots.empty() ? Phase::Finish : Phase::Shots;
             return;
         }
@@ -1040,7 +741,7 @@ namespace Atlas::Capture {
             backup += ".backup-" + std::to_string(timestamp);
             fs::copy_file(absoluteOutput, backup);
             edit["backup"] = backup.string();
-            Print("Backup of the previous scene: " + backup.string());
+            report.Print("Backup of the previous scene: " + backup.string());
         }
 
         // The capture camera must not end up in the scene, the editor does the same with its camera
@@ -1050,7 +751,7 @@ namespace Atlas::Capture {
         if (editState.terrainChanged) {
             SaveSceneTerrain(*scene);
             edit["terrain"] = scene->terrain.GetResource()->path;
-            Print("Saved terrain to data/" + scene->terrain.GetResource()->path);
+            report.Print("Saved terrain to data/" + scene->terrain.GetResource()->path);
         }
 
         auto binary = fs::path(output).extension() != ".json";
@@ -1058,21 +759,24 @@ namespace Atlas::Capture {
 
         CreateCaptureCamera();
 
-        try {
-            auto reloaded = Serializer::DeserializeScene(output, binary);
-            auto reloadedCount = reloaded->GetEntityCount();
-            edit["verified"] = reloadedCount == entityCount;
-            if (reloadedCount != entityCount)
-                Fail("Saved scene has " + std::to_string(reloadedCount) + " entities, expected " + std::to_string(entityCount));
-        }
-        catch (const std::exception& e) {
-            Fail("Saved scene " + output + " couldn't be loaded again: " + e.what());
-            return;
+        // A pipeline step that continues with the scene saves it again, only the last saved state is loaded again
+        if (mode != Mode::Pipeline || !StepReadsScene(pipeline->currentStep + 1, output)) {
+            try {
+                auto reloaded = Serializer::DeserializeScene(output, binary);
+                auto reloadedCount = reloaded->GetEntityCount();
+                edit["verified"] = reloadedCount == entityCount;
+                if (reloadedCount != entityCount)
+                    Fail("Saved scene has " + std::to_string(reloadedCount) + " entities, expected " + std::to_string(entityCount));
+            }
+            catch (const std::exception& e) {
+                Fail("Saved scene " + output + " couldn't be loaded again: " + e.what());
+                return;
+            }
         }
 
         edit["saved"] = true;
         edit["output"] = output;
-        Print("Saved edited scene to data/" + output);
+        report.Print("Saved edited scene to data/" + output);
 
         // A scene that stays loaded starts the next job with the settings it was saved with
         sceneSettings = ExportSettings(*scene);
@@ -1097,7 +801,7 @@ namespace Atlas::Capture {
             ApplySettings(*scene, baseSettings);
             ApplySettings(*scene, variant.settings);
             captureRenderer.SetRenderScale(variant.renderScale.value_or(baseRenderScale));
-            Print("Variant '" + variant.name + "'" + GetRenderDescription());
+            report.Print("Variant '" + variant.name + "'" + GetRenderDescription());
         }
 
         auto camera = shot.camera;
@@ -1177,18 +881,12 @@ namespace Atlas::Capture {
 
     void App::StartPlay() {
 
-        playStartTime = std::chrono::steady_clock::now();
-        events = job.timeline;
+        // The scripts get new entities, the asynchronous work of the last scene update (e.g. the ray tracing world)
+        // still reads the entity storage
+        scene->WaitForAsyncWorkCompletion();
 
-        for (auto it = events.begin(); it != events.end();) {
-            if (it->when) {
-                triggers.push_back({ .event = *it });
-                it = events.erase(it);
-            }
-            else {
-                ++it;
-            }
-        }
+        playStartTime = std::chrono::steady_clock::now();
+        auto events = job.timeline;
 
         // Strips are expanded into capture events
         for (const auto& strip : job.strips) {
@@ -1204,33 +902,16 @@ namespace Atlas::Capture {
             for (int32_t i = 0; i <= count; i++) {
                 auto time = strip.from + float(i) * strip.every;
 
-                EventSpec event;
-                event.time = time;
-                event.type = "capture";
-                event.data["capture"] = json::object();
-                event.data["capture"]["file"] = group + "/" + FormatFloat(time, 2) + "s.png";
-                event.data["capture"]["group"] = group;
-                event.data["capture"]["stripCamera"] = strip.hasCamera;
-                events.push_back(event);
+                CaptureEvent capture;
+                capture.file = group + "/" + FormatFloat(time, 2) + "s.png";
+                capture.group = group;
+                capture.stripCamera = strip.hasCamera;
+                events.push_back({ .time = time, .type = "capture", .action = capture });
             }
         }
 
-        std::stable_sort(events.begin(), events.end(), [](const EventSpec& a, const EventSpec& b) {
-
-            return a.time < b.time;
-
-        });
-
-        auto beyond = std::remove_if(events.begin(), events.end(), [&](const EventSpec& event) {
-
-            return event.time > job.duration + timeTolerance;
-
-        });
-        if (beyond != events.end()) {
-            Warn(std::to_string(std::distance(beyond, events.end())) + " timeline events after the duration of " +
-                FormatFloat(job.duration, 2) + "s are ignored");
-            events.erase(beyond, events.end());
-        }
+        if (auto dropped = timeline.Start(std::move(events), job.duration))
+            report.Warn(std::to_string(dropped) + " timeline events after the duration of " + FormatFloat(job.duration, 2) + "s are ignored");
 
         activeCamera = job.observer.value_or(CameraSpec {});
 
@@ -1271,18 +952,16 @@ namespace Atlas::Capture {
                 if (entity.HasComponent<LuaScriptComponent>())
                     throw std::runtime_error(GetEntityLabel(entity) + " already has a script, attach to a new entity instead");
                 entity.AddComponent<LuaScriptComponent>(script);
-                Print("Attached script " + spec.path + " to " + GetEntityLabel(entity));
+                report.Print("Attached script " + spec.path + " to " + GetEntityLabel(entity));
             }
         }
 
         // Enable play mode; scene.paused controls pauses and resetScripts temporarily leaves play mode
         scene->physicsWorld->pauseSimulation = false;
-        playTime = 0.0f;
-        nextEvent = 0;
         phase = Phase::Play;
 
-        Print("Playing for " + FormatFloat(job.duration, 2) + "s with " + std::to_string(events.size()) +
-            " timeline events and " + std::to_string(triggers.size()) + " conditional events");
+        report.Print("Playing for " + FormatFloat(job.duration, 2) + "s with " + std::to_string(timeline.GetTimedEventCount()) +
+            " timeline events and " + std::to_string(timeline.GetTriggerCount()) + " conditional events");
 
     }
 
@@ -1295,54 +974,39 @@ namespace Atlas::Capture {
 
         // A shown window plays in real time, the simulation still advances in fixed steps
         auto realPlayTime = std::chrono::duration<float>(std::chrono::steady_clock::now() - playStartTime).count();
-        if (job.showWindow && playTime > realPlayTime) {
+        if (job.showWindow && job.realTime && timeline.time > realPlayTime) {
             UpdateSceneWithCaptureCamera(*activeCamera, freezeDeltaTime);
             return;
         }
 
-        for (auto it = pendingKeyReleases.begin(); it != pendingKeyReleases.end();) {
-            if (IsDue(it->first)) {
-                FireKey(it->second, false);
-                it = pendingKeyReleases.erase(it);
-            }
-            else {
-                ++it;
-            }
-        }
-
-        UpdateTriggers();
+        timeline.Update(*scene, [&](const std::string& message) { report.Print(message); });
 
         bool liveCapture = false;
-        while (nextEvent < events.size() && IsDue(events[nextEvent].time)) {
-            const auto& event = events[nextEvent];
-            const auto& data = event.data;
+        while (auto due = timeline.GetDueEvent()) {
+            const auto& event = *due;
 
-            if (event.type == "capture") {
-                const auto& capture = data["capture"];
-                auto group = capture.value("group", std::string());
-
+            if (auto capture = std::get_if<CaptureEvent>(&event.action)) {
                 CameraSpec camera = activeCamera.value_or(CameraSpec {});
                 bool ownCamera = false;
-                if (capture.contains("camera")) {
-                    camera = ParseCamera(capture["camera"]);
+                if (capture->camera) {
+                    camera = *capture->camera;
                     ownCamera = true;
                 }
-                else if (capture.value("stripCamera", false)) {
-                    camera = stripCameras[group];
+                else if (capture->stripCamera) {
+                    camera = stripCameras[capture->group];
                     ownCamera = true;
                 }
 
                 CaptureRequest request;
-                auto defaultFile = SanitizeFileName(capture.value("name", "capture")) + "_" + FormatFloat(playTime, 2) + "s.png";
-                request.path = job.outputDirectory / capture.value("file", defaultFile);
-                request.group = group;
-                request.label = capture.value("label", FormatTime(event.time));
+                auto defaultFile = SanitizeFileName(capture->name) + "_" + FormatFloat(timeline.time, 2) + "s.png";
+                request.path = job.outputDirectory / capture->file.value_or(defaultFile);
+                request.group = capture->group;
+                request.label = capture->label.value_or(FormatTime(event.time));
                 request.time = event.time;
-                if (capture.contains("passes"))
-                    request.passes = capture["passes"].get<std::vector<std::string>>();
+                request.passes = capture->passes;
 
                 // A different camera than the observer needs frozen frames to let temporal effects settle
-                if (ownCamera || capture.value("still", false)) {
+                if (ownCamera || capture->still) {
                     // Pending live captures are taken first, the still starts in the next frame
                     if (liveCapture)
                         break;
@@ -1351,11 +1015,11 @@ namespace Atlas::Capture {
                         .active = true,
                         .camera = camera,
                         .request = request,
-                        .settleFrames = capture.value("settleFrames", job.settleFrames)
+                        .settleFrames = capture->settleFrames.value_or(job.settleFrames)
                     };
                     // The paused scene doesn't advance the exposure adaptation, it starts over for the new view
                     captureRenderer.InvalidateHistory();
-                    nextEvent++;
+                    timeline.PopEvent();
                     UpdateStill();
                     return;
                 }
@@ -1363,106 +1027,29 @@ namespace Atlas::Capture {
                 RequestCapture(request);
                 liveCapture = true;
             }
-            else if (event.type == "key") {
-                const auto& key = data["key"];
-                auto name = key.is_string() ? key.get<std::string>() : key.at("key").get<std::string>();
-                auto action = key.is_object() ? key.value("action", std::string("press")) : std::string("press");
-                auto duration = key.is_object() ? key.value("duration", job.fixedDeltaTime * 2.0f) : job.fixedDeltaTime * 2.0f;
-                if (action == "down" || action == "press")
-                    FireKey(name, true);
-                if (action == "up")
-                    FireKey(name, false);
-                if (action == "press")
-                    pendingKeyReleases.emplace_back(playTime + duration, name);
-                Print(FormatTime(playTime) + " key " + name + " " + action);
-            }
-            else if (event.type == "teleport") {
-                const auto& teleport = data["teleport"];
-                auto position = ToVec3(teleport.at("position"));
-                auto entities = FindTopmostEntities(*scene, teleport.at("entity").get<std::string>());
-                if (entities.empty())
-                    Warn(FormatTime(playTime) + " teleport: no entity matches " + teleport["entity"].dump());
-
-                for (auto entity : entities) {
-                    if (auto player = entity.TryGetComponent<PlayerComponent>(); player && player->IsValid())
-                        player->SetPosition(position);
-                    SetWorldPosition(entity, position);
-                    if (teleport.contains("yaw") || teleport.contains("pitch"))
-                        SetLookDirection(entity, teleport);
-                    Print(FormatTime(playTime) + " teleported " + GetEntityLabel(entity) + " to " + FormatVec3(position));
-                }
-            }
-            else if (event.type == "animation") {
-                const auto& spec = data["animation"];
-                auto entities = FindTopmostEntities(*scene, spec.at("entity").get<std::string>());
-                if (entities.empty())
-                    Warn(FormatTime(playTime) + " animation: no entity matches " + spec["entity"].dump());
-
-                ResourceHandle<Animation::Animation> animation;
-                try {
-                    animation = LoadAnimationForScene(spec.at("animation").get<std::string>(), spec.value("model", std::string()));
-                }
-                catch (const std::exception& e) {
-                    Warn(FormatTime(playTime) + " animation: " + e.what());
-                    entities.clear();
-                }
-
-                auto blendTime = spec.value("blendTime", 0.0f);
-                for (auto entity : entities) {
-                    auto animationComponent = entity.TryGetComponent<AnimationComponent>();
-                    if (!animationComponent) {
-                        Warn(FormatTime(playTime) + " animation: " + GetEntityLabel(entity) + " has no animation component");
-                        continue;
-                    }
-                    animationComponent->Play(animation, blendTime);
-                    Print(FormatTime(playTime) + " playing " + animation.GetResource()->path + " on " + GetEntityLabel(entity));
-                }
-            }
-            else if (event.type == "look") {
-                const auto& look = data["look"];
-                auto entities = FindTopmostEntities(*scene, look.at("entity").get<std::string>());
-                if (entities.empty())
-                    Warn(FormatTime(playTime) + " look: no entity matches " + look["entity"].dump());
-                for (auto entity : entities)
-                    SetLookDirection(entity, look);
-            }
-            else if (event.type == "resetScripts") {
-                // Leaving play mode discards non-permanent script environments; scene.paused keeps their state
-                scene->physicsWorld->pauseSimulation = true;
-                UpdateSceneWithCaptureCamera(*activeCamera, freezeDeltaTime);
-                scene->physicsWorld->pauseSimulation = false;
-                Print(FormatTime(playTime) + " reset the state of all scripts");
-            }
-            else if (event.type == "pause") {
-                // The job time continues, e.g. to check that nothing moves and scripts keep their state
-                scene->paused = data["pause"].get<bool>();
-                Print(FormatTime(playTime) + (scene->paused ? " paused the scene" : " resumed the scene"));
-            }
-            else if (event.type == "log") {
-                Print(FormatTime(playTime) + " " + data["log"].get<std::string>());
-            }
-            else if (event.type == "expect") {
-                RunExpectation(event);
+            else {
+                std::visit([&](const auto& action) {
+                    if constexpr (!std::is_same_v<std::decay_t<decltype(action)>, CaptureEvent>)
+                        RunEvent(action);
+                }, event.action);
             }
 
-            nextEvent++;
+            timeline.PopEvent();
         }
 
         // A live capture shows the regular step of this frame, which also gives correct motion vectors
         // The job only finishes once it was rendered
-        if (!liveCapture && IsDue(job.duration) && nextEvent >= events.size()) {
-            for (const auto& trigger : triggers) {
-                if (trigger.fired)
-                    continue;
-                auto message = "Conditional event never happened: " + trigger.event.data.dump();
-                if (trigger.event.optional)
-                    Warn(message);
+        if (!liveCapture && timeline.IsFinished(job.duration)) {
+            for (const auto& event : timeline.GetMissedEvents()) {
+                auto message = "Conditional event never happened: " + event.data.dump();
+                if (event.optional)
+                    report.Warn(message);
                 else
-                    checkRunner->AddFailure({ "timeline", trigger.event.type, playTime, message });
+                    checkRunner->AddFailure({ "timeline", event.type, timeline.time, message });
             }
-            checkRunner->Run(*scene, playTime);
+            checkRunner->Run(*scene, timeline.time);
             if (tracker)
-                tracker->Record(*scene, playTime);
+                tracker->Record(*scene, timeline.time);
             phase = Phase::Finish;
             return;
         }
@@ -1471,50 +1058,16 @@ namespace Atlas::Capture {
         // are computed for the main camera. Scripts access their camera through their entity
         playerInput.Update(*scene, job.fixedDeltaTime);
         UpdateSceneWithCaptureCamera(*activeCamera);
-        playTime += job.fixedDeltaTime;
+        timeline.time += job.fixedDeltaTime;
 
-        if (IsDue(nextCheckTime)) {
-            checkRunner->Run(*scene, playTime);
+        if (timeline.IsDue(nextCheckTime)) {
+            checkRunner->Run(*scene, timeline.time);
             nextCheckTime += job.checks.interval;
         }
-        if (tracker && IsDue(nextTrackTime)) {
-            tracker->Record(*scene, playTime);
+        if (tracker && timeline.IsDue(nextTrackTime)) {
+            tracker->Record(*scene, timeline.time);
             nextTrackTime += tracker->spec.interval;
         }
-
-    }
-
-    void App::UpdateTriggers() {
-
-        std::vector<EventSpec> due;
-        for (auto& trigger : triggers) {
-            const auto& when = *trigger.event.when;
-            if (!trigger.metTime && IsDue(trigger.event.time)) {
-                bool passed = trigger.logMatched;
-                if (!when.contains("log"))
-                    EvaluateExpectation(*scene, when, passed);
-                if (passed) {
-                    trigger.metTime = playTime;
-                    Print(FormatTime(playTime) + " condition met: " + when.dump());
-                }
-            }
-
-            if (trigger.metTime && !trigger.fired && IsDue(*trigger.metTime + trigger.event.delay)) {
-                trigger.fired = true;
-                auto event = trigger.event;
-                event.time = playTime;
-                due.push_back(event);
-            }
-        }
-
-        // Due events run in this frame before the timed events of the frame
-        events.insert(events.begin() + nextEvent, due.begin(), due.end());
-
-    }
-
-    bool App::IsDue(float time) const {
-
-        return time <= playTime + timeTolerance;
 
     }
 
@@ -1542,101 +1095,6 @@ namespace Atlas::Capture {
 
     }
 
-    void App::WriteProfile() {
-
-        auto threads = Graphics::Profiler::GetQueriesAverage(uint32_t(job.profileFrames));
-
-        json queries = json::array();
-        std::function<void(const Graphics::Profiler::Query&, const std::string&, int32_t)> addQuery =
-            [&](const Graphics::Profiler::Query& query, const std::string& parent, int32_t depth) {
-
-            auto path = parent.empty() ? query.name : parent + " / " + query.name;
-            auto milliseconds = double(query.timer.elapsedTime) / 1000000.0;
-            queries.push_back({ { "query", path }, { "depth", depth }, { "ms", Round(milliseconds, 4) } });
-            for (const auto& child : query.children)
-                addQuery(child, path, depth + 1);
-
-        };
-
-        json profile;
-        profile["frames"] = job.profileFrames;
-        for (const auto& thread : threads) {
-            queries = json::array();
-            double total = 0.0;
-            for (const auto& query : thread.queries) {
-                total += double(query.timer.elapsedTime) / 1000000.0;
-                addQuery(query, "", 0);
-            }
-            profile["threads"].push_back({ { "thread", thread.name }, { "ms", Round(total, 4) }, { "queries", queries } });
-
-            Print("GPU " + thread.name + ": " + FormatFloat(float(total), 3) + " ms per frame");
-            for (const auto& query : queries)
-                if (query["depth"].get<int32_t>() <= 1 && query["ms"].get<double>() >= 0.05)
-                    Print("  " + FormatFloat(query["ms"].get<float>(), 3) + " ms  " + query["query"].get<std::string>());
-        }
-
-        WriteJson("profile.json", profile);
-
-    }
-
-    void App::WriteValidationReport() {
-
-        std::lock_guard lock(validationMutex);
-
-        // Errors first, then the most frequent messages
-        std::vector<std::pair<std::string, ValidationMessage>> sorted(validationMessages.begin(), validationMessages.end());
-        std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) {
-
-            bool aError = a.second.severity == "error", bError = b.second.severity == "error";
-            if (aError != bError)
-                return aError;
-            return a.second.count > b.second.count;
-
-        });
-
-        json messages = json::array();
-        std::map<std::string, int32_t> counts = { { "error", 0 }, { "warning", 0 }, { "performance", 0 } };
-        for (const auto& [id, message] : sorted) {
-            messages.push_back({ { "id", id }, { "severity", message.severity }, { "count", message.count },
-                { "message", message.message } });
-            counts[message.severity]++;
-        }
-
-        json summary = { { "errors", counts["error"] }, { "warnings", counts["warning"] },
-            { "performance", counts["performance"] } };
-        WriteJson("validation.json", { { "summary", summary }, { "messages", messages } });
-        report["validation"] = summary;
-
-        Print("Validation: " + std::to_string(counts["error"]) + " errors, " + std::to_string(counts["warning"]) +
-            " warnings, " + std::to_string(counts["performance"]) + " performance warnings (distinct ids)");
-        for (const auto& [id, message] : sorted) {
-            if (message.severity == "error")
-                Print("VALIDATION " + id + " (" + std::to_string(message.count) + "x)");
-        }
-
-    }
-
-    VkBool32 App::ValidationCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-        VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* data, void* userData) {
-
-        auto app = static_cast<App*>(userData);
-        auto id = data->pMessageIdName ? std::string(data->pMessageIdName) : std::to_string(data->messageIdNumber);
-
-        std::lock_guard lock(app->validationMutex);
-        auto& message = app->validationMessages[id];
-        if (message.count++ == 0) {
-            if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-                message.severity = "error";
-            else
-                message.severity = type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT ? "performance" : "warning";
-            // Contains the involved objects with their debug names
-            message.message = data->pMessage;
-        }
-
-        return VK_FALSE;
-
-    }
-
     void App::Finish() {
 
         for (const auto& group : sheetOrder) {
@@ -1646,84 +1104,74 @@ namespace Atlas::Capture {
 
             auto image = ComposeSheet(sheet.images, sheet.labels, sheet.columns, sheet.title);
             if (WritePng(image, sheet.path))
-                outputs.push_back(fs::relative(sheet.path, job.outputDirectory).generic_string());
+                report.AddOutput(fs::relative(sheet.path, job.outputDirectory).generic_string());
         }
 
         if (tracker)
-            WriteJson("trace.json", tracker->GetTrace());
+            report.WriteJson("trace.json", tracker->GetTrace());
 
         if (job.profileFrames > 0)
-            WriteProfile();
+            report.WriteProfile(job.profileFrames);
 
-        if (validationMessenger != VK_NULL_HANDLE)
-            WriteValidationReport();
+        if (report.IsValidationEnabled())
+            report.WriteValidation();
+
+        auto failedExpectations = std::count_if(report.expectations.begin(), report.expectations.end(), [](const json& expectation) {
+
+            return !expectation["passed"].get<bool>();
+
+        });
 
         if (fatal)
-            jobExitCode = 2;
-        else if ((checkRunner && checkRunner->HasFailures()) || expectationFailed)
-            jobExitCode = 1;
+            report.exitCode = 2;
+        else if ((checkRunner && checkRunner->HasFailures()) || failedExpectations > 0)
+            report.exitCode = 1;
         else
-            jobExitCode = 0;
+            report.exitCode = 0;
 
         std::string reason;
-        if (fatal)
-            reason = errors.empty() ? "unknown error" : errors.front();
-        else if (jobExitCode == 1) {
-            auto failedExpectations = std::count_if(expectations.begin(), expectations.end(), [](const json& expectation) {
-
-                return !expectation["passed"].get<bool>();
-
-            });
+        if (fatal) {
+            reason = report.errors.empty() ? "unknown error" : report.errors.front();
+        }
+        else if (report.exitCode == 1) {
             auto failedChecks = checkRunner ? checkRunner->GetSummary().size() : size_t(0);
             reason = std::to_string(failedChecks) + " failed checks, " + std::to_string(failedExpectations) + " failed expectations";
         }
 
-        report["job"] = job.name;
-        report["runId"] = runId;
-        report["scene"] = job.scene;
-        report["status"] = jobExitCode == 0 ? "passed" : (jobExitCode == 1 ? "failed" : "error");
-        report["exitCode"] = jobExitCode;
+        std::string status = report.exitCode == 0 ? "passed" : (report.exitCode == 1 ? "failed" : "error");
+        json result = {
+            { "job", job.name }, { "runId", report.runId }, { "scene", job.scene }, { "status", status },
+            { "exitCode", report.exitCode }, { "renderScale", baseRenderScale }, { "loadSeconds", loadSeconds },
+            { "frames", frameCount }, { "errors", report.errors }, { "warnings", report.warnings },
+            { "totalSeconds", std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime).count() },
+            { "engineLogErrors", report.logErrorCount }
+        };
         if (!reason.empty())
-            report["reason"] = reason;
-        report["renderScale"] = baseRenderScale;
-        report["loadSeconds"] = loadSeconds;
-        report["frames"] = frameCount;
-        report["totalSeconds"] = std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime).count();
-        report["errors"] = errors;
-        report["warnings"] = warnings;
-        report["engineLogErrors"] = logErrorCount;
+            result["reason"] = reason;
         if (checkRunner)
-            report["checks"] = checkRunner->GetReport();
-        if (!expectations.empty())
-            report["expectations"] = expectations;
+            result["checks"] = checkRunner->GetReport();
+        if (!report.expectations.empty())
+            result["expectations"] = report.expectations;
         if (job.play)
-            report["playedSeconds"] = playTime;
-        if (!triggers.empty()) {
-            json triggerReport = json::array();
-            for (const auto& trigger : triggers)
-                triggerReport.push_back({ { "event", trigger.event.data }, { "fired", trigger.fired },
-                    { "conditionMetAt", trigger.metTime ? json(*trigger.metTime) : json() } });
-            report["conditionalEvents"] = triggerReport;
-        }
-        report["outputs"] = outputs;
+            result["playedSeconds"] = timeline.time;
+        if (auto triggers = timeline.GetTriggerReport(); !triggers.is_null())
+            result["conditionalEvents"] = triggers;
+        report.Write(result);
 
-        WriteJson("report.json", report);
-        reportWritten = true;
-
-        Print("---------------------------------------------");
-        Print("Status: " + report["status"].get<std::string>() + (reason.empty() ? "" : " (" + reason + ")"));
+        report.Print("---------------------------------------------");
+        report.Print("Status: " + status + (reason.empty() ? "" : " (" + reason + ")"));
         if (checkRunner) {
             for (const auto& line : checkRunner->GetSummary())
-                Print("FAILED " + line);
+                report.Print("FAILED " + line);
         }
-        for (const auto& expectation : expectations)
+        for (const auto& expectation : report.expectations)
             if (!expectation["passed"].get<bool>())
-                Print("FAILED expectation " + expectation.dump());
-        for (const auto& error : errors)
-            Print("ERROR " + error);
-        Print("Outputs in " + job.outputDirectory.string() + ":");
-        for (const auto& output : outputs)
-            Print("  " + output.get<std::string>());
+                report.Print("FAILED expectation " + expectation.dump());
+        for (const auto& error : report.errors)
+            report.Print("ERROR " + error);
+        report.Print("Outputs in " + job.outputDirectory.string() + ":");
+        for (const auto& output : report.GetOutputs())
+            report.Print("  " + output.get<std::string>());
 
         FinishJob();
 
@@ -1731,12 +1179,11 @@ namespace Atlas::Capture {
 
     void App::FinishJob() {
 
-        ReleaseLock();
-        logFile.close();
+        report.End();
 
         if (mode == Mode::Job) {
             phase = Phase::Done;
-            Exit(jobExitCode);
+            Exit(report.exitCode);
             return;
         }
 
@@ -1745,34 +1192,20 @@ namespace Atlas::Capture {
             if (!keepScene)
                 UnloadScene();
             phase = Phase::Idle;
-            CompleteCommand({ { "status", report.value("status", "error") }, { "exitCode", jobExitCode },
-                { "reason", report.value("reason", "") }, { "outputDirectory", job.outputDirectory.string() },
+            CompleteCommand({ { "status", report.data.value("status", "error") }, { "exitCode", report.exitCode },
+                { "reason", report.data.value("reason", "") }, { "outputDirectory", job.outputDirectory.string() },
                 { "report", (job.outputDirectory / "report.json").string() } });
             return;
         }
 
-        if (jobExitCode != 0) {
-            pipeline->Fail(pipelineStep);
-            pipelineExitCode = jobExitCode;
-            pipelineStep = pipeline->steps.size();
-        }
-        else {
-            pipeline->Complete(pipelineStep, report);
-            pipelineStep++;
-        }
+        if (report.exitCode != 0)
+            pipeline->FailStep(report.exitCode);
+        else
+            pipeline->CompleteStep(report.data);
 
-        // The next step continues with the scene in memory if it reads the scene this step saved
-        auto savedScene = report.contains("edit") && report["edit"].value("saved", false) ? report["edit"]["output"].get<std::string>() : "";
-        bool keep = false;
-        if (pipelineStep < pipeline->steps.size() && !savedScene.empty() && !job.play) {
-            try {
-                keep = ParseJobFile(pipeline->steps[pipelineStep].jobFile).scene == savedScene;
-            }
-            catch (const std::exception&) {
-                // Reported when the step starts
-            }
-        }
-        if (keep) {
+        const auto& edit = report.data.value("edit", json::object());
+        auto savedScene = edit.value("saved", false) ? edit["output"].get<std::string>() : "";
+        if (!savedScene.empty() && !job.play && StepReadsScene(pipeline->currentStep, savedScene)) {
             scenePath = savedScene;
             keepScene = true;
         }
@@ -1784,37 +1217,47 @@ namespace Atlas::Capture {
 
     }
 
+    bool App::StepReadsScene(size_t step, const std::string& scene) {
+
+        if (step >= pipeline->steps.size())
+            return false;
+
+        try {
+            return ParseJobFile(pipeline->steps[step].jobFile).scene == scene;
+        }
+        catch (const std::exception&) {
+            // Reported when the step starts
+            return false;
+        }
+
+    }
+
     void App::StartPipelineStep() {
 
-        if (pipelineStep >= pipeline->steps.size()) {
-            auto summary = pipeline->GetSummary();
-            auto summaryPath = pipeline->snapshotDirectory.parent_path() / "pipeline.json";
-            fs::create_directories(summaryPath.parent_path());
-            WriteFileAtomic(summaryPath, json({ { "pipeline", pipeline->name }, { "exitCode", pipelineExitCode }, { "steps", summary } }).dump(2));
+        if (pipeline->IsFinished()) {
+            auto summaryPath = pipeline->WriteSummary();
 
-            Print("---------------------------------------------");
-            for (const auto& step : summary)
-                Print("Step " + step["step"].get<std::string>() + ": " + step["result"].get<std::string>());
-            Print(std::string("Pipeline ") + (pipelineExitCode == 0 ? "passed" : "failed") + ", summary in " + summaryPath.string());
+            report.Print("---------------------------------------------");
+            for (const auto& step : pipeline->GetSummary())
+                report.Print("Step " + step["step"].get<std::string>() + ": " + step["result"].get<std::string>());
+            report.Print(std::string("Pipeline ") + (pipeline->exitCode == 0 ? "passed" : "failed") + ", summary in " + summaryPath.string());
 
             UnloadScene();
             phase = Phase::Done;
-            Exit(pipelineExitCode);
+            Exit(pipeline->exitCode);
             return;
         }
 
-        const auto& step = pipeline->steps[pipelineStep];
-        Print("Pipeline step " + std::to_string(pipelineStep + 1) + " / " + std::to_string(pipeline->steps.size()) + ": " + step.name);
+        const auto& step = pipeline->steps[pipeline->currentStep];
+        report.Print("Pipeline step " + std::to_string(pipeline->currentStep + 1) + " / " + std::to_string(pipeline->steps.size()) + ": " + step.name);
 
         Job stepJob;
         try {
             stepJob = ParseJobFile(step.jobFile);
         }
         catch (const std::exception& e) {
-            Print(std::string("ERROR: ") + e.what());
-            pipeline->Fail(pipelineStep);
-            pipelineExitCode = 2;
-            pipelineStep = pipeline->steps.size();
+            report.Print(std::string("ERROR: ") + e.what());
+            pipeline->FailStep(2);
             StartPipelineStep();
             return;
         }
@@ -1825,117 +1268,123 @@ namespace Atlas::Capture {
 
     void App::ProcessNextCommand() {
 
-        auto now = std::chrono::steady_clock::now();
-        if (now < nextPollTime)
+        auto command = server->Poll();
+        if (!command)
             return;
-        nextPollTime = now + std::chrono::milliseconds(200);
 
-        // Commands are processed in the order of their file names
-        std::vector<fs::path> files;
-        std::error_code error;
-        for (const auto& entry : fs::directory_iterator(serverDirectory, error)) {
-            auto name = entry.path().filename().string();
-            if (entry.is_regular_file() && name.ends_with(".json") && !name.ends_with(".result.json"))
-                files.push_back(entry.path());
-        }
-        if (files.empty())
-            return;
-        std::sort(files.begin(), files.end());
-
-        auto file = files.front();
-        commandName = file.stem().string();
-        commandStartTime = now;
-
-        json command;
-        {
-            std::ifstream stream(file);
-            command = json::parse(stream, nullptr, false, true);
-        }
-        // Processed commands are moved away, their results are written next to the queue
-        auto processed = serverDirectory / "done" / file.filename();
-        fs::rename(file, processed, error);
-        if (error) {
-            fs::copy_file(file, processed, fs::copy_options::overwrite_existing, error);
-            fs::remove(file, error);
-        }
-
-        if (command.is_discarded() || !command.is_object()) {
+        if (command->is_discarded() || !command->is_object()) {
             CompleteCommand({ { "status", "error" }, { "reason", "The command isn't a JSON object" } });
             return;
         }
 
+        static const std::map<std::string, void (App::*)(const json&)> commands = {
+            { "loadScene", &App::LoadSceneCommand },
+            { "reloadScene", &App::ReloadSceneCommand },
+            { "unloadScene", &App::UnloadSceneCommand },
+            { "run", &App::RunCommand },
+            { "stop", &App::StopCommand }
+        };
+
         try {
-            auto type = command.value("command", std::string(command.contains("job") ? "run" : ""));
-            Print("Command '" + commandName + "': " + type);
+            auto type = command->value("command", std::string(command->contains("job") ? "run" : ""));
+            report.Print("Command '" + server->commandName + "': " + type);
 
-            if (type == "stop") {
-                CompleteCommand({ { "status", "ok" } });
-                UnloadScene();
-                phase = Phase::Done;
-                Exit(0);
+            auto handler = commands.find(type);
+            if (handler == commands.end()) {
+                std::string known;
+                for (const auto& [name, _] : commands)
+                    known += (known.empty() ? "" : ", ") + name;
+                throw std::runtime_error("Unknown command '" + type + "' (" + known + ")");
             }
-            else if (type == "loadScene" || type == "reloadScene") {
-                auto path = type == "reloadScene" ? scenePath : ToAssetPath(command.at("scene").get<std::string>());
-                if (path.empty())
-                    throw std::runtime_error("No scene is loaded");
-                UnloadScene();
-
-                // A minimal job, its timeout and resolution apply while loading
-                ResetJobState();
-                job = Job();
-                job.name = commandName;
-                job.scene = path;
-                job.loadTimeout = command.value("timeout", job.loadTimeout);
-                activeCamera = command.contains("camera") ? ParseCamera(command["camera"]) : CameraSpec {};
-                logIndex = Log::GetEntryCount();
-
-                keepScene = true;
-                loadingForCommand = true;
-                Print("Loading " + path);
-                LoadScene(path);
-            }
-            else if (type == "unloadScene") {
-                UnloadScene();
-                CompleteCommand({ { "status", "ok" } });
-            }
-            else if (type == "run") {
-                fs::path jobFile;
-                const auto& jobJson = command.at("job");
-                if (jobJson.is_string()) {
-                    jobFile = ResolveUserPath(jobJson.get<std::string>());
-                }
-                else {
-                    // Inline jobs are written next to the processed command
-                    auto inlineJob = jobJson;
-                    if (!inlineJob.contains("name"))
-                        inlineJob["name"] = commandName;
-                    if (!inlineJob.contains("scene") && scene)
-                        inlineJob["scene"] = scenePath;
-                    jobFile = serverDirectory / "done" / (commandName + ".job.json");
-                    std::ofstream stream(jobFile);
-                    stream << inlineJob.dump(2);
-                }
-                StartJob(ParseJobFile(jobFile, command.value("args", std::vector<std::string>())));
-            }
-            else {
-                throw std::runtime_error("Unknown command '" + type + "' (loadScene, reloadScene, unloadScene, run, stop)");
-            }
+            (this->*handler->second)(*command);
         }
         catch (const std::exception& e) {
-            Print(std::string("ERROR: ") + e.what());
+            report.Print(std::string("ERROR: ") + e.what());
             CompleteCommand({ { "status", "error" }, { "reason", e.what() } });
         }
 
     }
 
+    void App::LoadSceneCommand(const json& command) {
+
+        LoadSceneForCommand(ToAssetPath(command.at("scene").get<std::string>()), command);
+
+    }
+
+    void App::ReloadSceneCommand(const json& command) {
+
+        if (scenePath.empty())
+            throw std::runtime_error("No scene is loaded");
+
+        // The meshes with their materials and textures stay loaded until the scene is ready again
+        if (scene)
+            retainedMeshes = scene->GetMeshes();
+        LoadSceneForCommand(scenePath, command);
+
+    }
+
+    void App::LoadSceneForCommand(std::string path, const json& command) {
+
+        UnloadScene();
+
+        // A minimal job, its timeout and resolution apply while loading
+        job = Job();
+        job.name = server->commandName;
+        job.scene = path;
+        job.loadTimeout = command.value("timeout", job.loadTimeout);
+        ResetJobState();
+        activeCamera = command.contains("camera") ? ParseCamera(command["camera"]) : CameraSpec {};
+        report.SkipLog();
+
+        keepScene = true;
+        loadingForCommand = true;
+        report.Print("Loading " + path);
+        LoadScene(path);
+
+    }
+
+    void App::UnloadSceneCommand(const json&) {
+
+        UnloadScene();
+        CompleteCommand({ { "status", "ok" } });
+
+    }
+
+    void App::RunCommand(const json& command) {
+
+        fs::path jobFile;
+        const auto& jobJson = command.at("job");
+        if (jobJson.is_string()) {
+            jobFile = ResolveUserPath(jobJson.get<std::string>());
+        }
+        else {
+            // Inline jobs are written next to the processed command
+            auto inlineJob = jobJson;
+            if (!inlineJob.contains("name"))
+                inlineJob["name"] = server->commandName;
+            if (!inlineJob.contains("scene") && scene)
+                inlineJob["scene"] = scenePath;
+            jobFile = server->directory / "done" / (server->commandName + ".job.json");
+            std::ofstream stream(jobFile);
+            stream << inlineJob.dump(2);
+        }
+        StartJob(ParseJobFile(jobFile, command.value("args", std::vector<std::string>())));
+
+    }
+
+    void App::StopCommand(const json&) {
+
+        CompleteCommand({ { "status", "ok" } });
+        UnloadScene();
+        phase = Phase::Done;
+        Exit(0);
+
+    }
+
     void App::CompleteCommand(const json& result) {
 
-        auto complete = result;
-        complete["command"] = commandName;
-        complete["seconds"] = std::chrono::duration<float>(std::chrono::steady_clock::now() - commandStartTime).count();
-        complete["scene"] = scene ? json(scenePath) : json();
-        WriteFileAtomic(serverDirectory / (commandName + ".result.json"), complete.dump(2));
-        Print("Command '" + commandName + "' done: " + complete.value("status", ""));
+        server->Complete(result, scene ? scenePath : "");
+        report.Print("Command '" + server->commandName + "' done: " + result.value("status", ""));
 
     }
 
@@ -1965,7 +1414,10 @@ namespace Atlas::Capture {
         if (scene->rayTracingWorld)
             scene->rayTracingWorld->includeObjectHistory = job.pathTrace;
 
+        auto updateStart = std::chrono::steady_clock::now();
         scene->Update(deltaTime < 0.0f ? job.fixedDeltaTime : deltaTime, useCaptureCamera ? captureCameraEntity : Scene::Entity());
+        sceneUpdated = true;
+        report.currentCpuTimes.update += std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - updateStart).count();
 
     }
 
@@ -2159,8 +1611,8 @@ namespace Atlas::Capture {
             }
 
             auto relative = fs::relative(request.path, job.outputDirectory).generic_string();
-            outputs.push_back(relative);
-            Print("Captured " + relative + (phase == Phase::Play ? " at " + FormatTime(request.time) : ""));
+            report.AddOutput(relative);
+            report.Print("Captured " + relative + (phase == Phase::Play ? " at " + FormatTime(request.time) : ""));
 
             if (!request.group.empty())
                 AddToSheet(request.group, image, request.label);
@@ -2183,7 +1635,7 @@ namespace Atlas::Capture {
 
                 auto passPath = fs::path(stem.string() + "_" + pass + ".png");
                 if (WritePng(passImages[pass], passPath))
-                    outputs.push_back(fs::relative(passPath, job.outputDirectory).generic_string());
+                    report.AddOutput(fs::relative(passPath, job.outputDirectory).generic_string());
                 AddToSheet(group, passImages[pass], pass);
             }
         }
@@ -2199,58 +1651,138 @@ namespace Atlas::Capture {
 
     }
 
-    void App::WriteJson(const std::string& fileName, const json& j) {
+    void App::RunEvent(const InputEvent& input) {
 
-        auto path = job.outputDirectory / fileName;
-        fs::create_directories(path.parent_path());
-
-        if (!WriteFileAtomic(path, j.dump(2)))
-            Warn("Couldn't write " + path.string());
-
-        outputs.push_back(fileName);
+        timeline.Fire(input);
+        if (input.device == InputEvent::Device::Axis)
+            report.Print(FormatTime(timeline.time) + " controller " + input.name + " " + FormatFloat(input.value, 2));
+        else
+            report.Print(FormatTime(timeline.time) + (input.device == InputEvent::Device::Key ? " key " : " controller ") + input.name + " " + input.action);
 
     }
 
-    void App::RunExpectation(const EventSpec& event) {
+    void App::RunEvent(const LookEvent& look) {
+
+        auto entities = FindTopmostEntities(*scene, look.entity);
+        if (entities.empty())
+            report.Warn(FormatTime(timeline.time) + " look: no entity matches '" + look.entity + "'");
+        for (auto entity : entities)
+            SetLookDirection(entity, look.yaw, look.pitch);
+
+    }
+
+    void App::RunEvent(const TeleportEvent& teleport) {
+
+        auto entities = FindTopmostEntities(*scene, teleport.entity);
+        if (entities.empty())
+            report.Warn(FormatTime(timeline.time) + " teleport: no entity matches '" + teleport.entity + "'");
+
+        for (auto entity : entities) {
+            if (auto player = entity.TryGetComponent<PlayerComponent>(); player && player->IsValid())
+                player->SetPosition(teleport.position);
+            SetWorldPosition(entity, teleport.position);
+            if (teleport.yaw || teleport.pitch)
+                SetLookDirection(entity, teleport.yaw, teleport.pitch);
+            report.Print(FormatTime(timeline.time) + " teleported " + GetEntityLabel(entity) + " to " + FormatVec3(teleport.position));
+        }
+
+    }
+
+    void App::RunEvent(const AnimationEvent& spec) {
+
+        auto entities = FindTopmostEntities(*scene, spec.entity);
+        if (entities.empty())
+            report.Warn(FormatTime(timeline.time) + " animation: no entity matches '" + spec.entity + "'");
+
+        ResourceHandle<Animation::Animation> animation;
+        try {
+            animation = LoadAnimationForScene(spec.animation, spec.model);
+        }
+        catch (const std::exception& e) {
+            report.Warn(FormatTime(timeline.time) + " animation: " + e.what());
+            return;
+        }
+
+        for (auto entity : entities) {
+            auto animationComponent = entity.TryGetComponent<AnimationComponent>();
+            if (!animationComponent) {
+                report.Warn(FormatTime(timeline.time) + " animation: " + GetEntityLabel(entity) + " has no animation component");
+                continue;
+            }
+            animationComponent->Play(animation, spec.blendTime);
+            report.Print(FormatTime(timeline.time) + " playing " + animation.GetResource()->path + " on " + GetEntityLabel(entity));
+        }
+
+    }
+
+    void App::RunEvent(const LogEvent& log) {
+
+        report.Print(FormatTime(timeline.time) + " " + log.text);
+
+    }
+
+    void App::RunEvent(const ExpectEvent& expect) {
 
         bool passed = false;
-        auto result = EvaluateExpectation(*scene, event.data["expect"], passed);
-        result["t"] = playTime;
+        auto result = EvaluateExpectation(*scene, expect.expectation, passed);
+        result["t"] = timeline.time;
         result["passed"] = passed;
-        expectations.push_back(result);
+        report.expectations.push_back(result);
 
-        if (!passed)
-            expectationFailed = true;
-
-        Print(FormatTime(playTime) + " expectation " + (passed ? "passed: " : "FAILED: ") + result.dump());
+        report.Print(FormatTime(timeline.time) + " expectation " + (passed ? "passed: " : "FAILED: ") + result.dump());
 
     }
 
-    void App::SetLookDirection(Scene::Entity entity, const json& look) {
+    void App::RunEvent(const PauseEvent& pause) {
+
+        // The job time continues, e.g. to check that nothing moves and scripts keep their state
+        scene->paused = pause.pause;
+        report.Print(FormatTime(timeline.time) + (scene->paused ? " paused the scene" : " resumed the scene"));
+
+    }
+
+    void App::RunEvent(const ResetScriptsEvent&) {
+
+        // Leaving play mode discards non-permanent script environments; scene.paused keeps their state
+        scene->physicsWorld->pauseSimulation = true;
+        UpdateSceneWithCaptureCamera(*activeCamera, freezeDeltaTime);
+        scene->physicsWorld->pauseSimulation = false;
+        report.Print(FormatTime(timeline.time) + " reset the state of all scripts");
+
+    }
+
+    void App::RunEvent(const EndEvent&) {
+
+        // The remaining timed events are skipped, conditional events that didn't happen yet still fail
+        report.Print(FormatTime(timeline.time) + " ended the job");
+        timeline.End();
+
+    }
+
+    void App::SetLookDirection(Scene::Entity entity, std::optional<float> yaw, std::optional<float> pitch) {
 
         auto camera = entity.TryGetComponent<CameraComponent>();
         if (!camera) {
             // Entities without a camera (e.g. driven by a script) are turned around the world Y axis instead
             auto transform = entity.TryGetComponent<TransformComponent>();
-            if (!transform || !look.contains("yaw")) {
-                Warn(GetEntityLabel(entity) + " has no camera, only the yaw of its transform can be set");
+            if (!transform || !yaw) {
+                report.Warn(GetEntityLabel(entity) + " has no camera, only the yaw of its transform can be set");
                 return;
             }
 
-            auto yaw = look["yaw"].get<float>();
-            auto global = glm::translate(vec3(transform->globalMatrix[3])) * glm::rotate(glm::radians(yaw), vec3(0.0f, 1.0f, 0.0f));
+            auto global = glm::translate(vec3(transform->globalMatrix[3])) * glm::rotate(glm::radians(*yaw), vec3(0.0f, 1.0f, 0.0f));
             transform->SetGlobal(global, scene->GetParentEntity(entity));
-            Print(FormatTime(playTime) + " " + GetEntityLabel(entity) + " turned to yaw " + FormatFloat(yaw, 1));
+            report.Print(FormatTime(timeline.time) + " " + GetEntityLabel(entity) + " turned to yaw " + FormatFloat(*yaw, 1));
             return;
         }
 
         // Yaw 0 looks towards +Z, 90 towards +X
-        if (look.contains("yaw"))
-            camera->rotation.x = glm::radians(look["yaw"].get<float>());
-        if (look.contains("pitch"))
-            camera->rotation.y = glm::radians(look["pitch"].get<float>());
+        if (yaw)
+            camera->rotation.x = glm::radians(*yaw);
+        if (pitch)
+            camera->rotation.y = glm::radians(*pitch);
 
-        Print(FormatTime(playTime) + " " + GetEntityLabel(entity) + " looks at yaw " +
+        report.Print(FormatTime(timeline.time) + " " + GetEntityLabel(entity) + " looks at yaw " +
             FormatFloat(glm::degrees(camera->rotation.x), 1) + ", pitch " +
             FormatFloat(glm::degrees(camera->rotation.y), 1));
 
@@ -2264,20 +1796,22 @@ namespace Atlas::Capture {
 
         const auto& spec = *job.overlay;
         overlay->depthTest = spec.depthTest;
+        auto& batch = overlay->GetBatch();
+        auto line = [&](vec3 from, vec3 to, vec3 color) { batch->AddLine(from, to, color, color); };
 
         for (auto entity : FindTopmostEntities(*scene, spec.bounds))
-            overlay->Box(GetEntityBounds(entity), vec3(1.0f, 0.85f, 0.1f));
+            batch->AddLineAABB(GetEntityBounds(entity), vec3(1.0f, 0.85f, 0.1f));
 
         if (spec.players) {
             auto playerSubset = scene->GetSubset<PlayerComponent>();
             for (auto entity : playerSubset)
-                overlay->Figure(GetEntityPosition(entity), 1.8f, 0.35f, vec3(0.1f, 0.9f, 1.0f));
+                batch->AddLineCylinder(GetEntityPosition(entity), 1.8f, 0.35f, vec3(0.1f, 0.9f, 1.0f));
         }
 
         if (spec.trails && tracker) {
             for (const auto& [label, samples] : tracker->GetSamples())
                 for (size_t i = 1; i < samples.size(); i++)
-                    overlay->Line(samples[i - 1].position, samples[i].position, vec3(1.0f, 0.2f, 0.9f));
+                    line(samples[i - 1].position, samples[i].position, vec3(1.0f, 0.2f, 0.9f));
         }
 
         if (spec.queries) {
@@ -2291,7 +1825,7 @@ namespace Atlas::Capture {
                 if (type == "pick") {
                     for (const auto& pick : hit)
                         if (pick.value("hit", false))
-                            overlay->Cross(ToVec3(pick["position"]), 0.3f, vec3(1.0f, 1.0f, 0.2f));
+                            batch->AddLineCross(ToVec3(pick["position"]), 0.3f, vec3(1.0f, 1.0f, 0.2f));
                     continue;
                 }
                 if (!hit.is_object())
@@ -2302,50 +1836,33 @@ namespace Atlas::Capture {
                     auto origin = ToVec3(query["origin"]);
                     auto end = isHit ? ToVec3(hit["position"]) :
                         origin + glm::normalize(ToVec3(query["direction"])) * query.value("maxDistance", 4096.0f);
-                    overlay->Line(origin, end, isHit ? vec3(0.2f, 1.0f, 0.2f) : vec3(1.0f, 0.2f, 0.2f));
+                    line(origin, end, isHit ? vec3(0.2f, 1.0f, 0.2f) : vec3(1.0f, 0.2f, 0.2f));
                 }
                 if ((type == "raycast" || type == "ground") && isHit)
-                    overlay->Cross(ToVec3(hit["position"]), 0.3f, vec3(0.2f, 1.0f, 0.2f));
+                    batch->AddLineCross(ToVec3(hit["position"]), 0.3f, vec3(0.2f, 1.0f, 0.2f));
                 if (type == "path") {
                     const auto& samples = hit["samples"];
                     for (size_t i = 1; i < samples.size(); i++)
-                        overlay->Line(ToVec3(samples[i - 1]["position"]) + vec3(0.0f, 0.05f, 0.0f),
+                        line(ToVec3(samples[i - 1]["position"]) + vec3(0.0f, 0.05f, 0.0f),
                             ToVec3(samples[i]["position"]) + vec3(0.0f, 0.05f, 0.0f), vec3(0.2f, 1.0f, 0.2f));
                     for (const auto& issue : hit["issues"])
-                        overlay->Cross(ToVec3(issue["at"]), 0.4f, vec3(1.0f, 0.15f, 0.15f));
+                        batch->AddLineCross(ToVec3(issue["at"]), 0.4f, vec3(1.0f, 0.15f, 0.15f));
                 }
                 else if (type == "route") {
                     const auto& points = hit["points"];
                     for (size_t i = 1; i < points.size(); i++)
-                        overlay->Line(ToVec3(points[i - 1]) + vec3(0.0f, 0.3f, 0.0f), ToVec3(points[i]) + vec3(0.0f, 0.3f, 0.0f),
+                        line(ToVec3(points[i - 1]) + vec3(0.0f, 0.3f, 0.0f), ToVec3(points[i]) + vec3(0.0f, 0.3f, 0.0f),
                             vec3(1.0f, 0.85f, 0.1f));
                 }
             }
         }
 
         for (const auto& marker : spec.markers)
-            overlay->Cross(ToVec3(marker.at("position")), marker.value("size", 0.5f),
+            batch->AddLineCross(ToVec3(marker.at("position")), marker.value("size", 0.5f),
                 ToVec3(marker.value("color", json()), vec3(1.0f, 0.3f, 0.1f)));
 
         for (const auto& axes : spec.axes)
-            overlay->Axes(axes, 2.0f);
-
-    }
-
-    void App::FireKey(const std::string& key, bool down) {
-
-        auto keyCode = SDL_GetKeyFromName(key.c_str());
-        if (keyCode == SDLK_UNKNOWN)
-            throw std::runtime_error("Unknown key '" + key + "', use SDL key names like E, Space, Left Shift, Up");
-
-        SDL_KeyboardEvent event = {};
-        event.type = down ? SDL_KEYDOWN : SDL_KEYUP;
-        event.state = down ? SDL_PRESSED : SDL_RELEASED;
-        event.repeat = 0;
-        event.keysym.sym = keyCode;
-        event.keysym.scancode = SDL_GetScancodeFromKey(keyCode);
-
-        Events::EventManager::KeyboardEventDelegate.Fire(Events::KeyboardEvent(event));
+            batch->AddLineAxes(axes, 2.0f);
 
     }
 

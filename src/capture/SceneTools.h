@@ -55,11 +55,18 @@ namespace Atlas::Capture {
 
     std::vector<Scene::Entity> FindTopmostEntities(Scene::Scene& scene, const std::string& pattern);
 
+    // Entities whose loaded mesh path matches one of the patterns and none of the excluded ones
+    std::vector<Scene::Entity> FindMeshInstances(Scene::Scene& scene, const std::vector<std::string>& patterns,
+        const std::vector<std::string>& excluded = {});
+
     // Adds the entity and all of its descendants to the set
     void CollectHierarchy(Scene::Entity entity, EntitySet& set);
 
     // The hierarchies of all matching entities, e.g. to ignore them in raycasts
     EntitySet CollectHierarchies(Scene::Scene& scene, const std::vector<std::string>& patterns);
+
+    // Whether the entity is in one of the hierarchies CollectHierarchies would collect, without visiting the whole scene
+    bool IsInHierarchies(Scene::Scene& scene, Scene::Entity entity, const std::vector<std::string>& patterns);
 
     // Union of the loaded mesh bounds of the entity and its descendants. Entities without
     // loaded meshes get a small box around their position
@@ -78,6 +85,9 @@ namespace Atlas::Capture {
     RaycastHit Raycast(Scene::Scene& scene, vec3 origin, vec3 direction, float maxDistance,
         const EntitySet& ignored = {}, Scene::SceneQueryComponents components = VisualComponents);
 
+    RaycastHit Raycast(Scene::Scene& scene, vec3 origin, vec3 direction, float maxDistance,
+        const std::function<bool(const Scene::Entity&)>& isIgnored, Scene::SceneQueryComponents components = VisualComponents);
+
     // Casts downwards from the given height
     RaycastHit GroundBelow(Scene::Scene& scene, vec3 position, const EntitySet& ignored = {});
 
@@ -89,9 +99,10 @@ namespace Atlas::Capture {
 
     };
 
-    // Ground below the center of the entity bounds, ignoring its own hierarchy. The ray starts searchAbove
-    // over the top of the bounds, such that roofs or arches above the entity are not hit
-    EntityGround GroundBelowEntity(Scene::Scene& scene, Scene::Entity entity, float searchAbove = 0.5f);
+    // Ground below the center of the entity bounds, ignoring its own hierarchy and the ignored entities. The ray
+    // starts searchAbove over the top of the bounds, such that roofs or arches above the entity are not hit
+    EntityGround GroundBelowEntity(Scene::Scene& scene, Scene::Entity entity, float searchAbove = 0.5f,
+        const EntitySet& ignored = {});
 
     json InspectScene(Scene::Scene& scene, const std::vector<std::string>& filter,
         const std::vector<std::string>& detail, const EntitySet& excluded = {});

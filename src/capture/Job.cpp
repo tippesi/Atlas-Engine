@@ -90,14 +90,21 @@ namespace Atlas::Capture {
 
     static GroundedCheckSpec ParseGrounded(const json& j) {
 
-        CheckKeys(j, { "entities", "maxGap", "maxSink", "surfaces" }, "checks.grounded");
+        CheckKeys(j, { "entities", "meshes", "maxGap", "maxSink", "surfaces", "ignore" }, "checks.grounded");
+        if (!j.contains("entities") && !j.contains("meshes"))
+            throw std::runtime_error("checks.grounded needs 'entities' or 'meshes'");
 
         GroundedCheckSpec spec;
-        spec.entities = ToStringList(j.at("entities"));
+        if (j.contains("entities"))
+            spec.entities = ToStringList(j["entities"]);
+        if (j.contains("meshes"))
+            spec.meshes = ToStringList(j["meshes"]);
         spec.maxGap = j.value("maxGap", spec.maxGap);
         spec.maxSink = j.value("maxSink", spec.maxSink);
         if (j.contains("surfaces"))
             spec.surfaces = ToStringList(j["surfaces"]);
+        if (j.contains("ignore"))
+            spec.ignore = ToStringList(j["ignore"]);
         return spec;
 
     }
@@ -115,8 +122,104 @@ namespace Atlas::Capture {
 
     }
 
-    static const std::set<std::string> eventTypes = { "capture", "key", "look", "teleport", "log", "expect",
-        "resetScripts", "pause", "animation" };
+    // The type of a timeline event is the key of its action, e.g. { "t": 1.0, "key": "E" }
+    static std::string GetEventType(const json& event) {
+
+        static const std::vector<std::string> types = { "capture", "key", "controller", "look", "teleport", "log", "expect",
+            "resetScripts", "pause", "end", "animation" };
+
+        std::string type;
+        for (const auto& candidate : types) {
+            if (!event.contains(candidate))
+                continue;
+            if (!type.empty())
+                throw std::runtime_error("A timeline event can only have one type: " + event.dump());
+            type = candidate;
+        }
+        if (type.empty())
+            throw std::runtime_error("Timeline event without a known type (capture, key, controller, look, teleport, log, expect, "
+                "resetScripts, pause, end, animation): " + event.dump());
+
+        return type;
+
+    }
+
+    static EventAction ParseEventAction(const json& event, const std::string& type, float fixedDeltaTime) {
+
+        const auto& value = event[type];
+        // A press lasts two frames unless it has a duration
+        auto pressDuration = fixedDeltaTime * 2.0f;
+
+        if (type == "capture") {
+            CaptureEvent capture;
+            capture.name = value.value("name", capture.name);
+            if (value.contains("file"))
+                capture.file = value["file"].get<std::string>();
+            capture.group = value.value("group", capture.group);
+            if (value.contains("label"))
+                capture.label = value["label"].get<std::string>();
+            if (value.contains("camera"))
+                capture.camera = ParseCamera(value["camera"]);
+            capture.stripCamera = value.value("stripCamera", capture.stripCamera);
+            capture.still = value.value("still", capture.still);
+            if (value.contains("settleFrames"))
+                capture.settleFrames = value["settleFrames"].get<int32_t>();
+            if (value.contains("passes"))
+                capture.passes = ToStringList(value["passes"]);
+            return capture;
+        }
+        if (type == "key") {
+            InputEvent input = { .device = InputEvent::Device::Key, .duration = pressDuration };
+            if (value.is_string()) {
+                input.name = value.get<std::string>();
+                return input;
+            }
+            input.name = value.at("key").get<std::string>();
+            input.action = value.value("action", input.action);
+            input.duration = value.value("duration", input.duration);
+            return input;
+        }
+        if (type == "controller") {
+            CheckKeys(value, { "button", "action", "duration", "axis", "value" }, "controller");
+            if (value.contains("axis"))
+                return InputEvent { .device = InputEvent::Device::Axis, .name = value["axis"].get<std::string>(),
+                    .value = value.at("value").get<float>() };
+            if (!value.contains("button"))
+                throw std::runtime_error("A controller event needs a button or an axis: " + event.dump());
+            return InputEvent { .device = InputEvent::Device::Button, .name = value["button"].get<std::string>(),
+                .action = value.value("action", std::string("press")), .duration = value.value("duration", pressDuration) };
+        }
+        if (type == "look" || type == "teleport") {
+            std::optional<float> yaw, pitch;
+            if (value.contains("yaw"))
+                yaw = value["yaw"].get<float>();
+            if (value.contains("pitch"))
+                pitch = value["pitch"].get<float>();
+            auto entity = value.at("entity").get<std::string>();
+            if (type == "look")
+                return LookEvent { entity, yaw, pitch };
+            return TeleportEvent { entity, ToVec3(value.at("position")), yaw, pitch };
+        }
+        if (type == "animation")
+            return AnimationEvent { value.at("entity").get<std::string>(), value.at("animation").get<std::string>(),
+                value.value("model", std::string()), value.value("blendTime", 0.0f) };
+        if (type == "log")
+            return LogEvent { value.get<std::string>() };
+        if (type == "expect")
+            return ExpectEvent { value };
+        if (type == "pause") {
+            if (!value.is_boolean())
+                throw std::runtime_error("A pause event needs true or false: " + event.dump());
+            return PauseEvent { value.get<bool>() };
+        }
+        if (type == "end") {
+            if (value != true)
+                throw std::runtime_error("An end event needs true: " + event.dump());
+            return EndEvent {};
+        }
+        return ResetScriptsEvent {};
+
+    }
 
     CameraSpec ParseCamera(const json& j) {
 
@@ -178,7 +281,7 @@ namespace Atlas::Capture {
     Job ParseJob(const json& j, const fs::path& baseDirectory) {
 
         CheckKeys(j,
-            { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow", "pathTrace",
+            { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow", "realTime", "pathTrace",
                 "settings", "variants", "inspect", "queries", "edit", "shots", "play", "duration", "timeline", "strips", "observer",
                 "scripts", "track", "overlay", "checks", "profile", "$schema", "description" },
             "job");
@@ -215,6 +318,7 @@ namespace Atlas::Capture {
         job.fixedDeltaTime = j.value("fixedDt", job.fixedDeltaTime);
         job.showWindow = j.value("showWindow", job.showWindow);
         job.pathTrace = j.value("pathTrace", job.pathTrace);
+        job.realTime = j.value("realTime", job.realTime);
 
         if (job.fixedDeltaTime <= 0.0f)
             throw std::runtime_error("fixedDt must be positive");
@@ -257,13 +361,16 @@ namespace Atlas::Capture {
 
         if (j.contains("edit")) {
             auto& edit = j["edit"];
-            CheckKeys(edit, { "operations", "output", "overwrite", "saveUnchanged", "dryRun", "queries" }, "edit");
+            CheckKeys(edit, { "operations", "output", "overwrite", "saveUnchanged", "dryRun", "queries", "textureFormat" }, "edit");
             EditSpec spec;
             spec.operations = edit.value("operations", json::array());
             spec.output = edit.contains("output") ? ToAssetPath(edit["output"].get<std::string>()) : "";
             spec.overwrite = edit.value("overwrite", false);
             spec.saveUnchanged = edit.value("saveUnchanged", false);
             spec.dryRun = edit.value("dryRun", false);
+            spec.textureFormat = edit.value("textureFormat", spec.textureFormat);
+            if (spec.textureFormat != "original" && spec.textureFormat != "ktx2")
+                throw std::runtime_error("edit.textureFormat has to be \"original\" or \"ktx2\"");
             spec.queries = edit.value("queries", json::array());
             job.edit = spec;
         }
@@ -281,20 +388,9 @@ namespace Atlas::Capture {
             for (const auto& event : j["timeline"]) {
                 EventSpec spec;
                 spec.time = event.value("t", 0.0f);
+                spec.type = GetEventType(event);
+                spec.action = ParseEventAction(event, spec.type, job.fixedDeltaTime);
                 spec.data = event;
-
-                for (const auto& type : eventTypes) {
-                    if (event.contains(type)) {
-                        if (!spec.type.empty())
-                            throw std::runtime_error("A timeline event can only have one type: " + event.dump());
-                        spec.type = type;
-                    }
-                }
-                if (spec.type.empty())
-                    throw std::runtime_error("Timeline event without a known type (capture, key, look, teleport, log, expect, resetScripts, pause, animation): " +
-                        event.dump());
-                if (spec.type == "pause" && !event["pause"].is_boolean())
-                    throw std::runtime_error("A pause event needs true or false: " + event.dump());
 
                 if (event.contains("when")) {
                     const auto& when = event["when"];
@@ -447,6 +543,7 @@ namespace Atlas::Capture {
         json cliShot = json::object();
         json cliCamera = json::object();
         bool validation = false;
+        bool sound = false;
 
         // Skip the executable path
         for (size_t i = 1; i < args.size(); i++) {
@@ -511,10 +608,14 @@ namespace Atlas::Capture {
                 j["showWindow"] = true;
             else if (arg == "--hidden")
                 j["showWindow"] = false;
+            else if (arg == "--fast")
+                j["realTime"] = false;
             else if (arg == "--overlay")
                 j["overlay"] = true;
             else if (arg == "--validation")
                 validation = true;
+            else if (arg == "--sound")
+                sound = true;
             else if (arg == "--inspect")
                 j["inspect"] = hasValue() ? json(next()) : json(true);
             else if (arg == "--play") {
@@ -583,6 +684,7 @@ namespace Atlas::Capture {
 
         auto job = ParseJob(j, baseDirectory);
         job.validation = validation;
+        job.sound = sound;
         return job;
 
     }
@@ -611,8 +713,10 @@ Options:
   --timeout <seconds>     Maximum time to wait for the scene to load
   --show                  Show the frames and the output in a window (default)
   --hidden                Render in a hidden window and play as fast as possible
+  --fast                  Play as fast as possible in the shown window
   --overlay               Draw debug lines: players, tracked paths and query hits
   --validation            Enable all Vulkan validation layer features and write validation.json (slow)
+  --sound                 Play the sound of the scene (muted by default)
   --inspect [file]        Write a scene summary (default scene.json)
   --play <seconds>        Play the scene for the given time
   --set <path=value>      Override a scene setting, e.g. fog.density=0.02

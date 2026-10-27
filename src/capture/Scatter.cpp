@@ -23,15 +23,6 @@ namespace Atlas::Capture {
 
     using namespace Scene::Components;
 
-    static float DistanceToSegment(vec2 point, vec2 a, vec2 b) {
-
-        auto ab = b - a;
-        auto lengthSquared = glm::dot(ab, ab);
-        auto t = lengthSquared > 0.0f ? glm::clamp(glm::dot(point - a, ab) / lengthSquared, 0.0f, 1.0f) : 0.0f;
-        return glm::distance(point, a + t * ab);
-
-    }
-
     // Circle (optionally a ring), rectangle, polygon or a corridor along a polyline
     struct Area {
 
@@ -52,20 +43,11 @@ namespace Atlas::Capture {
             }
             case Type::Rect:
                 return glm::all(glm::greaterThanEqual(point, min)) && glm::all(glm::lessThanEqual(point, max));
-            case Type::Polygon: {
-                bool inside = false;
-                for (size_t i = 0, j = points.size() - 1; i < points.size(); j = i++) {
-                    const auto& a = points[i];
-                    const auto& b = points[j];
-                    if ((a.y > point.y) != (b.y > point.y) &&
-                        point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x)
-                        inside = !inside;
-                }
-                return inside;
-            }
+            case Type::Polygon:
+                return Helper::Math::IsInsidePolygon(point, points);
             case Type::Corridor:
                 for (size_t i = 1; i < points.size(); i++)
-                    if (DistanceToSegment(point, points[i - 1], points[i]) <= halfWidth)
+                    if (Helper::Math::DistanceToSegment(point, points[i - 1], points[i]) <= halfWidth)
                         return true;
                 return false;
             }
@@ -146,6 +128,10 @@ namespace Atlas::Capture {
         std::string name;
         float weight = 1.0f;
         vec2 scale = vec2(1.0f);
+        // Factor on the height, e.g. for wide flat patches of grass
+        float scaleY = 1.0f;
+        // Largest height difference between the ground below the footprint and the plane of the instance, 0 for any
+        float flatness = 0.0f;
         vec2 yaw = vec2(0.0f, 360.0f);
         float tilt = 0.0f;
         // Fixed rotation around the local x axis after the yaw, e.g. for fallen objects
@@ -232,7 +218,7 @@ namespace Atlas::Capture {
         Ref<Terrain::Terrain> terrain;
         if (scene.terrain.IsLoaded())
             terrain = GetCompleteTerrain(scene);
-        auto sceneBounds = GetSceneBounds(scene);
+        auto sceneBounds = terrain ? Volume::AABB() : GetSceneBounds(scene);
         auto castFrom = spec.value("castFrom", sceneBounds.max.y + 1.0f);
 
         // With append, instances are added to an existing group of the same name
@@ -259,6 +245,8 @@ namespace Atlas::Capture {
                 item.scale = scale.is_array() ? vec2(scale.at(0).get<float>(), scale.at(1).get<float>()) :
                     vec2(scale.get<float>());
             }
+            item.scaleY = itemSpec.value("scaleY", 1.0f);
+            item.flatness = itemSpec.value("flatness", 0.0f);
             if (itemSpec.contains("yaw"))
                 item.yaw = vec2(itemSpec["yaw"].at(0).get<float>(), itemSpec["yaw"].at(1).get<float>());
             item.tilt = itemSpec.value("tilt", 0.0f);
@@ -327,11 +315,15 @@ namespace Atlas::Capture {
 
         // Existing meshes block placement, except ignored entities (e.g. grass) and huge meshes like merged
         // terrain pieces, which the ground raycast handles
-        auto ignored = CollectHierarchies(scene, spec.value("ignore", std::vector<std::string>()));
+        auto ignorePatterns = spec.value("ignore", std::vector<std::string>());
         auto maxBlockerSize = spec.value("maxBlockerSize", 120.0f);
+
+        // The ignored hierarchies (e.g. all grass) are only collected for the blockers, the casts check their few hits
+        auto isIgnored = [&](const Scene::Entity& entity) { return IsInHierarchies(scene, entity, ignorePatterns); };
 
         SpatialGrid<Blocker> blockers;
         if (clearance >= 0.0f) {
+            auto ignored = CollectHierarchies(scene, ignorePatterns);
             auto meshSubset = scene.GetSubset<MeshComponent>();
             for (auto entity : meshSubset) {
                 const auto& mesh = meshSubset.Get(entity);
@@ -346,6 +338,13 @@ namespace Atlas::Capture {
 
         SpatialGrid<Placed> placedGrid;
         placedGrid.cellSize = 8.0f;
+
+        // Instances of earlier scatters this one keeps its spacing to as well, e.g. grass patches of other groups
+        for (auto entity : FindEntities(scene, spec.value("spacingWith", std::vector<std::string>()))) {
+            auto position = GetEntityPosition(entity);
+            auto point = vec2(position.x, position.z);
+            placedGrid.Insert(point, point, { point, 0.0f });
+        }
 
         std::mt19937 random(seed);
         std::uniform_real_distribution<float> unit(0.0f, 1.0f);
@@ -421,7 +420,7 @@ namespace Atlas::Capture {
             }
             else {
                 auto surface = Raycast(scene, vec3(point.x, castFrom, point.y), vec3(0.0f, -1.0f, 0.0f),
-                    castFrom - sceneBounds.min.y + 1.0f, ignored);
+                    castFrom - sceneBounds.min.y + 1.0f, isIgnored);
                 sample.valid = surface.valid;
                 sample.height = surface.position.y;
                 sample.normal = surface.normal;
@@ -457,8 +456,24 @@ namespace Atlas::Capture {
                 continue;
             }
 
+            // Wide flat items lift off convex ground and dig into hollows, up to the edge of the footprint
+            if (terrain && item.flatness > 0.0f) {
+                auto uneven = false;
+                for (int32_t k = 0; k < 16 && !uneven; k++) {
+                    auto angle = float(k) * glm::quarter_pi<float>();
+                    auto offset = vec2(std::cos(angle), std::sin(angle)) * radius * (k < 8 ? 0.7f : 1.4f);
+                    auto edge = SampleTerrain(terrain, point + offset);
+                    auto plane = sample.height - (sample.normal.x * offset.x + sample.normal.z * offset.y) / sample.normal.y;
+                    uneven = !edge.valid || edge.hole || std::abs(edge.height - plane) > item.flatness;
+                }
+                if (uneven) {
+                    rejected["uneven"]++;
+                    continue;
+                }
+            }
+
             // On a terrain the ground has to be the terrain itself, something lying on it (a road, a house) is a mesh hit
-            auto ground = Raycast(scene, vec3(point.x, sample.height + 3.0f, point.y), vec3(0.0f, -1.0f, 0.0f), 8.0f, ignored);
+            auto ground = Raycast(scene, vec3(point.x, sample.height + 3.0f, point.y), vec3(0.0f, -1.0f, 0.0f), 8.0f, isIgnored);
             if (!ground.valid) {
                 rejected["noGround"]++;
                 continue;
@@ -468,7 +483,7 @@ namespace Atlas::Capture {
                 continue;
             }
 
-            if (clearance >= 0.0f && blocked(point, radius + clearance, ground, ground.position.y + item.height * scale)) {
+            if (clearance >= 0.0f && blocked(point, radius + clearance, ground, ground.position.y + item.height * scale * item.scaleY)) {
                 rejected["blocked"]++;
                 continue;
             }
@@ -482,16 +497,18 @@ namespace Atlas::Capture {
             auto alignment = glm::rotation(vec3(0.0f, 1.0f, 0.0f), up);
             auto yaw = glm::radians(glm::mix(item.yaw.x, item.yaw.y, yawChoice));
 
-            auto position = ground.position - up * ((item.sink + item.bottom) * scale);
+            auto position = ground.position - up * ((item.sink + item.bottom) * scale * item.scaleY);
             auto matrix = glm::translate(position) * glm::mat4_cast(alignment) *
                 glm::rotate(yaw, vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(item.pitch), vec3(1.0f, 0.0f, 0.0f)) *
-                glm::scale(vec3(scale));
+                glm::scale(vec3(scale, scale * item.scaleY, scale));
 
             auto name = item.instanceName.empty() ? groupName + " " + item.name + " " + std::to_string(created.size()) :
                 (count == 1 ? item.instanceName : item.instanceName + " " + std::to_string(item.placed + 1));
             auto entity = scene.CreatePrefab<Scene::Prefabs::MeshInstance>(item.mesh, matrix, true);
             entity.AddComponent<NameComponent>(name);
             entity.GetComponent<TransformComponent>().globalMatrix = matrix;
+            // The scene computes the bounds in its next update, later operations of the edit already need them
+            entity.GetComponent<MeshComponent>().aabb = item.mesh->data.aabb.Transform(matrix);
 
             // A light on a child entity, offset in the space of the instance (e.g. the flame of a lantern)
             if (!item.light.is_null()) {
@@ -501,7 +518,7 @@ namespace Atlas::Capture {
                 auto& lightTransform = lightEntity.AddComponent<TransformComponent>(glm::translate(offset), true);
                 lightTransform.globalMatrix = matrix * glm::translate(offset);
                 AddLight(lightEntity, item.light);
-                AddChild(entity, lightEntity);
+                lightEntity.SetParent(entity);
             }
 
             if (item.body == "mesh") {
@@ -523,12 +540,15 @@ namespace Atlas::Capture {
 
         // Children are added once all instances exist, creating components can invalidate component references.
         // The group is created below the parent (or the root, scenes without one get a top level group)
-        Scene::Entity parent = FindRoot(scene);
+        Scene::Entity parent;
         if (spec.contains("parent")) {
             auto parents = FindEntities(scene, spec["parent"].get<std::string>());
             if (parents.empty())
                 throw std::runtime_error("scatter: no parent matches " + spec["parent"].dump());
             parent = parents.front();
+        }
+        else {
+            parent = scene.GetRootEntity();
         }
 
         auto group = existingGroup;
@@ -537,10 +557,10 @@ namespace Atlas::Capture {
             group.AddComponent<NameComponent>(groupName);
             // Without a transform the group is in the space of its parent, the scene only updates it in the next frame
             group.AddComponent<HierarchyComponent>().globalMatrix = scene.GetGlobalMatrix(parent);
-            AddChild(parent, group);
+            group.SetParent(parent);
         }
         for (auto entity : created) {
-            AddChild(group, entity);
+            entity.SetParent(group);
             // The instances were placed in world space, groups (or their parents) may have a transform
             auto& transform = entity.GetComponent<TransformComponent>();
             transform.SetGlobal(transform.globalMatrix, group);

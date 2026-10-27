@@ -4,6 +4,7 @@
 #include "SceneTools.h"
 
 #include <map>
+#include <optional>
 
 namespace Atlas::Capture {
 
@@ -47,6 +48,8 @@ namespace Atlas::Capture {
         std::map<std::string, int32_t> runCounts;
 
         std::map<std::pair<ECS::Entity, ECS::Entity>, int32_t> baselineIntrusions;
+
+        std::optional<EntitySet> groundedIgnored;
 
     };
 

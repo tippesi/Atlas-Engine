@@ -37,25 +37,10 @@ namespace Atlas::Capture {
 
     }
 
-    static void SetPixel(Image& image, int32_t x, int32_t y, u8vec4 color) {
-
-        if (x < 0 || y < 0 || x >= image.width || y >= image.height)
-            return;
-
-        image.SetData(x, y, ivec4(color));
-
-    }
-
     Ref<Image> CreateImage(int32_t width, int32_t height, u8vec4 color) {
 
         auto image = CreateRef<Image>(width, height, 4);
-        auto& data = image->GetData();
-        for (size_t i = 0; i < data.size(); i += 4) {
-            data[i] = color.r;
-            data[i + 1] = color.g;
-            data[i + 2] = color.b;
-            data[i + 3] = color.a;
-        }
+        image->FillRect(0, 0, width, height, vec4(color));
 
         return image;
 
@@ -82,22 +67,6 @@ namespace Atlas::Capture {
         copy->Resize(maxWidth, std::max(int32_t(float(image->height) * scale), 1));
 
         return copy;
-
-    }
-
-    void Blit(Image& target, const Image& source, int32_t x, int32_t y) {
-
-        for (int32_t sy = 0; sy < source.height; sy++)
-            for (int32_t sx = 0; sx < source.width; sx++)
-                SetPixel(target, x + sx, y + sy, u8vec4(source.Sample(sx, sy)));
-
-    }
-
-    void FillRect(Image& image, int32_t x, int32_t y, int32_t width, int32_t height, u8vec4 color) {
-
-        for (int32_t py = y; py < y + height; py++)
-            for (int32_t px = x; px < x + width; px++)
-                SetPixel(image, px, py, color);
 
     }
 
@@ -130,13 +99,8 @@ namespace Atlas::Capture {
 
                 for (int32_t gy = 0; gy < glyphHeight; gy++) {
                     for (int32_t gx = 0; gx < glyphWidth; gx++) {
-                        auto px = int32_t(cursor) + x0 + gx, py = baseline + y0 + gy;
-                        if (px < 0 || py < 0 || px >= image.width || py >= image.height)
-                            continue;
-
                         auto alpha = float(bitmap[size_t(gy) * size_t(glyphWidth) + size_t(gx)]) / 255.0f;
-                        auto background = vec4(image.Sample(px, py));
-                        SetPixel(image, px, py, u8vec4(glm::mix(background, vec4(color), alpha)));
+                        image.BlendPixel(int32_t(cursor) + x0 + gx, baseline + y0 + gy, vec4(color), alpha);
                     }
                 }
             }
@@ -185,11 +149,11 @@ namespace Atlas::Capture {
             auto x = spacing + column * (cellWidth + spacing);
             auto y = titleHeight + spacing + row * (cellHeight + labelHeight + spacing);
 
-            FillRect(*sheet, x, y, cellWidth, labelHeight, u8vec4(48, 48, 48, 255));
+            sheet->FillRect(x, y, cellWidth, labelHeight, vec4(48, 48, 48, 255));
             if (i < labels.size())
                 DrawText(*sheet, x + 6, y + 4, labels[i], 17.0f);
 
-            Blit(*sheet, *cells[i], x, y + labelHeight);
+            sheet->Blit(*cells[i], x, y + labelHeight);
         }
 
         return sheet;

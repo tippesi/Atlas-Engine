@@ -45,6 +45,13 @@ namespace Atlas::Capture {
     // Copies the terrain file of the scene to a new path and loads the copy as the scene terrain
     void CopySceneTerrain(Scene::Scene& scene, const std::string& path, bool overwrite);
 
+    // Generates a terrain from a height map (16 bit) and an optional splat map image, writes it to its file and
+    // makes it the scene terrain with a height field body, see the "terrainCreate" edit operation in README.md
+    json CreateSceneTerrain(Scene::Scene& scene, const json& spec);
+
+    // Bakes the shore line map of the ocean waves next to the terrain file, see the "shoreLine" edit operation in README.md
+    json BakeShoreLine(Scene::Scene& scene, const json& spec);
+
     // Bakes the lower LoDs and writes the terrain back to its file
     void SaveSceneTerrain(Scene::Scene& scene);
 

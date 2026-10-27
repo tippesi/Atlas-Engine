@@ -2,27 +2,9 @@
 
 #include "graphics/GraphicsDevice.h"
 
-#include <glm/detail/type_half.hpp>
-
 #include <stdexcept>
 
 namespace Atlas::Capture {
-
-    // Images don't support half floats, the data goes through a float image
-    static Common::Image<float> ReadFloatImage(Texture::Texture2D& texture) {
-
-        auto data = texture.GetData<float16>();
-
-        Common::Image<float> image(texture.width, texture.height, 4);
-        std::transform(data.begin(), data.end(), image.GetData().begin(), [](float16 value) {
-
-            return glm::detail::toFloat32(value);
-
-        });
-
-        return image;
-
-    }
 
     void CaptureRenderer::Init(Ref<Renderer::MainRenderer> mainRenderer, ivec2 resolution) {
 
@@ -135,15 +117,12 @@ namespace Atlas::Capture {
 
     Ref<Image> CaptureRenderer::ReadOutput() {
 
-        auto floatImage = ReadFloatImage(*outputTexture);
-        auto& floatData = floatImage.GetData();
+        auto image = outputTexture->GetImage<uint8_t>();
 
         // The alpha channel isn't meaningful, write opaque images
-        for (size_t i = 3; i < floatData.size(); i += 4)
-            floatData[i] = 1.0f;
-
-        auto image = CreateImage(outputTexture->width, outputTexture->height);
-        image->SetData(floatImage.ConvertData<uint8_t>());
+        auto& data = image->GetData();
+        for (size_t i = 3; i < data.size(); i += 4)
+            data[i] = 255;
 
         return image;
 
@@ -152,8 +131,8 @@ namespace Atlas::Capture {
     Ref<Image> CaptureRenderer::ReadPass(const std::string& pass) {
 
         auto& target = GetPassTarget(pass);
-        auto floatImage = ReadFloatImage(*target.texture);
-        auto& floatData = floatImage.GetData();
+        auto floatImage = target.texture->GetImage<float>();
+        auto& floatData = floatImage->GetData();
 
         for (size_t i = 0; i < floatData.size(); i += 4) {
             // Signed screen space motion, no motion is gray
@@ -166,7 +145,7 @@ namespace Atlas::Capture {
         }
 
         auto image = CreateImage(target.texture->width, target.texture->height);
-        image->SetData(floatImage.ConvertData<uint8_t>());
+        image->SetData(floatImage->ConvertData<uint8_t>());
 
         return image;
 

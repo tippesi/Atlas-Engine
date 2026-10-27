@@ -3,6 +3,7 @@
 #include "Common.h"
 
 #include <optional>
+#include <variant>
 
 namespace Atlas::Capture {
 
@@ -62,11 +63,104 @@ namespace Atlas::Capture {
 
     };
 
+    struct CaptureEvent {
+
+        std::string name = "capture";
+        // Default: <name>_<time>s.png
+        std::optional<std::string> file;
+        // Sheet the capture is added to
+        std::string group;
+        // Default: the time of the capture
+        std::optional<std::string> label;
+        std::optional<CameraSpec> camera;
+        // Uses the camera of the strip of the group
+        bool stripCamera = false;
+        // Settles on frozen frames like a capture with its own camera
+        bool still = false;
+        std::optional<int32_t> settleFrames;
+        std::vector<std::string> passes;
+
+    };
+
+    // Simulated input with SDL names: keys and controller buttons go down, up or are pressed for a duration,
+    // controller axes keep their value until it changes
+    struct InputEvent {
+
+        enum class Device {
+            Key,
+            Button,
+            Axis
+        };
+
+        Device device = Device::Key;
+        std::string name;
+        // down, up or press
+        std::string action = "press";
+        float duration = 0.0f;
+        float value = 0.0f;
+
+    };
+
+    struct LookEvent {
+
+        std::string entity;
+        std::optional<float> yaw;
+        std::optional<float> pitch;
+
+    };
+
+    struct TeleportEvent {
+
+        std::string entity;
+        vec3 position = vec3(0.0f);
+        std::optional<float> yaw;
+        std::optional<float> pitch;
+
+    };
+
+    struct AnimationEvent {
+
+        std::string entity;
+        // An animation file or the name of an animation in the model file
+        std::string animation;
+        std::string model;
+        float blendTime = 0.0f;
+
+    };
+
+    struct LogEvent {
+
+        std::string text;
+
+    };
+
+    struct ExpectEvent {
+
+        json expectation;
+
+    };
+
+    struct PauseEvent {
+
+        bool pause = true;
+
+    };
+
+    struct ResetScriptsEvent {};
+
+    // Finishes the job early, the remaining timed events are skipped
+    struct EndEvent {};
+
+    using EventAction = std::variant<CaptureEvent, InputEvent, LookEvent, TeleportEvent, AnimationEvent, LogEvent, ExpectEvent,
+        PauseEvent, ResetScriptsEvent, EndEvent>;
+
     struct EventSpec {
 
         float time = 0.0f;
-        // capture, key, look, teleport, log, expect, resetScripts, pause, animation
+        // The key of the action in the job, e.g. "capture"
         std::string type;
+        EventAction action;
+        // The event as written in the job, for the report
         json data;
 
         // Condition that triggers the event, the time is then the earliest time it is checked
@@ -102,10 +196,14 @@ namespace Atlas::Capture {
     struct GroundedCheckSpec {
 
         std::vector<std::string> entities;
+        // Entities with these meshes (asset path patterns), e.g. every instance of a tree mesh
+        std::vector<std::string> meshes;
         float maxGap = 0.15f;
         float maxSink = 0.3f;
         // Optional patterns the surface below has to match (by its or a parent's name), e.g. "*Ground*"
         std::vector<std::string> surfaces;
+        // Hierarchies the ground ray passes, e.g. undergrowth around trees
+        std::vector<std::string> ignore;
 
     };
 
@@ -172,6 +270,8 @@ namespace Atlas::Capture {
         bool dryRun = false;
         // Queries on the edited scene, written to edit_queries.json
         json queries = json::array();
+        // Textures of imported models are stored as compressed KTX2 files ("ktx2") or like their source ("original")
+        std::string textureFormat = "original";
 
     };
 
@@ -187,8 +287,9 @@ namespace Atlas::Capture {
         int32_t settleFrames = 60;
         float loadTimeout = 300.0f;
         float fixedDeltaTime = 1.0f / 60.0f;
-        // Shows the frames and the output while running, playback then runs in real time
+        // Shows the frames and the output while running, playback then runs in real time unless realTime is off
         bool showWindow = true;
+        bool realTime = true;
         // Renders with the path tracer, which accumulates over the settle frames
         bool pathTrace = false;
 
@@ -217,6 +318,8 @@ namespace Atlas::Capture {
 
         // Only set by --validation, the engine enables the validation layers before the job is read
         bool validation = false;
+        // Only set by --sound, the capture tool is muted otherwise
+        bool sound = false;
 
     };
 

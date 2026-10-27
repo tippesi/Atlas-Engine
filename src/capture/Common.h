@@ -2,6 +2,7 @@
 
 #include "System.h"
 #include "common/SerializationHelper.h"
+#include "common/StringHelper.h"
 
 #include <filesystem>
 #include <string>
@@ -28,9 +29,7 @@ namespace Atlas::Capture {
     // e.g. "data/scenes/Kingdom.aescene" or "scenes/Kingdom.aescene" -> "scenes/Kingdom.aescene"
     std::string ToAssetPath(const std::string& path);
 
-    // Case sensitive glob match supporting '*' and '?'
-    bool MatchPattern(const std::string& pattern, const std::string& text);
-
+    // Wildcard match against any of the patterns, see Helper::String::MatchWildcard
     bool MatchAnyPattern(const std::vector<std::string>& patterns, const std::string& text);
 
     vec3 ToVec3(const json& j, vec3 defaultValue = vec3(0.0f));
@@ -50,6 +49,12 @@ namespace Atlas::Capture {
 
     std::string FormatVec3(vec3 v, int32_t precision = 3);
 
+    // Time of a timeline, e.g. "t=1.50s"
+    std::string FormatTime(float time);
+
     std::string SanitizeFileName(const std::string& name);
+
+    // Writes next to the target, then renames, a failed rename leaves the target unchanged
+    bool WriteFileAtomic(const fs::path& path, const std::string& content);
 
 }

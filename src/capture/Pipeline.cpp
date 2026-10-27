@@ -115,7 +115,7 @@ namespace Atlas::Capture {
 
     }
 
-    size_t Pipeline::Prepare(const std::function<void(const std::string&)>& print) {
+    void Pipeline::Prepare(const std::function<void(const std::string&)>& print) {
 
         size_t first = 0;
         for (; first < steps.size(); first++) {
@@ -137,7 +137,7 @@ namespace Atlas::Capture {
         }
 
         Invalidate(first);
-        return first;
+        currentStep = first;
 
     }
 
@@ -183,6 +183,36 @@ namespace Atlas::Capture {
         std::error_code error;
         for (size_t i = index; i < steps.size(); i++)
             fs::remove(GetManifestPath(i), error);
+
+    }
+
+    void Pipeline::CompleteStep(const json& report) {
+
+        Complete(currentStep, report);
+        currentStep++;
+
+    }
+
+    void Pipeline::FailStep(int32_t stepExitCode) {
+
+        Fail(currentStep);
+        exitCode = stepExitCode;
+        currentStep = steps.size();
+
+    }
+
+    bool Pipeline::IsFinished() const {
+
+        return currentStep >= steps.size();
+
+    }
+
+    fs::path Pipeline::WriteSummary() const {
+
+        auto path = snapshotDirectory.parent_path() / "pipeline.json";
+        fs::create_directories(path.parent_path());
+        WriteFileAtomic(path, json({ { "pipeline", name }, { "exitCode", exitCode }, { "steps", GetSummary() } }).dump(2));
+        return path;
 
     }
 

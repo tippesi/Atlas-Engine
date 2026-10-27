@@ -3,6 +3,8 @@
 #include "Job.h"
 #include "SceneTools.h"
 
+#include "loader/ModelImporter.h"
+
 #include <set>
 
 namespace Atlas::Capture {
@@ -19,6 +21,8 @@ namespace Atlas::Capture {
         bool terrainChanged = false;
         // Operations which only make sense for inspection (detachTerrain) require a dry run
         bool dryRun = false;
+        // Format of the textures of imported models
+        Loader::ImportTextureFormat textureFormat = Loader::ImportTextureFormat::Original;
 
     };
 
@@ -31,17 +35,11 @@ namespace Atlas::Capture {
     // An animation file or the name of an animation of the model file
     ResourceHandle<Animation::Animation> LoadAnimationForScene(const std::string& animation, const std::string& modelPath);
 
-    // The root of the hierarchy, invalid for scenes without one (their entities are all top level)
-    Scene::Entity FindRoot(Scene::Scene& scene);
-
     // Writes the materials to their files, a .backup of the original file is kept
     json SaveMaterials(const std::set<std::string>& paths);
 
     // Moves an entity to a world position, keeping its rotation (the parent transform is taken into account)
     void SetWorldPosition(Scene::Entity entity, vec3 position);
-
-    // An invalid parent leaves the entity at the top level
-    void AddChild(Scene::Entity parent, Scene::Entity entity);
 
     // Static body with the mesh as its collision shape
     void AddMeshBody(Scene::Entity entity, const ResourceHandle<Mesh::Mesh>& mesh, vec3 scale);
