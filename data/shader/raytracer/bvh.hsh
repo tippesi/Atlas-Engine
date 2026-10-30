@@ -180,6 +180,10 @@ bool CheckInstance(inout Ray ray, inout uint cullMask, inout int meshPtr, inout 
     int instancePtr = ~nodePtr;
     Instance instance = bvhInstances[instancePtr]; 
 
+    // Rejected instances must not transform the ray, the TLAS traversal continues with it
+    if ((instance.mask & cullMask) == 0)
+        return false;
+
     // We don't normalize the direction in case there is a scale in the
     // matrix. In that case the normalization leads to wrong scales in closest hit distance
     ray.origin = vec4(ray.origin, 1.0) * instance.inverseMatrix;
@@ -190,7 +194,7 @@ bool CheckInstance(inout Ray ray, inout uint cullMask, inout int meshPtr, inout 
     materialOffset = instance.materialOffset;
     nodePtr = 0;
 
-    return (instance.mask & cullMask) > 0;
+    return true;
 
 }
 
