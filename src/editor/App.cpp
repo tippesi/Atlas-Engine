@@ -223,8 +223,7 @@ namespace Atlas::Editor {
 
         };
 
-        auto windowFlags = window.GetFlags();
-        if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+        if (window.IsOccluded()) {
             waitForSceneUpdates();
             return;
         }

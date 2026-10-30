@@ -9,8 +9,11 @@
 #include <algorithm>
 #include <iterator>
 
-#include <SDL.h>
-#include <SDL_events.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_events.h>
+
+#define AE_BUTTON_RELEASED 0
+#define AE_BUTTON_PRESSED 1
 
 namespace Atlas {
 

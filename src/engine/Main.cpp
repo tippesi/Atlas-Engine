@@ -3,6 +3,8 @@
 #include "graphics/Instance.h"
 #include "common/Path.h"
 
+#include <SDL3/SDL_main.h>
+
 #if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE) || defined(AE_OS_LINUX)
 #include <zconf.h>
 #endif

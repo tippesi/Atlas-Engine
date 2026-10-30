@@ -3,7 +3,7 @@
 
 #include "events/EventManager.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include <algorithm>
 
@@ -215,11 +215,11 @@ namespace Atlas::Capture {
                 throw std::runtime_error("Unknown key '" + input.name + "', use SDL key names like E, Space, Left Shift, Up");
 
             SDL_KeyboardEvent event = {};
-            event.type = down ? SDL_KEYDOWN : SDL_KEYUP;
-            event.state = down ? SDL_PRESSED : SDL_RELEASED;
-            event.repeat = 0;
-            event.keysym.sym = keyCode;
-            event.keysym.scancode = SDL_GetScancodeFromKey(keyCode);
+            event.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+            event.down = down;
+            event.repeat = false;
+            event.key = keyCode;
+            event.scancode = SDL_GetScancodeFromKey(keyCode, nullptr);
 
             Events::EventManager::KeyboardEventDelegate.Fire(Events::KeyboardEvent(event));
             return;
@@ -227,17 +227,17 @@ namespace Atlas::Capture {
 
         AttachController();
         if (input.device == InputEvent::Device::Button) {
-            auto index = SDL_GameControllerGetButtonFromString(input.name.c_str());
-            if (index == SDL_CONTROLLER_BUTTON_INVALID)
+            auto index = SDL_GetGamepadButtonFromString(input.name.c_str());
+            if (index == SDL_GAMEPAD_BUTTON_INVALID)
                 throw std::runtime_error("Unknown controller button '" + input.name + "', use SDL names like a, b, x, y, leftshoulder, dpup, start");
-            SDL_JoystickSetVirtualButton(controller, index, down ? SDL_PRESSED : SDL_RELEASED);
+            SDL_SetJoystickVirtualButton(controller, index, down);
             return;
         }
 
-        auto index = SDL_GameControllerGetAxisFromString(input.name.c_str());
-        if (index == SDL_CONTROLLER_AXIS_INVALID)
+        auto index = SDL_GetGamepadAxisFromString(input.name.c_str());
+        if (index == SDL_GAMEPAD_AXIS_INVALID)
             throw std::runtime_error("Unknown controller axis '" + input.name + "', use leftx, lefty, rightx, righty, lefttrigger or righttrigger");
-        SDL_JoystickSetVirtualAxis(controller, index, Sint16(glm::clamp(input.value, -1.0f, 1.0f) * 32767.0f));
+        SDL_SetJoystickVirtualAxis(controller, index, Sint16(glm::clamp(input.value, -1.0f, 1.0f) * 32767.0f));
 
     }
 
@@ -247,13 +247,13 @@ namespace Atlas::Capture {
             return;
 
         // SDL reports the virtual controller like a connected one, the engine receives its events
-        SDL_VirtualJoystickDesc desc = {};
-        desc.version = SDL_VIRTUAL_JOYSTICK_DESC_VERSION;
-        desc.type = SDL_JOYSTICK_TYPE_GAMECONTROLLER;
-        desc.naxes = SDL_CONTROLLER_AXIS_MAX;
-        desc.nbuttons = SDL_CONTROLLER_BUTTON_MAX;
+        SDL_VirtualJoystickDesc desc;
+        SDL_INIT_INTERFACE(&desc);
+        desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+        desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+        desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
         desc.name = "Capture controller";
-        controller = SDL_JoystickOpen(SDL_JoystickAttachVirtualEx(&desc));
+        controller = SDL_OpenJoystick(SDL_AttachVirtualJoystick(&desc));
         if (!controller)
             throw std::runtime_error("Couldn't attach a virtual controller: " + std::string(SDL_GetError()));
 
@@ -264,12 +264,10 @@ namespace Atlas::Capture {
         if (!controller)
             return;
 
-        auto instance = SDL_JoystickInstanceID(controller);
-        SDL_JoystickClose(controller);
+        auto instance = SDL_GetJoystickID(controller);
+        SDL_CloseJoystick(controller);
         controller = nullptr;
-        for (int32_t i = 0; i < SDL_NumJoysticks(); i++)
-            if (SDL_JoystickIsVirtual(i) && SDL_JoystickGetDeviceInstanceID(i) == instance)
-                SDL_JoystickDetachVirtual(i);
+        SDL_DetachVirtualJoystick(instance);
 
     }
 

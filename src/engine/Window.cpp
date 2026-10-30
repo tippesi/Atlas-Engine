@@ -1,16 +1,24 @@
 #include "Window.h"
 #include "graphics/Instance.h"
 
-#include <SDL_vulkan.h>
+#include <SDL3/SDL_vulkan.h>
 
 namespace Atlas {
 
     Window::Window(const std::string& title, int32_t x, int32_t y, int32_t width, int32_t height,
-            int32_t flags) : title(title), x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x),
-            y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y), width(width), height(height) {
+            int32_t flags) : title(title), width(width), height(height) {
 
 #ifndef AE_HEADLESS
-        sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_VULKAN);
+        auto properties = SDL_CreateProperties();
+        SDL_SetStringProperty(properties, SDL_PROP_WINDOW_CREATE_TITLE_STRING, title.c_str());
+        SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_X_NUMBER, x);
+        SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_Y_NUMBER, y);
+        SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, width);
+        SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, height);
+        SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, flags | SDL_WINDOW_VULKAN);
+
+        sdlWindow = SDL_CreateWindowWithProperties(properties);
+        SDL_DestroyProperties(properties);
         if (!sdlWindow) {
             auto error = SDL_GetError();
             Log::Error("Error initializing window: " + std::string(error));
@@ -67,7 +75,7 @@ namespace Atlas {
 
     }
 
-    uint32_t Window::GetFlags() const {
+    uint64_t Window::GetFlags() const {
 
         return SDL_GetWindowFlags(sdlWindow);
 
@@ -84,13 +92,14 @@ namespace Atlas {
 #ifndef AE_OS_APPLE_MOBILE
         auto data = icon->GetData<uint8_t>();
 
-        SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(data.data(), icon->width, icon->height, icon->channels * 8,
-                                                        icon->channels * icon->width,
-                                                        0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+        auto format = SDL_GetPixelFormatForMasks(icon->channels * 8,
+            0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+        SDL_Surface *surface = SDL_CreateSurfaceFrom(icon->width, icon->height, format,
+            data.data(), icon->channels * icon->width);
 
         SDL_SetWindowIcon(sdlWindow, surface);
 
-        SDL_FreeSurface(surface);
+        SDL_DestroySurface(surface);
 #endif
 
     }
@@ -99,43 +108,50 @@ namespace Atlas {
 
         SDL_SetWindowPosition(sdlWindow, x, y);
 
-        this->x = x;
-        this->y = y;
-
     }
 
     ivec2 Window::GetPosition() {
 
-        return ivec2(x, y);
+        ivec2 position(0);
+        SDL_GetWindowPosition(sdlWindow, &position.x, &position.y);
+
+        return position;
 
     }
 
     void Window::SetSize(int32_t width, int32_t height) {
 
-        SDL_SetWindowSize(sdlWindow, width, height);
+        if (sdlWindow == nullptr) {
+            this->width = width;
+            this->height = height;
+            return;
+        }
 
-        this->width = width;
-        this->height = height;
+        SDL_SetWindowSize(sdlWindow, width, height);
 
     }
 
     int32_t Window::GetWidth() {
 
-        if (sdlWindow != nullptr) {
-            SDL_GetWindowSize(sdlWindow, &width, &height);
-        }
+        if (sdlWindow == nullptr)
+            return width;
 
-        return width;
+        int32_t windowWidth = 0;
+        SDL_GetWindowSize(sdlWindow, &windowWidth, nullptr);
+
+        return windowWidth;
 
     }
 
     int32_t Window::GetHeight() {
 
-        if (sdlWindow != nullptr) {
-            SDL_GetWindowSize(sdlWindow, &width, &height);
-        }
+        if (sdlWindow == nullptr)
+            return height;
 
-        return height;
+        int32_t windowHeight = 0;
+        SDL_GetWindowSize(sdlWindow, nullptr, &windowHeight);
+
+        return windowHeight;
 
     }
 
@@ -143,7 +159,7 @@ namespace Atlas {
 
         ivec2 size;
 
-        SDL_Vulkan_GetDrawableSize(sdlWindow, &size.x, &size.y);
+        SDL_GetWindowSizeInPixels(sdlWindow, &size.x, &size.y);
 
         return size;
 
@@ -154,6 +170,12 @@ namespace Atlas {
         auto flags = GetFlags();
         return flags & SDL_WINDOW_INPUT_FOCUS && flags & SDL_WINDOW_MOUSE_FOCUS
                && !(flags & SDL_WINDOW_MINIMIZED);
+
+    }
+
+    bool Window::IsOccluded() const {
+
+        return GetFlags() & (SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED | SDL_WINDOW_OCCLUDED);
 
     }
 
@@ -172,40 +194,54 @@ namespace Atlas {
     void Window::Maximize() {
 
         SDL_MaximizeWindow(sdlWindow);
-        SDL_GetWindowSize(sdlWindow, &width, &height);
 
     }
 
     void Window::Minimize() {
 
         SDL_MinimizeWindow(sdlWindow);
-        SDL_GetWindowSize(sdlWindow, &width, &height);
 
     }
 
     void Window::SetFullscreen(bool fullscreen) {
 
-        SDL_SetWindowFullscreen(sdlWindow, (fullscreen ? AE_WINDOW_FULLSCREEN : 0));
+        SDL_SetWindowFullscreen(sdlWindow, fullscreen);
 
     }
 
     void Window::SetBordered(bool border) {
 
-        SDL_SetWindowBordered(sdlWindow, border ? SDL_TRUE : SDL_FALSE);
+        SDL_SetWindowBordered(sdlWindow, border);
 
     }
 
     void Window::SetDisplayMode(const DisplayMode& mode) {
 
-        SDL_DisplayMode displayMode {
-            .format = mode.rawFormat,
-            .w = mode.width,
-            .h = mode.height,
-            .refresh_rate = mode.refreshRate,
-            .driverdata = mode.driverData
-        };
+        int32_t displayModeCount = 0;
+        auto displayModes = SDL_GetFullscreenDisplayModes(mode.displayID, &displayModeCount);
+        if (!displayModes) {
+            auto error = SDL_GetError();
+            Log::Warning("Getting display modes failed: " + std::string(error));
+            return;
+        }
 
-        SDL_SetWindowDisplayMode(sdlWindow, &displayMode);
+        // Look for the exact mode, there might be several with the same size and refresh rate
+        const SDL_DisplayMode* displayMode = nullptr;
+        for (int32_t i = 0; i < displayModeCount; i++) {
+            auto candidate = displayModes[i];
+            if (candidate->w == mode.width && candidate->h == mode.height && candidate->format == mode.rawFormat &&
+                candidate->refresh_rate == mode.refreshRate && candidate->pixel_density == mode.pixelDensity) {
+                displayMode = candidate;
+                break;
+            }
+        }
+
+        if (displayMode)
+            SDL_SetWindowFullscreenMode(sdlWindow, displayMode);
+        else
+            Log::Warning("Display mode isn't available on the display");
+
+        SDL_free(displayModes);
 
     }
 
@@ -226,11 +262,6 @@ namespace Atlas {
 
         if (event.type == AE_WINDOWEVENT_FOCUS_LOST) {
             hasFocus = false;
-        }
-
-        if (event.type == AE_WINDOWEVENT_RESIZED || event.type == AE_WINDOWEVENT_SIZE_CHANGED) {
-            width = event.data.x;
-            height = event.data.y;
         }
 
         windowEventDelegate.Fire(event);

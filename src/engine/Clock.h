@@ -53,7 +53,7 @@ namespace Atlas {
     private:
         static std::mutex mutex;
 
-        static double timeStamp;
+        static uint64_t timeStamp;
         static float deltaTime;
 
         static std::vector<float> deltas;

@@ -2,7 +2,7 @@
 #include "../common/Path.h"
 #include "../Log.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include <vector>
 #include <sys/stat.h>
@@ -20,37 +20,13 @@ namespace Atlas {
 
         std::mutex AssetLoader::assetLoaderMutex;
 
-#ifdef AE_OS_ANDROID
-        AAssetManager* AssetLoader::manager;
-#endif
-
         bool AssetLoader::alwaysReload = false;
         std::unordered_set<std::string> AssetLoader::readFiles;
 
         void AssetLoader::Init() {
 
 #ifdef AE_OS_ANDROID
-            auto interface = (JNIEnv*)SDL_AndroidGetJNIEnv();
-
-            JNIEnv* env = interface;
-
-            jobject activity = (jobject)SDL_AndroidGetActivity();
-
-            jclass Activity = interface->GetObjectClass(activity);
-
-            // We use the activity to call the Java methods and obtain the classes to get the AssetManager
-            jmethodID getResources = env->GetMethodID(Activity, "getResources",
-                "()Landroid/content/res/Resources;");
-            jobject ressource = env->CallObjectMethod(activity, getResources);
-
-            jclass resourcesClazz = env->FindClass("android/content/res/Resources");
-            jmethodID getAssetManager = env->GetMethodID(resourcesClazz, "getAssets",
-                "()Landroid/content/res/AssetManager;");
-            jobject assetManager = env->CallObjectMethod(ressource, getAssetManager);
-
-            manager = AAssetManager_fromJava(interface, assetManager);
-
-            dataDirectory = std::string(SDL_AndroidGetInternalStoragePath());
+            dataDirectory = std::string(SDL_GetAndroidInternalStoragePath());
 #elif defined(AE_OS_APPLE_MOBILE)
             auto prefPath = SDL_GetPrefPath("AtlasEngine", "AtlasEngine");
             if (prefPath != nullptr) {
@@ -149,7 +125,8 @@ namespace Atlas {
             if (!stream.is_open()) {
                 auto parentPath = std::filesystem::path(path).parent_path();
                 if (!parentPath.empty()) {
-                    std::filesystem::create_directories(parentPath);
+                    std::error_code errorCode;
+                    std::filesystem::create_directories(parentPath, errorCode);
                     stream.open(path, mode);
                 }
             }
@@ -234,50 +211,31 @@ namespace Atlas {
             }
 
             std::lock_guard<std::mutex> guard(assetLoaderMutex);
-#endif
 
-#ifdef AE_OS_ANDROID
-            auto assetPath = Common::Path::Normalize(GetAssetPath(filename));
+            // On Android SDL looks for relative paths in the internal storage first, then in the APK assets
+            auto assetPath = Common::Path::Normalize(GetAssetPath(path));
 
-            auto asset = AAssetManager_open(manager, assetPath.c_str(), AASSET_MODE_UNKNOWN);
-
+            auto asset = SDL_IOFromFile(assetPath.c_str(), "rb");
             if (!asset) {
                 Log::Error("Asset not found " + assetPath);
                 return;
             }
 
-            auto stream = WriteFile(filename, std::ios::out);
-
+            auto stream = WriteFile(path, std::ios::out | std::ios::binary);
             if (!stream.is_open()) {
-                AAsset_close(asset);
+                SDL_CloseIO(asset);
                 Log::Error("Unable to copy asset " + assetPath);
                 return;
             }
 
-            int32_t assetLength = AAsset_getLength(asset);
+            std::vector<char> buffer(1 << 16);
 
-            std::vector<char> buffer(assetLength);
+            size_t readLength = 0;
 
-            int32_t readLength = 0;
+            while ((readLength = SDL_ReadIO(asset, buffer.data(), buffer.size())) > 0)
+                stream.write(buffer.data(), std::streamsize(readLength));
 
-            while ((readLength = AAsset_read(asset, buffer.data(), assetLength)) > 0)
-                stream.write(buffer.data(), readLength);
-
-            stream.close();
-
-            AAsset_close(asset);
-#elif defined(AE_OS_APPLE_MOBILE)
-            auto assetPath = GetAssetPath(path);
-            auto dataPath = GetDataPath(path);
-            
-            try {
-                auto parentPath = std::filesystem::path(dataPath).parent_path();
-                if (!parentPath.empty()) {
-                    std::filesystem::create_directories(parentPath);
-                }
-                std::filesystem::copy_file(assetPath, dataPath, std::filesystem::copy_options::overwrite_existing);
-            }
-            catch(std::filesystem::filesystem_error) {}
+            SDL_CloseIO(asset);
 #endif
 
         }

@@ -4,7 +4,7 @@
 
 #include "scene/Scene.h"
 
-#include <SDL_joystick.h>
+#include <SDL3/SDL_joystick.h>
 
 #include <functional>
 

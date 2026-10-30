@@ -1,7 +1,9 @@
 #include "AudioManager.h"
 #include "Log.h"
 
-#include <SDL_audio.h>
+#include <SDL3/SDL_audio.h>
+#include <SDL3/SDL_hints.h>
+#include <string>
 #include <algorithm>
 
 namespace Atlas {
@@ -9,9 +11,12 @@ namespace Atlas {
     namespace Audio {
 
         SDL_AudioSpec AudioManager::audioSpec;
-        SDL_AudioDeviceID AudioManager::audioDevice;
+        SDL_AudioStream* AudioManager::deviceStream = nullptr;
 
         std::vector<Ref<AudioStream>> AudioManager::audioStreams;
+        std::vector<Ref<AudioStream>> AudioManager::mixStreams;
+        std::vector<float> AudioManager::mixBuffer;
+        std::vector<int16_t> AudioManager::chunkBuffer;
 
         std::mutex AudioManager::mutex;
 
@@ -22,21 +27,16 @@ namespace Atlas {
 
             std::lock_guard<std::mutex> guard(mutex);
 
-            SDL_AudioSpec desiredSpec;
+            audioSpec.freq = frequency;
+            audioSpec.format = SDL_AUDIO_S16LE;
+            audioSpec.channels = channels;
 
-            std::memset(&desiredSpec, 0, sizeof(SDL_AudioSpec));
+            SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, std::to_string(samples).c_str());
 
-            desiredSpec.freq = frequency;
-            desiredSpec.format = AUDIO_S16LSB;
-            desiredSpec.channels = channels;
-            desiredSpec.samples = samples;
-            desiredSpec.callback = AudioManager::Callback;
-            desiredSpec.userdata = nullptr;
-
-            if ((audioDevice = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &audioSpec, 0)) != 0) {
-
-                if (audioSpec.format != AUDIO_S16LSB)
-                    return false;
+            // The stream converts to the device format, so the audio spec is always the requested one
+            deviceStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &audioSpec,
+                AudioManager::Callback, nullptr);
+            if (deviceStream) {
 
                 Resume();
 
@@ -56,7 +56,8 @@ namespace Atlas {
 
             audioStreams.clear();
 
-            SDL_CloseAudioDevice(audioDevice);
+            SDL_DestroyAudioStream(deviceStream);
+            deviceStream = nullptr;
 
         }
 
@@ -92,13 +93,13 @@ namespace Atlas {
 
         void AudioManager::Pause() {
 
-            SDL_PauseAudioDevice(audioDevice, 1);
+            SDL_PauseAudioStreamDevice(deviceStream);
 
         }
 
         void AudioManager::Resume() {
 
-            SDL_PauseAudioDevice(audioDevice, 0);
+            SDL_ResumeAudioStreamDevice(deviceStream);
 
         }
 
@@ -140,42 +141,49 @@ namespace Atlas {
 
         }
 
-        void AudioManager::Callback(void* userData, uint8_t* streamData, int32_t length) {
+        void AudioManager::Callback(void* userData, SDL_AudioStream* audioStream, int32_t additionalAmount, int32_t totalAmount) {
 
             // We only use 16 bit audio internally
-            length /= 2;
+            auto length = additionalAmount / (2 * audioSpec.channels) * audioSpec.channels;
+            if (length <= 0)
+                return;
 
-            std::vector<float> dest(length, 0.0f);
-            std::vector<int16_t> chunk(length, 0);
+            mixBuffer.assign(length, 0.0f);
+            chunkBuffer.assign(length, 0);
 
             std::unique_lock<std::mutex> lock(mutex);
-            auto localStreams = audioStreams;
+            mixStreams = audioStreams;
             lock.unlock();
 
             // Take ownership of stream here, such that the update can run in parallel
-            for (const auto& stream : localStreams) {
+            for (const auto& stream : mixStreams) {
 
                 if (!stream->IsValid() || stream->IsPaused())
                     continue;
 
-                if (!stream->GetChunk(chunk))
+                if (!stream->GetChunk(chunkBuffer))
                     continue;
 
-                Mix(dest, chunk);
+                Mix(mixBuffer, chunkBuffer);
 
             }
 
+            // Release the streams here instead of in the next callback
+            mixStreams.clear();
+
             // Streams are summed in float, peaks are rounded off softly instead of clipping per stream
-            auto output = reinterpret_cast<int16_t*>(streamData);
+            auto& output = chunkBuffer;
             auto gain = muted ? 0.0f : masterVolume.load() / 32768.0f;
             const float knee = 0.75f;
             for (int32_t i = 0; i < length; i++) {
-                auto sample = dest[i] * gain;
+                auto sample = mixBuffer[i] * gain;
                 auto magnitude = glm::abs(sample);
                 if (magnitude > knee)
                     sample = glm::sign(sample) * (knee + (1.0f - knee) * tanhf((magnitude - knee) / (1.0f - knee)));
                 output[i] = int16_t(glm::clamp(sample, -1.0f, 1.0f) * 32767.0f);
             }
+
+            SDL_PutAudioStreamData(audioStream, output.data(), length * int32_t(sizeof(int16_t)));
 
         }
 

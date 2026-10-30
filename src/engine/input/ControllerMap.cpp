@@ -28,11 +28,7 @@ namespace Atlas::Input {
 
     bool ControllerMap::IsConnected() {
 
-        for (int32_t i = 0; i < SDL_NumJoysticks(); i++)
-            if (SDL_IsGameController(i))
-                return true;
-
-        return false;
+        return SDL_HasGamepad();
 
     }
 
@@ -56,7 +52,7 @@ namespace Atlas::Input {
     void ControllerMap::HandleButtonEvent(const Events::ControllerButtonEvent& event) {
 
         buttons[event.button] = ButtonState {
-            .pressed = event.state == SDL_PRESSED,
+            .pressed = event.state == AE_BUTTON_PRESSED,
             .repeat = false
         };
 

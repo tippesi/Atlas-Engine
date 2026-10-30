@@ -16,7 +16,7 @@
 
 #include "graphics/ShaderCompiler.h"
 
-#include <SDL_vulkan.h>
+#include <SDL3/SDL_vulkan.h>
 
 extern Atlas::EngineInstance* GetEngineInstance();
 
@@ -29,8 +29,12 @@ namespace Atlas {
 #ifdef AE_NO_APP
         SDL_SetMainReady();
 #endif
-        if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
-            SDL_Init(SDL_INIT_EVERYTHING);
+        const SDL_InitFlags initFlags = SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS;
+        if (SDL_WasInit(initFlags) != initFlags) {
+            if (!SDL_Init(initFlags)) {
+                auto error = SDL_GetError();
+                Log::Error("Error initializing SDL: " + std::string(error));
+            }
         }
 
         Loader::AssetLoader::SetAssetDirectory(config.assetDirectory);
@@ -43,10 +47,9 @@ namespace Atlas {
             AE_WINDOWPOSITION_UNDEFINED, 100, 100, AE_WINDOW_HIDDEN);
 
         // Need to retrieve the extension names required to create an SDL surface
-        uint32_t extensionCount;
-        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, nullptr);
-        std::vector<const char*> requiredExtensions(extensionCount);
-        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, requiredExtensions.data());
+        uint32_t extensionCount = 0;
+        auto extensionNames = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
+        std::vector<const char*> requiredExtensions(extensionNames, extensionNames + extensionCount);
 #endif
 
         // Then create graphics instance
@@ -133,10 +136,11 @@ namespace Atlas {
 
     ivec2 Engine::GetScreenSize() {
 
-        SDL_DisplayMode displayMode;
-        SDL_GetCurrentDisplayMode(0, &displayMode);
+        auto displayMode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+        if (!displayMode)
+            return ivec2(0);
 
-        return ivec2(displayMode.w, displayMode.h);
+        return ivec2(displayMode->w, displayMode->h);
 
     }
 

@@ -298,8 +298,7 @@ void App::Render(float deltaTime) {
     graphicsDevice->WaitForPreviousFrameSubmission();
 
 #ifndef AE_HEADLESS
-    auto windowFlags = window.GetFlags();
-    if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+    if (window.IsOccluded()) {
         // If we take the early way out we need to make sure that stuff is completed (usually main renderer takes care of that)
         scene->WaitForAsyncWorkCompletion();
         return;

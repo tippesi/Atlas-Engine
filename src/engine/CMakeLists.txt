@@ -49,7 +49,7 @@ endif()
 if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
             unofficial::spirv-reflect glslang::SPIRV Jolt::Jolt
             ${LUA_LIBRARIES} KTX::ktx fsr2)
@@ -64,7 +64,7 @@ if(APPLE)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
             volk::volk SPIRV-Tools-opt Jolt::Jolt fsr2
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
             unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx)
@@ -73,7 +73,7 @@ endif()
 if(ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
             ${LUA_LIBRARIES} KTX::ktx fsr2)
     set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
@@ -84,7 +84,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
     set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
     
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 fsr2
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Jolt::Jolt
             unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx)
 

@@ -38,6 +38,8 @@ namespace Atlas {
         private:
             void RegisterEvents();
 
+            void SetRelativeMouseMode(bool enable);
+
             void MouseMotionEventHandler(Events::MouseMotionEvent event);
             void MouseButtonEventHandler(Events::MouseButtonEvent event);
 

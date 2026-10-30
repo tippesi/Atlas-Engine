@@ -4,7 +4,7 @@
 
 #include "AudioStream.h"
 
-#include <SDL_audio.h>
+#include <SDL3/SDL_audio.h>
 
 #include <atomic>
 #include <vector>
@@ -46,14 +46,19 @@ namespace Atlas {
             static void Update();
 
         private:
-            static void Callback(void* userData, uint8_t* stream, int32_t length);
+            static void Callback(void* userData, SDL_AudioStream* audioStream, int32_t additionalAmount, int32_t totalAmount);
 
             static void Mix(std::vector<float>& dest, const std::vector<int16_t>& src);
 
             static SDL_AudioSpec audioSpec;
-            static SDL_AudioDeviceID audioDevice;
+            static SDL_AudioStream* deviceStream;
 
             static std::vector<Ref<AudioStream>> audioStreams;
+
+            // Only used by the audio callback, kept to not allocate on the audio thread
+            static std::vector<Ref<AudioStream>> mixStreams;
+            static std::vector<float> mixBuffer;
+            static std::vector<int16_t> chunkBuffer;
 
             static std::mutex mutex;
 

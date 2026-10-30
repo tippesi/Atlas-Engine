@@ -85,13 +85,10 @@ set (CAPTURE_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/capture)
 set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
-find_package(SDL2 CONFIG REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
 
 if(ATLAS_ASSIMP)
     find_package(assimp CONFIG REQUIRED)
-endif()
-if (ANDROID)
-    add_subdirectory(${HIDAPI_LOCATION})
 endif()
 
 find_package(unofficial-spirv-reflect CONFIG REQUIRED)

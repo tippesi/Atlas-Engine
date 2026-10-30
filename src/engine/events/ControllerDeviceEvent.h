@@ -3,9 +3,9 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#define AE_CONTROLLER_ADDED SDL_CONTROLLERDEVICEADDED
-#define AE_CONTROLLER_REMOVED SDL_CONTROLLERDEVICEREMOVED
-#define AE_CONTROLLER_MAPPED SDL_CONTROLLERDEVICEREMAPPED
+#define AE_CONTROLLER_ADDED SDL_EVENT_GAMEPAD_ADDED
+#define AE_CONTROLLER_REMOVED SDL_EVENT_GAMEPAD_REMOVED
+#define AE_CONTROLLER_MAPPED SDL_EVENT_GAMEPAD_REMAPPED
 
 namespace Atlas {
 
@@ -17,10 +17,10 @@ namespace Atlas {
         class ControllerDeviceEvent {
 
         public:
-            explicit ControllerDeviceEvent(SDL_ControllerDeviceEvent event) {
+            explicit ControllerDeviceEvent(SDL_GamepadDeviceEvent event) {
 
                 type = event.type;
-                device = event.which;
+                device = int32_t(event.which);
 
             }
 
