@@ -322,7 +322,7 @@ namespace Atlas {
             
             std::mutex vertexColorMutex;
 
-            JobGroup group{ "Mesh import" };
+            JobGroup group{ "Mesh import", JobPriority::High };
             JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](const JobData& data) {
                 auto i = data.idx;
 
@@ -841,7 +841,7 @@ namespace Atlas {
         std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution,
             ImportTextureFormat textureFormat, bool saveToDisk) {
 
-            JobGroup group{ "Material import" };
+            JobGroup group{ "Material import", JobPriority::High };
             JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](const JobData& data) {
                 LoadMaterialImages(state, state.scene->mMaterials[data.idx], true, maxTextureResolution);
                 });
@@ -1264,10 +1264,11 @@ namespace Atlas {
 
             std::vector<Ref<KtxImage>> ktxImages(imagesToConvert.size());
 
-            JobGroup group{ "Image conversion" };
+            JobGroup group{ "Image conversion", JobPriority::High };
             JobSystem::ExecuteMultiple(group, int32_t(imagesToConvert.size()), [&](const JobData& data) {
                 try {
                     ktxImages[data.idx] = KtxLoader::ConvertImage(imagesToConvert[data.idx]);
+                    imagesToConvert[data.idx]->GetData().clear();
                 }
                 catch (const std::exception& exception) {
                     Log::Error("Couldn't convert image " + imagesToConvert[data.idx]->fileName + ": " + exception.what());

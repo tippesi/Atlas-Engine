@@ -31,7 +31,11 @@ namespace Atlas::Loader {
         auto buffer = AssetLoader::GetFileContent(fileStream);
         fileStream.close();
 
-        return LoadImageFromMemory(buffer, normalizedFileName, colorSpaceConversion, maxImageResolution);
+        auto image = LoadImageFromMemory(buffer, normalizedFileName, colorSpaceConversion, maxImageResolution);
+
+        Log::Message("Loaded image " + normalizedFileName);
+
+        return image;
 
     }
 
@@ -141,8 +145,6 @@ namespace Atlas::Loader {
 
         ktxTexture_Destroy(ktxTexture(texture));
 
-        Log::Message("Loaded ktx image " + normalizedFileName);
-
         return image;
 
     }
@@ -212,6 +214,8 @@ namespace Atlas::Loader {
 
         auto ktxImage = LoadImageFromMemory(buffer, image->fileName);
         ktxImage->fileData = std::move(buffer);
+
+        Log::Message("Converted image " + image->fileName + " to ktx2 format");
 
         return ktxImage;
 
