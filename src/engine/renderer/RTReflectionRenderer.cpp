@@ -9,7 +9,9 @@ namespace Atlas {
     namespace Renderer {
 
         void RTReflectionRenderer::Init(Graphics::GraphicsDevice* device) {
-            
+
+            this->device = device;
+
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
             scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
                 VK_FORMAT_R8G8B8A8_UNORM);
@@ -22,6 +24,8 @@ namespace Atlas {
 
             ssrPipelineConfig = PipelineConfig("reflection/ssr.csh");
             rtrPipelineConfig = PipelineConfig("reflection/rtreflection.csh");
+            rtrShadowPipelineConfig = PipelineConfig("raytracer/traceShadow.csh");
+            rtrResolvePipelineConfig = PipelineConfig("reflection/rtreflectionResolve.csh");
             upsamplePipelineConfig = PipelineConfig("reflection/upsample.csh");
             temporalPipelineConfig = PipelineConfig("reflection/temporal.csh");
 
@@ -31,12 +35,10 @@ namespace Atlas {
 
             rtrUniformBuffer = Buffer::UniformBuffer(sizeof(RTRUniforms));
 
-            auto samplerDesc = Graphics::SamplerDesc {
-                .filter = VK_FILTER_NEAREST,
-                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                .compareEnabled = true
-            };
-            shadowSampler = device->CreateSampler(samplerDesc);
+            deferredSampleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4));
+            deferredLightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
+            deferredShadowRayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4));
+            deferredShadowRayCountBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t), 1);
 
         }
 
@@ -70,12 +72,6 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, {});
             }           
 
-            // Try to get a shadow map
-            Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
-
             auto downsampledRT = target->GetReflectionData(!reflection->halfResolution ? FULL_RES : HALF_RES);
             // Should be reflection resolution
             auto lightingTexture = &target->lightingTexture;
@@ -107,36 +103,6 @@ namespace Atlas {
             uniforms.resolution = rayRes;
             uniforms.hiZLevelCount = target->GetData(target->GetReflectionResolution())->hiZLevelCount;
 
-            if (shadow && reflection->useShadowMap) {
-                auto& shadowUniform = uniforms.shadow;
-                shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
-                shadowUniform.bias = shadow->bias;
-                shadowUniform.edgeSoftness = shadow->edgeSoftness;
-                shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
-                shadowUniform.cascadeCount = shadow->viewCount;
-                shadowUniform.resolution = vec2(shadow->resolution);
-
-                commandList->BindImage(shadow->maps->image, shadowSampler, 3, 6);
-
-                auto componentCount = shadow->viewCount;
-                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
-                    if (i < componentCount) {
-                        auto cascade = &shadow->views[i];
-                        auto frustum = Volume::Frustum(cascade->frustumMatrix);
-                        auto corners = frustum.GetCorners();
-                        auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                            abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
-                        shadowUniform.cascades[i].distance = cascade->farDistance;
-                        shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
-                            cascade->viewMatrix);
-                        shadowUniform.cascades[i].texelSize = texelSize;
-                    }
-                    else {
-                        auto cascade = &shadow->views[componentCount - 1];
-                        shadowUniform.cascades[i].distance = cascade->farDistance;
-                    }
-                }
-            }
             rtrUniformBuffer.SetData(&uniforms, 0);
 
             // Screen space reflections
@@ -171,7 +137,6 @@ namespace Atlas {
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
 
-                ssrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 ssrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
                 ssrPipelineConfig.ManageMacro("RT", reflection->rt);
                 ssrPipelineConfig.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility);
@@ -227,7 +192,6 @@ namespace Atlas {
                 
                 auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
-                rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 rtrPipelineConfig.ManageMacro("SSR", reflection->ssr);
                 rtrPipelineConfig.ManageMacro("IRRADIANCE_VOLUME", reflection->ddgi && ddgiEnabled);
                 rtrPipelineConfig.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility); 
@@ -237,7 +201,37 @@ namespace Atlas {
                 rtrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
                 rtrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
 
+                // The hit shader has a low occupancy with software ray tracing
+                auto deferredShadowRays = !device->support.hardwareRayTracing;
+                rtrPipelineConfig.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
+
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
+
+                auto sampleCount = size_t(rayRes.x) * size_t(rayRes.y) * size_t(reflection->sampleCount);
+                auto lightCount = sampleCount * size_t(reflection->lightSampleCount);
+                if (deferredShadowRays) {
+                    if (deferredSampleBuffer.GetElementCount() != sampleCount)
+                        deferredSampleBuffer.SetSize(sampleCount);
+                    if (deferredLightBuffer.GetElementCount() != lightCount) {
+                        deferredLightBuffer.SetSize(lightCount);
+                        deferredShadowRayBuffer.SetSize(lightCount);
+                    }
+
+                    Graphics::BufferBarrier preBufferBarriers[] = {
+                        { deferredShadowRayCountBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT }
+                    };
+                    commandList->PipelineBarrier({}, preBufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                    uint32_t zero = 0;
+                    commandList->FillBuffer(deferredShadowRayCountBuffer.Get(), &zero);
+
+                    Graphics::BufferBarrier postBufferBarriers[] = {
+                        { deferredShadowRayCountBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT }
+                    };
+                    commandList->PipelineBarrier({}, postBufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                }
 
                 commandList->ImageMemoryBarrier(reflectionTexture->image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
@@ -251,7 +245,61 @@ namespace Atlas {
                         }
 
                         commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 10);
+
+                        if (deferredShadowRays) {
+                            commandList->BindBuffer(deferredSampleBuffer.Get(), 3, 12);
+                            commandList->BindBuffer(deferredLightBuffer.Get(), 3, 13);
+                            commandList->BindBuffer(deferredShadowRayBuffer.Get(), 3, 14);
+                            commandList->BindBuffer(deferredShadowRayCountBuffer.Get(), 3, 15);
+                        }
                     });
+
+                if (deferredShadowRays) {
+                    Graphics::Profiler::EndAndBeginQuery("Shadow rays");
+
+                    Graphics::BufferBarrier bufferBarriers[] = {
+                        { deferredSampleBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+                        { deferredLightBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+                        { deferredShadowRayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+                        { deferredShadowRayCountBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT }
+                    };
+                    commandList->PipelineBarrier({}, bufferBarriers);
+
+                    auto shadowPipeline = PipelineManager::GetPipeline(rtrShadowPipelineConfig);
+                    commandList->BindPipeline(shadowPipeline);
+
+                    commandList->BindBuffer(deferredLightBuffer.Get(), 3, 13);
+                    commandList->BindBuffer(deferredShadowRayBuffer.Get(), 3, 14);
+                    commandList->BindBuffer(deferredShadowRayCountBuffer.Get(), 3, 15);
+
+                    const uint32_t shadowGroupSize = 32;
+                    auto shadowGroupCount = uint32_t(lightCount) / shadowGroupSize;
+                    shadowGroupCount += (uint32_t(lightCount) % shadowGroupSize == 0) ? 0 : 1;
+
+                    commandList->Dispatch(shadowGroupCount, 1, 1);
+
+                    commandList->BufferMemoryBarrier(deferredLightBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+                    commandList->ImageMemoryBarrier(reflectionTexture->image,
+                        VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                    Graphics::Profiler::EndAndBeginQuery("Resolve");
+
+                    auto resolvePipeline = PipelineManager::GetPipeline(rtrResolvePipelineConfig);
+                    commandList->BindPipeline(resolvePipeline);
+
+                    commandList->BindImage(reflectionTexture->image, 3, 0);
+                    commandList->BindBuffer(deferredSampleBuffer.Get(), 3, 12);
+                    commandList->BindBuffer(deferredLightBuffer.Get(), 3, 13);
+
+                    ResolveConstants constants = {
+                        .resolution = rayRes,
+                        .sampleCount = reflection->sampleCount,
+                        .lightSampleCount = reflection->lightSampleCount
+                    };
+                    commandList->PushConstants("constants", &constants);
+
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                }
 
                 commandList->ImageMemoryBarrier(reflectionTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);

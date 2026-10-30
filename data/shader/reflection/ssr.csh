@@ -17,7 +17,6 @@
 #include <../brdf/surface.hsh>
 
 #include <../ddgi/ddgi.hsh>
-#include <../shadow.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
@@ -28,7 +27,6 @@ layout(set = 3, binding = 2) uniform sampler2D depthTexture;
 layout(set = 3, binding = 3) uniform sampler2D roughnessMetallicAoTexture;
 layout(set = 3, binding = 4) uniform isampler2D offsetTexture;
 layout(set = 3, binding = 5) uniform usampler2D materialIdxTexture;
-layout(set = 3, binding = 6) uniform sampler2DArrayShadow cascadeMaps;
 
 layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
@@ -63,7 +61,6 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     ivec2 resolution;
     uint frameCount;
     int hiZLevelCount;
-    Shadow shadow;
 } uniforms;
 
 vec4 SampleCatmullRom(vec2 uv) {

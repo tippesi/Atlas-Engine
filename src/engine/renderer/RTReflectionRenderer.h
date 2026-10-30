@@ -31,7 +31,12 @@ namespace Atlas {
                 ivec2 resolution;
                 uint32_t frameCount;
                 int32_t hiZLevelCount;
-                Shadow shadow;
+            };
+
+            struct alignas(16) ResolveConstants {
+                ivec2 resolution;
+                int32_t sampleCount;
+                int32_t lightSampleCount;
             };
 
             struct alignas(16) UpscalingConstants {
@@ -61,12 +66,18 @@ namespace Atlas {
 
             PipelineConfig ssrPipelineConfig;
             PipelineConfig rtrPipelineConfig;
+            PipelineConfig rtrShadowPipelineConfig;
+            PipelineConfig rtrResolvePipelineConfig;
             PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;
             PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtrUniformBuffer;
-            Ref<Graphics::Sampler> shadowSampler;
+
+            Buffer::Buffer deferredSampleBuffer;
+            Buffer::Buffer deferredLightBuffer;
+            Buffer::Buffer deferredShadowRayBuffer;
+            Buffer::Buffer deferredShadowRayCountBuffer;
         };
 
     }

@@ -3,10 +3,6 @@
 // Journal of Computer Graphics Techniques Vol 8.2 (2019).
 // Majercik, Zander, et al. "Scaling Probe-Based Real-Time Dynamic Global Illumination for Production."
 // arXiv preprint arXiv:2009.10796 (2020).
-#ifdef USE_SHADOW_MAP
-#define SHADOW_FILTER_1x1
-#endif
-
 #define LOCAL_STACK
 
 #include <../raytracer/lights.hsh>
@@ -23,14 +19,12 @@
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
-#include <../shadow.hsh>
 #include <../clouds/shadow.hsh>
 #include <ddgi.hsh>
 #include <transmission.hsh>
+#include <shadowRay.hsh>
 
 layout (local_size_x = 32) in;
-
-layout(set = 3, binding = 0) uniform sampler2DArrayShadow cascadeMaps;
 
 #ifdef CLOUD_SHADOWS
 layout(set = 3, binding = 1) uniform sampler2D cloudMap;
@@ -41,14 +35,26 @@ layout(std430, set = 3, binding = 2) buffer RayHits {
     PackedRayHit hits[];
 };
 
+#ifdef DEFERRED_SHADOW_RAYS
+layout(std430, set = 3, binding = 4) buffer ShadowRays {
+    PackedShadowRay shadowRays[];
+};
+
+layout(std430, set = 3, binding = 5) buffer ShadowRayCount {
+    uint shadowRayCount;
+};
+#endif
+
 layout(std140, set = 3, binding = 3) uniform UniformBuffer {
     float seed;
-    Shadow shadow;
 } Uniforms;
 
 vec3 EvaluateHit(inout Ray ray);
 vec3 EvaluateDirectLight(inout Surface surface);
 bool CheckVisibility(Surface surface, float lightDistance);
+
+bool hasShadowRay = false;
+PackedShadowRay shadowRay;
 
 void main() {
     
@@ -61,6 +67,15 @@ void main() {
 
             // Probes store the lighting scaled, the lookup restores it
             radiance *= ddgiData.volumeStorageScale;
+
+#ifdef DEFERRED_SHADOW_RAYS
+            if (hasShadowRay) {
+                uint shadowRayIdx = atomicAdd(shadowRayCount, 1u);
+                shadowRays[shadowRayIdx].origin = shadowRay.origin;
+                shadowRays[shadowRayIdx].direction = shadowRay.direction;
+                shadowRays[shadowRayIdx].radiance = vec4(shadowRay.radiance.rgb * ddgiData.volumeStorageScale, uintBitsToFloat(uint(ray.ID)));
+            }
+#endif
         
             RayHit hit;
 #ifndef AE_HALF_FLOAT
@@ -104,7 +119,11 @@ vec3 EvaluateHit(inout Ray ray) {
     radiance += surface.material.emissiveColor;
 
     // Evaluate direct light
-    radiance += EvaluateDirectLight(surface);    
+    vec3 direct = EvaluateDirectLight(surface);
+    if (hasShadowRay)
+        shadowRay.radiance = vec4(direct, 0.0);
+    else
+        radiance += direct;
 
     // Without RADIANCE_VOLUME the probe radiance falls back to the irradiance, the large radiance
     // probes are too expensive to sample at incoherent hits for the small specular part of the bounce
@@ -153,27 +172,17 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     // Check for visibilty. This is important to get an
     // estimate of the solid angle of the light from point P
     // on the surface.
-    if (light.type == uint(DIRECTIONAL_LIGHT)) {
-#ifdef USE_SHADOW_MAP
-        float shadowFactor = CalculateShadowWorldSpace(Uniforms.shadow, cascadeMaps, surface.P,
-            lightSurface.geometryNormal, saturate(dot(lightSurface.L, lightSurface.geometryNormal)));
-        radiance *= shadowFactor;
-#else
-        if (light.castShadow)
-            radiance *= CheckVisibility(lightSurface, lightDistance) ? 1.0 : 0.0;
+    if (light.castShadow)
+        radiance *= CheckVisibility(lightSurface, lightDistance) ? 1.0 : 0.0;
 
 #ifdef CLOUD_SHADOWS
+    if (light.type == uint(DIRECTIONAL_LIGHT)) {
         vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
         float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
 
         radiance *= cloudShadowFactor;
-#endif
-#endif
     }
-    else {
-        if (light.castShadow)
-            radiance *= CheckVisibility(lightSurface, lightDistance) ? 1.0 : 0.0;
-    }
+#endif
     
     return reflectance * radiance * lightSurface.NdotL / lightPdf;
 
@@ -186,7 +195,14 @@ bool CheckVisibility(Surface surface, float lightDistance) {
         ray.direction = surface.L;
         float side = dot(surface.L, surface.geometryNormal) < 0.0 ? -1.0 : 1.0;
         ray.origin = surface.P + surface.geometryNormal * (side * EPSILON);
+#ifdef DEFERRED_SHADOW_RAYS
+        hasShadowRay = true;
+        shadowRay.origin = vec4(ray.origin, lightDistance - 2.0 * EPSILON);
+        shadowRay.direction = vec4(ray.direction, 0.0);
+        return true;
+#else
         return HitAny(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON) == false;
+#endif
     }
     else {
         return false;

@@ -111,7 +111,6 @@ namespace Atlas::Lighting {
             {"strength", p.strength},
             {"sampleEmissives", p.sampleEmissives},
             {"optimizeProbes", p.optimizeProbes},
-            {"useShadowMap", p.useShadowMap},
             {"opacityCheck", p.opacityCheck},
             {"scroll", p.scroll},
             {"splitCorrection", p.splitCorrection},
@@ -138,7 +137,6 @@ namespace Atlas::Lighting {
         j.at("strength").get_to(p.strength);
         j.at("sampleEmissives").get_to(p.sampleEmissives);
         j.at("optimizeProbes").get_to(p.optimizeProbes);
-        j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("opacityCheck").get_to(p.opacityCheck);
         j.at("scroll").get_to(p.scroll);
         j.at("splitCorrection").get_to(p.splitCorrection);
@@ -163,7 +161,6 @@ namespace Atlas::Lighting {
             {"rt", p.rt},
             {"ssr", p.ssr},
             {"ddgi", p.ddgi},
-            {"useShadowMap", p.useShadowMap},
             {"useNormalMaps", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution},
@@ -184,7 +181,6 @@ namespace Atlas::Lighting {
         j.at("enable").get_to(p.enable);
         j.at("rt").get_to(p.rt);
         j.at("ddgi").get_to(p.ddgi);
-        j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("useNormalMaps").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "ssr", p.ssr);
@@ -206,7 +202,6 @@ namespace Atlas::Lighting {
             {"currentClipFactor", p.currentClipFactor},
             {"enable", p.enable},
             {"ddgi", p.ddgi},
-            {"useShadowMap", p.useShadowMap},
             {"useNormalMap", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution},
@@ -225,7 +220,6 @@ namespace Atlas::Lighting {
         j.at("currentClipFactor").get_to(p.currentClipFactor);
         j.at("enable").get_to(p.enable);
         j.at("ddgi").get_to(p.ddgi);
-        j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("useNormalMap").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "halfResolution", p.halfResolution);

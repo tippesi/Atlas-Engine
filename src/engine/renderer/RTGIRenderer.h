@@ -28,10 +28,7 @@ namespace Atlas {
                 int32_t textureLevel;
                 float roughnessCutoff;
                 int32_t halfRes;
-                int32_t padding0;
-                int32_t padding1;
                 ivec2 resolution;
-                Shadow shadow;
             };
 
             struct alignas(16) TemporalConstants {
@@ -46,17 +43,29 @@ namespace Atlas {
                 float strength;
             };
 
+            struct alignas(16) ResolveConstants {
+                ivec2 resolution;
+                int32_t sampleCount;
+                int32_t lightSampleCount;
+            };
+
             Helper::RayTracingHelper helper;
 
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
 
             PipelineConfig rtPipelineConfig;
+            PipelineConfig rtShadowPipelineConfig;
+            PipelineConfig rtResolvePipelineConfig;
             PipelineConfig temporalPipelineConfig;
             PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtUniformBuffer;
-            Ref<Graphics::Sampler> shadowSampler;
+
+            Buffer::Buffer deferredSampleBuffer;
+            Buffer::Buffer deferredLightBuffer;
+            Buffer::Buffer deferredShadowRayBuffer;
+            Buffer::Buffer deferredShadowRayCountBuffer;
         };
 
     }

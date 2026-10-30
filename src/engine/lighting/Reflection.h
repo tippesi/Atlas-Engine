@@ -29,7 +29,6 @@ namespace Atlas {
             bool rt = true;
             bool ssr = true;
             bool ddgi = true;
-            bool useShadowMap = false;
             bool useNormalMaps = true;
             bool opacityCheck = false;
             bool halfResolution = true;

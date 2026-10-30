@@ -76,7 +76,6 @@ void App::LoadContent() {
     directionalLight.isMain = true;
 
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
-    scene->reflection->useShadowMap = true;
 
     scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
     scene->fog->enable = true;
@@ -95,7 +94,6 @@ void App::LoadContent() {
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
     scene->rtgi = Atlas::CreateRef<Atlas::Lighting::RTGI>();
     scene->rtgi->enable = graphicsDevice->support.hardwareRayTracing;
-    scene->rtgi->useShadowMap = true;
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
@@ -1170,7 +1168,6 @@ void App::CheckLoadScene() {
         scene->irradianceVolume->SetRayCount(128, 32);
     }
 
-    scene->irradianceVolume->useShadowMap = true;
     scene->irradianceVolume->visibility = false;
 
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)

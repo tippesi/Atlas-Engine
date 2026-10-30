@@ -105,7 +105,6 @@ namespace Atlas::Scripting::Bindings {
             "ddgi", &Lighting::Reflection::ddgi,
             "sampleCount", &Lighting::Reflection::sampleCount,
             "halfResolution", &Lighting::Reflection::halfResolution,
-            "useShadowMap", &Lighting::Reflection::useShadowMap,
             "useNormalMaps", &Lighting::Reflection::useNormalMaps,
             "opacityCheck", &Lighting::Reflection::opacityCheck
         );

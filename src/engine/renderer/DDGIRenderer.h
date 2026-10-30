@@ -30,7 +30,6 @@ namespace Atlas {
 
             struct alignas(16) RayHitUniforms {
                 float seed;
-                Shadow shadow;
             };
 
             struct alignas(16) ProbeDebugConstants {
@@ -41,6 +40,8 @@ namespace Atlas {
             };
 
             Buffer::Buffer rayHitBuffer;
+            Buffer::Buffer shadowRayBuffer;
+            Buffer::Buffer shadowRayCountBuffer;
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;
@@ -54,14 +55,12 @@ namespace Atlas {
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
+            PipelineConfig rayShadowPipelineConfig;
 
             PipelineConfig probeStatePipelineConfig;
             PipelineConfig probeIrradianceUpdatePipelineConfig;
             PipelineConfig probeRadianceUpdatePipelineConfig;
             PipelineConfig probeMomentsUpdatePipelineConfig;
-
-            Ref<Graphics::Sampler> shadowSampler;
-
 
         };
 

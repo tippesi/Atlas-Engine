@@ -1,0 +1,32 @@
+// The radiance of each sample is clamped, so the result can only be put together after the shadow rays are traced
+
+struct DeferredSample {
+    // w: 1.0 if the sample is valid, -1.0 in the first sample of a pixel which isn't ray traced
+    vec4 radiance;
+    // w: radiance limit
+    vec4 lobeWeight;
+};
+
+struct DeferredShadowRay {
+    // xyz: origin, w: maximum distance
+    vec4 origin;
+    // w: index of the light
+    vec4 direction;
+};
+
+layout(std430, set = 3, binding = 12) buffer DeferredSamples {
+    DeferredSample deferredSamples[];
+};
+
+// rgb: direct light, w: transparency along the shadow ray
+layout(std430, set = 3, binding = 13) buffer DeferredLights {
+    vec4 deferredLights[];
+};
+
+layout(std430, set = 3, binding = 14) buffer DeferredShadowRays {
+    DeferredShadowRay deferredShadowRays[];
+};
+
+layout(std430, set = 3, binding = 15) buffer DeferredShadowRayCount {
+    uint deferredShadowRayCount;
+};

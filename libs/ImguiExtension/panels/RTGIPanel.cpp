@@ -9,11 +9,6 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Enable", &rtgi->enable);
         ImGui::Checkbox("Half resolution", &rtgi->halfResolution);
 
-        ImGui::Checkbox("Use shadow map", &rtgi->useShadowMap);
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("Uses the shadow map to calculate shadows in GI. "
-                        "This is only possible when cascaded shadow maps are not used.");
-        }
         ImGui::Checkbox("Use normal maps", &rtgi->useNormalMaps);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip("Uses the normal maps to cast GI rays.");

@@ -70,7 +70,6 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.reflection) {
         scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
-        scene->reflection->useShadowMap = true;
     }
 
     if (config.ddgi) {

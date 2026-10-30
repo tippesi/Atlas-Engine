@@ -15,23 +15,19 @@ namespace Atlas {
             Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
 
             rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
+            shadowRayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 3 * sizeof(vec4));
+            shadowRayCountBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t), 1);
             rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
             rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms));
 
             rayGenPipelineConfig = PipelineConfig("ddgi/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("ddgi/rayHit.csh");
+            rayShadowPipelineConfig = PipelineConfig("ddgi/rayShadow.csh");
 
             probeStatePipelineConfig = PipelineConfig("ddgi/probeState.csh");
             probeIrradianceUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh", {"IRRADIANCE"});
             probeRadianceUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh", {"RADIANCE"});
             probeMomentsUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh");
-
-            auto samplerDesc = Graphics::SamplerDesc {
-                .filter = VK_FILTER_NEAREST,
-                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                .compareEnabled = true
-            };
-            shadowSampler = device->CreateSampler(samplerDesc);
 
         }
 
@@ -43,16 +39,14 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("DDGI");
 
-            Ref<Lighting::Shadow> shadow = nullptr;
-            if (scene->HasMainLight())
-                shadow = scene->GetMainLight().shadow;
-               
             auto clouds = scene->sky.clouds;
             auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
             rayHitPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
             rayHitPipelineConfig.ManageMacro("VISIBILITY_VOLUME", volume->visibility);
-            rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
+            // The hit shader has a low occupancy with software ray tracing
+            bool deferredShadowRays = !device->support.hardwareRayTracing;
+            rayHitPipelineConfig.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
             
             auto& internalVolume = volume->internal;
             internalVolume.SwapTextures();
@@ -72,6 +66,7 @@ namespace Atlas {
             if (totalRayCount != rayHitBuffer.GetElementCount()) {
                 helper.SetRayBufferSize(totalRayCount);
                 rayHitBuffer.SetSize(totalRayCount);
+                shadowRayBuffer.SetSize(totalRayCount);
             }
 
             auto [irradianceArray, radianceArray, momentsArray] = internalVolume.GetCurrentProbes();
@@ -133,40 +128,27 @@ namespace Atlas {
 
             auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
 
+            if (deferredShadowRays) {
+                Graphics::BufferBarrier preBufferBarriers[] = {
+                    { shadowRayCountBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT }
+                };
+                commandList->PipelineBarrier({}, preBufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                uint32_t zero = 0;
+                commandList->FillBuffer(shadowRayCountBuffer.Get(), &zero);
+
+                Graphics::BufferBarrier postBufferBarriers[] = {
+                    { shadowRayCountBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT }
+                };
+                commandList->PipelineBarrier({}, postBufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            }
+
             helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, volume->opacityCheck,
                 [&]() {
                     RayHitUniforms uniforms;
                     uniforms.seed = Common::Random::SampleUniformFloat();
-
-                    if (shadow && volume->useShadowMap) {
-                        auto &shadowUniform = uniforms.shadow;
-                        shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
-                        shadowUniform.bias = shadow->bias;
-                        shadowUniform.edgeSoftness = shadow->edgeSoftness;
-                        shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
-                        shadowUniform.cascadeCount = shadow->viewCount;
-                        shadowUniform.resolution = vec2(shadow->resolution);
-
-                        commandList->BindImage(shadow->maps->image, shadowSampler, 3, 0);
-
-                        auto componentCount = shadow->viewCount;
-                        for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
-                            if (i < componentCount) {
-                                auto cascade = &shadow->views[i];
-                                auto frustum = Volume::Frustum(cascade->frustumMatrix);
-                                auto corners = frustum.GetCorners();
-                                auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                                    abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
-                                shadowUniform.cascades[i].distance = cascade->farDistance;
-                                shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
-                                    cascade->viewMatrix);
-                                shadowUniform.cascades[i].texelSize = texelSize;
-                            } else {
-                                auto cascade = &shadow->views[componentCount - 1];
-                                shadowUniform.cascades[i].distance = cascade->farDistance;
-                            }
-                        }
-                    }
 
                     if (cloudShadowEnabled && scene->HasMainLight()) {
                         clouds->shadowTexture.Bind(commandList, 3, 1);
@@ -177,8 +159,34 @@ namespace Atlas {
                     // Use this buffer instead of the default writeRays buffer of the helper
                     commandList->BindBuffer(rayHitBuffer.Get(), 3, 2);
                     commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 3);
+                    commandList->BindBuffer(shadowRayBuffer.Get(), 3, 4);
+                    commandList->BindBuffer(shadowRayCountBuffer.Get(), 3, 5);
                 }
             );
+
+            if (deferredShadowRays) {
+                Graphics::Profiler::EndAndBeginQuery("Shadow rays");
+
+                Graphics::BufferBarrier bufferBarriers[] = {
+                    { rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+                    { shadowRayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+                    { shadowRayCountBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT }
+                };
+                commandList->PipelineBarrier({}, bufferBarriers);
+
+                auto rayShadowPipeline = PipelineManager::GetPipeline(rayShadowPipelineConfig);
+                commandList->BindPipeline(rayShadowPipeline);
+
+                commandList->BindBuffer(rayHitBuffer.Get(), 3, 2);
+                commandList->BindBuffer(shadowRayBuffer.Get(), 3, 4);
+                commandList->BindBuffer(shadowRayCountBuffer.Get(), 3, 5);
+
+                const uint32_t shadowGroupSize = 32;
+                auto shadowGroupCount = uint32_t(totalRayCount) / shadowGroupSize;
+                shadowGroupCount += (uint32_t(totalRayCount) % shadowGroupSize == 0) ? 0 : 1;
+
+                commandList->Dispatch(shadowGroupCount, 1, 1);
+            }
 
             commandList->BufferMemoryBarrier(rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
