@@ -16,7 +16,20 @@ namespace Atlas {
 
         GraphicsDevice* GraphicsDevice::DefaultDevice = nullptr;
 
-        GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
+        void HandleDeviceLost() {
+
+            auto device = GraphicsDevice::DefaultDevice;
+            if (!device || device->isDeviceLost.exchange(true))
+                return;
+
+            Log::Error("Graphics device lost on " + std::string(device->deviceProperties.properties.deviceName) +
+                " (driver " + std::string(device->driverProperties.driverInfo) + "), shutting down");
+            AE_LOG_STACKTRACE();
+
+        }
+
+        GraphicsDevice::GraphicsDevice(Surface* surface, const DeviceDesc& desc) :
+            surface(surface), desc(desc) {
 
             instance = Instance::DefaultInstance;
 
@@ -33,11 +46,10 @@ namespace Atlas {
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
                 VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
                 VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+                VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
                 VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
                 VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
-#ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
-#endif
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
@@ -60,7 +72,7 @@ namespace Atlas {
             BuildPhysicalDeviceFeatures(physicalDevice);
 
             // Uses the physical device structures generated above
-            CreateDevice(queueCreateInfos, requiredExtensions, enableValidationLayers);
+            CreateDevice(queueCreateInfos, requiredExtensions);
 
             for (auto& queueFamily : queueFamilyIndices.families) {
                 for (auto& queue : queueFamily.queues) {
@@ -998,6 +1010,11 @@ namespace Atlas {
             availableFeatures11.pNext = &availableFeatures12;
             availableFeatures12.pNext = &availableFeatures13;
 
+            availableRobustness2Features = {};
+            availableRobustness2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME))
+                availableFeatures13.pNext = &availableRobustness2Features;
+
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
 
@@ -1038,7 +1055,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
-            const std::vector<const char*>& extensions, bool enableValidationLayers) {
+            const std::vector<const char*>& extensions) {
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1076,6 +1093,7 @@ namespace Atlas {
 
             features.features.tessellationShader = availableFeatures.features.tessellationShader;
             features.features.multiDrawIndirect = availableFeatures.features.multiDrawIndirect;
+            features.features.drawIndirectFirstInstance = availableFeatures.features.drawIndirectFirstInstance;
             features.features.depthBounds = availableFeatures.features.depthBounds;
             features.features.wideLines = availableFeatures.features.wideLines;
             features.features.samplerAnisotropy = availableFeatures.features.samplerAnisotropy;
@@ -1088,6 +1106,9 @@ namespace Atlas {
             features.features.shaderInt64 = availableFeatures.features.shaderInt64;
             features.features.shaderInt16 = availableFeatures.features.shaderInt16;
             features.features.independentBlend = availableFeatures.features.independentBlend;
+            features.features.textureCompressionBC = availableFeatures.features.textureCompressionBC;
+            features.features.textureCompressionASTC_LDR = availableFeatures.features.textureCompressionASTC_LDR;
+            features.features.textureCompressionETC2 = availableFeatures.features.textureCompressionETC2;
 
             features11.storageBuffer16BitAccess = availableFeatures11.storageBuffer16BitAccess;
             features11.storagePushConstant16 = availableFeatures11.storagePushConstant16;
@@ -1157,6 +1178,20 @@ namespace Atlas {
                 support.memoryPriority = true;
             }
 
+            VkPhysicalDeviceRobustness2FeaturesEXT robustness2Features = {};
+            robustness2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+
+            if (desc.enableRobustness && supportedExtensions.contains(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
+                // robustBufferAccess2 requires robustBufferAccess to be enabled as well
+                robustness2Features.robustBufferAccess2 = availableRobustness2Features.robustBufferAccess2 &&
+                    availableFeatures.features.robustBufferAccess;
+                robustness2Features.robustImageAccess2 = availableRobustness2Features.robustImageAccess2;
+                robustness2Features.nullDescriptor = availableRobustness2Features.nullDescriptor;
+                features.features.robustBufferAccess = robustness2Features.robustBufferAccess2;
+
+                featureBuilder.Append(robustness2Features);
+            }
+
             VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedStateFeatures = {};
             extendedStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
 
@@ -1168,16 +1203,29 @@ namespace Atlas {
                 support.extendedDynamicState = true;
             }
 
-#ifdef AE_BINDLESS
-            if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
-                availableFeatures12.descriptorBindingPartiallyBound && availableFeatures12.runtimeDescriptorArray) {
+            // Ray tracing accesses all buffer arrays and direct lighting all sampled image arrays in one stage
+            const uint32_t bindlessSampledImageCount = BINDLESS_TEXTURE_COUNT + BINDLESS_CUBEMAP_COUNT + BINDLESS_TEXTURE_ARRAY_COUNT;
+            const uint32_t bindlessStorageBufferCount = 3 * BINDLESS_BUFFER_COUNT;
 
-                features12.descriptorBindingPartiallyBound = VK_TRUE;
-                features12.runtimeDescriptorArray = VK_TRUE;
+            // E.g. MoltenVK without tier 2 argument buffers reports the features but can't hold these arrays
+            bool bindlessLimitsSupported =
+                deviceProperties12.maxPerStageDescriptorUpdateAfterBindSampledImages >= bindlessSampledImageCount &&
+                deviceProperties12.maxDescriptorSetUpdateAfterBindSampledImages >= bindlessSampledImageCount &&
+                deviceProperties12.maxPerStageDescriptorUpdateAfterBindStorageBuffers >= bindlessStorageBufferCount &&
+                deviceProperties12.maxDescriptorSetUpdateAfterBindStorageBuffers >= bindlessStorageBufferCount &&
+                deviceProperties12.maxPerStageUpdateAfterBindResources >= bindlessSampledImageCount + bindlessStorageBufferCount;
 
-                support.bindless = true;
-            }
-#endif
+            bool bindlessSupported = availableFeatures12.descriptorBindingPartiallyBound &&
+                availableFeatures12.runtimeDescriptorArray &&
+                availableFeatures12.descriptorBindingSampledImageUpdateAfterBind &&
+                availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind &&
+                availableFeatures12.shaderSampledImageArrayNonUniformIndexing && bindlessLimitsSupported;
+            // The draws of the GPU culling select their instances with the first instance
+            AE_ASSERT(bindlessSupported && availableFeatures.features.drawIndirectFirstInstance &&
+                "The device doesn't support bindless resources or indirect draws with a first instance");
+
+            features12.descriptorBindingPartiallyBound = VK_TRUE;
+            features12.runtimeDescriptorArray = VK_TRUE;
 
             support.wideLines = features.features.wideLines;
 

@@ -9,6 +9,17 @@
 #include <../common/octahedron.hsh>
 #include <../common/flatten.hsh>
 
+layout(push_constant) uniform constants {
+    int lightCount;
+    uint rayBufferOffset;
+    uint rayPayloadBufferOffset;
+    uint rayBufferSize;
+    int useRayBinning;
+    int padding0;
+    int padding1;
+    int padding2;
+} PushConstants;
+
 // We use double buffering for the ray and payload buffers,
 // which means the buffer has an actual size of rayBufferSize * 2
 // Also note that the payload offset is different from the ray offset

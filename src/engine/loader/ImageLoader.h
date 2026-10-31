@@ -34,13 +34,33 @@ namespace Atlas {
 
                 const auto normalizedFileName = Common::Path::Normalize(filename);
 
-                Common::Image<T> image;
                 auto buffer = ReadFileContent(normalizedFileName);
 
                 if (buffer.size() == 0) {
                     Log::Error("Failed to load image " + normalizedFileName);
-                    return CreateRef(image);
+                    return CreateRef(Common::Image<T>());
                 }
+
+                return LoadImageFromMemory<T>(buffer, normalizedFileName, colorSpaceConversion, forceChannels, maxImageResolution);
+
+            }
+
+            /**
+             * Loads an image from the content of an image file.
+             * @param buffer The content of the image file.
+             * @param filename The name of the image, which also determines the file format.
+             * @param colorSpaceConversion Whether or not gamma to linear color space conversion is needed.
+             * @param forceChannels The number of channels to be forced. Default is zero, which means no force.
+             * @param maxImageResolution The maximum resolution on both axis of the image. If larger it gets resized.
+             * @return An Image object with all the important data.
+             */
+            template<typename T>
+            static Ref<Common::Image<T>> LoadImageFromMemory(const std::vector<char>& buffer, const std::string& filename,
+                bool colorSpaceConversion = false, int32_t forceChannels = 0, int32_t maxImageResolution = 8192) {
+
+                const auto normalizedFileName = Common::Path::Normalize(filename);
+
+                Common::Image<T> image;
 
                 int32_t width, height, channels;
                 void* data = nullptr;
@@ -56,6 +76,11 @@ namespace Atlas {
                 else if constexpr (std::is_same_v<T, float>) {
                     data = static_cast<void*>(stbi_loadf_from_memory((unsigned char*)buffer.data(), (int32_t)buffer.size(),
                         &width, &height, &channels, forceChannels));
+                }
+
+                if (data == nullptr) {
+                    Log::Error("Failed to decode image " + normalizedFileName);
+                    return CreateRef(image);
                 }
 
                 if (forceChannels > 0) {

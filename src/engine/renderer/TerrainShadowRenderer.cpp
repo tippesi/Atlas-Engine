@@ -117,7 +117,6 @@ namespace Atlas {
 
             const auto shaderConfig = ShaderConfig {
                 {"terrain/shadowmapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                {"terrain/shadowmapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {

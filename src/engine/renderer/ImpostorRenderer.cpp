@@ -15,7 +15,7 @@ namespace Atlas {
 
         void ImpostorRenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList, RenderList* renderList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+            std::unordered_map<void*, uint16_t>& materialMap) {
 
             struct alignas(16) PushConstants {
                 uint32_t materialIdx;
@@ -27,18 +27,10 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            for (const auto& item : mainPass->meshToInstancesMap) {
-
-                auto meshId = item.first;
-                auto instance = item.second;
-
-                // If there aren't any impostors there won't be a buffer
-                if (!instance.impostorCount)
-                    continue;
-
-                const auto& mesh = renderList->meshIdToMeshMap[meshId];
-
-                auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
+            // The instances are read from the instance buffer, except the ones of skinned meshes
+            auto bindImpostor = [&](Mesh::Mesh* mesh, bool useInstanceBuffer) {
+                auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset,
+                    useInstanceBuffer);
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
@@ -56,8 +48,29 @@ namespace Atlas {
                     .materialIdx = uint32_t(materialMap[mesh->impostor.Get().get()]),
                 };
                 commandList->PushConstants("constants", &constants);
+            };
 
+            for (const auto& item : mainPass->meshToInstancesMap) {
+
+                auto meshId = item.first;
+                auto instance = item.second;
+
+                // If there aren't any impostors there won't be a buffer
+                if (!instance.impostorCount)
+                    continue;
+
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
+
+                bindImpostor(mesh.Get().get(), !mesh->data.IsSkinned());
                 commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
+            }
+
+            for (const auto& draw : mainPass->gpuDraws) {
+                if (draw.type != RenderList::GPUDrawType::Impostor)
+                    continue;
+
+                bindImpostor(draw.mesh, true);
+                renderList->DrawGPUCulled(commandList, draw);
             }
 
             Graphics::Profiler::EndQuery();
@@ -263,7 +276,7 @@ namespace Atlas {
         }
 
         PipelineConfig ImpostorRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
-            bool interpolation, bool pixelDepthOffset) {
+            bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer) {
 
             auto shaderConfig = ShaderConfig {
                 {"impostor/impostor.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -280,6 +293,7 @@ namespace Atlas {
             std::vector<std::string> macros;
             if (interpolation) macros.push_back("INTERPOLATION");
             if (pixelDepthOffset) macros.push_back("PIXEL_DEPTH_OFFSET");
+            if (useInstanceBuffer) macros.push_back("INSTANCE_BUFFER");
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

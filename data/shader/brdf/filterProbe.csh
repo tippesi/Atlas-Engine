@@ -35,8 +35,8 @@ vec3 CubeCoordToWorld(ivec3 cubeCoord, vec2 cubemapSize) {
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(filteredCubeMap).x ||
-        pixel.y > imageSize(filteredCubeMap).y)
+    if (pixel.x >= imageSize(filteredCubeMap).x ||
+        pixel.y >= imageSize(filteredCubeMap).y)
         return;
 
     vec3 worldDirection = CubeCoordToWorld(ivec3(gl_GlobalInvocationID),

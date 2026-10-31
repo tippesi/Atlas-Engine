@@ -34,6 +34,7 @@ namespace Atlas::Lighting {
             {"mieScatteringCoeff", p.mieScatteringCoeff},
             {"rayleighHeightScale", p.rayleighHeightScale},
             {"mieHeightScale", p.mieHeightScale},
+            {"sunDiskSize", p.sunDiskSize},
             {"probeResolution", p.probe->GetCubemap().width}
         };
     }
@@ -47,6 +48,7 @@ namespace Atlas::Lighting {
         try_get_json(j, "mieScatteringCoeff", p.mieScatteringCoeff);
         try_get_json(j, "rayleighHeightScale", p.rayleighHeightScale);
         try_get_json(j, "mieHeightScale", p.mieHeightScale);
+        try_get_json(j, "sunDiskSize", p.sunDiskSize);
     }
 
     void to_json(json& j, const Fog& p) {
@@ -63,6 +65,10 @@ namespace Atlas::Lighting {
             {"rayMarching", p.rayMarching},
             {"localLights", p.localLights},
             {"rayMarchStepCount", p.rayMarchStepCount},
+            {"froxels", p.froxels},
+            {"froxelTileSize", p.froxelTileSize},
+            {"froxelSliceCount", p.froxelSliceCount},
+            {"froxelFilter", p.froxelFilter},
             {"volumetricIntensity", p.volumetricIntensity},
         };
     }
@@ -82,6 +88,10 @@ namespace Atlas::Lighting {
         j.at("volumetricIntensity").get_to(p.volumetricIntensity);
 
         try_get_json(j, "localLights", p.localLights);
+        try_get_json(j, "froxels", p.froxels);
+        try_get_json(j, "froxelTileSize", p.froxelTileSize);
+        try_get_json(j, "froxelSliceCount", p.froxelSliceCount);
+        try_get_json(j, "froxelFilter", p.froxelFilter);
     }
 
     void to_json(json& j, const IrradianceVolume& p) {
@@ -101,7 +111,6 @@ namespace Atlas::Lighting {
             {"strength", p.strength},
             {"sampleEmissives", p.sampleEmissives},
             {"optimizeProbes", p.optimizeProbes},
-            {"useShadowMap", p.useShadowMap},
             {"opacityCheck", p.opacityCheck},
             {"scroll", p.scroll},
             {"splitCorrection", p.splitCorrection},
@@ -128,7 +137,6 @@ namespace Atlas::Lighting {
         j.at("strength").get_to(p.strength);
         j.at("sampleEmissives").get_to(p.sampleEmissives);
         j.at("optimizeProbes").get_to(p.optimizeProbes);
-        j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("opacityCheck").get_to(p.opacityCheck);
         j.at("scroll").get_to(p.scroll);
         j.at("splitCorrection").get_to(p.splitCorrection);
@@ -153,7 +161,6 @@ namespace Atlas::Lighting {
             {"rt", p.rt},
             {"ssr", p.ssr},
             {"ddgi", p.ddgi},
-            {"useShadowMap", p.useShadowMap},
             {"useNormalMaps", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution},
@@ -174,7 +181,6 @@ namespace Atlas::Lighting {
         j.at("enable").get_to(p.enable);
         j.at("rt").get_to(p.rt);
         j.at("ddgi").get_to(p.ddgi);
-        j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("useNormalMaps").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "ssr", p.ssr);
@@ -196,7 +202,6 @@ namespace Atlas::Lighting {
             {"currentClipFactor", p.currentClipFactor},
             {"enable", p.enable},
             {"ddgi", p.ddgi},
-            {"useShadowMap", p.useShadowMap},
             {"useNormalMap", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution},
@@ -215,7 +220,6 @@ namespace Atlas::Lighting {
         j.at("currentClipFactor").get_to(p.currentClipFactor);
         j.at("enable").get_to(p.enable);
         j.at("ddgi").get_to(p.ddgi);
-        j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("useNormalMap").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "halfResolution", p.halfResolution);
@@ -340,6 +344,7 @@ namespace Atlas::Lighting {
             {"eccentricityFirstPhase", p.eccentricityFirstPhase},
             {"eccentricitySecondPhase", p.eccentricitySecondPhase},
             {"phaseAlpha", p.phaseAlpha},
+            {"positiveForwardScattering", true}
         };
     }
 
@@ -350,6 +355,12 @@ namespace Atlas::Lighting {
         j.at("eccentricityFirstPhase").get_to(p.eccentricityFirstPhase);
         j.at("eccentricitySecondPhase").get_to(p.eccentricitySecondPhase);
         j.at("phaseAlpha").get_to(p.phaseAlpha);
+
+        // Older scenes stored the eccentricities with the opposite sign, negative values scattered forward
+        if (!j.contains("positiveForwardScattering")) {
+            p.eccentricityFirstPhase = -p.eccentricityFirstPhase;
+            p.eccentricitySecondPhase = -p.eccentricitySecondPhase;
+        }
     }
 
     void to_json(json& j, const VolumetricClouds& p) {
@@ -461,6 +472,7 @@ namespace Atlas::Lighting {
                 *p.clouds = j["clouds"];
             }
         }
+        p.probe = nullptr;
         if (j.contains("probe")) {
             p.probe = CreateRef<EnvironmentProbe>();
             *p.probe = j["probe"];

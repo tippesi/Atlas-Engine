@@ -6,14 +6,15 @@ namespace Atlas {
 
     namespace Graphics {
 
-        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : isDynamic(desc.isDynamic), device(device), 
+        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : isDynamic(desc.isDynamic), allowUpdate(desc.allowUpdate), device(device), 
             geometries(desc.geometries), buildRanges(desc.buildRanges), flags(desc.flags)    {
 
             buildGeometryInfo = {};
             buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
             buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
             buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-            buildGeometryInfo.flags = desc.flags | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
+            buildGeometryInfo.flags = desc.flags | (desc.allowUpdate ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR :
+                VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
             buildGeometryInfo.geometryCount = uint32_t(geometries.size());
             buildGeometryInfo.pGeometries = geometries.data();
 

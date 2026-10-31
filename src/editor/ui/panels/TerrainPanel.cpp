@@ -286,9 +286,7 @@ namespace Atlas::Editor::UI {
             terrainPhysicsEntity = scene->CreateEntity();
             terrainPhysicsEntity.AddComponent<NameComponent>(terrain->filename);
             
-            auto root = scene->GetEntityByName("Root");
-            if (root.IsValid() && root.HasComponent<HierarchyComponent>())
-                root.GetComponent<HierarchyComponent>().AddChild(terrainPhysicsEntity);
+            terrainPhysicsEntity.SetParent(scene->GetRootEntity());
         }
         else {
             terrainPhysicsEntity.RemoveComponent<RigidBodyComponent>();

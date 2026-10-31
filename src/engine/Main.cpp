@@ -3,6 +3,8 @@
 #include "graphics/Instance.h"
 #include "common/Path.h"
 
+#include <SDL3/SDL_main.h>
+
 #if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE) || defined(AE_OS_LINUX)
 #include <zconf.h>
 #endif
@@ -29,20 +31,19 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#if (defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)) && defined(AE_BINDLESS)
-    // Argument buffers are enabled by default in MoltenVk 
-    //setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
-    //setenv("MVK_DEBUG", "0", 1);
-#elif defined(AE_OS_MACOS)
-    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
-#elif defined(AE_OS_APPLE_MOBILE)
-    // setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
-#endif
-    
     // To test with swiftshader locally, put in the path of the *_icd.json (note: on Windows use backslashes)
     // SetEnvironmentVariable("VK_ICD_FILENAMES", "..\\vk_swiftshader_icd.json");
 
-    Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
+    // Validation has to be known before the graphics instance is created
+    auto engineConfig = Atlas::EngineInstance::engineConfig;
+    for (int32_t i = 1; i < argc; i++) {
+        if (std::string(argv[i]) == "--validation") {
+            engineConfig.deviceDesc.enableValidationLayers = true;
+            engineConfig.deviceDesc.enableExtendedValidation = true;
+        }
+    }
+
+    Atlas::Engine::Init(engineConfig);
 
     auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
 
@@ -91,15 +92,19 @@ int main(int argc, char* argv[]) {
         engineInstance->Render(deltaTime);
 
         graphicsDevice->SubmitFrame();
-        
+
+        if (graphicsDevice->isDeviceLost)
+            break;
+
     }
 
     engineInstance->UnloadContent();
+    auto exitCode = graphicsDevice->isDeviceLost ? -1 : engineInstance->GetExitCode();
     delete engineInstance;
 
     Atlas::Engine::Shutdown();
     delete graphicsInstance;
 
-    return 0;
+    return exitCode;
 
 }

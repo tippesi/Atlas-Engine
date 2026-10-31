@@ -28,9 +28,9 @@ namespace Atlas {
         std::string shaderDirectory = "shader";
 
         /**
-         * Configures which messages of the validation layers to log
+         * Configures validation layers and robustness of the graphics device
          */
-        Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
+        Graphics::DeviceDesc deviceDesc;
 
         /*
          * 

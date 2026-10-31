@@ -7,6 +7,7 @@
 
 #include "volume/AABB.h"
 #include "volume/Frustum.h"
+#include "volume/Ray.h"
 
 namespace Atlas::Scripting::Bindings {
 
@@ -70,6 +71,17 @@ namespace Atlas::Scripting::Bindings {
             "GetCorners", &Volume::AABB::GetCorners,
             "min", DependentMember<&Volume::AABB::min>(),
             "max", DependentMember<&Volume::AABB::max>()
+            );
+
+        ns->new_usertype<Volume::Ray>("Ray",
+            sol::call_constructor,
+            sol::constructors<Volume::Ray(), Volume::Ray(glm::vec3, glm::vec3),
+                Volume::Ray(glm::vec3, glm::vec3, float, float)>(),
+            "Get", &Volume::Ray::Get,
+            "origin", DependentMember<&Volume::Ray::origin>(),
+            "direction", DependentMember<&Volume::Ray::direction>(),
+            "tMin", &Volume::Ray::tMin,
+            "tMax", &Volume::Ray::tMax
             );
 
         auto resizeFrustumOverload = sol::overload(

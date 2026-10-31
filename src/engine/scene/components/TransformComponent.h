@@ -36,6 +36,9 @@ namespace Atlas {
 
                 void Set(const glm::mat4& matrix);
 
+                // Sets the world matrix immediately and derives the local matrix relative to the parent
+                void SetGlobal(const glm::mat4& matrix, const Entity& parentEntity);
+
                 void ReconstructLocalMatrix(const Entity& parentEntity);
 
                 bool IsStatic() const;
@@ -52,6 +55,9 @@ namespace Atlas {
 
                 bool isStatic = true;
 
+                // Joint of the parent's animated mesh which the transform is relative to, -1 for the parent itself
+                int32_t parentJoint = -1;
+
                 mat4 globalMatrix = mat4{ 1.0f };
                 mat4 lastGlobalMatrix = mat4{ 1.0f };
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
@@ -65,6 +71,7 @@ namespace Atlas {
                 bool updated = false;
                 bool wasStatic = true;
                 bool initialized = false;
+                bool lastGlobalMatrixSet = false;
 
             };
 

@@ -1,0 +1,250 @@
+#include <../globals.hsh>
+#include <../structures.hsh>
+#include <../common/convert.hsh>
+#include <../common/utility.hsh>
+#include <../clouds/shadow.hsh>
+
+#include <fog.hsh>
+
+layout(set = 3, binding = 2) uniform sampler2D cloudMap;
+layout(set = 3, binding = 5) uniform sampler2D volumetricCloudTexture;
+layout(set = 3, binding = 6) uniform sampler shadowSampler;
+layout(set = 3, binding = 12) uniform sampler shadowDepthSampler;
+
+layout(std140, set = 3, binding = 7) uniform UniformBuffer {
+    int sampleCount;
+    float intensity;
+    int fogEnabled;
+    float oceanHeight;
+    int lightCount;
+    int offsetX;
+    int offsetY;
+    int directionalLightCount;
+    vec4 planetCenterAndRadius;
+    Fog fog;
+    CloudShadow cloudShadow;
+} uniforms;
+
+layout (std430, set = 3, binding = 8) buffer VolumetricLights {
+    VolumetricLight volumetricLights[];
+};
+
+layout (std430, set = 3, binding = 9) buffer VolumetricShadows {
+    Shadow volumetricShadows[];
+};
+
+layout(std430, set = 3, binding = 10) buffer LightIndicesBuffer {
+    int lightIndices[];
+};
+
+const int lightCountPerTile = 63;
+
+shared uint sharedLightIndices[64];
+shared int sharedLightIndicesCount;
+
+shared VolumetricLight sharedLights[64];
+shared int sharedShadowMapIdx[64];
+shared float sharedShadowDistance[64];
+shared mat4 sharedShadowMatrix[64];
+shared vec4 sharedShadowProjection[64];
+
+// Distance in world units over which the shadow fades in behind an occluder
+const float shadowFadeDistance = 0.1;
+
+float GetShadowFactorDirectionalLight(int lightIdx, int shadowIdx, uint lightType, bool isMain, vec3 currentPosition);
+float GetShadowFactorPunctualLight(int sharedIdx, uint lightType, vec3 currentPosition);
+
+// Exponential depth test of a gathered 2x2 footprint, filtered bilinearly to avoid hard shadow edges in the fog
+float GetSoftShadow(vec4 occluderDistances, float receiverDistance, vec2 texelPosition) {
+
+    vec4 shadows = exp(min(occluderDistances - receiverDistance, 0.0) / shadowFadeDistance);
+
+    vec2 weight = fract(texelPosition - 0.5);
+    float top = mix(shadows.w, shadows.z, weight.x);
+    float bottom = mix(shadows.x, shadows.y, weight.x);
+    return mix(top, bottom, weight.y);
+
+}
+
+int GetLightIndicesOffset() {
+
+    int groupOffset = int(gl_WorkGroupID.x + (gl_WorkGroupID.y + gl_WorkGroupID.z * gl_NumWorkGroups.y) * gl_NumWorkGroups.x);
+    return groupOffset * (lightCountPerTile + 1);
+
+}
+
+void LoadLightTypeData(uint requestedLightType) {
+
+    barrier();
+
+    int groupSize = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z);
+    int localOffset = int(gl_LocalInvocationIndex);
+
+    if (localOffset == 0) {
+        sharedLightIndicesCount = 0;
+    }
+
+    barrier();
+
+    int groupOffset = GetLightIndicesOffset();
+    int lightCount = min(lightCountPerTile, lightIndices[groupOffset]);
+
+    int lastIdx = 0;
+    for (int i = localOffset; i < lightCount; i += groupSize) {
+        uint lightIdx = lightIndices[groupOffset + i + 1];
+        uint lightType = floatBitsToUint(volumetricLights[lightIdx].color.a);
+        if (requestedLightType != lightType)
+            continue;
+
+        int idx = atomicAdd(sharedLightIndicesCount, 1);
+        if (idx < lightCountPerTile)
+            sharedLightIndices[idx] = lightIdx;
+    }
+
+    barrier();
+
+    if (localOffset == 0) {
+        sharedLightIndicesCount = min(lightCount, sharedLightIndicesCount);
+    }
+
+    barrier();
+
+    for (int i = localOffset; i < sharedLightIndicesCount; i += groupSize) {
+        int lightIdx = int(sharedLightIndices[i]);
+        VolumetricLight light = volumetricLights[lightIdx];
+        sharedLights[i] = light;
+
+        int shadowIdx = light.shadowIdx;
+        int mapIdx = -1;
+        if (shadowIdx >= 0) {
+            mapIdx = volumetricShadows[shadowIdx].mapIdx;
+            sharedShadowDistance[i] = volumetricShadows[shadowIdx].distance;
+        }
+        sharedShadowMapIdx[i] = mapIdx;
+
+        if (mapIdx < 0)
+            continue;
+
+        if (requestedLightType == POINT_LIGHT) {
+            sharedShadowMatrix[i] = mat4(transpose(volumetricShadows[shadowIdx].cascades[0].cascadeSpace));
+            vec4 projection2 = volumetricShadows[shadowIdx].cascades[1].cascadeSpace[2];
+            vec4 projection3 = volumetricShadows[shadowIdx].cascades[2].cascadeSpace[0];
+            sharedShadowProjection[i] = vec4(projection2.z, projection3.z, projection2.w, projection3.w);
+        }
+        else if (requestedLightType == SPOT_LIGHT) {
+            mat4 shadowMatrix;
+            shadowMatrix[0] = volumetricShadows[shadowIdx].cascades[0].cascadeSpace[0];
+            shadowMatrix[1] = volumetricShadows[shadowIdx].cascades[0].cascadeSpace[1];
+            shadowMatrix[2] = volumetricShadows[shadowIdx].cascades[0].cascadeSpace[2];
+            shadowMatrix[3] = volumetricShadows[shadowIdx].cascades[1].cascadeSpace[0];
+            sharedShadowMatrix[i] = shadowMatrix;
+
+            // Linearizes the shadow map depth: distance = b / (depth + a)
+            mat4 shadowRows = transpose(shadowMatrix);
+            float a = -dot(shadowRows[2].xyz, shadowRows[3].xyz) / dot(shadowRows[3].xyz, shadowRows[3].xyz);
+            float b = shadowRows[2].w + a * shadowRows[3].w;
+            sharedShadowProjection[i] = vec4(a, b, 0.0, 0.0);
+        }
+    }
+
+    barrier();
+
+}
+
+float GetShadowFactorDirectionalLight(int lightIdx, int shadowIdx, uint lightType, bool isMain, vec3 currentPosition) {
+
+    float dist = -currentPosition.z;
+
+    if (shadowIdx < 0)
+        return 1.0;
+
+    int mapIdx = volumetricShadows[shadowIdx].mapIdx;
+
+    if (dist > volumetricShadows[shadowIdx].distance || mapIdx < 0)
+        return 1.0;
+    
+    float shadowValue = 1.0;
+    
+
+        int cascadeIndex = 0;
+        cascadeIndex = dist >= volumetricShadows[shadowIdx].cascades[0].distance ? 1 : cascadeIndex;
+        cascadeIndex = dist >= volumetricShadows[shadowIdx].cascades[1].distance ? 2 : cascadeIndex;
+        cascadeIndex = dist >= volumetricShadows[shadowIdx].cascades[2].distance ? 3 : cascadeIndex;
+        cascadeIndex = dist >= volumetricShadows[shadowIdx].cascades[3].distance ? 4 : cascadeIndex;
+        cascadeIndex = dist >= volumetricShadows[shadowIdx].cascades[4].distance ? 5 : cascadeIndex;
+
+        cascadeIndex = min(volumetricShadows[shadowIdx].cascadeCount - 1, cascadeIndex);
+
+        mat3x4 cascadeMatrix = volumetricShadows[shadowIdx].cascades[max(cascadeIndex, 0)].cascadeSpace;
+
+        float positionLength = dist;
+        float positionRatio = positionLength / volumetricShadows[shadowIdx].distance;
+        vec3 shadowPosition = positionRatio <= 1.0 ? currentPosition : currentPosition / positionRatio;
+        vec4 cascadeSpace = mat4(transpose(cascadeMatrix)) * vec4(currentPosition, 1.0);
+        cascadeSpace.xyz /= cascadeSpace.w;
+
+        cascadeSpace.xy = cascadeSpace.xy * 0.5 + 0.5;
+
+        vec2 texelPosition = cascadeSpace.xy * vec2(textureSize(sampler2DArray(bindlessTextureArrays[nonuniformEXT(mapIdx)], shadowDepthSampler), 0).xy);
+        vec4 depths = textureGather(sampler2DArray(bindlessTextureArrays[nonuniformEXT(mapIdx)], shadowDepthSampler),
+            vec3(cascadeSpace.xy, cascadeIndex), 0);
+
+        // The cascades are orthographic, the depth is linear
+        float depthToDistance = 1.0 / length(cascadeMatrix[2].xyz);
+        shadowValue = GetSoftShadow(depths * depthToDistance, cascadeSpace.z * depthToDistance, texelPosition);
+
+        vec3 worldPosition = vec3(globalData.ivMatrix * vec4(currentPosition, 1.0));
+
+#ifdef CLOUD_SHADOWS
+        if (isMain) {
+            vec3 planetCenter = uniforms.planetCenterAndRadius.xyz;
+            float cloudInnerRadius = uniforms.planetCenterAndRadius.w;
+            float distToPlanetCenter = distance(worldPosition, planetCenter);
+            float cloudShadowValue = CalculateCloudShadow(currentPosition, uniforms.cloudShadow, cloudMap);
+            cloudShadowValue = distToPlanetCenter < cloudInnerRadius ? cloudShadowValue : 1.0;
+            shadowValue = min(shadowValue, cloudShadowValue);
+        }
+#endif
+
+    return min(shadowValue, 1.0);
+
+}
+
+float GetShadowFactorPunctualLight(int sharedIdx, uint lightType, vec3 currentPosition) {
+
+    float dist = -currentPosition.z;
+
+    int mapIdx = sharedShadowMapIdx[sharedIdx];
+    if (mapIdx < 0 || dist > sharedShadowDistance[sharedIdx])
+        return 1.0;
+    
+    float shadowValue = 1.0;
+    if (lightType == POINT_LIGHT) {
+        vec4 shadowCoords = sharedShadowMatrix[sharedIdx] * vec4(currentPosition, 1.0);
+        shadowCoords.y *= -1.0;
+        vec4 absPosition = abs(shadowCoords);
+        float depth = -max(absPosition.x, max(absPosition.y, absPosition.z));
+        vec4 projection = sharedShadowProjection[sharedIdx];
+        depth = (projection.x * depth + projection.y) / (projection.z * depth + projection.w);
+
+        shadowValue = clamp(texture(samplerCubeShadow(bindlessCubemaps[nonuniformEXT(mapIdx)], shadowSampler), 
+            vec4(shadowCoords.xyz , depth - 0.0001)), 0.0, 1.0);
+    }
+    else if (lightType == SPOT_LIGHT) {
+        vec4 cascadeSpace = sharedShadowMatrix[sharedIdx] * vec4(currentPosition, 1.0);
+        float receiverDistance = cascadeSpace.w;
+        cascadeSpace.xyz /= cascadeSpace.w;
+
+        cascadeSpace.xy = cascadeSpace.xy * 0.5 + 0.5;
+
+        vec2 texelPosition = cascadeSpace.xy * vec2(textureSize(sampler2DArray(bindlessTextureArrays[nonuniformEXT(mapIdx)], shadowDepthSampler), 0).xy);
+        vec4 depths = textureGather(sampler2DArray(bindlessTextureArrays[nonuniformEXT(mapIdx)], shadowDepthSampler),
+            vec3(cascadeSpace.xy, 0.0), 0);
+
+        vec4 projection = sharedShadowProjection[sharedIdx];
+        shadowValue = GetSoftShadow(projection.y / (depths + projection.x), receiverDistance, texelPosition);
+    }
+
+    return min(shadowValue, 1.0);
+
+}

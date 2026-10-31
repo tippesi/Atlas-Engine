@@ -28,6 +28,8 @@ namespace Atlas::Scene::Components {
         if (world->pauseSimulation)
             return;
         
+        UpdateCrouching();
+
         auto up = GetUp();
 
         // Don't want to stick to the ground while jumping
@@ -41,13 +43,15 @@ namespace Atlas::Scene::Components {
 
         if (IsOnGround()) {
             jumped = false;
+            airTime = 0.0f;
             newVelocity += groundVelocity;
-            if (jump) {
+            if (jumpRequest > 0.0f) {
                 newVelocity += up * jumpVelocity;
                 jumped = true;
+                jumpRequest = 0.0f;
             }
             if (allowInput && !slide)
-                newVelocity += inputVelocity;
+                newVelocity += FollowInput(groundVelocity, up, deltaTime);
 
             if (slide) {
                 // Get difference between ground velocity and actual velocty and dampen this over time
@@ -72,9 +76,17 @@ namespace Atlas::Scene::Components {
             // Add reduced input velocity such that jumping doesn't feel weird
             if (allowInput)
                 newVelocity += inputVelocity * 0.01f;
+            // Just walked off an edge: the jump still counts, the fall so far is cancelled
+            airTime += deltaTime;
+            if (jumpRequest > 0.0f && !jumped && airTime <= coyoteTime) {
+                newVelocity -= up * glm::dot(newVelocity, up);
+                newVelocity += up * jumpVelocity;
+                jumped = true;
+                jumpRequest = 0.0f;
+            }
         }
 
-        jump = false;
+        jumpRequest = glm::max(0.0f, jumpRequest - deltaTime);
 
         lastGravityAcceleration = up * world->GetGravity() * deltaTime;
         newVelocity += lastGravityAcceleration;
@@ -85,6 +97,49 @@ namespace Atlas::Scene::Components {
 
         Player::Update(deltaTime);
         
+    }
+
+    void PlayerComponent::UpdateCrouching() {
+
+        auto crouchRequested = crouch;
+        crouch = false;
+
+        auto& shape = creationSettings->shape;
+        if (crouchRequested == crouching || shape->type != Physics::ShapeType::Capsule || !shape->settings)
+            return;
+
+        if (crouchRequested) {
+            auto crouchShapeSettings = *static_cast<Physics::CapsuleShapeSettings*>(shape->settings.get());
+            crouchShapeSettings.height = glm::min(crouchHeight, crouchShapeSettings.height);
+            auto crouchShape = Physics::ShapesManager::CreateShape(crouchShapeSettings);
+            if (crouchShape->IsValid() && SetShape(crouchShape))
+                crouching = true;
+        }
+        else if (SetShape(shape)) {
+            crouching = false;
+        }
+
+    }
+
+    vec3 PlayerComponent::FollowInput(const vec3& groundVelocity, const vec3& up, float deltaTime) const {
+
+        // The horizontal velocity relative to the ground, as the character moved it (pushed or blocked)
+        auto current = GetLinearVelocity() - groundVelocity;
+        current -= up * glm::dot(current, up);
+
+        auto target = inputVelocity;
+        if (crouching && glm::length(target) > crouchVelocity)
+            target = glm::normalize(target) * crouchVelocity;
+
+        auto difference = target - current;
+        auto distance = glm::length(difference);
+        auto speedingUp = glm::dot(target, current) >= 0.0f && glm::dot(target, target) >= glm::dot(current, current);
+        auto rate = speedingUp ? acceleration : deceleration;
+        if (rate <= 0.0f || distance <= rate * deltaTime)
+            return target;
+
+        return current + difference / distance * rate * deltaTime;
+
     }
 
     void PlayerComponent::InsertIntoPhysicsWorld(const TransformComponent& transformComponent,

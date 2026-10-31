@@ -163,8 +163,8 @@ void main() {
 
     if (Uniforms.giDownsampled2x > 0 || Uniforms.reflectionDownsampled2x > 0) LoadGroupSharedData();
 
-    if (gl_GlobalInvocationID.x > imageSize(image).x ||
-        gl_GlobalInvocationID.y > imageSize(image).y)
+    if (gl_GlobalInvocationID.x >= imageSize(image).x ||
+        gl_GlobalInvocationID.y >= imageSize(image).y)
         return;
 
     ivec2 resolution = imageSize(image);

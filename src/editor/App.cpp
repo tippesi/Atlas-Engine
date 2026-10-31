@@ -190,18 +190,9 @@ namespace Atlas::Editor {
             keyboardHandler.Update(camera, deltaTime);
         }
 
-        if (activeSceneWindow->isPlaying) {
-            auto playerSubset = activeSceneWindow->scene->GetSubset<PlayerComponent>();
-            for (auto entity : playerSubset) {
-                auto camera = entity.TryGetComponent<CameraComponent>();
-                if (!camera)
-                    continue;
-
-                auto& player = entity.GetComponent<PlayerComponent>();
-
-                mouseHandler.Update(*camera, deltaTime);
-                keyboardHandler.Update(*camera, player, deltaTime);
-            }
+        if (activeSceneWindow->isPlaying && !activeSceneWindow->scene->paused) {
+            playerInput.mouseHandler.sensibility = activeSceneWindow->cameraRotationSpeed;
+            playerInput.Update(*activeSceneWindow->scene.Get(), deltaTime);
         }
 
         // Update all scenes after input was applied
@@ -223,8 +214,17 @@ namespace Atlas::Editor {
 
         graphicsDevice->WaitForPreviousFrameSubmission();
 
-        auto windowFlags = window.GetFlags();
-        if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+        auto waitForSceneUpdates = [&]() {
+
+            for (const auto& sceneWindow : sceneWindows) {
+                if (sceneWindow->scene.IsLoaded())
+                    sceneWindow->scene->WaitForAsyncWorkCompletion();
+            }
+
+        };
+
+        if (window.IsOccluded()) {
+            waitForSceneUpdates();
             return;
         }
 
@@ -387,6 +387,8 @@ namespace Atlas::Editor {
         UI::PopupPanels::Render();
         commandPalette.Render();
 
+        // Inactive viewports can still have scene jobs that enqueue GPU work
+        waitForSceneUpdates();
         ImGui::Render();
         Singletons::imguiWrapper->Render(true);
 
@@ -610,6 +612,9 @@ namespace Atlas::Editor {
         // Scene
         commandPalette.Register({ .category = "Scene", .name = "Play",
             .action = [this]() { GetActiveSceneWindow()->StartPlaying(); }, .isEnabled = canEdit });
+        commandPalette.Register({ .category = "Scene", .name = "Pause or resume playing",
+            .action = [this]() { GetActiveSceneWindow()->TogglePause(); },
+            .isEnabled = [this, hasScene]() { return hasScene() && GetActiveSceneWindow()->isPlaying; } });
         commandPalette.Register({ .category = "Scene", .name = "Stop playing", .shortcut = "Ctrl+Q",
             .action = [this]() { GetActiveSceneWindow()->StopPlaying(); },
             .isEnabled = [this, hasScene]() { return hasScene() && GetActiveSceneWindow()->isPlaying; } });

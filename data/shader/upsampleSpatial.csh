@@ -61,8 +61,8 @@ vec4 SampleCatmullRom(vec2 uv) {
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(textureOut).x ||
-        pixel.y > imageSize(textureOut).y)
+    if (pixel.x >= imageSize(textureOut).x ||
+        pixel.y >= imageSize(textureOut).y)
         return;
 
     vec2 uv = (vec2(pixel)) / vec2(imageSize(textureOut));

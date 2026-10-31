@@ -18,6 +18,7 @@ namespace Atlas::Editor {
         Prefab,
         Texture,
         EnvironmentTexture,
+        Animation,
         None
     };
 

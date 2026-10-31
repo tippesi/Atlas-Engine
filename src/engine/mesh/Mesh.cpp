@@ -52,6 +52,12 @@ namespace Atlas {
                 colorBuffer = Buffer::VertexBuffer(data.colors.GetFormat(), data.GetVertexCount(),
                     data.colors.GetConvertedVoid(), hostAccessible);
             }
+            if (data.IsSkinned()) {
+                jointBuffer = Buffer::VertexBuffer(data.joints.GetFormat(), data.GetVertexCount(),
+                    data.joints.GetConvertedVoid(), hostAccessible);
+                weightBuffer = Buffer::VertexBuffer(data.weights.GetFormat(), data.GetVertexCount(),
+                    data.weights.GetConvertedVoid(), hostAccessible);
+            }
 
             UpdateVertexArray();
 
@@ -81,6 +87,10 @@ namespace Atlas {
                 vertexArray.AddComponent(3, tangentBuffer);
             if (data.colors.ContainsData())
                 vertexArray.AddComponent(4, colorBuffer);
+            if (data.IsSkinned()) {
+                vertexArray.AddComponent(5, jointBuffer);
+                vertexArray.AddComponent(6, weightBuffer);
+            }
 
         }
 
@@ -103,11 +113,10 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             bool hardwareRayTracing = device->support.hardwareRayTracing;
-            bool bindless = device->support.bindless;
 
             AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
-            if (data.indexCount == 0 || !bindless || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
+            if (data.indexCount == 0 || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
 
             std::vector<RayTracing::BLAS::Triangle> triangles;
             data.BuildBVHData(triangles);
@@ -127,7 +136,15 @@ namespace Atlas {
                         });
                 }
 
-                blas->Build(triangles, data.materials, vertexBuffer, indexBuffer, geometryRegions);
+                if (data.IsSkinned()) {
+                    std::vector<vec3> restVertices;
+                    std::vector<vec4> restNormals;
+                    data.GetRestPoseVertices(restVertices, restNormals);
+                    restVertexBuffer = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, restVertices.size(), restVertices.data());
+                }
+
+                blas->Build(triangles, data.materials, data.IsSkinned() ? restVertexBuffer : vertexBuffer,
+                    indexBuffer, geometryRegions);
             }
             else {
                 blas->Build(triangles, data.materials);
@@ -143,11 +160,10 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             bool hardwareRayTracing = device->support.hardwareRayTracing;
-            bool bindless = device->support.bindless;
 
             AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
-            if (data.indexCount == 0 || !bindless) return;
+            if (data.indexCount == 0) return;
 
             data.gpuTriangles.clear();
             data.gpuTriangles.shrink_to_fit();

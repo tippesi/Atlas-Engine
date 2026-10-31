@@ -2,7 +2,7 @@
 
 #include "../System.h"
 
-#include <SDL_audio.h>
+#include <SDL3/SDL_audio.h>
 
 #include <string>
 #include <vector>

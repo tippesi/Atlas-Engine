@@ -20,6 +20,8 @@ namespace Atlas {
             float mieScatteringCoeff = 21e-6f;
             float rayleighHeightScale = 8.0e3f;
             float mieHeightScale = 1.2e3f;
+            // Angular diameter of the sun disk in degrees
+            float sunDiskSize = 0.535f;
             bool needsUpdate = true;
 
             Ref<EnvironmentProbe> probe;

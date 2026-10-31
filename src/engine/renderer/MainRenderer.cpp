@@ -4,7 +4,6 @@
 
 #include "../common/Packing.h"
 #include "../tools/PerformanceCounter.h"
-#include "../Clock.h"
 
 namespace Atlas {
 
@@ -46,6 +45,7 @@ namespace Atlas {
 			impostorShadowRenderer.Init(device);
 			terrainShadowRenderer.Init(device);
 			gBufferRenderer.Init(device);
+			hiZRenderer.Init(device);
 			ddgiRenderer.Init(device);
 			rtgiRenderer.Init(device);
 			ssgiRenderer.Init(device);
@@ -143,7 +143,6 @@ namespace Atlas {
 
 			// Wait as long as possible for this to finish
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
-			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
 			JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
 			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
 			if (renderState->textures.size())
@@ -162,6 +161,12 @@ namespace Atlas {
 			}
 
 			JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
+
+			// The main and directional shadow passes are culled together
+			JobSystem::WaitSpin(renderState->fillGPUShadowRenderPassesJob);
+			JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
+			renderState->gpuScene.Cull(renderState->renderList, scene->GetMainCamera().GetLocation(), commandList);
+			renderState->gpuScene.Bind(commandList);
 
 			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
 			// Better orders are: Shadow, DDGI, Main or. DDGI, Shadow, Main or DDGI Main, Shadow
@@ -204,12 +209,15 @@ namespace Atlas {
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
+			// Written separately from the culling, so the main pass doesn't wait for the ray tracing world update
+			if (scene->rayTracingWorld)
+				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, scene->GetMainCamera().GetLocation(),
+					commandList);
+
 			renderState->lightBuffer.Bind(commandList, 1, 18);
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 
 			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
-
-			oceanRenderer.RenderDepthOnly(target, scene, commandList);
 
 			auto targetData = target->GetData(FULL_RES);
 
@@ -222,54 +230,26 @@ namespace Atlas {
 			commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
 
 			if (!target->HasHistory()) {
-				auto rtHalfData = target->GetHistoryData(HALF_RES);
-				auto rtData = target->GetHistoryData(FULL_RES);
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-				Graphics::ImageBarrier imageBarriers[] = {
-					{rtData->baseColorTexture->image, layout, access},
-					{rtData->depthTexture->image, layout, access},
-					{rtData->normalTexture->image, layout, access},
-					{rtData->geometryNormalTexture->image, layout, access},
-					{rtData->roughnessMetallicAoTexture->image, layout, access},
-					{rtData->emissiveTexture->image, layout, access},
-					{rtData->offsetTexture->image, layout, access},
-					{rtData->materialIdxTexture->image, layout, access},
-					{rtData->stencilTexture->image, layout, access},
-					{rtData->velocityTexture->image, layout, access},
-					{rtHalfData->baseColorTexture->image, layout, access},
-					{rtHalfData->depthTexture->image, layout, access},
-					{rtHalfData->normalTexture->image, layout, access},
-					{rtHalfData->geometryNormalTexture->image, layout, access},
-					{rtHalfData->roughnessMetallicAoTexture->image, layout, access},
-					{rtHalfData->emissiveTexture->image, layout, access},
-					{rtHalfData->offsetTexture->image, layout, access},
-					{rtHalfData->materialIdxTexture->image, layout, access},
-					{rtHalfData->stencilTexture->image, layout, access},
-					{rtHalfData->velocityTexture->image, layout, access},
-					{target->exposureTexture.image, layout, access}
-				};
-				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				target->GetHistoryData(FULL_RES)->Transition(commandList, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				target->GetHistoryData(HALF_RES)->Transition(commandList, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				commandList->ImageMemoryBarrier(target->exposureTexture.image, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 			}
 
-			{
-				auto rtData = target->GetData(FULL_RES);
+			target->GetData(FULL_RES)->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
+			// The ocean depth pass reads the scene depth
+			oceanRenderer.RenderDepthOnly(target, scene, commandList);
+
+			{
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
 				Graphics::ImageBarrier imageBarriers[] = {
-					{rtData->baseColorTexture->image, layout, access},
-					{rtData->depthTexture->image, layout, access},
-					{rtData->normalTexture->image, layout, access},
-					{rtData->geometryNormalTexture->image, layout, access},
-					{rtData->roughnessMetallicAoTexture->image, layout, access},
-					{rtData->emissiveTexture->image, layout, access},
-					{rtData->offsetTexture->image, layout, access},
-					{rtData->materialIdxTexture->image, layout, access},
-					{rtData->stencilTexture->image, layout, access},
-					{rtData->velocityTexture->image, layout, access},
 					{target->oceanStencilTexture.image, layout, access},
+					{target->oceanNormalTexture.image, layout, access},
 					{target->oceanDepthTexture.image, layout, access}
 				};
 
@@ -302,6 +282,10 @@ namespace Atlas {
 				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
 			if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
+				if (scene->ssgi && scene->ssgi->enable) {
+					auto resolution = scene->ssgi->halfResolution ? HALF_RES : FULL_RES;
+					hiZRenderer.Generate(target->GetData(resolution), 4.0f, commandList);
+				}
 				ssgiRenderer.Render(target, scene, commandList);
 			}
 
@@ -314,6 +298,22 @@ namespace Atlas {
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 			commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+			auto reflection = scene->reflection;
+
+			// The reflections start on the ocean surface where it's visible, which isn't part of the G-buffer
+			auto reflectionEnabled = reflection && reflection->enable && (reflection->ssr || scene->IsRtDataValid());
+			auto oceanReflections = reflectionEnabled && scene->ocean && scene->ocean->enable;
+			target->SetSeparateReflectionData(oceanReflections);
+			if (oceanReflections) {
+				oceanRenderer.RenderReflectionData(target, scene, commandList);
+			}
+
+			if (reflection && reflection->enable && reflection->ssr) {
+				// Upscaled reflections trace from full resolution, surfaces have no thickness when ray tracing continues the rays
+				auto resolution = !reflection->halfResolution || reflection->upsampleBeforeFiltering ? FULL_RES : HALF_RES;
+				hiZRenderer.Generate(target->GetData(resolution), reflection->rt ? 0.0f : 1.0f, commandList);
+			}
 
 			rtrRenderer.Render(target, scene, commandList);
 
@@ -331,7 +331,7 @@ namespace Atlas {
 			// downscaleRenderer.Downscale(target, commandList);
 
 			{
-				commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+				commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBufferWithStencil);
 
 				textRenderer.Render(target, scene, commandList);
 
@@ -447,8 +447,8 @@ namespace Atlas {
 				.windDir = glm::normalize(scene->wind.direction),
 				.windSpeed = scene->wind.speed,
 				.planetRadius = scene->sky.planetRadius,
-				.time = Clock::Get(),
-				.deltaTime = Clock::GetDelta(),
+				.time = scene->GetTime(),
+				.deltaTime = scene->GetDeltaTime(),
 				.frameCount = frameCount,
 				.mipLodBias = -1.0f / target->GetScalingFactor(),
 				.cameraNearPlane = camera.nearPlane,
@@ -459,7 +459,13 @@ namespace Atlas {
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
-			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
+			JobSystem::WaitSpin(renderState->materialUpdateJob);
+
+			// Writes the hardware ray tracing instances and builds the acceleration structure
+			if (scene->rayTracingWorld) {
+				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
+				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, camera.GetLocation(), commandList);
+			}
 
 			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
@@ -915,9 +921,6 @@ namespace Atlas {
 
 		void MainRenderer::CreateGlobalDescriptorSetLayout() {
 
-			if (!device->support.bindless)
-				return;
-
 			auto samplerDesc = Graphics::SamplerDesc{
 				.filter = VK_FILTER_LINEAR,
 				.mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
@@ -951,19 +954,19 @@ namespace Atlas {
 				.bindings = {
 					{
 						.bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-						.descriptorCount = 16384, .bindless = true
+						.descriptorCount = BINDLESS_TEXTURE_COUNT, .bindless = true
 					}
 				},
 				.bindingCount = 4
@@ -999,8 +1002,8 @@ namespace Atlas {
 				.windDir = glm::normalize(scene->wind.direction),
 				.windSpeed = scene->wind.speed,
 				.planetRadius = scene->sky.planetRadius,
-				.time = Clock::Get(),
-				.deltaTime = Clock::GetDelta(),
+				.time = scene->GetTime(),
+				.deltaTime = scene->GetDeltaTime(),
 				.frameCount = frameCount,
 				.mipLodBias = mipBias ? log2f(target->GetScalingFactor()) - 1.0f : 0.0f,
 				.cameraNearPlane = camera.nearPlane,
@@ -1087,8 +1090,7 @@ namespace Atlas {
 				cloudShadowUniformBuffer->SetData(&cloudShadowUniform, 0, sizeof(CloudShadow));
 			}
 
-			auto meshes = scene->GetMeshes();
-			for (auto& mesh : meshes) {
+			for (auto& mesh : scene->renderState.meshes) {
 				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated) continue;
 
 				auto& impostor = mesh->impostor;

@@ -12,10 +12,16 @@ namespace Atlas::Editor::UI {
         Scene::Entity entity, MeshComponent &meshComponent) {
 
         bool resourceChanged = false;
-        meshComponent.mesh = meshSelectionPanel.Render(meshComponent.mesh, resourceChanged);
+        auto handle = meshSelectionPanel.Render(meshComponent.mesh, resourceChanged);
+        if (resourceChanged)
+            meshComponent.ChangeResource(handle);
 
-        ImGui::Checkbox("Visible", &meshComponent.visible);
-        ImGui::Checkbox("Don't cull", &meshComponent.dontCull);
+        auto visible = meshComponent.visible;
+        if (ImGui::Checkbox("Visible", &visible))
+            meshComponent.SetVisible(visible);
+        auto dontCull = meshComponent.dontCull;
+        if (ImGui::Checkbox("Don't cull", &dontCull))
+            meshComponent.SetDontCull(dontCull);
 
         if (meshComponent.mesh.IsLoaded()) {
             auto& mesh = meshComponent.mesh;

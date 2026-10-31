@@ -1,0 +1,49 @@
+// Surface detail which can only be evaluated in fragment shaders, used by the surface and the depth pass
+
+// Roughness of the waves which are too small for the simulation, the larger ones add their slope variance
+const float roughness = 0.07;
+// Only part of the unresolved slopes is turned into roughness, which keeps some of the sparkle of the sun reflection
+const float slopeVarianceScale = 0.25;
+
+void GetOceanGradientAndFold(vec2 texCoord, float dist, out float fold, out vec2 gradient,
+    out float jacobian, out float slopeVariance) {
+    
+    texCoord /= Uniforms.tiling;
+
+    vec4 tilingFactors = Uniforms.spectrumTilingFactors;
+    vec4 fadeoutDistances = Uniforms.spectrumFadeoutDistances;
+    
+    vec4 fade = saturate((fadeoutDistances - vec4(dist)) / fadeDistances);
+
+    // Each cascade contains a different band of waves, so they are added up
+    gradient = vec2(0.0);
+    jacobian = 1.0;
+    slopeVariance = 0.0;
+
+    for (int i = 0; i < Uniforms.spectrumCount; i++) {
+        vec3 coord = vec3(texCoord / tilingFactors[i] + vec2(0.25 * float(i)), float(i));
+        if (fade[i] > 0.0) {
+            vec4 data = texture(normalMap, coord);
+            gradient += fade[i] * data.rg;
+            jacobian -= fade[i] * data.a;
+            // Unresolved slopes roughen the surface, under magnification the filtering only adds grid artifacts
+            float mipLevel = textureQueryLod(normalMap, coord.xy).y;
+            float filteredVariance = max(0.0, data.b - dot(data.rg, data.rg)) * saturate(mipLevel);
+            slopeVariance += filteredVariance + (1.0 - sqr(fade[i])) * dot(data.rg, data.rg);
+        }
+        else {
+            // The smallest mip level is the average squared slope of the whole cascade
+            slopeVariance += textureLod(normalMap, coord, float(textureQueryLevels(normalMap) - 1)).b;
+        }
+    }
+
+    fold = saturate((Uniforms.foamOffset - jacobian) * Uniforms.foamScale);
+
+}
+
+float GetOceanAlpha(float slopeVariance) {
+
+    // The slope variance of a surface roughly is the squared alpha of its microfacet distribution
+    return sqrt(sqr(sqr(roughness)) + slopeVarianceScale * slopeVariance);
+
+}

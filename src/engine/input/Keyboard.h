@@ -43,6 +43,7 @@ namespace Atlas {
             bool jump = false;
             bool fast = false;
             bool slide = false;
+            bool crouch = false;
 
             int32_t eventHandle = -1;
 

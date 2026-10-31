@@ -122,6 +122,47 @@ namespace Atlas {
 
         }
 
+        void ASBuilder::UpdateBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList) {
+
+            auto device = GraphicsDevice::DefaultDevice;
+
+            size_t maxScratchSize = 0;
+            for (const auto& blas : blases) {
+                AE_ASSERT(blas->allowUpdate && blas->isBuilt && "Only built BLASes which allow updates can be updated");
+                maxScratchSize = std::max(maxScratchSize, size_t(blas->sizesInfo.updateScratchSize));
+            }
+
+            if (blases.empty())
+                return;
+
+            auto scratchBufferDesc = BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .domain = BufferDomain::Device,
+                .size = maxScratchSize,
+                .alignment = device->accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment
+            };
+            auto scratchBuffer = device->CreateBuffer(scratchBufferDesc);
+
+            VkDeviceAddress scratchAddress = scratchBuffer->GetDeviceAddress();
+
+            for (const auto& blas : blases) {
+                auto buildInfo = blas->buildGeometryInfo;
+                buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+                buildInfo.srcAccelerationStructure = blas->accelerationStructure;
+                buildInfo.dstAccelerationStructure = blas->accelerationStructure;
+                buildInfo.scratchData.deviceAddress = scratchAddress;
+
+                commandList->BuildBLAS(blas, buildInfo);
+
+                // All updates share the scratch buffer
+                commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+            }
+
+        }
+
         Buffer* ASBuilder::BuildTLAS(Ref<Atlas::Graphics::TLAS>& tlas,
             std::span<VkAccelerationStructureInstanceKHR> instances, CommandList* commandList) {
 
@@ -146,7 +187,29 @@ namespace Atlas {
             else
                 instanceBuffer->SetData(instances.data(), 0, desc.size);
 
-            tlas->Allocate(instanceBuffer->GetCurrent()->GetDeviceAddress(), uint32_t(instances.size()), false);
+            BuildTLAS(tlas, instanceBuffer->GetCurrent()->GetDeviceAddress(), instances.size(), commandList);
+
+            if (immediateSubmission) {
+                commandList->EndCommands();
+
+                device->SubmitCommandList(commandList);
+            }
+
+            return instanceBuffer->GetCurrent();
+
+        }
+
+        void ASBuilder::BuildTLAS(Ref<TLAS>& tlas, const Ref<Buffer>& instances, size_t instanceCount, CommandList* commandList) {
+
+            BuildTLAS(tlas, instances->GetDeviceAddress(), instanceCount, commandList);
+
+        }
+
+        void ASBuilder::BuildTLAS(Ref<TLAS>& tlas, VkDeviceAddress instanceAddress, size_t instanceCount, CommandList* commandList) {
+
+            auto device = GraphicsDevice::DefaultDevice;
+
+            tlas->Allocate(instanceAddress, uint32_t(instanceCount), false);
 
             commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
@@ -165,14 +228,6 @@ namespace Atlas {
             buildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
 
             commandList->BuildTLAS(tlas, buildInfo);
-
-            if (immediateSubmission) {
-                commandList->EndCommands();
-
-                device->SubmitCommandList(commandList);
-            }
-
-            return instanceBuffer->GetCurrent();
 
         }
 

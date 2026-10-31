@@ -609,19 +609,24 @@ void GetLocalProbeLightingFromCascade(vec3 P, vec3 V, vec3 N, vec3 L, vec3 geome
         vec3 irrCoord = GetProbeCoord(gridCell, cascadeIndex, irrOctCoord, irrRes, irrTexelSize, ddgiData.volumeIrradianceRes);
         irradiance.rgb = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * ddgiData.volumeGamma));
 
+#ifdef RADIANCE_VOLUME
         vec3 radCoord = GetProbeCoord(gridCell, cascadeIndex, radOctCoord, radRes, radTexelSize, ddgiData.volumeRadianceRes);
         radiance.rgb = pow(textureLod(radianceVolume, radCoord, 0).rgb, vec3(0.5 * ddgiData.volumeGamma));
+#endif
 
         float weightIgnoredState = weight;
         weight = probeState != PROBE_STATE_INACTIVE ? weight : 0.0;
 
         sumIrradiance += weight * irradiance.rgb;
-        sumRadiance += weight * radiance.rgb;
         sumWeight += weight;
 
         sumIrradianceIgnoredState += weightIgnoredState * irradiance.rgb;
-        sumRadianceIgnoredState += weightIgnoredState * radiance.rgb;
         sumWeightIgnoredState += weightIgnoredState;
+
+#ifdef RADIANCE_VOLUME
+        sumRadiance += weight * radiance.rgb;
+        sumRadianceIgnoredState += weightIgnoredState * radiance.rgb;
+#endif
     }
 
     if (sumWeight == 0.0 && sumWeightIgnoredState == 0.0) return;

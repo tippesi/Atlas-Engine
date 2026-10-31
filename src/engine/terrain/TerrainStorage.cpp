@@ -12,22 +12,7 @@ namespace Atlas {
             cells.resize(LoDCount);
             LoDSideLengths.resize(LoDCount);
 
-            baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
-                materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-            roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
-                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-            aoMaps = Atlas::Texture::Texture2DArray(materialResolution,
-                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-            normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
-                materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-            displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
-                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-
+            AllocateMaterialArrays();
             materials.resize(materialCount);
 
             for (int32_t i = 0; i < LoDCount; i++) {
@@ -76,6 +61,16 @@ namespace Atlas {
 
         void TerrainStorage::WriteMaterial(int32_t slot, ResourceHandle<Material> material) {
 
+            // A slot past the arrays: larger arrays and the materials written into them again
+            if (slot >= materialCount) {
+                materialCount = slot + 1;
+                materials.resize(materialCount);
+                AllocateMaterialArrays();
+                for (int32_t i = 0; i < materialCount; i++)
+                    if (i != slot && materials[i].IsLoaded())
+                        WriteMaterial(i, materials[i]);
+            }
+
             materials[slot] = material;
 
             if (material->HasBaseColorMap()) {
@@ -123,6 +118,26 @@ namespace Atlas {
         void TerrainStorage::RemoveMaterial(int32_t slot, ResourceHandle<Material> material) {
 
             materials[slot].Reset();
+
+        }
+
+        void TerrainStorage::AllocateMaterialArrays() {
+
+            baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            aoMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
 
         }
 

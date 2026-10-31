@@ -35,6 +35,9 @@
 
 #include <type_traits>
 #include <map>
+#include <functional>
+#include <mutex>
+#include <optional>
 
 namespace Atlas {
 
@@ -50,6 +53,22 @@ namespace Atlas {
             AllComponentsBit = (1 << 4) - 1
         } SceneQueryComponentBits;
 
+        // Seen from the entity: both entities of a contact get an event
+        struct ContactEvent {
+            Physics::ContactEventType type = Physics::ContactEventType::Begin;
+
+            Entity entity;
+            Entity otherEntity;
+
+            // Contact position and normal pointing from the entity to the other entity, both are zero for end events
+            vec3 position = vec3(0.0f);
+            vec3 normal = vec3(0.0f);
+
+            float impactSpeed = 0.0f;
+
+            bool isTrigger = false;
+        };
+
         class Scene : public SpacePartitioning {
 
             template<typename T>
@@ -59,12 +78,12 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5), renderState(this)
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 6), renderState(this)
                 { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
-            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
+            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 6),
                 name(name), renderState(this) { RegisterSubscribers(); }
-            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
+            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 6) 
                 : SpacePartitioning(this, min, max, depth), name(name), renderState(this) { RegisterSubscribers(); }
 
             ~Scene();
@@ -77,6 +96,7 @@ namespace Atlas {
             void DestroyEntity(Entity entity, bool removeRecursively = true, 
                 bool parentDeleted = false);
 
+            // The duplicate (with copies of all descendants) has the same parent as the entity
             Entity DuplicateEntity(Entity entity);
 
             size_t GetEntityCount() const;
@@ -84,6 +104,15 @@ namespace Atlas {
             Entity GetEntityByName(const std::string& name);
 
             Entity GetParentEntity(Entity entity);
+
+            // The entity whose hierarchy is marked as root, invalid if the scene has none
+            Entity GetRootEntity();
+
+            // World matrix of the transform, entities without one use the matrix of their hierarchy
+            mat4 GetGlobalMatrix(Entity entity);
+
+            // Union of the mesh bounds of the entity and its descendants, empty if none of them has a loaded mesh
+            std::optional<Volume::AABB> GetHierarchyBounds(Entity entity);
 
             template<typename... Comp>
             Subset<Comp...> GetSubset();
@@ -93,7 +122,19 @@ namespace Atlas {
 
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
-            void Update(float deltaTime);
+            // A valid mainCameraOverride is used as the main camera regardless of the isMain flags
+            void Update(float deltaTime, Entity mainCameraOverride = Entity());
+
+            /**
+             * Time in seconds that the scene was updated for. It stands still while the scene is paused,
+             * everything animated by the renderers (wind, clouds, water) uses it.
+             */
+            float GetTime() const { return time; }
+
+            /**
+             * Time step of the last update in seconds, 0 while the scene is paused.
+             */
+            float GetDeltaTime() const { return deltaTime; }
 
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
@@ -105,13 +146,43 @@ namespace Atlas {
 
             LightComponent& GetMainLight();
 
+            /**
+             * Plays audio at a location without an entity, heard from the main camera. The sound pauses
+             * with the scene and is removed once it played to its end.
+             */
+            Ref<Audio::AudioStream> PlayAudio(const ResourceHandle<Audio::AudioData>& data, vec3 location,
+                float volume = 1.0f, float falloffFactor = 0.5f, float falloffPower = 2.0f);
+
             bool HasMainLight() const;
 
-            Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
-                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
+            /**
+             * Casts a ray against the scene. Physics bodies are tested with their collision shapes, meshes with
+             * triangle precision. If bodies are queried, meshes covered by a mesh shape body are only hit
+             * through the physics world instead of being tested twice. Only mesh hits report a triangle
+             * index, query meshes without bodies to get the visible triangle. Entities for which ignore returns true are skipped.
+             */
+            Volume::RayResult<Entity> CastRay(Volume::Ray& ray,
+                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit,
+                const std::function<bool(const Entity&)>& ignore = nullptr);
 
             std::vector<Entity> QueryAABB(const Volume::AABB& aabb, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
+
+            /**
+             * Moves the shape from the matrix along the direction and returns the first physics body it hits.
+             * The hit distance is measured along the direction.
+             */
+            Volume::RayResult<Entity> CastShape(const Ref<Physics::Shape>& shape, const mat4& matrix, vec3 direction,
+                float distance, const std::function<bool(const Entity&)>& ignore = nullptr);
+
+            std::vector<Entity> CollideShape(const Ref<Physics::Shape>& shape, const mat4& matrix,
+                const std::function<bool(const Entity&)>& ignore = nullptr);
+
+            /**
+             * Contacts of physics bodies and players that began or ended in the last update. Scripts get them before
+             * their update through OnContactBegin, OnContactEnd, OnTriggerEnter and OnTriggerExit.
+             */
+            const std::vector<ContactEvent>& GetContactEvents() const { return contactEvents; }
 
             void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
@@ -121,9 +192,12 @@ namespace Atlas {
 
             void WaitForAsyncWorkCompletion();
 
+            // Meshes and terrain finished loading, resources that failed to load count as finished
             bool IsFullyLoaded();
 
             bool IsRtDataValid() const;
+
+            bool IsRtDataNeeded() const;
 
             void Clear();
 
@@ -136,7 +210,10 @@ namespace Atlas {
             static Ref<Scene> Restore(const std::vector<uint8_t>& serialized);
 
             std::string name;
-            
+
+            // Halts scripts, physics and players of a running simulation while keeping their state
+            bool paused = false;
+
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
@@ -156,6 +233,9 @@ namespace Atlas {
 
             SceneRenderState renderState;
             ECS::EntityManager entityManager = ECS::EntityManager(this);
+
+        protected:
+            void MarkEntityDirty(const Entity& entity);
 
         private:
             struct ThreadContext {
@@ -184,13 +264,29 @@ namespace Atlas {
 
             void FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
 
+            void CollectDirtyEntities();
+
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
+            struct PositionalAudio {
+                Ref<Audio::AudioStream> stream;
+                vec3 location;
+                float volume;
+                float falloffFactor;
+                float falloffPower;
+            };
+
+            std::vector<PositionalAudio> positionalAudios;
+            std::mutex positionalAudioMutex;
+
             Entity mainCameraEntity;
             Entity mainLightEntity;
-            float deltaTime = 1.0f;
+            float time = 0.0f;
+            float deltaTime = 0.0f;
+
+            std::vector<ContactEvent> contactEvents;
 
             bool firstTimestep = true;
             bool hasChanged = true;
@@ -199,6 +295,11 @@ namespace Atlas {
 
             std::vector<std::pair<ECS::Entity, int32_t>> changedTransformSet;
             std::vector<ECS::Entity> changedMeshSet;
+
+            std::mutex dirtyEntitiesMutex;
+            std::vector<ECS::Entity> dirtyEntities;
+            std::vector<ECS::Entity> frameDirtyEntities;
+            std::vector<ECS::Entity> lastFrameDirtyEntities;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 

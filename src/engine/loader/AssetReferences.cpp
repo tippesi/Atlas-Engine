@@ -19,6 +19,7 @@ namespace Atlas {
 
         static const std::vector<std::string> entityReferences = {
             "/mesh/resourcePath",
+            "/animation/resourcePath",
             "/text/resourcePath",
             "/script/resourcePath",
             "/audio/stream/resourcePath",

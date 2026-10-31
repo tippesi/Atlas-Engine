@@ -34,6 +34,8 @@ namespace Atlas::ImguiExtension {
             atmosphereChanged |= ImGui::DragFloat("Rayleigh height scale", &atmosphere->rayleighHeightScale, 100.0f, 0.0f, 10e10f);
             atmosphereChanged |= ImGui::DragFloat("Mie height scale", &atmosphere->mieHeightScale, 100.0f, 0.0f, 10e10f);
             atmosphere->needsUpdate |= atmosphereChanged;
+            ImGui::DragFloat("Sun disk size", &atmosphere->sunDiskSize, 0.01f, 0.01f, 20.0f, "%.2f deg");
+            ImGui::SetItemTooltip("Angular diameter of the sun, the real sun has about 0.53 degrees");
 
             atmosphere->rayleighScatteringCoeff /= 1e6f;
             atmosphere->mieScatteringCoeff /= 1e6f;

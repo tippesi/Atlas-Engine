@@ -18,7 +18,7 @@ namespace Atlas {
         }
 
         void VegetationRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+            std::unordered_map<void*, uint16_t>& materialMap) {
 
             struct alignas(16) PushConstants {
                 uint32_t invertUVs;

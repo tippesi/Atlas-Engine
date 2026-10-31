@@ -6,6 +6,7 @@
 #include "components/NameComponentPanel.h"
 #include "components/TransformComponentPanel.h"
 #include "components/MeshComponentPanel.h"
+#include "components/AnimationComponentPanel.h"
 #include "components/LightComponentPanel.h"
 #include "components/AudioComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
@@ -15,6 +16,7 @@
 #include "components/CameraComponentPanel.h"
 #include "components/TextComponentPanel.h"
 #include "components/SplineComponentPanel.h"
+#include "components/ConstraintComponentPanel.h"
 #include "components/HierarchyComponentPanel.h"
 
 #include "tools/CopyPasteHelper.h"
@@ -43,6 +45,7 @@ namespace Atlas::Editor::UI {
         NameComponentPanel nameComponentPanel;
         TransformComponentPanel transformComponentPanel;
         MeshComponentPanel meshComponentPanel;
+        AnimationComponentPanel animationComponentPanel;
         LightComponentPanel lightComponentPanel;
         AudioComponentPanel audioComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
@@ -52,6 +55,7 @@ namespace Atlas::Editor::UI {
         CameraComponentPanel cameraComponentPanel;
         TextComponentPanel textComponentPanel;
         SplineComponentPanel splineComponentPanel;
+        ConstraintComponentPanel constraintComponentPanel;
         HierarchyComponentPanel hierarchyComponentPanel;
 
     private:

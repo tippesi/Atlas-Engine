@@ -65,6 +65,9 @@ namespace Atlas {
                 uint32_t width, uint32_t height, uint32_t depth, uint32_t layerOffset = 0,
                 uint32_t layerCount = 1, MemoryTransferManager* transferManager = nullptr);
 
+            void SetData(const void* data, size_t dataSize, const std::vector<VkBufferImageCopy>& copyRegions,
+                MemoryTransferManager* transferManager = nullptr);
+
             void GenerateMipMaps(MemoryTransferManager* transferManager = nullptr);
 
             VkImageType GetImageType() const;
@@ -92,6 +95,8 @@ namespace Atlas {
 
             ImageDomain domain;
             ImageType type;
+
+            const uint64_t id;
 
         private:
             GraphicsDevice* device;

@@ -62,12 +62,19 @@ namespace Atlas::Editor::UI {
 
 		ImGui::DragFloat("Mass", &player.creationSettings->mass, 0.5f, 1.0f, 1000.0f);
 		ImGui::DragFloat("Max strength", &player.creationSettings->maxStrength, 0.5f, 1.0f, 1000.0f);
+		ImGui::Checkbox("Can push bodies", &player.creationSettings->canPushBodies);
 
 		ImGui::SeparatorText("Movement");
 
 		ImGui::DragFloat("Slow movement velocity", &player.slowVelocity, 0.1f, 0.0f, 100.0f);
 		ImGui::DragFloat("Fast movement velocity", &player.fastVelocity, 0.1f, 0.0f, 100.0f);
 		ImGui::DragFloat("Jump velocity", &player.jumpVelocity, 0.1f, 0.0f, 100.0f);
+		ImGui::DragFloat("Acceleration", &player.acceleration, 0.5f, 0.0f, 200.0f);
+		ImGui::DragFloat("Deceleration", &player.deceleration, 0.5f, 0.0f, 200.0f);
+
+		ImGui::Separator();
+		ImGui::DragFloat("Crouch height", &player.crouchHeight, 0.01f, 0.0f, 10.0f);
+		ImGui::DragFloat("Crouch velocity", &player.crouchVelocity, 0.1f, 0.0f, 100.0f);
 
 		ImGui::Separator();
 		ImGui::DragFloat("Stick to ground distance", &player.stickToGroundDistance, 0.01f, 0.0f, 10.0f);

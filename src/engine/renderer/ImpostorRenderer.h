@@ -16,7 +16,7 @@ namespace Atlas {
 
             void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
                 Graphics::CommandList* commandList, RenderList* renderList,
-                std::unordered_map<void*, uint16_t> materialMap);
+                std::unordered_map<void*, uint16_t>& materialMap);
 
             void Generate(const std::vector<mat4>& viewMatrices,
                 mat4 projectionMatrix, float distToCenter, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
@@ -25,7 +25,7 @@ namespace Atlas {
             Ref<Graphics::FrameBuffer> GenerateFrameBuffer(Mesh::Impostor* impostor);
 
             PipelineConfig GetPipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
-                bool interpolation, bool pixelDepthOffset);
+                bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer);
 
             PipelineConfig GetPipelineConfigForSubData(const Mesh::MeshSubData* subData,
                 Mesh::Mesh* mesh, const Ref<Graphics::FrameBuffer>& frameBuffer);

@@ -75,6 +75,8 @@ namespace Atlas {
 
             PipelineConfig GetPipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer, bool threeDimensional = false);
 
+            void ReserveInstances(int32_t characterCount);
+
             Buffer::Buffer instanceBuffer;
 
             Ref<Graphics::RenderPass> renderPass;

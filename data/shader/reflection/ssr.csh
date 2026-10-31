@@ -17,7 +17,6 @@
 #include <../brdf/surface.hsh>
 
 #include <../ddgi/ddgi.hsh>
-#include <../shadow.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
@@ -28,12 +27,14 @@ layout(set = 3, binding = 2) uniform sampler2D depthTexture;
 layout(set = 3, binding = 3) uniform sampler2D roughnessMetallicAoTexture;
 layout(set = 3, binding = 4) uniform isampler2D offsetTexture;
 layout(set = 3, binding = 5) uniform usampler2D materialIdxTexture;
-layout(set = 3, binding = 6) uniform sampler2DArrayShadow cascadeMaps;
 
 layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
 
 layout(set = 3, binding = 9) uniform sampler2D lightingTexture;
+layout(set = 3, binding = 12) uniform sampler2D hiZTexture;
+// Depth at the resolution of the hierarchical depth buffer, which is the one of the rays
+layout(set = 3, binding = 13) uniform sampler2D hiZDepthTexture;
 #ifdef AUTO_EXPOSURE
 layout(set = 3, binding = 11) uniform sampler2D exposureTexture;
 #endif
@@ -59,8 +60,7 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     int halfRes;
     ivec2 resolution;
     uint frameCount;
-    int padding1;
-    Shadow shadow;
+    int hiZLevelCount;
 } uniforms;
 
 vec4 SampleCatmullRom(vec2 uv) {
@@ -117,7 +117,6 @@ vec4 SampleCatmullRom(vec2 uv) {
 }
 
 shared int maxSteps;
-shared int stepSize;
 
 void main() {
 
@@ -125,7 +124,6 @@ void main() {
 
     if (gl_LocalInvocationIndex == 0u) {
         maxSteps = 0;
-        stepSize = 0;
     }
 
     barrier();
@@ -169,12 +167,10 @@ void main() {
         material.roughness *= material.roughnessMap || material.terrain ? roughness : 1.0;
 
         if (material.roughness < 0.1) {
-            atomicMax(maxSteps, 128);
-            atomicMax(stepSize, 8);
+            atomicMax(maxSteps, 64);
         }
         else {
-            atomicMax(maxSteps, 64);
-            atomicMax(stepSize, 16);
+            atomicMax(maxSteps, 32);
         }
 
         barrier();
@@ -232,19 +228,14 @@ void main() {
 
                     vec2 hitPixel;
                     vec3 hitPoint;
-#ifdef UPSCALE
-                    float jitter = GetInterleavedGradientNoise(vec2(highResPixel), 32u) / float(sampleCount) + i / float(sampleCount);
-#else
-                    float jitter = GetInterleavedGradientNoise(vec2(highResPixel), 32u) / float(sampleCount) + i / float(sampleCount);
-#endif
 #ifdef RT
                     bool stopBehindGeometry = true;
 #else
                     bool stopBehindGeometry = false;
 #endif
-                    if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 1.0, stepSize, 0.9, maxSteps, 
-                        rayLength, false, stopBehindGeometry, hitPixel, hitPoint)) {
-                        vec2 hitTexCoord = vec2(hitPixel + 0.5) / vec2(textureSize(lightingTexture, 0));
+                    if (traceScreenSpaceHiZ(viewRayOrigin, viewDir, hiZTexture, uniforms.hiZLevelCount, vec2(textureSize(hiZDepthTexture, 0)),
+                        maxSteps, rayLength, stopBehindGeometry, hitPixel, hitPoint)) {
+                        vec2 hitTexCoord = vec2(hitPixel + 0.5) / vec2(textureSize(hiZDepthTexture, 0));
 
                         //radiance = SampleCatmullRom(hitTexCoord).rgb;
                         radiance = textureLod(lightingTexture, hitTexCoord, 0.0).rgb;

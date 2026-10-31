@@ -178,12 +178,12 @@ namespace Atlas::Editor::UI {
                     target.valid = true;
                 }
 
-                activeSceneWindow->viewportPanel.primitiveBatchWrapper.RenderLineSphere(hitPosition,
-                    brushRadius, vec3(1.0f), true);
+                activeSceneWindow->viewportPanel.primitiveBatchWrapper.GetBatch(true)->AddLineSphere(hitPosition,
+                    brushRadius, vec3(1.0f));
             }
             else if (rayCastResult.valid && !rayCastResult.IsNormalValid()) {
-                activeSceneWindow->viewportPanel.primitiveBatchWrapper.RenderLineSphere(hitPosition,
-                    brushRadius, vec3(1.0f, 0.0f, 0.0f), true);
+                activeSceneWindow->viewportPanel.primitiveBatchWrapper.GetBatch(true)->AddLineSphere(hitPosition,
+                    brushRadius, vec3(1.0f, 0.0f, 0.0f));
             }
         }
 
@@ -213,9 +213,6 @@ namespace Atlas::Editor::UI {
         brushLastApplied = Clock::Get();
 
         auto scene = brushEntity.GetScene();
-
-        if (!parentEntity.HasComponent<HierarchyComponent>())
-            parentEntity.AddComponent<HierarchyComponent>();
 
         auto decomposition = brushEntity.GetComponent<TransformComponent>().Decompose();
 
@@ -256,15 +253,10 @@ namespace Atlas::Editor::UI {
             matrix = glm::scale(matrix, decomposition.scale);
 
             auto entity = scene->DuplicateEntity(brushEntity);
+            entity.SetParent(parentEntity);
 
-            auto& transformComponent = entity.GetComponent<TransformComponent>();
-            transformComponent.Set(matrix);
-
-            parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
-
-            // Ray cast result is in global space, so need to bring transform to valid local one
-            transformComponent.globalMatrix = matrix;
-            transformComponent.ReconstructLocalMatrix(parentEntity);
+            // Ray cast result is in global space
+            entity.GetComponent<TransformComponent>().SetGlobal(matrix, parentEntity);
         }
 
     }

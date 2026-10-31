@@ -20,9 +20,14 @@ namespace Atlas::Scene {
             explicit PlayerComponent(float mass, float maxStrength);
 			explicit PlayerComponent(const Physics::PlayerCreationSettings& playerCreationSettings);
 
-			void Jump() { jump = true; }
+			void Jump() { jumpRequest = jumpBuffer; }
 
 			void Slide() { slide = true; }
+
+			// Has to be called every update to stay crouched, standing up waits until there is enough space
+			void Crouch() { crouch = true; }
+
+			bool IsCrouching() const { return crouching; }
 
 			void SetInputVelocity(const vec3& velocity) { inputVelocity = velocity; }
 
@@ -32,10 +37,24 @@ namespace Atlas::Scene {
             float fastVelocity = 4.0f;
             float jumpVelocity = 4.0f;
 
+            // On the ground the velocity follows the input at these rates (m/s²): the acceleration speeds up along the
+            // current direction, the deceleration slows down and turns. Zero follows the input at once
+            float acceleration = 0.0f;
+            float deceleration = 0.0f;
+
+            // A jump pressed this long before landing happens on landing, one pressed this long after walking off an
+            // edge still happens (seconds)
+            float jumpBuffer = 0.15f;
+            float coyoteTime = 0.12f;
+
 			bool allowInput = true;
 			
 			float stickToGroundDistance = 0.1f;
             float walkStairStepUpDistance = 0.2f;
+
+			// Capsule height while crouching, the velocity is limited to the crouch velocity
+			float crouchHeight = 0.4f;
+			float crouchVelocity = 1.0f;
 
 			float slideDeacceleration = 4.0f;
 			float slideCutoffVelocity = 0.2f;
@@ -44,13 +63,20 @@ namespace Atlas::Scene {
 		private:
 			void Update(float deltaTime);
 
+			void UpdateCrouching();
+
+			vec3 FollowInput(const vec3& groundVelocity, const vec3& up, float deltaTime) const;
+
 			void InsertIntoPhysicsWorld(const TransformComponent& transformComponent,
 				Physics::PhysicsWorld* physicsWorld);
 
 			void RemoveFromPhysicsWorld();
 
-			bool jump = false;
+			float jumpRequest = 0.0f;
+			float airTime = 0.0f;
 			bool slide = false;
+			bool crouch = false;
+			bool crouching = false;
 			bool jumped = false;
 
 			vec3 inputVelocity = vec3(0.0f);

@@ -1,6 +1,7 @@
 #include "SceneRenderState.h"
 #include "Scene.h"
 #include "renderer/helper/CommonStructures.h"
+#include "graphics/Profiler.h"
 
 #include "common/ColorConverter.h"
 #include "common/Packing.h"
@@ -12,7 +13,7 @@
 // Also move rendering related map updates from the scene to here
 namespace Atlas::Scene {
 
-    SceneRenderState::SceneRenderState(Scene* scene) : scene(scene) {
+    SceneRenderState::SceneRenderState(Scene* scene) : scene(scene), gpuScene(scene) {
 
         materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
             Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit, sizeof(Renderer::PackedMaterial));
@@ -30,7 +31,7 @@ namespace Atlas::Scene {
         meshes = scene->GetMeshes();
 
         JobSystem::Execute(newFrameRenderListJob, [&](JobData&) {
-            renderList.NewFrame(scene);
+            renderList.NewFrame(scene, meshes);
 
             for (auto& pass : renderList.passes) {
                 pass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
@@ -59,13 +60,16 @@ namespace Atlas::Scene {
 
             if (!materials.empty()) {
                 materials.clear();
+                uniqueMaterials.clear();
                 materialMap.clear();
             }
 
-            for (auto material : sceneMaterials) {
+            for (const auto& material : sceneMaterials) {
                 // Might happen due to the scene giving back materials on a mesh basis
                 if (materialMap.contains(material.Get().get()))
                     continue;
+
+                uniqueMaterials.push_back(material.Get());
 
                 auto usage = material->usage.load();
 
@@ -114,7 +118,7 @@ namespace Atlas::Scene {
                 materialMap[material.Get().get()] = idx++;
             }
 
-            for (auto mesh : meshes) {
+            for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
                     continue;
 
@@ -162,23 +166,77 @@ namespace Atlas::Scene {
                 materialMap[impostor.Get().get()] = idx++;
             }
 
+            // The reflections start on the ocean surface, which is a perfect mirror for them
+            if (scene->ocean) {
+                Renderer::PackedMaterial packed;
+
+                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
+                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
+
+                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(0.0f, 1.0f));
+
+                vec4 data0, data1, data2;
+
+                data0.x = 1.0f;
+                data0.y = 0.0f;
+                data0.z = 0.0f;
+
+                data1.x = 1.0f;
+                data1.y = 0.0f;
+                data1.z = 0.0f;
+
+                // F0 of water is 0.02
+                data2.x = sqrtf(0.02f / 0.16f);
+                data2.y = 0.0f;
+                data2.z = 0.0f;
+
+                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
+                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
+                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
+
+                packed.features = 0;
+
+                materials.push_back(packed);
+
+                materialMap[scene->ocean.get()] = idx++;
+            }
+
             if (materials.size() > materialBuffer.GetElementCount()) {
                 materialBuffer.SetSize(materials.size());
             }
 
             if (!materials.empty())
                 materialBuffer.SetData(materials.data(), 0, materials.size());
+
+            UpdateTextureBindlessData();
             });
 
     }
 
-    void SceneRenderState::UpdateBlasBindlessData() {
+    void SceneRenderState::UpdateBlasBindlessData(bool rayTracing) {
+
+        // The material update reads the terrain leaf nodes
+        JobSystem::Wait(materialUpdateJob);
 
         terrainLeafNodes.clear();
         if (scene->terrain.IsLoaded()) {
             auto& leafNodes = scene->terrain->leafList;
             terrainLeafNodes.reserve(leafNodes.size());
             std::copy(leafNodes.begin(), leafNodes.end(), std::back_inserter(terrainLeafNodes));
+        }
+
+        JobSystem::Wait(bindlessBlasMapUpdateJob);
+        JobSystem::Wait(prepareBindlessBlasesJob);
+
+        // Nothing reads these buffers without any rt effects running
+        if (!rayTracing) {
+            blasToBindlessIdx.clear();
+            blasBuffers.clear();
+            triangleBuffers.clear();
+            bvhTriangleBuffers.clear();
+            triangleOffsetBuffers.clear();
+            return;
         }
 
         auto bindlessBlasBuffersUpdate = [&](JobData&) {
@@ -222,6 +280,13 @@ namespace Atlas::Scene {
                 blasToBindlessIdx[mesh->blas] = bufferIdx++;
             }
 
+            if (scene->rayTracingWorld) {
+                for (const auto& [entity, skinnedBlas] : scene->rayTracingWorld->skinnedBlases) {
+                    if (skinnedBlas.blas->IsBuilt())
+                        blasToBindlessIdx[skinnedBlas.blas] = bufferIdx++;
+                }
+            }
+
             for (const auto leafNode : terrainLeafNodes) {
                 auto leafCell = leafNode->cell;
                 if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
@@ -231,9 +296,6 @@ namespace Atlas::Scene {
             }
             };
 
-        JobSystem::Wait(bindlessBlasMapUpdateJob);
-        JobSystem::Wait(prepareBindlessBlasesJob);
-
         JobSystem::Execute(bindlessBlasMapUpdateJob, bindlessBlasMapUpdate);
         JobSystem::Execute(prepareBindlessBlasesJob, bindlessBlasBuffersUpdate);
 
@@ -241,64 +303,125 @@ namespace Atlas::Scene {
 
     void SceneRenderState::UpdateTextureBindlessData() {
 
-        auto bindlessTextureMapUpdate = [&](JobData&) {
-            textureToBindlessIdx.clear();
-            textures.clear();
+        if (textureSlots.empty())
+            CreateDefaultBindlessTextures();
 
-            std::set<Ref<Material>> materialSet;
-            std::set<Ref<Texture::Texture2D>> textureSet;
+        textureFrameCount++;
+        newTextureSlotCount = 0;
 
-            uint32_t textureIdx = 0;
-            for (const auto& mesh : meshes) {
-                if (!mesh.IsLoaded()) continue;
-
-                for (auto& material : mesh->data.materials)
-                    if (material.IsLoaded())
-                        materialSet.insert(material.Get());
-            }
-
-            for (const auto leafNode : terrainLeafNodes) {
-                auto leafCell = leafNode->cell;
-                if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
-                    continue;
-
-                textureSet.insert(leafCell->normalMap);
-
-                for (auto& material : leafCell->blas->materials)
-                    if (material.IsLoaded())
-                        materialSet.insert(material.Get());
-            }
-
-            for (const auto& material : materialSet) {
-                if (material->HasBaseColorMap())
-                    textureSet.insert(material->baseColorMap.Get());
-                if (material->HasOpacityMap())
-                    textureSet.insert(material->opacityMap.Get());
-                if (material->HasNormalMap())
-                    textureSet.insert(material->normalMap.Get());
-                if (material->HasRoughnessMap())
-                    textureSet.insert(material->roughnessMap.Get());
-                if (material->HasMetalnessMap())
-                    textureSet.insert(material->metalnessMap.Get());
-                if (material->HasAoMap())
-                    textureSet.insert(material->aoMap.Get());
-                if (material->HasDisplacementMap())
-                    textureSet.insert(material->displacementMap.Get());
-                if (material->HasEmissiveMap())
-                    textureSet.insert(material->emissiveMap.Get());
-            }
-
-            for (const auto& texture : textureSet) {
-
-                textureToBindlessIdx[texture] = textureIdx++;
-                textures.push_back(texture->image);
-
-            }
+        auto requestTexture = [&](const ResourceHandle<Texture::Texture2D>& texture, DefaultTextureSlot defaultSlot) {
+            return texture.IsLoaded() ? RequestBindlessTexture(texture.Get(), defaultSlot) : uint32_t(defaultSlot);
             };
 
-        JobSystem::Wait(bindlessTextureMapUpdateJob);
+        materialTextureIndices.resize(uniqueMaterials.size());
+        for (size_t i = 0; i < uniqueMaterials.size(); i++) {
+            const auto& material = uniqueMaterials[i];
+            auto& indices = materialTextureIndices[i];
 
-        JobSystem::Execute(bindlessTextureMapUpdateJob, bindlessTextureMapUpdate);
+            indices.baseColor = requestTexture(material->baseColorMap, DefaultTextureSlot::White);
+            indices.opacity = requestTexture(material->opacityMap, DefaultTextureSlot::White);
+            indices.normal = requestTexture(material->normalMap, DefaultTextureSlot::Normal);
+            indices.roughness = requestTexture(material->roughnessMap, DefaultTextureSlot::White);
+            indices.metalness = requestTexture(material->metalnessMap, DefaultTextureSlot::Black);
+            indices.ao = requestTexture(material->aoMap, DefaultTextureSlot::White);
+            indices.height = requestTexture(material->displacementMap, DefaultTextureSlot::Black);
+            indices.emissive = requestTexture(material->emissiveMap, DefaultTextureSlot::Black);
+        }
+
+        for (const auto leafNode : terrainLeafNodes) {
+            auto leafCell = leafNode->cell;
+            if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
+                continue;
+
+            if (leafCell->normalMap)
+                RequestBindlessTexture(leafCell->normalMap, DefaultTextureSlot::Normal);
+        }
+
+        EvictUnusedBindlessTextures();
+
+    }
+
+    uint32_t SceneRenderState::GetBindlessTextureIdx(const Ref<Texture::Texture2D>& texture) const {
+
+        auto it = textureToBindlessIdx.find(texture);
+        return it != textureToBindlessIdx.end() ? it->second : uint32_t(DefaultTextureSlot::White);
+
+    }
+
+    uint32_t SceneRenderState::RequestBindlessTexture(const Ref<Texture::Texture2D>& texture, DefaultTextureSlot defaultSlot) {
+
+        auto it = textureToBindlessIdx.find(texture);
+        if (it != textureToBindlessIdx.end()) {
+            auto slotIdx = it->second;
+            textureSlots[slotIdx].lastUsedFrame = textureFrameCount;
+            if (textures[slotIdx] != texture->image)
+                textures[slotIdx] = texture->image;
+            return slotIdx;
+        }
+
+        // Slots which can't be assigned this frame use a default until the next frames
+        if (newTextureSlotCount >= maxNewTextureSlotsPerFrame)
+            return uint32_t(defaultSlot);
+
+        uint32_t slotIdx;
+        if (!freeTextureSlots.empty()) {
+            slotIdx = freeTextureSlots.back();
+            freeTextureSlots.pop_back();
+        }
+        else if (textureSlots.size() < BINDLESS_TEXTURE_COUNT) {
+            slotIdx = uint32_t(textureSlots.size());
+            textureSlots.emplace_back();
+            textures.emplace_back();
+        }
+        else {
+            return uint32_t(defaultSlot);
+        }
+
+        textureSlots[slotIdx] = { texture, textureFrameCount };
+        textures[slotIdx] = texture->image;
+        textureToBindlessIdx[texture] = slotIdx;
+        newTextureSlotCount++;
+
+        return slotIdx;
+
+    }
+
+    void SceneRenderState::CreateDefaultBindlessTextures() {
+
+        std::vector<std::vector<uint8_t>> defaultData = {
+            { 255, 255, 255, 255 },
+            { 0, 0, 0, 255 },
+            { 128, 128, 255, 255 }
+        };
+
+        for (auto& data : defaultData) {
+            auto texture = CreateRef<Texture::Texture2D>(1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Nearest);
+            texture->SetData(data);
+
+            RequestBindlessTexture(texture, DefaultTextureSlot::White);
+        }
+
+    }
+
+    void SceneRenderState::EvictUnusedBindlessTextures() {
+
+        auto slotCount = uint32_t(textureSlots.size());
+        auto checkCount = std::min(slotCount, textureEvictionChecksPerFrame);
+
+        for (uint32_t i = 0; i < checkCount; i++) {
+            textureEvictionIdx = (textureEvictionIdx + 1) % slotCount;
+            auto& slot = textureSlots[textureEvictionIdx];
+
+            if (textureEvictionIdx < uint32_t(DefaultTextureSlot::Count) || !slot.texture ||
+                textureFrameCount - slot.lastUsedFrame < textureEvictionFrameCount)
+                continue;
+
+            textureToBindlessIdx.erase(slot.texture);
+            slot.texture.reset();
+            textures[textureEvictionIdx].reset();
+            freeTextureSlots.push_back(textureEvictionIdx);
+        }
 
     }
 
@@ -336,6 +459,35 @@ namespace Atlas::Scene {
 
     }
 
+    void SceneRenderState::UpdateGPUScene(const std::vector<ECS::Entity>& dirtyEntities,
+        const std::vector<ECS::Entity>& lastDirtyEntities) {
+
+        // The buffers are updated in the same job, everything which binds them waits for it
+        JobSystem::Execute(gpuSceneUpdateJob, [&](JobData&) {
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            // The upload buffers belong to the frame which is recorded next
+            device->WaitForPreviousFrameSubmission();
+            gpuScene.Update(dirtyEntities, lastDirtyEntities);
+
+            // The changes of this frame are lost, everything is uploaded again
+            if (!device->swapChain->isComplete) {
+                gpuScene.Invalidate();
+                return;
+            }
+
+            auto commandList = device->GetCommandList();
+            commandList->BeginCommands();
+            Graphics::Profiler::BeginThread("GPU scene", commandList);
+
+            gpuScene.UpdateBuffers(commandList);
+
+            Graphics::Profiler::EndThread();
+            commandList->EndCommands();
+            device->SubmitCommandList(commandList);
+            });
+
+    }
+
     void SceneRenderState::FillMainRenderPass() {
 
         if (!scene->HasMainCamera())
@@ -353,7 +505,9 @@ namespace Atlas::Scene {
                 mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
             }
 
-            scene->GetRenderList(camera.frustum, mainPass);
+            JobSystem::Wait(gpuSceneUpdateJob);
+            gpuScene.FillPass(camera.frustum, camera.GetLocation(), mainPass);
+            renderList.AddGPUCulledPass(mainPass);
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass, RenderList::RenderPassType::Main);
@@ -372,8 +526,15 @@ namespace Atlas::Scene {
         if (!light.shadow || !light.shadow->update)
             return;
 
-        JobSystem::Execute(fillShadowRenderPassesJob, [&, entity = entity](JobData&) {
+        // The cascades of directional lights cover most of the scene, other lights stay culled on the host.
+        // The renderer waits for the GPU culled passes separately.
+        auto gpuCulled = light.type == LightType::DirectionalLight;
+        auto jobGroup = gpuCulled ? &fillGPUShadowRenderPassesJob : &fillShadowRenderPassesJob;
+
+        JobSystem::Execute(*jobGroup, [&, entity = entity, gpuCulled, jobGroup](JobData&) {
             JobSystem::Wait(newFrameRenderListJob);
+            if (gpuCulled)
+                JobSystem::Wait(gpuSceneUpdateJob);
 
             auto& camera = scene->GetMainCamera();
             auto& shadow = light.shadow;
@@ -381,8 +542,8 @@ namespace Atlas::Scene {
             auto componentCount = shadow->longRange ?
                 shadow->viewCount - 1 : shadow->viewCount;
 
-            JobSystem::ExecuteMultiple(fillShadowRenderPassesJob, componentCount,
-                [&, shadow = shadow, entity = entity](JobData& data) {
+            JobSystem::ExecuteMultiple(*jobGroup, componentCount,
+                [&, shadow = shadow, entity = entity, gpuCulled](JobData& data) {
                     auto component = &shadow->views[data.idx];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
@@ -393,7 +554,13 @@ namespace Atlas::Scene {
                         shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
                     }
 
-                    scene->GetRenderList(frustum, shadowPass);
+                    if (gpuCulled) {
+                        gpuScene.FillPass(frustum, camera.GetLocation(), shadowPass);
+                        renderList.AddGPUCulledPass(shadowPass);
+                    }
+                    else {
+                        scene->GetRenderList(frustum, shadowPass);
+                    }
                     shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
                     shadowPass->FillBuffers();
                     renderList.FinishPass(shadowPass, RenderList::RenderPassType::Shadow);
@@ -617,13 +784,14 @@ namespace Atlas::Scene {
 
         JobSystem::Wait(newFrameRenderListJob);
         JobSystem::Wait(bindlessBlasMapUpdateJob);
-        JobSystem::Wait(bindlessTextureMapUpdateJob);
         JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
         JobSystem::Wait(materialUpdateJob);
         JobSystem::Wait(rayTracingWorldUpdateJob);
         JobSystem::Wait(prepareBindlessBlasesJob);
         JobSystem::Wait(fillMainRenderPassJob);
         JobSystem::Wait(fillShadowRenderPassesJob);
+        JobSystem::Wait(fillGPUShadowRenderPassesJob);
+        JobSystem::Wait(gpuSceneUpdateJob);
         JobSystem::Wait(cullAndSortLightsJob);
 
         if (!renderList.wasCleared)

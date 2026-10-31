@@ -35,12 +35,13 @@ namespace Atlas::Editor::UI {
             }
 
             if (entity.HasComponent<MeshComponent>()) {
-                // Create a copy here to be able to change the resource
-                auto comp = entity.GetComponent<MeshComponent>();
                 RenderComponentPanel("Mesh", scene,
-                    entity, meshComponentPanel, comp);
-                entity.RemoveComponent<MeshComponent>();
-                entity.AddComponent<MeshComponent>(comp);
+                    entity, meshComponentPanel, entity.GetComponent<MeshComponent>());
+            }
+
+            if (entity.HasComponent<AnimationComponent>()) {
+                RenderComponentPanel("Animation", scene, entity,
+                    animationComponentPanel, entity.GetComponent<AnimationComponent>());
             }
 
             if (entity.HasComponent<LightComponent>()) {
@@ -92,12 +93,28 @@ namespace Atlas::Editor::UI {
                 auto comp = entity.GetComponent<PlayerComponent>();
                 RenderComponentPanel("Player", scene,
                     entity, playerComponentPanel, comp);
-                // Only change if we have new settings
-                entity.RemoveComponent<PlayerComponent>();
-                auto& newComp = entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                // Recreating the player while playing would reset its state, e.g. crouching or touched triggers
+                if (scene->physicsWorld->pauseSimulation) {
+                    entity.RemoveComponent<PlayerComponent>();
+                    entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                }
+                auto& newComp = entity.GetComponent<PlayerComponent>();
                 newComp.slowVelocity = comp.slowVelocity;
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
+                newComp.acceleration = comp.acceleration;
+                newComp.deceleration = comp.deceleration;
+                newComp.allowInput = comp.allowInput;
+                newComp.stickToGroundDistance = comp.stickToGroundDistance;
+                newComp.walkStairStepUpDistance = comp.walkStairStepUpDistance;
+                newComp.crouchHeight = comp.crouchHeight;
+                newComp.crouchVelocity = comp.crouchVelocity;
+            }
+
+            if (entity.HasComponent<ConstraintComponent>()) {
+                auto& comp = entity.GetComponent<ConstraintComponent>();
+                RenderComponentPanel("Constraint", scene,
+                    entity, constraintComponentPanel, comp);
             }
 
             if (entity.HasComponent<SplineComponent>()) {
@@ -141,6 +158,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
                 if (!entity.HasComponent<MeshComponent>() && matches("Mesh") && ImGui::MenuItem("Mesh"))
                     entity.AddComponent<MeshComponent>();
+                if (!entity.HasComponent<AnimationComponent>() && matches("Animation") && ImGui::MenuItem("Animation"))
+                    entity.AddComponent<AnimationComponent>();
                 if (!entity.HasComponent<LightComponent>() && matches("Light") && ImGui::MenuItem("Light"))
                     entity.AddComponent<LightComponent>(LightType::PointLight);
                 if (!entity.HasComponent<AudioComponent>() && matches("Audio") && ImGui::MenuItem("Audio"))
@@ -184,6 +203,10 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<RigidBodyComponent>(bodySettings);
                 }
 
+                if (entity.HasComponent<RigidBodyComponent>() &&
+                    !entity.HasComponent<ConstraintComponent>() && matches("Constraint") && ImGui::MenuItem("Constraint"))
+                    entity.AddComponent<ConstraintComponent>();
+
                 ImGui::EndPopup();
             }
 
@@ -199,6 +222,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<TransformComponent>();
                 if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Mesh"))
                     entity.RemoveComponent<MeshComponent>();
+                if (entity.HasComponent<AnimationComponent>() && ImGui::MenuItem("Animation"))
+                    entity.RemoveComponent<AnimationComponent>();
                 if (entity.HasComponent<LightComponent>() && ImGui::MenuItem("Light"))
                     entity.RemoveComponent<LightComponent>();
                 if (entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Audio"))
@@ -217,6 +242,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<PlayerComponent>();
                 if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Rigid body"))
                     entity.RemoveComponent<RigidBodyComponent>();
+                if (entity.HasComponent<ConstraintComponent>() && ImGui::MenuItem("Constraint"))
+                    entity.RemoveComponent<ConstraintComponent>();
 
                 ImGui::EndPopup();
             }
@@ -227,6 +254,7 @@ namespace Atlas::Editor::UI {
             if (ImGui::MenuItem("Paste")) {
                 if (HandleComponentPaste<TransformComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<MeshComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<AnimationComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<LightComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioVolumeComponent>(scene, entity)) {}
@@ -236,6 +264,7 @@ namespace Atlas::Editor::UI {
                 else if (HandleComponentPaste<SplineComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<PlayerComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<RigidBodyComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<ConstraintComponent>(scene, entity)) {}
                 else {
                     Notifications::Push({"Invalid type to paste as a component."});
                 }

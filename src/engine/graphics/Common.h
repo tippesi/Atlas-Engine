@@ -24,6 +24,12 @@
 #define MAX_COLOR_ATTACHMENTS 8
 #define MAX_VERTEX_BUFFER_BINDINGS 16
 
+// Has to match the counts in globals.hsh
+#define BINDLESS_TEXTURE_COUNT 16384u
+#define BINDLESS_CUBEMAP_COUNT 1024u
+#define BINDLESS_TEXTURE_ARRAY_COUNT 128u
+#define BINDLESS_BUFFER_COUNT 8192u
+
 #if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
 #define AE_LOG_STACKTRACE() { \
     Atlas::Log::Message("Stack trace:\n" + std::to_string(std::stacktrace::current())); \
@@ -34,7 +40,11 @@
 
 #define VK_CHECK(x) {                                                               \
     VkResult err = x;                                                               \
-    if (err)                                                                        \
+    if (err == VK_ERROR_DEVICE_LOST)                                                \
+    {                                                                               \
+        Atlas::Graphics::HandleDeviceLost();                                        \
+    }                                                                               \
+    else if (err)                                                                   \
     {                                                                               \
         Atlas::Log::Error("Detected Vulkan error: " +                               \
             Atlas::Graphics::VkResultToString(err));                                \
@@ -45,7 +55,11 @@
 
 #define VK_CHECK_MESSAGE(x,y) {                                                     \
     VkResult err = x;                                                               \
-    if (err)                                                                        \
+    if (err == VK_ERROR_DEVICE_LOST)                                                \
+    {                                                                               \
+        Atlas::Graphics::HandleDeviceLost();                                        \
+    }                                                                               \
+    else if (err)                                                                   \
     {                                                                               \
         Atlas::Log::Error("Detected Vulkan error: " +                               \
             Atlas::Graphics::VkResultToString(err));                                \
@@ -57,6 +71,9 @@
 namespace Atlas {
 
     namespace Graphics {
+
+        // Defined in GraphicsDevice.cpp
+        void HandleDeviceLost();
 
         inline std::string VkResultToString(VkResult result) {
             switch (result) {

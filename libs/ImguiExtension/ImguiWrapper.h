@@ -56,6 +56,7 @@ namespace Atlas::ImguiExtension {
         void UpdateMouseCursor();
 
         SDL_Cursor *mouseCursors[ImGuiMouseCursor_COUNT];
+        char *clipboardText = nullptr;
 
         int32_t windowID = 0;
         int32_t mouseMotionID = 0;

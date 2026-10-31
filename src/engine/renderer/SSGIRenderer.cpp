@@ -111,6 +111,8 @@ namespace Atlas {
 
             target->exposureTexture.Bind(commandList, 3, 13);
 
+            commandList->BindImage(downsampledRT->hiZTexture->image, downsampledRT->hiZTexture->sampler, 3, 14);
+
             Graphics::Profiler::BeginQuery("Main pass");
 
             {
@@ -138,6 +140,7 @@ namespace Atlas {
                     .rayCount = uint32_t(ssgi->rayCount),
                     .sampleCount = uint32_t(ssgi->sampleCount),
                     .downsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
+                    .hiZLevelCount = downsampledRT->hiZLevelCount,
                 };
                 ssUniformBuffer.SetData(&uniforms, 0);
 
@@ -192,28 +195,10 @@ namespace Atlas {
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-                // Need barriers for all four images
-                Graphics::ImageBarrier preImageBarriers[] = {
-                    {target->giTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->giLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->historyGiTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                    {target->historyGiLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT}
-                };
-                commandList->PipelineBarrier(preImageBarriers, {},
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                commandList->CopyImage(target->giTexture.image, target->historyGiTexture.image);
-                commandList->CopyImage(target->giLengthTexture.image, target->historyGiLengthTexture.image);
-
-                // Need barriers for all four images
-                Graphics::ImageBarrier postImageBarriers[] = {
-                    {target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->giLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyGiLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                };
-                commandList->PipelineBarrier(postImageBarriers, {},
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                // The new history length is the one written this frame, no copy needed
+                std::swap(target->giLengthTexture, target->historyGiLengthTexture);
+                commandList->ImageMemoryBarrier(target->historyGiLengthTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
                 
             }
 
@@ -231,12 +216,17 @@ namespace Atlas {
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
                 commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
 
+                // The temporal filter output in giTexture is the history of the next frame. The blur ping-pongs
+                // between the swap texture and the old history, which then holds the result. Swapping it with
+                // giTexture afterwards avoids copying the history.
                 for (int32_t i = 0; i < 3; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
 
+                    auto& sourceTexture = i == 0 ? target->giTexture : target->historyGiTexture;
+
                     Graphics::ImageBarrier preImageBarriers[] = {
-                        {target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {sourceTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {target->swapGiTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
                     commandList->PipelineBarrier(preImageBarriers, {});
@@ -245,7 +235,7 @@ namespace Atlas {
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                     commandList->BindImage(target->swapGiTexture.image, 3, 0);
-                    commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 1);
+                    commandList->BindImage(sourceTexture.image, sourceTexture.sampler, 3, 1);
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -254,18 +244,20 @@ namespace Atlas {
 
                     Graphics::ImageBarrier postImageBarriers[] = {
                         {target->swapGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                        {target->giTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                        {target->historyGiTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
                     commandList->PipelineBarrier(postImageBarriers, {});
 
                     commandList->BindPipeline(verticalBlurPipeline);
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
-                    commandList->BindImage(target->giTexture.image, 3, 0);
+                    commandList->BindImage(target->historyGiTexture.image, 3, 0);
                     commandList->BindImage(target->swapGiTexture.image, target->swapGiTexture.sampler, 3, 1);
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
                 }
+
+                std::swap(target->giTexture, target->historyGiTexture);
             }
 
             commandList->ImageMemoryBarrier(target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

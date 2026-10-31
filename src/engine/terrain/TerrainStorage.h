@@ -110,6 +110,8 @@ namespace Atlas {
             bool inEditing = false;
 
         private:
+            void AllocateMaterialArrays();
+
             void BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
                 Ref<Graphics::Image>& dstImage, int32_t slot);
 

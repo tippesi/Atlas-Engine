@@ -14,7 +14,7 @@ namespace Atlas {
             VegetationRenderer();
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
-                std::unordered_map<void*, uint16_t> materialMap);
+                std::unordered_map<void*, uint16_t>& materialMap);
 
             Helper::VegetationHelper helper;
 

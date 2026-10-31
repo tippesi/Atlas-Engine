@@ -17,10 +17,7 @@
 
 #if defined(AE_OS_ANDROID)
 
-#include <jni.h>
 #include <android/log.h>
-#include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
 
 #define AtlasLog(...) __android_log_print(ANDROID_LOG_INFO, "ATLAS_LOG", __VA_ARGS__)
 

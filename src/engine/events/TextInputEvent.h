@@ -19,7 +19,7 @@ namespace Atlas {
 
                 windowID = event.windowID;
 
-                char *text = event.text;
+                auto text = event.text;
 
                 while (*text != '\0') {
                     character.push_back(*text);

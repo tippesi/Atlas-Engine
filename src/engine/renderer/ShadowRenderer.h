@@ -41,6 +41,9 @@ namespace Atlas {
                 float windBendScale;
                 float windWiggleScale;
                 uint32_t textureID;
+                uint32_t jointOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
             };
 
             LightMap prevLightMap;
@@ -48,7 +51,8 @@ namespace Atlas {
 
             ImpostorShadowRenderer impostorRenderer;
 
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+            // Draws culled on the GPU have a draw command
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*>> subDatas;
 
 
         };

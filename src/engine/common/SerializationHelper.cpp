@@ -88,52 +88,49 @@ namespace glm {
         j.at("w").get_to(p.w);
     }
 
+    // Matrices are flat arrays of their columns, older files have an object per column ("j0", "j1", ...)
+    static void MatrixToJson(json& j, const float* values, int32_t count) {
+
+        j = json::array();
+        for (int32_t i = 0; i < count; i++)
+            j.push_back(values[i]);
+
+    }
+
+    static bool MatrixFromJson(const json& j, float* values, int32_t count) {
+
+        if (!j.is_array())
+            return false;
+        for (int32_t i = 0; i < count; i++)
+            values[i] = j[i].get<float>();
+        return true;
+
+    }
+
     void to_json(json &j, const mat3 &p) {
-        json j0, j1, j2;
-        to_json(j0, p[0]);
-        to_json(j1, p[1]);
-        to_json(j2, p[2]);
-        j = json{{"j0", j0},
-                 {"j1", j1},
-                 {"j2", j2}};
+        MatrixToJson(j, &p[0][0], 9);
     }
 
     void from_json(const json &j, mat3 &p) {
-        json j0, j1, j2;
-        j.at("j0").get_to(j0);
-        j.at("j1").get_to(j1);
-        j.at("j2").get_to(j2);
-
-        from_json(j0, p[0]);
-        from_json(j1, p[1]);
-        from_json(j2, p[2]);
+        if (MatrixFromJson(j, &p[0][0], 9))
+            return;
+        j.at("j0").get_to(p[0]);
+        j.at("j1").get_to(p[1]);
+        j.at("j2").get_to(p[2]);
     }
 
     void to_json(json &j, const mat4 &p) {
-        json j0, j1, j2, j3;
-        to_json(j0, p[0]);
-        to_json(j1, p[1]);
-        to_json(j2, p[2]);
-        to_json(j3, p[3]);
-        j = json{{"j0", j0},
-                 {"j1", j1},
-                 {"j2", j2},
-                 {"j3", j3}};
+        MatrixToJson(j, &p[0][0], 16);
     }
 
     void from_json(const json &j, mat4 &p) {
-        json j0, j1, j2, j3;
-        j.at("j0").get_to(j0);
-        j.at("j1").get_to(j1);
-        j.at("j2").get_to(j2);
-        j.at("j3").get_to(j3);
-
-        from_json(j0, p[0]);
-        from_json(j1, p[1]);
-        from_json(j2, p[2]);
-        from_json(j3, p[3]);
+        if (MatrixFromJson(j, &p[0][0], 16))
+            return;
+        j.at("j0").get_to(p[0]);
+        j.at("j1").get_to(p[1]);
+        j.at("j2").get_to(p[2]);
+        j.at("j3").get_to(p[3]);
     }
-
 }
 
 namespace Atlas::Volume {

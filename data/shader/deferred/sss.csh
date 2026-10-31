@@ -45,8 +45,8 @@ void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
     ivec2 resolution = imageSize(image);
 
-    if (pixel.x > resolution.x ||
-        pixel.y > resolution.y)
+    if (pixel.x >= resolution.x ||
+        pixel.y >= resolution.y)
         return;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;

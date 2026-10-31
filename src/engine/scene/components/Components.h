@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AnimationComponent.h"
 #include "AudioComponent.h"
 #include "AudioVolumeComponent.h"
 #include "CameraComponent.h"
@@ -11,6 +12,7 @@
 #include "ObjectComponent.h"
 #include "RigidBodyComponent.h"
 #include "PlayerComponent.h"
+#include "ConstraintComponent.h"
 #include "TextComponent.h"
 #include "ClutterComponent.h"
 #include "SplineComponent.h"

@@ -28,7 +28,7 @@ namespace Atlas {
                 
                 RenderOutlined3D(commandList, textComp.font.Get(), textComp.text, textComp.GetTransformedPosition(),
                     textComp.GetTransformedRotation(), textComp.halfSize, textComp.textColor, textComp.outlineColor,
-                    textComp.outlineFactor, textComp.textScale, target->afterLightingFrameBuffer);
+                    textComp.outlineFactor, textComp.textScale, target->afterLightingFrameBufferWithStencil);
 
             }
 
@@ -88,6 +88,7 @@ namespace Atlas {
             float height = float(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
 
             auto instances = CalculateCharacterInstances(font, text, &characterCount);
+            ReserveInstances(characterCount);
             instanceBuffer.SetData(instances.data(), frameCharacterCount, characterCount);
 
             PushConstants constants {
@@ -130,6 +131,7 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             auto instances = CalculateCharacterInstances3D(font, text, halfSize, scale, &characterCount);
+            ReserveInstances(characterCount);
             instanceBuffer.SetData(instances.data(), frameCharacterCount, characterCount);
 
             auto right = glm::mat3_cast(rotation) * glm::vec3(1.0f, 0.0f, 0.0f);
@@ -148,13 +150,23 @@ namespace Atlas {
                 .smoothness = font->smoothness
             };
 
-            commandList->PushConstants("constants", &constants);
-
             commandList->BindImage(font->glyphTexture.image, font->glyphTexture.sampler, 3, 0);
 
             commandList->BindBuffer(font->glyphBuffer.Get(), 3, 1);
             commandList->BindBuffer(instanceBuffer.GetMultiBuffer(), 3, 2);
 
+            // Without blending the outline of a character would cover its neighbours, so all outlines
+            // are drawn first and the characters on top of them
+            if (outlineScale > 0.0f) {
+                auto outlineConstants = constants;
+                outlineConstants.characterColor = outlineColor;
+                commandList->PushConstants("constants", &outlineConstants);
+                commandList->Draw(4, uint32_t(characterCount), 0, frameCharacterCount);
+
+                constants.outlineScale = 0.0f;
+            }
+
+            commandList->PushConstants("constants", &constants);
             commandList->Draw(4, uint32_t(characterCount), 0, frameCharacterCount);
 
             frameCharacterCount += characterCount;
@@ -164,6 +176,16 @@ namespace Atlas {
         void TextRenderer::Update() {
 
             frameCharacterCount = 0;
+
+        }
+
+        void TextRenderer::ReserveInstances(int32_t characterCount) {
+
+            // All texts of a frame share the buffer, writing past its end overwrites other GPU memory.
+            // Draws recorded earlier in the frame keep using the old buffer
+            auto requiredCount = size_t(frameCharacterCount) + size_t(characterCount);
+            if (requiredCount > instanceBuffer.GetElementCount())
+                instanceBuffer.SetSize(2 * requiredCount);
 
         }
 
@@ -196,7 +218,7 @@ namespace Atlas {
 
                 nextGlyph = font->GetGlyphUTF8(ctext);
 
-                xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
+                xOffset += glyph->advance + font->GetKerning(glyph->codepoint, nextGlyph->codepoint);
 
             }
 
@@ -242,7 +264,7 @@ namespace Atlas {
 
                 nextGlyph = font->GetGlyphUTF8(ctext);
 
-                xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
+                xOffset += glyph->advance + font->GetKerning(glyph->codepoint, nextGlyph->codepoint);
 
             }
 

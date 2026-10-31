@@ -61,6 +61,11 @@ namespace Atlas {
         void Update();
 
         /**
+         * Returns the exit code passed to Exit(), which main returns.
+         */
+        int32_t GetExitCode() const { return exitCode; }
+
+        /**
          * Needs to be implemented by the user.
          */
         const static EngineConfig engineConfig;
@@ -85,8 +90,9 @@ namespace Atlas {
 
         /**
          * Closes the application.
+         * @param exitCode The code the application returns, e.g. to report a failure to a calling process.
          */
-        void Exit();
+        void Exit(int32_t exitCode = 0);
 
         Graphics::GraphicsDevice* graphicsDevice = nullptr;
 
@@ -95,6 +101,9 @@ namespace Atlas {
         Ref<Renderer::MainRenderer> mainRenderer = nullptr;
 
         std::vector<Display> displays;
+
+    private:
+        int32_t exitCode = 0;
 
     };
 

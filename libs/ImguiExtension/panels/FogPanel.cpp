@@ -24,6 +24,19 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Raymarching", &fog->rayMarching);
         ImGui::Checkbox("Local lights", &fog->localLights);
         ImGui::DragInt("Raymarch step count", &fog->rayMarchStepCount, 1, 128);
+        ImGui::Checkbox("Froxels", &fog->froxels);
+        ImGui::DragInt("Froxel tile size", &fog->froxelTileSize, 1, 4, 32);
+        ImGui::DragInt("Froxel slice count", &fog->froxelSliceCount, 1, 16, 256);
+        ImGui::Checkbox("Froxel filter", &fog->froxelFilter);
+        // Temporary froxel debug options
+        ImGui::Checkbox("Froxel directional light jitter", &fog->froxelDirectionalJitter);
+        const char* jitterModes[] = { "R3 per frame", "R3 per froxel" };
+        ImGui::Combo("Froxel jitter mode", &fog->froxelJitterMode, jitterModes, IM_ARRAYSIZE(jitterModes));
+        ImGui::Checkbox("Froxel local light jitter", &fog->froxelLocalLightJitter);
+        ImGui::SliderInt("Froxel local light samples", &fog->froxelLocalLightSamples, 1, 16);
+        ImGui::SliderFloat("Froxel far distance (0 = camera far)", &fog->froxelFarDistance, 0.0f, 2000.0f);
+        ImGui::SliderFloat("Froxel distribution exponent", &fog->froxelDistributionExponent, 0.25f, 4.0f);
+        ImGui::SliderFloat("Froxel history weight", &fog->froxelHistoryWeight, 0.0f, 0.99f);
         ImGui::SliderFloat("Intensity", &fog->volumetricIntensity, 0.0f, 1.0f);
 
         ImGui::PopID();

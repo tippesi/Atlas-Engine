@@ -3,6 +3,8 @@
 #include "SceneSerializer.h"
 #include "components/Components.h"
 #include "components/LuaScriptComponent.h"
+#include "raytracing/RayTracingManager.h"
+#include "../audio/AudioManager.h"
 
 namespace Atlas {
 
@@ -51,6 +53,7 @@ namespace Atlas {
             auto newEntity = CreateEntity();
 
             DuplicateEntityComponents(entity, newEntity, nullptr);
+            newEntity.SetParent(GetParentEntity(entity));
 
             return newEntity;
 
@@ -88,14 +91,87 @@ namespace Atlas {
 
         }
 
-        void Scene::Update(float deltaTime) {
+        Entity Scene::GetRootEntity() {
 
-            this->deltaTime = deltaTime;
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
+            for (auto entity : hierarchySubset) {
+                if (hierarchySubset.Get(entity).root)
+                    return { entity, &entityManager };
+            }
+
+            return { ECS::EntityConfig::InvalidEntity, &entityManager };
+
+        }
+
+        mat4 Scene::GetGlobalMatrix(Entity entity) {
+
+            if (!entity.IsValid())
+                return mat4(1.0f);
+
+            if (auto transformComponent = entity.TryGetComponent<TransformComponent>())
+                return transformComponent->globalMatrix;
+
+            if (auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>())
+                return hierarchyComponent->globalMatrix;
+
+            return mat4(1.0f);
+
+        }
+
+        std::optional<Volume::AABB> Scene::GetHierarchyBounds(Entity entity) {
+
+            std::optional<Volume::AABB> bounds;
+
+            std::vector<Entity> entities = { entity };
+            while (!entities.empty()) {
+                auto current = entities.back();
+                entities.pop_back();
+
+                auto meshComponent = current.TryGetComponent<MeshComponent>();
+                if (meshComponent && meshComponent->mesh.IsLoaded()) {
+                    if (bounds)
+                        bounds->Grow(meshComponent->aabb);
+                    else
+                        bounds = meshComponent->aabb;
+                }
+
+                if (auto hierarchyComponent = current.TryGetComponent<HierarchyComponent>()) {
+                    const auto& children = hierarchyComponent->GetChildren();
+                    entities.insert(entities.end(), children.begin(), children.end());
+                }
+            }
+
+            return bounds;
+
+        }
+
+        void Scene::Update(float deltaTime, Entity mainCameraOverride) {
+
+            AE_ASSERT((!mainCameraOverride.IsValid() || mainCameraOverride.HasComponent<CameraComponent>()) &&
+                "Main camera override needs a camera component");
+
+            this->deltaTime = paused ? 0.0f : deltaTime;
+            time += this->deltaTime;
 
             WaitForAsyncWorkCompletion();
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
+
+            lastFrameDirtyEntities.swap(frameDirtyEntities);
+            frameDirtyEntities.clear();
+
+            // Motion vectors use the matrix of the last frame, SetGlobal before the update already stored it
+            {
+                auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+                JobGroup historyJobGroup{ "Transform history", JobPriority::High };
+                JobSystem::ParallelFor(historyJobGroup, int32_t(lastFrameDirtyEntities.size()), 64, [&](JobData&, int32_t idx) {
+                    auto transformComponent = transformComponentPool.TryGet(lastFrameDirtyEntities[idx]);
+                    if (transformComponent && !transformComponent->lastGlobalMatrixSet)
+                        transformComponent->lastGlobalMatrix = transformComponent->globalMatrix;
+                    });
+                JobSystem::Wait(historyJobGroup);
+            }
 
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
@@ -133,8 +209,45 @@ namespace Atlas {
 
                 if (ocean) {
                     JobSystem::Execute(terrainOceanJobGroup, [&](JobData&) {
-                        ocean->Update(mainCamera, deltaTime);
+                        ocean->Update(mainCamera, this->deltaTime);
                         });
+                }
+            }
+
+            auto rtDataNeeded = IsRtDataNeeded();
+            if (rtDataNeeded)
+                RayTracing::RayTracingManager::RequestMeshBVHs();
+
+            // Animations are updated before the transforms, such that entities attached to joints follow them
+            JobGroup animationJobGroup{ "Animation update", JobPriority::High };
+            auto& animationComponentPool = entityManager.GetPool<AnimationComponent>();
+            JobSystem::ParallelFor(animationJobGroup, int32_t(animationComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto entity = animationComponentPool[idx];
+                auto& animationComponent = animationComponentPool.GetByIndex(idx);
+                auto meshComponent = meshComponentPool.TryGet(entity);
+
+                if (!meshComponent || !meshComponent->mesh.IsLoaded() || !meshComponent->mesh->data.IsSkinned())
+                    return;
+
+                animationComponent.Update(meshComponent->mesh->data.skeleton, this->deltaTime);
+                });
+
+            JobSystem::Wait(animationJobGroup);
+
+            for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
+                auto hierarchyComponent = hierarchyComponentPool.TryGet(animationComponentPool[i]);
+                if (!hierarchyComponent)
+                    continue;
+
+                for (auto entity : hierarchyComponent->GetChildren()) {
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+                    if (!transformComponent || transformComponent->parentJoint < 0)
+                        continue;
+
+                    if (!transformComponent->changed)
+                        MarkEntityDirty(entity);
+                    transformComponent->changed = true;
+                    transformComponent->updated = false;
                 }
             }
 
@@ -144,11 +257,9 @@ namespace Atlas {
 
                 // Can only update after scripts were runxx
                 renderState.NewFrame();
-                if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
-                    renderState.UpdateBlasBindlessData();
-                    renderState.UpdateTextureBindlessData();
-                    renderState.UpdateOtherTextureBindlessData();
-                }
+                renderState.UpdateBlasBindlessData(rtDataNeeded);
+                renderState.UpdateOtherTextureBindlessData();
+                // Also updates the bindless textures of the materials
                 renderState.PrepareMaterials();
 
                 });
@@ -166,13 +277,13 @@ namespace Atlas {
                     continue;
 
                 glm::mat4 parentMatrix(1.0f);
+                auto& transformComponent = transformComponentPool.Get(entity);
                 auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
                 if (parentEntity.IsValid()) {
                     const auto& parentHierarchyComponent = hierarchyComponentPool.Get(parentEntity);
-                    parentMatrix = parentHierarchyComponent.globalMatrix;
+                    parentMatrix = parentHierarchyComponent.GetParentMatrix(transformComponent);
                 }
-                
-                auto& transformComponent = transformComponentPool.Get(entity);
+
                 transformComponent.Update(parentMatrix, true);
                 hierarchyComponent.Update(jobGroup, transformComponent, true,
                     transformComponentPool, hierarchyComponentPool, cameraComponentPool);
@@ -193,7 +304,7 @@ namespace Atlas {
                 auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
                 if (parentEntity.IsValid()) {
                     const auto& hierarchyComponent = hierarchyComponentPool.Get(parentEntity);
-                    parentMatrix = hierarchyComponent.globalMatrix;
+                    parentMatrix = hierarchyComponent.GetParentMatrix(transformComponent);
                 }
 
                 transformComponent.Update(parentMatrix, true);
@@ -204,32 +315,7 @@ namespace Atlas {
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
 
-                // This part (updating physics transforms) is required regardless of the simulation running
-                auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
-                for (auto entity : playerSubset) {
-                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
-
-                    // Might happen if there was no transform at the creation of rigid body component
-                    if (!playerComponent.IsValid()) {
-                        playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
-                    }
-
-                    // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && playerComponent.IsValid()) {
-                        auto& globalPlayerMatrix = transformComponent.globalMatrix;
-                        auto decomposition = Common::MatrixDecomposition(globalPlayerMatrix);
-                        // In theory we have to apply the rotation here as well
-                        playerComponent.SetPosition(decomposition.translation);
-                    }
-
-                    playerComponent.Update(deltaTime);
-
-                    auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
-                    if (hierarchyComponent) {
-                        hierarchyComponent->Update(transformComponent, true,
-                            transformComponentPool, hierarchyComponentPool, cameraComponentPool);
-                    }
-                }
+                auto simulate = !physicsWorld->pauseSimulation && !paused;
 
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
 
@@ -247,7 +333,7 @@ namespace Atlas {
                     // Kinematic bodies follow their transform through velocities, such that simulated bodies
                     // are pushed instead of penetrated. A teleport is still needed if no simulation step follows.
                     auto moveKinematic = rigidBodyComponent.layer == Physics::Layers::Kinematic &&
-                        !physicsWorld->pauseSimulation && deltaTime > 0.0f;
+                        simulate && deltaTime > 0.0f;
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
                     if (transformComponent.changed) {
@@ -262,10 +348,82 @@ namespace Atlas {
                     }
                 }
 
+                // Players move after kinematic bodies got their velocities, such that they move with platforms
+                auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
+                for (auto entity : playerSubset) {
+                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+
+                    // Might happen if there was no transform at the creation of rigid body component
+                    if (!playerComponent.IsValid()) {
+                        playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
+                        if (playerComponent.IsValid())
+                            playerComponent.SetUserData(entity);
+                    }
+
+                    // Apply update here (transform overwrite everything else in physics simulation for now)
+                    if (transformComponent.changed && playerComponent.IsValid()) {
+                        auto& globalPlayerMatrix = transformComponent.globalMatrix;
+                        auto decomposition = Common::MatrixDecomposition(globalPlayerMatrix);
+                        // In theory we have to apply the rotation here as well
+                        playerComponent.SetPosition(decomposition.translation);
+                    }
+
+                    if (simulate)
+                        playerComponent.Update(deltaTime);
+
+                    auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
+                    if (hierarchyComponent) {
+                        hierarchyComponent->Update(transformComponent, true,
+                            transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+                    }
+                }
+
+                // Constraints are only created while simulating, otherwise moving bodies in the editor would pull them along
+                auto constraintSubset = entityManager.GetSubset<ConstraintComponent, RigidBodyComponent>();
+                for (auto entity : constraintSubset) {
+                    const auto& [constraintComponent, rigidBodyComponent] = constraintSubset.Get(entity);
+
+                    // Destroying one of the bodies destroys the constraint as well
+                    if (!constraintComponent.IsValid()) {
+                        constraintComponent.ref = nullptr;
+                        constraintComponent.world = nullptr;
+                    }
+
+                    if (!simulate || constraintComponent.IsValid() || constraintComponent.broken || !rigidBodyComponent.IsValid())
+                        continue;
+
+                    Physics::BodyID otherBodyId;
+                    auto movable = rigidBodyComponent.layer == Physics::Layers::Movable;
+                    if (constraintComponent.connectedEntity != ECS::EntityConfig::InvalidEntity) {
+                        if (!entityManager.Valid(constraintComponent.connectedEntity))
+                            continue;
+                        auto otherRigidBodyComponent = entityManager.TryGet<RigidBodyComponent>(constraintComponent.connectedEntity);
+                        if (!otherRigidBodyComponent || !otherRigidBodyComponent->IsValid() ||
+                            constraintComponent.connectedEntity == entity)
+                            continue;
+                        otherBodyId = otherRigidBodyComponent->bodyId;
+                        movable |= otherRigidBodyComponent->layer == Physics::Layers::Movable;
+                    }
+
+                    if (movable)
+                        constraintComponent.InsertIntoPhysicsWorld(rigidBodyComponent.bodyId, otherBodyId, physicsWorld.get());
+                }
+
                 // This part only needs to be executed if the simulation is running
-                if (!physicsWorld->pauseSimulation) {
+                if (simulate) {
 
                     physicsWorld->Update(deltaTime);
+
+                    for (auto entity : constraintSubset) {
+                        const auto& [constraintComponent, rigidBodyComponent] = constraintSubset.Get(entity);
+
+                        auto breakForce = constraintComponent.creationSettings.breakForce;
+                        if (!constraintComponent.IsValid() || breakForce <= 0.0f || constraintComponent.GetForce() < breakForce)
+                            continue;
+
+                        constraintComponent.RemoveFromPhysicsWorld();
+                        constraintComponent.broken = true;
+                    }
 
                     for (auto entity : rigidBodySubset) {
                         const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
@@ -276,10 +434,14 @@ namespace Atlas {
                             rigidBodyComponent.layer == Physics::Layers::Kinematic)
                             continue;
 
+                        // Bodies at rest are marked dirty every frame as well, could be skipped if the body isn't active
+
                         // This happens if no change was triggered by the user, then we still need
                         // to update the last global matrix, since it might have changed due to physics simulation
-                        if (!transformComponent.changed)
+                        if (!transformComponent.changed) {
                             transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                            MarkEntityDirty(ToSceneEntity(entity));
+                        }
 
                         // Need to set changed to true such that the space partitioning is updated
                         transformComponent.changed = true;
@@ -300,8 +462,10 @@ namespace Atlas {
 
                         // This happens if no change was triggered by the user, then we still need
                         // to update the last global matrix, since it might have changed due to physics simulation
-                        if (!transformComponent.changed)
+                        if (!transformComponent.changed) {
                             transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                            MarkEntityDirty(ToSceneEntity(entity));
+                        }
 
                         // Need to set changed to true such that the space partitioning is updated
                         transformComponent.changed = true;
@@ -348,12 +512,30 @@ namespace Atlas {
                         }
                     }
                 }
+
+                contactEvents.clear();
+                for (const auto& event : physicsWorld->contactEvents) {
+                    ContactEvent contactEvent;
+                    contactEvent.type = event.type;
+                    contactEvent.entity = { event.userData, &entityManager };
+                    contactEvent.otherEntity = { event.otherUserData, &entityManager };
+                    contactEvent.position = event.position;
+                    contactEvent.normal = event.normal;
+                    contactEvent.impactSpeed = event.impactSpeed;
+                    contactEvent.isTrigger = event.isTrigger;
+                    contactEvents.push_back(contactEvent);
+
+                    std::swap(contactEvent.entity, contactEvent.otherEntity);
+                    contactEvent.normal = -contactEvent.normal;
+                    contactEvents.push_back(contactEvent);
+                }
+                physicsWorld->contactEvents.clear();
             }
 
             // Do camera update while we find changed meshes
             FindChangedMeshes([&]() {
                 // Don't do anything in parallel here, we don't expect to have many cameras
-                mainCameraEntity = Entity();
+                mainCameraEntity = mainCameraOverride;
                 auto cameraSubset = entityManager.GetSubset<CameraComponent>();
                 // Attempt to find a main camera
                 for (auto entity : cameraSubset) {
@@ -386,9 +568,44 @@ namespace Atlas {
 
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
+                meshComponent.resourceChanged = false;
             }
 
+            // Animated meshes change their bounds every frame
+            for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
+                auto entity = animationComponentPool[i];
+                const auto& animationComponent = animationComponentPool.GetByIndex(i);
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                auto transformComponent = transformComponentPool.TryGet(entity);
+
+                if (!meshComponent || !transformComponent || !meshComponent->inserted ||
+                    animationComponent.jointMatrices.empty())
+                    continue;
+
+                SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), *meshComponent);
+                meshComponent->aabb = animationComponent.aabb.Transform(transformComponent->globalMatrix);
+                SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), *meshComponent);
+            }
+
+            renderState.UpdateGPUScene(frameDirtyEntities, lastFrameDirtyEntities);
+
             renderState.FillMainRenderPass();
+
+            // The ray tracing update doesn't depend on the lights, start it before their update
+            auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
+            JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset, rtDataNeeded](JobData&) {
+                // Need to wait before updating graphic resources
+                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
+                // The ray tracing instances are written from the GPU scene
+                JobSystem::Wait(renderState.gpuSceneUpdateJob);
+                if (rayTracingWorld && rtDataNeeded) {
+                    rayTracingWorld->scene = this;
+                    // Don't update triangle lights for now (second argument)
+                    rayTracingWorld->Update(rayTracingSubset, false);
+                }
+                // The bindless blas data isn't updated without any rt effects running
+                rtDataValid = rtDataNeeded && rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+            });
 
             // Clear old state
             mainLightEntity = Entity();
@@ -417,26 +634,6 @@ namespace Atlas {
 
             JobSystem::Wait(lightJobGroup);
 
-            auto device = Graphics::GraphicsDevice::DefaultDevice;
-            if (device->support.bindless) {
-                auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
-                    // Check if any rt effects are running (pathtracing checked by rayTracingWorld->includeObjectHistory)
-                    auto rtUpdateNeeded = (irradianceVolume && irradianceVolume->enable) ||
-                        (reflection && reflection->enable && reflection->rt) ||
-                        (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
-                        (rtgi && rtgi->enable);
-                    // Need to wait before updating graphic resources
-                    Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
-                    if (rayTracingWorld && rtUpdateNeeded) {
-                        rayTracingWorld->scene = this;
-                        // Don't update triangle lights for now (second argument)
-                        rayTracingWorld->Update(rayTracingSubset, false);
-                    }
-                    rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-                });
-            }
-
             if (HasMainCamera()) {
                 auto& mainCamera = GetMainCamera();
 
@@ -453,6 +650,22 @@ namespace Atlas {
                         mainCamera.GetLastLocation(), mainCamera.right);
                     });
 
+                {
+                    std::lock_guard lock(positionalAudioMutex);
+                    auto listener = mainCamera.GetLocation();
+                    auto scenePaused = paused || (physicsWorld && physicsWorld->pauseSimulation);
+                    std::erase_if(positionalAudios, [](const PositionalAudio& audio) { return audio.stream->IsFinished(); });
+                    for (auto& audio : positionalAudios) {
+                        if (scenePaused) {
+                            audio.stream->Pause();
+                            continue;
+                        }
+                        audio.stream->Resume();
+                        audio.stream->Spatialize(audio.location, listener, mainCamera.right, audio.volume, audio.falloffFactor,
+                            audio.falloffPower, 0.001f);
+                    }
+                }
+
                 auto& audioVolumeComponentPool = entityManager.GetPool<AudioVolumeComponent>();
                 JobSystem::ParallelFor(jobGroup, int32_t(audioVolumeComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
                     auto entity = audioVolumeComponentPool[idx];
@@ -467,13 +680,22 @@ namespace Atlas {
             }
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
-                auto& transformComponent = transformComponentPool.GetByIndex(idx);
+            JobSystem::ParallelFor(jobGroup, int32_t(frameDirtyEntities.size()), 8, [&](JobData&, int32_t idx) {
+                auto entity = frameDirtyEntities[idx];
+                auto transformComponent = transformComponentPool.TryGet(entity);
+                if (!transformComponent)
+                    return;
 
-                if (transformComponent.updated) {
-                    transformComponent.changed = false;
-                    transformComponent.updated = false;
+                if (transformComponent->updated) {
+                    transformComponent->changed = false;
+                    transformComponent->updated = false;
                 }
+                transformComponent->lastGlobalMatrixSet = false;
+
+                // Entities which couldn't be updated, e.g. because their mesh isn't loaded yet, stay dirty
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                if (transformComponent->changed || (meshComponent && !meshComponent->inserted))
+                    MarkEntityDirty(ToSceneEntity(entity));
                 });
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
@@ -532,17 +754,9 @@ namespace Atlas {
 
             }
 
-            auto meshes = GetMeshes();
-            if (clutter) {
-                auto vegMeshes = clutter->GetMeshes();
-                meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
-            }
-
-            materials.reserve(materials.size() + meshes.size());
-
-            for (const auto& mesh : meshes) {
+            auto addMeshMaterials = [&](const ResourceHandle<Mesh::Mesh>& mesh) {
                 if (!mesh.IsLoaded())
-                    continue;
+                    return;
                 for (auto& material : mesh->data.materials) {
                     if (!material.IsLoaded())
                         continue;
@@ -550,6 +764,15 @@ namespace Atlas {
                     material->usage |= MaterialUsageBits::MeshBit;
                     materials.push_back(material);
                 }
+                };
+
+            // Iterate the registered meshes directly, copying all the mesh handles is expensive
+            for (const auto& [meshId, registeredMesh] : registeredMeshes)
+                addMeshMaterials(registeredMesh.resource);
+
+            if (clutter) {
+                for (const auto& mesh : clutter->GetMeshes())
+                    addMeshMaterials(mesh);
             }
 
             return materials;
@@ -568,6 +791,22 @@ namespace Atlas {
 
         }
 
+        Ref<Audio::AudioStream> Scene::PlayAudio(const ResourceHandle<Audio::AudioData>& data, vec3 location,
+            float volume, float falloffFactor, float falloffPower) {
+
+            // Silent until it is placed relative to the listener
+            auto stream = Audio::AudioManager::Play(data, 0.0f);
+            if (HasMainCamera()) {
+                auto& camera = GetMainCamera();
+                stream->Spatialize(location, camera.GetLocation(), camera.right, volume, falloffFactor, falloffPower, 0.001f);
+            }
+
+            std::lock_guard lock(positionalAudioMutex);
+            positionalAudios.push_back({ stream, location, volume, falloffFactor, falloffPower });
+            return stream;
+
+        }
+
         LightComponent& Scene::GetMainLight() {
 
             return mainLightEntity.GetComponent<LightComponent>();
@@ -580,55 +819,120 @@ namespace Atlas {
 
         }
 
-        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents) {
+        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents,
+            const std::function<bool(const Entity&)>& ignore) {
 
             Volume::RayResult<Entity> result;
             result.hitDistance = ray.tMax;
 
-            // Most accurate method if it works
+            auto isIgnored = [&](const Entity& entity) {
+                return ignore && entity.IsValid() && ignore(entity);
+            };
+
             if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
-                auto bodyResult = physicsWorld->CastRay(ray);
+                auto bodyResult = physicsWorld->CastRay(ray, [&](const Physics::Body& body) {
+                    return isIgnored({ body.GetUserData(), &entityManager });
+                });
 
                 if (bodyResult.valid) {
-                    auto userData = bodyResult.data.GetUserData();
-
                     result.valid = true;
                     result.hitDistance = bodyResult.hitDistance;
                     result.normal = bodyResult.normal;
-                    result.data = { userData, &entityManager };
+                    result.data = { bodyResult.data.GetUserData(), &entityManager };
                 }
             }
 
-            // This isn't really optimized, we could use hierarchical data structures
+            // Meshes with a mesh shape body of the same mesh were already hit exactly by the physics query above.
             if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
-                auto meshSubset = entityManager.GetSubset<MeshComponent>();
+                auto queriedBodies = physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit);
 
-                for (auto entity : meshSubset) {
-                    const auto& meshComp = meshSubset.Get(entity);
+                auto hasMeshBody = [&](ECS::Entity entity, const MeshComponent& meshComp) {
+                    auto rigidBodyComp = entityManager.TryGet<RigidBodyComponent>(entity);
+                    if (!rigidBodyComp || !rigidBodyComp->IsValid() || !rigidBodyComp->creationSettings)
+                        return false;
 
-                    auto dist = 0.0f;
-                    ray.tMax = result.hitDistance;
-                    if (ray.Intersects(meshComp.aabb, dist)) {
-                        auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
-                        // This means we already found a more accurate hit
-                        if (result.valid && entityManager.Contains<RigidBodyComponent>(entity))
-                            continue;
+                    const auto& shape = rigidBodyComp->creationSettings->shape;
+                    if (!shape || shape->type != Physics::ShapeType::Mesh || !shape->settings)
+                        return false;
 
-                        // Accept all hits greater equal if they were within the updated hit distance
-                        if (dist > 0.0f) {
-                            result.valid = true;
-                            result.data = { entity, &entityManager };
-                            result.hitDistance = dist;
-                            result.normal = vec3(0.0f);
-                        }
+                    auto meshSettings = static_cast<Physics::MeshShapeSettings*>(shape->settings.get());
+                    return meshSettings->mesh == meshComp.mesh;
+                };
 
-                        // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
-                        if (!result.valid) {
-                            result.valid = true;
-                            result.data = { entity, &entityManager };
-                            result.normal = vec3(0.0f);
+                // Candidates are the meshes in the octree nodes along the ray, Update inserts them with their bounds
+                std::vector<Entity> candidates;
+                auto octreeRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
+                renderableStaticEntityOctree.QueryRay(candidates, octreeRay);
+                renderableMovableEntityOctree.QueryRay(candidates, octreeRay);
+
+                // The bounds test comes first, most candidates are rejected by it
+                std::vector<Entity> hitCandidates;
+                for (auto sceneEntity : candidates) {
+                    auto meshCompPtr = entityManager.TryGet<MeshComponent>(sceneEntity);
+                    if (meshCompPtr && octreeRay.Intersects(meshCompPtr->aabb))
+                        hitCandidates.push_back(sceneEntity);
+                }
+
+                // The order in the octree depends on when meshes were (re)inserted, e.g. after loading. Hits at the
+                // same distance go to the first candidate, a fixed order keeps queries reproducible
+                auto entityLess = [](const Entity& a, const Entity& b) { return ECS::Entity(a) < ECS::Entity(b); };
+                auto entityEqual = [](const Entity& a, const Entity& b) { return ECS::Entity(a) == ECS::Entity(b); };
+                std::sort(hitCandidates.begin(), hitCandidates.end(), entityLess);
+                hitCandidates.erase(std::unique(hitCandidates.begin(), hitCandidates.end(), entityEqual), hitCandidates.end());
+
+                for (auto sceneEntity : hitCandidates) {
+                    const auto& meshComp = entityManager.Get<MeshComponent>(sceneEntity);
+                    // Closer hits of earlier candidates shorten the ray
+                    auto boxRay = Volume::Ray(ray.origin, ray.direction, ray.tMin, result.hitDistance);
+                    if (!boxRay.Intersects(meshComp.aabb))
+                        continue;
+
+                    auto transformCompPtr = entityManager.TryGet<TransformComponent>(sceneEntity);
+                    if (!transformCompPtr || !meshComp.mesh.IsLoaded() || (queriedBodies && hasMeshBody(sceneEntity, meshComp)))
+                        continue;
+
+                    const auto& transformComp = *transformCompPtr;
+
+                    if (isIgnored(sceneEntity))
+                        continue;
+
+                    auto& data = meshComp.mesh->data;
+                    auto& vertices = data.vertices.Get();
+                    auto& indices = data.indices.Get();
+                    if (vertices.empty() || indices.size() < 3)
+                        continue;
+
+                    // The ray parameter stays the same in local space as long as the direction isn't normalized
+                    auto inverseMatrix = glm::inverse(transformComp.globalMatrix);
+                    auto localRay = Volume::Ray(vec3(inverseMatrix * vec4(ray.origin, 1.0f)),
+                        vec3(inverseMatrix * vec4(ray.direction, 0.0f)), ray.tMin, result.hitDistance);
+
+                    int32_t hitTriangle = -1;
+                    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+                        auto t = 0.0f;
+                        if (localRay.IntersectsTriangle(vertices[indices[i]], vertices[indices[i + 1]],
+                            vertices[indices[i + 2]], t)) {
+                            localRay.tMax = t;
+                            hitTriangle = int32_t(i / 3);
                         }
                     }
+
+                    if (hitTriangle < 0)
+                        continue;
+
+                    const auto& v0 = vertices[indices[hitTriangle * 3]];
+                    const auto& v1 = vertices[indices[hitTriangle * 3 + 1]];
+                    const auto& v2 = vertices[indices[hitTriangle * 3 + 2]];
+                    auto normalMatrix = glm::transpose(glm::inverse(mat3(transformComp.globalMatrix)));
+                    auto normal = glm::normalize(normalMatrix * glm::cross(v1 - v0, v2 - v0));
+
+                    result.valid = true;
+                    result.data = sceneEntity;
+                    result.hitDistance = localRay.tMax;
+                    // Report the side the ray hit
+                    result.frontFace = glm::dot(normal, ray.direction) <= 0.0f;
+                    result.normal = result.frontFace ? normal : -normal;
+                    result.triangleIndex = hitTriangle;
                 }
             }
 
@@ -638,6 +942,9 @@ namespace Atlas {
                 for (auto entity : textSubset) {
                     const auto& textComp = textSubset.Get(entity);
 
+                    if (isIgnored({ entity, &entityManager }))
+                        continue;
+
                     auto dist = 0.0f;
                     ray.tMax = result.hitDistance;
                     if (ray.Intersects(textComp.GetRectangle(), dist)) {
@@ -646,6 +953,7 @@ namespace Atlas {
                         result.data = { entity, &entityManager };
                         result.hitDistance = dist;
                         result.normal = vec3(0.0f);
+                        result.triangleIndex = -1;
                     }
                 }
             }
@@ -662,11 +970,56 @@ namespace Atlas {
                         result.valid = true;
                         result.hitDistance = hitDistance;
                         result.normal = hitNormal;
+                        result.triangleIndex = -1;
                     }
                 }
             }
 
             return result;
+
+        }
+
+        Volume::RayResult<Entity> Scene::CastShape(const Ref<Physics::Shape>& shape, const mat4& matrix, vec3 direction,
+            float distance, const std::function<bool(const Entity&)>& ignore) {
+
+            Volume::RayResult<Entity> result;
+
+            if (!physicsWorld)
+                return result;
+
+            auto bodyResult = physicsWorld->CastShape(shape, matrix, direction, distance, [&](const Physics::Body& body) {
+                Entity entity(body.GetUserData(), &entityManager);
+                return ignore && entity.IsValid() && ignore(entity);
+                });
+
+            if (bodyResult.valid) {
+                result.valid = true;
+                result.hitDistance = bodyResult.hitDistance;
+                result.normal = bodyResult.normal;
+                result.data = { bodyResult.data.GetUserData(), &entityManager };
+            }
+
+            return result;
+
+        }
+
+        std::vector<Entity> Scene::CollideShape(const Ref<Physics::Shape>& shape, const mat4& matrix,
+            const std::function<bool(const Entity&)>& ignore) {
+
+            std::vector<Entity> entities;
+
+            if (!physicsWorld)
+                return entities;
+
+            auto bodies = physicsWorld->CollideShape(shape, matrix, [&](const Physics::Body& body) {
+                Entity entity(body.GetUserData(), &entityManager);
+                return ignore && entity.IsValid() && ignore(entity);
+                });
+
+            for (const auto& body : bodies)
+                entities.emplace_back(body.GetUserData(), &entityManager);
+
+            return entities;
 
         }
 
@@ -797,13 +1150,20 @@ namespace Atlas {
 
         bool Scene::IsFullyLoaded() {
 
+            auto isDone = [](const auto& handle) {
+                return handle.IsLoaded() || (handle.IsValid() && handle.GetResource()->errorOnLoad);
+            };
+
             bool loaded = true;
 
             auto meshes = GetMeshes();
 
             for (const auto& mesh : meshes) {
-                loaded &= mesh.IsLoaded();
+                loaded &= isDone(mesh);
             }
+
+            if (terrain.IsValid())
+                loaded &= isDone(terrain);
 
             return loaded;
 
@@ -815,10 +1175,25 @@ namespace Atlas {
 
         }
 
+        bool Scene::IsRtDataNeeded() const {
+
+            // Path tracing is checked by rayTracingWorld->includeObjectHistory
+            return (irradianceVolume && irradianceVolume->enable) ||
+                (reflection && reflection->enable && reflection->rt) ||
+                (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
+                (rtgi && rtgi->enable);
+
+        }
+
         void Scene::Clear() {
 
             ClearRTStructures();
             entityManager.Clear();
+
+            dirtyEntities.clear();
+            frameDirtyEntities.clear();
+            lastFrameDirtyEntities.clear();
+            renderState.gpuScene.Invalidate();
 
             CleanupUnusedResources();
 
@@ -853,15 +1228,30 @@ namespace Atlas {
 
         void Scene::RegisterSubscribers() {
 
+            // New transforms and meshes need to be inserted into the space partitioning
+            entityManager.SubscribeToTopic<TransformComponent>(ECS::Topic::ComponentEmplace,
+                [this](const ECS::Entity entity, TransformComponent& transformComponent) {
+                    transformComponent.changed = true;
+                    MarkEntityDirty(ToSceneEntity(entity));
+                });
+
+            // The ray tracing instances of the entity need to be refreshed
+            entityManager.SubscribeToTopic<TransformComponent>(ECS::Topic::ComponentErase,
+                [this](const ECS::Entity entity, TransformComponent&) {
+                    MarkEntityDirty(ToSceneEntity(entity));
+                });
+
             // Each resource type needs to count references
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentEmplace,
                 [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     RegisterResource(registeredMeshes, meshComponent.mesh);
+                    MarkEntityDirty(ToSceneEntity(entity));
                 });
 
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentErase,
                 [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     UnregisterResource(registeredMeshes, meshComponent.mesh);
+                    MarkEntityDirty(ToSceneEntity(entity));
 
                     if (meshComponent.inserted) {
                         SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
@@ -891,6 +1281,14 @@ namespace Atlas {
 
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.InsertIntoPhysicsWorld(*transformComp, physicsWorld.get());
+                    // Ray hits on the character body have to map back to the entity
+                    if (rigidBodyComponent.IsValid())
+                        rigidBodyComponent.SetUserData(entity);
+                });
+
+            entityManager.SubscribeToTopic<ConstraintComponent>(ECS::Topic::ComponentErase,
+                [this](const ECS::Entity entity, ConstraintComponent& constraintComponent) {
+                    constraintComponent.RemoveFromPhysicsWorld();
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,
@@ -953,10 +1351,10 @@ namespace Atlas {
                         childEntities.push_back(newEntity);
                     }
 
-                    // Comp might be dereferenced already
-                    comp = dstEntity.GetComponent<HierarchyComponent>();
+                    // Creating the children can move the component, so it's looked up again
+                    auto& newComp = dstEntity.GetComponent<HierarchyComponent>();
                     for (auto entity : childEntities)
-                        comp.AddChild(entity);
+                        newComp.AddChild(entity);
                 }
             }
 
@@ -1003,6 +1401,14 @@ namespace Atlas {
                 // Need to create a new creation settings, since right now the memory is shared between components
                 comp.creationSettings = CreateRef<Physics::PlayerCreationSettings>(*otherComp.creationSettings);
             }
+            if (srcEntity.HasComponent<ConstraintComponent>()) {
+                auto otherComp = srcEntity.GetComponent<ConstraintComponent>();
+                auto& comp = dstEntity.AddComponent<ConstraintComponent>(otherComp);
+                // A merged scene connects to the merged entity, a duplicate to the same entity
+                if (mapper)
+                    comp.connectedEntity = mapper->contains(otherComp.connectedEntity) ?
+                        ECS::Entity((*mapper)[otherComp.connectedEntity]) : ECS::EntityConfig::InvalidEntity;
+            }
 
             // Resource components need extra attention (resources need to be registered in this scene)
             // We can do a straight copy afterwards, to get around copying every field
@@ -1031,6 +1437,10 @@ namespace Atlas {
                 auto& comp = dstEntity.AddComponent<TextComponent>(otherComp.font, otherComp.text);
                 comp = otherComp;
             }
+            if (srcEntity.HasComponent<AnimationComponent>()) {
+                auto otherComp = srcEntity.GetComponent<AnimationComponent>();
+                dstEntity.AddComponent<AnimationComponent>(otherComp);
+            }
 
         }
 
@@ -1046,12 +1456,14 @@ namespace Atlas {
                 context.changedTransforms.clear();
             }
 
-            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
-                auto& transformComponent = transformComponentPool.GetByIndex(idx);
-                if (!transformComponent.changed)
+            CollectDirtyEntities();
+
+            JobSystem::ParallelFor(jobGroup, int32_t(frameDirtyEntities.size()), 8, [&](JobData& data, int32_t idx) {
+                auto entity = frameDirtyEntities[idx];
+                auto transformComponent = transformComponentPool.TryGet(entity);
+                if (!transformComponent || !transformComponent->changed)
                     return;
 
-                auto entity = transformComponentPool[idx];
                 auto hierarchy = hierarchyComponentPool.TryGet(entity);
 
                 int32_t level = hierarchy ? hierarchy->level : -1;
@@ -1093,20 +1505,23 @@ namespace Atlas {
             auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
             auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
 
-            JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
-                auto entity = meshComponentPool[idx];
+            // Physics and hierarchy updates mark more entities dirty
+            CollectDirtyEntities();
+
+            JobSystem::ParallelFor(jobGroup, int32_t(frameDirtyEntities.size()), 8, [&](JobData& data, int32_t idx) {
+                auto entity = frameDirtyEntities[idx];
                 auto transformComponent = transformComponentPool.TryGet(entity);
-                if (!transformComponent)
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                if (!transformComponent || !meshComponent)
                     return;
 
-                auto& meshComponent = meshComponentPool.GetByIndex(idx);
-                if (!meshComponent.mesh.IsLoaded()) {
+                if (!meshComponent->mesh.IsLoaded()) {
                     // We can't update the transform yet
                     transformComponent->updated = false;
                     return;
                 }
 
-                if (!transformComponent->changed && meshComponent.inserted)
+                if (!transformComponent->changed && meshComponent->inserted && !meshComponent->resourceChanged)
                     return;
 
                 threadContexts[data.idx].changedMeshes.push_back(entity);
@@ -1120,6 +1535,27 @@ namespace Atlas {
             for (const auto& context : threadContexts) {
                 changedMeshSet.insert(changedMeshSet.end(), context.changedMeshes.begin(), context.changedMeshes.end());
             }
+
+        }
+
+        void Scene::MarkEntityDirty(const Entity& entity) {
+
+            std::scoped_lock lock(dirtyEntitiesMutex);
+            dirtyEntities.push_back(entity);
+
+        }
+
+        void Scene::CollectDirtyEntities() {
+
+            {
+                std::scoped_lock lock(dirtyEntitiesMutex);
+                frameDirtyEntities.insert(frameDirtyEntities.end(), dirtyEntities.begin(), dirtyEntities.end());
+                dirtyEntities.clear();
+            }
+
+            // An entity is marked again when its components are removed and added in the same frame
+            std::sort(frameDirtyEntities.begin(), frameDirtyEntities.end());
+            frameDirtyEntities.erase(std::unique(frameDirtyEntities.begin(), frameDirtyEntities.end()), frameDirtyEntities.end());
 
         }
 

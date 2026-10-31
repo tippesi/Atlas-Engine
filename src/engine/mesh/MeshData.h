@@ -5,6 +5,7 @@
 #include "raytracing/BLAS.h"
 #include "resource/Resource.h"
 #include "DataComponent.h"
+#include "Skeleton.h"
 #include "Material.h"
 #include "pipeline/PipelineConfig.h"
 
@@ -90,6 +91,21 @@ namespace Atlas {
              */
             void BuildBVHData(std::vector<RayTracing::BLAS::Triangle>& triangles);
 
+            bool IsSkinned() const;
+
+            /**
+             * Skins the vertices and normals of a skinned mesh into the rest pose of its skeleton
+             */
+            void GetRestPoseVertices(std::vector<vec3>& restVertices, std::vector<vec4>& restNormals) const;
+
+
+            /**
+             * Returns the sub data a triangle belongs to, e.g. to get the material of a ray hit
+             * @param triangleIndex Index of the triangle like Volume::RayResult::triangleIndex
+             * @return The sub data or nullptr for invalid indices
+             */
+            const MeshSubData* GetSubDataOfTriangle(int32_t triangleIndex) const;
+
             std::string name;
 
             DataComponent<uint32_t> indices;
@@ -99,6 +115,10 @@ namespace Atlas {
             DataComponent<vec4> normals;
             DataComponent<vec4> tangents;
             DataComponent<vec4> colors;
+            DataComponent<vec4> joints;
+            DataComponent<vec4> weights;
+
+            Skeleton skeleton;
 
             std::vector<ResourceHandle<Material>> materials;
             std::vector<MeshSubData> subData;

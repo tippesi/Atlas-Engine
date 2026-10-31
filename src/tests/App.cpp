@@ -6,7 +6,7 @@
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../../data",
     .shaderDirectory = "shader",
-    .validationLayerSeverity = Log::SEVERITY_MEDIUM,
+    .deviceDesc = { .validationLayerSeverity = Log::SEVERITY_MEDIUM },
 };
 
 using namespace Atlas::Scene::Components;
@@ -70,7 +70,6 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.reflection) {
         scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
-        scene->reflection->useShadowMap = true;
     }
 
     if (config.ddgi) {
@@ -123,7 +122,7 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.ocean) {
         scene->ocean = Atlas::CreateRef<Atlas::Ocean::Ocean>(9, 4096.0f,
-            glm::vec3(0.0f, 5.0f, 0.0f), 128, 86);
+            glm::vec3(0.0f, 5.0f, 0.0f), 128);
     }
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
@@ -196,8 +195,7 @@ void App::Render(float deltaTime) {
 
 #ifndef AE_HEADLESS
     /*
-    auto windowFlags = window.GetFlags();
-    if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+    if (window.IsOccluded()) {
         return;
     }
     */

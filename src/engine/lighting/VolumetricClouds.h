@@ -6,6 +6,9 @@
 
 #include "scene/components/CameraComponent.h"
 
+#include <unordered_map>
+#include <mutex>
+
 namespace Atlas {
 
     namespace Lighting {
@@ -35,8 +38,9 @@ namespace Atlas {
 
                 vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
 
+                // Henyey-Greenstein eccentricities, positive values scatter forward (silver lining)
                 float eccentricityFirstPhase = 0.0f;
-                float eccentricitySecondPhase = -0.5f;
+                float eccentricitySecondPhase = 0.5f;
                 float phaseAlpha = 0.5f;
             };
 
@@ -68,6 +72,11 @@ namespace Atlas {
             bool needsNoiseUpdate = true;
             bool enable = true;
             bool castShadow = true;
+
+        private:
+            // The coverage only depends on the resolution, add new inputs to the key
+            static std::unordered_map<int32_t, std::vector<float16>> coverageDataCache;
+            static std::mutex coverageDataCacheMutex;
 
         };
 

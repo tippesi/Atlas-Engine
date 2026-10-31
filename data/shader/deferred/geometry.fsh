@@ -50,6 +50,9 @@ layout(push_constant) uniform constants {
     uint aoTextureIdx;
     uint heightTextureIdx;
     uint emissiveTextureIdx;
+    uint jointOffset;
+    uint jointCount;
+    uint instanceOffset;
 } PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {

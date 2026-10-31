@@ -87,6 +87,9 @@ namespace Atlas {
             if (slide)
                 player.Slide();
 
+            if (crouch)
+                player.Crouch();
+
         }
 
         void KeyboardHandler::RegisterEvent() {
@@ -170,6 +173,14 @@ namespace Atlas {
 
             if (event.keyCode == Keycode::KeyLeftControl && event.state == AE_BUTTON_RELEASED) {
                 slide = false;
+            }
+
+            if (event.keyCode == Keycode::KeyC && event.state == AE_BUTTON_PRESSED) {
+                crouch = true;
+            }
+
+            if (event.keyCode == Keycode::KeyC && event.state == AE_BUTTON_RELEASED) {
+                crouch = false;
             }
            
         }

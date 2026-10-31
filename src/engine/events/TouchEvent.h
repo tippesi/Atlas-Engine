@@ -3,9 +3,10 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#define AE_FINGERMOTION SDL_FINGERMOTION
-#define AE_FINGERDOWN   SDL_FINGERDOWN
-#define AE_FINGERUP     SDL_FINGERUP
+#define AE_FINGERMOTION SDL_EVENT_FINGER_MOTION
+#define AE_FINGERDOWN   SDL_EVENT_FINGER_DOWN
+#define AE_FINGERUP     SDL_EVENT_FINGER_UP
+#define AE_FINGERCANCELED SDL_EVENT_FINGER_CANCELED
 
 namespace Atlas {
 
@@ -19,7 +20,7 @@ namespace Atlas {
         public:
             explicit TouchEvent(SDL_TouchFingerEvent event) {
 
-                finger = event.fingerId;
+                finger = int64_t(event.fingerID);
 
                 type = event.type;
 

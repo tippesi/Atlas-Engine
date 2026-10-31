@@ -163,6 +163,15 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
 
 }
 
+vec3 GetHistoryWorldPosition(ivec2 historyPixel) {
+
+    float historyDepth = texelFetch(historyDepthTexture, historyPixel, 0).r;
+    vec2 ndc = (vec2(historyPixel) + 0.5) * invResolution * 2.0 - 1.0;
+    vec4 position = globalData.ipvMatrixLast * vec4(ndc, historyDepth, 1.0);
+    return position.xyz / position.w;
+
+}
+
 bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 history, out vec4 historyMoments) {
     
     history = vec4(0.0);
@@ -177,8 +186,11 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = normalPhi / abs(linearDepth);
+    vec3 viewPosition = ConvertDepthToViewSpace(depth, (vec2(pixel) + 0.5) * invResolution);
+    vec3 position = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
+    vec3 worldNormal = normalize(mat3(globalData.ivMatrix) * normal);
+    // The distance to the surface plane stays stable at grazing angles, unlike the depth
+    float depthPhi = normalPhi / abs(viewPosition.z);
 
     float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
@@ -193,10 +205,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(max(dot(historyNormal, normal), 0.0), normalPhi);
 
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = historyDepth;
-        
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
+        float planeDistance = abs(dot(GetHistoryWorldPosition(offsetPixel) - position, worldNormal));
+        confidence *= min(1.0 , exp(-planeDistance * depthPhi));
 
         uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
         confidence *= historyMaterialIdx == materialIdx ? 1.0 : 0.0;
@@ -223,9 +233,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(max(dot(historyNormal, normal), 0.0), normalPhi);
 
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
+        float planeDistance = abs(dot(GetHistoryWorldPosition(offsetPixel) - position, worldNormal));
+        confidence *= min(1.0 , exp(-planeDistance * depthPhi));
 
         uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
         confidence *= historyMaterialIdx == materialIdx ? 1.0 : 0.0;
@@ -584,7 +593,9 @@ void main() {
     factor = min(factor, historyLength / (historyLength + 1.0));
 
 #ifdef UPSCALE
-    factor = rayLength > 0.0 ? factor : (valid ? mix(1.0, 0.0, adjClipBlend) : factor);
+    // Misses have a ray length of zero, so the upsampling marks pixels it filled in by their position
+    bool traced = pixel % 2 == pixelOffsets[globalData.frameCount % 4];
+    factor = traced ? factor : (valid ? mix(1.0, 0.0, adjClipBlend) : factor);
 #endif
 
     vec3 resolve = factor <= 0.0 ? currentColor : mix(currentColor, historyColor, factor);

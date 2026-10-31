@@ -25,7 +25,6 @@ namespace Atlas {
             Graphics::CommandList* commandList) {
 
             auto renderState = &scene->renderState;
-            bool bindless = device->support.bindless;
 
             Graphics::Profiler::BeginQuery("Direct lighting");
 
@@ -48,9 +47,7 @@ namespace Atlas {
             commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
 
             CullingPushConstants cullingPushConstants;
-            cullingPushConstants.lightCount = bindless ?
-                std::min(4096, int32_t(renderState->lightEntities.size())) :
-                std::min(8, int32_t(renderState->lightEntities.size()));
+            cullingPushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
 
             lightCullingBuffer.Bind(commandList, 3, 6);
 
@@ -67,33 +64,8 @@ namespace Atlas {
             Graphics::Profiler::EndAndBeginQuery("Lighting");
 
             PushConstants pushConstants;
-            if (bindless) {
-                pushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
-                pushConstants.lightBucketCount = int32_t(std::ceil(float(pushConstants.lightCount) / 32.0f));
-            }
-            else {
-                pushConstants.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
-                pushConstants.lightBucketCount = 1;
-
-                std::vector<Ref<Graphics::Image>> cascadeMaps;
-                std::vector<Ref<Graphics::Image>> cubeMaps;
-                for (int32_t i = 0; i < pushConstants.lightCount; i++) {
-                    const auto& comp = renderState->lightEntities[i].comp;
-
-                    if (comp.shadow) {
-                        const auto& shadow = comp.shadow;
-                        if (shadow->useCubemap) {
-                            cubeMaps.push_back(shadow->cubemap->image);
-                        }
-                        else {
-                            cascadeMaps.push_back(shadow->maps->image);
-                        }
-                    }
-                }
-
-                commandList->BindSampledImages(cascadeMaps, 3, 7);
-                commandList->BindSampledImages(cubeMaps, 3, 15);
-            }
+            pushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
+            pushConstants.lightBucketCount = int32_t(std::ceil(float(pushConstants.lightCount) / 32.0f));
 
             pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
             pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow && scene->HasMainLight());

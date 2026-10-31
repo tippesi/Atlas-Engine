@@ -71,3 +71,4 @@ __pycache__/
 local.properties
 CMakeSettings.json
 CMakeUserPresets.json
+src/capture/examples

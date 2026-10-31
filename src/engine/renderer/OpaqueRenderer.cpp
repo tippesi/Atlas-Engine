@@ -16,9 +16,7 @@ namespace Atlas {
         }
 
         void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
-            RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
-
-            bool bindlessTextures = device->support.bindless;
+            RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap) {
 
             Graphics::Profiler::BeginQuery("Opaque geometry");
 
@@ -31,6 +29,8 @@ namespace Atlas {
             commandList->BindBuffer(mainPass->currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(mainPass->lastMatricesBuffer, 1, 2);
             commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
+            commandList->BindBuffer(mainPass->currentJointMatricesBuffer, 1, 4);
+            commandList->BindBuffer(mainPass->lastJointMatricesBuffer, 1, 5);
 
             // Bind wind map
             scene->wind.noiseMap.Bind(commandList, 3, 8);
@@ -46,46 +46,67 @@ namespace Atlas {
                         continue;
 
                     if (subDataCount < subDatas.size())
-                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
+                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get(), nullptr };
                     else
-                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get() });
+                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get(), nullptr });
                     subDataCount++;
                 }
             }
 
+            for (const auto& draw : mainPass->gpuDraws) {
+                if (!draw.subData)
+                    continue;
+
+                if (subDataCount < subDatas.size())
+                    subDatas[subDataCount] = { draw.subData, draw.meshId, draw.mesh, &draw };
+                else
+                    subDatas.push_back({ draw.subData, draw.meshId, draw.mesh, &draw });
+                subDataCount++;
+            }
+
             // Check whether materials have pipeline configs
             for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, _, mesh] = subDatas[i];
+                auto& [subData, _, mesh, gpuDraw] = subDatas[i];
                 const auto& material = subData->material;
                 if (subData->mainConfig.IsValid()) continue;
 
                 subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
                 subData->mainReversedWindingConfig = subData->mainConfig.GetReversedWindingVariant();
+                subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+                subData->mainReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
             }
+
+            auto getConfig = [](const auto& entry) -> PipelineConfig& {
+                const auto& [subData, meshID, mesh, gpuDraw] = entry;
+                return gpuDraw && gpuDraw->type == RenderList::GPUDrawType::ReversedWinding ?
+                    subData->mainReversedWindingConfig : subData->mainConfig;
+            };
 
             // Sort materials by hash
             std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
-                [](auto& subData0, auto& subData1) {
-                    return std::get<0>(subData0)->mainConfig.variantHash <
-                        std::get<0>(subData1)->mainConfig.variantHash;
+                [&](auto& subData0, auto& subData1) {
+                    return getConfig(subData0).variantHash < getConfig(subData1).variantHash;
                 });
 
             Hash prevMesh = 0;
             Hash prevHash = 0;
             Ref<Graphics::Pipeline> currentPipeline;
             for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, meshID, mesh] = subDatas[i];
-                const auto& instances = mainPass->meshToInstancesMap[meshID];
+                auto& [subData, meshID, mesh, gpuDraw] = subDatas[i];
+                auto instances = gpuDraw ? RenderList::MeshInstances{} : mainPass->meshToInstancesMap[meshID];
 
-                const auto material = subData->material;
+                const auto& material = subData->material;
 
-                // Overwrite material config frame buffer (and assume these have the same format)
-                subData->mainConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
+                auto& config = getConfig(subDatas[i]);
 
-                if (subData->mainConfig.variantHash != prevHash) {
-                    currentPipeline = PipelineManager::GetPipeline(subData->mainConfig);
+                if (config.variantHash != prevHash) {
+                    // The frame buffer is only needed to create the pipeline (assume these have the same format),
+                    // it isn't kept in the config to let it be able to be deleted
+                    config.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
+                    currentPipeline = PipelineManager::GetPipeline(config);
+                    config.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
-                    prevHash = subData->mainConfig.variantHash;
+                    prevHash = config.variantHash;
                 }
 
                 if (meshID != prevMesh) {
@@ -93,31 +114,16 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-                if (!bindlessTextures) {
-                    if (material->HasBaseColorMap())
-                        material->baseColorMap->Bind(commandList, 3, 0);
-                    if (material->HasOpacityMap())
-                        material->opacityMap->Bind(commandList, 3, 1);
-                    if (material->HasNormalMap())
-                        material->normalMap->Bind(commandList, 3, 2);
-                    if (material->HasRoughnessMap())
-                        material->roughnessMap->Bind(commandList, 3, 3);
-                    if (material->HasMetalnessMap())
-                        material->metalnessMap->Bind(commandList, 3, 4);
-                    if (material->HasAoMap())
-                        material->aoMap->Bind(commandList, 3, 5);
-                    if (material->HasDisplacementMap())
-                        material->displacementMap->Bind(commandList, 3, 6);
-                    if (material->HasEmissiveMap())
-                        material->emissiveMap->Bind(commandList, 3, 7);
-                }
+                auto materialIdx = uint32_t(materialMap[material.Get().get()]);
+                auto textureIndices = materialIdx < sceneState->materialTextureIndices.size() ?
+                    sceneState->materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
 
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
                     .twoSided = material->twoSided ? 1u : 0u,
                     .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
-                    .materialIdx = uint32_t(materialMap[material.Get().get()]),
+                    .materialIdx = materialIdx,
                     .normalScale = material->normalScale,
                     .displacementScale = material->displacementScale,
                     .windTextureLod = mesh->windNoiseTextureLod,
@@ -126,16 +132,24 @@ namespace Atlas {
                     .uvAnimationX = material->uvAnimation.x,
                     .uvAnimationY = material->uvAnimation.y,
                     .uvTiling = material->tiling,
-                    .baseColorTextureIdx = material->HasBaseColorMap() ? sceneState->textureToBindlessIdx[material->baseColorMap.Get()] : 0,
-                    .opacityTextureIdx = material->HasOpacityMap() ? sceneState->textureToBindlessIdx[material->opacityMap.Get()] : 0,
-                    .normalTextureIdx = material->HasNormalMap() ? sceneState->textureToBindlessIdx[material->normalMap.Get()] : 0,
-                    .roughnessTextureIdx = material->HasRoughnessMap() ? sceneState->textureToBindlessIdx[material->roughnessMap.Get()] : 0,
-                    .metalnessTextureIdx = material->HasMetalnessMap() ? sceneState->textureToBindlessIdx[material->metalnessMap.Get()] : 0,
-                    .aoTextureIdx = material->HasAoMap() ? sceneState->textureToBindlessIdx[material->aoMap.Get()] : 0,
-                    .heightTextureIdx = material->HasDisplacementMap() ? sceneState->textureToBindlessIdx[material->displacementMap.Get()] : 0,
-                    .emissiveTextureIdx = material->HasEmissiveMap() ? sceneState->textureToBindlessIdx[material->emissiveMap.Get()] : 0,
+                    .baseColorTextureIdx = textureIndices.baseColor,
+                    .opacityTextureIdx = textureIndices.opacity,
+                    .normalTextureIdx = textureIndices.normal,
+                    .roughnessTextureIdx = textureIndices.roughness,
+                    .metalnessTextureIdx = textureIndices.metalness,
+                    .aoTextureIdx = textureIndices.ao,
+                    .heightTextureIdx = textureIndices.height,
+                    .emissiveTextureIdx = textureIndices.emissive,
+                    .jointOffset = uint32_t(instances.jointOffset),
+                    .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
+                    .instanceOffset = uint32_t(instances.offset),
                 };
                 commandList->PushConstants("constants", &pushConstants);
+
+                if (gpuDraw) {
+                    renderList->DrawGPUCulled(commandList, *gpuDraw);
+                    continue;
+                }
 
                 const auto defaultWindingCount = instances.count - instances.reversedWindingCount;
                 if (defaultWindingCount) {
@@ -146,16 +160,13 @@ namespace Atlas {
                     auto& reversedWindingConfig = subData->mainReversedWindingConfig;
                     reversedWindingConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
+                    reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
                     commandList->PushConstants("constants", &pushConstants);
                     commandList->DrawIndexed(subData->indicesCount, instances.reversedWindingCount, subData->indicesOffset,
                         0, instances.reversedWindingOffset);
                     prevHash = reversedWindingConfig.variantHash;
                 }
-
-                // Reset the frame buffer here to let it be able to be deleted
-                subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
-                subData->mainReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
             }
 
@@ -222,9 +233,12 @@ namespace Atlas {
             if (mesh->data.colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
             }
+            if (mesh->data.IsSkinned()) {
+                macros.push_back("SKINNED");
+            }
 
-            if (device->support.bindless) {
-                macros.push_back("BINDLESS_TEXTURES");
+            if (!mesh->data.IsSkinned()) {
+                macros.push_back("INSTANCE_BUFFER");
             }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);

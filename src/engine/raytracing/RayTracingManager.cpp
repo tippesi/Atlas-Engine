@@ -10,17 +10,17 @@ namespace Atlas::RayTracing {
 
     JobGroup RayTracingManager::bvhUpdateGroup{ "Bvh manager update" };
 	std::vector<Ref<Graphics::BLAS>> RayTracingManager::blases;
+	std::atomic_bool RayTracingManager::meshBVHsRequested = false;
 
 	void RayTracingManager::Update() {
-
-        auto device = Graphics::GraphicsDevice::DefaultDevice;
-        if (!device->support.bindless)
-            return;
 
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
         auto buildRTStructure = [](JobData) {
-            auto meshes = ResourceManager<Mesh::Mesh>::GetOwnedResources();
+            // Mesh BVHs are only needed by rt effects, while terrain BVHs are also needed by the terrain LoD
+            std::vector<ResourceHandle<Mesh::Mesh>> meshes;
+            if (meshBVHsRequested.exchange(false))
+                meshes = ResourceManager<Mesh::Mesh>::GetOwnedResources();
 
             JobGroup bvhBuildGroup{ "Bvh build" };
             for (const auto& mesh : meshes) {
@@ -72,6 +72,12 @@ namespace Atlas::RayTracing {
         }
 
 	}
+
+    void RayTracingManager::RequestMeshBVHs() {
+
+        meshBVHsRequested = true;
+
+    }
 
     void RayTracingManager::BuildStaticBLAS(std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
         std::vector<ResourceHandle<Terrain::Terrain>>& terrains) {        

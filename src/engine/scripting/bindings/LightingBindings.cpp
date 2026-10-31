@@ -7,6 +7,7 @@
 #include "lighting/IrradianceVolume.h"
 #include "lighting/Atmosphere.h"
 #include "lighting/Reflection.h"
+#include "lighting/RTGI.h"
 #include "lighting/Fog.h"
 #include "lighting/VolumetricClouds.h"
 #include "lighting/Sky.h"
@@ -17,6 +18,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Lighting::IrradianceVolume>("IrradianceVolume",
             sol::no_constructor,
+            "enable", &Lighting::IrradianceVolume::enable,
             "storageScale", &Lighting::IrradianceVolume::storageScale,
             "ClearProbes", &Lighting::IrradianceVolume::ClearProbes
         );
@@ -59,6 +61,7 @@ namespace Atlas::Scripting::Bindings {
             "mieScatteringCoeff", &Lighting::Atmosphere::mieScatteringCoeff,
             "rayleighHeightScale", &Lighting::Atmosphere::rayleighHeightScale,
             "mieHeightScale", &Lighting::Atmosphere::mieHeightScale,
+            "sunDiskSize", &Lighting::Atmosphere::sunDiskSize,
             "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 
@@ -76,7 +79,16 @@ namespace Atlas::Scripting::Bindings {
             "rayCount", &Lighting::SSGI::rayCount,
             "sampleCount", &Lighting::SSGI::sampleCount,
             "irradianceLimit", &Lighting::SSGI::irradianceLimit,
-            "aoStrength", &Lighting::SSGI::aoStrength
+            "aoStrength", &Lighting::SSGI::aoStrength,
+            "halfResolution", &Lighting::SSGI::halfResolution,
+            "ddgi", &Lighting::SSGI::ddgi
+        );
+
+        ns->new_usertype<Lighting::RTGI>("RTGI",
+            "enable", &Lighting::RTGI::enable,
+            "ddgi", &Lighting::RTGI::ddgi,
+            "sampleCount", &Lighting::RTGI::sampleCount,
+            "halfResolution", &Lighting::RTGI::halfResolution
         );
 
         ns->new_usertype<Lighting::Reflection>("Reflection",
@@ -89,8 +101,10 @@ namespace Atlas::Scripting::Bindings {
             "currentClipFactor", &Lighting::Reflection::currentClipFactor,
             "enable", &Lighting::Reflection::enable,
             "rt", &Lighting::Reflection::rt,
+            "ssr", &Lighting::Reflection::ssr,
             "ddgi", &Lighting::Reflection::ddgi,
-            "useShadowMap", &Lighting::Reflection::useShadowMap,
+            "sampleCount", &Lighting::Reflection::sampleCount,
+            "halfResolution", &Lighting::Reflection::halfResolution,
             "useNormalMaps", &Lighting::Reflection::useNormalMaps,
             "opacityCheck", &Lighting::Reflection::opacityCheck
         );
@@ -118,6 +132,10 @@ namespace Atlas::Scripting::Bindings {
             "ambientFactor", &Lighting::Fog::ambientFactor,
             "rayMarching", &Lighting::Fog::rayMarching,
             "rayMarchStepCount", &Lighting::Fog::rayMarchStepCount,
+            "froxels", &Lighting::Fog::froxels,
+            "froxelTileSize", &Lighting::Fog::froxelTileSize,
+            "froxelSliceCount", &Lighting::Fog::froxelSliceCount,
+            "froxelFilter", &Lighting::Fog::froxelFilter,
             "volumetricIntensity", &Lighting::Fog::volumetricIntensity
         );
 

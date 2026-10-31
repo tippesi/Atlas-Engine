@@ -3,43 +3,43 @@
 
 #include <string>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 namespace Atlas {
 
-    Display::Display(int32_t displayIndex) : displayIndex(displayIndex) {
+    Display::Display(uint32_t displayID) : displayID(displayID) {
 
-        auto displayModeCount = SDL_GetNumDisplayModes(displayIndex);
-        if (displayModeCount < 1) {
+        int32_t displayModeCount = 0;
+        auto displayModes = SDL_GetFullscreenDisplayModes(displayID, &displayModeCount);
+        if (!displayModes) {
             auto error = SDL_GetError();
-            Log::Warning("Getting display modes count failed: " + std::string(error));
+            Log::Warning("Getting display modes failed: " + std::string(error));
             return;
         }
 
         for (int32_t i = 0; i < displayModeCount; ++i) {
-            SDL_DisplayMode mode;
-            if (SDL_GetDisplayMode(displayIndex, i, &mode) != 0) {
-                auto error = SDL_GetError();
-                Log::Warning("Getting display mode failed: " + std::string(error));
-            }
+            const auto& mode = *displayModes[i];
 
             DisplayMode displayMode {
                 .format = {
-                    .type = SDL_PIXELTYPE(mode.format),
-                    .order = SDL_PIXELORDER(mode.format),
-                    .layout = SDL_PIXELLAYOUT(mode.format),
-                    .bitCount = SDL_BITSPERPIXEL(mode.format),
-                    .byteCount = SDL_BYTESPERPIXEL(mode.format)
+                    .type = uint32_t(SDL_PIXELTYPE(mode.format)),
+                    .order = uint32_t(SDL_PIXELORDER(mode.format)),
+                    .layout = uint32_t(SDL_PIXELLAYOUT(mode.format)),
+                    .bitCount = uint32_t(SDL_BITSPERPIXEL(mode.format)),
+                    .byteCount = uint32_t(SDL_BYTESPERPIXEL(mode.format))
                 },
                 .width = mode.w,
                 .height = mode.h,
                 .refreshRate = mode.refresh_rate,
-                .driverData = mode.driverdata,
+                .pixelDensity = mode.pixel_density,
+                .displayID = mode.displayID,
                 .rawFormat = mode.format
             };
 
             modes.push_back(displayMode);
         }
+
+        SDL_free(displayModes);
 
     }
 

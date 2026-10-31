@@ -1,6 +1,5 @@
 #include "PostProcessRenderer.h"
 
-#include "../Clock.h"
 
 namespace Atlas {
 
@@ -202,6 +201,9 @@ namespace Atlas {
             float logLuminanceMin = log2(exposure.luminanceMin);
             float logLuminanceRange = log2(exposure.luminanceMax - exposure.luminanceMin);
 
+            // The histogram only samples every second pixel in each direction
+            ivec2 histogramResolution = (ivec2(target->GetScaledWidth(), target->GetScaledHeight()) + 1) / 2;
+
             {
                 Graphics::Profiler::BeginQuery("Generate exposure histogram");
                 struct alignas(16) HistogramPushConstants {
@@ -216,11 +218,9 @@ namespace Atlas {
                     .blackLevel = exposure.blackLevel
                 };
 
-                ivec2 resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
-
-                ivec2 groupCount = resolution / 16;
-                groupCount.x += ((groupCount.x * 16 == resolution.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 16 == resolution.y) ? 0 : 1);
+                ivec2 groupCount = histogramResolution / 16;
+                groupCount.x += ((groupCount.x * 16 == histogramResolution.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 16 == histogramResolution.y) ? 0 : 1);
 
                 auto pipelineConfig = PipelineConfig("exposure/histogram.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -258,8 +258,8 @@ namespace Atlas {
                 auto pushConstants = TemporalPushConstants{
                     .logLuminanceMin = logLuminanceMin,
                     .logLuminanceRange = logLuminanceRange,
-                    .timeCoefficient = 1.0f - exp(-Clock::GetDelta() * exposure.timeCoefficient),
-                    .pixelCount = float(target->GetScaledWidth() * target->GetScaledHeight()),
+                    .timeCoefficient = 1.0f - exp(-scene->GetDeltaTime() * exposure.timeCoefficient),
+                    .pixelCount = float(histogramResolution.x * histogramResolution.y),
                     .resetHistory = !target->HasHistory() ? 1 : 0
                 };
 

@@ -20,13 +20,14 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
-                RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap);
+                RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap);
 
         private:
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 Mesh::Mesh* mesh, const Ref<RenderTarget>& target);
 
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+            // Draws culled on the GPU have a draw command
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*>> subDatas;
 
             struct alignas(16) PushConstants {
                 uint32_t vegetation;
@@ -50,6 +51,9 @@ namespace Atlas {
                 uint32_t aoTextureIdx;
                 uint32_t heightTextureIdx;
                 uint32_t emissiveTextureIdx;
+                uint32_t jointOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
             };
 
 

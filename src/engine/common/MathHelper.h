@@ -4,6 +4,8 @@
 
 #include <glm/gtc/constants.hpp>
 
+#include <span>
+
 namespace Helper {
 
     namespace Math {
@@ -62,6 +64,31 @@ namespace Helper {
             phi = phi < 0.0f ? phi + glm::two_pi<float>() : phi;
 
             return glm::vec2(theta, phi);
+
+        }
+
+        inline float DistanceToSegment(glm::vec2 point, glm::vec2 a, glm::vec2 b) {
+
+            auto ab = b - a;
+            auto lengthSquared = glm::dot(ab, ab);
+            auto t = lengthSquared > 0.0f ? Saturate(glm::dot(point - a, ab) / lengthSquared) : 0.0f;
+            return glm::distance(point, a + t * ab);
+
+        }
+
+        // Even-odd rule, the polygon is closed between its last and first point
+        inline bool IsInsidePolygon(glm::vec2 point, std::span<const glm::vec2> polygon) {
+
+            bool inside = false;
+            for (size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
+                const auto& a = polygon[i];
+                const auto& b = polygon[j];
+                if ((a.y > point.y) != (b.y > point.y) &&
+                    point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x)
+                    inside = !inside;
+            }
+
+            return inside;
 
         }
 

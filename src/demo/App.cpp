@@ -76,7 +76,6 @@ void App::LoadContent() {
     directionalLight.isMain = true;
 
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
-    scene->reflection->useShadowMap = true;
 
     scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
     scene->fog->enable = true;
@@ -95,7 +94,6 @@ void App::LoadContent() {
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
     scene->rtgi = Atlas::CreateRef<Atlas::Lighting::RTGI>();
     scene->rtgi->enable = graphicsDevice->support.hardwareRayTracing;
-    scene->rtgi->useShadowMap = true;
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
@@ -300,8 +298,7 @@ void App::Render(float deltaTime) {
     graphicsDevice->WaitForPreviousFrameSubmission();
 
 #ifndef AE_HEADLESS
-    auto windowFlags = window.GetFlags();
-    if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+    if (window.IsOccluded()) {
         // If we take the early way out we need to make sure that stuff is completed (usually main renderer takes care of that)
         scene->WaitForAsyncWorkCompletion();
         return;
@@ -911,7 +908,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
-        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5, false, false, false, 2048);
+        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 6, false, false, false, 2048);
         otherScene->Update(1.0f);
 
         CopyActors(otherScene);
@@ -928,7 +925,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5, false, false, false, 2048);
+        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 6, false, false, false, 2048);
         otherScene->Update(1.0f);
 
         CopyActors(otherScene);
@@ -1170,7 +1167,6 @@ void App::CheckLoadScene() {
         scene->irradianceVolume->SetRayCount(128, 32);
     }
 
-    scene->irradianceVolume->useShadowMap = true;
     scene->irradianceVolume->visibility = false;
 
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)

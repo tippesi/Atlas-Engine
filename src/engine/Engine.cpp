@@ -8,6 +8,7 @@
 #include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
 #include "input/KeyboardMap.h"
+#include "input/ControllerMap.h"
 #include "events/EventManager.h"
 #include "raytracing/RayTracingManager.h"
 #include "terrain/TerrainManager.h"
@@ -15,7 +16,7 @@
 
 #include "graphics/ShaderCompiler.h"
 
-#include <SDL_vulkan.h>
+#include <SDL3/SDL_vulkan.h>
 
 extern Atlas::EngineInstance* GetEngineInstance();
 
@@ -28,8 +29,12 @@ namespace Atlas {
 #ifdef AE_NO_APP
         SDL_SetMainReady();
 #endif
-        if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
-            SDL_Init(SDL_INIT_EVERYTHING);
+        const SDL_InitFlags initFlags = SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS;
+        if (SDL_WasInit(initFlags) != initFlags) {
+            if (!SDL_Init(initFlags)) {
+                auto error = SDL_GetError();
+                Log::Error("Error initializing SDL: " + std::string(error));
+            }
         }
 
         Loader::AssetLoader::SetAssetDirectory(config.assetDirectory);
@@ -42,21 +47,17 @@ namespace Atlas {
             AE_WINDOWPOSITION_UNDEFINED, 100, 100, AE_WINDOW_HIDDEN);
 
         // Need to retrieve the extension names required to create an SDL surface
-        uint32_t extensionCount;
-        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, nullptr);
-        std::vector<const char*> requiredExtensions(extensionCount);
-        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, requiredExtensions.data());
+        uint32_t extensionCount = 0;
+        auto extensionNames = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
+        std::vector<const char*> requiredExtensions(extensionNames, extensionNames + extensionCount);
 #endif
 
         // Then create graphics instance
         auto instanceDesc = Graphics::InstanceDesc{
             .instanceName = "AtlasEngineInstance",
-#ifdef AE_BUILDTYPE_DEBUG
-            .enableValidationLayers = true,
-#else
-            .enableValidationLayers = false,
-#endif
-            .validationLayerSeverity = config.validationLayerSeverity,
+            .enableValidationLayers = config.deviceDesc.enableValidationLayers,
+            .enableExtendedValidation = config.deviceDesc.enableExtendedValidation,
+            .validationLayerSeverity = config.deviceDesc.validationLayerSeverity,
 #ifndef AE_HEADLESS
             .requiredExtensions = requiredExtensions
 #else
@@ -73,7 +74,7 @@ namespace Atlas {
         surface = Graphics::Instance::DefaultInstance->CreateHeadlessSurface();
 #endif
         // Initialize device
-        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface);
+        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface, config.deviceDesc);
         Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
 
 #ifndef AE_HEADLESS
@@ -89,6 +90,7 @@ namespace Atlas {
         PipelineManager::Init();
         Physics::PhysicsManager::Init();
         Input::KeyboardMap::Init();
+        Input::ControllerMap::Init();
 
         // We need lower sample size for smaller buffer on SDL side (e.g. 256 instead of 1024)
         Audio::AudioManager::Configure(48000, 2, 128);
@@ -107,6 +109,7 @@ namespace Atlas {
         Texture::Texture::Shutdown();
         Audio::AudioManager::Shutdown();
         Input::KeyboardMap::Shutdown();
+        Input::ControllerMap::Shutdown();
 
         Events::EventManager::ShutdownEventDelegate.Fire();
 
@@ -121,6 +124,7 @@ namespace Atlas {
         Graphics::Profiler::BeginFrame();
         // First reset keyboard state before new events
         Input::KeyboardMap::Update();
+        Input::ControllerMap::Update();
         Events::EventManager::Update();
         PipelineManager::Update();
         Audio::AudioManager::Update();
@@ -132,10 +136,11 @@ namespace Atlas {
 
     ivec2 Engine::GetScreenSize() {
 
-        SDL_DisplayMode displayMode;
-        SDL_GetCurrentDisplayMode(0, &displayMode);
+        auto displayMode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+        if (!displayMode)
+            return ivec2(0);
 
-        return ivec2(displayMode.w, displayMode.h);
+        return ivec2(displayMode->w, displayMode->h);
 
     }
 

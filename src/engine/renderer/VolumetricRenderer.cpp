@@ -30,6 +30,12 @@ namespace Atlas {
             sobolSequenceTexture.SetData(noiseImage->GetData());
 
             volumetricPipelineConfig = PipelineConfig("volumetric/volumetric.csh");
+            froxelCullingPipelineConfig = PipelineConfig("volumetric/froxelCulling.csh");
+            froxelInjectPipelineConfig = PipelineConfig("volumetric/froxelInject.csh");
+            froxelHorizontalFilterPipelineConfig = PipelineConfig("volumetric/froxelFilter.csh", {"HORIZONTAL"});
+            froxelVerticalFilterPipelineConfig = PipelineConfig("volumetric/froxelFilter.csh", {"VERTICAL"});
+            froxelIntegratePipelineConfig = PipelineConfig("volumetric/froxelIntegrate.csh");
+            froxelApplyPipelineConfig = PipelineConfig("volumetric/froxelApply.csh");
 
             horizontalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
                 {"HORIZONTAL", "BLUR_RGBA", "DEPTH_WEIGHT"});
@@ -53,6 +59,9 @@ namespace Atlas {
             };
             shadowSampler = device->CreateSampler(samplerDesc);
 
+            samplerDesc.compareEnabled = false;
+            shadowDepthSampler = device->CreateSampler(samplerDesc);
+
         }
 
         void VolumetricRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
@@ -60,7 +69,6 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Render volumetric");
 
             auto renderState = &scene->renderState;
-            bool bindless = device->support.bindless;
             auto& camera = scene->GetMainCamera();
             auto fog = scene->fog;
 
@@ -97,8 +105,6 @@ namespace Atlas {
 
             const int32_t groupSize = 16;
 
-            res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
-
             ivec2 groupCount = res / groupSize;
             groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
             groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
@@ -107,28 +113,32 @@ namespace Atlas {
                 lightCullingBuffer.SetSize(groupCount.x * groupCount.y * 64);
             }
 
-            Graphics::Profiler::BeginQuery("Light culling");
-
-            commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
+            auto useFroxels = fog && fog->froxels;
 
             CullingPushConstants cullingPushConstants;
-            cullingPushConstants.lightCount = bindless ?
-                std::min(4096, int32_t(renderState->volumetricLights.size())) :
-                std::min(8, int32_t(renderState->volumetricLights.size()));
+            cullingPushConstants.lightCount = std::min(4096, int32_t(renderState->volumetricLights.size()));
 
             lightCullingBuffer.Bind(commandList, 3, 10);
 
-            auto cullingPipelineConfig = PipelineConfig("volumetric/lightCulling.csh");
-            auto pipeline = PipelineManager::GetPipeline(cullingPipelineConfig);
-            commandList->BindPipeline(pipeline);
+            if (!useFroxels) {
+                Graphics::Profiler::BeginQuery("Light culling");
 
-            commandList->PushConstants("constants", &cullingPushConstants);
+                commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
 
-            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                auto cullingPipelineConfig = PipelineConfig("volumetric/lightCulling.csh");
+                auto pipeline = PipelineManager::GetPipeline(cullingPipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-            commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+                commandList->PushConstants("constants", &cullingPushConstants);
 
-            Graphics::Profiler::EndAndBeginQuery("Ray marching");
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+
+                Graphics::Profiler::EndQuery();
+            }
+
+            Graphics::Profiler::BeginQuery(useFroxels ? "Froxels" : "Ray marching");
 
             auto ocean = scene->ocean;
             bool oceanEnabled = ocean && ocean->enable;
@@ -184,47 +194,30 @@ namespace Atlas {
             }
             
             commandList->BindSampler(shadowSampler, 3, 6);
-
-            if (!bindless) {
-                std::vector<Ref<Graphics::Image>> cascadeMaps;
-                std::vector<Ref<Graphics::Image>> cubeMaps;
-
-                uniforms.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
-                uniforms.directionalLightCount = std::min(8, uniforms.directionalLightCount);
-                for (int32_t i = 0; i < uniforms.lightCount; i++) {
-                    const auto& comp = renderState->lightEntities[i].comp;
-
-                    if (comp.shadow) {
-                        const auto& shadow = comp.shadow;
-                        if (shadow->useCubemap) {
-                            cubeMaps.push_back(shadow->cubemap->image);
-                        }
-                        else {
-                            cascadeMaps.push_back(shadow->maps->image);
-                        }
-                    }
-                }
-
-                commandList->BindSampledImages(cascadeMaps, 3, 11);
-                commandList->BindSampledImages(cubeMaps, 3, 19);
-            }
+            commandList->BindSampler(shadowDepthSampler, 3, 12);
 
             volumetricUniformBuffer.SetData(&uniforms, 0);
             commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
 
-            volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
-            volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
-            volumetricPipelineConfig.ManageMacro("OCEAN", oceanEnabled);
-            volumetricPipelineConfig.ManageMacro("LOCAL_LIGHTS", fogEnabled && fog->localLights);
-            auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
+            if (useFroxels) {
+                RenderFroxels(target, scene, res, cullingPushConstants.lightCount, cloudsEnabled,
+                    cloudShadowsEnabled, oceanEnabled, commandList);
+            }
+            else {
+                volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
+                volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
+                volumetricPipelineConfig.ManageMacro("OCEAN", oceanEnabled);
+                volumetricPipelineConfig.ManageMacro("LOCAL_LIGHTS", fogEnabled && fog->localLights);
+                auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
 
-            commandList->BindPipeline(volumetricPipeline);
+                commandList->BindPipeline(volumetricPipeline);
 
-            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+            }
 
             Graphics::Profiler::EndQuery();
 
-            if (fog && fog->enable && fog->rayMarching) {
+            if (fog && fog->enable && fog->rayMarching && !useFroxels) {
                 Graphics::Profiler::BeginQuery("Bilateral blur");
 
                 const int32_t blurGroupSize = 256;
@@ -363,6 +356,199 @@ namespace Atlas {
 
         }
 
+        void VolumetricRenderer::RenderFroxels(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
+            ivec2 resolution, int32_t lightCount, bool cloudsEnabled, bool cloudShadowsEnabled, bool oceanEnabled,
+            Graphics::CommandList* commandList) {
+
+            auto fog = scene->fog;
+            auto& camera = scene->GetMainCamera();
+
+            auto tileSize = glm::clamp(fog->froxelTileSize, 4, 32);
+            ivec2 columnCount = resolution / tileSize;
+            columnCount.x += ((resolution.x % tileSize == 0) ? 0 : 1);
+            columnCount.y += ((resolution.y % tileSize == 0) ? 0 : 1);
+
+            auto sliceCount = std::max(fog->froxelSliceCount, 1);
+            auto froxelCount = ivec3(columnCount, sliceCount);
+
+            ivec3 clusterCount = froxelCount / froxelClusterSize;
+            clusterCount.x += ((froxelCount.x % froxelClusterSize == 0) ? 0 : 1);
+            clusterCount.y += ((froxelCount.y % froxelClusterSize == 0) ? 0 : 1);
+            clusterCount.z += ((froxelCount.z % froxelClusterSize == 0) ? 0 : 1);
+
+            if (lightCullingBuffer.GetElementCount() < clusterCount.x * clusterCount.y * clusterCount.z * 64) {
+                lightCullingBuffer.SetSize(clusterCount.x * clusterCount.y * clusterCount.z * 64);
+            }
+            lightCullingBuffer.Bind(commandList, 3, 10);
+
+            if (target->froxelTexture.width != columnCount.x || target->froxelTexture.height != columnCount.y ||
+                target->froxelTexture.depth != sliceCount)
+                target->SetFroxelResolution(froxelCount);
+
+            auto resetHistory = !target->HasHistory() ||
+                target->historyFroxelTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED;
+
+            // See "The Unreasonable Effectiveness of Quasirandom Sequences", Roberts 2018
+            const double g = 1.22074408460575947536;
+            auto r3 = [&](int32_t axis) {
+                auto alpha = 1.0 / std::pow(g, double(axis + 1));
+                auto value = 0.5 + alpha * double(froxelFrameCount);
+                return float(value - std::floor(value));
+            };
+            auto jitter = vec4(r3(0), r3(1), r3(2), 0.0f);
+            froxelFrameCount++;
+
+            FroxelPushConstants constants = {
+                .columnCount = columnCount,
+                .resolution = resolution,
+                .sliceCount = sliceCount,
+                .tileSize = tileSize,
+                .near = camera.nearPlane,
+                .far = fog->froxelFarDistance > camera.nearPlane ?
+                    std::min(fog->froxelFarDistance, camera.farPlane) : camera.farPlane,
+                .lightCount = lightCount,
+                .resetHistory = resetHistory ? 1 : 0,
+                .jitter = jitter,
+                .extendedFar = camera.farPlane,
+                .currentWeight = 1.0f - glm::clamp(fog->froxelHistoryWeight, 0.0f, 0.99f),
+                .distributionExponent = glm::clamp(fog->froxelDistributionExponent, 0.1f, 4.0f),
+                .directionalJitter = fog->froxelDirectionalJitter ? 1 : 0,
+                .localLightJitter = fog->froxelLocalLightJitter ? 1 : 0,
+                .localLightSampleCount = glm::clamp(fog->froxelLocalLightSamples, 1, 16),
+                .jitterMode = fog->froxelJitterMode
+            };
+
+            auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
+
+            {
+                Graphics::Profiler::BeginQuery("Light culling");
+
+                auto pipeline = PipelineManager::GetPipeline(froxelCullingPipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->Dispatch(clusterCount.x, clusterCount.y, clusterCount.z);
+                commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+            }
+
+            {
+                Graphics::Profiler::EndAndBeginQuery("Inject");
+
+                froxelInjectPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
+                froxelInjectPipelineConfig.ManageMacro("LOCAL_LIGHTS", fog->enable && fog->localLights);
+                auto pipeline = PipelineManager::GetPipeline(froxelInjectPipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                Graphics::ImageBarrier imageBarriers[] = {
+                    {target->froxelTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    {target->historyFroxelTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, {});
+
+                commandList->BindImage(target->froxelTexture.image, 3, 0);
+                commandList->BindImage(target->historyFroxelTexture.image, target->historyFroxelTexture.sampler, 3, 1);
+
+                commandList->Dispatch(clusterCount.x, clusterCount.y, clusterCount.z);
+            }
+
+            auto integrateInputTexture = &target->froxelTexture;
+            if (fog->froxelFilter) {
+                Graphics::Profiler::EndAndBeginQuery("Filter");
+
+                ivec3 groupCount = froxelCount / 4;
+                groupCount.x += ((froxelCount.x % 4 == 0) ? 0 : 1);
+                groupCount.y += ((froxelCount.y % 4 == 0) ? 0 : 1);
+                groupCount.z += ((froxelCount.z % 4 == 0) ? 0 : 1);
+
+                // The integrated texture is free until the integration, it holds the horizontal pass
+                auto pipeline = PipelineManager::GetPipeline(froxelHorizontalFilterPipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                Graphics::ImageBarrier imageBarriers[] = {
+                    {target->froxelTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->integratedFroxelTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, {});
+
+                commandList->BindImage(target->integratedFroxelTexture.image, 3, 0);
+                commandList->BindImage(target->froxelTexture.image, target->froxelTexture.sampler, 3, 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
+
+                pipeline = PipelineManager::GetPipeline(froxelVerticalFilterPipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                Graphics::ImageBarrier verticalImageBarriers[] = {
+                    {target->integratedFroxelTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->filteredFroxelTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(verticalImageBarriers, {});
+
+                commandList->BindImage(target->filteredFroxelTexture.image, 3, 0);
+                commandList->BindImage(target->integratedFroxelTexture.image, target->integratedFroxelTexture.sampler, 3, 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
+
+                integrateInputTexture = &target->filteredFroxelTexture;
+            }
+
+            {
+                Graphics::Profiler::EndAndBeginQuery("Integrate");
+
+                froxelIntegratePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
+                auto pipeline = PipelineManager::GetPipeline(froxelIntegratePipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                Graphics::ImageBarrier imageBarriers[] = {
+                    {integrateInputTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->integratedFroxelTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, {});
+
+                commandList->BindImage(target->integratedFroxelTexture.image, 3, 0);
+                commandList->BindImage(integrateInputTexture->image, integrateInputTexture->sampler, 3, 1);
+
+                ivec2 groupCount = columnCount / 8;
+                groupCount.x += ((columnCount.x % 8 == 0) ? 0 : 1);
+                groupCount.y += ((columnCount.y % 8 == 0) ? 0 : 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+            }
+
+            {
+                Graphics::Profiler::EndAndBeginQuery("Apply");
+
+                froxelApplyPipelineConfig.ManageMacro("OCEAN", oceanEnabled);
+                auto pipeline = PipelineManager::GetPipeline(froxelApplyPipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
+
+                commandList->ImageMemoryBarrier(target->integratedFroxelTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+                commandList->BindImage(target->volumetricTexture.image, 3, 0);
+                commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 1);
+                commandList->BindImage(target->integratedFroxelTexture.image, target->integratedFroxelTexture.sampler, 3, 20);
+
+                ivec2 groupCount = resolution / 8;
+                groupCount.x += ((resolution.x % 8 == 0) ? 0 : 1);
+                groupCount.y += ((resolution.y % 8 == 0) ? 0 : 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+            }
+
+            Graphics::Profiler::EndQuery();
+
+            std::swap(target->froxelTexture, target->historyFroxelTexture);
+
+        }
+
     }
 
 }
+

@@ -140,7 +140,6 @@ namespace Atlas {
             bool sampleEmissives = false;
             bool debug = false;
             bool optimizeProbes = true;
-            bool useShadowMap = false;
             bool lowerResMoments = false;
             bool lowerResRadiance = true;
             bool opacityCheck = false;
