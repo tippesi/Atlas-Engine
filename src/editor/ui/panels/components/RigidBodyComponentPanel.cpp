@@ -46,13 +46,22 @@ namespace Atlas::Editor::UI {
             return;
         }
 
-        const char* typeItems[] = { "Mesh", "Sphere", "Bounding box" };
-        int currentItem = static_cast<int>(shape->type);
-        int previousItem = currentItem;
-        ImGui::Combo("Shape type", &currentItem, typeItems, IM_ARRAYSIZE(typeItems));
-        shape->type = static_cast<ShapeType>(currentItem);
+        std::vector<ShapeType> types = { ShapeType::Mesh, ShapeType::ConvexHull, ShapeType::Sphere,
+            ShapeType::BoundingBox, ShapeType::Capsule, ShapeType::Cylinder, ShapeType::Compound };
 
-        bool shapeTypeChanged = currentItem != previousItem;
+        auto previousType = shape->type;
+        if (ImGui::BeginCombo("Shape type", GetShapeTypeName(shape->type))) {
+            for (auto type : types) {
+                auto isSelected = type == shape->type;
+                if (ImGui::Selectable(GetShapeTypeName(type), isSelected))
+                    shape->type = type;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        bool shapeTypeChanged = shape->type != previousType;
 
         auto meshComponent = entity.TryGetComponent<MeshComponent>();
         auto transformComponent = entity.TryGetComponent<TransformComponent>();
@@ -115,6 +124,47 @@ namespace Atlas::Editor::UI {
 
             density = &capsuleSettings->density;
             scale = &capsuleSettings->scale;
+        }
+        else if (shape->type == ShapeType::ConvexHull) {
+            if (shapeTypeChanged)
+                shape->settings = CreateRef<ConvexHullShapeSettings>();
+
+            auto convexHullSettings = static_cast<ConvexHullShapeSettings*>(shape->settings.get());
+
+            bool resourceChanged = false;
+            convexHullSettings->mesh = meshSelectionPanel.Render(convexHullSettings->mesh, resourceChanged);
+
+            if (meshComponent)
+                if (ImGui::Button("Take resource from mesh component", ImVec2(-FLT_MIN, 0.0f)))
+                    convexHullSettings->mesh = meshComponent->mesh;
+
+            density = &convexHullSettings->density;
+            scale = &convexHullSettings->scale;
+        }
+        else if (shape->type == ShapeType::Cylinder) {
+            if (shapeTypeChanged)
+                shape->settings = CreateRef<CylinderShapeSettings>();
+
+            auto cylinderSettings = static_cast<CylinderShapeSettings*>(shape->settings.get());
+
+            ImGui::DragFloat("Radius", &cylinderSettings->radius, 0.1f, 0.01f, 100.0f);
+            ImGui::DragFloat("Height", &cylinderSettings->height, 0.1f, 0.01f, 100.0f);
+
+            density = &cylinderSettings->density;
+            scale = &cylinderSettings->scale;
+        }
+        else if (shape->type == ShapeType::Compound) {
+            if (shapeTypeChanged) {
+                auto compoundSettings = CreateRef<CompoundShapeSettings>();
+                compoundSettings->children.push_back({ ShapesManager::CreateShape(BoundingBoxShapeSettings {}) });
+                shape->settings = compoundSettings;
+            }
+
+            auto compoundSettings = static_cast<CompoundShapeSettings*>(shape->settings.get());
+
+            RenderCompoundSettings(*compoundSettings);
+
+            scale = &compoundSettings->scale;
         }
 
         if (density != nullptr) {
@@ -182,6 +232,108 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat("Angular dampening", &settings.angularDampening, 0.01f, -0.0f, 1.0f);
 
         ImGui::DragFloat("Gravity factor", &settings.gravityFactor, 0.01f, -0.0f, 1.0f);
+
+        ImGui::Checkbox("Trigger", &settings.isTrigger);
+        ImGui::SetItemTooltip("Reports contacts to scripts without colliding");
+
+    }
+
+    void RigidBodyComponentPanel::RenderCompoundSettings(Physics::CompoundShapeSettings& compoundSettings) {
+
+        std::vector<ShapeType> types = { ShapeType::Sphere, ShapeType::BoundingBox, ShapeType::Capsule, ShapeType::Cylinder };
+
+        auto& children = compoundSettings.children;
+        int32_t removeIdx = -1;
+
+        for (size_t i = 0; i < children.size(); i++) {
+            auto& child = children[i];
+            if (!child.shape)
+                continue;
+
+            ImGui::PushID(int32_t(i));
+
+            if (Widgets::SectionHeader(("Child " + std::to_string(i)).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                auto previousType = child.shape->type;
+                if (ImGui::BeginCombo("Shape type", GetShapeTypeName(child.shape->type))) {
+                    for (auto type : types) {
+                        auto isSelected = type == child.shape->type;
+                        if (ImGui::Selectable(GetShapeTypeName(type), isSelected))
+                            child.shape->type = type;
+                        if (isSelected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+
+                if (child.shape->type != previousType) {
+                    if (child.shape->type == ShapeType::Sphere)
+                        child.shape->settings = CreateRef<SphereShapeSettings>();
+                    else if (child.shape->type == ShapeType::BoundingBox)
+                        child.shape->settings = CreateRef<BoundingBoxShapeSettings>();
+                    else if (child.shape->type == ShapeType::Capsule)
+                        child.shape->settings = CreateRef<CapsuleShapeSettings>();
+                    else if (child.shape->type == ShapeType::Cylinder)
+                        child.shape->settings = CreateRef<CylinderShapeSettings>();
+                }
+
+                if (child.shape->type == ShapeType::Sphere) {
+                    auto sphereSettings = static_cast<SphereShapeSettings*>(child.shape->settings.get());
+                    ImGui::DragFloat("Radius", &sphereSettings->radius, 0.1f, 0.01f, 100.0f);
+                    ImGui::DragFloat("Density", &sphereSettings->density, 0.01f, 0.001f);
+                }
+                else if (child.shape->type == ShapeType::BoundingBox) {
+                    auto boundingBoxSettings = static_cast<BoundingBoxShapeSettings*>(child.shape->settings.get());
+                    Widgets::DragVec3("Min", boundingBoxSettings->aabb.min, 0.1f, 0.0f, -10000.0f, 10000.0f);
+                    Widgets::DragVec3("Max", boundingBoxSettings->aabb.max, 0.1f, 0.0f, -10000.0f, 10000.0f);
+                    ImGui::DragFloat("Density", &boundingBoxSettings->density, 0.01f, 0.001f);
+                }
+                else if (child.shape->type == ShapeType::Capsule) {
+                    auto capsuleSettings = static_cast<CapsuleShapeSettings*>(child.shape->settings.get());
+                    ImGui::DragFloat("Radius", &capsuleSettings->radius, 0.1f, 0.01f, 100.0f);
+                    ImGui::DragFloat("Height", &capsuleSettings->height, 0.1f, 0.01f, 100.0f);
+                    ImGui::DragFloat("Density", &capsuleSettings->density, 0.01f, 0.001f);
+                }
+                else if (child.shape->type == ShapeType::Cylinder) {
+                    auto cylinderSettings = static_cast<CylinderShapeSettings*>(child.shape->settings.get());
+                    ImGui::DragFloat("Radius", &cylinderSettings->radius, 0.1f, 0.01f, 100.0f);
+                    ImGui::DragFloat("Height", &cylinderSettings->height, 0.1f, 0.01f, 100.0f);
+                    ImGui::DragFloat("Density", &cylinderSettings->density, 0.01f, 0.001f);
+                }
+
+                Widgets::DragVec3("Translation", child.translation, 0.01f, 0.0f, -10000.0f, 10000.0f);
+
+                auto rotation = glm::degrees(glm::eulerAngles(child.rotation));
+                if (Widgets::DragVec3("Rotation", rotation, 0.5f, 0.0f, -360.0f, 360.0f))
+                    child.rotation = quat(glm::radians(rotation));
+
+                if (ImGui::Button("Remove child", { -FLT_MIN, 0 }))
+                    removeIdx = int32_t(i);
+            }
+
+            ImGui::PopID();
+        }
+
+        if (removeIdx >= 0 && children.size() > 1)
+            children.erase(children.begin() + removeIdx);
+
+        if (ImGui::Button("Add child", { -FLT_MIN, 0 }))
+            children.push_back({ ShapesManager::CreateShape(BoundingBoxShapeSettings {}) });
+
+    }
+
+    const char* RigidBodyComponentPanel::GetShapeTypeName(Physics::ShapeType type) const {
+
+        switch (type) {
+            case ShapeType::Mesh: return "Mesh";
+            case ShapeType::Sphere: return "Sphere";
+            case ShapeType::BoundingBox: return "Bounding box";
+            case ShapeType::Capsule: return "Capsule";
+            case ShapeType::HeightField: return "Height field";
+            case ShapeType::ConvexHull: return "Convex hull";
+            case ShapeType::Cylinder: return "Cylinder";
+            case ShapeType::Compound: return "Compound";
+            default: return "Unknown";
+        }
 
     }
 

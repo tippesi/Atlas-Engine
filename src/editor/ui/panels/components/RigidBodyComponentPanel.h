@@ -22,6 +22,10 @@ namespace Atlas::Editor::UI {
 
         void RenderBodySettings(Scene::Entity entity, Physics::BodyCreationSettings& creationSettings);
 
+        void RenderCompoundSettings(Physics::CompoundShapeSettings& compoundSettings);
+
+        const char* GetShapeTypeName(Physics::ShapeType type) const;
+
         ResourceSelectionPanel<Mesh::Mesh> meshSelectionPanel;
 
     };

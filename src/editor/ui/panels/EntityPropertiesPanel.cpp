@@ -93,14 +93,28 @@ namespace Atlas::Editor::UI {
                 auto comp = entity.GetComponent<PlayerComponent>();
                 RenderComponentPanel("Player", scene,
                     entity, playerComponentPanel, comp);
-                // Only change if we have new settings
-                entity.RemoveComponent<PlayerComponent>();
-                auto& newComp = entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                // Recreating the player while playing would reset its state, e.g. crouching or touched triggers
+                if (scene->physicsWorld->pauseSimulation) {
+                    entity.RemoveComponent<PlayerComponent>();
+                    entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                }
+                auto& newComp = entity.GetComponent<PlayerComponent>();
                 newComp.slowVelocity = comp.slowVelocity;
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
                 newComp.acceleration = comp.acceleration;
                 newComp.deceleration = comp.deceleration;
+                newComp.allowInput = comp.allowInput;
+                newComp.stickToGroundDistance = comp.stickToGroundDistance;
+                newComp.walkStairStepUpDistance = comp.walkStairStepUpDistance;
+                newComp.crouchHeight = comp.crouchHeight;
+                newComp.crouchVelocity = comp.crouchVelocity;
+            }
+
+            if (entity.HasComponent<ConstraintComponent>()) {
+                auto& comp = entity.GetComponent<ConstraintComponent>();
+                RenderComponentPanel("Constraint", scene,
+                    entity, constraintComponentPanel, comp);
             }
 
             if (entity.HasComponent<SplineComponent>()) {
@@ -189,6 +203,10 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<RigidBodyComponent>(bodySettings);
                 }
 
+                if (entity.HasComponent<RigidBodyComponent>() &&
+                    !entity.HasComponent<ConstraintComponent>() && matches("Constraint") && ImGui::MenuItem("Constraint"))
+                    entity.AddComponent<ConstraintComponent>();
+
                 ImGui::EndPopup();
             }
 
@@ -224,6 +242,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<PlayerComponent>();
                 if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Rigid body"))
                     entity.RemoveComponent<RigidBodyComponent>();
+                if (entity.HasComponent<ConstraintComponent>() && ImGui::MenuItem("Constraint"))
+                    entity.RemoveComponent<ConstraintComponent>();
 
                 ImGui::EndPopup();
             }
@@ -244,6 +264,7 @@ namespace Atlas::Editor::UI {
                 else if (HandleComponentPaste<SplineComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<PlayerComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<RigidBodyComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<ConstraintComponent>(scene, entity)) {}
                 else {
                     Notifications::Push({"Invalid type to paste as a component."});
                 }

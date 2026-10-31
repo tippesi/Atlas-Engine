@@ -53,6 +53,22 @@ namespace Atlas {
             AllComponentsBit = (1 << 4) - 1
         } SceneQueryComponentBits;
 
+        // Seen from the entity: both entities of a contact get an event
+        struct ContactEvent {
+            Physics::ContactEventType type = Physics::ContactEventType::Begin;
+
+            Entity entity;
+            Entity otherEntity;
+
+            // Contact position and normal pointing from the entity to the other entity, both are zero for end events
+            vec3 position = vec3(0.0f);
+            vec3 normal = vec3(0.0f);
+
+            float impactSpeed = 0.0f;
+
+            bool isTrigger = false;
+        };
+
         class Scene : public SpacePartitioning {
 
             template<typename T>
@@ -151,6 +167,22 @@ namespace Atlas {
 
             std::vector<Entity> QueryAABB(const Volume::AABB& aabb, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
+
+            /**
+             * Moves the shape from the matrix along the direction and returns the first physics body it hits.
+             * The hit distance is measured along the direction.
+             */
+            Volume::RayResult<Entity> CastShape(const Ref<Physics::Shape>& shape, const mat4& matrix, vec3 direction,
+                float distance, const std::function<bool(const Entity&)>& ignore = nullptr);
+
+            std::vector<Entity> CollideShape(const Ref<Physics::Shape>& shape, const mat4& matrix,
+                const std::function<bool(const Entity&)>& ignore = nullptr);
+
+            /**
+             * Contacts of physics bodies and players that began or ended in the last update. Scripts get them before
+             * their update through OnContactBegin, OnContactEnd, OnTriggerEnter and OnTriggerExit.
+             */
+            const std::vector<ContactEvent>& GetContactEvents() const { return contactEvents; }
 
             void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
@@ -253,6 +285,8 @@ namespace Atlas {
             Entity mainLightEntity;
             float time = 0.0f;
             float deltaTime = 0.0f;
+
+            std::vector<ContactEvent> contactEvents;
 
             bool firstTimestep = true;
             bool hasChanged = true;

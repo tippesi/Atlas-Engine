@@ -120,7 +120,7 @@ namespace Atlas::Physics {
 
     }
 
-    void Player::SetShape(const Ref<Shape>& shape) {
+    bool Player::SetShape(const Ref<Shape>& shape) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
 
@@ -131,8 +131,13 @@ namespace Atlas::Physics {
         const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::Movable);
         const auto& tempAllocator = Physics::PhysicsManager::tempAllocator;
 
-        character->SetShape(shape->ref, physicsSettings.mPenetrationSlop * 1.5f, broadPhaseLayerFilter,
-            defaultLayerFilter, {}, {}, *tempAllocator);
+        if (!character->SetShape(shape->ref, physicsSettings.mPenetrationSlop * 1.5f, broadPhaseLayerFilter,
+            defaultLayerFilter, {}, {}, *tempAllocator))
+            return false;
+
+        character->SetInnerBodyShape(shape->ref);
+
+        return true;
 
     }
 
@@ -186,10 +191,11 @@ namespace Atlas::Physics {
 
     }
 
-    void Player::OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::BodyID &inBodyID2, const JPH::SubShapeID &inSubShapeID2, 
-			JPH::RVec3Arg inContactPosition, JPH::Vec3Arg inContactNormal, JPH::CharacterContactSettings &ioSettings) {
+    void Player::OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::CharacterContact &inContact,
+			JPH::CharacterContactSettings &ioSettings) {
 
         ioSettings.mCanPushCharacter = false;
+        ioSettings.mCanReceiveImpulses = creationSettings->canPushBodies;
 
     }
 

@@ -24,6 +24,11 @@ namespace Atlas::Scene {
 
 			void Slide() { slide = true; }
 
+			// Has to be called every update to stay crouched, standing up waits until there is enough space
+			void Crouch() { crouch = true; }
+
+			bool IsCrouching() const { return crouching; }
+
 			void SetInputVelocity(const vec3& velocity) { inputVelocity = velocity; }
 
 			vec3 GetInputVelocity() const { return inputVelocity; }
@@ -47,12 +52,18 @@ namespace Atlas::Scene {
 			float stickToGroundDistance = 0.1f;
             float walkStairStepUpDistance = 0.2f;
 
+			// Capsule height while crouching, the velocity is limited to the crouch velocity
+			float crouchHeight = 0.4f;
+			float crouchVelocity = 1.0f;
+
 			float slideDeacceleration = 4.0f;
 			float slideCutoffVelocity = 0.2f;
 			float slideVelocityMax = 4.0f;
 
 		private:
 			void Update(float deltaTime);
+
+			void UpdateCrouching();
 
 			vec3 FollowInput(const vec3& groundVelocity, const vec3& up, float deltaTime) const;
 
@@ -64,6 +75,8 @@ namespace Atlas::Scene {
 			float jumpRequest = 0.0f;
 			float airTime = 0.0f;
 			bool slide = false;
+			bool crouch = false;
+			bool crouching = false;
 			bool jumped = false;
 
 			vec3 inputVelocity = vec3(0.0f);

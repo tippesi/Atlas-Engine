@@ -60,6 +60,9 @@ namespace Atlas {
 
                 if (controllerJump && ControllerMap::IsButtonPressed(AE_CONTROLLERBUTTON_A, false))
                     player.Jump();
+
+                if (controllerCrouch && ControllerMap::IsButtonPressed(AE_CONTROLLERBUTTON_B))
+                    player.Crouch();
             }
 
         }

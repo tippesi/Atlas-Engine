@@ -18,7 +18,7 @@ namespace Atlas {
 
             static void Shutdown();
 
-            static void ExecuteUpdate(PhysicsWorld* physicsWorld, float deltaTime);
+            static void ExecuteUpdate(PhysicsWorld* physicsWorld, float deltaTime, int32_t collisionSteps);
 
             static Ref<JPH::TempAllocatorImpl> tempAllocator;
             static Ref<JPH::JobSystemThreadPool> jobSystemThreadPool;

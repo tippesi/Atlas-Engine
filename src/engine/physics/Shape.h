@@ -19,8 +19,13 @@ namespace Atlas::Physics {
         Sphere,
         BoundingBox,
         Capsule,
-        HeightField
+        HeightField,
+        ConvexHull,
+        Cylinder,
+        Compound
     };
+
+    class Shape;
 
     struct ShapeSettings {};
 
@@ -55,6 +60,30 @@ namespace Atlas::Physics {
         vec3 scale = vec3(1.0f);
 
         static inline const float holeValue = JPH::HeightFieldShapeConstants::cNoCollisionValue;
+    };
+
+    struct ConvexHullShapeSettings : ShapeSettings {
+        ResourceHandle<Mesh::Mesh> mesh;
+        float density = 1.0f;
+        vec3 scale = vec3(1.0f);
+    };
+
+    struct CylinderShapeSettings : ShapeSettings {
+        float height = 1.0f;
+        float radius = 0.5f;
+        float density = 1.0f;
+        vec3 scale = vec3(1.0f);
+    };
+
+    struct CompoundShapeChild {
+        Ref<Shape> shape = nullptr;
+        vec3 translation = vec3(0.0f);
+        quat rotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
+    };
+
+    struct CompoundShapeSettings : ShapeSettings {
+        std::vector<CompoundShapeChild> children;
+        vec3 scale = vec3(1.0f);
     };
 
     using ShapeRef = JPH::ShapeRefC;

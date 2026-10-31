@@ -48,11 +48,10 @@ namespace Atlas {
 
         }
 
-        void PhysicsManager::ExecuteUpdate(PhysicsWorld* physicsWorld, float deltaTime) {
+        void PhysicsManager::ExecuteUpdate(PhysicsWorld* physicsWorld, float deltaTime, int32_t collisionSteps) {
 
             std::scoped_lock<std::mutex> lock(updateMutex);
 
-            uint32_t collisionSteps = std::min(std::max(uint32_t(float(physicsWorld->simulationStepsPerSecond) * deltaTime), 1u), 8u);
             physicsWorld->system->Update(deltaTime, collisionSteps, tempAllocator.get(), jobSystemThreadPool.get());
 
         }

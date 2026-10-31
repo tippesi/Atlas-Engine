@@ -34,6 +34,9 @@ namespace Atlas::Physics {
 
         float gravityFactor = 1.0f;
 
+        // Triggers report contacts with movable bodies and players but don't collide, they never move by themselves
+        bool isTrigger = false;
+
         Ref<Shape> shape = nullptr;
     };
 

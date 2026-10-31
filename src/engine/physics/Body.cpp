@@ -94,6 +94,48 @@ namespace Atlas::Physics {
 
     }
 
+    void Body::AddForce(vec3 force) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddForce(bodyId, force);
+
+    }
+
+    void Body::AddForce(vec3 force, vec3 position) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddForce(bodyId, force, position);
+
+    }
+
+    void Body::AddImpulse(vec3 impulse) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddImpulse(bodyId, impulse);
+
+    }
+
+    void Body::AddImpulse(vec3 impulse, vec3 position) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddImpulse(bodyId, impulse, position);
+
+    }
+
+    void Body::AddTorque(vec3 torque) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddTorque(bodyId, torque);
+
+    }
+
+    void Body::AddAngularImpulse(vec3 angularImpulse) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddAngularImpulse(bodyId, angularImpulse);
+
+    }
+
     Ref<Shape> Body::GetShape() const {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

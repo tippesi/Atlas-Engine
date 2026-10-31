@@ -337,6 +337,8 @@ namespace Atlas::Scene::Components {
             {"acceleration", p.acceleration},
             {"deceleration", p.deceleration},
             {"allowInput", p.allowInput},
+            {"crouchHeight", p.crouchHeight},
+            {"crouchVelocity", p.crouchVelocity},
         };
 
         if (p.creationSettings != nullptr)
@@ -350,11 +352,27 @@ namespace Atlas::Scene::Components {
         j.at("allowInput").get_to(p.allowInput);
         try_get_json(j, "acceleration", p.acceleration);
         try_get_json(j, "deceleration", p.deceleration);
+        try_get_json(j, "crouchHeight", p.crouchHeight);
+        try_get_json(j, "crouchVelocity", p.crouchVelocity);
 
         if (j.contains("creationSettings")) {
             p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();
             *p.creationSettings = j["creationSettings"];
         }
+    }
+
+    void to_json(json& j, const ConstraintComponent& p) {
+        j = json {
+            {"creationSettings", p.creationSettings},
+            {"connectedEntity", size_t(p.connectedEntity)},
+        };
+    }
+
+    void from_json(const json& j, ConstraintComponent& p) {
+        j.at("creationSettings").get_to(p.creationSettings);
+        size_t connectedEntity;
+        j.at("connectedEntity").get_to(connectedEntity);
+        p.connectedEntity = connectedEntity;
     }
 
     void to_json(json &j, const LuaScriptComponent &p) {

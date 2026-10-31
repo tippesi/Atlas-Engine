@@ -8,10 +8,34 @@
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
+#include <Jolt/Physics/Collision/ShapeCast.h>
+#include <Jolt/Physics/Collision/CollideShape.h>
+#include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
+#include <Jolt/Physics/Constraints/FixedConstraint.h>
+#include <Jolt/Physics/Constraints/PointConstraint.h>
+#include <Jolt/Physics/Constraints/HingeConstraint.h>
+#include <Jolt/Physics/Constraints/SliderConstraint.h>
+#include <Jolt/Physics/Constraints/DistanceConstraint.h>
+#include <Jolt/Physics/Constraints/ConeConstraint.h>
 
 namespace Atlas {
 
     namespace Physics {
+
+        // Ignored bodies are filtered in the queries. Continuing a query behind them would start inside of convex
+        // shapes, which count as solid and are hit again right away
+        class QueryBodyFilter : public JPH::BodyFilter {
+        public:
+            QueryBodyFilter(PhysicsWorld* world, const std::function<bool(const Body&)>& ignore) : world(world), ignore(ignore) {}
+
+            bool ShouldCollide(const JPH::BodyID& bodyId) const override { return !ignore || !ignore(Body(bodyId, world)); }
+
+            bool ShouldCollideLocked(const JPH::Body& body) const override { return !body.IsSensor(); }
+
+        private:
+            PhysicsWorld* world;
+            const std::function<bool(const Body&)>& ignore;
+        };
 
         PhysicsWorld::PhysicsWorld(uint32_t maxBodyCount, uint32_t bodyMutexesCount, uint32_t maxBodyPairCount,
             uint32_t maxContactConstraintCount, Ref<JPH::ObjectLayerPairFilter> objectLayerFilter,
@@ -34,12 +58,16 @@ namespace Atlas {
 
             state = CreateRef<JPH::StateRecorderImpl>();
 
-            //contactListener = CreateRef<MyContactListener>();
-            //system.SetContactListener(contactListener.get());
+            contactListener = CreateRef<ContactListener>();
+            system->SetContactListener(contactListener.get());
 
         }
 
         PhysicsWorld::~PhysicsWorld() {
+
+            for (auto& constraint : constraints)
+                system->RemoveConstraint(constraint);
+            constraints.clear();
 
             for (auto [_, shape] : bodyToShapeMap)
                 shape->settings.reset();
@@ -52,7 +80,12 @@ namespace Atlas {
 
             if (pauseSimulation) return;
 
-            PhysicsManager::ExecuteUpdate(this, deltaTime);
+            auto collisionSteps = std::min(std::max(int32_t(float(simulationStepsPerSecond) * deltaTime), 1), 8);
+            stepDeltaTime = deltaTime / float(collisionSteps);
+
+            PhysicsManager::ExecuteUpdate(this, deltaTime, collisionSteps);
+
+            ProcessContacts();
 
         }
 
@@ -85,6 +118,23 @@ namespace Atlas {
         void PhysicsWorld::DestroyBody(Body body) {
 
             auto& bodyInterface = system->GetBodyInterface();
+
+            // Constraints keep pointers to their bodies
+            std::erase_if(constraints, [&](const JPH::Ref<JPH::TwoBodyConstraint>& constraint) {
+                if (constraint->GetBody1()->GetID() != body.bodyId && constraint->GetBody2()->GetID() != body.bodyId)
+                    return false;
+                bodyInterface.ActivateConstraint(constraint);
+                system->RemoveConstraint(constraint);
+                return true;
+                });
+
+            std::erase_if(contactPairs, [&](const auto& item) {
+                const auto& event = item.second.event;
+                if (event.bodyId != body.bodyId && event.otherBodyId != body.bodyId)
+                    return false;
+                EndContact(item.second);
+                return true;
+                });
 
             bodyToShapeMap.erase(body.bodyId);
 
@@ -221,6 +271,48 @@ namespace Atlas {
 
         }
 
+        void PhysicsWorld::AddForce(BodyID bodyId, vec3 force) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.AddForce(bodyId, VecToJPHVec(force));
+
+        }
+
+        void PhysicsWorld::AddForce(BodyID bodyId, vec3 force, vec3 position) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.AddForce(bodyId, VecToJPHVec(force), VecToJPHVec(position));
+
+        }
+
+        void PhysicsWorld::AddImpulse(BodyID bodyId, vec3 impulse) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.AddImpulse(bodyId, VecToJPHVec(impulse));
+
+        }
+
+        void PhysicsWorld::AddImpulse(BodyID bodyId, vec3 impulse, vec3 position) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.AddImpulse(bodyId, VecToJPHVec(impulse), VecToJPHVec(position));
+
+        }
+
+        void PhysicsWorld::AddTorque(BodyID bodyId, vec3 torque) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.AddTorque(bodyId, VecToJPHVec(torque));
+
+        }
+
+        void PhysicsWorld::AddAngularImpulse(BodyID bodyId, vec3 angularImpulse) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.AddAngularImpulse(bodyId, VecToJPHVec(angularImpulse));
+
+        }
+
         uint64_t PhysicsWorld::GetUserData(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
@@ -278,19 +370,6 @@ namespace Atlas {
 
         Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray, const std::function<bool(const Body&)>& ignore) {
 
-            // Ignored bodies are filtered in the query. Continuing a ray behind them would start inside of convex
-            // shapes, which count as solid and are hit again right away
-            class IgnoreFilter : public JPH::BodyFilter {
-            public:
-                IgnoreFilter(PhysicsWorld* world, const std::function<bool(const Body&)>& ignore) : world(world), ignore(ignore) {}
-
-                bool ShouldCollide(const JPH::BodyID& bodyId) const override { return !ignore || !ignore(Body(bodyId, world)); }
-
-            private:
-                PhysicsWorld* world;
-                const std::function<bool(const Body&)>& ignore;
-            };
-
             JPH::RayCastResult hit;
             // The ray starts at tMin and the direction is the whole segment up to tMax
             auto length = ray.tMax - ray.tMin;
@@ -303,7 +382,7 @@ namespace Atlas {
 
             rayCastSettings.SetBackFaceMode(JPH::EBackFaceMode::CollideWithBackFaces);
 
-            IgnoreFilter bodyFilter(this, ignore);
+            QueryBodyFilter bodyFilter(this, ignore);
             if (system->GetNarrowPhaseQuery().CastRay(rayCast, hit, JPH::BroadPhaseLayerFilter(), JPH::ObjectLayerFilter(), bodyFilter)) {
                 auto& bodyLockInterface = system->GetBodyLockInterface();
 
@@ -325,6 +404,249 @@ namespace Atlas {
 
         }
 
+        Volume::RayResult<Body> PhysicsWorld::CastShape(const Ref<Shape>& shape, const mat4& matrix, vec3 direction,
+            float distance, const std::function<bool(const Body&)>& ignore) {
+
+            Volume::RayResult<Body> result;
+
+            if (!shape->IsValid() || distance <= 0.0f)
+                return result;
+
+            JPH::Vec3 pos;
+            JPH::Quat quat;
+            MatrixToJPHPosAndRot(matrix, pos, quat);
+
+            auto shapeCast = JPH::RShapeCast::sFromWorldTransform(shape->ref, JPH::Vec3::sOne(),
+                JPH::Mat44::sRotationTranslation(quat, pos), VecToJPHVec(glm::normalize(direction) * distance));
+
+            JPH::ShapeCastSettings shapeCastSettings;
+            shapeCastSettings.mBackFaceModeTriangles = JPH::EBackFaceMode::CollideWithBackFaces;
+
+            JPH::ClosestHitCollisionCollector<JPH::CastShapeCollector> collector;
+            QueryBodyFilter bodyFilter(this, ignore);
+            system->GetNarrowPhaseQuery().CastShape(shapeCast, shapeCastSettings, JPH::RVec3::sZero(), collector,
+                JPH::BroadPhaseLayerFilter(), JPH::ObjectLayerFilter(), bodyFilter);
+
+            if (collector.HadHit()) {
+                const auto& hit = collector.mHit;
+
+                result.valid = true;
+                result.hitDistance = distance * hit.mFraction;
+                result.normal = -JPHVecToVec(hit.mPenetrationAxis.NormalizedOr(JPH::Vec3::sZero()));
+                result.data = { hit.mBodyID2, this };
+            }
+
+            return result;
+
+        }
+
+        std::vector<Body> PhysicsWorld::CollideShape(const Ref<Shape>& shape, const mat4& matrix,
+            const std::function<bool(const Body&)>& ignore) {
+
+            std::vector<Body> bodies;
+
+            if (!shape->IsValid())
+                return bodies;
+
+            JPH::Vec3 pos;
+            JPH::Quat quat;
+            MatrixToJPHPosAndRot(matrix, pos, quat);
+
+            auto centerOfMassTransform = JPH::Mat44::sRotationTranslation(quat, pos).PreTranslated(shape->ref->GetCenterOfMass());
+
+            JPH::CollideShapeSettings collideShapeSettings;
+            collideShapeSettings.mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;
+
+            JPH::AllHitCollisionCollector<JPH::CollideShapeCollector> collector;
+            QueryBodyFilter bodyFilter(this, ignore);
+            system->GetNarrowPhaseQuery().CollideShape(shape->ref, JPH::Vec3::sOne(), centerOfMassTransform,
+                collideShapeSettings, JPH::RVec3::sZero(), collector, JPH::BroadPhaseLayerFilter(),
+                JPH::ObjectLayerFilter(), bodyFilter);
+
+            for (const auto& hit : collector.mHits) {
+                auto found = std::find_if(bodies.begin(), bodies.end(),
+                    [&](const Body& body) { return body.bodyId == hit.mBodyID2; });
+                if (found == bodies.end())
+                    bodies.emplace_back(hit.mBodyID2, this);
+            }
+
+            return bodies;
+
+        }
+
+        Constraint PhysicsWorld::CreateConstraint(const ConstraintCreationSettings& constraintCreationSettings,
+            BodyID bodyId, BodyID otherBodyId) {
+
+            const auto& settings = constraintCreationSettings;
+
+            auto matrix = GetBodyMatrix(bodyId);
+            auto point = VecToJPHVec(vec3(matrix * vec4(settings.point, 1.0f)));
+            auto worldAxis = mat3(matrix) * settings.axis;
+            auto axis = VecToJPHVec(glm::length(worldAxis) > 0.0f ? glm::normalize(worldAxis) : vec3(0.0f, 1.0f, 0.0f));
+            auto normal = axis.GetNormalizedPerpendicular();
+
+            auto otherPoint = VecToJPHVec(settings.otherPoint);
+            if (!otherBodyId.IsInvalid())
+                otherPoint = VecToJPHVec(vec3(GetBodyMatrix(otherBodyId) * vec4(settings.otherPoint, 1.0f)));
+
+            JPH::Ref<JPH::TwoBodyConstraintSettings> constraintSettings;
+            switch (settings.type) {
+                case ConstraintType::Fixed: {
+                    auto fixedSettings = new JPH::FixedConstraintSettings();
+                    fixedSettings->mAutoDetectPoint = true;
+                    constraintSettings = fixedSettings;
+                    break;
+                }
+                case ConstraintType::Point: {
+                    auto pointSettings = new JPH::PointConstraintSettings();
+                    pointSettings->mPoint1 = pointSettings->mPoint2 = point;
+                    constraintSettings = pointSettings;
+                    break;
+                }
+                case ConstraintType::Hinge: {
+                    auto hingeSettings = new JPH::HingeConstraintSettings();
+                    hingeSettings->mPoint1 = hingeSettings->mPoint2 = point;
+                    hingeSettings->mHingeAxis1 = hingeSettings->mHingeAxis2 = axis;
+                    hingeSettings->mNormalAxis1 = hingeSettings->mNormalAxis2 = normal;
+                    if (settings.enableLimits) {
+                        hingeSettings->mLimitsMin = glm::clamp(settings.limitsMin, -glm::pi<float>(), 0.0f);
+                        hingeSettings->mLimitsMax = glm::clamp(settings.limitsMax, 0.0f, glm::pi<float>());
+                    }
+                    constraintSettings = hingeSettings;
+                    break;
+                }
+                case ConstraintType::Slider: {
+                    auto sliderSettings = new JPH::SliderConstraintSettings();
+                    sliderSettings->mAutoDetectPoint = true;
+                    sliderSettings->SetSliderAxis(axis);
+                    if (settings.enableLimits) {
+                        sliderSettings->mLimitsMin = glm::min(settings.limitsMin, 0.0f);
+                        sliderSettings->mLimitsMax = glm::max(settings.limitsMax, 0.0f);
+                    }
+                    constraintSettings = sliderSettings;
+                    break;
+                }
+                case ConstraintType::Distance: {
+                    auto distanceSettings = new JPH::DistanceConstraintSettings();
+                    distanceSettings->mPoint1 = point;
+                    distanceSettings->mPoint2 = otherPoint;
+                    // Without a range the distance at creation is kept
+                    if (settings.enableLimits && settings.limitsMax > 0.0f) {
+                        distanceSettings->mMinDistance = glm::max(settings.limitsMin, 0.0f);
+                        distanceSettings->mMaxDistance = glm::max(settings.limitsMax, distanceSettings->mMinDistance);
+                    }
+                    constraintSettings = distanceSettings;
+                    break;
+                }
+                case ConstraintType::Cone: {
+                    auto coneSettings = new JPH::ConeConstraintSettings();
+                    coneSettings->mPoint1 = coneSettings->mPoint2 = point;
+                    coneSettings->mTwistAxis1 = coneSettings->mTwistAxis2 = axis;
+                    coneSettings->mHalfConeAngle = glm::clamp(settings.halfConeAngle, 0.0f, glm::pi<float>());
+                    constraintSettings = coneSettings;
+                    break;
+                }
+            }
+
+            auto& bodyInterface = system->GetBodyInterface();
+
+            JPH::Ref<JPH::TwoBodyConstraint> constraint = bodyInterface.CreateConstraint(constraintSettings, bodyId, otherBodyId);
+            system->AddConstraint(constraint);
+            bodyInterface.ActivateConstraint(constraint);
+
+            constraints.push_back(constraint);
+
+            return { constraint, this };
+
+        }
+
+        void PhysicsWorld::DestroyConstraint(Constraint constraint) {
+
+            if (!ContainsConstraint(constraint))
+                return;
+
+            system->GetBodyInterface().ActivateConstraint(constraint.ref);
+            system->RemoveConstraint(constraint.ref);
+
+            std::erase(constraints, constraint.ref);
+
+        }
+
+        bool PhysicsWorld::ContainsConstraint(const Constraint& constraint) const {
+
+            if (constraint.ref == nullptr)
+                return false;
+
+            return std::find(constraints.begin(), constraints.end(), constraint.ref) != constraints.end();
+
+        }
+
+        void PhysicsWorld::ProcessContacts() {
+
+            auto& bodyInterface = system->GetBodyInterface();
+
+            auto pairKey = [](BodyID bodyId, BodyID otherBodyId) {
+                return (uint64_t(bodyId.GetIndexAndSequenceNumber()) << 32) | otherBodyId.GetIndexAndSequenceNumber();
+            };
+
+            // Sleeping bodies lose their contacts, these only end when the bodies move apart after waking up
+            auto isSleeping = [&](BodyID bodyId) {
+                return bodyInterface.IsAdded(bodyId) && !bodyInterface.IsActive(bodyId) &&
+                    bodyInterface.GetMotionType(bodyId) == JPH::EMotionType::Dynamic;
+            };
+
+            // Contacts are reported per sub shape, a body pair begins with its first and ends with its last contact
+            for (const auto& event : contactListener->addedContacts) {
+                auto& contactPair = contactPairs[pairKey(event.bodyId, event.otherBodyId)];
+                if (contactPair.count++ == 0 && !contactPair.sleeping) {
+                    contactPair.event = event;
+                    contactEvents.push_back(event);
+                }
+                contactPair.sleeping = false;
+            }
+
+            for (const auto& [bodyId, otherBodyId] : contactListener->removedContacts) {
+                auto it = contactPairs.find(pairKey(bodyId, otherBodyId));
+                if (it == contactPairs.end() || it->second.count == 0 || --it->second.count > 0)
+                    continue;
+
+                if (!it->second.event.isTrigger && (isSleeping(bodyId) || isSleeping(otherBodyId))) {
+                    it->second.sleeping = true;
+                    continue;
+                }
+
+                EndContact(it->second);
+                contactPairs.erase(it);
+            }
+
+            std::erase_if(contactPairs, [&](const auto& item) {
+                const auto& contactPair = item.second;
+                if (!contactPair.sleeping || isSleeping(contactPair.event.bodyId) ||
+                    isSleeping(contactPair.event.otherBodyId))
+                    return false;
+                EndContact(contactPair);
+                return true;
+                });
+
+            contactListener->addedContacts.clear();
+            contactListener->removedContacts.clear();
+
+        }
+
+        void PhysicsWorld::EndContact(const ContactPair& contactPair) {
+
+            ContactEvent event;
+            event.type = ContactEventType::End;
+            event.bodyId = contactPair.event.bodyId;
+            event.otherBodyId = contactPair.event.otherBodyId;
+            event.userData = contactPair.event.userData;
+            event.otherUserData = contactPair.event.otherUserData;
+            event.isTrigger = contactPair.event.isTrigger;
+
+            contactEvents.push_back(event);
+
+        }
+
         void PhysicsWorld::OptimizeBroadphase() {
 
             system->OptimizeBroadPhase();
@@ -341,6 +663,9 @@ namespace Atlas {
 
             system->RestoreState(*state);
             state->Clear();
+
+            contactPairs.clear();
+            contactEvents.clear();
 
         }
 

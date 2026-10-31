@@ -317,36 +317,6 @@ namespace Atlas {
 
                 auto simulate = !physicsWorld->pauseSimulation && !paused;
 
-                // This part (updating physics transforms) is required regardless of the simulation running
-                auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
-                for (auto entity : playerSubset) {
-                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
-
-                    // Might happen if there was no transform at the creation of rigid body component
-                    if (!playerComponent.IsValid()) {
-                        playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
-                        if (playerComponent.IsValid())
-                            playerComponent.SetUserData(entity);
-                    }
-
-                    // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && playerComponent.IsValid()) {
-                        auto& globalPlayerMatrix = transformComponent.globalMatrix;
-                        auto decomposition = Common::MatrixDecomposition(globalPlayerMatrix);
-                        // In theory we have to apply the rotation here as well
-                        playerComponent.SetPosition(decomposition.translation);
-                    }
-
-                    if (simulate)
-                        playerComponent.Update(deltaTime);
-
-                    auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
-                    if (hierarchyComponent) {
-                        hierarchyComponent->Update(transformComponent, true,
-                            transformComponentPool, hierarchyComponentPool, cameraComponentPool);
-                    }
-                }
-
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
 
                 for (auto entity : rigidBodySubset) {
@@ -378,10 +348,82 @@ namespace Atlas {
                     }
                 }
 
+                // Players move after kinematic bodies got their velocities, such that they move with platforms
+                auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
+                for (auto entity : playerSubset) {
+                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+
+                    // Might happen if there was no transform at the creation of rigid body component
+                    if (!playerComponent.IsValid()) {
+                        playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
+                        if (playerComponent.IsValid())
+                            playerComponent.SetUserData(entity);
+                    }
+
+                    // Apply update here (transform overwrite everything else in physics simulation for now)
+                    if (transformComponent.changed && playerComponent.IsValid()) {
+                        auto& globalPlayerMatrix = transformComponent.globalMatrix;
+                        auto decomposition = Common::MatrixDecomposition(globalPlayerMatrix);
+                        // In theory we have to apply the rotation here as well
+                        playerComponent.SetPosition(decomposition.translation);
+                    }
+
+                    if (simulate)
+                        playerComponent.Update(deltaTime);
+
+                    auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
+                    if (hierarchyComponent) {
+                        hierarchyComponent->Update(transformComponent, true,
+                            transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+                    }
+                }
+
+                // Constraints are only created while simulating, otherwise moving bodies in the editor would pull them along
+                auto constraintSubset = entityManager.GetSubset<ConstraintComponent, RigidBodyComponent>();
+                for (auto entity : constraintSubset) {
+                    const auto& [constraintComponent, rigidBodyComponent] = constraintSubset.Get(entity);
+
+                    // Destroying one of the bodies destroys the constraint as well
+                    if (!constraintComponent.IsValid()) {
+                        constraintComponent.ref = nullptr;
+                        constraintComponent.world = nullptr;
+                    }
+
+                    if (!simulate || constraintComponent.IsValid() || constraintComponent.broken || !rigidBodyComponent.IsValid())
+                        continue;
+
+                    Physics::BodyID otherBodyId;
+                    auto movable = rigidBodyComponent.layer == Physics::Layers::Movable;
+                    if (constraintComponent.connectedEntity != ECS::EntityConfig::InvalidEntity) {
+                        if (!entityManager.Valid(constraintComponent.connectedEntity))
+                            continue;
+                        auto otherRigidBodyComponent = entityManager.TryGet<RigidBodyComponent>(constraintComponent.connectedEntity);
+                        if (!otherRigidBodyComponent || !otherRigidBodyComponent->IsValid() ||
+                            constraintComponent.connectedEntity == entity)
+                            continue;
+                        otherBodyId = otherRigidBodyComponent->bodyId;
+                        movable |= otherRigidBodyComponent->layer == Physics::Layers::Movable;
+                    }
+
+                    if (movable)
+                        constraintComponent.InsertIntoPhysicsWorld(rigidBodyComponent.bodyId, otherBodyId, physicsWorld.get());
+                }
+
                 // This part only needs to be executed if the simulation is running
                 if (simulate) {
 
                     physicsWorld->Update(deltaTime);
+
+                    for (auto entity : constraintSubset) {
+                        const auto& [constraintComponent, rigidBodyComponent] = constraintSubset.Get(entity);
+
+                        auto breakForce = constraintComponent.creationSettings.breakForce;
+                        if (!constraintComponent.IsValid() || breakForce <= 0.0f || constraintComponent.GetForce() < breakForce)
+                            continue;
+
+                        constraintComponent.RemoveFromPhysicsWorld();
+                        constraintComponent.broken = true;
+                    }
 
                     for (auto entity : rigidBodySubset) {
                         const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
@@ -470,6 +512,24 @@ namespace Atlas {
                         }
                     }
                 }
+
+                contactEvents.clear();
+                for (const auto& event : physicsWorld->contactEvents) {
+                    ContactEvent contactEvent;
+                    contactEvent.type = event.type;
+                    contactEvent.entity = { event.userData, &entityManager };
+                    contactEvent.otherEntity = { event.otherUserData, &entityManager };
+                    contactEvent.position = event.position;
+                    contactEvent.normal = event.normal;
+                    contactEvent.impactSpeed = event.impactSpeed;
+                    contactEvent.isTrigger = event.isTrigger;
+                    contactEvents.push_back(contactEvent);
+
+                    std::swap(contactEvent.entity, contactEvent.otherEntity);
+                    contactEvent.normal = -contactEvent.normal;
+                    contactEvents.push_back(contactEvent);
+                }
+                physicsWorld->contactEvents.clear();
             }
 
             // Do camera update while we find changed meshes
@@ -919,6 +979,50 @@ namespace Atlas {
 
         }
 
+        Volume::RayResult<Entity> Scene::CastShape(const Ref<Physics::Shape>& shape, const mat4& matrix, vec3 direction,
+            float distance, const std::function<bool(const Entity&)>& ignore) {
+
+            Volume::RayResult<Entity> result;
+
+            if (!physicsWorld)
+                return result;
+
+            auto bodyResult = physicsWorld->CastShape(shape, matrix, direction, distance, [&](const Physics::Body& body) {
+                Entity entity(body.GetUserData(), &entityManager);
+                return ignore && entity.IsValid() && ignore(entity);
+                });
+
+            if (bodyResult.valid) {
+                result.valid = true;
+                result.hitDistance = bodyResult.hitDistance;
+                result.normal = bodyResult.normal;
+                result.data = { bodyResult.data.GetUserData(), &entityManager };
+            }
+
+            return result;
+
+        }
+
+        std::vector<Entity> Scene::CollideShape(const Ref<Physics::Shape>& shape, const mat4& matrix,
+            const std::function<bool(const Entity&)>& ignore) {
+
+            std::vector<Entity> entities;
+
+            if (!physicsWorld)
+                return entities;
+
+            auto bodies = physicsWorld->CollideShape(shape, matrix, [&](const Physics::Body& body) {
+                Entity entity(body.GetUserData(), &entityManager);
+                return ignore && entity.IsValid() && ignore(entity);
+                });
+
+            for (const auto& body : bodies)
+                entities.emplace_back(body.GetUserData(), &entityManager);
+
+            return entities;
+
+        }
+
         std::vector<Entity> Scene::QueryAABB(const Volume::AABB& aabb, SceneQueryComponents queryComponents) {
 
             std::set<Entity> entities;
@@ -1182,6 +1286,11 @@ namespace Atlas {
                         rigidBodyComponent.SetUserData(entity);
                 });
 
+            entityManager.SubscribeToTopic<ConstraintComponent>(ECS::Topic::ComponentErase,
+                [this](const ECS::Entity entity, ConstraintComponent& constraintComponent) {
+                    constraintComponent.RemoveFromPhysicsWorld();
+                });
+
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,
                 [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent) {
                     if (physicsWorld != nullptr)
@@ -1291,6 +1400,14 @@ namespace Atlas {
                 auto& comp = dstEntity.AddComponent<PlayerComponent>(otherComp);
                 // Need to create a new creation settings, since right now the memory is shared between components
                 comp.creationSettings = CreateRef<Physics::PlayerCreationSettings>(*otherComp.creationSettings);
+            }
+            if (srcEntity.HasComponent<ConstraintComponent>()) {
+                auto otherComp = srcEntity.GetComponent<ConstraintComponent>();
+                auto& comp = dstEntity.AddComponent<ConstraintComponent>(otherComp);
+                // A merged scene connects to the merged entity, a duplicate to the same entity
+                if (mapper)
+                    comp.connectedEntity = mapper->contains(otherComp.connectedEntity) ?
+                        ECS::Entity((*mapper)[otherComp.connectedEntity]) : ECS::EntityConfig::InvalidEntity;
             }
 
             // Resource components need extra attention (resources need to be registered in this scene)

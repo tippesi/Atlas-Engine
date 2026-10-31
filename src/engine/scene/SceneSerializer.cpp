@@ -54,6 +54,9 @@ namespace Atlas::Scene {
         if (p.HasComponent<PlayerComponent>()) {
             j["player"] = p.GetComponent<PlayerComponent>();
         }
+        if (p.HasComponent<ConstraintComponent>()) {
+            j["constraint"] = p.GetComponent<ConstraintComponent>();
+        }
         if (p.HasComponent<TextComponent>()) {
             j["text"] = p.GetComponent<TextComponent>();
         }
@@ -116,6 +119,10 @@ namespace Atlas::Scene {
         if (j.contains("player")) {
             PlayerComponent comp = j["player"];
             p.AddComponent<PlayerComponent>(comp);
+        }
+        if (j.contains("constraint")) {
+            ConstraintComponent comp = j["constraint"];
+            p.AddComponent<ConstraintComponent>(comp);
         }
         if (j.contains("text")) {
             TextComponent comp = j["text"];

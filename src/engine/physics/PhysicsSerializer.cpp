@@ -112,6 +112,82 @@ namespace Atlas::Physics {
         }
     }
 
+    void to_json(json& j, const ConvexHullShapeSettings& p) {
+        j = json {
+            {"density", p.density},
+            {"scale", p.scale},
+        };
+
+        if (p.mesh.IsValid() && !p.mesh.IsGenerated()) {
+            j["resourcePath"] = p.mesh.GetResource()->path;
+        }
+    }
+
+    void from_json(const json& j, ConvexHullShapeSettings& p) {
+        j.at("density").get_to(p.density);
+        j.at("scale").get_to(p.scale);
+
+        if (j.contains("resourcePath")) {
+            std::string resourcePath;
+            j.at("resourcePath").get_to(resourcePath);
+
+            // Mesh components load the same mesh file, both have to use the same loader
+            if (resourcePath.ends_with(".aemesh"))
+                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                    ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
+            else
+                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                    ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
+        }
+    }
+
+    void to_json(json& j, const CylinderShapeSettings& p) {
+        j = json{
+            {"height", p.height},
+            {"radius", p.radius},
+            {"density", p.density},
+            {"scale", p.scale},
+        };
+    }
+
+    void from_json(const json& j, CylinderShapeSettings& p) {
+        j.at("height").get_to(p.height);
+        j.at("radius").get_to(p.radius);
+        j.at("density").get_to(p.density);
+        j.at("scale").get_to(p.scale);
+    }
+
+    void to_json(json& j, const CompoundShapeSettings& p) {
+        j = json {
+            {"scale", p.scale},
+        };
+
+        j["children"] = json::array();
+        for (const auto& child : p.children) {
+            if (!child.shape)
+                continue;
+
+            json jChild = {
+                {"shape", *child.shape},
+                {"translation", child.translation},
+                {"rotation", child.rotation},
+            };
+            j["children"].push_back(jChild);
+        }
+    }
+
+    void from_json(const json& j, CompoundShapeSettings& p) {
+        j.at("scale").get_to(p.scale);
+
+        for (const auto& jChild : j["children"]) {
+            CompoundShapeChild child;
+            child.shape = jChild["shape"];
+            jChild.at("translation").get_to(child.translation);
+            jChild.at("rotation").get_to(child.rotation);
+            p.children.push_back(child);
+        }
+    }
+
     void to_json(json& j, const Shape& p) {
         if (p.type == ShapeType::Mesh) {
             auto meshSettings = static_cast<MeshShapeSettings*>(p.settings.get());
@@ -132,6 +208,18 @@ namespace Atlas::Physics {
         else if (p.type == ShapeType::HeightField) {
             auto heightFieldSettings = static_cast<HeightFieldShapeSettings*>(p.settings.get());
             j["heightFieldSettings"] = *heightFieldSettings;
+        }
+        else if (p.type == ShapeType::ConvexHull) {
+            auto convexHullSettings = static_cast<ConvexHullShapeSettings*>(p.settings.get());
+            j["convexHullSettings"] = *convexHullSettings;
+        }
+        else if (p.type == ShapeType::Cylinder) {
+            auto cylinderSettings = static_cast<CylinderShapeSettings*>(p.settings.get());
+            j["cylinderSettings"] = *cylinderSettings;
+        }
+        else if (p.type == ShapeType::Compound) {
+            auto compoundSettings = static_cast<CompoundShapeSettings*>(p.settings.get());
+            j["compoundSettings"] = *compoundSettings;
         }
     }
 
@@ -154,6 +242,18 @@ namespace Atlas::Physics {
         }
         else if (j.contains("heightFieldSettings")) {
             HeightFieldShapeSettings settings = j["heightFieldSettings"];
+            p = ShapesManager::CreateShape(settings);
+        }
+        else if (j.contains("convexHullSettings")) {
+            ConvexHullShapeSettings settings = j["convexHullSettings"];
+            p = ShapesManager::CreateShape(settings);
+        }
+        else if (j.contains("cylinderSettings")) {
+            CylinderShapeSettings settings = j["cylinderSettings"];
+            p = ShapesManager::CreateShape(settings);
+        }
+        else if (j.contains("compoundSettings")) {
+            CompoundShapeSettings settings = j["compoundSettings"];
             p = ShapesManager::CreateShape(settings);
         }
     }
@@ -179,6 +279,8 @@ namespace Atlas::Physics {
             j["angularDampening"] = p.angularDampening;
         if (d.gravityFactor != p.gravityFactor)
             j["gravityFactor"] = p.gravityFactor;
+        if (d.isTrigger != p.isTrigger)
+            j["isTrigger"] = p.isTrigger;
         if (p.shape)
             j["shape"] = *p.shape;
     }
@@ -202,9 +304,37 @@ namespace Atlas::Physics {
             p.angularDampening = j["angularDampening"];
         if (j.contains("gravityFactor"))
             p.gravityFactor = j["gravityFactor"];
+        if (j.contains("isTrigger"))
+            p.isTrigger = j["isTrigger"];
         if (j.contains("shape")) {
             p.shape = j["shape"];
         }
+    }
+
+    void to_json(json& j, const ConstraintCreationSettings& p) {
+        j = json {
+            {"type", p.type},
+            {"point", p.point},
+            {"otherPoint", p.otherPoint},
+            {"axis", p.axis},
+            {"enableLimits", p.enableLimits},
+            {"limitsMin", p.limitsMin},
+            {"limitsMax", p.limitsMax},
+            {"halfConeAngle", p.halfConeAngle},
+            {"breakForce", p.breakForce},
+        };
+    }
+
+    void from_json(const json& j, ConstraintCreationSettings& p) {
+        j.at("type").get_to(p.type);
+        j.at("point").get_to(p.point);
+        j.at("otherPoint").get_to(p.otherPoint);
+        j.at("axis").get_to(p.axis);
+        j.at("enableLimits").get_to(p.enableLimits);
+        j.at("limitsMin").get_to(p.limitsMin);
+        j.at("limitsMax").get_to(p.limitsMax);
+        j.at("halfConeAngle").get_to(p.halfConeAngle);
+        j.at("breakForce").get_to(p.breakForce);
     }
 
     void to_json(json& j, const PlayerCreationSettings& p) {
@@ -224,6 +354,8 @@ namespace Atlas::Physics {
             j["shapePadding"] = p.shapePadding;
         if (d.shapeOffset != p.shapeOffset)
             j["shapeOffset"] = p.shapeOffset;
+        if (d.canPushBodies != p.canPushBodies)
+            j["canPushBodies"] = p.canPushBodies;
         if (p.shape)
             j["shape"] = *p.shape;
     }
@@ -243,6 +375,8 @@ namespace Atlas::Physics {
             p.shapePadding = j["shapePadding"];
         if (j.contains("shapeOffset"))
             p.shapeOffset = j["shapeOffset"];
+        if (j.contains("canPushBodies"))
+            p.canPushBodies = j["canPushBodies"];
         if (j.contains("shape")) {
             p.shape = j["shape"];
         }

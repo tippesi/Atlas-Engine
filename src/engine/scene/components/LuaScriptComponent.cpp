@@ -89,6 +89,10 @@ namespace Atlas::Scene::Components {
 
             // reset the saved references
             updateFunction.reset();
+            contactBeginFunction.reset();
+            contactEndFunction.reset();
+            triggerEnterFunction.reset();
+            triggerExitFunction.reset();
             scriptEnvironment.reset();
 
             // reload the properties, therefore init the state
@@ -104,6 +108,10 @@ namespace Atlas::Scene::Components {
         if (scene->physicsWorld->pauseSimulation && !permanentExecution) {
             // the instance is not running, discard the state
             updateFunction.reset();
+            contactBeginFunction.reset();
+            contactEndFunction.reset();
+            triggerEnterFunction.reset();
+            triggerExitFunction.reset();
             scriptEnvironment.reset();
         }
         else if (scene->paused && !permanentExecution) {
@@ -120,6 +128,26 @@ namespace Atlas::Scene::Components {
             // process the script
             AE_ASSERT(scriptEnvironment.has_value());
             SetPropertyValuesInLuaState();
+
+            // call the contact functions with the contacts of the last update
+            for (const auto& event : scene->GetContactEvents()) {
+                if (ECS::Entity(event.entity) != ECS::Entity(entity))
+                    continue;
+
+                auto begin = event.type == Physics::ContactEventType::Begin;
+                auto& function = event.isTrigger ? (begin ? triggerEnterFunction : triggerExitFunction) :
+                    (begin ? contactBeginFunction : contactEndFunction);
+                if (!function.has_value())
+                    continue;
+
+                auto result = function.value()(event);
+                if (!result.valid()) {
+                    sol::error err = result;
+                    std::string what = err.what();
+                    Log::Error("Error while executing contact function in "
+                        + script.GetResource()->GetFileName() + ": " + what);
+                }
+            }
 
             // call the update function
             try {
@@ -164,9 +192,33 @@ namespace Atlas::Scene::Components {
             if (function.valid()) {
                 this->updateFunction = function;
             }
+
+            function = scriptEnv["OnContactBegin"];
+            if (function.valid()) {
+                this->contactBeginFunction = function;
+            }
+
+            function = scriptEnv["OnContactEnd"];
+            if (function.valid()) {
+                this->contactEndFunction = function;
+            }
+
+            function = scriptEnv["OnTriggerEnter"];
+            if (function.valid()) {
+                this->triggerEnterFunction = function;
+            }
+
+            function = scriptEnv["OnTriggerExit"];
+            if (function.valid()) {
+                this->triggerExitFunction = function;
+            }
         }
         catch (const std::exception& e) {
             updateFunction.reset();
+            contactBeginFunction.reset();
+            contactEndFunction.reset();
+            triggerEnterFunction.reset();
+            triggerExitFunction.reset();
             scriptEnvironment.reset();
             Atlas::Log::Error("Error while compiling lua script "
                 + script.GetResource()->GetFileName() + ": " + std::string(e.what()));

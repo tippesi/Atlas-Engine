@@ -28,6 +28,8 @@ namespace Atlas::Scene::Components {
         if (world->pauseSimulation)
             return;
         
+        UpdateCrouching();
+
         auto up = GetUp();
 
         // Don't want to stick to the ground while jumping
@@ -97,18 +99,44 @@ namespace Atlas::Scene::Components {
         
     }
 
+    void PlayerComponent::UpdateCrouching() {
+
+        auto crouchRequested = crouch;
+        crouch = false;
+
+        auto& shape = creationSettings->shape;
+        if (crouchRequested == crouching || shape->type != Physics::ShapeType::Capsule || !shape->settings)
+            return;
+
+        if (crouchRequested) {
+            auto crouchShapeSettings = *static_cast<Physics::CapsuleShapeSettings*>(shape->settings.get());
+            crouchShapeSettings.height = glm::min(crouchHeight, crouchShapeSettings.height);
+            auto crouchShape = Physics::ShapesManager::CreateShape(crouchShapeSettings);
+            if (crouchShape->IsValid() && SetShape(crouchShape))
+                crouching = true;
+        }
+        else if (SetShape(shape)) {
+            crouching = false;
+        }
+
+    }
+
     vec3 PlayerComponent::FollowInput(const vec3& groundVelocity, const vec3& up, float deltaTime) const {
 
         // The horizontal velocity relative to the ground, as the character moved it (pushed or blocked)
         auto current = GetLinearVelocity() - groundVelocity;
         current -= up * glm::dot(current, up);
 
-        auto difference = inputVelocity - current;
+        auto target = inputVelocity;
+        if (crouching && glm::length(target) > crouchVelocity)
+            target = glm::normalize(target) * crouchVelocity;
+
+        auto difference = target - current;
         auto distance = glm::length(difference);
-        auto speedingUp = glm::dot(inputVelocity, current) >= 0.0f && glm::dot(inputVelocity, inputVelocity) >= glm::dot(current, current);
+        auto speedingUp = glm::dot(target, current) >= 0.0f && glm::dot(target, target) >= glm::dot(current, current);
         auto rate = speedingUp ? acceleration : deceleration;
         if (rate <= 0.0f || distance <= rate * deltaTime)
-            return inputVelocity;
+            return target;
 
         return current + difference / distance * rate * deltaTime;
 

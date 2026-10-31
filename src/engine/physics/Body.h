@@ -41,6 +41,18 @@ namespace Atlas::Physics {
 
         float GetFriction();
 
+        void AddForce(vec3 force);
+
+        void AddForce(vec3 force, vec3 position);
+
+        void AddImpulse(vec3 impulse);
+
+        void AddImpulse(vec3 impulse, vec3 position);
+
+        void AddTorque(vec3 torque);
+
+        void AddAngularImpulse(vec3 angularImpulse);
+
         Ref<Shape> GetShape() const;
 
         uint64_t GetUserData() const;

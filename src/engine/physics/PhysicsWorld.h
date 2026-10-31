@@ -6,6 +6,8 @@
 #include "BodyCreation.h"
 #include "Body.h"
 #include "Player.h"
+#include "Constraint.h"
+#include "ContactListener.h"
 
 #include "InterfaceImplementations.h"
 #include <Jolt/Physics/StateRecorderImpl.h>
@@ -72,6 +74,18 @@ namespace Atlas {
 
             float GetFriction(BodyID bodyId);
 
+            void AddForce(BodyID bodyId, vec3 force);
+
+            void AddForce(BodyID bodyId, vec3 force, vec3 position);
+
+            void AddImpulse(BodyID bodyId, vec3 impulse);
+
+            void AddImpulse(BodyID bodyId, vec3 impulse, vec3 position);
+
+            void AddTorque(BodyID bodyId, vec3 torque);
+
+            void AddAngularImpulse(BodyID bodyId, vec3 angularImpulse);
+
             uint64_t GetUserData(BodyID bodyId);
 
             void ChangeShape(BodyID bodyId, Ref<Shape> shape);
@@ -84,8 +98,24 @@ namespace Atlas {
 
             uint32_t GetBodyCount() const;
 
-            // The ray passes through bodies for which ignore returns true
+            // One of the bodies has to be movable, an invalid other body connects the body to the world
+            Constraint CreateConstraint(const ConstraintCreationSettings& constraintCreationSettings,
+                BodyID bodyId, BodyID otherBodyId = BodyID());
+
+            void DestroyConstraint(Constraint constraint);
+
+            bool ContainsConstraint(const Constraint& constraint) const;
+
+            // Queries pass through triggers and through bodies for which ignore returns true
             Volume::RayResult<Body> CastRay(Volume::Ray& ray, const std::function<bool(const Body&)>& ignore = {});
+
+            // Moves the shape from the matrix along the direction, the hit distance is measured along the direction
+            Volume::RayResult<Body> CastShape(const Ref<Shape>& shape, const mat4& matrix, vec3 direction,
+                float distance, const std::function<bool(const Body&)>& ignore = {});
+
+            // Returns all bodies that overlap the shape at the matrix
+            std::vector<Body> CollideShape(const Ref<Shape>& shape, const mat4& matrix,
+                const std::function<bool(const Body&)>& ignore = {});
 
             void OptimizeBroadphase();
 
@@ -100,17 +130,37 @@ namespace Atlas {
 
             std::unordered_map<BodyID, Ref<Shape>> bodyToShapeMap;
 
+            // Contacts that began and ended since the events were last cleared
+            std::vector<ContactEvent> contactEvents;
+
         private:
+            struct ContactPair {
+                ContactEvent event;
+                int32_t count = 0;
+                bool sleeping = false;
+            };
+
+            void ProcessContacts();
+
+            void EndContact(const ContactPair& contactPair);
+
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;
             Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr;
             Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr;
-            Ref<JPH::ContactListener> contactListener = nullptr;
+            Ref<ContactListener> contactListener = nullptr;
+
+            std::unordered_map<uint64_t, ContactPair> contactPairs;
+            std::vector<JPH::Ref<JPH::TwoBodyConstraint>> constraints;
 
             Ref<JPH::StateRecorderImpl> state = nullptr;
+
+            // Time step of a collision step in the last update
+            float stepDeltaTime = 0.0f;
 
             friend class Scene::Scene;
             friend class RigidBodyComponent;
             friend class PhysicsSerializer;
+            friend Constraint;
 
         };
 

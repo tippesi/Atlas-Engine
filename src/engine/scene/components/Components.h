@@ -12,6 +12,7 @@
 #include "ObjectComponent.h"
 #include "RigidBodyComponent.h"
 #include "PlayerComponent.h"
+#include "ConstraintComponent.h"
 #include "TextComponent.h"
 #include "ClutterComponent.h"
 #include "SplineComponent.h"

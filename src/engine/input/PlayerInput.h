@@ -14,9 +14,9 @@ namespace Atlas {
 
         /**
          * Controls the players of a scene with keyboard and mouse: W, A, S and D move a player relative to
-         * the direction of its camera, Left Shift runs, Space jumps and the mouse rotates the camera.
+         * the direction of its camera, Left Shift runs, Space jumps, C crouches and the mouse rotates the camera.
          * Game controllers move with the left stick (fully deflected or with a stick click to run), look
-         * with the right stick and jump with A.
+         * with the right stick, jump with A and crouch with B.
          * Only players with a camera component are controlled.
          */
         class PlayerInput {
@@ -41,8 +41,9 @@ namespace Atlas {
             float controllerFollowSpeed = 0.0f;
             float controllerFollowDeadZone = 0.5f;
 
-            // A jumps, false leaves the button to the application, e.g. while a modifier makes it another action
+            // A jumps and B crouches, false leaves the button to the application, e.g. while a modifier makes it another action
             bool controllerJump = true;
+            bool controllerCrouch = true;
 
         private:
             float lookIdleTime = 0.0f;

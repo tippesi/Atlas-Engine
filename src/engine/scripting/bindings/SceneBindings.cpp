@@ -163,6 +163,33 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
+    static RayHit CastShape(Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix,
+        const vec3& direction, float distance, Scene::Entity ignored) {
+
+        RayHit hit;
+
+        if (glm::length(direction) == 0.0f)
+            return hit;
+
+        auto normalizedDirection = glm::normalize(direction);
+        auto result = scene.CastShape(shape, matrix, normalizedDirection, distance, [&](const Scene::Entity& entity) {
+            return IsIgnored(scene, entity, ignored);
+            });
+
+        if (!result.valid)
+            return hit;
+
+        // The position of the shape when it hits
+        hit.valid = true;
+        hit.hitDistance = result.hitDistance;
+        hit.position = vec3(matrix[3]) + normalizedDirection * result.hitDistance;
+        hit.normal = result.normal;
+        hit.entity = result.data;
+
+        return hit;
+
+    }
+
     void GenerateSceneBindings(sol::table* ns) {
 
         ns->new_usertype<Scene::Wind>("Wind",
@@ -200,7 +227,38 @@ namespace Atlas::Scripting::Bindings {
             }
         );
 
+        auto castShapeOverload = sol::overload(
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix, const vec3& direction, float distance) {
+                return CastShape(scene, shape, matrix, direction, distance, Scene::Entity());
+            },
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix, const vec3& direction, float distance,
+                Scene::Entity ignored) {
+                return CastShape(scene, shape, matrix, direction, distance, ignored);
+            }
+        );
+
         // Entity lists are returned as tables of copies, elements of a bound vector would reference its storage
+        auto collideShapeOverload = sol::overload(
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix) {
+                return sol::as_table(scene.CollideShape(shape, matrix));
+            },
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix, Scene::Entity ignored) {
+                return sol::as_table(scene.CollideShape(shape, matrix, [&](const Scene::Entity& entity) {
+                    return IsIgnored(scene, entity, ignored);
+                    }));
+            }
+        );
+
+        ns->new_usertype<Scene::ContactEvent>("ContactEvent",
+            "type", &Scene::ContactEvent::type,
+            "entity", &Scene::ContactEvent::entity,
+            "otherEntity", &Scene::ContactEvent::otherEntity,
+            "position", &Scene::ContactEvent::position,
+            "normal", &Scene::ContactEvent::normal,
+            "impactSpeed", &Scene::ContactEvent::impactSpeed,
+            "isTrigger", &Scene::ContactEvent::isTrigger
+            );
+
         auto queryAABBOverload = sol::overload(
             [](Scene::Scene& scene, const Volume::AABB& aabb) {
                 return sol::as_table(scene.QueryAABB(aabb));
@@ -213,6 +271,11 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<Scene::Scene>("Scene",
             "CastRay", castRayOverload,
             "QueryAABB", queryAABBOverload,
+            "CastShape", castShapeOverload,
+            "CollideShape", collideShapeOverload,
+            "GetContactEvents", [](Scene::Scene& scene) {
+                return sol::as_table(scene.GetContactEvents());
+            },
             "CreateEntity", &Scene::Scene::CreateEntity,
             "DestroyEntity", &Scene::Scene::DestroyEntity,
             "DuplicateEntity", &Scene::Scene::DuplicateEntity,
@@ -272,6 +335,9 @@ namespace Atlas::Scripting::Bindings {
             "AddNameComponent", &AddComponentRef<NameComponent, std::string>,
             "AddPlayerComponent", &AddComponentRef<PlayerComponent>,
             "AddRigidBodyComponent", &AddComponentRef<RigidBodyComponent, Physics::BodyCreationSettings&>,
+            "AddConstraintComponent", sol::overload(
+                &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&>,
+                &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&, Scene::Entity>),
             "AddTextComponent", &AddComponentRef<TextComponent, ResourceHandle<Font>&, std::string>,
             "AddTransformComponent", &AddComponentRef<TransformComponent, glm::mat4&, bool>,
             "AddLuaScriptComponent", &AddComponentRef<LuaScriptComponent, ResourceHandle<Script>&>,
@@ -288,6 +354,7 @@ namespace Atlas::Scripting::Bindings {
             "RemoveNameComponent", &Scene::Entity::RemoveComponent<NameComponent>,
             "RemovePlayerComponent", &Scene::Entity::RemoveComponent<PlayerComponent>,
             "RemoveRigidBodyComponent", &Scene::Entity::RemoveComponent<RigidBodyComponent>,
+            "RemoveConstraintComponent", &Scene::Entity::RemoveComponent<ConstraintComponent>,
             "RemoveTextComponent", &Scene::Entity::RemoveComponent<TextComponent>,
             "RemoveTransformComponent", &Scene::Entity::RemoveComponent<TransformComponent>,
             "RemoveLuaScriptComponent", &Scene::Entity::RemoveComponent<LuaScriptComponent>,
@@ -304,6 +371,7 @@ namespace Atlas::Scripting::Bindings {
             "GetNameComponent", &GetComponentRef<NameComponent>,
             "GetPlayerComponent", &GetComponentRef<PlayerComponent>,
             "GetRigidBodyComponent", &GetComponentRef<RigidBodyComponent>,
+            "GetConstraintComponent", &GetComponentRef<ConstraintComponent>,
             "GetTextComponent", &GetComponentRef<TextComponent>,
             "GetTransformComponent", &GetComponentRef<TransformComponent>,
             "GetLuaScriptComponent", &GetComponentRef<LuaScriptComponent>,
@@ -494,8 +562,32 @@ namespace Atlas::Scripting::Bindings {
             "GetRestitution", &RigidBodyComponent::GetRestitution,
             "SetFriction", &RigidBodyComponent::SetFriction,
             "GetFriction", &RigidBodyComponent::GetFriction,
+            "AddForce", sol::overload(
+                [](RigidBodyComponent& rigidBodyComponent, vec3 force) { rigidBodyComponent.AddForce(force); },
+                [](RigidBodyComponent& rigidBodyComponent, vec3 force, vec3 position) {
+                    rigidBodyComponent.AddForce(force, position);
+                }),
+            "AddImpulse", sol::overload(
+                [](RigidBodyComponent& rigidBodyComponent, vec3 impulse) { rigidBodyComponent.AddImpulse(impulse); },
+                [](RigidBodyComponent& rigidBodyComponent, vec3 impulse, vec3 position) {
+                    rigidBodyComponent.AddImpulse(impulse, position);
+                }),
+            "AddTorque", &RigidBodyComponent::AddTorque,
+            "AddAngularImpulse", &RigidBodyComponent::AddAngularImpulse,
             "GetBodyCreationSettings", &RigidBodyComponent::GetBodyCreationSettings,
             "layer", &RigidBodyComponent::layer
+        );
+
+        ns->new_usertype<ConstraintComponent>("ConstraintComponent",
+            "IsValid", &ConstraintComponent::IsValid,
+            "SetEnabled", &ConstraintComponent::SetEnabled,
+            "IsEnabled", &ConstraintComponent::IsEnabled,
+            "GetForce", &ConstraintComponent::GetForce,
+            "SetConnectedEntity", &ConstraintComponent::SetConnectedEntity,
+            "GetConnectedEntity", &ConstraintComponent::GetConnectedEntity,
+            "Reset", &ConstraintComponent::Reset,
+            "creationSettings", &ConstraintComponent::creationSettings,
+            "broken", &ConstraintComponent::broken
         );
 
         ns->new_usertype<PlayerComponent>("PlayerComponent",
@@ -508,6 +600,8 @@ namespace Atlas::Scripting::Bindings {
             "GetLinearVelocity", &PlayerComponent::GetLinearVelocity,
             "GetGroundVelocity", &PlayerComponent::GetGroundVelocity,
             "IsOnGround", &PlayerComponent::IsOnGround,
+            "Crouch", &PlayerComponent::Crouch,
+            "IsCrouching", &PlayerComponent::IsCrouching,
             "stickToGroundDist", &PlayerComponent::stickToGroundDist,
             "walkStairsStepUpDist", &PlayerComponent::walkStairsStepUpDist,
             "slowVelocity", &PlayerComponent::slowVelocity,
@@ -515,6 +609,8 @@ namespace Atlas::Scripting::Bindings {
             "jumpVelocity", &PlayerComponent::jumpVelocity,
             "acceleration", &PlayerComponent::acceleration,
             "deceleration", &PlayerComponent::deceleration,
+            "crouchHeight", &PlayerComponent::crouchHeight,
+            "crouchVelocity", &PlayerComponent::crouchVelocity,
             "allowInput", &PlayerComponent::allowInput
         );
 
@@ -602,6 +698,7 @@ namespace Atlas::Scripting::Bindings {
         GenerateComponentRefBindings<NameComponent>(ns, "NameComponent");
         GenerateComponentRefBindings<PlayerComponent>(ns, "PlayerComponent");
         GenerateComponentRefBindings<RigidBodyComponent>(ns, "RigidBodyComponent");
+        GenerateComponentRefBindings<ConstraintComponent>(ns, "ConstraintComponent");
         GenerateComponentRefBindings<TextComponent>(ns, "TextComponent");
         GenerateComponentRefBindings<TransformComponent>(ns, "TransformComponent");
         GenerateComponentRefBindings<LuaScriptComponent>(ns, "LuaScriptComponent");
