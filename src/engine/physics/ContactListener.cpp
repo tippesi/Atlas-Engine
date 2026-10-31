@@ -9,6 +9,36 @@ namespace Atlas::Physics {
     void ContactListener::OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
         const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) {
 
+        auto event = CreateEvent(inBody1, inBody2, inManifold);
+
+        std::scoped_lock lock(mutex);
+        addedContacts.push_back(event);
+
+    }
+
+    void ContactListener::OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
+        const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) {
+
+        if (!recordPersistedContacts)
+            return;
+
+        auto event = CreateEvent(inBody1, inBody2, inManifold);
+
+        std::scoped_lock lock(mutex);
+        persistedContacts.push_back(event);
+
+    }
+
+    void ContactListener::OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) {
+
+        std::scoped_lock lock(mutex);
+        removedContacts.emplace_back(inSubShapePair.GetBody1ID(), inSubShapePair.GetBody2ID());
+
+    }
+
+    ContactEvent ContactListener::CreateEvent(const JPH::Body& inBody1, const JPH::Body& inBody2,
+        const JPH::ContactManifold& inManifold) const {
+
         JPH::RVec3 position = JPH::RVec3::sZero();
         for (JPH::uint i = 0; i < inManifold.mRelativeContactPointsOn1.size(); i++)
             position += inManifold.GetWorldSpaceContactPointOn1(i);
@@ -27,15 +57,7 @@ namespace Atlas::Physics {
         event.impactSpeed = glm::max(0.0f, relativeVelocity.Dot(inManifold.mWorldSpaceNormal));
         event.isTrigger = inBody1.IsSensor() || inBody2.IsSensor();
 
-        std::scoped_lock lock(mutex);
-        addedContacts.push_back(event);
-
-    }
-
-    void ContactListener::OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) {
-
-        std::scoped_lock lock(mutex);
-        removedContacts.emplace_back(inSubShapePair.GetBody1ID(), inSubShapePair.GetBody2ID());
+        return event;
 
     }
 

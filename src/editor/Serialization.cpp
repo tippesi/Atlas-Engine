@@ -5,6 +5,7 @@
 #include "common/SerializationHelper.h"
 #include "tools/ToolSerializer.h"
 #include "scene/SceneSerializer.h"
+#include "physics/PhysicsSerializer.h"
 
 #include "Log.h"
 #include "loader/AssetLoader.h"
@@ -84,6 +85,9 @@ namespace Atlas::Editor {
             { "showGrid", sceneWindow->showGrid },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
             { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
+            { "showPhysics", sceneWindow->showPhysics },
+            { "depthTestPhysics", sceneWindow->depthTestPhysics },
+            { "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings },
             { "playMaximized", sceneWindow->playMaximized },
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
             { "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator },
@@ -125,6 +129,9 @@ namespace Atlas::Editor {
         try_get_json(j, "showGrid", sceneWindow->showGrid);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
         try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
+        try_get_json(j, "showPhysics", sceneWindow->showPhysics);
+        try_get_json(j, "depthTestPhysics", sceneWindow->depthTestPhysics);
+        try_get_json(j, "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings);
         try_get_json(j, "playMaximized", sceneWindow->playMaximized);
         try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);
         try_get_json(j, "camera", camera);

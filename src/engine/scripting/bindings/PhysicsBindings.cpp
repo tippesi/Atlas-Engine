@@ -148,6 +148,10 @@ namespace Atlas::Scripting::Bindings {
             "angularDampening", &Physics::BodyCreationSettings::angularDampening,
             "gravityFactor", &Physics::BodyCreationSettings::gravityFactor,  
             "isTrigger", &Physics::BodyCreationSettings::isTrigger,
+            "isFluid", &Physics::BodyCreationSettings::isFluid,
+            "buoyancy", &Physics::BodyCreationSettings::buoyancy,
+            "fluidLinearDrag", &Physics::BodyCreationSettings::fluidLinearDrag,
+            "fluidAngularDrag", &Physics::BodyCreationSettings::fluidAngularDrag,
             "shape", &Physics::BodyCreationSettings::shape
             );
 

@@ -287,6 +287,8 @@ namespace Atlas {
             float deltaTime = 0.0f;
 
             std::vector<ContactEvent> contactEvents;
+            // Ocean surface queries below the corners of the bodies with buoyancy
+            std::unordered_map<Physics::BodyID, uint32_t> oceanSurfaceQueries;
 
             bool firstTimestep = true;
             bool hasChanged = true;

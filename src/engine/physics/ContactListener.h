@@ -6,6 +6,7 @@
 #include <Jolt/Physics/Collision/ContactListener.h>
 
 #include <mutex>
+#include <atomic>
 #include <vector>
 
 namespace Atlas::Physics {
@@ -43,12 +44,23 @@ namespace Atlas::Physics {
         void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
             const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override;
 
+        void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
+            const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override;
+
         void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override;
 
         std::vector<ContactEvent> addedContacts;
+        std::vector<ContactEvent> persistedContacts;
         std::vector<std::pair<BodyID, BodyID>> removedContacts;
 
+        // Persisted contacts are only needed to draw the current contacts
+        std::atomic<bool> recordPersistedContacts = false;
+
         std::mutex mutex;
+
+    private:
+        ContactEvent CreateEvent(const JPH::Body& inBody1, const JPH::Body& inBody2,
+            const JPH::ContactManifold& inManifold) const;
 
     };
 

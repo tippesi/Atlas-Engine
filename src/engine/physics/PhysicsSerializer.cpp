@@ -281,6 +281,14 @@ namespace Atlas::Physics {
             j["gravityFactor"] = p.gravityFactor;
         if (d.isTrigger != p.isTrigger)
             j["isTrigger"] = p.isTrigger;
+        if (d.isFluid != p.isFluid)
+            j["isFluid"] = p.isFluid;
+        if (d.buoyancy != p.buoyancy)
+            j["buoyancy"] = p.buoyancy;
+        if (d.fluidLinearDrag != p.fluidLinearDrag)
+            j["fluidLinearDrag"] = p.fluidLinearDrag;
+        if (d.fluidAngularDrag != p.fluidAngularDrag)
+            j["fluidAngularDrag"] = p.fluidAngularDrag;
         if (p.shape)
             j["shape"] = *p.shape;
     }
@@ -306,6 +314,14 @@ namespace Atlas::Physics {
             p.gravityFactor = j["gravityFactor"];
         if (j.contains("isTrigger"))
             p.isTrigger = j["isTrigger"];
+        if (j.contains("isFluid"))
+            p.isFluid = j["isFluid"];
+        if (j.contains("buoyancy"))
+            p.buoyancy = j["buoyancy"];
+        if (j.contains("fluidLinearDrag"))
+            p.fluidLinearDrag = j["fluidLinearDrag"];
+        if (j.contains("fluidAngularDrag"))
+            p.fluidAngularDrag = j["fluidAngularDrag"];
         if (j.contains("shape")) {
             p.shape = j["shape"];
         }
@@ -321,7 +337,7 @@ namespace Atlas::Physics {
             {"limitsMin", p.limitsMin},
             {"limitsMax", p.limitsMax},
             {"halfConeAngle", p.halfConeAngle},
-            {"breakForce", p.breakForce},
+            {"breakForce", p.breakForce}
         };
     }
 
@@ -335,6 +351,26 @@ namespace Atlas::Physics {
         j.at("limitsMax").get_to(p.limitsMax);
         j.at("halfConeAngle").get_to(p.halfConeAngle);
         j.at("breakForce").get_to(p.breakForce);
+    }
+
+    void to_json(json& j, const DebugDrawSettings& p) {
+        j = json {
+            {"drawShapes", p.drawShapes},
+            {"drawBounds", p.drawBounds},
+            {"drawContacts", p.drawContacts},
+            {"drawConstraints", p.drawConstraints},
+            {"drawStaticBodies", p.drawStaticBodies},
+            {"distance", p.distance}
+        };
+    }
+
+    void from_json(const json& j, DebugDrawSettings& p) {
+        try_get_json(j, "drawShapes", p.drawShapes);
+        try_get_json(j, "drawBounds", p.drawBounds);
+        try_get_json(j, "drawContacts", p.drawContacts);
+        try_get_json(j, "drawConstraints", p.drawConstraints);
+        try_get_json(j, "drawStaticBodies", p.drawStaticBodies);
+        try_get_json(j, "distance", p.distance);
     }
 
     void to_json(json& j, const PlayerCreationSettings& p) {

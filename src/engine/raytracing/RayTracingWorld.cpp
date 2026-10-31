@@ -561,6 +561,7 @@ namespace Atlas {
             // went up a lot.
             auto instanceBound = std::min(maxInstanceCount, hostInstanceCount + initialGPUInstanceBound);
             if (readbackFrameCount >= FRAME_DATA_COUNT) {
+                instanceCountReadback->Invalidate();
                 auto lastInstanceCount = *static_cast<uint32_t*>(instanceCountReadback->Map());
                 instanceCountReadback->Unmap();
                 instanceBound = std::clamp(lastInstanceCount + lastInstanceCount / 4 + instanceBoundMargin,

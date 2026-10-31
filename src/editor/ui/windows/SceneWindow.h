@@ -67,6 +67,10 @@ namespace Atlas::Editor::UI {
 
         bool depthTestBoundingVolumes = false;
         bool showGrid = false;
+        bool showPhysics = false;
+        bool depthTestPhysics = true;
+
+        Physics::DebugDrawSettings physicsDebugDrawSettings;
 
         bool hasMainCamera = false;
         bool hasPlayer = false;
@@ -82,6 +86,9 @@ namespace Atlas::Editor::UI {
 
         // Ground grid on the y = 0 plane around the editor camera
         void RenderGrid();
+
+        // Physics bodies, contacts and constraints around the main camera
+        void RenderPhysics();
 
         // Time when the camera speed was last changed with the mouse wheel, to show a short hint
         float cameraSpeedChangeTime = -1000.0f;

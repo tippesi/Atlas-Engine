@@ -318,6 +318,7 @@ the scene, e.g. marker entities.
     "players": true,                  // figures for player entities, including those without meshes (cyan)
     "trails": true,                   // paths of tracked entities (magenta)
     "queries": true,                  // query results: raycasts, ground hits, paths, picks (green/red)
+    "physics": true,                  // physics shapes, contacts and constraints within 50 m of the camera, off by default
     "markers": [{ "position": [x, y, z], "color": [1, 0, 0], "size": 0.5 }],
     "axes": [[x, y, z]],              // X red, Y green, Z blue
     "depthTest": false                // drawn on top of everything by default
@@ -325,7 +326,8 @@ the scene, e.g. marker entities.
 ```
 
 The lines are drawn with the engine primitive batches into every capture (`--overlay` enables
-the defaults). They show what can't be seen otherwise: invisible players, the path a character
+the defaults). Physics draws static bodies gray, dynamic bodies green (dark when sleeping), kinematic
+bodies orange, triggers cyan, fluid triggers blue, contacts red and constraints magenta. They show what can't be seen otherwise: invisible players, the path a character
 walked, where a ray hit or which part of a route is blocked.
 
 ### Checks

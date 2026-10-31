@@ -510,7 +510,29 @@ namespace Atlas::Scripting::Bindings {
             "volumetric", &LightComponent::volumetric
         );
 
+        ns->new_usertype<Ocean::OceanSurface>("OceanSurface",
+            "position", &Ocean::OceanSurface::position,
+            "normal", &Ocean::OceanSurface::normal
+        );
+
+        ns->new_usertype<Ocean::OceanSurfaceQueries>("OceanSurfaceQueries",
+            "CreateQuery", [](Ocean::OceanSurfaceQueries& queries, sol::as_table_t<std::vector<vec3>> positions) {
+                return queries.CreateQuery(positions.value());
+            },
+            "UpdateQuery", [](Ocean::OceanSurfaceQueries& queries, uint32_t queryId, sol::as_table_t<std::vector<vec3>> positions) {
+                return queries.UpdateQuery(queryId, positions.value());
+            },
+            "IsQueryValid", &Ocean::OceanSurfaceQueries::IsQueryValid,
+            "GetQueryResults", [](Ocean::OceanSurfaceQueries& queries, uint32_t queryId) {
+                return sol::as_table(queries.GetQueryResults(queryId));
+            },
+            "DestroyQuery", &Ocean::OceanSurfaceQueries::DestroyQuery
+        );
+
         ns->new_usertype<Ocean::Ocean>("Ocean",
+            "surfaceQueries", &Ocean::Ocean::surfaceQueries,
+            "translation", &Ocean::Ocean::translation,
+            "physics", &Ocean::Ocean::physics,
             "displacementScale", &Ocean::Ocean::displacementScale,
             "choppynessScale", &Ocean::Ocean::choppynessScale,
             "shoreWaveAmplitude", &Ocean::Ocean::shoreWaveAmplitude,

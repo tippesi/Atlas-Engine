@@ -288,7 +288,9 @@ namespace Atlas {
 
             auto multiBuffer = std::make_shared<MultiBuffer>(this, desc);
 
+            // Buffers created during a frame have to use the copy of this frame
             std::lock_guard<std::mutex> guard(multiBuffers.mutex);
+            multiBuffer->UpdateFrameIndex(frameIndex);
             multiBuffers.data.push_back(multiBuffer);
 
             return multiBuffer;

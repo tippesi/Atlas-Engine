@@ -173,6 +173,10 @@ namespace Atlas {
                 JobSystem::Wait(historyJobGroup);
             }
 
+            // Paused scenes don't execute their scripts, the queries of the scripts only age while they are running
+            if (ocean && !paused)
+                ocean->surfaceQueries.Update();
+
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
                 // Work with a copy here
@@ -408,6 +412,61 @@ namespace Atlas {
                     if (movable)
                         constraintComponent.InsertIntoPhysicsWorld(rigidBodyComponent.bodyId, otherBodyId, physicsWorld.get());
                 }
+
+                // Bodies with buoyancy float on the waves where they reach the ocean surface. The queries are
+                // refreshed while paused as well, such that the results are there when the simulation continues
+                physicsWorld->bodyFluids.clear();
+
+                std::unordered_map<Physics::BodyID, uint32_t> surfaceQueries;
+                std::vector<vec3> corners(4);
+                if (ocean && ocean->enable && ocean->physics) {
+                    for (auto entity : rigidBodySubset) {
+                        const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
+                        auto bodyId = rigidBodyComponent.bodyId;
+                        if (!rigidBodyComponent.IsValid() || !physicsWorld->HasBuoyancy(bodyId))
+                            continue;
+
+                        auto bounds = physicsWorld->GetBodyBounds(bodyId);
+                        corners[0] = vec3(bounds.min.x, 0.0f, bounds.min.z);
+                        corners[1] = vec3(bounds.max.x, 0.0f, bounds.min.z);
+                        corners[2] = vec3(bounds.min.x, 0.0f, bounds.max.z);
+                        corners[3] = vec3(bounds.max.x, 0.0f, bounds.max.z);
+
+                        auto it = oceanSurfaceQueries.find(bodyId);
+                        auto queryId = it != oceanSurfaceQueries.end() ? it->second : 0;
+                        if (!ocean->surfaceQueries.UpdateQuery(queryId, corners))
+                            queryId = ocean->surfaceQueries.CreateQuery(corners);
+                        surfaceQueries[bodyId] = queryId;
+
+                        // The ocean is calm until the first results arrive, they are from a few frames ago
+                        Physics::Fluid fluid = { .surfacePosition = ocean->translation };
+                        auto surfaceHeight = ocean->translation.y;
+
+                        auto results = ocean->surfaceQueries.GetQueryResults(queryId);
+                        if (results.size() == corners.size()) {
+                            auto normal = glm::cross(results[2].position - results[1].position,
+                                results[3].position - results[0].position);
+                            if (normal.y > 0.0f) {
+                                fluid.surfacePosition = 0.25f * (results[0].position + results[1].position +
+                                    results[2].position + results[3].position);
+                                fluid.surfaceNormal = glm::normalize(normal);
+                            }
+
+                            surfaceHeight = -std::numeric_limits<float>::max();
+                            for (const auto& result : results)
+                                surfaceHeight = glm::max(surfaceHeight, result.position.y);
+                        }
+
+                        // Bodies above the waves or on terrain above the water aren't in the ocean
+                        auto center = bounds.GetCenter();
+                        if (bounds.min.y > surfaceHeight ||
+                            (terrain.IsLoaded() && terrain->GetHeight(center.x, center.z) > surfaceHeight))
+                            continue;
+
+                        physicsWorld->bodyFluids[bodyId] = fluid;
+                    }
+                }
+                oceanSurfaceQueries.swap(surfaceQueries);
 
                 // This part only needs to be executed if the simulation is running
                 if (simulate) {

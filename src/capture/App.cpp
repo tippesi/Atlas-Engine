@@ -1857,6 +1857,12 @@ namespace Atlas::Capture {
             }
         }
 
+        if (spec.physics && scene->physicsWorld && scene->HasMainCamera()) {
+            Physics::DebugDrawSettings settings;
+            settings.center = scene->GetMainCamera().GetLocation();
+            scene->physicsWorld->DebugDraw(batch.get(), settings);
+        }
+
         for (const auto& marker : spec.markers)
             batch->AddLineCross(ToVec3(marker.at("position")), marker.value("size", 0.5f),
                 ToVec3(marker.value("color", json()), vec3(1.0f, 0.3f, 0.1f)));

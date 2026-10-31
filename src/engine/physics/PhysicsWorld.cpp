@@ -1,6 +1,8 @@
 #include "PhysicsWorld.h"
 #include "PhysicsManager.h"
 #include "MathConversion.h"
+#include "../renderer/PrimitiveBatch.h"
+#include "../tools/PerformanceCounter.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
@@ -11,6 +13,8 @@
 #include <Jolt/Physics/Collision/ShapeCast.h>
 #include <Jolt/Physics/Collision/CollideShape.h>
 #include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
+#include <Jolt/Physics/Collision/TransformedShape.h>
+#include <Jolt/Physics/Collision/BroadPhase/BroadPhaseQuery.h>
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
 #include <Jolt/Physics/Constraints/PointConstraint.h>
 #include <Jolt/Physics/Constraints/HingeConstraint.h>
@@ -37,6 +41,16 @@ namespace Atlas {
             const std::function<bool(const Body&)>& ignore;
         };
 
+        class BuoyancyStepListener : public JPH::PhysicsStepListener {
+        public:
+            explicit BuoyancyStepListener(PhysicsWorld* world) : world(world) {}
+
+            void OnStep(const JPH::PhysicsStepListenerContext& inContext) override { world->ApplyBuoyancy(inContext.mDeltaTime); }
+
+        private:
+            PhysicsWorld* world;
+        };
+
         PhysicsWorld::PhysicsWorld(uint32_t maxBodyCount, uint32_t bodyMutexesCount, uint32_t maxBodyPairCount,
             uint32_t maxContactConstraintCount, Ref<JPH::ObjectLayerPairFilter> objectLayerFilter,
             Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface,
@@ -61,9 +75,14 @@ namespace Atlas {
             contactListener = CreateRef<ContactListener>();
             system->SetContactListener(contactListener.get());
 
+            stepListener = CreateRef<BuoyancyStepListener>(this);
+            system->AddStepListener(stepListener.get());
+
         }
 
         PhysicsWorld::~PhysicsWorld() {
+
+            system->RemoveStepListener(stepListener.get());
 
             for (auto& constraint : constraints)
                 system->RemoveConstraint(constraint);
@@ -83,7 +102,19 @@ namespace Atlas {
             auto collisionSteps = std::min(std::max(int32_t(float(simulationStepsPerSecond) * deltaTime), 1), 8);
             stepDeltaTime = deltaTime / float(collisionSteps);
 
+            FindFluidContacts();
+
+            // Waves keep moving, bodies on them shouldn't fall asleep
+            auto& bodyInterface = system->GetBodyInterface();
+            for (const auto& [bodyId, _] : bodyFluids)
+                if (bodyToBuoyancyMap.contains(bodyId))
+                    bodyInterface.ActivateBody(bodyId);
+
+            Tools::PerformanceCounter performanceCounter;
+
             PhysicsManager::ExecuteUpdate(this, deltaTime, collisionSteps);
+
+            updateTime = float(performanceCounter.Stamp().delta);
 
             ProcessContacts();
 
@@ -111,6 +142,12 @@ namespace Atlas {
             auto bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
             bodyToShapeMap[bodyId] = bodyCreationSettings.shape;
 
+            if (bodyCreationSettings.buoyancy > 0.0f && settings.mMotionType == JPH::EMotionType::Dynamic)
+                bodyToBuoyancyMap[bodyId] = { bodyCreationSettings.buoyancy,
+                    bodyCreationSettings.fluidLinearDrag, bodyCreationSettings.fluidAngularDrag };
+            if (bodyCreationSettings.isFluid && settings.mIsSensor)
+                fluidBodies.insert(bodyId);
+
             return { bodyId, this };
 
         }
@@ -137,6 +174,10 @@ namespace Atlas {
                 });
 
             bodyToShapeMap.erase(body.bodyId);
+            bodyToBuoyancyMap.erase(body.bodyId);
+            bodyToFluidBodiesMap.erase(body.bodyId);
+            bodyFluids.erase(body.bodyId);
+            fluidBodies.erase(body.bodyId);
 
             bodyInterface.RemoveBody(body.bodyId);
             bodyInterface.DestroyBody(body.bodyId);
@@ -342,6 +383,14 @@ namespace Atlas {
                     BodyCreationSettings bodyCreationSettings;
                     bodyCreationSettings.SetSettings(settings);
                     bodyCreationSettings.shape = bodyToShapeMap[bodyId];
+                    bodyCreationSettings.isFluid = fluidBodies.contains(bodyId);
+
+                    auto it = bodyToBuoyancyMap.find(bodyId);
+                    if (it != bodyToBuoyancyMap.end()) {
+                        bodyCreationSettings.buoyancy = it->second.buoyancy;
+                        bodyCreationSettings.fluidLinearDrag = it->second.linearDrag;
+                        bodyCreationSettings.fluidAngularDrag = it->second.angularDrag;
+                    }
                     return bodyCreationSettings;
                 }
             }
@@ -362,9 +411,43 @@ namespace Atlas {
 
         }
 
+        bool PhysicsWorld::HasBuoyancy(BodyID bodyId) const {
+
+            return bodyToBuoyancyMap.contains(bodyId);
+
+        }
+
+        Volume::AABB PhysicsWorld::GetBodyBounds(BodyID bodyId) const {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            auto bounds = bodyInterface.GetTransformedShape(bodyId).GetWorldSpaceBounds();
+
+            return Volume::AABB(JPHVecToVec(bounds.mMin), JPHVecToVec(bounds.mMax));
+
+        }
+
         uint32_t PhysicsWorld::GetBodyCount() const {
 
             return system->GetNumBodies();
+
+        }
+
+        WorldStatistics PhysicsWorld::GetStatistics() const {
+
+            auto bodyStats = system->GetBodyStats();
+
+            WorldStatistics statistics;
+            statistics.bodyCount = bodyStats.mNumBodies;
+            statistics.staticBodyCount = bodyStats.mNumBodiesStatic;
+            statistics.dynamicBodyCount = bodyStats.mNumBodiesDynamic;
+            statistics.activeDynamicBodyCount = bodyStats.mNumActiveBodiesDynamic;
+            statistics.kinematicBodyCount = bodyStats.mNumBodiesKinematic;
+            statistics.activeKinematicBodyCount = bodyStats.mNumActiveBodiesKinematic;
+            statistics.constraintCount = uint32_t(constraints.size());
+            statistics.contactCount = uint32_t(contactPairs.size());
+            statistics.updateTime = updateTime;
+
+            return statistics;
 
         }
 
@@ -628,8 +711,209 @@ namespace Atlas {
                 return true;
                 });
 
+            for (const auto& event : contactListener->persistedContacts) {
+                auto it = contactPairs.find(pairKey(event.bodyId, event.otherBodyId));
+                if (it == contactPairs.end())
+                    continue;
+
+                it->second.event.position = event.position;
+                it->second.event.normal = event.normal;
+            }
+
             contactListener->addedContacts.clear();
+            contactListener->persistedContacts.clear();
             contactListener->removedContacts.clear();
+
+            // Debug drawing requests the persisted contacts again for the next update
+            contactListener->recordPersistedContacts = false;
+
+        }
+
+        void PhysicsWorld::FindFluidContacts() {
+
+            bodyToFluidBodiesMap.clear();
+
+            if (bodyToBuoyancyMap.empty() || fluidBodies.empty())
+                return;
+
+            for (const auto& [_, contactPair] : contactPairs) {
+                const auto& event = contactPair.event;
+                if (fluidBodies.contains(event.bodyId) && bodyToBuoyancyMap.contains(event.otherBodyId))
+                    bodyToFluidBodiesMap[event.otherBodyId].push_back(event.bodyId);
+                if (fluidBodies.contains(event.otherBodyId) && bodyToBuoyancyMap.contains(event.bodyId))
+                    bodyToFluidBodiesMap[event.bodyId].push_back(event.otherBodyId);
+            }
+
+        }
+
+        void PhysicsWorld::ApplyBuoyancy(float deltaTime) {
+
+            // All bodies are locked during the collision steps
+            const auto& bodyLockInterface = system->GetBodyLockInterfaceNoLock();
+            auto gravity = system->GetGravity();
+
+            for (const auto& [bodyId, buoyancy] : bodyToBuoyancyMap) {
+                JPH::BodyLockWrite lock(bodyLockInterface, bodyId);
+                if (!lock.Succeeded())
+                    continue;
+
+                auto& body = lock.GetBody();
+                if (!body.IsActive())
+                    continue;
+
+                auto position = JPHVecToVec(body.GetCenterOfMassPosition());
+
+                // Bodies float in the fluid in which they are submerged the most
+                Fluid fluid;
+                auto depth = 0.0f;
+                auto found = false;
+                auto findDeepestFluid = [&](const Fluid& candidate) {
+                    auto candidateDepth = glm::dot(candidate.surfacePosition - position, candidate.surfaceNormal);
+                    if (found && candidateDepth <= depth)
+                        return;
+                    fluid = candidate;
+                    depth = candidateDepth;
+                    found = true;
+                };
+
+                // A fluid of the body itself, e.g. the waves below it, replaces the endless fluids
+                auto bodyFluid = bodyFluids.find(bodyId);
+                if (bodyFluid != bodyFluids.end()) {
+                    findDeepestFluid(bodyFluid->second);
+                }
+                else {
+                    for (const auto& candidate : fluids)
+                        findDeepestFluid(candidate);
+                }
+
+                auto it = bodyToFluidBodiesMap.find(bodyId);
+                if (it != bodyToFluidBodiesMap.end()) {
+                    for (auto fluidBodyId : it->second) {
+                        JPH::BodyLockRead fluidLock(bodyLockInterface, fluidBodyId);
+                        if (!fluidLock.Succeeded())
+                            continue;
+
+                        const auto& fluidBody = fluidLock.GetBody();
+                        auto surfaceHeight = fluidBody.GetWorldSpaceBounds().mMax.GetY();
+                        findDeepestFluid({ .surfacePosition = vec3(position.x, surfaceHeight, position.z),
+                            .velocity = JPHVecToVec(fluidBody.GetLinearVelocity()) });
+                    }
+                }
+
+                if (!found)
+                    continue;
+
+                body.ApplyBuoyancyImpulse(VecToJPHVec(fluid.surfacePosition), VecToJPHVec(fluid.surfaceNormal),
+                    buoyancy.buoyancy, buoyancy.linearDrag, buoyancy.angularDrag, VecToJPHVec(fluid.velocity),
+                    gravity, deltaTime);
+            }
+
+        }
+
+        void PhysicsWorld::DebugDraw(Renderer::PrimitiveBatch* primitiveBatch, const DebugDrawSettings& settings) {
+
+            contactListener->recordPersistedContacts = settings.drawContacts;
+
+            const auto& bodyLockInterface = system->GetBodyLockInterface();
+
+            auto center = VecToJPHVec(settings.center);
+            auto extent = JPH::Vec3::sReplicate(settings.distance);
+            JPH::AABox drawBox(center - extent, center + extent);
+
+            auto bodyColor = [&](const JPH::Body& body) {
+                if (body.IsSensor())
+                    return fluidBodies.contains(body.GetID()) ? vec3(0.2f, 0.4f, 1.0f) : vec3(0.0f, 1.0f, 1.0f);
+                if (body.IsStatic())
+                    return vec3(0.5f);
+                if (body.IsKinematic())
+                    return vec3(1.0f, 0.5f, 0.0f);
+                return body.IsActive() ? vec3(0.0f, 1.0f, 0.0f) : vec3(0.0f, 0.4f, 0.0f);
+            };
+
+            if (settings.drawShapes || settings.drawBounds) {
+                JPH::AllHitCollisionCollector<JPH::CollideShapeBodyCollector> bodyCollector;
+                system->GetBroadPhaseQuery().CollideAABox(drawBox, bodyCollector);
+
+                JPH::Shape::GetTrianglesContext context;
+                std::vector<JPH::Float3> vertices(3 * 256);
+
+                for (auto bodyId : bodyCollector.mHits) {
+                    JPH::BodyLockRead lock(bodyLockInterface, bodyId);
+                    if (!lock.Succeeded())
+                        continue;
+
+                    const auto& body = lock.GetBody();
+                    if (body.IsStatic() && !settings.drawStaticBodies)
+                        continue;
+
+                    auto bounds = body.GetWorldSpaceBounds();
+
+                    auto color = bodyColor(body);
+                    if (settings.drawBounds)
+                        primitiveBatch->AddLineAABB(Volume::AABB(JPHVecToVec(bounds.mMin), JPHVecToVec(bounds.mMax)), color);
+
+                    if (!settings.drawShapes)
+                        continue;
+
+                    // Triangles are only available for leaf shapes, the engine shapes are at least scaled
+                    JPH::AllHitCollisionCollector<JPH::TransformedShapeCollector> collector;
+                    body.GetTransformedShape().CollectTransformedShapes(drawBox, collector);
+
+                    for (const auto& transformedShape : collector.mHits) {
+                        transformedShape.GetTrianglesStart(context, drawBox, JPH::RVec3::sZero());
+
+                        int32_t count = 0;
+                        while ((count = transformedShape.GetTrianglesNext(context, 256, vertices.data())) > 0) {
+                            for (int32_t i = 0; i < count; i++) {
+                                auto v0 = JPHVecToVec(JPH::Vec3(vertices[3 * i]));
+                                auto v1 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 1]));
+                                auto v2 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 2]));
+
+                                primitiveBatch->AddLine(v0, v1, color, color);
+                                primitiveBatch->AddLine(v1, v2, color, color);
+                                primitiveBatch->AddLine(v2, v0, color, color);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (settings.drawContacts) {
+                for (const auto& [_, contactPair] : contactPairs) {
+                    const auto& event = contactPair.event;
+                    if (contactPair.sleeping || !drawBox.Contains(VecToJPHVec(event.position)))
+                        continue;
+
+                    auto color = event.isTrigger ? vec3(0.0f, 1.0f, 1.0f) : vec3(1.0f, 0.0f, 0.0f);
+                    primitiveBatch->AddLineCross(event.position, 0.05f, color);
+                    primitiveBatch->AddLine(event.position, event.position + event.normal * 0.25f, color, color);
+                }
+            }
+
+            if (settings.drawConstraints) {
+                for (const auto& constraint : constraints) {
+                    auto matrix = constraint->GetBody1()->GetCenterOfMassTransform() * constraint->GetConstraintToBody1Matrix();
+                    auto otherMatrix = constraint->GetBody2()->GetCenterOfMassTransform() * constraint->GetConstraintToBody2Matrix();
+
+                    auto point = JPHVecToVec(matrix.GetTranslation());
+                    auto otherPoint = JPHVecToVec(otherMatrix.GetTranslation());
+                    if (!drawBox.Contains(VecToJPHVec(point)))
+                        continue;
+
+                    auto color = constraint->GetEnabled() ? vec3(1.0f, 0.0f, 1.0f) : vec3(0.5f, 0.0f, 0.5f);
+                    primitiveBatch->AddLineCross(point, 0.1f, color);
+                    primitiveBatch->AddLineCross(otherPoint, 0.1f, color);
+                    primitiveBatch->AddLine(point, otherPoint, color, color);
+
+                    // The first axis of the constraint space is the hinge, slider or twist axis
+                    auto subType = constraint->GetSubType();
+                    if (subType == JPH::EConstraintSubType::Hinge || subType == JPH::EConstraintSubType::Slider ||
+                        subType == JPH::EConstraintSubType::Cone) {
+                        auto axis = JPHVecToVec(matrix.GetAxisX()) * 0.5f;
+                        primitiveBatch->AddLine(point - axis, point + axis, color, color);
+                    }
+                }
+            }
 
         }
 
@@ -666,6 +950,8 @@ namespace Atlas {
 
             contactPairs.clear();
             contactEvents.clear();
+            bodyToFluidBodiesMap.clear();
+            bodyFluids.clear();
 
         }
 

@@ -5,6 +5,7 @@
 #include "OceanState.h"
 #include "OceanNode.h"
 #include "OceanSimulation.h"
+#include "OceanSurfaceQueries.h"
 
 #include <vector>
 
@@ -33,6 +34,7 @@ namespace Atlas {
             std::vector<OceanNode*> GetRenderList();
 
             OceanSimulation simulation;
+            OceanSurfaceQueries surfaceQueries;
 
             Texture::Texture2D rippleTexture;
             Texture::Texture2D foamTexture;
@@ -60,6 +62,9 @@ namespace Atlas {
             bool wireframe = false;
             bool enable = true;
             bool underwaterShader = true;
+
+            // Bodies float on the waves and the surface can be queried
+            bool physics = false;
 
         private:
             void SortNodes(std::vector<OceanNode*>& nodes, vec3 cameraLocation);

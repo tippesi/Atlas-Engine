@@ -236,6 +236,20 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Trigger", &settings.isTrigger);
         ImGui::SetItemTooltip("Reports contacts to scripts without colliding");
 
+        if (settings.isTrigger) {
+            ImGui::Checkbox("Fluid", &settings.isFluid);
+            ImGui::SetItemTooltip("Bodies with buoyancy float below the top of the trigger");
+        }
+
+        if (settings.objectLayer == Physics::Layers::Movable && !settings.isTrigger) {
+            ImGui::DragFloat("Buoyancy", &settings.buoyancy, 0.01f, 0.0f, 2.0f);
+            ImGui::SetItemTooltip("Floats in fluid triggers and the ocean, 1 is neutral, lower sinks, higher floats, zero disables it");
+            if (settings.buoyancy > 0.0f) {
+                ImGui::DragFloat("Fluid linear drag", &settings.fluidLinearDrag, 0.01f, 0.0f, 10.0f);
+                ImGui::DragFloat("Fluid angular drag", &settings.fluidAngularDrag, 0.001f, 0.0f, 10.0f);
+            }
+        }
+
     }
 
     void RigidBodyComponentPanel::RenderCompoundSettings(Physics::CompoundShapeSettings& compoundSettings) {

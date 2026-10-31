@@ -37,7 +37,8 @@ namespace Atlas::Ocean {
             {"foamSize", p.simulation.foamSize},
             {"simulationSpeed", p.simulation.simulationSpeed},
             {"update", p.simulation.update},
-            {"fftNormals", p.simulation.fftNormals}
+            {"fftNormals", p.simulation.fftNormals},
+            {"physics", p.physics}
         };
     }
 
@@ -82,6 +83,7 @@ namespace Atlas::Ocean {
         try_get_json(j, "simulationSpeed", p.simulation.simulationSpeed);
         try_get_json(j, "update", p.simulation.update);
         try_get_json(j, "fftNormals", p.simulation.fftNormals);
+        try_get_json(j, "physics", p.physics);
 
         p.simulation.UpdateSpectrum();
     }

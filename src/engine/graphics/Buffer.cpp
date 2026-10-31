@@ -97,6 +97,12 @@ namespace Atlas {
 
         }
 
+        void Buffer::Invalidate() {
+
+            VK_CHECK(vmaInvalidateAllocation(memoryManager->allocator, allocation, 0, VK_WHOLE_SIZE))
+
+        }
+
         VkDeviceAddress Buffer::GetDeviceAddress() {
 
             VkBufferDeviceAddressInfo info = {};
@@ -151,6 +157,12 @@ namespace Atlas {
         void MultiBuffer::Unmap() {
 
             GetCurrent()->Unmap();
+
+        }
+
+        void MultiBuffer::Invalidate() {
+
+            GetCurrent()->Invalidate();
 
         }
 

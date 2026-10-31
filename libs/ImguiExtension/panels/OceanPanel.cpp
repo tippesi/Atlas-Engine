@@ -89,6 +89,10 @@ namespace Atlas::ImguiExtension {
         ImGui::DragFloat("Speed", &ocean->shoreWaveSpeed, 0.01f, 0.0f, 50.0f);
         ImGui::DragFloat("Length", &ocean->shoreWaveLength, 0.01f, 0.0f, 50.0f);
 
+        ImGui::SeparatorText("Physics");
+        ImGui::Checkbox("Enable physics", &ocean->physics);
+        ImGui::SetItemTooltip("Bodies with buoyancy float on the waves and scripts can query the surface");
+
         ImGui::PopID();
 
     }

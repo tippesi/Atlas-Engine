@@ -200,6 +200,9 @@ namespace Atlas::Editor::UI {
         if (showGrid && !isPlaying && scene.IsLoaded())
             RenderGrid();
 
+        if (showPhysics && scene.IsLoaded())
+            RenderPhysics();
+
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
             // Path tracing needs history while ray tracing
@@ -381,6 +384,21 @@ namespace Atlas::Editor::UI {
                 ImGui::SeparatorText("Overlays");
                 ImGui::Checkbox("Show grid (G)", &showGrid);
                 ImGui::Checkbox("Depth test bounding volumes", &depthTestBoundingVolumes);
+
+                ImGui::SeparatorText("Physics");
+                ImGui::Checkbox("Show physics", &showPhysics);
+                ImGui::SetItemTooltip("Static bodies are gray, dynamic green (dark when sleeping), kinematic orange, "
+                    "triggers cyan, fluids blue, contacts red and constraints magenta");
+                if (showPhysics) {
+                    auto& settings = physicsDebugDrawSettings;
+                    ImGui::Checkbox("Depth test physics", &depthTestPhysics);
+                    ImGui::Checkbox("Shapes", &settings.drawShapes);
+                    ImGui::Checkbox("Bounds", &settings.drawBounds);
+                    ImGui::Checkbox("Static bodies", &settings.drawStaticBodies);
+                    ImGui::Checkbox("Contacts", &settings.drawContacts);
+                    ImGui::Checkbox("Constraints", &settings.drawConstraints);
+                    ImGui::DragFloat("Distance", &settings.distance, 1.0f, 1.0f, 10000.0f);
+                }
 
                 ImGui::SeparatorText("Movement");
 
@@ -815,6 +833,18 @@ namespace Atlas::Editor::UI {
 
                 Notifications::Push({ .message = "Saved scene " + scene->name });
             });       
+
+    }
+
+    void SceneWindow::RenderPhysics() {
+
+        if (!scene->physicsWorld || !scene->HasMainCamera())
+            return;
+
+        physicsDebugDrawSettings.center = scene->GetMainCamera().GetLocation();
+
+        auto& wrapper = viewportPanel.primitiveBatchWrapper;
+        scene->physicsWorld->DebugDraw(wrapper.GetBatch(depthTestPhysics).get(), physicsDebugDrawSettings);
 
     }
 

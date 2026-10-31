@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "../volume/Ray.h"
+#include "../volume/AABB.h"
 #include "ShapesManager.h"
 #include "BodyCreation.h"
 #include "Body.h"
@@ -11,8 +12,17 @@
 
 #include "InterfaceImplementations.h"
 #include <Jolt/Physics/StateRecorderImpl.h>
+#include <Jolt/Physics/PhysicsStepListener.h>
+
+#include <unordered_set>
 
 namespace Atlas {
+
+    namespace Renderer {
+
+        class PrimitiveBatch;
+
+    }
 
     namespace Scene {
 
@@ -27,6 +37,41 @@ namespace Atlas {
     }
 
     namespace Physics {
+
+        class BuoyancyStepListener;
+
+        // Endless fluid below the surface, bodies with buoyancy float in it
+        struct Fluid {
+            vec3 surfacePosition = vec3(0.0f);
+            vec3 surfaceNormal = vec3(0.0f, 1.0f, 0.0f);
+            vec3 velocity = vec3(0.0f);
+        };
+
+        struct DebugDrawSettings {
+            bool drawShapes = true;
+            bool drawBounds = false;
+            bool drawContacts = true;
+            bool drawConstraints = true;
+            bool drawStaticBodies = true;
+
+            // Only what is within the box of the distance around the center is drawn
+            vec3 center = vec3(0.0f);
+            float distance = 50.0f;
+        };
+
+        struct WorldStatistics {
+            uint32_t bodyCount = 0;
+            uint32_t staticBodyCount = 0;
+            uint32_t dynamicBodyCount = 0;
+            uint32_t activeDynamicBodyCount = 0;
+            uint32_t kinematicBodyCount = 0;
+            uint32_t activeKinematicBodyCount = 0;
+            uint32_t constraintCount = 0;
+            uint32_t contactCount = 0;
+
+            // Time of the last update in milliseconds
+            float updateTime = 0.0f;
+        };
 
         class PhysicsWorld {
 
@@ -96,7 +141,13 @@ namespace Atlas {
 
             vec3 GetGravity();
 
+            bool HasBuoyancy(BodyID bodyId) const;
+
+            Volume::AABB GetBodyBounds(BodyID bodyId) const;
+
             uint32_t GetBodyCount() const;
+
+            WorldStatistics GetStatistics() const;
 
             // One of the bodies has to be movable, an invalid other body connects the body to the world
             Constraint CreateConstraint(const ConstraintCreationSettings& constraintCreationSettings,
@@ -117,6 +168,9 @@ namespace Atlas {
             std::vector<Body> CollideShape(const Ref<Shape>& shape, const mat4& matrix,
                 const std::function<bool(const Body&)>& ignore = {});
 
+            // Draws the bodies, contacts and constraints with lines, contacts are drawn from the next update on
+            void DebugDraw(Renderer::PrimitiveBatch* primitiveBatch, const DebugDrawSettings& settings);
+
             void OptimizeBroadphase();
 
             void SaveState();
@@ -133,6 +187,11 @@ namespace Atlas {
             // Contacts that began and ended since the events were last cleared
             std::vector<ContactEvent> contactEvents;
 
+            // Fluids in addition to the fluid triggers
+            std::vector<Fluid> fluids;
+            // Fluids of single bodies that replace the fluids above, the scene sets the ocean waves here every update
+            std::unordered_map<BodyID, Fluid> bodyFluids;
+
         private:
             struct ContactPair {
                 ContactEvent event;
@@ -140,7 +199,18 @@ namespace Atlas {
                 bool sleeping = false;
             };
 
+            struct Buoyancy {
+                float buoyancy = 0.0f;
+                float linearDrag = 0.0f;
+                float angularDrag = 0.0f;
+            };
+
             void ProcessContacts();
+
+            void FindFluidContacts();
+
+            // Called before every collision step on a job thread
+            void ApplyBuoyancy(float deltaTime);
 
             void EndContact(const ContactPair& contactPair);
 
@@ -149,18 +219,27 @@ namespace Atlas {
             Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr;
             Ref<ContactListener> contactListener = nullptr;
 
+            Ref<JPH::PhysicsStepListener> stepListener = nullptr;
+
             std::unordered_map<uint64_t, ContactPair> contactPairs;
             std::vector<JPH::Ref<JPH::TwoBodyConstraint>> constraints;
+
+            std::unordered_map<BodyID, Buoyancy> bodyToBuoyancyMap;
+            std::unordered_set<BodyID> fluidBodies;
+            // Fluid triggers that touched the bodies with buoyancy in the last update
+            std::unordered_map<BodyID, std::vector<BodyID>> bodyToFluidBodiesMap;
 
             Ref<JPH::StateRecorderImpl> state = nullptr;
 
             // Time step of a collision step in the last update
             float stepDeltaTime = 0.0f;
+            float updateTime = 0.0f;
 
             friend class Scene::Scene;
             friend class RigidBodyComponent;
             friend class PhysicsSerializer;
             friend Constraint;
+            friend BuoyancyStepListener;
 
         };
 

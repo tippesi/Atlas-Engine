@@ -568,6 +568,10 @@ namespace Atlas::Editor {
             .action = [this]() { auto window = GetActiveSceneWindow(); window->showGrid = !window->showGrid; },
             .isEnabled = canEdit,
             .isChecked = [this]() { auto window = GetActiveSceneWindow(); return window && window->showGrid; } });
+        commandPalette.Register({ .category = "Viewport", .name = "Toggle physics",
+            .action = [this]() { auto window = GetActiveSceneWindow(); window->showPhysics = !window->showPhysics; },
+            .isEnabled = hasScene,
+            .isChecked = [this]() { auto window = GetActiveSceneWindow(); return window && window->showPhysics; } });
         commandPalette.Register({ .category = "Viewport", .name = "Toggle gizmo snapping",
             .action = [this]() { auto& guizmo = GetActiveSceneWindow()->guizmo; guizmo.snappingEnabled = !guizmo.snappingEnabled; },
             .isEnabled = canEdit,

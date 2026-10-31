@@ -62,6 +62,9 @@ namespace Atlas {
 
             void Unmap();
 
+            // Makes writes of the GPU visible to the host for memory that isn't coherent
+            void Invalidate();
+
             VkDeviceAddress GetDeviceAddress();
 
             VkBuffer buffer;
@@ -100,6 +103,8 @@ namespace Atlas {
             void* Map();
 
             void Unmap();
+
+            void Invalidate();
 
             Buffer* GetCurrent() const;
 

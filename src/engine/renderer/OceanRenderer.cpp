@@ -20,6 +20,7 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             depthUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
+            queryUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -213,39 +214,7 @@ namespace Atlas {
 
                 vertexArray.Bind(commandList);
 
-                Uniforms uniforms = {
-                    .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
-                    .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
-                    .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
-
-                    .translation = vec4(ocean->translation, 1.0f),
-                    
-                    .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
-
-                    .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
-                    .spectrumWeights = ocean->simulation.spectrumWeights,
-                    .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
-
-                    .displacementScale = ocean->displacementScale,
-                    .choppyScale = ocean->choppynessScale,
-                    .tiling = ocean->tiling,
-                    .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
-
-                    .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
-                    .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
-                    .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
-                    .shoreWaveSteepness = ocean->shoreWaveSteepness,
-
-                    .shoreWavePower = ocean->shoreWavePower,
-                    .shoreWaveSpeed = ocean->shoreWaveSpeed,
-                    .shoreWaveLength = ocean->shoreWaveLength,
-                    .terrainSideLength = -1.0f,
-                    .N = ocean->simulation.N,
-                    .spectrumCount = ocean->simulation.C,
-                    .foamOffset = ocean->simulation.foamOffset,
-                    .foamScale = ocean->simulation.foamScale,
-                    .foamSize = ocean->simulation.foamSize,
-                };
+                auto uniforms = GetUniforms(scene);
 
                 if (scene->sky.atmosphere)
                     uniforms.sunAngularRadius = glm::radians(0.5f * glm::max(scene->sky.atmosphere->sunDiskSize, 0.01f));
@@ -273,18 +242,8 @@ namespace Atlas {
                 depthTexture.Bind(commandList, 3, 5);
                 target->oceanDepthTexture.Bind(commandList, 3, 20);
 
-                if (scene->terrain.IsLoaded()) {
-                    if (scene->terrain->shoreLine.IsValid()) {
-                        auto terrain = scene->terrain;
-
-                        uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
-                        uniforms.terrainSideLength = scene->terrain->sideLength;
-                        uniforms.terrainHeightScale = scene->terrain->heightScale;
-
-                        scene->terrain->shoreLine.Bind(commandList, 3, 9);
-
-                    }
-                }
+                if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid())
+                    scene->terrain->shoreLine.Bind(commandList, 3, 9);
 
                 if (fogEnabled) {
                     target->volumetricTexture.Bind(commandList, 3, 7);
@@ -476,6 +435,29 @@ namespace Atlas {
 
         }
 
+        void OceanRenderer::ComputeSurfaceQueries(Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+
+            auto ocean = scene->ocean;
+            if (!ocean || !ocean->enable || !ocean->physics)
+                return;
+
+            auto uniforms = GetUniforms(scene);
+
+            bool shoreLine = scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid();
+            if (shoreLine)
+                scene->terrain->shoreLine.Bind(commandList, 3, 9);
+
+            ocean->simulation.displacementMap.Bind(commandList, 3, 0);
+            ocean->simulation.normalMap.Bind(commandList, 3, 1);
+            ocean->simulation.perlinNoiseMap.Bind(commandList, 3, 13);
+
+            queryUniformBuffer.SetData(&uniforms, 0);
+            queryUniformBuffer.Bind(commandList, 3, 11);
+
+            ocean->surfaceQueries.Compute(commandList, shoreLine);
+
+        }
+
         void OceanRenderer::RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->ocean || !scene->ocean->enable)
@@ -499,36 +481,7 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            Uniforms uniforms = {
-                .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
-                .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
-                .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
-
-                .translation = vec4(ocean->translation, 1.0f),
-
-                .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
-
-                .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
-                .spectrumWeights = ocean->simulation.spectrumWeights,
-                .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
-
-                .displacementScale = ocean->displacementScale,
-                .choppyScale = ocean->choppynessScale,
-                .tiling = ocean->tiling,
-                .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
-
-                .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
-                .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
-                .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
-                .shoreWaveSteepness = ocean->shoreWaveSteepness,
-
-                .shoreWavePower = ocean->shoreWavePower,
-                .shoreWaveSpeed = ocean->shoreWaveSpeed,
-                .shoreWaveLength = ocean->shoreWaveLength,
-                .terrainSideLength = -1.0f,
-                .N = ocean->simulation.N,
-                .spectrumCount = ocean->simulation.C,
-            };
+            auto uniforms = GetUniforms(scene);
 
             ocean->simulation.displacementMap.Bind(commandList, 3, 0);
             ocean->simulation.normalMap.Bind(commandList, 3, 1);
@@ -543,18 +496,8 @@ namespace Atlas {
             auto sceneDepthTexture = target->GetData(FULL_RES)->depthTexture;
             commandList->BindImage(sceneDepthTexture->image, nearestSampler, 3, 5);
 
-            if (scene->terrain.IsLoaded()) {
-                if (scene->terrain->shoreLine.IsValid()) {
-                    auto terrain = scene->terrain;
-
-                    uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
-                    uniforms.terrainSideLength = scene->terrain->sideLength;
-                    uniforms.terrainHeightScale = scene->terrain->heightScale;
-
-                    scene->terrain->shoreLine.Bind(commandList, 3, 9);
-
-                }
-            }
+            if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid())
+                scene->terrain->shoreLine.Bind(commandList, 3, 9);
 
             if (ocean->rippleTexture.IsValid()) {
                 ocean->rippleTexture.Bind(commandList, 3, 10);
@@ -590,6 +533,55 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();
+
+        }
+
+        OceanRenderer::Uniforms OceanRenderer::GetUniforms(const Ref<Scene::Scene>& scene) const {
+
+            auto ocean = scene->ocean;
+
+            Uniforms uniforms = {
+                .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
+                .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
+                .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
+
+                .translation = vec4(ocean->translation, 1.0f),
+
+                .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
+
+                .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
+                .spectrumWeights = ocean->simulation.spectrumWeights,
+                .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
+
+                .displacementScale = ocean->displacementScale,
+                .choppyScale = ocean->choppynessScale,
+                .tiling = ocean->tiling,
+                .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
+
+                .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
+                .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
+                .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
+                .shoreWaveSteepness = ocean->shoreWaveSteepness,
+
+                .shoreWavePower = ocean->shoreWavePower,
+                .shoreWaveSpeed = ocean->shoreWaveSpeed,
+                .shoreWaveLength = ocean->shoreWaveLength,
+                .terrainSideLength = -1.0f,
+                .N = ocean->simulation.N,
+                .spectrumCount = ocean->simulation.C,
+                .foamOffset = ocean->simulation.foamOffset,
+                .foamScale = ocean->simulation.foamScale,
+                .foamSize = ocean->simulation.foamSize,
+            };
+
+            auto terrain = scene->terrain;
+            if (terrain.IsLoaded() && terrain->shoreLine.IsValid()) {
+                uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
+                uniforms.terrainSideLength = terrain->sideLength;
+                uniforms.terrainHeightScale = terrain->heightScale;
+            }
+
+            return uniforms;
 
         }
 

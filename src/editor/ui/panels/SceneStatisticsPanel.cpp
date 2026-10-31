@@ -60,7 +60,31 @@ namespace Atlas::Editor::UI {
             row("Materials", std::to_string(materials.size()));
             row("Lights", std::to_string(lightCount));
             row("Mesh instances", std::to_string(meshInstanceCount));
-            row("Physics bodies", std::to_string(scene->physicsWorld->GetBodyCount()));
+            ImGui::EndTable();
+        }
+
+        if (!scene->physicsWorld)
+            return;
+
+        auto physicsStatistics = scene->physicsWorld->GetStatistics();
+
+        auto activeToString = [](uint32_t active, uint32_t count) {
+            return std::to_string(active) + " / " + std::to_string(count);
+            };
+
+        char updateTime[32];
+        std::snprintf(updateTime, sizeof(updateTime), "%.2f ms", physicsStatistics.updateTime);
+
+        ImGui::Spacing();
+        ImGui::SeparatorText("Physics");
+        if (ImGui::BeginTable("Physics table", 2, tableFlags)) {
+            row("Bodies", std::to_string(physicsStatistics.bodyCount));
+            row("Static bodies", std::to_string(physicsStatistics.staticBodyCount));
+            row("Active dynamic bodies", activeToString(physicsStatistics.activeDynamicBodyCount, physicsStatistics.dynamicBodyCount));
+            row("Active kinematic bodies", activeToString(physicsStatistics.activeKinematicBodyCount, physicsStatistics.kinematicBodyCount));
+            row("Constraints", std::to_string(physicsStatistics.constraintCount));
+            row("Contacts", std::to_string(physicsStatistics.contactCount));
+            row("Update time", updateTime);
             ImGui::EndTable();
         }
 

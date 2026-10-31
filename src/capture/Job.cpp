@@ -486,7 +486,7 @@ namespace Atlas::Capture {
             auto& overlay = j["overlay"];
             OverlaySpec spec;
             if (overlay.is_object()) {
-                CheckKeys(overlay, { "bounds", "markers", "axes", "players", "trails", "queries", "depthTest" }, "overlay");
+                CheckKeys(overlay, { "bounds", "markers", "axes", "players", "trails", "queries", "physics", "depthTest" }, "overlay");
                 if (overlay.contains("bounds"))
                     spec.bounds = ToStringList(overlay["bounds"]);
                 spec.markers = overlay.value("markers", json::array());
@@ -495,6 +495,7 @@ namespace Atlas::Capture {
                 spec.players = overlay.value("players", spec.players);
                 spec.trails = overlay.value("trails", spec.trails);
                 spec.queries = overlay.value("queries", spec.queries);
+                spec.physics = overlay.value("physics", spec.physics);
                 spec.depthTest = overlay.value("depthTest", spec.depthTest);
             }
             if (!overlay.is_boolean() || overlay.get<bool>())

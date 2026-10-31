@@ -239,6 +239,7 @@ namespace Atlas::Capture {
         bool players = true;
         bool trails = true;
         bool queries = true;
+        bool physics = false;
         bool depthTest = false;
 
     };

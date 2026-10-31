@@ -36,6 +36,13 @@ namespace Atlas::Physics {
 
         // Triggers report contacts with movable bodies and players but don't collide, they never move by themselves
         bool isTrigger = false;
+        // Bodies with buoyancy float in fluid triggers below their top
+        bool isFluid = false;
+
+        // 1 is neutral, lower values sink, higher values float and zero disables it
+        float buoyancy = 0.0f;
+        float fluidLinearDrag = 0.5f;
+        float fluidAngularDrag = 0.01f;
 
         Ref<Shape> shape = nullptr;
     };

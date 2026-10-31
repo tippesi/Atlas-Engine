@@ -22,6 +22,9 @@ namespace Atlas {
 
             void RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
+            // Surfaces of the ocean surface queries, read back FRAME_DATA_COUNT frames later
+            void ComputeSurfaceQueries(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
         private:
             struct alignas(16) Uniforms {
                 Fog fog;
@@ -79,6 +82,8 @@ namespace Atlas {
                 vec2 nodeLocation;
             };
 
+            Uniforms GetUniforms(const Ref<Scene::Scene>& scene) const;
+
             PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target, bool depthOnly, bool wireframe);
 
             PipelineConfig causticPipelineConfig;
@@ -94,6 +99,7 @@ namespace Atlas {
             Buffer::UniformBuffer uniformBuffer;
             Buffer::UniformBuffer depthUniformBuffer;
             Buffer::UniformBuffer lightUniformBuffer;
+            Buffer::UniformBuffer queryUniformBuffer;
 
             Ref<Graphics::Sampler> nearestSampler;
             Ref<Graphics::Sampler> shadowSampler;
