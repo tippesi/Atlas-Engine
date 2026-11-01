@@ -632,14 +632,19 @@ namespace Atlas::Capture {
         }
 
         if (job.edit) {
-            report.data["edit"]["before"] = InspectScene(*scene, {}, {}, excluded);
+            auto inspectStart = std::chrono::steady_clock::now();
+            editBefore = CaptureSceneState(*scene, excluded);
+            report.data["edit"]["seconds"]["inspectBefore"] = SecondsSince(inspectStart);
             editState.loadedTerrain = scene->terrain.IsValid() ? scene->terrain.GetResource()->path : "";
             editState.dryRun = job.edit->dryRun;
             editState.textureFormat = job.edit->textureFormat == "ktx2" ? Loader::ImportTextureFormat::KTX2 :
                 Loader::ImportTextureFormat::Original;
             scene->WaitForAsyncWorkCompletion();
+            auto operationsStart = std::chrono::steady_clock::now();
             report.data["edit"]["operations"] = ApplyEditOperations(scene, job.edit->operations, editState);
-            report.Print("Applied " + std::to_string(job.edit->operations.size()) + " edit operations");
+            report.data["edit"]["seconds"]["operations"] = SecondsSince(operationsStart);
+            report.Print("Applied " + std::to_string(job.edit->operations.size()) + " edit operations in " +
+                FormatFloat(report.data["edit"]["seconds"]["operations"].get<float>(), 1) + "s");
             phase = Phase::EditSave;
             return;
         }
@@ -667,10 +672,17 @@ namespace Atlas::Capture {
         EntitySet excluded = { captureCameraEntity };
         auto& edit = report.data["edit"];
 
-        auto after = InspectScene(*scene, {}, {}, excluded);
-        auto diff = DiffInspections(edit["before"], after);
-        edit.erase("before");
+        auto& seconds = edit["seconds"];
+        auto phaseStart = std::chrono::steady_clock::now();
+        auto after = CaptureSceneState(*scene, excluded);
+        seconds["inspectAfter"] = SecondsSince(phaseStart);
+        phaseStart = std::chrono::steady_clock::now();
+        auto diff = DiffSceneStates(editBefore, after);
+        editBefore.clear();
+        for (const auto& list : { "changed", "added", "removed" })
+            diff[list] = CapList(diff[list], 2000);
         report.WriteJson("edit_diff.json", diff);
+        seconds["diff"] = SecondsSince(phaseStart);
         edit["diff"] = diff["summary"];
         report.Print("Edit diff: " + diff["summary"].get<std::string>() + " (see edit_diff.json)");
 
@@ -686,7 +698,9 @@ namespace Atlas::Capture {
             }
         }
 
+        phaseStart = std::chrono::steady_clock::now();
         checkRunner->Run(*scene, 0.0f);
+        seconds["checks"] = SecondsSince(phaseStart);
         if (checkRunner->HasFailures()) {
             edit["saved"] = false;
             Fail("Checks failed after the edit, neither the scene nor materials were saved");
@@ -755,18 +769,22 @@ namespace Atlas::Capture {
         }
 
         auto binary = fs::path(output).extension() != ".json";
+        phaseStart = std::chrono::steady_clock::now();
         Serializer::SerializeScene(scene, output, false, binary);
+        seconds["save"] = SecondsSince(phaseStart);
 
         CreateCaptureCamera();
 
         // A pipeline step that continues with the scene saves it again, only the last saved state is loaded again
         if (mode != Mode::Pipeline || !StepReadsScene(pipeline->currentStep + 1, output)) {
+            phaseStart = std::chrono::steady_clock::now();
             try {
                 auto reloaded = Serializer::DeserializeScene(output, binary);
                 auto reloadedCount = reloaded->GetEntityCount();
                 edit["verified"] = reloadedCount == entityCount;
                 if (reloadedCount != entityCount)
                     Fail("Saved scene has " + std::to_string(reloadedCount) + " entities, expected " + std::to_string(entityCount));
+                seconds["verify"] = SecondsSince(phaseStart);
             }
             catch (const std::exception& e) {
                 Fail("Saved scene " + output + " couldn't be loaded again: " + e.what());
@@ -1219,6 +1237,9 @@ namespace Atlas::Capture {
 
     bool App::StepReadsScene(size_t step, const std::string& scene) {
 
+        // Skipped steps leave the scene in memory for the step after them
+        while (step < pipeline->steps.size() && pipeline->Skips(step))
+            step++;
         if (step >= pipeline->steps.size())
             return false;
 
@@ -1249,6 +1270,13 @@ namespace Atlas::Capture {
         }
 
         const auto& step = pipeline->steps[pipeline->currentStep];
+        if (pipeline->Skips(pipeline->currentStep)) {
+            report.Print("Pipeline step " + std::to_string(pipeline->currentStep + 1) + " / " + std::to_string(pipeline->steps.size()) + ": " +
+                step.name + " is independent and unchanged, skipped");
+            pipeline->SkipStep();
+            StartPipelineStep();
+            return;
+        }
         report.Print("Pipeline step " + std::to_string(pipeline->currentStep + 1) + " / " + std::to_string(pipeline->steps.size()) + ": " + step.name);
 
         Job stepJob;

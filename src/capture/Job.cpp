@@ -609,6 +609,8 @@ namespace Atlas::Capture {
                 j["showWindow"] = true;
             else if (arg == "--hidden")
                 j["showWindow"] = false;
+            else if (arg == "--no-shots")
+                j["shots"] = json::array();
             else if (arg == "--fast")
                 j["realTime"] = false;
             else if (arg == "--overlay")
@@ -714,6 +716,7 @@ Options:
   --timeout <seconds>     Maximum time to wait for the scene to load
   --show                  Show the frames and the output in a window (default)
   --hidden                Render in a hidden window and play as fast as possible
+  --no-shots              Skip the shots of the job, e.g. the review images of the steps of a pipeline
   --fast                  Play as fast as possible in the shown window
   --overlay               Draw debug lines: players, tracked paths and query hits
   --validation            Enable all Vulkan validation layer features and write validation.json (slow)

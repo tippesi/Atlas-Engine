@@ -47,7 +47,8 @@ namespace Atlas::Capture {
     // Point or spot light at the entity origin, the light of the add and scatter operations
     void AddLight(Scene::Entity entity, const json& spec);
 
-    // Compares selected entity fields of two InspectScene results, including their rounded transform values
-    json DiffInspections(const json& before, const json& after);
+    // Lists of more than count entries are reduced to their length and the first entries, large edits of a pipeline
+    // otherwise write reports of hundreds of megabytes
+    json CapList(const json& list, size_t count = 200);
 
 }

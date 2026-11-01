@@ -21,8 +21,12 @@ namespace Atlas::Capture {
             fs::path jobFile;
             // Additional files the result depends on, e.g. scripts or prefabs used by the job
             std::vector<fs::path> inputs;
-            // Hash of the job, its inputs and the key of the previous step
+            // Hash of the job, its inputs and the key of the previous step. An independent step doesn't use the state
+            // of the steps before it (e.g. it imports assets), its key covers only its job and inputs
             std::string key;
+            bool independent = false;
+            // The key of an independent step in the last run, it is skipped while its key is the same
+            std::string previousKey;
 
         };
 
@@ -41,6 +45,11 @@ namespace Atlas::Capture {
         void FailStep(int32_t exitCode);
 
         bool IsFinished() const;
+
+        // An independent step whose job and inputs didn't change since the last run, SkipStep passes it
+        bool Skips(size_t index) const;
+
+        void SkipStep();
 
         // Writes pipeline.json with the result of each step next to the snapshots and returns its path
         fs::path WriteSummary() const;

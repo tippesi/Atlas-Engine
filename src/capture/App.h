@@ -250,6 +250,7 @@ namespace Atlas::Capture {
         float baseRenderScale = 1.0f;
         int32_t editFrames = 0;
         EditState editState;
+        SceneState editBefore;
 
         // Capture path -> (sheet group, label) for the comparison of variants
         std::map<std::string, std::pair<std::string, std::string>> variantCaptures;

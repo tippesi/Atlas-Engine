@@ -58,6 +58,10 @@ namespace Atlas::Capture {
     void CaptureRenderer::Present(const Ref<Font>& font, const std::vector<TextLine>& lines) {
 
         auto device = Graphics::GraphicsDevice::DefaultDevice;
+        // A minimized window has no swap chain images
+        if (!device->swapChain->isComplete)
+            return;
+
         auto commandList = device->GetCommandList();
 
         commandList->BeginCommands();

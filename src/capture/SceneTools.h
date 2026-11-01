@@ -5,6 +5,7 @@
 #include "scene/Scene.h"
 
 #include <functional>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace Atlas::Capture {
@@ -106,6 +107,28 @@ namespace Atlas::Capture {
 
     json InspectScene(Scene::Scene& scene, const std::vector<std::string>& filter,
         const std::vector<std::string>& detail, const EntitySet& excluded = {});
+
+    // What the diff of an edit compares of an entity, collected without building JSON: the world scene of a pipeline
+    // has a million entities
+    struct EntityState {
+        std::string name;
+        uint64_t parent = ECS::EntityConfig::InvalidEntity;
+        uint32_t components = 0;
+        bool hasTransform = false;
+        mat4 local = mat4(1.0f);
+        mat4 global = mat4(1.0f);
+        std::string mesh;
+        bool visible = false;
+        std::string script;
+    };
+
+    using SceneState = std::unordered_map<uint64_t, EntityState>;
+
+    SceneState CaptureSceneState(Scene::Scene& scene, const EntitySet& excluded = {});
+
+    // Changed, added and removed entities, the changed fields with the values before and after as an inspection
+    // lists them
+    json DiffSceneStates(const SceneState& before, const SceneState& after);
 
     json ExportSettings(Scene::Scene& scene);
 

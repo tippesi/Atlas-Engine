@@ -8,11 +8,14 @@
 #include "physics/ShapesManager.h"
 #include "resource/ResourceManager.h"
 #include "tools/TerrainTool.h"
+#include "navigation/NavigationMesh.h"
 
 #include <cfloat>
 #include <map>
 #include <queue>
 #include <stdexcept>
+#include <chrono>
+#include <thread>
 
 namespace Atlas::Capture {
 
@@ -523,7 +526,76 @@ namespace Atlas::Capture {
 
     };
 
+    // The route on a navigation mesh like the game builds it, with the settings of the scene's navigation. The mesh
+    // is built leg by leg around the stops, which are placed on the terrain or given with their height
+    static json FindNavigationRoute(Scene::Scene& scene, const json& query) {
+
+        std::vector<vec3> stops;
+        auto addStop = [&](const json& stop) {
+            if (stop.size() == 3) {
+                stops.push_back(ToVec3(stop));
+                return;
+            }
+            auto position = ToVec2(stop);
+            if (!scene.terrain.IsLoaded())
+                throw std::runtime_error("route: stops need a height in a scene without terrain");
+            auto sample = SampleTerrain(GetCompleteTerrain(scene), position);
+            stops.push_back(vec3(position.x, sample.valid ? sample.height : 0.0f, position.y));
+        };
+        addStop(query.at("from"));
+        for (const auto& via : query.value("via", json::array()))
+            addStop(via);
+        addStop(query.at("to"));
+
+        auto settings = scene.navigation ? scene.navigation->settings : Navigation::NavigationSettings();
+        Navigation::NavigationMesh mesh(settings);
+        mesh.searchExtents = vec3(2.0f, 4.0f, 2.0f);
+
+        auto margin = query.value("margin", 60.0f);
+        auto timeout = query.value("timeout", 120.0f);
+
+        auto formatStop = [](vec3 stop) { return FormatFloat(stop.x, 1) + ", " + FormatFloat(stop.z, 1); };
+
+        json points = json::array();
+        auto totalLength = 0.0f;
+        for (size_t leg = 0; leg + 1 < stops.size(); leg++) {
+            auto from = stops[leg], to = stops[leg + 1];
+            auto center = (from + to) * 0.5f;
+            auto radius = glm::distance(vec2(from.x, from.z), vec2(to.x, to.z)) * 0.5f + margin;
+
+            auto start = std::chrono::steady_clock::now();
+            while (true) {
+                mesh.Update(&scene, center, radius);
+                if (!mesh.GetPendingTileCount())
+                    break;
+                if (std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count() > timeout)
+                    throw std::runtime_error("route: the navigation tiles around " + formatStop(center) + " weren't built within " +
+                        FormatFloat(timeout, 0) + " s");
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+
+            auto path = mesh.FindPath(from, to);
+            if (path.empty())
+                throw std::runtime_error("route: no path on the navigation mesh from " + formatStop(from) + " to " + formatStop(to) +
+                    " (" + std::to_string(mesh.GetTileCount()) + " tiles with polygons)");
+
+            for (size_t i = leg == 0 ? 0 : 1; i < path.size(); i++) {
+                if (!points.empty()) {
+                    const auto& last = points.back();
+                    totalLength += glm::distance(vec3(last[0].get<float>(), last[1].get<float>(), last[2].get<float>()), path[i]);
+                }
+                points.push_back({ path[i].x, path[i].y, path[i].z });
+            }
+        }
+
+        return { { "points", points }, { "length", totalLength }, { "navigation", true } };
+
+    }
+
     json FindRoute(Scene::Scene& scene, const json& query, const fs::path& outputDirectory) {
+
+        if (query.value("navigation", false))
+            return FindNavigationRoute(scene, query);
 
         const auto& terrain = GetCompleteTerrain(scene);
 

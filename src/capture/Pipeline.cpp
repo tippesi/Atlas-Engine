@@ -82,9 +82,11 @@ namespace Atlas::Capture {
             auto jobPath = stepJson.is_string() ? stepJson.get<std::string>() : stepJson.at("job").get<std::string>();
             step.jobFile = (baseDirectory / jobPath).lexically_normal();
             step.name = stepJson.is_object() ? stepJson.value("name", step.jobFile.stem().string()) : step.jobFile.stem().string();
-            if (stepJson.is_object())
+            if (stepJson.is_object()) {
                 for (const auto& input : stepJson.value("inputs", std::vector<std::string>()))
                     step.inputs.push_back((baseDirectory / input).lexically_normal());
+                step.independent = stepJson.value("independent", false);
+            }
             pipeline.steps.push_back(step);
         }
 
@@ -101,13 +103,17 @@ namespace Atlas::Capture {
                 (fs::current_path() / ".." / "capture" / SanitizeFileName(pipeline.name) / "snapshots").lexically_normal();
         }
 
-        // Each key covers the steps before it, a change invalidates all following steps
+        // Each key covers the steps before it, a change invalidates all following steps. The key of an independent
+        // step covers only its own files, they still go into the keys of the steps after it
         uint64_t key = fnvOffset;
         for (auto& step : pipeline.steps) {
+            auto own = HashFile(fnvOffset, step.jobFile);
             key = HashFile(key, step.jobFile);
-            for (const auto& input : step.inputs)
+            for (const auto& input : step.inputs) {
+                own = HashFile(own, input);
                 key = HashFile(key, input);
-            step.key = ToHex(key);
+            }
+            step.key = ToHex(step.independent ? own : key);
         }
 
         pipeline.results.resize(pipeline.steps.size(), "pending");
@@ -136,8 +142,29 @@ namespace Atlas::Capture {
                 stateFiles.push_back(path);
         }
 
+        for (size_t i = first; i < steps.size(); i++) {
+            auto snapshot = steps[i].independent ? ReadSnapshot(i) : std::nullopt;
+            if (snapshot)
+                steps[i].previousKey = snapshot->key;
+        }
+
         Invalidate(first);
         currentStep = first;
+
+    }
+
+    bool Pipeline::Skips(size_t index) const {
+
+        const auto& step = steps[index];
+        return step.independent && !force && step.name != from && !step.previousKey.empty() && step.previousKey == step.key;
+
+    }
+
+    void Pipeline::SkipStep() {
+
+        Complete(currentStep, json::object());
+        results[currentStep] = "unchanged";
+        currentStep++;
 
     }
 
@@ -161,8 +188,10 @@ namespace Atlas::Capture {
 
         json manifest = { { "step", steps[index].name }, { "job", steps[index].jobFile.string() }, { "key", steps[index].key },
             { "files", json::object() } };
+        auto start = std::chrono::steady_clock::now();
         for (const auto& path : stateFiles)
             manifest["files"][path] = StoreFile(path);
+        manifest["storeSeconds"] = SecondsSince(start);
 
         fs::create_directories(snapshotDirectory);
         std::ofstream stream(GetManifestPath(index));

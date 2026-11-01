@@ -11,6 +11,7 @@
 #include "loader/AnimationLoader.h"
 #include "loader/ImageLoader.h"
 #include "loader/KtxLoader.h"
+#include "loader/ImpostorLoader.h"
 #include "jobsystem/JobSystem.h"
 #include "loader/ModelImporter.h"
 #include "mesh/MeshSerializer.h"
@@ -140,6 +141,51 @@ namespace Atlas::Capture {
 
     }
 
+    // A simulated body around a mesh instance: its bounding box or convex hull at the scale of the instance
+    static void AddMovableBody(Scene::Entity entity, const json& operation, bool inOcean) {
+
+        auto& mesh = entity.GetComponent<MeshComponent>().mesh;
+        auto& transform = GetTransform(entity);
+        auto scale = transform.DecomposeGlobal().scale;
+        auto density = operation.value("density", 500.0f);
+
+        Ref<Physics::Shape> shape;
+        auto type = operation.value("shape", std::string("box"));
+        if (type == "box") {
+            Physics::BoundingBoxShapeSettings settings = { .aabb = mesh->data.aabb, .density = density, .scale = scale };
+            shape = Physics::ShapesManager::CreateShape(settings);
+        }
+        else if (type == "convex") {
+            Physics::ConvexHullShapeSettings settings = { .mesh = mesh, .density = density, .scale = scale };
+            shape = Physics::ShapesManager::CreateShape(settings);
+        }
+        else if (type == "boxes") {
+            // Boxes in mesh space [minX, minY, minZ, maxX, maxY, maxZ], e.g. a hull up to its deck and the rails
+            Physics::CompoundShapeSettings settings = { .scale = scale };
+            for (const auto& box : operation.at("boxes")) {
+                Physics::BoundingBoxShapeSettings boxSettings = { .aabb = Volume::AABB(vec3(box[0], box[1], box[2]),
+                    vec3(box[3], box[4], box[5])), .density = density };
+                settings.children.push_back({ .shape = Physics::ShapesManager::CreateShape(boxSettings) });
+            }
+            shape = Physics::ShapesManager::CreateShape(settings);
+        }
+        else {
+            throw std::runtime_error("meshBodies: shape has to be box, convex or boxes");
+        }
+
+        entity.AddComponent<RigidBodyComponent>(Physics::BodyCreationSettings {
+            .objectLayer = Physics::Layers::Movable,
+            .friction = operation.value("friction", 0.8f),
+            .restitution = operation.value("restitution", 0.1f),
+            .buoyancy = inOcean ? operation.value("buoyancy", 0.0f) : 0.0f,
+            .fluidLinearDrag = operation.value("fluidLinearDrag", 0.5f),
+            .fluidAngularDrag = operation.value("fluidAngularDrag", 0.01f),
+            .startAsleep = operation.value("asleep", true),
+            .shape = shape });
+        transform.isStatic = false;
+
+    }
+
     void AddLight(Scene::Entity entity, const json& spec) {
 
         auto type = spec.value("type", std::string("point"));
@@ -228,6 +274,9 @@ namespace Atlas::Capture {
         mesh.vegetation = settings.value("vegetation", mesh.vegetation);
         mesh.castShadow = settings.value("castShadow", mesh.castShadow);
         mesh.rayTrace = settings.value("rayTrace", mesh.rayTrace);
+        // Instances moved by the physics need the motion of the last frame
+        if (settings.contains("movable"))
+            mesh.mobility = settings["movable"].get<bool>() ? Mesh::MeshMobility::Movable : Mesh::MeshMobility::Stationary;
         mesh.UpdatePipelines();
 
     }
@@ -235,13 +284,74 @@ namespace Atlas::Capture {
     // A distant impostor of views x views renderings, saved next to the mesh by SaveMesh
     static void GenerateMeshImpostor(ResourceHandle<Mesh::Mesh>& mesh, const json& spec) {
 
-        if (!mesh->impostor.IsLoaded())
-            mesh->impostor = ResourceManager<Mesh::Impostor>::AddResource(mesh.GetResource()->path + ".aeimpostor", CreateRef<Mesh::Impostor>());
+        // A pending load must finish before replacing the same resource
+        mesh->impostor.WaitForLoad();
+
+        // Copies of a mesh (meshCopy) still reference the impostor of the original
+        auto impostorPath = mesh.GetResource()->path + ".aeimpostor";
+        if (!mesh->impostor.IsLoaded() || mesh->impostor.GetResource()->path != impostorPath) {
+            // A new impostor is compressed like the textures the edit imports
+            auto impostor = CreateRef<Mesh::Impostor>();
+            impostor->compressTextures = importTextureFormat == Loader::ImportTextureFormat::KTX2;
+            mesh->impostor = ResourceManager<Mesh::Impostor>::AddResource(impostorPath, impostor);
+        }
+
+        // Settings the spec leaves out stay those of the impostor that is replaced, like in the editor
+        auto interpolation = spec.value("interpolation", mesh->impostor->interpolation);
+        auto pixelDepthOffset = spec.value("pixelDepthOffset", mesh->impostor->pixelDepthOffset);
+        auto textureFormat = spec.value("textureFormat", std::string(mesh->impostor->compressTextures ? "ktx2" : "original"));
+        if (textureFormat != "original" && textureFormat != "ktx2")
+            throw std::runtime_error("impostor.textureFormat has to be \"original\" or \"ktx2\"");
 
         auto impostor = Tools::ImpostorTool::GenerateImpostor(mesh, spec.value("views", 12), spec.value("resolution", 256));
         mesh->impostor.GetResource()->Swap(impostor);
+        mesh->impostor->interpolation = interpolation;
+        mesh->impostor->pixelDepthOffset = pixelDepthOffset;
+        mesh->impostor->compressTextures = textureFormat == "ktx2";
         mesh->impostorDistance = spec.value("distance", mesh->impostorDistance);
         mesh->impostorShadowDistance = spec.value("shadowDistance", mesh->impostorShadowDistance);
+
+    }
+
+    // Whether the saved impostor of a mesh was baked with these settings after the last change of the mesh, its
+    // materials and their textures, then baking it again would give the same result
+    static bool IsImpostorCurrent(ResourceHandle<Mesh::Mesh>& mesh, const fs::path& meshFile, const json& spec) {
+
+        mesh->impostor.WaitForLoad();
+        auto impostorFile = fs::path(meshFile).concat(".aeimpostor");
+        if (!mesh->impostor.IsLoaded() || mesh->impostor.GetResource()->path != mesh.GetResource()->path + ".aeimpostor" ||
+            !fs::exists(impostorFile))
+            return false;
+
+        const auto& impostor = mesh->impostor;
+        auto textureFormat = spec.value("textureFormat", std::string(impostor->compressTextures ? "ktx2" : "original"));
+        if (impostor->views != spec.value("views", 12) || impostor->resolution != spec.value("resolution", 256) ||
+            impostor->interpolation != spec.value("interpolation", impostor->interpolation) ||
+            impostor->pixelDepthOffset != spec.value("pixelDepthOffset", impostor->pixelDepthOffset) ||
+            impostor->compressTextures != (textureFormat == "ktx2") ||
+            mesh->impostorDistance != spec.value("distance", mesh->impostorDistance) ||
+            mesh->impostorShadowDistance != spec.value("shadowDistance", mesh->impostorShadowDistance))
+            return false;
+
+        auto baked = fs::last_write_time(impostorFile);
+        auto newer = [&](const std::string& path) {
+            auto file = fs::path(Loader::AssetLoader::GetFullPath(path));
+            return fs::exists(file) && fs::last_write_time(file) > baked;
+        };
+        if (fs::last_write_time(meshFile) > baked)
+            return false;
+        auto newerMap = [&](const ResourceHandle<Texture::Texture2D>& map) {
+            return map.IsValid() && newer(map.GetResource()->path);
+        };
+        for (const auto& material : mesh->data.materials) {
+            if (!material.IsLoaded())
+                continue;
+            if (newer(material.GetResource()->path) || newerMap(material->baseColorMap) || newerMap(material->opacityMap) ||
+                newerMap(material->normalMap) || newerMap(material->roughnessMap) || newerMap(material->metalnessMap) ||
+                newerMap(material->aoMap) || newerMap(material->displacementMap) || newerMap(material->emissiveMap))
+                return false;
+        }
+        return true;
 
     }
 
@@ -434,6 +544,14 @@ namespace Atlas::Capture {
         EditState& state;
         // Many prefabs are cut from the same scene, it is only read once per edit
         std::map<std::string, json> prefabSources;
+        // Impostors encoded and written while meshSettings renders the next ones
+        JobGroup impostorWrites{ "Impostor writes" };
+
+        ~EditContext() {
+
+            JobSystem::Wait(impostorWrites);
+
+        }
 
     };
 
@@ -850,15 +968,57 @@ namespace Atlas::Capture {
                 fs::copy_file(file.path(), backup);
 
             auto mesh = LoadMeshForScene(path);
+            // Meshes that already have these settings and a current impostor are left as they are
+            auto unchanged = settings.value("invertUVs", mesh->invertUVs) == mesh->invertUVs &&
+                settings.value("cullBackFaces", mesh->cullBackFaces) == mesh->cullBackFaces &&
+                settings.value("vegetation", mesh->vegetation) == mesh->vegetation &&
+                settings.value("castShadow", mesh->castShadow) == mesh->castShadow &&
+                settings.value("rayTrace", mesh->rayTrace) == mesh->rayTrace &&
+                settings.value("movable", mesh->mobility == Mesh::MeshMobility::Movable) == (mesh->mobility == Mesh::MeshMobility::Movable);
+            auto bake = settings.contains("impostor") && (!unchanged || !IsImpostorCurrent(mesh, file.path(), settings["impostor"]));
+            if (unchanged && !bake)
+                continue;
+
             ApplyMeshSettings(*mesh.Get(), settings);
-            if (settings.contains("impostor"))
-                GenerateMeshImpostor(mesh, settings["impostor"]);
-            Loader::MeshLoader::SaveMesh(mesh.Get(), path, true);
             changed.push_back(path);
+            if (!bake) {
+                Loader::MeshLoader::SaveMesh(mesh.Get(), path, true);
+                continue;
+            }
+
+            // Impostors are rendered one at a time, jobs encode and write them meanwhile. Rendering waits while
+            // the jobs are behind, every pending impostor keeps its renderings in memory
+            GenerateMeshImpostor(mesh, settings["impostor"]);
+            Loader::MeshLoader::SaveMesh(mesh.Get(), path, true, false, false);
+            auto data = Loader::ImpostorLoader::ReadImpostor(mesh->impostor.Get(), mesh->impostor.GetResource()->path);
+            auto& writes = context.impostorWrites;
+            auto maxPending = std::max(2, 2 * JobSystem::GetWorkerCount(writes.priority));
+            if (writes.counter.load() >= maxPending)
+                JobSystem::Wait(writes);
+            JobSystem::Execute(writes, [data](JobData&) { Loader::ImpostorLoader::WriteImpostor(data); });
+
+            // The renderings of an impostor are only released at the end of a frame, which doesn't come during an
+            // edit: without this many impostors in one edit run out of GPU memory
+            Graphics::GraphicsDevice::DefaultDevice->WaitForIdle();
+            Graphics::GraphicsDevice::DefaultDevice->ForceMemoryCleanup();
         }
         affected.push_back({ { "meshes", changed.size() }, { "set", settings } });
 
         return affected;
+
+    }
+
+    // The mesh instances an operation is for: all instances of "meshes" or the entities named like "entity" (with all)
+    static std::vector<Scene::Entity> SelectMeshInstances(Scene::Scene& scene, const json& operation) {
+
+        if (!operation.contains("entity"))
+            return FindMeshInstances(scene, ToAssetPatterns(operation.at("meshes")));
+
+        std::vector<Scene::Entity> instances;
+        for (auto entity : SelectEntities(scene, operation))
+            if (entity.HasComponent<MeshComponent>())
+                instances.push_back(entity);
+        return instances;
 
     }
 
@@ -867,23 +1027,184 @@ namespace Atlas::Capture {
         auto& scene = context.scene;
         json affected = json::array();
 
-        // Static mesh shapes for every instance of the matching meshes, e.g. trees of prefabs and scatter groups
+        // Static mesh shapes for every instance of the matching meshes, e.g. trees of prefabs and scatter groups.
+        // With remove the instances lose their bodies instead, e.g. grass the player walks through. "motion":
+        // "dynamic" makes them simulated bodies (shape box or convex, density, friction, restitution, asleep, buoyancy),
+        // with "supported": true only those resting on a body, the terrain or the ocean, the others stay as they are
         auto replace = operation.value("replace", false);
+        auto remove = operation.value("remove", false);
+        auto motion = operation.value("motion", std::string("static"));
+        if (motion != "static" && motion != "dynamic")
+            throw std::runtime_error("meshBodies: motion has to be static or dynamic");
 
         std::vector<Scene::Entity> matches;
-        for (auto entity : FindMeshInstances(scene, ToAssetPatterns(operation.at("meshes"))))
-            if (replace || !entity.HasComponent<RigidBodyComponent>())
+        for (auto entity : SelectMeshInstances(scene, operation))
+            if (remove ? entity.HasComponent<RigidBodyComponent>() : replace || !entity.HasComponent<RigidBodyComponent>())
                 matches.push_back(entity);
 
-        // Components are added once all matches are known, adding them invalidates the subset
+        // Something with a body or the terrain right below the bottom of an instance: a pot on a table without
+        // collision would fall through it once touched. Floating instances are carried by the ocean they reach
+        size_t unsupported = 0;
+        auto floats = operation.value("buoyancy", 0.0f) > 0.0f && scene.ocean && scene.ocean->enable && scene.ocean->physics;
+        // Only instances in the ocean float, sunken ones, e.g. the cargo of a wreck on the sea floor, stay down there
+        auto isInOcean = [&](Scene::Entity entity) {
+            auto aabb = entity.GetComponent<MeshComponent>().mesh->data.aabb.Transform(GetTransform(entity).globalMatrix);
+            return floats && aabb.min.y < scene.ocean->translation.y && aabb.max.y > scene.ocean->translation.y - 2.0f;
+        };
+        auto isSupported = [&](Scene::Entity entity) {
+            if (isInOcean(entity))
+                return true;
+            auto aabb = entity.GetComponent<MeshComponent>().mesh->data.aabb.Transform(GetTransform(entity).globalMatrix);
+            Volume::Ray ray(vec3(aabb.GetCenter().x, aabb.min.y + 0.15f, aabb.GetCenter().z), vec3(0.0f, -1.0f, 0.0f), 0.0f, 0.4f);
+            auto hit = scene.CastRay(ray, Scene::RigidBodyComponentBit | Scene::TerrainComponentBit,
+                [&](const Scene::Entity& other) { return other == entity; });
+            return hit.valid;
+        };
+        // Only the instances that float in the ocean, e.g. the boats on the water and not those pulled up on a beach
+        if (operation.value("inOcean", false)) {
+            if (!floats)
+                throw std::runtime_error("meshBodies: inOcean needs buoyancy and an ocean with physics");
+            std::erase_if(matches, [&](Scene::Entity entity) { return !isInOcean(entity); });
+        }
+        if (motion == "dynamic" && operation.value("supported", false)) {
+            std::erase_if(matches, [&](Scene::Entity entity) {
+                auto supported = isSupported(entity);
+                unsupported += supported ? 0 : 1;
+                return !supported;
+            });
+        }
+
+        // Components are changed once all matches are known, adding them invalidates the subset
         for (auto entity : matches) {
             if (entity.HasComponent<RigidBodyComponent>())
                 entity.RemoveComponent<RigidBodyComponent>();
-            AddMeshBody(entity, entity.GetComponent<MeshComponent>().mesh, GetTransform(entity).DecomposeGlobal().scale);
+            if (remove)
+                continue;
+            if (motion == "dynamic")
+                AddMovableBody(entity, operation, isInOcean(entity));
+            else
+                AddMeshBody(entity, entity.GetComponent<MeshComponent>().mesh, GetTransform(entity).DecomposeGlobal().scale);
         }
-        affected.push_back({ { "bodies", matches.size() } });
+        affected.push_back({ { remove ? "removed" : "bodies", matches.size() } });
+        if (unsupported)
+            affected.push_back({ { "unsupported", unsupported } });
 
         return affected;
+
+    }
+
+    // A zone that reports the hero and simulated bodies entering and leaving it (contact events with isTrigger), e.g.
+    // a place the hero discovers: a sphere (radius), a box (halfSize) or an upright cylinder (radius, height)
+    static json EditTrigger(EditContext& context, const json& operation) {
+
+        auto& scene = context.scene;
+
+        auto name = operation.at("name").get<std::string>();
+        CheckNewName(scene, name);
+        auto parent = GetParent(scene, operation);
+        auto global = GetPlacement(scene, operation, parent);
+
+        Ref<Physics::Shape> shape;
+        auto type = operation.value("shape", std::string("sphere"));
+        if (type == "sphere") {
+            Physics::SphereShapeSettings settings = { .radius = operation.at("radius").get<float>() };
+            shape = Physics::ShapesManager::CreateShape(settings);
+        }
+        else if (type == "box") {
+            auto halfSize = ToVec3(operation.at("halfSize"));
+            Physics::BoundingBoxShapeSettings settings = { .aabb = Volume::AABB(-halfSize, halfSize) };
+            shape = Physics::ShapesManager::CreateShape(settings);
+        }
+        else if (type == "cylinder") {
+            Physics::CylinderShapeSettings settings = { .height = operation.at("height").get<float>(),
+                .radius = operation.at("radius").get<float>() };
+            shape = Physics::ShapesManager::CreateShape(settings);
+        }
+        else {
+            throw std::runtime_error("trigger: shape has to be sphere, box or cylinder");
+        }
+
+        auto entity = scene.CreateEntity();
+        entity.AddComponent<TransformComponent>(global, true);
+        entity.AddComponent<NameComponent>(name);
+        Place(entity, parent, global);
+        entity.AddComponent<RigidBodyComponent>(Physics::BodyCreationSettings {
+            .objectLayer = Physics::Layers::Static, .isTrigger = true, .shape = shape });
+
+        return json::array({ { { "entity", GetEntityLabel(entity) }, { "shape", type } } });
+
+    }
+
+    // Hangs the simulated instances of matching meshes on the world or connects them to an entity: a point, hinge,
+    // cone, distance, slider or fixed constraint at an anchor in the mesh ("top", "bottom" or a position in mesh
+    // space), to the anchor where the instance is or to a fixed worldPoint
+    static json EditConstraint(EditContext& context, const json& operation) {
+
+        auto& scene = context.scene;
+
+        static const std::unordered_map<std::string, Physics::ConstraintType> types = {
+            { "fixed", Physics::ConstraintType::Fixed }, { "point", Physics::ConstraintType::Point },
+            { "hinge", Physics::ConstraintType::Hinge }, { "slider", Physics::ConstraintType::Slider },
+            { "distance", Physics::ConstraintType::Distance }, { "cone", Physics::ConstraintType::Cone } };
+        auto type = types.find(operation.value("type", std::string("point")));
+        if (type == types.end())
+            throw std::runtime_error("constraint: unknown type");
+
+        Scene::Entity connected;
+        if (operation.contains("connect")) {
+            connected = scene.GetEntityByName(operation["connect"].get<std::string>());
+            if (!connected.IsValid() || !connected.HasComponent<RigidBodyComponent>())
+                throw std::runtime_error("constraint: connect needs an entity with a body");
+        }
+
+        // Instances that already hang on a constraint keep it, e.g. the boats tied to a bollard among those anchored
+        std::vector<Scene::Entity> matches;
+        for (auto entity : SelectMeshInstances(scene, operation))
+            if (auto body = entity.TryGetComponent<RigidBodyComponent>(); body && body->layer == Physics::Layers::Movable &&
+                entity != connected && !entity.HasComponent<ConstraintComponent>())
+                matches.push_back(entity);
+
+        for (auto entity : matches) {
+            const auto& aabb = entity.GetComponent<MeshComponent>().mesh->data.aabb;
+            auto center = aabb.GetCenter();
+            vec3 anchor;
+            auto spec = operation.value("anchor", json("top"));
+            if (spec == "top")
+                anchor = vec3(center.x, aabb.max.y, center.z);
+            else if (spec == "bottom")
+                anchor = vec3(center.x, aabb.min.y, center.z);
+            else
+                anchor = ToVec3(spec);
+
+            // The body has the position and rotation of the instance, its shape carries the scale
+            auto& transform = GetTransform(entity);
+            auto decomposition = transform.DecomposeGlobal();
+            Physics::ConstraintCreationSettings settings = {
+                .type = type->second,
+                .point = anchor * decomposition.scale,
+                .otherPoint = vec3(transform.globalMatrix * vec4(anchor, 1.0f)),
+                .axis = ToVec3(operation.value("axis", json()), vec3(0.0f, 1.0f, 0.0f)),
+                .enableLimits = operation.contains("limits"),
+                .limitsMin = operation.contains("limits") ? operation["limits"][0].get<float>() : 0.0f,
+                .limitsMax = operation.contains("limits") ? operation["limits"][1].get<float>() : 0.0f,
+                .halfConeAngle = glm::radians(operation.value("halfConeAngle", 30.0f)),
+                .breakForce = operation.value("breakForce", 0.0f) };
+            // The other end at a fixed point of the world, e.g. the bollard a boat is tied to, or at an offset in the
+            // world from where the anchor is now, e.g. the stone a boat is anchored to on the sea floor
+            if (operation.contains("worldPoint"))
+                settings.otherPoint = ToVec3(operation["worldPoint"]);
+            if (operation.contains("worldOffset"))
+                settings.otherPoint += ToVec3(operation["worldOffset"]);
+            if (connected.IsValid()) {
+                auto other = GetTransform(connected).DecomposeGlobal();
+                other.scale = vec3(1.0f);
+                auto body = other.Compose();
+                settings.otherPoint = vec3(glm::inverse(body) * vec4(settings.otherPoint, 1.0f));
+            }
+            entity.AddComponent<ConstraintComponent>(settings, connected);
+        }
+
+        return json::array({ { { "constraints", matches.size() } } });
 
     }
 
@@ -976,15 +1297,24 @@ namespace Atlas::Capture {
         // The encoder runs single threaded per image
         std::vector<std::string> failed(pending.size());
         JobGroup group{ "Compress textures", JobPriority::Medium };
-        JobSystem::ParallelFor(group, int32_t(pending.size()), 1, [&](JobData&, int32_t idx) {
+        JobSystem::ParallelFor(group, int32_t(pending.size()), int32_t(pending.size()), [&](JobData&, int32_t idx) {
             const auto& [source, target] = pending[idx];
             if (!fs::exists(GetAssetDirectory() / source)) {
                 failed[idx] = source + " doesn't exist";
                 return;
             }
             auto image = Loader::ImageLoader::LoadImage<uint8_t>(source);
-            auto compressed = Loader::KtxLoader::ConvertImage(image);
-            Loader::KtxLoader::SaveImage(compressed, target);
+            auto fileData = Loader::KtxLoader::EncodeImage({ image });
+            if (fileData.empty()) {
+                failed[idx] = "couldn't encode " + source;
+                return;
+            }
+            auto fileStream = Loader::AssetLoader::WriteFile(target, std::ios::out | std::ios::binary);
+            if (!fileStream.is_open()) {
+                failed[idx] = "couldn't write " + target;
+                return;
+            }
+            fileStream.write(fileData.data(), std::streamsize(fileData.size()));
             });
         JobSystem::Wait(group);
 
@@ -1280,6 +1610,8 @@ namespace Atlas::Capture {
         { "clearArea", EditClearArea },
         { "meshSettings", EditMeshSettings },
         { "meshBodies", EditMeshBodies },
+        { "trigger", EditTrigger },
+        { "constraint", EditConstraint },
         { "materialCopy", EditMaterialCopy },
         { "compressTextures", EditCompressTextures },
         { "meshMaterials", EditMeshMaterials },
@@ -1289,6 +1621,14 @@ namespace Atlas::Capture {
         { "replaceMesh", EditReplaceMesh },
         { "replaceWithPrefab", EditReplaceWithPrefab }
     };
+
+    json CapList(const json& list, size_t count) {
+
+        if (!list.is_array() || list.size() <= count)
+            return list;
+        return { { "count", list.size() }, { "first", json(list.begin(), list.begin() + count) } };
+
+    }
 
     json ApplyEditOperations(const Ref<Scene::Scene>& sceneRef, const json& operations, EditState& state) {
 
@@ -1306,8 +1646,15 @@ namespace Atlas::Capture {
                 throw std::runtime_error("Unknown edit operation '" + type + "' (" + known + ")");
             }
 
-            log.push_back({ { "operation", operation }, { "affected", handler->second(context, operation) } });
+            // Other operations may read the impostor files
+            if (type != "meshSettings")
+                JobSystem::Wait(context.impostorWrites);
+
+            auto start = std::chrono::steady_clock::now();
+            auto affected = handler->second(context, operation);
+            log.push_back({ { "operation", CapList(operation) }, { "affected", CapList(affected) }, { "seconds", SecondsSince(start) } });
         }
+        JobSystem::Wait(context.impostorWrites);
 
         return log;
 
@@ -1336,53 +1683,6 @@ namespace Atlas::Capture {
         }
 
         return saved;
-
-    }
-
-    json DiffInspections(const json& before, const json& after) {
-
-        std::map<uint64_t, const json*> beforeEntities, afterEntities;
-        for (const auto& entity : before["entities"])
-            beforeEntities[entity["id"].get<uint64_t>()] = &entity;
-        for (const auto& entity : after["entities"])
-            afterEntities[entity["id"].get<uint64_t>()] = &entity;
-
-        static const std::vector<std::string> fields = { "name", "parent", "components", "position", "localPosition",
-            "localRotationDegrees", "localScale", "mesh", "visible", "script" };
-
-        json diff;
-        json changed = json::array(), added = json::array(), removed = json::array();
-
-        for (const auto& [id, entity] : beforeEntities) {
-            auto it = afterEntities.find(id);
-            if (it == afterEntities.end()) {
-                removed.push_back({ { "id", id }, { "name", (*entity)["name"] } });
-                continue;
-            }
-
-            json changes = json::object();
-            for (const auto& field : fields) {
-                auto beforeValue = entity->value(field, json());
-                auto afterValue = it->second->value(field, json());
-                if (beforeValue != afterValue)
-                    changes[field] = { { "before", beforeValue }, { "after", afterValue } };
-            }
-
-            if (!changes.empty())
-                changed.push_back({ { "id", id }, { "name", (*it->second)["name"] }, { "changes", changes } });
-        }
-
-        for (const auto& [id, entity] : afterEntities)
-            if (!beforeEntities.contains(id))
-                added.push_back({ { "id", id }, { "name", (*entity)["name"] }, { "position", entity->value("position", json()) } });
-
-        diff["changed"] = changed;
-        diff["added"] = added;
-        diff["removed"] = removed;
-        diff["summary"] = std::to_string(changed.size()) + " changed, " + std::to_string(added.size()) + " added, " +
-            std::to_string(removed.size()) + " removed";
-
-        return diff;
 
     }
 

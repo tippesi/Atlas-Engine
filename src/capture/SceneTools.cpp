@@ -10,8 +10,10 @@
 #include "mesh/MeshSerializer.h"
 #include "resource/ResourceManager.h"
 #include "common/MathHelper.h"
+#include "common/MatrixDecomposition.h"
 
 #include <algorithm>
+#include <array>
 #include <cfloat>
 #include <map>
 #include <optional>
@@ -51,36 +53,37 @@ namespace Atlas::Capture {
 
     }
 
-    static std::vector<std::string> GetComponentNames(Scene::Entity entity) {
+    static const char* componentNames[] = { "Name", "Transform", "Hierarchy", "Mesh", "Camera", "Light", "RigidBody", "Player",
+        "LuaScript", "Audio", "AudioVolume", "Text", "Spline" };
+    static constexpr uint32_t meshBit = 1u << 3, scriptBit = 1u << 8;
+
+    static uint32_t GetComponentMask(Scene::Entity entity) {
+
+        bool has[] = { entity.HasComponent<NameComponent>(), entity.HasComponent<TransformComponent>(),
+            entity.HasComponent<HierarchyComponent>(), entity.HasComponent<MeshComponent>(), entity.HasComponent<CameraComponent>(),
+            entity.HasComponent<LightComponent>(), entity.HasComponent<RigidBodyComponent>(), entity.HasComponent<PlayerComponent>(),
+            entity.HasComponent<LuaScriptComponent>(), entity.HasComponent<AudioComponent>(), entity.HasComponent<AudioVolumeComponent>(),
+            entity.HasComponent<TextComponent>(), entity.HasComponent<SplineComponent>() };
+        uint32_t mask = 0;
+        for (uint32_t i = 0; i < std::size(has); i++)
+            mask |= has[i] ? 1u << i : 0u;
+        return mask;
+
+    }
+
+    static std::vector<std::string> GetComponentNames(uint32_t mask) {
 
         std::vector<std::string> names;
-        if (entity.HasComponent<NameComponent>())
-            names.push_back("Name");
-        if (entity.HasComponent<TransformComponent>())
-            names.push_back("Transform");
-        if (entity.HasComponent<HierarchyComponent>())
-            names.push_back("Hierarchy");
-        if (entity.HasComponent<MeshComponent>())
-            names.push_back("Mesh");
-        if (entity.HasComponent<CameraComponent>())
-            names.push_back("Camera");
-        if (entity.HasComponent<LightComponent>())
-            names.push_back("Light");
-        if (entity.HasComponent<RigidBodyComponent>())
-            names.push_back("RigidBody");
-        if (entity.HasComponent<PlayerComponent>())
-            names.push_back("Player");
-        if (entity.HasComponent<LuaScriptComponent>())
-            names.push_back("LuaScript");
-        if (entity.HasComponent<AudioComponent>())
-            names.push_back("Audio");
-        if (entity.HasComponent<AudioVolumeComponent>())
-            names.push_back("AudioVolume");
-        if (entity.HasComponent<TextComponent>())
-            names.push_back("Text");
-        if (entity.HasComponent<SplineComponent>())
-            names.push_back("Spline");
+        for (uint32_t i = 0; i < std::size(componentNames); i++)
+            if (mask & (1u << i))
+                names.push_back(componentNames[i]);
         return names;
+
+    }
+
+    static std::vector<std::string> GetComponentNames(Scene::Entity entity) {
+
+        return GetComponentNames(GetComponentMask(entity));
 
     }
 
@@ -489,6 +492,123 @@ namespace Atlas::Capture {
 
     }
 
+    SceneState CaptureSceneState(Scene::Scene& scene, const EntitySet& excluded) {
+
+        SceneState state;
+        state.reserve(scene.GetEntityCount());
+        for (auto entity : scene) {
+            if (excluded.contains(entity))
+                continue;
+
+            auto& e = state[entity.GetID()];
+            e.name = GetEntityName(entity);
+            auto parent = scene.GetParentEntity(entity);
+            e.parent = parent.IsValid() ? parent.GetID() : ECS::EntityConfig::InvalidEntity;
+            e.components = GetComponentMask(entity);
+            if (auto transform = entity.TryGetComponent<TransformComponent>()) {
+                e.hasTransform = true;
+                e.local = transform->matrix;
+                e.global = transform->globalMatrix;
+            }
+            if (auto mesh = entity.TryGetComponent<MeshComponent>()) {
+                e.mesh = mesh->mesh.IsValid() ? mesh->mesh.GetResource()->path : "";
+                e.visible = mesh->visible;
+            }
+            if (auto script = entity.TryGetComponent<LuaScriptComponent>())
+                e.script = script->script.IsValid() ? script->script.GetResource()->path : "";
+        }
+        return state;
+
+    }
+
+    json DiffSceneStates(const SceneState& before, const SceneState& after) {
+
+        // The inspection rounds to 4 decimals, smaller differences don't count as changes
+        auto same = [](const mat4& a, const mat4& b) {
+            for (int32_t c = 0; c < 4; c++)
+                for (int32_t r = 0; r < 4; r++)
+                    if (std::abs(a[c][r] - b[c][r]) > 1e-4f)
+                        return false;
+            return true;
+        };
+        auto parentLabel = [](const SceneState& state, uint64_t parent) -> json {
+            if (parent == ECS::EntityConfig::InvalidEntity)
+                return json();
+            auto it = state.find(parent);
+            auto name = it != state.end() ? it->second.name : std::string();
+            return (name.empty() ? "<unnamed>" : name) + " (#" + std::to_string(parent) + ")";
+        };
+        auto decompose = [](const EntityState& e) -> std::array<json, 3> {
+            if (!e.hasTransform)
+                return { json(), json(), json() };
+            Common::MatrixDecomposition local(e.local);
+            return { FromVec3(local.translation), FromVec3(glm::degrees(local.rotation)), FromVec3(local.scale) };
+        };
+        auto meshField = [](const EntityState& e, json value) { return e.components & meshBit ? value : json(); };
+
+        // Sorted by id like the inspections, so the lists don't depend on the hashing
+        std::vector<uint64_t> ids;
+        ids.reserve(before.size());
+        for (const auto& [id, _] : before)
+            ids.push_back(id);
+        std::sort(ids.begin(), ids.end());
+
+        json changed = json::array(), added = json::array(), removed = json::array();
+        for (auto id : ids) {
+            const auto& b = before.at(id);
+            auto it = after.find(id);
+            if (it == after.end()) {
+                removed.push_back({ { "id", id }, { "name", b.name } });
+                continue;
+            }
+            const auto& a = it->second;
+
+            json changes = json::object();
+            auto change = [&](const char* field, const json& beforeValue, const json& afterValue) {
+                if (beforeValue != afterValue)
+                    changes[field] = { { "before", beforeValue }, { "after", afterValue } };
+            };
+            change("name", b.name, a.name);
+            if (b.parent != a.parent)
+                change("parent", parentLabel(before, b.parent), parentLabel(after, a.parent));
+            if (b.components != a.components)
+                change("components", GetComponentNames(b.components), GetComponentNames(a.components));
+            if (b.hasTransform != a.hasTransform || !same(b.global, a.global))
+                change("position", b.hasTransform ? FromVec3(vec3(b.global[3])) : json(), a.hasTransform ? FromVec3(vec3(a.global[3])) : json());
+            if (b.hasTransform != a.hasTransform || !same(b.local, a.local)) {
+                auto beforeLocal = decompose(b), afterLocal = decompose(a);
+                change("localPosition", beforeLocal[0], afterLocal[0]);
+                change("localRotationDegrees", beforeLocal[1], afterLocal[1]);
+                change("localScale", beforeLocal[2], afterLocal[2]);
+            }
+            change("mesh", meshField(b, b.mesh), meshField(a, a.mesh));
+            change("visible", meshField(b, b.visible), meshField(a, a.visible));
+            change("script", b.components & scriptBit ? json(b.script) : json(), a.components & scriptBit ? json(a.script) : json());
+
+            if (!changes.empty())
+                changed.push_back({ { "id", id }, { "name", a.name }, { "changes", changes } });
+        }
+
+        ids.clear();
+        for (const auto& [id, _] : after)
+            if (!before.contains(id))
+                ids.push_back(id);
+        std::sort(ids.begin(), ids.end());
+        for (auto id : ids) {
+            const auto& a = after.at(id);
+            added.push_back({ { "id", id }, { "name", a.name }, { "position", a.hasTransform ? FromVec3(vec3(a.global[3])) : json() } });
+        }
+
+        json diff;
+        diff["changed"] = changed;
+        diff["added"] = added;
+        diff["removed"] = removed;
+        diff["summary"] = std::to_string(changed.size()) + " changed, " + std::to_string(added.size()) + " added, " +
+            std::to_string(removed.size()) + " removed";
+        return diff;
+
+    }
+
     json ExportSettings(Scene::Scene& scene) {
 
         json j;
@@ -499,6 +619,9 @@ namespace Atlas::Capture {
             const auto& light = scene.GetMainLight();
             j["sun"] = { { "direction", FromVec3(light.properties.directional.direction) },
                 { "color", FromVec3(light.color) }, { "intensity", light.intensity } };
+            if (light.shadow && light.shadow->isCascaded)
+                j["sun"]["shadow"] = { { "cascades", light.shadow->viewCount - (light.shadow->longRange ? 1 : 0) },
+                    { "longRange", light.shadow->longRange }, { "longRangeDistance", light.shadow->longRangeDistance } };
         }
         return j;
 
@@ -527,6 +650,23 @@ namespace Atlas::Capture {
                     light.color = ToVec3(patch["color"]);
                 if (patch.contains("intensity"))
                     light.intensity = patch["intensity"].get<float>();
+                if (patch.contains("shadow")) {
+                    if (!light.shadow || !light.shadow->isCascaded)
+                        throw std::runtime_error("The main light has no cascaded shadow for the sun shadow settings");
+
+                    // The shadow is created anew for its cascades, the long range view is one more after the near ones
+                    auto previous = light.shadow;
+                    const auto& shadow = patch["shadow"];
+                    auto longRange = shadow.value("longRange", previous->longRange);
+                    auto longRangeDistance = shadow.value("longRangeDistance", previous->longRangeDistance);
+                    auto cascades = shadow.value("cascades", previous->viewCount - (previous->longRange ? 1 : 0));
+                    light.AddDirectionalShadow(previous->distance, previous->bias, previous->resolution, previous->edgeSoftness,
+                        cascades + (longRange ? 1 : 0), previous->splitCorrection, longRange, longRangeDistance);
+                    light.shadow->allowTerrain = previous->allowTerrain;
+                    light.shadow->allowDynamicEntities = previous->allowDynamicEntities;
+                    light.shadow->cascadeBlendDistance = previous->cascadeBlendDistance;
+                    light.shadow->followMainCamera = previous->followMainCamera;
+                }
             }
             else {
                 // A default constructed ocean has no valid simulation to patch, so it starts with the editor defaults

@@ -4,6 +4,7 @@
 #include "common/SerializationHelper.h"
 #include "common/StringHelper.h"
 
+#include <chrono>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -46,6 +47,8 @@ namespace Atlas::Capture {
     vec3 GetDirection(float azimuth, float elevation);
 
     std::string FormatFloat(float value, int32_t precision = 3);
+
+    float SecondsSince(std::chrono::steady_clock::time_point start);
 
     std::string FormatVec3(vec3 v, int32_t precision = 3);
 

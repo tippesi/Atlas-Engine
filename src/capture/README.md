@@ -17,8 +17,12 @@ path). SwiftShader/headless builds don't produce correct images.
 
 By default a window shows the rendered frames with a status line and the latest output below them
 and plays in real time; it closes when the job is done. `--hidden` (`"showWindow": false`) renders
-into a hidden window and plays as fast as possible, which suits automated runs. Keyboard input into
-a shown window reaches the scene like the job's key events, so don't type into it while it runs.
+into a hidden window and plays as fast as possible, which suits automated runs; `--fast` (`"realTime": false`)
+plays as fast as possible in the shown window. Keyboard input into
+a shown window reaches the scene like the job's key events, so don't type into it while it runs. The tool is muted, `--sound`
+plays the sound of the scene.
+`report.json` lists the GPU memory at the end of a job (`gpuMemory`: textures, other images, buffers, the
+largest of each and the device heaps).
 
 ## Quick start
 
@@ -110,10 +114,16 @@ before it and runs the remaining steps, so changing a late step doesn't run the 
 }
 ```
 
+A step with `"independent": true` doesn't use the state of the steps before it (e.g. it only imports assets or
+generates impostors): its key covers only its job and inputs, and it is skipped while they are unchanged, even when
+steps before it ran. Its files still go into the keys of the steps after it.
+
 Job files and inputs are relative to the pipeline file. `--from <step>` runs again from a step, `--force` runs all
-steps; options like `--hidden` apply to every step. If all steps are up to date, the files of the last
+steps; options like `--hidden` apply to every step. `--no-shots` leaves out the review images of the steps, a build
+that doesn't need them is faster. If all steps are up to date, the files of the last
 snapshot are restored in case they were changed since. A step that reads the scene the previous step
-saved continues with it in memory. A failed step stops the pipeline; its snapshot and those of the
+saved continues with it in memory, the previous step then skips loading its saved scene again to verify
+it. A failed step stops the pipeline; its snapshot and those of the
 following steps are removed. Snapshots store each file content once, steps that don't change a file
 share it. Steps don't back up the scenes they overwrite, the snapshots keep the previous states.
 `pipeline.json` next to the snapshots lists the result of each step. See
@@ -135,6 +145,7 @@ All keys are optional except `scene`. Unknown keys are rejected to catch typos.
     "fixedDt": 0.016667,
     "showWindow": true,                    // false or --hidden: no window, no real time playback
     "pathTrace": false,                    // render with the path tracer, it accumulates over the settle frames
+    "realTime": true,                      // false or --fast: the shown window plays as fast as possible
 
     "settings": { "fog": { "density": 0.02 } },     // merged into the scene settings (see below)
     "variants": [ { "name": "noFog", "settings": { "fog": { "enable": false } } } ],
@@ -171,7 +182,9 @@ recreates the simulation. Two additional keys:
 
 - `sun`: the main directional light, `{ "elevation": 12, "azimuth": 10 }` in degrees (azimuth 0 places
   the sun on the +Z side) or `"direction"`, plus `"color"` and `"intensity"`. Clouds, fog and
-  materials have to be judged with front, side and back light.
+  materials have to be judged with front, side and back light. `"shadow": { "cascades": 3, "longRange": true,
+  "longRangeDistance": 2048 }` recreates its cascaded shadow; the long range view (terrain only) is a layer after
+  the near cascades.
 - `materials`: patches loaded materials whose path matches a pattern, with the keys of the
   `.aematerial` files, e.g. `{ "*M_PolygonFantasyKingdom_01_A*": { "metalness": 0.0, "roughnessMapPath": null } }`.
   It only changes the running scene, use the `material` edit operation to change the files.
@@ -248,6 +261,8 @@ Timeline events, each with a time `t` in seconds:
 { "t": 0.0, "look": { "entity": "Player", "yaw": -90, "pitch": 0 } }   // camera direction, yaw 0 looks along +Z
 { "t": 0.5, "key": "E" }                                        // press: down, released 2 frames later
 { "t": 0.5, "key": { "key": "W", "action": "down" } }          // down / up / press (+ "duration")
+{ "t": 0.5, "controller": { "axis": "lefty", "value": -1.0 } }  // stick or trigger, held until changed
+{ "t": 0.5, "controller": { "button": "a", "action": "press" } } // down / up / press (+ "duration")
 { "t": 1.0, "capture": { "name": "now" } }                     // live capture with the observer
 { "t": 1.0, "capture": { "name": "side", "camera": { ... }, "passes": [...] } }   // still
 { "t": 2.0, "expect": { "entity": "Crate", "property": "bottom.y", "op": "<", "value": 0.1 } }
@@ -256,9 +271,13 @@ Timeline events, each with a time `t` in seconds:
 { "t": 3.0, "pause": true }          // pauses scripts, physics and players, the job time continues
 { "t": 4.0, "pause": false }         // resumes
 { "t": 5.0, "resetScripts": true }   // discards non-permanent script environments like leaving play mode does
+{ "when": { "log": "*done*" }, "end": true }   // finishes the job early, duration is then only the limit
 ```
 
-Key names are SDL key names (`E`, `Space`, `Left Shift`, `Up`, ...).
+Key names are SDL key names (`E`, `Space`, `Left Shift`, `Up`, ...). Controller events attach a virtual game controller, which
+the engine sees like a connected one. Buttons and axes have SDL game controller names (`a`, `x`,
+`leftshoulder`, `dpup`, `start`, `leftx`, `lefty`, `rightx`, `righty`, `lefttrigger`), sticks go from
+-1 to 1 with positive values to the right and down, triggers from 0 to 1.
 
 Instead of a time, an event can wait for a condition. Use it when the timing depends on the
 simulation, e.g. to jump at an edge or to react to a script:
@@ -275,6 +294,9 @@ simulation, e.g. to jump at an edge or to react to a script:
 Each conditional event happens once, in the frame its condition is met (plus `delay`). One that
 never happens fails the job, unless it is `optional`. `report.json` lists when each condition was met
 (`conditionalEvents`). See `examples/kingdom_conditions.json`.
+
+`end` finishes the job in its frame, e.g. once a script logs that its scenario is over: the remaining
+timed events and strip frames are skipped, conditional events that haven't happened yet fail as usual.
 
 Expectation properties: `exists`, `count` (number of matching entities, e.g. to find duplicates
 after a script reset), `position.x/y/z`, `bottom.y`, `top.y` (of the bounds), `yaw`, `distanceTo`
@@ -347,6 +369,9 @@ walked, where a ray hit or which part of a route is blocked.
   entity sinks deeper than `maxSink`. Entities whose hierarchy has no loaded meshes are skipped. With `"surfaces":
   ["*Ground*", "*Path*"]` the surface below also has to match, e.g. guards walking over hay bales
   are grounded, but not on a valid surface.
+  `"meshes": ["*/SM_Env_Tree_*.aemesh"]` checks every instance of the matching meshes instead of (or besides) the
+  named `entities`.
+  `ignore` takes hierarchies the ray passes through, e.g. undergrowth growing around trees.
 - `penetration`: counts the triangles of other meshes (matching `against`, by name or a parent's
   name) intersecting the entity bounds shrunk by `margin`. Intended intersections at the start (a gate
   in its frame) are the baseline; only additional intruding triangles fail.
@@ -378,6 +403,7 @@ grass) and the terrain directly. Players are never hit.
 { "type": "route", "from": [x, z], "to": [x, z], "via": [], "cell": 2, "margin": 60, "maxSlope": 30, "maxStep": 0.6,
   "clearance": 1, "avoidMaterials": ["*Water*"], "avoid": [], "walkOn": ["*Ground*", "*Bridge*"],
   "ignore": ["Grass*"], "map": "route.png" }
+{ "type": "route", "from": [x, z], "to": [x, y, z], "navigation": true, "margin": 60, "timeout": 120 }   // on the navigation mesh
 { "type": "buried", "entity": "Dungeon", "margin": 1.0 }   // meshes reaching above the terrain or lying below a hole
 ```
 
@@ -402,6 +428,11 @@ site before placing anything. `terrainMap` draws a top down map into the output 
 materials with hill shading and contour lines, holes in magenta, mesh footprints (buildings red, trees
 green, rocks grey), highlighted hierarchies in cyan, a labeled grid, markers and paths.
 
+With `"navigation": true`, `route` finds the path on a navigation mesh like the game: Recast/Detour with
+the settings of the scene's `navigation` (or the defaults), built leg by leg around the stops within
+`margin`. Stops without a height are placed on the terrain, without a terrain all stops need a height. It returns the path corners and the length
+or fails when there is no connection on the mesh; `map` and the grid options don't apply.
+
 `route` searches a walkable route with A* over a grid around the stops. A cell is blocked by holes,
 slopes above `maxSlope`, avoided materials or entities, objects lying on the ground (unless their
 name or a parent name matches `walkOn`) and obstacles at knee and chest height. `clearance` keeps the
@@ -419,7 +450,9 @@ check that a level placed below the terrain only shows at its entrance.
 
 `"profile": true` (or `{ "frames": 64 }`, default 32) averages the GPU profiler timings over the
 last frames of the run, prints the passes that take at least 0.05 ms and writes all of them to
-`profile.json`. Play the scene for long enough that the last frames are representative. Work that
+`profile.json`. `cpu` in the file averages the CPU times of the same frames: the whole frame,
+waiting for the previous GPU frame, the scene update (scripts, physics, animation) and recording the
+render. Play the scene for long enough that the last frames are representative. Work that
 only runs on changes (e.g. the atmosphere tables) can be forced every frame with a script to
 measure it.
 
@@ -439,6 +472,7 @@ enabled before the job is read.
 "edit": {
     "output": "scenes/Kingdom.edit.aescene",   // default: <scene>.edit.aescene next to the input
     "overwrite": false,
+    "textureFormat": "original",               // "ktx2": textures of imported models are stored compressed
     "operations": [
         { "op": "snapToGround", "entity": "Barrel_12", "offset": 0.0 },
         { "op": "translate", "entity": "#4711", "delta": [0, -6, 0] },           // "space": "world" | "local"
@@ -458,13 +492,21 @@ enabled before the job is read.
         { "op": "scatter", "group": "Forest", ... },                                     // see below
         { "op": "clearArea", "entities": ["Grass*"], "area": { "center": [x, z], "radius": 20 } },
         { "op": "terrainCopy", "path": "terrains/x/x.aeterrain", "overwrite": false },
+        { "op": "terrainCreate", "path": "terrains/x/x.aeterrain", "heightMap": "x/height.png", "splatMap": "x/splat.png",
+          "materials": ["synty/Terrain/Grass.aematerial", "synty/Terrain/Sand.aematerial"], "LoDCount": 6, "patchSize": 16,
+          "resolution": 1.0, "height": 300, "translation": [x, y, z] },                 // see below
         { "op": "terrain", "brushes": [ ... ] },                                         // see below
         { "op": "makePrefab", "scene": "scenes/Demo.aescene", "output": "prefabs/Dungeon.aeprefab", "name": "Dungeon",
           "exclude": ["Atmospheric Fog"], "scripts": false },
         { "op": "prefab", "prefab": "prefabs/Dungeon.aeprefab", "name": "Dungeon", "parent": "Level", "position": [x, y, z], "rotation": [0, 55, 0] },
         { "op": "meshCopy", "mesh": "a.aemesh", "output": "b.aemesh", "invertNormals": true, "set": { "cullBackFaces": false }, "assign": ["Grass*"] },
         { "op": "meshSettings", "meshes": "dungeon/meshes/*.aemesh", "set": { "cullBackFaces": false } },
+        { "op": "meshBodies", "meshes": ["*/SM_Env_Tree_*.aemesh"], "replace": true },
+        { "op": "replaceMesh", "meshes": ["ancient/meshes/SM_Env_Tree_01_*.aemesh"], "with": ["biomes/SM_Env_Tree_Forest_03.gltf"], "matchHeight": true, "seed": 0 },
+        { "op": "replaceWithPrefab", "meshes": "ancient/meshes/SM_Prop_Brazier_01_*.aemesh", "exclude": ["*Insert*"],
+          "removeNear": ["ancient/meshes/*Insert*.aemesh"], "prefab": "prefabs/Fire_Bowl_01.aeprefab", "name": "Fire Bowl" },
         { "op": "materialCopy", "material": "a.aematerial", "output": "b.aematerial", "set": { "emissiveIntensity": 0 }, "remove": ["emissiveMapPath"] },
+        { "op": "compressTextures", "directories": ["ancient", "odyssey/models"] },
         { "op": "meshMaterials", "meshes": ["b.aemesh"], "replace": { "a.aematerial": "b.aematerial" } }
     ]
 }
@@ -474,12 +516,47 @@ enabled before the job is read.
 script. Model files other than `.aemesh` (glTF, FBX, ...) are imported first, next to the source into
 `meshes/` and `materials/`, because scenes only reference `.aemesh` files. `"body": true` adds a static
 mesh shape, such that the piece collides and is found by physics queries. Lights are `point` or `spot`
-lights at the entity origin (`radius`, `intensity`, `color`, `volumetric` (off by default), `shadow`;
+lights at the entity origin (`radius`, `intensity`, `color`, `volumetric` (off by default), `shadow`,
+`shadowResolution` (1024);
 spots also `direction` in entity space and the cone half angles in degrees). Spot lights with `shadow` currently
 stay dark when created this way.
 `animation` adds an animation component to a skinned mesh: either an `.aeanimation` file or the name
 of an animation in the model file, whose animations are then imported into `animations/` next to it
 (`animationSpeed`, `animationTime` in seconds).
+
+`meshBodies` gives every instance of the matching meshes a static mesh shape in its world scale, also the
+instances of prefabs and scatter groups; instances with a body keep it unless `"replace": true`. With
+`"remove": true` the instances lose their bodies instead, e.g. grass and bushes the player walks through.
+`"motion": "dynamic"` makes them simulated bodies instead: `"shape"` `"box"` (the mesh bounds) or `"convex"` (its
+hull) or `"boxes"` (`boxes` `[[minX, minY, minZ, maxX, maxY, maxZ], ...]` in mesh space, e.g. a hull up to its deck),
+`density` (kg/m³, 500), `friction`, `restitution` and `"asleep"` (default true: they rest until something
+touches them). With the scene setting `"ocean": { "physics": true }` the instances in the ocean float on the waves with
+`buoyancy` (1 neutral, higher floats), `fluidLinearDrag` and `fluidAngularDrag`. They count as supported, those more
+than 2 m below the surface and all others get no buoyancy. `"inOcean": true` selects only these instances, e.g. the boats on
+the water and not those pulled up on a beach. `"supported": true` turns only instances resting on a body or the terrain into simulated bodies, e.g.
+not the pots on a table without collision. The instances stop being static. Instead of `meshes`, `"entity"` (with `"all": true`) selects named
+instances.
+
+`constraint` hangs the simulated instances of `meshes` (or `entity`) on the world or connects them to the body of
+`connect`: `type` `point`, `hinge`, `cone`, `distance`, `slider` or `fixed` at an `anchor` (`"top"`, `"bottom"` or
+`[x, y, z]` in mesh space), with `axis`, `limits` `[min, max]`, `halfConeAngle` (degrees) and `breakForce` (N, 0 never
+breaks). The other end is the anchor where the instance stands, or `worldPoint` `[x, y, z]`, e.g. a `distance`
+constraint with `limits` `[0, length]` as a rope to a bollard. `worldOffset` `[x, y, z]` moves the other end from where the
+anchor is now, e.g. `[0, -4, 0]` for a boat anchored to the sea floor. Instances that already have a constraint keep it.
+
+`trigger` adds a zone that reports bodies and the player entering and leaving it as contact events: `"shape"`
+`"sphere"` (`radius`), `"box"` (`halfSize`) or `"cylinder"` (`radius`, `height`), placed like `add`.
+
+`replaceWithPrefab` turns every instance of the matching meshes (also inside prefabs and scatter groups, not those
+matching `exclude`) into an instance of the prefab with the same transform and parent, named `<name> <n>`; meshes matching
+`removeNear` within 1.5 m of a replaced one are deleted, e.g. the separate inserts of a bowl the prefab brings itself.
+The bottom of the prefab's meshes is placed where the bottom of the replaced mesh was, so pivots may differ.
+
+`replaceMesh` gives every instance of the matching meshes one of the meshes in `with`, chosen per instance (`seed` changes
+the mix). `"matchHeight": true` (default) scales the new mesh to the height of the old one. The bottom of the new mesh
+stays where the old one's was: packs place pivots differently (centered or at the base). Bodies of the old mesh are
+removed, `meshBodies` adds new ones. `"within"` and `"beyond"` (`{ "center": [x, z], "radius": r }`) limit it to instances inside or outside a
+circle, e.g. only straight palms in a town.
 
 `add`, `prefab` and `scatter` put new entities below the root of the scene (or `parent`); scenes
 without a root get top level entities. `localPosition` places an added entity or prefab (with
@@ -495,20 +572,54 @@ e.g. to verify placements.
 
 Asset operations, for meshes and materials that need different settings in a scene:
 
-- `meshCopy` copies a mesh file, optionally inverts its normals, changes the mesh settings `set`
-  (`invertUVs`, `cullBackFaces`, `vegetation`, `castShadow`) and assigns the copy to the meshes of the
+- `meshCopy` copies a mesh file (model files like OBJ or glTF are imported first), optionally inverts
+  its normals, changes the mesh settings `set`
+  (`invertUVs`, `cullBackFaces`, `vegetation`, `castShadow`, `rayTrace`, `movable`) and assigns the copy to the meshes of the
   selected hierarchies that use the original. The original file stays untouched.
 - `meshSettings` changes these settings in all mesh files matching the pattern, after keeping a
-  `<file>.backup` once. It changes shared assets: every scene using the meshes is affected.
+  `<file>.backup` once (`"movable": true` for meshes whose instances the physics moves, they get motion vectors). It changes shared assets: every scene using the meshes is affected. `"impostor":
+  { "views": 12, "resolution": 256, "distance": 150, "shadowDistance": 80 }` also renders an impostor for the
+  distance (`<mesh>.aeimpostor`), like the editor's Generate button; `"interpolation"` blends the neighbouring views
+  and `"pixelDepthOffset"` writes the depth of the impostor pixels (both as in the editor). `"textureFormat": "ktx2"`
+  stores the color views of the impostor as KTX2 arrays (UASTC, transcoded to BC7 when loaded, about a quarter of
+  the GPU memory), the depth stays uncompressed. Settings left out keep those of the impostor that is regenerated. A
+  mesh copied with `meshCopy` gets its own impostor next to the copy.
 - `materialCopy` copies a material file and changes (`set`, colors as `[r, g, b]`) or removes (`remove`)
-  its properties. `meshMaterials` replaces materials in mesh files (`replace`: old path to new path),
+  its properties. `compressTextures` converts the textures of all material files below the `directories`
+  into KTX2 files next to the sources (UASTC, transcoded to BC7 when loaded) and points the materials to
+  them, keeping a `<material>.backup` once. It changes shared assets, the sources stay. A dry run only reports
+  the pending conversions.
+  `edit.textureFormat: "ktx2"` stores the textures of models the edit imports compressed right away. `meshMaterials` replaces materials in mesh files (`replace`: old path to new path),
   e.g. in copies made by `meshCopy`.
-- `makePrefab` turns the root of a scene file (MessagePack or JSON) into a prefab. Players, cameras,
-  directional lights and excluded names are left out, scripts with `"scripts": false`. With
+- `makePrefab` turns the root of a scene file (MessagePack or JSON) into a prefab. Model scenes
+  (glTF, FBX, ...) are imported first like in the editor (`invertUVs`, `maxTextureResolution` 4096), their
+  meshes and materials are saved next to the source. Players, cameras,
+  directional lights and excluded names are left out, scripts with `"scripts": false`. Meshes matching
+  `withoutBodies` (e.g. `["*Grass*"]`) lose their physics bodies, the player walks through them. With
   `"area": { "center": [x, y, z], "radius": r }` only the mesh and light entities inside the sphere are
   kept (those whose mesh matches `includeMeshes` and not `excludeMeshes`), flattened and relative to the
   center, e.g. to reuse a vignette or a building of another scene. Meshes of other scenes are often
-  split into parts whose offsets are lost when placed one by one, a prefab keeps them.
+  split into parts whose offsets are lost when placed one by one, a prefab keeps them. `"entity": "Name"`
+  makes the prefab of that entity and its children only (the first match of the name pattern), e.g. one of
+  several places built in a workshop scene. It keeps its hierarchy relative to `"origin": [x, y, z]`; with an `area`
+  it is flattened relative to its center.
+
+`terrainCreate` generates a new terrain and makes it the terrain of the scene, with a static height field
+body like the editor creates it (an existing terrain body is replaced). `heightMap` is a square 16 bit
+grayscale PNG (0 is the bottom, 65535 the top, the full range spans `height` meters), `splatMap` an optional
+8 bit grayscale PNG with the index of the terrain material per texel (default: the first material). Both
+are resized to the vertex grid of the terrain, which has `2^(LoDCount - 1) * 8 * patchSize` vertices per
+side at `resolution` meters spacing (the defaults give 4096 vertices, 4096 m). `translation` places the
+corner of the terrain, by default it is centered on the origin at height 0. The terrain is written to
+`path` and saved again with the scene; an existing file needs `"overwrite": true`. `displacementDistance`
+(meters) and `tessellation` (`factor`, `slope`, `shift`, `maxLevel`, see `Terrain::SetTessellationFunction`)
+control where the displacement maps of the materials (`displacementMapPath`, `displacementScale`) shape the ground. Scenes keep a fixed
+bounding box (`aabb`), so the scene has to be large enough for the terrain.
+
+`shoreLine` bakes the map of the ocean shore waves (shore distance and direction, `Terrain::shoreLine`) into
+`<terrain>_shoreline.png` next to the terrain file, which references and loads it from then on. `oceanHeight`
+(world space) defaults to the height of the scene ocean, `resolution` to 2048 texels for the whole terrain. Bake it again
+after changing the coast.
 
 `terrain` changes the terrain with brushes, radii in meters (at most about one terrain cell). Terrain
 files can be shared by several scenes, so it only works on a copy made by `terrainCopy` or with
@@ -520,9 +631,13 @@ of detail are baked and the terrain is saved together with the scene.
 { "type": "raise", "position": [x, z], "radius": 20, "amount": 6 }   // gaussian mound, negative amounts dig
 { "type": "smooth", "position": [x, z], "radius": 20, "strength": 0.5, "iterations": 2 }   // or "points"
 { "type": "hole", "position": [x, z], "radius": 3 }
+{ "type": "fill", "position": [x, z], "radius": 3 }   // or "points": closes holes with the height of their edge
 { "type": "material", "position": [x, z], "radius": 10, "slot": 5 }
 { "type": "path", "points": [[x, z], ...], "width": 4, "slot": 5, "smooth": 0.25 }
 ```
+
+The `falloff` of `flatten` blends towards the height with a smooth curve over that many meters outside
+of the radius, use several meters for natural transitions.
 
 Brushes don't move what stands on the terrain: clear and place things after changing the ground,
 e.g. `clearArea` the grass of a site, then the brushes, then `scatter` it again.
@@ -535,8 +650,8 @@ or `path`/`width`, all in x/z) and outside of the `exclude` areas into a new gro
   "count": 2400, "attempts": 96000, "area": { "polygon": [[x, z], ...] }, "exclude": [ ... ],
   "materials": [0, 5], "slope": [0, 32], "height": [-20, 100], "castFrom": 5.0,
   "noise": { "scale": 110, "threshold": -0.35, "softness": 0.35 },
-  "spacing": 0, "clearance": 0.5, "ignore": ["Grass*"], "maxBlockerSize": 120, "onMeshes": false,
-  "items": [{ "mesh": "...", "weight": 3, "scale": [0.85, 1.3], "yaw": [0, 360], "tilt": 3, "pitch": 0, "align": 0,
+  "spacing": 0, "spacingWith": ["Grass * SM_*Large*"], "clearance": 0.5, "ignore": ["Grass*"], "maxBlockerSize": 120, "onMeshes": false,
+  "items": [{ "mesh": "...", "weight": 3, "scale": [0.85, 1.3], "scaleY": 1, "flatness": 0, "yaw": [0, 360], "tilt": 3, "pitch": 0, "align": 0,
               "sink": 0.15, "pivotOnGround": false, "radius": 2.0, "body": "capsule", "bodyRadius": 0.35, "bodyHeight": 5,
               "name": "Lantern", "light": { "offset": [0, 1.5, 0], "color": [1, 0.6, 0.3], "intensity": 2, "radius": 9 } }] }
 ```
@@ -547,13 +662,15 @@ or `path`/`width`, all in x/z) and outside of the `exclude` areas into a new gro
   below a roof.
 - The simplex `noise` mask keeps instances where the noise is above `threshold` (with a linear ramp of
   `softness`), which creates clusters and clearings.
-- Instances keep `spacing` (or the sum of their footprint `radius`) to each other and `clearance` to
-  existing meshes, except `ignore`d hierarchies, the mesh they stand on and meshes larger than
+- Instances keep `spacing` (or the sum of their footprint `radius`) to each other and to the existing
+  entities matching `spacingWith` (e.g. those of earlier scatters), and `clearance` to existing meshes, except `ignore`d hierarchies, the mesh they stand on and meshes larger than
   `maxBlockerSize`. -1 disables the clearance test.
 - The lowest point of the mesh bounds (after `pitch`, a fixed rotation around x, e.g. for fallen
   objects) is put on the ground, `pivotOnGround` puts the pivot there instead. `align` tilts instances
   towards the ground normal, `tilt` randomly, `sink` moves them into the ground relative to their scale
-  (negative values lift them).
+  (negative values lift them). `scaleY` multiplies the height of an item, e.g. for wide flat patches of grass.
+- `flatness` rejects positions where the terrain below the footprint (up to 1.4 times its `radius`) is more
+  than this many meters away from the plane of the instance, e.g. wide patches on a convex hill.
 - Bodies are `"mesh"` (static mesh shape) or `"capsule"` (a feet aligned trunk, the crown stays passable).
 - `name` replaces the instance names (`<group> <mesh> <index>`), `light` adds a child with a light like the
   one of `add`, at `offset` in the space of the instance.
@@ -618,6 +735,21 @@ busy"). Wait for it to finish, or close it if it is stopped in the debugger, the
 4. Look at the sheets, not only at the exit code. Overlays make invisible things visible.
 5. For rendering changes, render a fixed job before and after the change and `--compose` the
    images, with several sun positions (`settings.sun`).
+
+## Source layout
+
+- `App`: the run modes (single job, `--serve`, `--pipeline`) and the phases of a job: loading, preparing,
+  editing, shots, playing and finishing. It dispatches the timeline events and requests the captures.
+- `Job`: parses job files and the command line into typed specs, including the timeline events.
+- `Timeline`: the events of a playing job in time order, the conditional events and the simulated
+  keyboard and controller input.
+- `Report`: `report.json`, `log.txt`, the printed output, the profile, the validation messages, the lock of
+  the output directory and the crash report.
+- `Server` and `Pipeline`: the command queue of the server mode and the steps and snapshots of a pipeline.
+- `SceneEditor`, `SceneTools`, `TerrainTools`, `Scatter`: the edit operations, queries and terrain brushes.
+  Each operation, query and brush is a function registered in a table by its name.
+- `CaptureRenderer`, `Overlay`, `Image`, `Checks`: rendering and reading back passes, debug lines, sheets,
+  checks and expectations.
 
 ## Examples
 

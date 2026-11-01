@@ -110,6 +110,12 @@ namespace Atlas::Capture {
 
     }
 
+    float SecondsSince(std::chrono::steady_clock::time_point start) {
+
+        return std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count();
+
+    }
+
     std::string FormatVec3(vec3 v, int32_t precision) {
 
         return "(" + FormatFloat(v.x, precision) + ", " + FormatFloat(v.y, precision) + ", " +
