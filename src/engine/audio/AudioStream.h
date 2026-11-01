@@ -57,6 +57,16 @@ namespace Atlas {
 
             double GetPitch() const;
 
+            // Frequencies above the cutoff (Hz) are damped, e.g. under water or behind a wall, 0 turns the filter off
+            void SetLowPass(float cutoff);
+
+            float GetLowPass() const;
+
+            // How much of the stream goes into the reverb of the audio manager, 0 to 1
+            void SetReverbSend(float send);
+
+            float GetReverbSend() const;
+
             void Pause();
 
             void Resume();
@@ -79,6 +89,11 @@ namespace Atlas {
 
             float volume = 1.0f;
             double pitch = 1.0f;
+
+            float lowPass = 0.0f;
+            float reverbSend = 0.0f;
+            // Two one pole stages per channel
+            std::array<float, 16> filterState = {};
 
             bool pause = false;
             std::atomic_bool finished = false;

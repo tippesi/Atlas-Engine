@@ -1,4 +1,5 @@
 #include "AudioStream.h"
+#include "AudioManager.h"
 #include "../common/MathHelper.h"
 
 namespace Atlas {
@@ -146,6 +147,38 @@ namespace Atlas {
 
         }
 
+        void AudioStream::SetLowPass(float cutoff) {
+
+            std::lock_guard<std::mutex> lock(mutex);
+
+            lowPass = glm::max(0.0f, cutoff);
+
+        }
+
+        float AudioStream::GetLowPass() const {
+
+            std::lock_guard<std::mutex> lock(mutex);
+
+            return lowPass;
+
+        }
+
+        void AudioStream::SetReverbSend(float send) {
+
+            std::lock_guard<std::mutex> lock(mutex);
+
+            reverbSend = Helper::Math::Saturate(send);
+
+        }
+
+        float AudioStream::GetReverbSend() const {
+
+            std::lock_guard<std::mutex> lock(mutex);
+
+            return reverbSend;
+
+        }
+
         void AudioStream::Pause() {
 
             pause = true;
@@ -246,6 +279,21 @@ namespace Atlas {
 
                 progress += pitch;
 
+            }
+
+            if (lowPass > 0.0f) {
+                // The coefficient of a one pole low pass at the mixing rate, two stages for 12 dB per octave
+                auto rate = float(AudioManager::GetSampleRate());
+                auto coefficient = 1.0f - expf(-2.0f * glm::pi<float>() * glm::min(lowPass, rate * 0.45f) / rate);
+                for (int32_t i = 0; i < length; i++) {
+                    for (int32_t j = 0; j < channels && j < 8; j++) {
+                        auto& first = filterState[j * 2];
+                        auto& second = filterState[j * 2 + 1];
+                        first += (float(chunk[i * channels + j]) - first) * coefficient;
+                        second += (first - second) * coefficient;
+                        chunk[i * channels + j] = int16_t(second);
+                    }
+                }
             }
 
             return true;

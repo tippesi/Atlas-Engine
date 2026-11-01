@@ -29,6 +29,10 @@ namespace Atlas::Scripting::Bindings {
             "IsValid", &Audio::AudioStream::IsValid,
             "IsFinished", &Audio::AudioStream::IsFinished,
             "SetPan", &Audio::AudioStream::SetPan,
+            "SetLowPass", &Audio::AudioStream::SetLowPass,
+            "GetLowPass", &Audio::AudioStream::GetLowPass,
+            "SetReverbSend", &Audio::AudioStream::SetReverbSend,
+            "GetReverbSend", &Audio::AudioStream::GetReverbSend,
             "loop", &Audio::AudioStream::loop
             );
 
@@ -43,6 +47,17 @@ namespace Atlas::Scripting::Bindings {
         audio.set_function("Mute", &Audio::AudioManager::Mute);
         audio.set_function("Unmute", &Audio::AudioManager::Unmute);
         audio.set_function("IsMuted", &Audio::AudioManager::IsMuted);
+        audio.set_function("SetReverb", &Audio::AudioManager::SetReverb);
+        audio.set_function("GetReverb", &Audio::AudioManager::GetReverb);
+
+        ns->new_usertype<Audio::ReverbSettings>("ReverbSettings",
+            sol::call_constructor,
+            sol::constructors<Audio::ReverbSettings()>(),
+            "roomSize", &Audio::ReverbSettings::roomSize,
+            "damping", &Audio::ReverbSettings::damping,
+            "wet", &Audio::ReverbSettings::wet,
+            "width", &Audio::ReverbSettings::width
+            );
 
     }
 

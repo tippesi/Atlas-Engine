@@ -3,10 +3,12 @@
 #include "../System.h"
 
 #include "AudioStream.h"
+#include "Reverb.h"
 
 #include <SDL3/SDL_audio.h>
 
 #include <atomic>
+#include <memory>
 #include <vector>
 #include <mutex>
 
@@ -43,6 +45,13 @@ namespace Atlas {
 
             static bool IsMuted();
 
+            // The reverb every stream sends to by its reverb send, e.g. a cave or a hall around the listener
+            static void SetReverb(const ReverbSettings& settings);
+
+            static ReverbSettings GetReverb();
+
+            static int32_t GetSampleRate();
+
             static void Update();
 
         private:
@@ -59,11 +68,15 @@ namespace Atlas {
             static std::vector<Ref<AudioStream>> mixStreams;
             static std::vector<float> mixBuffer;
             static std::vector<int16_t> chunkBuffer;
+            static std::vector<float> reverbBuffer;
 
             static std::mutex mutex;
 
             static std::atomic<float> masterVolume;
             static std::atomic_bool muted;
+
+            static ReverbSettings reverbSettings;
+            static std::unique_ptr<Reverb> reverb;
 
             friend AudioData;
 

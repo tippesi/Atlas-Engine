@@ -17,11 +17,15 @@ namespace Atlas {
         std::vector<Ref<AudioStream>> AudioManager::mixStreams;
         std::vector<float> AudioManager::mixBuffer;
         std::vector<int16_t> AudioManager::chunkBuffer;
+        std::vector<float> AudioManager::reverbBuffer;
 
         std::mutex AudioManager::mutex;
 
         std::atomic<float> AudioManager::masterVolume = 1.0f;
         std::atomic_bool AudioManager::muted = false;
+
+        ReverbSettings AudioManager::reverbSettings;
+        std::unique_ptr<Reverb> AudioManager::reverb;
         
         bool AudioManager::Configure(int32_t frequency, uint8_t channels, uint32_t samples) {
 
@@ -37,6 +41,8 @@ namespace Atlas {
             deviceStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &audioSpec,
                 AudioManager::Callback, nullptr);
             if (deviceStream) {
+
+                reverb = std::make_unique<Reverb>(audioSpec.freq);
 
                 Resume();
 
@@ -88,6 +94,26 @@ namespace Atlas {
         float AudioManager::GetMasterVolume() {
 
             return masterVolume;
+
+        }
+
+        void AudioManager::SetReverb(const ReverbSettings& settings) {
+
+            std::lock_guard<std::mutex> lock(mutex);
+            reverbSettings = settings;
+
+        }
+
+        ReverbSettings AudioManager::GetReverb() {
+
+            std::lock_guard<std::mutex> lock(mutex);
+            return reverbSettings;
+
+        }
+
+        int32_t AudioManager::GetSampleRate() {
+
+            return audioSpec.freq > 0 ? audioSpec.freq : 48000;
 
         }
 
@@ -153,7 +179,13 @@ namespace Atlas {
 
             std::unique_lock<std::mutex> lock(mutex);
             mixStreams = audioStreams;
+            auto settings = reverbSettings;
             lock.unlock();
+
+            // The reverb is stereo, it needs the stereo device the engine configures
+            auto useReverb = reverb && audioSpec.channels == 2;
+            if (useReverb)
+                reverbBuffer.assign(length, 0.0f);
 
             // Take ownership of stream here, such that the update can run in parallel
             for (const auto& stream : mixStreams) {
@@ -166,6 +198,17 @@ namespace Atlas {
 
                 Mix(mixBuffer, chunkBuffer);
 
+                auto send = useReverb ? stream->GetReverbSend() : 0.0f;
+                if (send > 0.0f) {
+                    for (int32_t i = 0; i < length; i++)
+                        reverbBuffer[i] += float(chunkBuffer[i]) * send;
+                }
+
+            }
+
+            if (useReverb) {
+                reverb->target = settings;
+                reverb->Process(reverbBuffer.data(), mixBuffer.data(), length / 2);
             }
 
             // Release the streams here instead of in the next callback
