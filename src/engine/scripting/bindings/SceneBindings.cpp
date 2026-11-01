@@ -276,6 +276,13 @@ namespace Atlas::Scripting::Bindings {
             "GetContactEvents", [](Scene::Scene& scene) {
                 return sol::as_table(scene.GetContactEvents());
             },
+            // E.g. for scripts that give the nearest lights a shadow
+            "GetLightEntities", [](Scene::Scene& scene) {
+                std::vector<Scene::Entity> entities;
+                for (auto entity : scene.GetSubset<LightComponent>())
+                    entities.push_back(entity);
+                return sol::as_table(entities);
+            },
             "CreateEntity", &Scene::Scene::CreateEntity,
             "DestroyEntity", &Scene::Scene::DestroyEntity,
             "DuplicateEntity", &Scene::Scene::DuplicateEntity,
@@ -506,7 +513,9 @@ namespace Atlas::Scripting::Bindings {
             "volumetricIntensity", &LightComponent::volumetricIntensity,
             "properties", &LightComponent::properties,
             "transformedProperties", &LightComponent::transformedProperties,
-            "shadow", &LightComponent::shadow,
+            // nil removes the shadow, e.g. to hand it on to another light
+            "shadow", sol::property([](LightComponent& light) { return light.shadow; },
+                [](LightComponent& light, sol::optional<Ref<Lighting::Shadow>> shadow) { light.shadow = shadow.value_or(nullptr); }),
             "isMain", &LightComponent::isMain,
             "volumetric", &LightComponent::volumetric
         );
