@@ -33,7 +33,7 @@ namespace Atlas {
                 .refreshRate = mode.refresh_rate,
                 .pixelDensity = mode.pixel_density,
                 .displayID = mode.displayID,
-                .rawFormat = mode.format
+                .rawFormat = uint32_t(mode.format)
             };
 
             modes.push_back(displayMode);

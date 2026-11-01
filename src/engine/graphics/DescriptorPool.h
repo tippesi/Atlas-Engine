@@ -52,7 +52,7 @@ namespace Atlas {
                 size_t counter = 0;
             };
 
-            VkDescriptorPool InitPool(const DescriptorSetSize& size);
+            void AddPool(const DescriptorSetSize& size);
 
             bool PoolFits(const DescriptorSetSize& poolSize, const DescriptorSetSize& requestedSize) const;
 

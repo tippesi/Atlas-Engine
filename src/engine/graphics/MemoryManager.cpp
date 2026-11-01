@@ -177,9 +177,11 @@ namespace Atlas {
 
         void MemoryManager::DestroyAllImmediate() {
 
-            // Cheap trick to make sure everything is deleted
-            frameIndex += framesToDeletion;
+            // Every pending deletion is due, without moving the frame index of later deletions
+            auto currentFrameIndex = frameIndex;
+            frameIndex = std::numeric_limits<size_t>::max();
             DeleteData();
+            frameIndex = currentFrameIndex;
 
         }
 
