@@ -6,6 +6,10 @@
 #include <surface.hsh>
 
 layout (location = 0) in vec3 fOriginalCoord;
+layout (location = 1) in float shoreScaling;
+#ifdef TERRAIN
+layout (location = 2) in vec3 normalShoreWave;
+#endif
 
 layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 
@@ -42,6 +46,10 @@ void main() {
 
         // The reflections treat the water surface as a perfect mirror
         vec3 worldNormal = normalize(vec3(gradient.x, 1.0, gradient.y));
+#ifdef TERRAIN
+        worldNormal = mix(normalShoreWave, worldNormal, shoreScaling);
+#endif
+        worldNormal = GetOceanRippleNormal(worldNormal, fOriginalCoord.xz, shoreScaling);
         normal = EncodeNormal(normalize(vec3(globalData.vMatrix * vec4(worldNormal, 0.0))));
     }
 

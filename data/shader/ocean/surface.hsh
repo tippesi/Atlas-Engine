@@ -1,5 +1,7 @@
 // Surface detail which can only be evaluated in fragment shaders, used by the surface and the depth pass
 
+layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
+
 // Roughness of the waves which are too small for the simulation, the larger ones add their slope variance
 const float roughness = 0.07;
 // Only part of the unresolved slopes is turned into roughness, which keeps some of the sparkle of the sun reflection
@@ -38,6 +40,26 @@ void GetOceanGradientAndFold(vec2 texCoord, float dist, out float fold, out vec2
     }
 
     fold = saturate((Uniforms.foamOffset - jacobian) * Uniforms.foamScale);
+
+}
+
+// Small ripples from the normal map on top of the simulated waves, they fade out at the shore
+vec3 GetOceanRippleNormal(vec3 normal, vec2 position, float shoreScaling) {
+
+#ifdef RIPPLE_TEXTURE
+    vec3 tangent = normalize(vec3(1.0, -normal.x / normal.y, 0.0));
+    vec3 bitangent = normalize(cross(tangent, normal));
+    mat3 tbn = mat3(tangent, bitangent, normal);
+
+    vec2 texCoord = 20.0 * position / Uniforms.tiling;
+    vec3 rippleNormal = normalize(2.0 * texture(rippleTexture, texCoord - vec2(globalData.time * 0.2), globalData.mipLodBias).rgb - 1.0);
+    rippleNormal += normalize(2.0 * texture(rippleTexture, texCoord * 0.5 + vec2(globalData.time * 0.05), globalData.mipLodBias).rgb - 1.0);
+
+    float rippleScaling = clamp(1.0 - shoreScaling, 0.05, 0.1);
+    return normalize(mix(normal, normalize(tbn * rippleNormal), rippleScaling));
+#else
+    return normal;
+#endif
 
 }
 

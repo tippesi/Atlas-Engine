@@ -30,7 +30,6 @@ namespace Atlas {
                 Fog fog;
 
                 vec4 waterBodyColor;
-                vec4 deepWaterBodyColor;
                 vec4 scatterColor;
 
                 vec4 translation;

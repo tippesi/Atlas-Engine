@@ -13,6 +13,7 @@
 #include <../brdf/brdf.hsh>
 
 #include <shoreInteraction.hsh>
+#include <waterBody.hsh>
 
 #ifdef DDGI
 #include <../ddgi/ddgi.hsh>
@@ -36,7 +37,6 @@ layout (set = 3, binding = 4) uniform sampler2D refractionTexture;
 layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
 layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
-layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
 layout(set = 3, binding = 15) uniform sampler2D cloudShadowMap;
 layout(set = 3, binding = 16) uniform sampler2D volumetricCloudTexture;
 layout(set = 3, binding = 20) uniform sampler2D oceanDepthTexture;
@@ -58,6 +58,11 @@ const float scatterIntensity = 2.5;
 const float scatterThinnessScale = 4.0;
 const float scatterCrestHeight = 1.0;
 
+// From right below, the surface stays partly transparent near the camera
+const float nearSurfaceTransmission = 0.6;
+const float nearSurfaceCameraDepth = 1.5;
+const float nearSurfaceDistance = 15.0;
+
 // Shore softness (lower is softer)
 const float shoreSoftness = 70.5;
 
@@ -76,8 +81,6 @@ void main() {
 
     Light light = LightUniforms.light;
     
-    vec2 fTexCoord = fOriginalCoord.xz / Uniforms.tiling;
-
     float fold, jacobian, slopeVariance;
     vec2 gradientDisplacement;
     float viewDistance = distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz);
@@ -120,27 +123,7 @@ void main() {
     fNormal = mix(normalShoreWave, fNormal, shoreScaling);
 #endif
 
-    // Create TBN matrix for normal mapping
-    vec3 norm = fNormal;
-    vec3 tang = vec3(1.0, 0.0, 0.0);
-    tang.y = -((norm.x*tang.x) / norm.y) - ((norm.z*tang.z) / norm.y);
-    tang = normalize(tang);
-    vec3 bitang = normalize(cross(tang, norm));
-    mat3 tbn = mat3(tang, bitang, norm);
-    
-    // Normal mapping normal (offsets actual normal)
-    vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
-
-#ifdef RIPPLE_TEXTURE
-        rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(globalData.time * 0.2), globalData.mipLodBias).rgb - 1.0);
-        rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(globalData.time * 0.05), globalData.mipLodBias).rgb - 1.0);
-        // Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
-        norm = normalize(tbn * rippleNormal);
-#endif
-    
-    // Scale ripples based on actual (not view) depth of water
-    float rippleScaling = clamp(1.0 - shoreScaling, 0.05, 0.1);
-    norm = normalize(mix(fNormal, norm, rippleScaling));
+    vec3 norm = GetOceanRippleNormal(fNormal, fOriginalCoord.xz, shoreScaling);
 
     vec3 eyeDir = normalize(fModelCoord - globalData.cameraLocation.xyz);
     vec3 lightDir = -light.direction.xyz;
@@ -193,9 +176,6 @@ void main() {
     vec3 reflectionColor = textureLod(specularProbe, reflectionVec, reflectionMipLevel).rgb;
 #endif
 
-    // Calculate water color
-    vec3 depthFog = mix(Uniforms.deepWaterBodyColor.rgb, Uniforms.waterBodyColor.rgb, min(1.0 , exp(-waterViewDepth / 10.0)));
-
     // The light which enters the water body from above, like the indirect diffuse lighting of the scene
     vec3 indirectLight = textureLod(diffuseProbe, norm, 0.0).rgb;
 #ifdef DDGI
@@ -210,14 +190,21 @@ void main() {
     indirectLight = (indirectLightLocal.rgb + indirectLight * indirectLightLocal.a) * ddgiData.volumeStrength;
 #endif
 
-    vec3 waterColor = depthFog * (Uniforms.waterColorIntensity.x * indirectLight +
-        Uniforms.waterColorIntensity.y * max(0.0, nDotL) * shadowFactor * light.intensity * light.color.rgb);
+    // Light scattered by the water body along the refracted view ray, like seen from under water
+    vec3 extinction = GetWaterExtinction();
+    float waterRayLength = distance(fPosition, depthPos);
+    vec3 sunScattering, ambientScattering;
+    GetWaterScattering(extinction, refract(eyeDir, norm, 1.0 / waterRefractiveIndex), 0.0, waterRayLength,
+        light, indirectLight, sunScattering, ambientScattering);
+    vec3 waterColor = shadowFactor * sunScattering + ambientScattering;
     
     // Water edges at shore sould be soft
     fresnel *= min(1.0, waterViewDepth * shoreSoftness);
 
-    // Update refraction color based on water depth (exponential falloff)
-    refractionColor = mix(waterColor, refractionColor, min(1.0 , exp(-waterViewDepth / 2.0)));
+    // The ground was lit with the light above the water, it lost energy on the way down
+    vec3 groundPos = vec3(globalData.ivMatrix * vec4(depthPos, 1.0));
+    refractionColor *= GetWaterDownwellingTransmittance(light, max(Uniforms.translation.y - groundPos.y, 0.0));
+    refractionColor = refractionColor * exp(-extinction * waterRayLength) + waterColor;
 
     vec2 shoreInteraction = vec2(0.0);
 #ifdef TERRAIN
@@ -237,35 +224,63 @@ void main() {
     color += specularFactor * light.intensity * light.color.rgb;
     color += (1.0 - fresnel) * scatterFactor * light.intensity * light.color.rgb * Uniforms.scatterColor.rgb;
 
-    vec3 foamShadowFactor = mix(vec3(0.1),
-        vec3(0.5) * max(0.0, nDotL) * shadowFactor, 0.7);
+    // Foam is a bright diffuse surface lit by the sun and the sky
+    const float foamAlbedo = 0.9;
+    vec3 foamLight = max(0.0, nDotL) * shadowFactor * light.intensity * light.color.rgb * INV_PI + indirectLight;
 
     // Without a foam texture the foam is broken up by noise
-    vec3 foamColor = foamShadowFactor * light.intensity * light.color.rgb;
 #ifdef FOAM_TEXTURE
-    float foamPattern = texture(foamTexture, fOriginalCoord.xz / 8.0, globalData.mipLodBias).r;
+    float foamPattern = texture(foamTexture, fOriginalCoord.xz / (2.0 * Uniforms.foamSize), globalData.mipLodBias).r;
 #else
     float foamNoise = 0.6 * texture(perlinNoiseMap, fOriginalCoord.xz / (3.0 * Uniforms.foamSize), globalData.mipLodBias).r +
         0.4 * texture(perlinNoiseMap, fOriginalCoord.xz / Uniforms.foamSize, globalData.mipLodBias).r;
     float foamPattern = saturate((foamNoise - 0.2) / 0.6);
 #endif
-    // Thresholding the pattern by the amount of foam keeps the foam edges sharp instead of blending a blurry pattern
-    float foamEdge = max(fwidth(foamPattern), 0.02);
+    // The pattern shapes the foam edges and gives the foam its structure
+    vec3 foamColor = foamAlbedo * mix(0.35, 1.0, foamPattern) * foamLight;
+    float foamEdge = max(fwidth(foamPattern), 0.1);
     float foamCoverage = smoothstep(1.0 - foam - foamEdge, 1.0 - foam + foamEdge, foamPattern) * step(0.001, foam);
     color = mix(color, foamColor, foamCoverage);
 
-    vec3 breakingColor = foamShadowFactor * light.intensity * light.color.rgb;
+    vec3 breakingColor = foamAlbedo * foamLight;
     color = mix(color, breakingColor, shoreInteraction.y);
 
     StencilFeatures features = CreateStencilFeatures();
 
     if (!gl_FrontFacing) {
-        fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - saturate(dot(fNormal, eyeDir)), 5.0);
         disturbance = (mat3(globalData.vMatrix) * -vec3(norm.x, 0.0, norm.z)).xz;
 
         refractionDisturbance = vec2(disturbance.x, -disturbance.y) * 0.1;
         refractionDisturbance *= min(2.0, waterViewDepth);
-        color = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb * (1.0 - fresnel);
+        vec3 transmittedColor = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb;
+
+        // Light from above only gets through inside of Snell's window, outside of it the water body is reflected
+        // The waves only bend the edge of the window slightly, it stays a circle
+        vec3 windowNormal = normalize(mix(vec3(0.0, 1.0, 0.0), norm, 0.3));
+        vec3 transmittedDir = refract(eyeDir, -windowNormal, waterRefractiveIndex);
+        float windowTransmission = dot(transmittedDir, transmittedDir) > 0.0 ?
+            1.0 - FresnelSchlick(vec3(0.02), 1.0, saturate(dot(transmittedDir, windowNormal))).r : 0.0;
+
+        // The whole sky is squeezed into the window, what isn't on screen comes from the sky probe
+        vec4 windowClip = globalData.pMatrix * globalData.vMatrix * vec4(transmittedDir, 0.0);
+        vec2 windowCoord = 0.5 * windowClip.xy / max(windowClip.w, 1e-4) + 0.5;
+        vec2 windowEdge = saturate(min(windowCoord, 1.0 - windowCoord) * 10.0);
+        float windowOnScreen = windowClip.w > 0.0 ? windowEdge.x * windowEdge.y : 0.0;
+        vec3 windowColor = mix(textureLod(specularProbe, transmittedDir, 0.0).rgb,
+            textureLod(refractionTexture, windowCoord, 0.0).rgb, windowOnScreen);
+
+        vec3 skyRadiance = textureLod(diffuseProbe, vec3(0.0, 1.0, 0.0), 0.0).rgb;
+        vec3 sunScattering, ambientScattering;
+        GetWaterScattering(GetWaterExtinction(), reflect(eyeDir, -norm), 0.0, 1000.0, light, skyRadiance,
+            sunScattering, ambientScattering);
+
+        color = mix(sunScattering + ambientScattering, windowColor, windowTransmission);
+
+        // Right below the surface the outside stays visible through the waves
+        float cameraDepth = Uniforms.translation.y - globalData.cameraLocation.y;
+        float nearTransmission = nearSurfaceTransmission * (1.0 - smoothstep(0.0, nearSurfaceCameraDepth, cameraDepth)) *
+            (1.0 - smoothstep(0.0, nearSurfaceDistance, length(fPosition)));
+        color = mix(color, transmittedColor, nearTransmission * (1.0 - windowTransmission));
         features.underWaterPixel = true;
     }
     else {

@@ -14,7 +14,9 @@ namespace Atlas {
         static const std::vector<std::string> sceneReferences = {
             "/terrain",
             "/sky/probe/cubemapPath",
-            "/postProcessing/bloom/dirtMap"
+            "/postProcessing/bloom/dirtMap",
+            "/ocean/rippleTexture",
+            "/ocean/foamTexture"
         };
 
         static const std::vector<std::string> entityReferences = {

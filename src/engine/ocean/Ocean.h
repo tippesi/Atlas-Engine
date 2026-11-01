@@ -6,6 +6,8 @@
 #include "OceanNode.h"
 #include "OceanSimulation.h"
 #include "OceanSurfaceQueries.h"
+#include "../resource/Resource.h"
+#include "../texture/Texture2D.h"
 
 #include <vector>
 
@@ -36,13 +38,13 @@ namespace Atlas {
             OceanSimulation simulation;
             OceanSurfaceQueries surfaceQueries;
 
-            Texture::Texture2D rippleTexture;
-            Texture::Texture2D foamTexture;
+            // The normals of the small ripples over the waves and the texture of the foam, both repeated over the surface
+            ResourceHandle<Texture::Texture2D> rippleTexture;
+            ResourceHandle<Texture::Texture2D> foamTexture;
 
             vec3 translation = vec3(0.0f);
 
             vec3 waterBodyColor = vec3(0.1f, 1.0f, 0.7f);
-            vec3 deepWaterBodyColor = vec3(0.1f, 0.15f, 0.5f);
             vec3 scatterColor = vec3(0.3f, 0.7f, 0.6f);
             vec2 waterColorIntensity = vec2(0.1f, 0.2f);
 

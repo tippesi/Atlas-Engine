@@ -71,7 +71,10 @@ namespace Atlas::Editor::UI {
             else if constexpr (std::is_same_v<T, Ref<Ocean::Ocean>>) {
                 RenderHeading("Ocean");
                 if (t) {
-                    oceanPanel.Render(t);
+                    oceanPanel.Render(t,
+                        [&](ResourceHandle<Texture::Texture2D> handle) {
+                            return textureSelectionPanel.Render(handle);
+                        });
                     ImGui::Separator();
                     if (ImGui::Button("Remove ocean", ImVec2(-FLT_MIN, 0.0f)))
                         t = nullptr;

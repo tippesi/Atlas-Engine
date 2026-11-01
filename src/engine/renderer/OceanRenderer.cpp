@@ -204,8 +204,8 @@ namespace Atlas {
                 if (ddgiEnabled) config.AddMacro("DDGI");
                 if (ddgiEnabled && volume->scroll) config.AddMacro("DDGI_SCROLL");
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
-                if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
-                if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
+                if (ocean->rippleTexture.IsLoaded()) config.AddMacro("RIPPLE_TEXTURE");
+                if (ocean->foamTexture.IsLoaded()) config.AddMacro("FOAM_TEXTURE");
                 if (oceanReflections) config.AddMacro("REFLECTION");
                 if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
@@ -223,8 +223,8 @@ namespace Atlas {
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
                 ocean->simulation.normalMap.Bind(commandList, 3, 1);
 
-                if (ocean->foamTexture.IsValid()) {
-                    ocean->foamTexture.Bind(commandList, 3, 2);
+                if (ocean->foamTexture.IsLoaded()) {
+                    ocean->foamTexture->Bind(commandList, 3, 2);
                 }
                 else {
                     dummyTexture.Bind(commandList, 3, 2);
@@ -260,8 +260,8 @@ namespace Atlas {
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
-                if (ocean->rippleTexture.IsValid()) {
-                    ocean->rippleTexture.Bind(commandList, 3, 10);
+                if (ocean->rippleTexture.IsLoaded()) {
+                    ocean->rippleTexture->Bind(commandList, 3, 10);
                 }
                 else {
                     dummyTexture.Bind(commandList, 3, 10);
@@ -475,6 +475,7 @@ namespace Atlas {
 
             auto config = GeneratePipelineConfig(target, true, ocean->wireframe);
             if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+            if (ocean->rippleTexture.IsLoaded()) config.AddMacro("RIPPLE_TEXTURE");
 
             auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -487,7 +488,10 @@ namespace Atlas {
             ocean->simulation.displacementMap.Bind(commandList, 3, 0);
             ocean->simulation.normalMap.Bind(commandList, 3, 1);
 
-            ocean->foamTexture.Bind(commandList, 3, 2);
+            if (ocean->foamTexture.IsLoaded())
+                ocean->foamTexture->Bind(commandList, 3, 2);
+            else
+                dummyTexture.Bind(commandList, 3, 2);
 
             if (scene->sky.GetProbe()) {
                 scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
@@ -500,9 +504,10 @@ namespace Atlas {
             if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid())
                 scene->terrain->shoreLine.Bind(commandList, 3, 9);
 
-            if (ocean->rippleTexture.IsValid()) {
-                ocean->rippleTexture.Bind(commandList, 3, 10);
-            }
+            if (ocean->rippleTexture.IsLoaded())
+                ocean->rippleTexture->Bind(commandList, 3, 10);
+            else
+                dummyTexture.Bind(commandList, 3, 10);
 
             depthUniformBuffer.SetData(&uniforms, 0);
             depthUniformBuffer.Bind(commandList, 3, 11);
@@ -543,7 +548,6 @@ namespace Atlas {
 
             Uniforms uniforms = {
                 .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
-                .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
                 .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
 
                 .translation = vec4(ocean->translation, 1.0f),
@@ -557,7 +561,7 @@ namespace Atlas {
                 .displacementScale = ocean->displacementScale,
                 .choppyScale = ocean->choppynessScale,
                 .tiling = ocean->tiling,
-                .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
+                .hasRippleTexture = ocean->rippleTexture.IsLoaded() ? 1 : 0,
 
                 .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
                 .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,

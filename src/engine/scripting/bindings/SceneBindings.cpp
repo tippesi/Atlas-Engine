@@ -539,7 +539,6 @@ namespace Atlas::Scripting::Bindings {
             "shoreWaveAmplitude", &Ocean::Ocean::shoreWaveAmplitude,
             "shoreWaveSpeed", &Ocean::Ocean::shoreWaveSpeed,
             "waterBodyColor", &Ocean::Ocean::waterBodyColor,
-            "deepWaterBodyColor", &Ocean::Ocean::deepWaterBodyColor,
             "enable", &Ocean::Ocean::enable
         );
 

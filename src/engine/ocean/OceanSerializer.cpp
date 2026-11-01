@@ -1,5 +1,7 @@
 #include "OceanSerializer.h"
 
+#include "resource/ResourceManager.h"
+
 namespace Atlas::Ocean {
 
     void to_json(json& j, const Ocean& p) {
@@ -11,7 +13,6 @@ namespace Atlas::Ocean {
             {"enable", p.enable},
             {"underwaterShader", p.underwaterShader},
             {"waterBodyColor", p.waterBodyColor},
-            {"deepWaterBodyColor", p.deepWaterBodyColor},
             {"scatterColor", p.scatterColor},
             {"waterColorIntensity", p.waterColorIntensity},
             {"displacementScale", p.displacementScale},
@@ -40,6 +41,11 @@ namespace Atlas::Ocean {
             {"fftNormals", p.simulation.fftNormals},
             {"physics", p.physics}
         };
+
+        if (p.rippleTexture.IsValid() && !p.rippleTexture.IsGenerated())
+            j["rippleTexture"] = p.rippleTexture.GetResource()->path;
+        if (p.foamTexture.IsValid() && !p.foamTexture.IsGenerated())
+            j["foamTexture"] = p.foamTexture.GetResource()->path;
     }
 
     void from_json(const json& j, Ocean& p) {
@@ -56,7 +62,6 @@ namespace Atlas::Ocean {
         try_get_json(j, "enable", p.enable);
         try_get_json(j, "underwaterShader", p.underwaterShader);
         try_get_json(j, "waterBodyColor", p.waterBodyColor);
-        try_get_json(j, "deepWaterBodyColor", p.deepWaterBodyColor);
         try_get_json(j, "scatterColor", p.scatterColor);
         try_get_json(j, "waterColorIntensity", p.waterColorIntensity);
         try_get_json(j, "displacementScale", p.displacementScale);
@@ -84,6 +89,14 @@ namespace Atlas::Ocean {
         try_get_json(j, "update", p.simulation.update);
         try_get_json(j, "fftNormals", p.simulation.fftNormals);
         try_get_json(j, "physics", p.physics);
+
+        // Normals and foam are data, not colors
+        auto loadTexture = [&](const char* key) {
+            return j.contains(key) ? ResourceManager<Texture::Texture2D>::GetOrLoadResource(j[key], false,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0) : ResourceHandle<Texture::Texture2D>();
+        };
+        p.rippleTexture = loadTexture("rippleTexture");
+        p.foamTexture = loadTexture("foamTexture");
 
         p.simulation.UpdateSpectrum();
     }

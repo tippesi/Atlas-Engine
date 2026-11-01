@@ -8,6 +8,10 @@
 layout(location=0) in vec3 vPosition;
 
 layout(location=0) out vec3 fOriginalCoord;
+layout(location=1) out float shoreScaling;
+#ifdef TERRAIN
+layout(location=2) out vec3 normalShoreWave;
+#endif
 
 vec3 stitch(vec3 position) {
     
@@ -47,8 +51,10 @@ void main() {
     fOriginalCoord = fPosition;
     float distanceToCamera = distance(fPosition.xyz, globalData.cameraLocation.xyz);
 
-    float perlinScale, shoreScaling;
+#ifndef TERRAIN
     vec3 normalShoreWave;
+#endif
+    float perlinScale;
     fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     
     vec3 position = vec3(globalData.vMatrix * vec4(fPosition, 1.0));

@@ -4,7 +4,7 @@
 
 namespace Atlas::ImguiExtension {
 
-    void OceanPanel::Render(Ref<Ocean::Ocean>& ocean) {
+    void OceanPanel::Render(Ref<Ocean::Ocean>& ocean, TextureSelector textureSelector) {
 
         ImGui::PushID(GetNameID());
 
@@ -28,10 +28,8 @@ namespace Atlas::ImguiExtension {
             N = 128 << resolutionIdx;
             recreate = true;
         }
-        ImGui::DragFloat("Size", &size, 16.0f, 64.0f, 65536.0f, "%.0f m");
-        recreate |= ImGui::IsItemDeactivatedAfterEdit();
-        ImGui::DragInt("LoD count", &LoDCount, 0.1f, 1, 12);
-        recreate |= ImGui::IsItemDeactivatedAfterEdit();
+        recreate |= ImGui::DragFloat("Size", &size, 16.0f, 64.0f, 65536.0f, "%.0f m");
+        recreate |= ImGui::DragInt("LoD count", &LoDCount, 0.1f, 1, 12);
 
         if (recreate) {
             json j = *ocean;
@@ -69,14 +67,25 @@ namespace Atlas::ImguiExtension {
         ImGui::DragFloat4("Fadeout distances", glm::value_ptr(simulation.spectrumFadeoutDistances),
             10.0f, 0.0f, 100000.0f, "%.0f");
 
+        if (textureSelector.has_value()) {
+            ImGui::SeparatorText("Ripple normal map");
+            ImGui::PushID("Ripple");
+            ocean->rippleTexture = textureSelector.value()(ocean->rippleTexture);
+            ImGui::PopID();
+        }
+
         ImGui::SeparatorText("Foam");
+        if (textureSelector.has_value()) {
+            ImGui::PushID("Foam");
+            ocean->foamTexture = textureSelector.value()(ocean->foamTexture);
+            ImGui::PopID();
+        }
         ImGui::DragFloat("Foam offset", &simulation.foamOffset, 0.01f, -1.0f, 1.0f);
         ImGui::DragFloat("Foam scale", &simulation.foamScale, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Foam size", &simulation.foamSize, 0.01f, 0.0f, 20.0f);
 
         ImGui::SeparatorText("Water color");
         ImGui::ColorEdit3("Water body color", glm::value_ptr(ocean->waterBodyColor));
-        ImGui::ColorEdit3("Deep water body color", glm::value_ptr(ocean->deepWaterBodyColor));
         ImGui::ColorEdit3("Scatter color", glm::value_ptr(ocean->scatterColor));
         ImGui::DragFloat2("Water color intensity", glm::value_ptr(ocean->waterColorIntensity), 0.01f, 0.0f, 10.0f);
 
