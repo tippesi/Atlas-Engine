@@ -15,24 +15,23 @@ namespace Atlas::ImguiExtension {
             // If this will not be loaded it will return 0, so we can still use it
             ImGui::PushID(texture.GetID());
             
-            if (texture.IsLoaded()) {
+            // The selector shows its own preview
+            if (textureSelector.has_value()) {
+                texture = textureSelector.value()(texture);
+                element();
+            }
+            else if (texture.IsLoaded()) {
                 UIElements::TexturePreview(wrapper, &texture);
                 ImGui::SameLine();
                 // Calculate next item width and push a width with the image elements width substracted from it
                 auto width = ImGui::CalcItemWidth();
                 ImGui::PushItemWidth(width - padding - ImGui::GetTextLineHeightWithSpacing());
-                if (textureSelector.has_value()) {
-                    texture = textureSelector.value()(texture);
-                    ImGui::PopItemWidth();
-                }                
+                element();
+                ImGui::PopItemWidth();
             }
             else {
-                if (textureSelector.has_value())
-                    texture = textureSelector.value()(texture);
+                element();
             }
-            element();
-            if (texture.IsLoaded() && !textureSelector.has_value())
-                ImGui::PopItemWidth();
             ImGui::PopID();
         };
         

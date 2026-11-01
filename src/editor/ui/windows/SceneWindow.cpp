@@ -405,7 +405,7 @@ namespace Atlas::Editor::UI {
 
                 ImGui::SeparatorText("Movement");
 
-                ImGui::DragFloat("Movement speed", &cameraMovementSpeed, 0.1f, 0.1f, 100.0f);
+                ImGui::DragFloat("Movement speed", &cameraMovementSpeed, 0.1f, 0.1f, 500.0f);
                 ImGui::SetItemTooltip("The mouse wheel over the viewport changes the speed as well");
                 ImGui::DragFloat("Rotation speed", &cameraRotationSpeed, 0.1f, 0.1f, 10.0f);
 
@@ -499,7 +499,7 @@ namespace Atlas::Editor::UI {
             // Mouse wheel over the viewport changes the camera speed
             const auto& wheelIO = ImGui::GetIO();
             if (!isPlaying && ImGui::IsWindowHovered() && wheelIO.MouseWheel != 0.0f && !wheelIO.KeyCtrl) {
-                cameraMovementSpeed = std::clamp(cameraMovementSpeed * std::pow(1.25f, wheelIO.MouseWheel), 0.1f, 100.0f);
+                cameraMovementSpeed = std::clamp(cameraMovementSpeed * std::pow(1.25f, wheelIO.MouseWheel), 0.1f, 500.0f);
                 cameraSpeedChangeTime = Clock::Get();
             }
 

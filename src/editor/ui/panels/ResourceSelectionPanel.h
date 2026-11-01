@@ -8,6 +8,9 @@
 #include "tools/ResourcePayloadHelper.h"
 #include "ui/windows/ContentBrowserWindow.h"
 
+#include <ImguiExtension/UiElements.h>
+#include <type_traits>
+
 namespace Atlas::Editor::UI {
 
 	template<class T>
@@ -26,6 +29,13 @@ namespace Atlas::Editor::UI {
 		ResourceHandle<T> Render(ResourceHandle<T> resourceHandle, bool& resourceChanged) {
 
             const float padding = 8.0f;
+
+            if constexpr (std::is_same_v<T, Texture::Texture2D>) {
+                if (resourceHandle.IsLoaded()) {
+                    ImguiExtension::UIElements::TexturePreview(Singletons::imguiWrapper, &resourceHandle);
+                    ImGui::SameLine();
+                }
+            }
 
             auto region = ImGui::GetContentRegionAvail();
             auto lineHeight = ImGui::GetTextLineHeight();
