@@ -16,6 +16,7 @@ namespace Atlas::Editor::UI {
         bool sss = false;
         bool irradianceVolume = false;
         bool ocean = false;
+        bool navigation = false;
         bool wind = false;
         bool sky = false;
         bool postProcessing = false;

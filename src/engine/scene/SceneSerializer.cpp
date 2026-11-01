@@ -5,6 +5,7 @@
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
 #include "ocean/OceanSerializer.h"
+#include "navigation/NavigationSerializer.h"
 
 #include "loader/TerrainLoader.h"
 
@@ -272,6 +273,8 @@ namespace Atlas::Scene {
             j["ssgi"] = *scene->ssgi;
         if (scene->ocean)
             j["ocean"] = *scene->ocean;
+        if (scene->navigation)
+            j["navigation"] = *scene->navigation;
 
     }
 
@@ -311,6 +314,7 @@ namespace Atlas::Scene {
         readFeature("sss", scene->sss);
         readFeature("ssgi", scene->ssgi);
         readFeature("ocean", scene->ocean);
+        readFeature("navigation", scene->navigation);
 
     }
 

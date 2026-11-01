@@ -50,6 +50,9 @@ namespace Atlas::Editor::UI {
 
         void ApplyBrush();
 
+        // Draws the navigation mesh and the test path, right clicks set the points of the path
+        void ApplyNavigationTools();
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel scenePropertiesPanel;
@@ -99,6 +102,7 @@ namespace Atlas::Editor::UI {
         std::vector<uint8_t> cameraState;
 
         float terrainFlattenHeight = Terrain::Terrain::invalidHeight;
+        bool terrainHeightsEdited = false;
 
     };
 

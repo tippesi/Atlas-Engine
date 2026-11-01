@@ -52,7 +52,7 @@ if(WIN32)
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
             unofficial::spirv-reflect glslang::SPIRV Jolt::Jolt
-            ${LUA_LIBRARIES} KTX::ktx fsr2)
+            ${LUA_LIBRARIES} KTX::ktx fsr2 RecastNavigation::Recast RecastNavigation::Detour)
 endif()
 
 if (MINGW)
@@ -67,14 +67,14 @@ if(APPLE)
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
             volk::volk SPIRV-Tools-opt Jolt::Jolt fsr2
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
-            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx)
+            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx RecastNavigation::Recast RecastNavigation::Detour)
 endif()
 
 if(ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
-            ${LUA_LIBRARIES} KTX::ktx fsr2)
+            ${LUA_LIBRARIES} KTX::ktx fsr2 RecastNavigation::Recast RecastNavigation::Detour)
     set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
@@ -86,7 +86,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 fsr2
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Jolt::Jolt
-            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx)
+            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx RecastNavigation::Recast RecastNavigation::Detour)
 
     if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14.0)
         message("USe gcc14!")

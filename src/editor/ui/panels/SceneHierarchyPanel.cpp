@@ -491,6 +491,7 @@ namespace Atlas::Editor::UI {
 
         RenderExtendedItem("Terrain", &selectedProperty.terrain, selectionChanged);
         RenderExtendedItem("Ocean", &selectedProperty.ocean, selectionChanged);
+        RenderExtendedItem("Navigation", &selectedProperty.navigation, selectionChanged);
         if (scene->irradianceVolume)
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
         if (scene->rtgi)

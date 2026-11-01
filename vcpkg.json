@@ -41,7 +41,8 @@
     "implot",
     "lua",
     "sol2",
-    "ktx"
+    "ktx",
+    "recastnavigation"
   ],
   "overrides": [
     {
@@ -115,6 +116,10 @@
     {
       "name": "ktx",
       "version": "4.4.2#0"
+    },
+    {
+      "name": "recastnavigation",
+      "version": "1.6.0#1"
     }
   ]
 }

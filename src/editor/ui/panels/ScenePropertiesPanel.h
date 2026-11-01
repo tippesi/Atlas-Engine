@@ -8,6 +8,7 @@
 #include "SceneStatisticsPanel.h"
 #include "ResourceSelectionPanel.h"
 #include "TerrainPanel.h"
+#include "NavigationPanel.h"
 #include "ImguiExtension/Panels.h"
 
 #include <type_traits>
@@ -79,6 +80,10 @@ namespace Atlas::Editor::UI {
                     t = CreateRef<Ocean::Ocean>(9, 4096.0f);
                 }
             }
+            else if constexpr (std::is_same_v<T, Ref<Navigation::Navigation>>) {
+                RenderHeading("Navigation");
+                navigationPanel.Render(t);
+            }
             else if constexpr (std::is_same_v<T, Scene::Wind>) {
                 RenderHeading("Wind");
                 windPanel.Render(Singletons::imguiWrapper, t);
@@ -116,6 +121,7 @@ namespace Atlas::Editor::UI {
         ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
 
         TerrainPanel terrainPanel;
+        NavigationPanel navigationPanel;
         ImguiExtension::FogPanel fogPanel;
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
         ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;

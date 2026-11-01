@@ -307,6 +307,7 @@ namespace Atlas::Scripting::Bindings {
             "sky", &Scene::Scene::sky,
             "fog", &Scene::Scene::fog,
             "ocean", &Scene::Scene::ocean,
+            "navigation", &Scene::Scene::navigation,
             "irradianceVolume", &Scene::Scene::irradianceVolume,
             "reflection", &Scene::Scene::reflection,
             "sss", &Scene::Scene::sss,

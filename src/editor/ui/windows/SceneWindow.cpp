@@ -53,6 +53,7 @@ namespace Atlas::Editor::UI {
             camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
 
             ApplyBrush();
+            ApplyNavigationTools();
         }
 
         bool controlDown;        
@@ -149,6 +150,8 @@ namespace Atlas::Editor::UI {
                 scenePropertiesPanel.Render(scene->terrain, refScene, target);
             else if (sceneHierarchyPanel.selectedProperty.ocean)
                 scenePropertiesPanel.Render(scene->ocean);
+            else if (sceneHierarchyPanel.selectedProperty.navigation)
+                scenePropertiesPanel.Render(scene->navigation);
             else if (sceneHierarchyPanel.selectedProperty.fog)
                 scenePropertiesPanel.Render(scene->fog, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
@@ -1011,6 +1014,14 @@ namespace Atlas::Editor::UI {
         auto& terrainPanel = scenePropertiesPanel.terrainPanel;
 
         brushActive = terrainPanel.editingMode;
+
+        // Rebuilding the height field is expensive, it's done once a stroke ends
+        bool mousePressed = ImGui::GetIO().MouseDown[ImGuiMouseButton_Right];
+        if (terrainHeightsEdited && (!mousePressed || !brushActive)) {
+            terrainPanel.RebuildTerrainBody(scene.Get());
+            terrainHeightsEdited = false;
+        }
+
         if (!brushActive || !cameraEntity.IsValid())
             return;
 
@@ -1027,7 +1038,6 @@ namespace Atlas::Editor::UI {
 
         auto result = scene->CastRay(ray, componentBits);
 
-        bool mousePressed = ImGui::GetIO().MouseDown[ImGuiMouseButton_Right];
         bool brushTerrain = mousePressed && result.valid && terrainPanel.editingMode;
 
         if (!mousePressed)
@@ -1075,6 +1085,7 @@ namespace Atlas::Editor::UI {
                     Tools::TerrainTool::FlattenHeight(scene->terrain.Get(), brushSize,
                         brushStrength, vec2(intersection.x, intersection.z), terrainFlattenHeight);
                 }
+                terrainHeightsEdited = true;
 
             }
             else if (terrainPanel.brushType == TerrainPanel::TerrainBrushType::Material) {
@@ -1087,10 +1098,78 @@ namespace Atlas::Editor::UI {
                 brushSize = 2 * brushSize + 1;
                 Atlas::Tools::TerrainTool::BrushHole(scene->terrain.Get(),
                     vec2(intersection.x, intersection.z), brushSize);
+                terrainHeightsEdited = true;
             }
 
             
         }
+
+    }
+
+    void SceneWindow::ApplyNavigationTools() {
+
+        auto& navigationPanel = scenePropertiesPanel.navigationPanel;
+        const auto& navigation = scene->navigation;
+        if (!navigation || !navigation->mesh || !cameraEntity.IsValid())
+            return;
+
+        const auto& mesh = navigation->mesh;
+        const auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        const auto& batch = viewportPanel.primitiveBatchWrapper.GetBatch(true);
+        // Lifted a little, the ground would hide the lines in the depth test
+        const auto lift = vec3(0.0f, 0.05f, 0.0f);
+
+        if (navigationPanel.showMesh) {
+            // All built tiles, collected again when the mesh changes
+            if (navigationPanel.meshEdgesMesh != mesh.get() || navigationPanel.meshEdgesRevision != mesh->GetRevision()) {
+                navigationPanel.meshEdges = mesh->GetPolygonEdges(Volume::AABB(vec3(-1e30f), vec3(1e30f)));
+                navigationPanel.meshEdgesMesh = mesh.get();
+                navigationPanel.meshEdgesRevision = mesh->GetRevision();
+            }
+
+            const auto& edges = navigationPanel.meshEdges;
+            for (size_t i = 0; i + 1 < edges.size(); i += 2)
+                batch->AddLine(edges[i] + lift, edges[i + 1] + lift, vec3(0.0f, 0.6f, 1.0f), vec3(0.0f, 0.6f, 1.0f));
+        }
+
+        if (!navigationPanel.pathTest || !sceneHierarchyPanel.selectedProperty.navigation)
+            return;
+
+        // Right clicks set the points instead of selecting entities
+        brushActive = true;
+
+        const auto& viewport = viewportPanel.viewport;
+        auto mousePos = ImGui::GetMousePos();
+        bool inViewport = mousePos.x > float(viewport->x) && mousePos.y > float(viewport->y) &&
+            mousePos.x < float(viewport->x + viewport->width) && mousePos.y < float(viewport->y + viewport->height);
+
+        if (inViewport && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            Volume::Ray ray(viewport, camera, vec2(mousePos.x, mousePos.y));
+            auto result = scene->CastRay(ray);
+            if (result.valid) {
+                auto point = ray.Get(result.hitDistance);
+                if (!navigationPanel.pathStart || navigationPanel.pathGoal) {
+                    navigationPanel.pathStart = point;
+                    navigationPanel.pathGoal.reset();
+                }
+                else {
+                    navigationPanel.pathGoal = point;
+                }
+            }
+        }
+
+        // The tiles change while they are built, the path is searched again every frame
+        navigationPanel.path.clear();
+        if (navigationPanel.pathStart && navigationPanel.pathGoal)
+            navigationPanel.path = mesh->FindPath(*navigationPanel.pathStart, *navigationPanel.pathGoal);
+
+        if (navigationPanel.pathStart)
+            batch->AddLineCross(*navigationPanel.pathStart, 0.5f, vec3(0.0f, 1.0f, 0.0f));
+        if (navigationPanel.pathGoal)
+            batch->AddLineCross(*navigationPanel.pathGoal, 0.5f, vec3(1.0f, 0.0f, 0.0f));
+        for (size_t i = 1; i < navigationPanel.path.size(); i++)
+            batch->AddLine(navigationPanel.path[i - 1] + 2.0f * lift, navigationPanel.path[i] + 2.0f * lift,
+                vec3(1.0f, 0.9f, 0.1f), vec3(1.0f, 0.9f, 0.1f));
 
     }
 

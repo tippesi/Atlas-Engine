@@ -622,6 +622,10 @@ namespace Atlas {
                 }
                 });
 
+            // Static bodies are in their place by now, the mesh follows their changes
+            if (navigation && navigation->enable && HasMainCamera())
+                navigation->Update(this, mainCameraEntity.GetComponent<CameraComponent>().GetLocation());
+
             // Do the space partitioning update here (ofc also update AABBs)
             for (auto entity : changedMeshSet) {
                 auto& meshComponent = meshComponentPool.Get(entity);

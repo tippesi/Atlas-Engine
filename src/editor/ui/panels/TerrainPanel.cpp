@@ -258,7 +258,14 @@ namespace Atlas::Editor::UI {
 
         terrain.WaitForLoad();
 
-        auto heightImage = scene->terrain->GetHeightField(terrain->LoDCount - 1);
+        RebuildTerrainBody(scene);
+
+    }
+
+    void TerrainPanel::RebuildTerrainBody(Ref<Scene::Scene>& scene) {
+
+        auto& terrain = scene->terrain;
+        auto heightImage = terrain->GetHeightField(terrain->LoDCount - 1);
 
         Atlas::Physics::HeightFieldShapeSettings terrainShapeSettings{
             .heightData = heightImage.GetData(),

@@ -5,6 +5,7 @@
 #include "../resource/ResourceManager.h"
 
 #include "../ocean/Ocean.h"
+#include "../navigation/Navigation.h"
 #include "../terrain/Terrain.h"
 #include "../physics/PhysicsWorld.h"
 #include "../lighting/Sky.h"
@@ -219,6 +220,7 @@ namespace Atlas {
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
 
             Ref<Ocean::Ocean> ocean = nullptr;
+            Ref<Navigation::Navigation> navigation = nullptr;
             ResourceHandle<Terrain::Terrain> terrain;       
 
             Wind wind;
