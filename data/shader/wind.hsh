@@ -16,6 +16,8 @@ vec3 WindAnimation(sampler2D noiseTexture, vec3 position, vec2 windDir,
     vec3 originalPos = position;
 
     float windSpeed = globalData.windSpeed;
+    // Above a breeze the bending grows linearly with the speed, so strong wind and storms visibly bend vegetation
+    float windAmplitude = max(sqrt(windSpeed), windSpeed * 0.5);
 
     float centerDistance = length(position.xz);
     float height = max(0.0, position.y * bendFactor * 0.5);
@@ -28,10 +30,10 @@ vec3 WindAnimation(sampler2D noiseTexture, vec3 position, vec2 windDir,
     mainBending *= mainBending;
     mainBending = mainBending * mainBending - mainBending;
 
-    position.xz += windDir * mainBending * sqrt(windSpeed);
+    position.xz += windDir * mainBending * windAmplitude;
     position.xyz = normalize(position - vec3(originalPos.x, 0.0, originalPos.z)) * abs(originalPos.y) + vec3(originalPos.x, 0.0, originalPos.z);
 
-    float branchAmp = .25 * sqrt(windSpeed);
+    float branchAmp = .25 * windAmplitude;
     float detailAmp = 0.02;
     float edgeAtten = 0.5;
     float speed = 0.2;
