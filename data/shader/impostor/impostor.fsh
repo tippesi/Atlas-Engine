@@ -29,7 +29,7 @@ layout(location=4) flat in int indexVS;
 
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=10) in vec3 modelPositionVS;
-layout(location=11) flat in vec3 instanceScale;
+layout(location=11) in float depthScale;
 #endif
 layout(location=12) flat in mat3 rotationMatrix;
 
@@ -135,7 +135,7 @@ void main() {
         baseColor.a);
 #endif
     vec3 toCamera = normalize(globalData.cameraLocation.xyz - modelPositionVS);
-    vec3 modelPosition = modelPositionVS + depthOffset * toCamera * instanceScale;
+    vec3 modelPosition = modelPositionVS + depthOffset * toCamera * depthScale;
     vec4 modelPositionFS = globalData.pMatrix * globalData.vMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;

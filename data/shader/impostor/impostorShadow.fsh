@@ -15,7 +15,7 @@ layout(location=1) flat in int indexVS;
 #endif
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=7) in vec3 modelPositionVS;
-layout(location=8) flat in vec3 instanceScale;
+layout(location=8) in float depthScale;
 #endif
 
 layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
@@ -77,7 +77,7 @@ void main() {
 #endif
     // Towards a point light or along the directional light (its location lies far away against the direction)
     vec3 toLight = normalize(pushConstants.lightLocation.xyz - modelPositionVS);
-    vec3 modelPosition = modelPositionVS + depthOffset * toLight * instanceScale;
+    vec3 modelPosition = modelPositionVS + depthOffset * toLight * depthScale;
     vec4 modelPositionFS = pushConstants.lightSpaceMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;

@@ -18,7 +18,7 @@ layout(location=1) flat out int indexVS;
 #endif
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=7) out vec3 modelPositionVS;
-layout(location=8) flat out vec3 instanceScale;
+layout(location=8) out float depthScale;
 #endif
 
 struct ViewPlane {
@@ -82,10 +82,9 @@ void main() {
 
     texCoordVS = 0.5 * vPosition + 0.5;
 	
-	vec3 translation = vec3(mMatrix[3]);
-
-	vec3 pos = translation + uniforms.center.xyz;
-	vec3 dir = normalize(vec3(inverse(mMatrix) * vec4(pushConstants.lightLocation.xyz - pos, 0.0)));
+	mat4 inverseMatrix = inverse(mMatrix);
+	vec3 pos = vec3(mMatrix * vec4(uniforms.center.xyz, 1.0));
+	vec3 dir = normalize(vec3(inverseMatrix * vec4(pushConstants.lightLocation.xyz - pos, 0.0)));
     float frames = float(uniforms.views);
 
 	vec2 octahedron = UnitVectorToHemiOctahedron(normalize(dir));
@@ -143,12 +142,9 @@ void main() {
         + normalize(right.xyz) * position.x) + uniforms.center.xyz, 1.0);
 
 #ifdef PIXEL_DEPTH_OFFSET
-	instanceScale = vec3(
-		length(mMatrix[0]),
-		length(mMatrix[1]),
-		length(mMatrix[2])
-	);
 	modelPositionVS = vec3(modelPosition);
+	// The depth is baked along the view direction in model space, this is its length in world space
+	depthScale = 1.0 / length(mat3(inverseMatrix) * normalize(pushConstants.lightLocation.xyz - modelPositionVS));
 #endif
 
     gl_Position =  pushConstants.lightSpaceMatrix * modelPosition;

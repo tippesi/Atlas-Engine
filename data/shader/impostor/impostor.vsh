@@ -41,7 +41,7 @@ layout(location=4) flat out int indexVS;
 
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=10) out vec3 modelPositionVS;
-layout(location=11) flat out vec3 instanceScale;
+layout(location=11) out float depthScale;
 #endif
 layout(location=12) flat out mat3 rotationMatrix;
 
@@ -86,10 +86,9 @@ void main() {
 #endif
     texCoordVS = 0.5 * vPosition + 0.5;
 
-	vec3 translation = vec3(mMatrix[3]);
-	
-	vec3 pos = translation + uniforms.center.xyz;
-	vec3 dir = normalize(vec3(inverse(mMatrix) * vec4(globalData.cameraLocation.xyz - pos, 0.0)));
+	mat4 inverseMatrix = inverse(mMatrix);
+	vec3 pos = vec3(mMatrix * vec4(uniforms.center.xyz, 1.0));
+	vec3 dir = normalize(vec3(inverseMatrix * vec4(globalData.cameraLocation.xyz - pos, 0.0)));
 
     float frames = float(uniforms.views);
 
@@ -158,11 +157,8 @@ void main() {
 	rotationMatrix = mat3(mMatrix);
 #ifdef PIXEL_DEPTH_OFFSET
 	modelPositionVS = vec3(modelPosition);
-	instanceScale = vec3(
-		length(mMatrix[0]),
-		length(mMatrix[1]),
-		length(mMatrix[2])
-	);
+	// The depth is baked along the view direction in model space, this is its length in world space
+	depthScale = 1.0 / length(mat3(inverseMatrix) * normalize(globalData.cameraLocation.xyz - modelPositionVS));
 #endif
 
     gl_Position =  globalData.pMatrix * vec4(positionVS, 1.0);
