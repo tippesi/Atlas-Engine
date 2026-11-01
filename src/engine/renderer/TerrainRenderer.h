@@ -32,7 +32,11 @@ namespace Atlas {
                 float normalScale;
                 float tiling;
 
-                float padding1;
+                uint32_t baseColorTextureIdx;
+                uint32_t roughnessTextureIdx;
+                uint32_t aoTextureIdx;
+                uint32_t normalTextureIdx;
+                uint32_t displacementTextureIdx;
             };
 
             struct alignas(16) Uniforms {

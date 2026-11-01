@@ -194,8 +194,6 @@ namespace Atlas {
 
             auto terrainDir = Common::Path::GetDirectory(filename);
 
-            terrain->storage->BeginMaterialWrite();
-
             for (int32_t i = 0; i < materialCount; i++) {
                 std::getline(fileStream, line);
 
@@ -212,8 +210,6 @@ namespace Atlas {
                 if (material.IsLoaded())
                     terrain->storage->WriteMaterial(slot, material);
             }
-
-            terrain->storage->EndMaterialWrite();
 
             fileStream.close();
 

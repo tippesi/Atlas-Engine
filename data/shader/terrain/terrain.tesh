@@ -10,7 +10,6 @@ layout(quads, equal_spacing, cw) in;
 
 layout (set = 3, binding = 1) uniform sampler2D normalMap;
 layout (set = 3, binding = 2) uniform usampler2D splatMap;
-layout (set = 3, binding = 7) uniform sampler2DArray displacementMaps;
 layout (set = 3, binding = 10) uniform sampler2D noiseMap;
 
 layout (set = 3, binding = 8, std140) uniform UBO {
@@ -49,6 +48,12 @@ layout(location=1) out vec2 texCoords;
 layout(location=2) out vec3 ndcCurrent;
 layout(location=3) out vec3 ndcLast;
 
+float SampleDisplacementTexture(uint textureIdx, vec2 coords) {
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), coords, 0.0).r;
+
+}
+
 float SampleDisplacement(vec2 off, vec2 coords, uvec4 indices) {
 
     vec2 position = materialTexCoords + PushConstants.nodeLocation;
@@ -63,12 +68,12 @@ float SampleDisplacement(vec2 off, vec2 coords, uvec4 indices) {
     if (indices.x == indices.y && 
         indices.x == indices.z &&
         indices.x == indices.w)
-        return texture(displacementMaps, vec3(rotTexCoords, float(indices.x))).r;
+        return SampleDisplacementTexture(Materials.materials[indices.x].displacementTextureIdx, rotTexCoords);
     
-    float q00 = texture(displacementMaps, vec3(rotTexCoords, float(indices.x))).r;
-    float q10 = texture(displacementMaps, vec3(rotTexCoords, float(indices.y))).r;
-    float q01 = texture(displacementMaps, vec3(rotTexCoords, float(indices.z))).r;
-    float q11 = texture(displacementMaps, vec3(rotTexCoords, float(indices.w))).r;
+    float q00 = SampleDisplacementTexture(Materials.materials[indices.x].displacementTextureIdx, rotTexCoords);
+    float q10 = SampleDisplacementTexture(Materials.materials[indices.y].displacementTextureIdx, rotTexCoords);
+    float q01 = SampleDisplacementTexture(Materials.materials[indices.z].displacementTextureIdx, rotTexCoords);
+    float q11 = SampleDisplacementTexture(Materials.materials[indices.w].displacementTextureIdx, rotTexCoords);
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -138,7 +143,8 @@ void main(){
             Materials.materials[indices.w].displacementScale,
             off
         );
-        float displacement = SampleDisplacement(off, materialTexCoords, indices)
+        // Around the surface instead of above it, so objects placed on the physical ground don't look sunk in
+        float displacement = (SampleDisplacement(off, materialTexCoords, indices) - 0.5)
             * displacementScale * weight;
         
         position.xyz += norm * displacement;

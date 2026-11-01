@@ -27,9 +27,7 @@ namespace Atlas::Tools {
 
         auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
-        terrain->storage->BeginMaterialWrite();
         terrain->storage->WriteMaterial(0, material);
-        terrain->storage->EndMaterialWrite();
 
         // Calculate the number of vertices per tile and resize the height data to map 1:1
         int32_t tileResolution = 8 * patchSize;
@@ -131,11 +129,9 @@ namespace Atlas::Tools {
         auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
         int32_t count = 0;
-        terrain->storage->BeginMaterialWrite();
         for (auto& material : materials) {
             terrain->storage->WriteMaterial(count++, material);
         }
-        terrain->storage->EndMaterialWrite();
 
         // Calculate the number of vertices per tile and resize the height data to map 1:1
         int32_t tileResolution = 8 * patchSize;
@@ -250,11 +246,9 @@ namespace Atlas::Tools {
         int32_t maxNodesPerSide = (int32_t)powf(2.0f, float(terrain->LoDCount) - 1.0f) * terrain->rootNodeSideCount;
 
         int32_t count = 0;
-        terrain->storage->BeginMaterialWrite();
         for (auto& material : materials) {
             terrain->storage->WriteMaterial(count++, material);
         }
-        terrain->storage->EndMaterialWrite();
 
         // Calculate the number of vertices per tile and resize the height data to map 1:1
         int32_t tileResolution = 8 * terrain->patchSizeFactor;

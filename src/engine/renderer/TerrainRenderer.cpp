@@ -13,7 +13,7 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
-            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 128, 1);
+            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * Terrain::TerrainStorage::maxMaterialCount, 1);
 
             Common::Image<float> noiseImage(512, 512, 1);
             std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
@@ -70,13 +70,18 @@ namespace Atlas {
                 }
             }
 
+            auto sceneState = &scene->renderState;
             auto materials = terrain->storage->GetMaterials();
 
-            std::vector<TerrainMaterial> terrainMaterials(128);
+            std::vector<TerrainMaterial> terrainMaterials(Terrain::TerrainStorage::maxMaterialCount);
 
             for (size_t i = 0; i < materials.size(); i++) {
                 if (materials[i].IsLoaded()) {
-                    terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].Get().get()];
+                    auto materialIdx = uint32_t(materialMap[materials[i].Get().get()]);
+                    auto textureIndices = materialIdx < sceneState->materialTextureIndices.size() ?
+                        sceneState->materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
+
+                    terrainMaterials[i].idx = materialIdx;
                     terrainMaterials[i].baseColor = vec4(materials[i]->baseColor, 1.0);
                     terrainMaterials[i].roughness = materials[i]->roughness;
                     terrainMaterials[i].metalness = materials[i]->metalness;
@@ -84,16 +89,15 @@ namespace Atlas {
                     terrainMaterials[i].displacementScale = materials[i]->displacementScale;
                     terrainMaterials[i].normalScale = materials[i]->normalScale;
                     terrainMaterials[i].tiling = materials[i]->tiling;
+                    terrainMaterials[i].baseColorTextureIdx = textureIndices.baseColor;
+                    terrainMaterials[i].roughnessTextureIdx = textureIndices.roughness;
+                    terrainMaterials[i].aoTextureIdx = textureIndices.ao;
+                    terrainMaterials[i].normalTextureIdx = textureIndices.normal;
+                    terrainMaterials[i].displacementTextureIdx = textureIndices.height;
                 }
             }
 
             terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, 1);
-
-            terrain->storage->baseColorMaps.Bind(commandList, 3, 3);
-            terrain->storage->roughnessMaps.Bind(commandList, 3, 4);
-            terrain->storage->aoMaps.Bind(commandList, 3, 5);
-            terrain->storage->normalMaps.Bind(commandList, 3, 6);
-            terrain->storage->displacementMaps.Bind(commandList, 3, 7);
 
             Uniforms uniforms = {
                 .translation = vec4(terrain->translation, 1.0f),

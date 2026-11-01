@@ -31,7 +31,7 @@ namespace Atlas {
                          patchSizeFactor * 8.0f;
             float ratio = sideLength / (float)rootNodeSideCount;
 
-            storage = CreateRef<TerrainStorage>(rootNodeCount, LoDCount, sideLength, 1024, materialCount);
+            storage = CreateRef<TerrainStorage>(rootNodeCount, LoDCount, sideLength, materialCount);
             LoDDistances = std::vector<float>(LoDCount);
             LoDImage = Common::Image<uint8_t>(leafNodesSideCount, leafNodesSideCount, 1);
 
