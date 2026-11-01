@@ -28,12 +28,14 @@ namespace Atlas {
         public:
             virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override {
                 switch (inObject1) {
+                    // Static and kinematic pairs only make contacts when a kinematic body asks for them
+                    // (BodyCreationSettings::kinematicContacts), Jolt skips the others
                     case Layers::Static:
-                        return inObject2 == Layers::Movable; // Non moving only collides with moving
+                        return inObject2 != Layers::Static;
                     case Layers::Movable:
                         return true; // Moving collides with everything
                     case Layers::Kinematic:
-                        return inObject2 == Layers::Movable; // Kinematic bodies are only interesting for simulated bodies
+                        return true;
                     default:
                         JPH_ASSERT(false);
                         return false;
@@ -98,7 +100,7 @@ namespace Atlas {
                     case Layers::Movable:
                         return true;
                     case Layers::Kinematic:
-                        return inLayer2 == BroadPhaseLayers::Movable;
+                        return true;
                     default:
                         JPH_ASSERT(false);
                         return false;

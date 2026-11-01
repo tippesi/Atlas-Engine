@@ -44,6 +44,13 @@ namespace Atlas::Physics {
         float fluidLinearDrag = 0.5f;
         float fluidAngularDrag = 0.01f;
 
+        // Movable bodies placed at rest start asleep until something touches them
+        bool startAsleep = false;
+
+        // A kinematic body reports contacts with static and kinematic bodies and is seen by triggers, e.g. a boat
+        // steered by a script against the rocks. Others only meet movable bodies
+        bool kinematicContacts = false;
+
         Ref<Shape> shape = nullptr;
     };
 

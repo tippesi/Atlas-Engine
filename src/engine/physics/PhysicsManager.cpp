@@ -12,7 +12,7 @@ namespace Atlas {
         using namespace JPH;
 
         Ref<TempAllocatorImpl> PhysicsManager::tempAllocator = nullptr;
-        Ref<JobSystemThreadPool> PhysicsManager::jobSystemThreadPool = nullptr;
+        Ref<JoltJobSystem> PhysicsManager::jobSystem = nullptr;
 
         std::mutex PhysicsManager::updateMutex;
 
@@ -29,8 +29,7 @@ namespace Atlas {
             RegisterTypes();
 
             tempAllocator = Atlas::CreateRef<TempAllocatorImpl>(100 * 1024 * 1024);
-            jobSystemThreadPool = Atlas::CreateRef<JobSystemThreadPool>(cMaxPhysicsJobs,
-                cMaxPhysicsBarriers, std::min(thread::hardware_concurrency() - 1u, 12u));
+            jobSystem = Atlas::CreateRef<JoltJobSystem>(cMaxPhysicsJobs, cMaxPhysicsBarriers);
 
         }
 
@@ -44,7 +43,7 @@ namespace Atlas {
 
             // Do an explicit release on shutdown
             tempAllocator.reset();
-            jobSystemThreadPool.reset();
+            jobSystem.reset();
 
         }
 
@@ -52,7 +51,7 @@ namespace Atlas {
 
             std::scoped_lock<std::mutex> lock(updateMutex);
 
-            physicsWorld->system->Update(deltaTime, collisionSteps, tempAllocator.get(), jobSystemThreadPool.get());
+            physicsWorld->system->Update(deltaTime, collisionSteps, tempAllocator.get(), jobSystem.get());
 
         }
 

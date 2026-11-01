@@ -3,8 +3,8 @@
 #include "../System.h"
 
 #include "PhysicsWorld.h"
+#include "JoltJobSystem.h"
 
-#include <Jolt/Core/JobSystemThreadPool.h>
 #include <mutex>
 
 namespace Atlas {
@@ -21,7 +21,7 @@ namespace Atlas {
             static void ExecuteUpdate(PhysicsWorld* physicsWorld, float deltaTime, int32_t collisionSteps);
 
             static Ref<JPH::TempAllocatorImpl> tempAllocator;
-            static Ref<JPH::JobSystemThreadPool> jobSystemThreadPool;
+            static Ref<JoltJobSystem> jobSystem;
 
         private:
             static std::mutex updateMutex;

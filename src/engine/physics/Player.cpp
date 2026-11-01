@@ -120,7 +120,7 @@ namespace Atlas::Physics {
 
     }
 
-    bool Player::SetShape(const Ref<Shape>& shape) {
+    bool Player::SetShape(const Ref<Shape>& shape, float maxPenetration) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
 
@@ -131,7 +131,9 @@ namespace Atlas::Physics {
         const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::Movable);
         const auto& tempAllocator = Physics::PhysicsManager::tempAllocator;
 
-        if (!character->SetShape(shape->ref, physicsSettings.mPenetrationSlop * 1.5f, broadPhaseLayerFilter,
+        if (maxPenetration < 0.0f)
+            maxPenetration = physicsSettings.mPenetrationSlop * 1.5f;
+        if (!character->SetShape(shape->ref, maxPenetration, broadPhaseLayerFilter,
             defaultLayerFilter, {}, {}, *tempAllocator))
             return false;
 

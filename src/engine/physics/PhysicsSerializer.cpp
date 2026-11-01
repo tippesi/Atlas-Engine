@@ -289,6 +289,10 @@ namespace Atlas::Physics {
             j["fluidLinearDrag"] = p.fluidLinearDrag;
         if (d.fluidAngularDrag != p.fluidAngularDrag)
             j["fluidAngularDrag"] = p.fluidAngularDrag;
+        if (d.startAsleep != p.startAsleep)
+            j["startAsleep"] = p.startAsleep;
+        if (d.kinematicContacts != p.kinematicContacts)
+            j["kinematicContacts"] = p.kinematicContacts;
         if (p.shape)
             j["shape"] = *p.shape;
     }
@@ -322,6 +326,10 @@ namespace Atlas::Physics {
             p.fluidLinearDrag = j["fluidLinearDrag"];
         if (j.contains("fluidAngularDrag"))
             p.fluidAngularDrag = j["fluidAngularDrag"];
+        if (j.contains("startAsleep"))
+            p.startAsleep = j["startAsleep"];
+        if (j.contains("kinematicContacts"))
+            p.kinematicContacts = j["kinematicContacts"];
         if (j.contains("shape")) {
             p.shape = j["shape"];
         }

@@ -578,6 +578,7 @@ namespace Atlas::Scripting::Bindings {
             "GetMotionQuality", &RigidBodyComponent::GetMotionQuality,
             "SetLinearVelocity", &RigidBodyComponent::SetLinearVelocity,
             "GetLinearVelocity", &RigidBodyComponent::GetLinearVelocity,
+            "IsActive", &RigidBodyComponent::IsActive,
             "SetAngularVelocity", &RigidBodyComponent::SetAngularVelocity,
             "GetAngularVelocity", &RigidBodyComponent::GetAngularVelocity,
             "SetRestitution", &RigidBodyComponent::SetRestitution,

@@ -29,6 +29,9 @@ namespace Atlas::Physics {
 
         vec3 GetLinearVelocity();
 
+        // Asleep bodies aren't moved by the simulation until something wakes them
+        bool IsActive();
+
         void SetAngularVelocity(vec3 velocity);
 
         vec3 GetAngularVelocity();

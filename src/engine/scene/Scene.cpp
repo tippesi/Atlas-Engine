@@ -493,7 +493,14 @@ namespace Atlas {
                             rigidBodyComponent.layer == Physics::Layers::Kinematic)
                             continue;
 
-                        // Bodies at rest are marked dirty every frame as well, could be skipped if the body isn't active
+                        // Asleep bodies don't move, their last matrix catches up once for the motion vectors
+                        if (!rigidBodyComponent.IsActive()) {
+                            if (!transformComponent.changed && transformComponent.lastGlobalMatrix != transformComponent.globalMatrix) {
+                                transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                                MarkEntityDirty(ToSceneEntity(entity));
+                            }
+                            continue;
+                        }
 
                         // This happens if no change was triggered by the user, then we still need
                         // to update the last global matrix, since it might have changed due to physics simulation
@@ -1098,6 +1105,16 @@ namespace Atlas {
                         validEntity = true;
 
                     if (validEntity)
+                        entities.insert(entity);
+                }
+
+            }
+
+            if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
+
+                for (const auto& body : physicsWorld->QueryAABB(aabb)) {
+                    Entity entity = { body.GetUserData(), &entityManager };
+                    if (entity.IsValid() && entity.HasComponent<RigidBodyComponent>())
                         entities.insert(entity);
                 }
 

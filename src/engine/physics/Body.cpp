@@ -52,6 +52,13 @@ namespace Atlas::Physics {
 
     }
 
+    bool Body::IsActive() {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        return world->IsActive(bodyId);
+
+    }
+
     void Body::SetAngularVelocity(glm::vec3 velocity) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

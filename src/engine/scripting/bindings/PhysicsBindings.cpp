@@ -152,6 +152,8 @@ namespace Atlas::Scripting::Bindings {
             "buoyancy", &Physics::BodyCreationSettings::buoyancy,
             "fluidLinearDrag", &Physics::BodyCreationSettings::fluidLinearDrag,
             "fluidAngularDrag", &Physics::BodyCreationSettings::fluidAngularDrag,
+            "startAsleep", &Physics::BodyCreationSettings::startAsleep,
+            "kinematicContacts", &Physics::BodyCreationSettings::kinematicContacts,
             "shape", &Physics::BodyCreationSettings::shape
             );
 

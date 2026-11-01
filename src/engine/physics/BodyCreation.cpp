@@ -20,6 +20,7 @@ namespace Atlas::Physics {
         gravityFactor = settings.mGravityFactor;
 
         isTrigger = settings.mIsSensor;
+        kinematicContacts = settings.mCollideKinematicVsNonDynamic;
 
         //shapePtr = settings.GetShape();
 
@@ -57,6 +58,7 @@ namespace Atlas::Physics {
         settings.mGravityFactor = gravityFactor;
 
         settings.mIsSensor = isTrigger;
+        settings.mCollideKinematicVsNonDynamic = kinematicContacts;
 
         settings.SetShape(shape->ref);
 

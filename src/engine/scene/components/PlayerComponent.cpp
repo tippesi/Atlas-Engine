@@ -109,10 +109,16 @@ namespace Atlas::Scene::Components {
             return;
 
         if (crouchRequested) {
-            auto crouchShapeSettings = *static_cast<Physics::CapsuleShapeSettings*>(shape->settings.get());
-            crouchShapeSettings.height = glm::min(crouchHeight, crouchShapeSettings.height);
+            auto capsuleSettings = *static_cast<Physics::CapsuleShapeSettings*>(shape->settings.get());
+            auto height = capsuleSettings.height;
+            capsuleSettings.height = glm::min(crouchHeight, height);
+            // The lower capsule keeps its bottom where the standing one has it, the feet stay on the ground
+            Physics::CompoundShapeSettings crouchShapeSettings;
+            crouchShapeSettings.children.push_back({ .shape = Physics::ShapesManager::CreateShape(capsuleSettings),
+                .translation = vec3(0.0f, (capsuleSettings.height - height) * 0.5f * capsuleSettings.scale.y, 0.0f) });
+            // The lower shape lies within the standing one, nothing can be in its way
             auto crouchShape = Physics::ShapesManager::CreateShape(crouchShapeSettings);
-            if (crouchShape->IsValid() && SetShape(crouchShape))
+            if (crouchShape->IsValid() && SetShape(crouchShape, std::numeric_limits<float>::max()))
                 crouching = true;
         }
         else if (SetShape(shape)) {

@@ -65,7 +65,8 @@ namespace Atlas::Physics {
 		vec3 GetUp() const;
 
 		// Fails without changing the shape if the new shape would collide
-		bool SetShape(const Ref<Shape>& shape);
+		// A shape penetrating more than maxPenetration (the penetration slop by default) is refused
+		bool SetShape(const Ref<Shape>& shape, float maxPenetration = -1.0f);
 
 		virtual void Update(float deltaTime);
 

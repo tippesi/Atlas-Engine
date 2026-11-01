@@ -3,6 +3,7 @@
 #include "MathConversion.h"
 #include "../renderer/PrimitiveBatch.h"
 #include "../tools/PerformanceCounter.h"
+#include "../common/MathHelper.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
@@ -99,7 +100,11 @@ namespace Atlas {
 
             if (pauseSimulation) return;
 
-            auto collisionSteps = std::min(std::max(int32_t(float(simulationStepsPerSecond) * deltaTime), 1), 8);
+            // A long frame (the first one after loading, a hitch) doesn't take giant steps, which throw floating
+            // bodies out of the water: the simulation falls behind instead
+            const int32_t maxCollisionSteps = 8;
+            deltaTime = std::min(deltaTime, float(maxCollisionSteps) / float(simulationStepsPerSecond));
+            auto collisionSteps = std::min(std::max(int32_t(float(simulationStepsPerSecond) * deltaTime), 1), maxCollisionSteps);
             stepDeltaTime = deltaTime / float(collisionSteps);
 
             FindFluidContacts();
@@ -139,14 +144,18 @@ namespace Atlas {
             settings.mRotation = quat;
             settings.mUserData = userData;
 
-            auto bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+            auto activation = bodyCreationSettings.startAsleep ? JPH::EActivation::DontActivate : JPH::EActivation::Activate;
+            auto bodyId = bodyInterface.CreateAndAddBody(settings, activation);
             bodyToShapeMap[bodyId] = bodyCreationSettings.shape;
+            RecordStaticChange(bodyId);
 
             if (bodyCreationSettings.buoyancy > 0.0f && settings.mMotionType == JPH::EMotionType::Dynamic)
                 bodyToBuoyancyMap[bodyId] = { bodyCreationSettings.buoyancy,
                     bodyCreationSettings.fluidLinearDrag, bodyCreationSettings.fluidAngularDrag };
             if (bodyCreationSettings.isFluid && settings.mIsSensor)
                 fluidBodies.insert(bodyId);
+            if (bodyCreationSettings.startAsleep)
+                startAsleepBodies.insert(bodyId);
 
             return { bodyId, this };
 
@@ -173,11 +182,13 @@ namespace Atlas {
                 return true;
                 });
 
+            RecordStaticChange(body.bodyId);
             bodyToShapeMap.erase(body.bodyId);
             bodyToBuoyancyMap.erase(body.bodyId);
             bodyToFluidBodiesMap.erase(body.bodyId);
             bodyFluids.erase(body.bodyId);
             fluidBodies.erase(body.bodyId);
+            startAsleepBodies.erase(body.bodyId);
 
             bodyInterface.RemoveBody(body.bodyId);
             bodyInterface.DestroyBody(body.bodyId);
@@ -200,7 +211,14 @@ namespace Atlas {
             MatrixToJPHPosAndRot(matrix, pos, quat);
 
             auto& bodyInterface = system->GetBodyInterface();
-            bodyInterface.SetPositionAndRotation(bodyId, pos, quat, JPH::EActivation::Activate);
+            // A sleeping body set where it already is stays asleep, e.g. every body in the first update after loading
+            auto activation = JPH::EActivation::Activate;
+            if (!bodyInterface.IsActive(bodyId) && bodyInterface.GetPosition(bodyId).IsClose(pos, 1e-6f) &&
+                bodyInterface.GetRotation(bodyId).IsClose(quat, 1e-6f))
+                activation = JPH::EActivation::DontActivate;
+            RecordStaticChange(bodyId);
+            bodyInterface.SetPositionAndRotation(bodyId, pos, quat, activation);
+            RecordStaticChange(bodyId);
 
         }
 
@@ -267,6 +285,13 @@ namespace Atlas {
 
             auto& bodyInterface = system->GetBodyInterface();
             return JPHVecToVec(bodyInterface.GetLinearVelocity(bodyId));
+
+        }
+
+        bool PhysicsWorld::IsActive(BodyID bodyId) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            return bodyInterface.IsActive(bodyId);
 
         }
 
@@ -364,7 +389,9 @@ namespace Atlas {
         void PhysicsWorld::ChangeShape(BodyID bodyId, Ref<Shape> shape) {
 
             auto& bodyInterface = system->GetBodyInterface();
+            RecordStaticChange(bodyId);
             bodyInterface.SetShape(bodyId, shape->ref, true, JPH::EActivation::Activate);
+            RecordStaticChange(bodyId);
 
             bodyToShapeMap[bodyId] = shape;
 
@@ -391,6 +418,7 @@ namespace Atlas {
                         bodyCreationSettings.fluidLinearDrag = it->second.linearDrag;
                         bodyCreationSettings.fluidAngularDrag = it->second.angularDrag;
                     }
+                    bodyCreationSettings.startAsleep = startAsleepBodies.contains(bodyId);
                     return bodyCreationSettings;
                 }
             }
@@ -448,6 +476,18 @@ namespace Atlas {
             statistics.updateTime = updateTime;
 
             return statistics;
+
+        }
+
+        std::vector<Body> PhysicsWorld::QueryAABB(const Volume::AABB& aabb) {
+
+            JPH::AllHitCollisionCollector<JPH::CollideShapeBodyCollector> collector;
+            system->GetBroadPhaseQuery().CollideAABox(JPH::AABox(VecToJPHVec(aabb.min), VecToJPHVec(aabb.max)), collector);
+
+            std::vector<Body> bodies;
+            for (auto bodyId : collector.mHits)
+                bodies.emplace_back(bodyId, this);
+            return bodies;
 
         }
 
@@ -635,7 +675,10 @@ namespace Atlas {
 
             JPH::Ref<JPH::TwoBodyConstraint> constraint = bodyInterface.CreateConstraint(constraintSettings, bodyId, otherBodyId);
             system->AddConstraint(constraint);
-            bodyInterface.ActivateConstraint(constraint);
+            // Bodies asleep since loading stay asleep, e.g. a moored boat or a hanging cage, an awake one wakes the other
+            auto otherActive = !otherBodyId.IsInvalid() && bodyInterface.IsActive(otherBodyId);
+            if (bodyInterface.IsActive(bodyId) || otherActive)
+                bodyInterface.ActivateConstraint(constraint);
 
             constraints.push_back(constraint);
 
@@ -810,6 +853,67 @@ namespace Atlas {
 
         }
 
+        const PhysicsWorld::DebugWireframe& PhysicsWorld::GetDebugWireframe(const JPH::Shape* shape) {
+
+            auto& wireframe = debugWireframes[shape];
+            wireframe.lastFrame = debugFrame;
+            if (wireframe.shape)
+                return wireframe;
+            wireframe.shape = shape;
+
+            struct Edge {
+                vec3 v0, v1;
+                vec3 normal;
+                bool keep = true;
+            };
+            std::unordered_map<uint64_t, Edge> edges;
+            // On a millimeter grid, so the two triangles of an edge find each other
+            auto key = [](vec3 v) {
+                auto q = glm::ivec3(glm::round(v * 1000.0f));
+                return (uint64_t(uint32_t(q.x)) * 73856093u) ^ (uint64_t(uint32_t(q.y)) * 19349663u) ^ (uint64_t(uint32_t(q.z)) * 83492791u);
+            };
+            auto addEdge = [&](vec3 v0, vec3 v1, vec3 normal) {
+                auto k0 = key(v0), k1 = key(v1);
+                auto edgeKey = k0 < k1 ? k0 * 31u + k1 : k1 * 31u + k0;
+                auto [it, inserted] = edges.try_emplace(edgeKey, Edge { v0, v1, normal });
+                // An edge between two triangles of one plane lies inside a flat face
+                if (!inserted)
+                    it->second.keep = glm::dot(it->second.normal, normal) < 0.999f;
+            };
+
+            auto everything = JPH::AABox::sBiggest();
+            JPH::TransformedShape transformedShape(JPH::RVec3::sZero(), JPH::Quat::sIdentity(), shape, JPH::BodyID());
+            JPH::AllHitCollisionCollector<JPH::TransformedShapeCollector> collector;
+            transformedShape.CollectTransformedShapes(everything, collector);
+
+            JPH::Shape::GetTrianglesContext context;
+            std::vector<JPH::Float3> vertices(3 * 256);
+            for (const auto& leaf : collector.mHits) {
+                leaf.GetTrianglesStart(context, everything, JPH::RVec3::sZero());
+                int32_t count = 0;
+                while ((count = leaf.GetTrianglesNext(context, 256, vertices.data())) > 0) {
+                    for (int32_t i = 0; i < count; i++) {
+                        auto v0 = JPHVecToVec(JPH::Vec3(vertices[3 * i]));
+                        auto v1 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 1]));
+                        auto v2 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 2]));
+                        auto normal = Helper::Math::NormalizeOrZero(glm::cross(v1 - v0, v2 - v0));
+                        addEdge(v0, v1, normal);
+                        addEdge(v1, v2, normal);
+                        addEdge(v2, v0, normal);
+                    }
+                }
+            }
+
+            for (const auto& [_, edge] : edges) {
+                if (!edge.keep)
+                    continue;
+                wireframe.lines.push_back(edge.v0);
+                wireframe.lines.push_back(edge.v1);
+            }
+            return wireframe;
+
+        }
+
         void PhysicsWorld::DebugDraw(Renderer::PrimitiveBatch* primitiveBatch, const DebugDrawSettings& settings) {
 
             contactListener->recordPersistedContacts = settings.drawContacts;
@@ -836,6 +940,7 @@ namespace Atlas {
 
                 JPH::Shape::GetTrianglesContext context;
                 std::vector<JPH::Float3> vertices(3 * 256);
+                debugFrame++;
 
                 for (auto bodyId : bodyCollector.mHits) {
                     JPH::BodyLockRead lock(bodyLockInterface, bodyId);
@@ -854,6 +959,18 @@ namespace Atlas {
 
                     if (!settings.drawShapes)
                         continue;
+
+                    // Bodies smaller than the box come from the cache, only large ones like the terrain are cut to the box
+                    if ((bounds.GetExtent() - extent).ReduceMax() < 0.0f) {
+                        const auto& wireframe = GetDebugWireframe(body.GetShape());
+                        auto transform = body.GetCenterOfMassTransform();
+                        for (size_t i = 0; i + 1 < wireframe.lines.size(); i += 2) {
+                            auto v0 = JPHVecToVec(transform * VecToJPHVec(wireframe.lines[i]));
+                            auto v1 = JPHVecToVec(transform * VecToJPHVec(wireframe.lines[i + 1]));
+                            primitiveBatch->AddLine(v0, v1, color, color);
+                        }
+                        continue;
+                    }
 
                     // Triangles are only available for leaf shapes, the engine shapes are at least scaled
                     JPH::AllHitCollisionCollector<JPH::TransformedShapeCollector> collector;
@@ -877,6 +994,8 @@ namespace Atlas {
                     }
                 }
             }
+
+            std::erase_if(debugWireframes, [&](const auto& item) { return debugFrame - item.second.lastFrame > 300; });
 
             if (settings.drawContacts) {
                 for (const auto& [_, contactPair] : contactPairs) {
@@ -952,6 +1071,21 @@ namespace Atlas {
             contactEvents.clear();
             bodyToFluidBodiesMap.clear();
             bodyFluids.clear();
+
+        }
+
+        void PhysicsWorld::RecordStaticChange(BodyID bodyId) {
+
+            JPH::BodyLockRead lock(system->GetBodyLockInterface(), bodyId);
+            if (!lock.Succeeded())
+                return;
+
+            const auto& body = lock.GetBody();
+            if (!body.IsStatic() || body.IsSensor())
+                return;
+
+            auto bounds = body.GetWorldSpaceBounds();
+            staticChanges.Add(Volume::AABB(JPHVecToVec(bounds.mMin), JPHVecToVec(bounds.mMax)));
 
         }
 

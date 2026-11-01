@@ -3,6 +3,7 @@
 #include "../System.h"
 #include "../volume/Ray.h"
 #include "../volume/AABB.h"
+#include "../volume/BoundsChangeLog.h"
 #include "ShapesManager.h"
 #include "BodyCreation.h"
 #include "Body.h"
@@ -107,6 +108,8 @@ namespace Atlas {
 
             vec3 GetLinearVelocity(BodyID bodyId);
 
+            bool IsActive(BodyID bodyId);
+
             void SetAngularVelocity(BodyID bodyId, vec3 velocity);
 
             vec3 GetAngularVelocity(BodyID bodyId);
@@ -160,6 +163,9 @@ namespace Atlas {
             // Queries pass through triggers and through bodies for which ignore returns true
             Volume::RayResult<Body> CastRay(Volume::Ray& ray, const std::function<bool(const Body&)>& ignore = {});
 
+            // The bodies whose bounds overlap the box, also sleeping ones
+            std::vector<Body> QueryAABB(const Volume::AABB& aabb);
+
             // Moves the shape from the matrix along the direction, the hit distance is measured along the direction
             Volume::RayResult<Body> CastShape(const Ref<Shape>& shape, const mat4& matrix, vec3 direction,
                 float distance, const std::function<bool(const Body&)>& ignore = {});
@@ -181,6 +187,9 @@ namespace Atlas {
 
             int32_t simulationStepsPerSecond = 60;
             bool pauseSimulation = false;
+
+            // Bounds of static bodies which were added, moved, reshaped or removed, e.g. for navigation meshes
+            Volume::BoundsChangeLog staticChanges;
 
             std::unordered_map<BodyID, Ref<Shape>> bodyToShapeMap;
 
@@ -214,6 +223,8 @@ namespace Atlas {
 
             void EndContact(const ContactPair& contactPair);
 
+            void RecordStaticChange(BodyID bodyId);
+
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;
             Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr;
             Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr;
@@ -226,8 +237,22 @@ namespace Atlas {
 
             std::unordered_map<BodyID, Buoyancy> bodyToBuoyancyMap;
             std::unordered_set<BodyID> fluidBodies;
+            std::unordered_set<BodyID> startAsleepBodies;
             // Fluid triggers that touched the bodies with buoyancy in the last update
             std::unordered_map<BodyID, std::vector<BodyID>> bodyToFluidBodiesMap;
+
+            // Edges of the shapes for DebugDraw in their own space, built once per shape: edges shared by two triangles
+            // once, those inside flat faces not at all. Shapes not drawn for a while are dropped
+            struct DebugWireframe {
+                JPH::RefConst<JPH::Shape> shape;
+                std::vector<vec3> lines;
+                uint32_t lastFrame = 0;
+            };
+
+            const DebugWireframe& GetDebugWireframe(const JPH::Shape* shape);
+
+            std::unordered_map<const JPH::Shape*, DebugWireframe> debugWireframes;
+            uint32_t debugFrame = 0;
 
             Ref<JPH::StateRecorderImpl> state = nullptr;
 
