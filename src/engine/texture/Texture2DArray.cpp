@@ -15,6 +15,20 @@ namespace Atlas {
 
         }
 
+        Texture2DArray::Texture2DArray(const Ref<Loader::KtxImage>& image, Wrapping wrapping, Filtering filtering) {
+
+            format = image->format;
+
+            Reallocate(Graphics::ImageType::Image2DArray, image->width, image->height, image->layers,
+                filtering, wrapping, false, false, image->mipLevels);
+            RecreateSampler(filtering, wrapping);
+
+            std::vector<VkBufferImageCopy> copyRegions(image->copyRegions.begin(),
+                image->copyRegions.begin() + this->image->mipLevels);
+            this->image->SetData(image->data.data(), image->data.size(), copyRegions);
+
+        }
+
         void Texture2DArray::SetData(std::vector<uint8_t> &data, int32_t layer, int32_t count) {
 
             Texture::SetData(data.data(), 0, 0, layer, width, height, count);

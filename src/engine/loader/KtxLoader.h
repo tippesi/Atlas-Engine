@@ -11,6 +11,7 @@ namespace Atlas::Loader {
     struct KtxImage {
         int32_t width = 0;
         int32_t height = 0;
+        int32_t layers = 1;
         uint32_t mipLevels = 1;
 
         VkFormat format = VK_FORMAT_UNDEFINED;
@@ -33,6 +34,12 @@ namespace Atlas::Loader {
             bool colorSpaceConversion = false, int32_t maxImageResolution = 8192);
 
         static Ref<KtxImage> ConvertImage(const Ref<Common::Image<uint8_t>>& image);
+
+        // All layers need the same size
+        static Ref<KtxImage> ConvertImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers);
+
+        // The ktx2 file of the layers without loading it, empty if the encoding failed
+        static std::vector<char> EncodeImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers);
 
         static void SaveImage(const Ref<KtxImage>& image, const std::string& filename);
 

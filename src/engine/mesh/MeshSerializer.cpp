@@ -258,6 +258,7 @@ namespace Atlas::Mesh {
             {"mipBias", p.mipBias},
             {"interpolation", p.interpolation},
             {"pixelDepthOffset", p.pixelDepthOffset},
+            {"compressTextures", p.compressTextures},
             {"approxTransmissiveColor", p.approxTransmissiveColor},
             {"approxReflectance", p.approxReflectance},
         };
@@ -275,6 +276,7 @@ namespace Atlas::Mesh {
         j.at("mipBias").get_to(p.mipBias);
         j.at("interpolation").get_to(p.interpolation);
         j.at("pixelDepthOffset").get_to(p.pixelDepthOffset);
+        try_get_json(j, "compressTextures", p.compressTextures);
         j.at("approxTransmissiveColor").get_to(p.approxTransmissiveColor);
         j.at("approxReflectance").get_to(p.approxReflectance);
 

@@ -1,4 +1,5 @@
 #include <../globals.hsh>
+#include <depthOffset.hsh>
 
 layout(location = 0) in vec2 texCoordVS;
 #ifdef INTERPOLATION
@@ -69,13 +70,14 @@ void main() {
     float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).r;
     float depth2 = texture(depthMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).r;
 
-    float depthOffset = weight0VS * depth0 +
-        weight1VS * depth1 +
-        weight2VS * depth2;
+    // Decoded together, views without the surface at this texel would push the depth back
+    float depthOffset = ImpostorDepthOffset(weight0VS * depth0 + weight1VS * depth1 + weight2VS * depth2, alpha);
 #else
-    float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).r;
+    float depthOffset = ImpostorDepthOffset(texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).r, alpha);
 #endif
-    vec3 modelPosition = modelPositionVS + depthOffset * normalize(pushConstants.lightLocation.xyz) * instanceScale;
+    // Towards a point light or along the directional light (its location lies far away against the direction)
+    vec3 toLight = normalize(pushConstants.lightLocation.xyz - modelPositionVS);
+    vec3 modelPosition = modelPositionVS + depthOffset * toLight * instanceScale;
     vec4 modelPositionFS = pushConstants.lightSpaceMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;

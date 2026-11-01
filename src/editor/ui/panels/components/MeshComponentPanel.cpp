@@ -80,11 +80,17 @@ namespace Atlas::Editor::UI {
                     ImGui::SliderFloat("Cutoff", &impostor->cutoff, 0.0, 1.0f);
                     ImGui::Checkbox("Interpolation", &impostor->interpolation);
                     ImGui::Checkbox("Pixel-depth offset", &impostor->pixelDepthOffset);
+                    ImGui::Checkbox("Compress textures", &impostor->compressTextures);
 
                     if (ImGui::Button("Generate", ImVec2(-FLT_MIN, 0.0f))) {
                         auto newImpostor = Atlas::Tools::ImpostorTool::GenerateImpostor(
                             mesh, impostor->views, impostor->resolution
                         );
+                        newImpostor->cutoff = impostor->cutoff;
+                        newImpostor->mipBias = impostor->mipBias;
+                        newImpostor->interpolation = impostor->interpolation;
+                        newImpostor->pixelDepthOffset = impostor->pixelDepthOffset;
+                        newImpostor->compressTextures = impostor->compressTextures;
                         impostor.GetResource()->Swap(newImpostor);                        
                     }
                 }

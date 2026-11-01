@@ -1,5 +1,6 @@
 #include "Texture2D.h"
 #include "../graphics/Format.h"
+#include "../resource/ResourceLoadException.h"
 
 namespace Atlas {
 
@@ -21,6 +22,8 @@ namespace Atlas {
 
             if (Loader::KtxLoader::IsKtxFile(filename)) {
                 auto image = Loader::KtxLoader::LoadImage(filename, colorSpaceConversion);
+                if (image->layers > 1)
+                    throw ResourceLoadException(filename, "Ktx2 texture arrays can't be loaded as a 2D texture");
                 InitializeInternal(image, wrapping, filtering, dedicatedMemory);
                 return;
             }

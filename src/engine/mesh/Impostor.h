@@ -56,6 +56,9 @@ namespace Atlas {
             bool interpolation = false;
             bool pixelDepthOffset = true;
 
+            // Saves the color maps as ktx2 arrays, transcoded to a block compressed format when loaded
+            bool compressTextures = false;
+
             vec3 approxTransmissiveColor = vec3(0.0f);
             float approxReflectance = 0.5f;
 

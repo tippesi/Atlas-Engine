@@ -52,9 +52,9 @@ namespace Atlas::Loader {
             throw ResourceLoadException(normalizedFileName, "Couldn't read ktx2 file: " + std::string(ktxErrorString(result)));
         }
 
-        if (texture->numDimensions != 2 || texture->numLayers > 1 || texture->numFaces > 1) {
+        if (texture->numDimensions != 2 || texture->numFaces > 1) {
             ktxTexture_Destroy(ktxTexture(texture));
-            throw ResourceLoadException(normalizedFileName, "Only 2D ktx2 textures without layers or faces are supported");
+            throw ResourceLoadException(normalizedFileName, "Only 2D ktx2 textures without faces are supported");
         }
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
@@ -106,15 +106,17 @@ namespace Atlas::Loader {
         auto image = CreateRef<KtxImage>();
         image->width = int32_t(glm::max(texture->baseWidth >> baseLevel, 1u));
         image->height = int32_t(glm::max(texture->baseHeight >> baseLevel, 1u));
+        image->layers = int32_t(texture->numLayers);
         image->mipLevels = texture->numLevels - baseLevel;
         image->format = format;
         image->fileName = normalizedFileName;
 
         auto levelAlignment = std::lcm(Graphics::GetFormatSize(format), size_t(4));
 
+        // The layers of a level are stored one after another
         size_t dataSize = 0;
         for (uint32_t i = baseLevel; i < texture->numLevels; i++) {
-            auto levelSize = ktxTexture_GetImageSize(ktxTexture(texture), i);
+            auto levelSize = ktxTexture_GetImageSize(ktxTexture(texture), i) * texture->numLayers;
             dataSize += (levelSize + levelAlignment - 1) / levelAlignment * levelAlignment;
         }
         image->data.resize(dataSize);
@@ -123,7 +125,7 @@ namespace Atlas::Loader {
         for (uint32_t i = baseLevel; i < texture->numLevels; i++) {
             ktx_size_t levelOffset;
             ktxTexture_GetImageOffset(ktxTexture(texture), i, 0, 0, &levelOffset);
-            auto levelSize = ktxTexture_GetImageSize(ktxTexture(texture), i);
+            auto levelSize = ktxTexture_GetImageSize(ktxTexture(texture), i) * texture->numLayers;
 
             std::memcpy(image->data.data() + dataOffset, ktxTexture_GetData(ktxTexture(texture)) + levelOffset, levelSize);
 
@@ -132,7 +134,7 @@ namespace Atlas::Loader {
             copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             copyRegion.imageSubresource.mipLevel = i - baseLevel;
             copyRegion.imageSubresource.baseArrayLayer = 0;
-            copyRegion.imageSubresource.layerCount = 1;
+            copyRegion.imageSubresource.layerCount = texture->numLayers;
             copyRegion.imageExtent = {
                 glm::max(texture->baseWidth >> i, 1u),
                 glm::max(texture->baseHeight >> i, 1u),
@@ -151,41 +153,77 @@ namespace Atlas::Loader {
 
     Ref<KtxImage> KtxLoader::ConvertImage(const Ref<Common::Image<uint8_t>>& image) {
 
-        auto channels = image->channels;
-        const auto& imageData = image->GetData();
+        return ConvertImage(std::vector<Ref<Common::Image<uint8_t>>>{ image });
 
-        std::vector<uint8_t> rgbaData(size_t(image->width) * size_t(image->height) * 4);
-        for (size_t i = 0; i < rgbaData.size() / 4; i++) {
-            for (int32_t j = 0; j < 4; j++) {
-                rgbaData[i * 4 + j] = j < channels ? imageData[i * channels + j] : 255;
+    }
+
+    Ref<KtxImage> KtxLoader::ConvertImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers) {
+
+        const auto& image = layers.front();
+
+        auto buffer = EncodeImage(layers);
+        if (buffer.empty())
+            throw ResourceLoadException(image->fileName, "Couldn't convert image to ktx2");
+
+        auto ktxImage = LoadImageFromMemory(buffer, image->fileName);
+        ktxImage->fileData = std::move(buffer);
+
+        Log::Message("Converted image " + image->fileName + " to ktx2 format");
+
+        return ktxImage;
+
+    }
+
+    std::vector<char> KtxLoader::EncodeImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers) {
+
+        AE_ASSERT(!layers.empty() && "No layers to convert");
+
+        const auto& image = layers.front();
+
+        std::vector<Common::Image<uint8_t>> rgbaImages;
+        for (const auto& layer : layers) {
+            AE_ASSERT(layer->width == image->width && layer->height == image->height && "Layers differ in size");
+
+            auto channels = layer->channels;
+            const auto& imageData = layer->GetData();
+
+            std::vector<uint8_t> rgbaData(size_t(layer->width) * size_t(layer->height) * 4);
+            for (size_t i = 0; i < rgbaData.size() / 4; i++) {
+                for (int32_t j = 0; j < 4; j++) {
+                    rgbaData[i * 4 + j] = j < channels ? imageData[i * channels + j] : 255;
+                }
             }
-        }
 
-        Common::Image<uint8_t> rgbaImage(image->width, image->height, 4);
-        rgbaImage.SetData(rgbaData);
-        rgbaImage.GenerateMipmap();
+            auto& rgbaImage = rgbaImages.emplace_back(layer->width, layer->height, 4);
+            rgbaImage.SetData(rgbaData);
+            rgbaImage.GenerateMipmap();
+        }
 
         ktxTextureCreateInfo createInfo = {};
         createInfo.vkFormat = VK_FORMAT_R8G8B8A8_UNORM;
-        createInfo.baseWidth = uint32_t(rgbaImage.width);
-        createInfo.baseHeight = uint32_t(rgbaImage.height);
+        createInfo.baseWidth = uint32_t(image->width);
+        createInfo.baseHeight = uint32_t(image->height);
         createInfo.baseDepth = 1;
         createInfo.numDimensions = 2;
-        createInfo.numLevels = uint32_t(rgbaImage.GetMipmapLevelCount());
-        createInfo.numLayers = 1;
+        createInfo.numLevels = uint32_t(rgbaImages.front().GetMipmapLevelCount());
+        createInfo.numLayers = uint32_t(layers.size());
         createInfo.numFaces = 1;
-        createInfo.isArray = KTX_FALSE;
+        createInfo.isArray = layers.size() > 1 ? KTX_TRUE : KTX_FALSE;
         createInfo.generateMipmaps = KTX_FALSE;
 
         ktxTexture2* texture = nullptr;
         auto result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture);
         if (result != KTX_SUCCESS) {
-            throw ResourceLoadException(image->fileName, "Couldn't create ktx2 texture: " + std::string(ktxErrorString(result)));
+            Log::Error("Couldn't create ktx2 texture for " + image->fileName + ": " + ktxErrorString(result));
+            return {};
         }
 
-        for (int32_t i = 0; i < rgbaImage.GetMipmapLevelCount(); i++) {
-            auto& level = rgbaImage.GetMipLevel(i);
-            ktxTexture_SetImageFromMemory(ktxTexture(texture), uint32_t(i), 0, 0, level.data.data(), level.data.size());
+        for (size_t layer = 0; layer < rgbaImages.size(); layer++) {
+            for (int32_t i = 0; i < rgbaImages[layer].GetMipmapLevelCount(); i++) {
+                auto& level = rgbaImages[layer].GetMipLevel(i);
+                ktxTexture_SetImageFromMemory(ktxTexture(texture), uint32_t(i), uint32_t(layer), 0,
+                    level.data.data(), level.data.size());
+            }
         }
 
         ktxBasisParams params = {};
@@ -206,18 +244,14 @@ namespace Atlas::Loader {
         ktxTexture_Destroy(ktxTexture(texture));
 
         if (result != KTX_SUCCESS) {
-            throw ResourceLoadException(image->fileName, "Couldn't convert image to ktx2: " + std::string(ktxErrorString(result)));
+            Log::Error("Couldn't encode " + image->fileName + " as ktx2: " + ktxErrorString(result));
+            return {};
         }
 
         std::vector<char> buffer(reinterpret_cast<char*>(fileData), reinterpret_cast<char*>(fileData) + fileSize);
         free(fileData);
 
-        auto ktxImage = LoadImageFromMemory(buffer, image->fileName);
-        ktxImage->fileData = std::move(buffer);
-
-        Log::Message("Converted image " + image->fileName + " to ktx2 format");
-
-        return ktxImage;
+        return buffer;
 
     }
 
