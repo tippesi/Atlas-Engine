@@ -35,11 +35,34 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::Update() {
 
-        if (!show)
+        // A search runs on the medium pool next to long jobs (e.g. navigation tiles), the window doesn't wait for it.
+        // The next search starts once the last one has finished
+        if (!show || isEditing || !searchAndFilterJob.HasFinished())
             return;
 
-        JobSystem::Execute(searchAndFilterJob, [&](JobData&) {
-            UpdateFilteredAndSortedDirEntries();
+        auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
+        if (!contentDirectory)
+            return;
+
+        // The job gets copies, the window changes the search while it runs
+        auto searchQuery = assetSearch;
+        std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
+        auto filter = contentFilter;
+        auto recursively = searchQuery.empty() ? filterRecursively && filter != ContentFilterBits::AllBit : searchRecursively;
+        auto listDirectories = searchQuery.empty() && !filterRecursively && filter == ContentFilterBits::AllBit;
+
+        JobSystem::Execute(searchAndFilterJob, [this, contentDirectory, searchQuery, filter, recursively, listDirectories](JobData&) {
+            foundFiles.clear();
+            SearchDirectory(contentDirectory, foundFiles, searchQuery, filter, recursively);
+            std::sort(foundFiles.begin(), foundFiles.end(), [](const auto& file0, const auto& file1) {
+                return file0.name < file1.name;
+                });
+
+            if (listDirectories)
+                foundDirectories = contentDirectory->directories;
+            else
+                foundDirectories.clear();
+            hasFoundEntries = true;
             });
 
     }
@@ -361,7 +384,11 @@ namespace Atlas::Editor::UI {
             currentDirectory = Loader::AssetLoader::GetDataDirectory();
         }
 
-        JobSystem::Wait(searchAndFilterJob);
+        if (searchAndFilterJob.HasFinished() && hasFoundEntries) {
+            directories.swap(foundDirectories);
+            files.swap(foundFiles);
+            hasFoundEntries = false;
+        }
 
         auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
@@ -700,46 +727,12 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ContentBrowserWindow::UpdateFilteredAndSortedDirEntries() {
-
-        // Don't want to update anything now
-        if (isEditing)
-            return;
-
-        auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
-        if (!contentDirectory)
-            return;
-
-        std::string searchQuery = assetSearch;
-        if (!searchQuery.empty()) {
-            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
-        }
-
-        std::vector<Content> discoverdFiles;
-        bool recursively = searchQuery.empty() ? filterRecursively && contentFilter != ContentFilterBits::AllBit : searchRecursively;
-        SearchDirectory(contentDirectory, discoverdFiles, searchQuery, recursively);
-
-        std::sort(discoverdFiles.begin(), discoverdFiles.end(), [](const auto& file0, const auto& file1) {
-            return file0.name < file1.name;
-            });
-
-        if (assetSearch.empty() && !filterRecursively && contentFilter == ContentFilterBits::AllBit) {
-            directories = contentDirectory->directories;
-            files = discoverdFiles;
-        }
-        else {
-            files = discoverdFiles;
-            directories.clear();
-        }
-
-    }
-
     void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles,
-        const std::string& searchQuery, bool recursively) {
+        const std::string& searchQuery, ContentFilter filter, bool recursively) {
 
         for (const auto& file : directory->files) {
             // Enum class and ContentFilterBits are in same order, so we can just bitshift the content type
-            if (!((1 << static_cast<uint32_t>(file.type)) & contentFilter)) {
+            if (!((1 << static_cast<uint32_t>(file.type)) & filter)) {
                 continue;
             }
 
@@ -752,7 +745,7 @@ namespace Atlas::Editor::UI {
 
         if (recursively) {
             for (const auto& childDirectory : directory->directories) {
-                SearchDirectory(childDirectory, contentFiles, searchQuery, true);
+                SearchDirectory(childDirectory, contentFiles, searchQuery, filter, true);
             }
         }
 

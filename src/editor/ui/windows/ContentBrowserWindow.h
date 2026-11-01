@@ -80,10 +80,8 @@ namespace Atlas::Editor::UI {
 
         Texture::Texture2D& GetIcon(const ContentType contentType);
 
-        void UpdateFilteredAndSortedDirEntries();
-
-        void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
-            const std::string& searchQuery, bool recursively);
+        void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles,
+            const std::string& searchQuery, ContentFilter filter, bool recursively);
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
@@ -97,6 +95,11 @@ namespace Atlas::Editor::UI {
 
         std::vector<Ref<ContentDirectory>> directories;
         std::vector<Content> files;
+
+        // Results of the search job, the window shows the last ones until the job has finished
+        std::vector<Ref<ContentDirectory>> foundDirectories;
+        std::vector<Content> foundFiles;
+        bool hasFoundEntries = false;
 
         JobGroup searchAndFilterJob{ "Content search and filter", JobPriority::Medium };
 
