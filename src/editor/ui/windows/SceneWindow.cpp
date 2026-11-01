@@ -9,6 +9,7 @@
 #include "common/Hash.h"
 #include "tools/TerrainTool.h"
 #include "Clock.h"
+#include "profiler/CPUProfiler.h"
 
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
@@ -137,6 +138,7 @@ namespace Atlas::Editor::UI {
 
         Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
 
+        CPUProfiler::Scope sectionScope("Properties panel");
         // Depending on the selection in the scene hierarchy panel, render the properties in a different window
         if (scene.IsLoaded()) {
             const auto& target = Singletons::renderTarget;
@@ -182,7 +184,9 @@ namespace Atlas::Editor::UI {
             scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
         }
 
+        sectionScope.Next("Hierarchy panel");
         sceneHierarchyPanel.Render(refScene, inFocus);
+        sectionScope.Next("Overlays");
 
         if (sceneHierarchyPanel.focusRequested) {
             sceneHierarchyPanel.focusRequested = false;
@@ -206,6 +210,7 @@ namespace Atlas::Editor::UI {
         if (showPhysics && scene.IsLoaded())
             RenderPhysics();
 
+        sectionScope.Next("Update scene");
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
             // Path tracing needs history while ray tracing
@@ -214,6 +219,7 @@ namespace Atlas::Editor::UI {
             scene->Update(Clock::GetDelta(), cameraEntity);
         }
 
+        sectionScope.Next("Viewport panel");
         viewportPanel.Render(refScene, isActiveWindow);
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();

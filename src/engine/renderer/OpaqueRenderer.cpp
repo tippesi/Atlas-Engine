@@ -18,7 +18,8 @@ namespace Atlas {
         void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
             RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap) {
 
-            Graphics::Profiler::BeginQuery("Opaque geometry");
+            CPUProfiler::Scope profilerScope("Opaque geometry");
+            GPUProfiler::Scope gpuScope("Opaque geometry");
 
             auto mainPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
             if (!mainPass)
@@ -33,7 +34,7 @@ namespace Atlas {
             commandList->BindBuffer(mainPass->lastJointMatricesBuffer, 1, 5);
 
             // Bind wind map
-            scene->wind.noiseMap.Bind(commandList, 3, 8);
+            scene->renderState.wind.noiseMap.Bind(commandList, 3, 8);
 
             int32_t subDataCount = 0;
             // Retrieve all possible materials;
@@ -169,8 +170,6 @@ namespace Atlas {
                 }
 
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 

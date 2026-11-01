@@ -23,11 +23,12 @@ namespace Atlas {
         void PostProcessRenderer::Render(Ref<RenderTarget>& target, Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList, Texture::Texture2D* texture) {
 
-            Graphics::Profiler::BeginQuery("Postprocessing");
+            CPUProfiler::Scope profilerScope("Postprocessing");
+            GPUProfiler::BeginQuery("Postprocessing");
 
-            auto& postProcessing = scene->postProcessing;
+            auto& postProcessing = scene->renderState.postProcessing;
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
             const auto& taa = postProcessing.taa;
@@ -70,7 +71,7 @@ namespace Atlas {
             }
 
             if (spatialUpscalingEnabled) {
-                Graphics::Profiler::BeginQuery("Scaling");
+                GPUProfiler::Scope gpuScope("Scaling");
 
                 auto pipelineConfig = PipelineConfig("upsampleSpatial.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -93,12 +94,10 @@ namespace Atlas {
 
                 readTexture = writeTexture;
                 writeTexture = &target->hdrTexture;
-
-                Graphics::Profiler::EndQuery();
             }
 
             if (shapenEnabled) {
-                Graphics::Profiler::BeginQuery("Sharpen");
+                GPUProfiler::Scope gpuScope("Sharpen");
 
                 auto pipelineConfig = PipelineConfig("sharpen.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -124,8 +123,6 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
                 std::swap(readTexture, writeTexture);
-
-                Graphics::Profiler::EndQuery();
             }
 
             if (bloom.enable) {
@@ -133,7 +130,7 @@ namespace Atlas {
             }
 
             {
-                Graphics::Profiler::BeginQuery("Main");
+                GPUProfiler::BeginQuery("Main");
 
                 // We can't return here because of the queries
                 if (device->swapChain->isComplete) {
@@ -184,19 +181,19 @@ namespace Atlas {
                     }
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
         }
 
         void PostProcessRenderer::GenerateExposureTexture(Ref<RenderTarget>& target,
             Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
 
-            auto& exposure = scene->postProcessing.autoExposure;
+            auto& exposure = scene->renderState.postProcessing.autoExposure;
 
-            Graphics::Profiler::BeginQuery("Auto-exposure");
+            GPUProfiler::Scope gpuScope("Auto-exposure");
 
             float logLuminanceMin = log2(exposure.luminanceMin);
             float logLuminanceRange = log2(exposure.luminanceMax - exposure.luminanceMin);
@@ -205,7 +202,7 @@ namespace Atlas {
             ivec2 histogramResolution = (ivec2(target->GetScaledWidth(), target->GetScaledHeight()) + 1) / 2;
 
             {
-                Graphics::Profiler::BeginQuery("Generate exposure histogram");
+                GPUProfiler::Scope sectionScope("Generate exposure histogram");
                 struct alignas(16) HistogramPushConstants {
                     float logLuminanceMin;
                     float invLogLuminanceRange;
@@ -240,12 +237,10 @@ namespace Atlas {
                 commandList->PipelineBarrier(histogramImageBarriers, histogramBufferBarriers);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                Graphics::Profiler::EndQuery();
             }
 
             {
-                Graphics::Profiler::BeginQuery("Generate exposure texture");
+                GPUProfiler::Scope sectionScope("Generate exposure texture");
 
                 struct alignas(16) TemporalPushConstants {
                     float logLuminanceMin;
@@ -258,7 +253,7 @@ namespace Atlas {
                 auto pushConstants = TemporalPushConstants{
                     .logLuminanceMin = logLuminanceMin,
                     .logLuminanceRange = logLuminanceRange,
-                    .timeCoefficient = 1.0f - exp(-scene->GetDeltaTime() * exposure.timeCoefficient),
+                    .timeCoefficient = 1.0f - exp(-scene->renderState.deltaTime * exposure.timeCoefficient),
                     .pixelCount = float(histogramResolution.x * histogramResolution.y),
                     .resetHistory = !target->HasHistory() ? 1 : 0
                 };
@@ -283,11 +278,7 @@ namespace Atlas {
 
                 commandList->ImageMemoryBarrier(target->exposureTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-                Graphics::Profiler::EndQuery();
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 
@@ -297,8 +288,8 @@ namespace Atlas {
             const uint32_t maxDownsampleCount = 12;
             ivec2 resolutions[maxDownsampleCount];
 
-            Graphics::Profiler::BeginQuery("Bloom");
-            Graphics::Profiler::BeginQuery("Copy texture");
+            GPUProfiler::BeginQuery("Bloom");
+            GPUProfiler::BeginQuery("Copy texture");
 
             CopyToTexture(hdrTexture, bloomTexture, commandList);
 
@@ -310,7 +301,7 @@ namespace Atlas {
 
             // Downsample
             {
-                Graphics::Profiler::EndAndBeginQuery("Downsample");
+                GPUProfiler::EndAndBeginQuery("Downsample");
 
                 struct alignas(16) PushConstants {
                     int mipLevel;
@@ -356,7 +347,7 @@ namespace Atlas {
 
             // Upsample
             {
-                Graphics::Profiler::EndAndBeginQuery("Upsample");
+                GPUProfiler::EndAndBeginQuery("Upsample");
 
                 struct alignas(16) PushConstants {
                     int additive;
@@ -396,8 +387,8 @@ namespace Atlas {
                     std::swap(textureIn, textureOut);
                 }
 
-                Graphics::Profiler::EndQuery();
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
+                GPUProfiler::EndQuery();
             }
 
             Graphics::ImageBarrier imageBarriers[] = {
@@ -435,7 +426,7 @@ namespace Atlas {
         void PostProcessRenderer::SetUniforms(const CameraComponent& camera,
             const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene) {
 
-            const auto& postProcessing = scene->postProcessing;
+            const auto& postProcessing = scene->renderState.postProcessing;
 
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;

@@ -16,7 +16,8 @@ namespace Atlas {
 
         void ShadowRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList) {
 
-            Graphics::Profiler::BeginQuery("Shadows");
+            CPUProfiler::Scope profilerScope("Shadows");
+            GPUProfiler::Scope gpuScope("Shadows");
 
             std::swap(prevLightMap, lightMap);
             lightMap.clear();
@@ -44,33 +45,33 @@ namespace Atlas {
 
             // Need to also keep track of non processed layer (e.g. long range layers)
             for (auto& [lightEntity, frameBuffer] : lightMap) {
-                const auto& light = lightEntity.GetComponent<LightComponent>();
+                auto light = scene->renderState.GetLight(lightEntity);
                 
-                if (light.type == LightType::DirectionalLight && light.shadow->longRange) {
+                if (light && light->comp.type == LightType::DirectionalLight && light->comp.shadow->longRange) {
                     // Need to go through render passes to make sure images have transitioned
-                    frameBuffer->depthAttachment.layer = light.shadow->viewCount - 1;
+                    frameBuffer->depthAttachment.layer = light->comp.shadow->viewCount - 1;
                     frameBuffer->Refresh();
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
                     commandList->EndRenderPass();
                 }
             }
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             RenderList* renderList, Ref<RenderList::Pass> shadowPass) {
 
-            Graphics::Profiler::BeginQuery("Entity pass " + std::to_string(shadowPass->lightEntity) + " layer " + std::to_string(shadowPass->layer));
+            GPUProfiler::Scope gpuScope("Entity pass " + std::to_string(shadowPass->lightEntity) + " layer " + std::to_string(shadowPass->layer));
 
             auto lightEntity = shadowPass->lightEntity;
-            auto& light = lightEntity.GetComponent<LightComponent>();
-            if (!light.shadow || !light.shadow->update)
+            auto extractedLight = scene->renderState.GetLight(lightEntity);
+            if (!extractedLight || !extractedLight->updateShadow)
                 return;
 
+            auto& light = extractedLight->comp;
+
             auto sceneState = &scene->renderState;
-            auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+            auto frameBuffer = GetOrCreateFrameBuffer(lightEntity, light);
 
             lightMap[lightEntity] = frameBuffer;
 
@@ -113,7 +114,7 @@ namespace Atlas {
             auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
 
             // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
-            scene->wind.noiseMap.Bind(commandList, 3, 0);
+            scene->renderState.wind.noiseMap.Bind(commandList, 3, 0);
 
             int32_t subDataCount = 0;
             // Retrieve all possible materials
@@ -241,13 +242,10 @@ namespace Atlas {
 
             commandList->EndRenderPass();
 
-            Graphics::Profiler::EndQuery();
-
         }
 
-        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity) {
+        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light) {
 
-            auto& light = entity.GetComponent<LightComponent>();
             auto& shadow = light.shadow;
             
             if (prevLightMap.contains(entity)) {

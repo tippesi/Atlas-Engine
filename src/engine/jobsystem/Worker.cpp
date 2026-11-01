@@ -64,6 +64,9 @@ namespace Atlas {
             if (!success)
                 Log::Warning("Couldn't set thread priority");
 
+            const char* priorityNames[] = { "high", "medium", "low" };
+            CPUProfiler::SetThreadName("Worker " + std::to_string(workerId) + " " + priorityNames[static_cast<int>(priority)]);
+
             function(*this);
         });
 

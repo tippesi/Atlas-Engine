@@ -1,6 +1,6 @@
 #include "OceanSurfaceQueries.h"
 #include "../graphics/GraphicsDevice.h"
-#include "../graphics/Profiler.h"
+#include "../profiler/GPUProfiler.h"
 #include "../pipeline/PipelineManager.h"
 
 #include <bit>
@@ -18,6 +18,7 @@ namespace Atlas {
 
         uint32_t OceanSurfaceQueries::CreateQuery(const std::vector<vec3>& positions) {
 
+            std::scoped_lock lock(*mutex);
             // The counter wraps around, ids that are still in use are skipped
             do {
                 queryCounter++;
@@ -31,6 +32,7 @@ namespace Atlas {
 
         bool OceanSurfaceQueries::UpdateQuery(uint32_t queryId, const std::vector<vec3>& positions) {
 
+            std::scoped_lock lock(*mutex);
             auto it = queries.find(queryId);
             if (it == queries.end())
                 return false;
@@ -44,6 +46,7 @@ namespace Atlas {
 
         bool OceanSurfaceQueries::IsQueryValid(uint32_t queryId) {
 
+            std::scoped_lock lock(*mutex);
             auto it = queries.find(queryId);
             if (it == queries.end())
                 return false;
@@ -56,6 +59,7 @@ namespace Atlas {
 
         std::vector<OceanSurface> OceanSurfaceQueries::GetQueryResults(uint32_t queryId) {
 
+            std::scoped_lock lock(*mutex);
             auto it = queries.find(queryId);
             if (it == queries.end())
                 return {};
@@ -68,12 +72,14 @@ namespace Atlas {
 
         void OceanSurfaceQueries::DestroyQuery(uint32_t queryId) {
 
+            std::scoped_lock lock(*mutex);
             queries.erase(queryId);
 
         }
 
         void OceanSurfaceQueries::Update() {
 
+            std::scoped_lock lock(*mutex);
             // Results arrive FRAME_DATA_COUNT frames later, queries need to live at least that long
             auto lifetime = std::max(queryLifetime, FRAME_DATA_COUNT + 1);
             std::erase_if(queries, [&](auto& item) {
@@ -84,6 +90,7 @@ namespace Atlas {
 
         void OceanSurfaceQueries::Compute(Graphics::CommandList* commandList, bool shoreLine) {
 
+            std::scoped_lock lock(*mutex);
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             // A scene that is rendered multiple times in a frame computes its queries only once
@@ -128,7 +135,7 @@ namespace Atlas {
             if (framePositions.empty())
                 return;
 
-            Graphics::Profiler::BeginQuery("Ocean surface queries");
+            GPUProfiler::Scope gpuScope("Ocean surface queries");
 
             if (framePositions.size() > capacity) {
                 capacity = std::max(std::bit_ceil(framePositions.size()), size_t(64));
@@ -166,8 +173,6 @@ namespace Atlas {
 
             commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

@@ -9,6 +9,7 @@ namespace Atlas {
 	namespace Scene {
 
         class Scene;
+        class SceneRenderState;
 
 		namespace Components {
 
@@ -95,6 +96,7 @@ namespace Atlas {
                 mat4 lastViewMatrix = mat4{ 1.0f };
 
                 friend Scene;
+                friend SceneRenderState;
 
             };
 

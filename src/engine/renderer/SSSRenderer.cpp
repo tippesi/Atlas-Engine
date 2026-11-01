@@ -14,14 +14,15 @@ namespace Atlas {
 
         void SSSRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto sss = scene->sss;
+            auto sss = scene->renderState.sss;
 
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!sss || !sss->enable || !mainLightEntity.IsValid()) return;
+            auto& mainLight = scene->renderState.mainLight;
+            if (!sss || !sss->enable || !mainLight) return;
 
-            Graphics::Profiler::BeginQuery("Screen space shadows");
+            CPUProfiler::Scope profilerScope("Screen space shadows");
+            GPUProfiler::Scope gpuScope("Screen space shadows");
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
 
             ivec2 res = ivec2(target->sssTexture.width, target->sssTexture.height);
             auto downsampledTarget = target->GetData(RenderResolution::FULL_RES);
@@ -36,7 +37,7 @@ namespace Atlas {
 
                 static int frameCount = 0;
 
-                auto& light = mainLightEntity.GetComponent<LightComponent>();
+                auto& light = *mainLight;
                 auto lightDirection = glm::normalize(vec3(camera.viewMatrix * vec4(
                     light.transformedProperties.directional.direction, 0.0f)));
 
@@ -52,7 +53,7 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 2);
 
-                bool temporalEnabled = scene->postProcessing.fsr2 || scene->postProcessing.taa.enable;
+                bool temporalEnabled = scene->renderState.postProcessing.fsr2 || scene->renderState.postProcessing.taa.enable;
 
                 PushConstants constants = {
                     .lightDirection = vec4(lightDirection, 0.0),
@@ -74,8 +75,6 @@ namespace Atlas {
             {
 
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 

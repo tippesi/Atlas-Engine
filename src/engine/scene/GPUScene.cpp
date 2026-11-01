@@ -1,9 +1,10 @@
 #include "GPUScene.h"
 #include "Scene.h"
+#include "../profiler/CPUProfiler.h"
 
 #include "common/TransformOrientation.h"
 #include "graphics/GraphicsDevice.h"
-#include "graphics/Profiler.h"
+#include "../profiler/GPUProfiler.h"
 #include "pipeline/PipelineManager.h"
 
 #include <glm/gtx/norm.hpp>
@@ -128,7 +129,8 @@ namespace Atlas::Scene {
 
     void GPUScene::UpdateBuffers(Graphics::CommandList* commandList) {
 
-        Graphics::Profiler::BeginQuery("GPU scene update");
+        CPUProfiler::Scope profilerScope("GPU scene update");
+        GPUProfiler::Scope gpuScope("GPU scene update");
 
         // The instances might still be read by the previous frame
         commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT,
@@ -184,8 +186,6 @@ namespace Atlas::Scene {
 
         commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-        Graphics::Profiler::EndQuery();
 
     }
 
@@ -296,7 +296,8 @@ namespace Atlas::Scene {
         if (requests.empty())
             return;
 
-        Graphics::Profiler::BeginQuery("GPU culling");
+        CPUProfiler::Scope profilerScope("GPU culling");
+        GPUProfiler::Scope gpuScope("GPU culling");
 
         auto viewBuffer = uploadBufferPool.Upload(views.data(), views.size() * sizeof(GPUCullView));
         auto requestBuffer = uploadBufferPool.Upload(requests.data(), requests.size() * sizeof(GPUDrawRequest));
@@ -346,8 +347,6 @@ namespace Atlas::Scene {
         commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_SHADER_READ_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 
-        Graphics::Profiler::EndQuery();
-
     }
 
     void GPUScene::WriteRayTracingInstances(RayTracing::RayTracingWorld& rayTracingWorld, vec3 cameraLocation,
@@ -357,7 +356,8 @@ namespace Atlas::Scene {
         if (!pendingInstances)
             return;
 
-        Graphics::Profiler::BeginQuery("Ray tracing instances");
+        CPUProfiler::Scope profilerScope("Ray tracing instances");
+        GPUProfiler::BeginQuery("Ray tracing instances");
 
         rayTracingWorld.PrepareInstances(commandList);
 
@@ -386,7 +386,7 @@ namespace Atlas::Scene {
             commandList->Dispatch((instanceCount + 63) / 64, 1, 1);
         }
 
-        Graphics::Profiler::EndQuery();
+        GPUProfiler::EndQuery();
 
         rayTracingWorld.FinishInstances(commandList);
 

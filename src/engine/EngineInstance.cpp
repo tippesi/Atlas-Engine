@@ -1,5 +1,6 @@
 #include "EngineInstance.h"
 #include "graphics/Instance.h"
+#include "profiler/CPUProfiler.h"
 
 namespace Atlas {
 
@@ -34,14 +35,97 @@ namespace Atlas {
 
     EngineInstance::~EngineInstance() {
 
-
+        if (renderer.joinable()) {
+            WaitForRender();
+            stopRendering = true;
+            renderStart.release();
+            renderer.join();
+        }
 
     }
 
     void EngineInstance::Update() {
 
-        if(mainRenderer)
+        // The render thread updates the main renderer before each frame
+        if(mainRenderer && !UsesRenderThread())
             mainRenderer->Update();
+
+    }
+
+    bool EngineInstance::RenderFrame(float deltaTime) {
+
+        if (!UsesRenderThread()) {
+            {
+                CPUProfiler::Scope profilerScope("Render");
+                Render(deltaTime);
+            }
+            graphicsDevice->SubmitFrame();
+            return !graphicsDevice->isDeviceLost;
+        }
+
+        WaitForRender();
+        if (graphicsDevice->isDeviceLost)
+            return false;
+
+        if (!renderer.joinable())
+            renderer = std::thread([this]() { RenderLoop(); });
+
+        renderDeltaTime = deltaTime;
+        rendering = true;
+        renderFrameBegun = false;
+        renderStart.release();
+
+        return true;
+
+    }
+
+    void EngineInstance::WaitForRender() {
+
+        if (!UsesRenderThread() || renderFrameBegun)
+            return;
+
+        if (rendering) {
+            CPUProfiler::Scope profilerScope("Wait for render");
+            renderDone.acquire();
+            rendering = false;
+        }
+
+        renderFrameBegun = true;
+        Engine::BeginRenderFrame();
+
+    }
+
+    bool EngineInstance::UsesRenderThread() {
+
+        if (!renderThreadKnown) {
+            usesRenderThread = renderThread;
+            renderThreadKnown = true;
+        }
+
+        return usesRenderThread;
+
+    }
+
+    void EngineInstance::RenderLoop() {
+
+        CPUProfiler::SetThreadName("Render");
+
+        while (true) {
+            renderStart.acquire();
+            if (stopRendering)
+                return;
+
+            {
+                CPUProfiler::Scope profilerScope("Render");
+                if (mainRenderer)
+                    mainRenderer->Update();
+
+                Render(renderDeltaTime);
+            }
+            graphicsDevice->SubmitFrame();
+
+            renderDone.release();
+        }
 
     }
 

@@ -43,27 +43,28 @@ namespace Atlas {
 
         void OceanRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->ocean || !scene->ocean->enable)
+            if (!scene->renderState.ocean || !scene->renderState.ocean->enable)
                 return;
 
-            Graphics::Profiler::BeginQuery("Ocean");
+            CPUProfiler::Scope profilerScope("Ocean");
+            GPUProfiler::Scope gpuScope("Ocean");
 
-            auto& camera = scene->GetMainCamera();
-            auto ocean = scene->ocean;
-            auto clouds = scene->sky.clouds;
-            auto fog = scene->fog;
+            auto& camera = scene->renderState.camera;
+            auto ocean = scene->renderState.ocean;
+            auto clouds = scene->renderState.sky.clouds;
+            auto fog = scene->renderState.fog;
 
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!mainLightEntity.IsValid())
+            auto& mainLight = scene->renderState.mainLight;
+            if (!mainLight)
                 return;
 
-            auto& light = mainLightEntity.GetComponent<LightComponent>();
+            auto& light = *mainLight;
 
             vec3 direction = normalize(light.transformedProperties.directional.direction);
 
             Light lightUniform;
             lightUniform.direction = vec4(light.transformedProperties.directional.direction, 0.0);
-            auto transmittance = scene->sky.GetDirectLightTransmittance(scene->GetMainCamera().GetLocation(), direction);
+            auto transmittance = scene->renderState.sky.GetDirectLightTransmittance(scene->renderState.camera.GetLocation(), direction);
             lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color) * transmittance, 0.0);
             lightUniform.intensity = light.intensity;
 
@@ -116,13 +117,13 @@ namespace Atlas {
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
 
             // The ocean can't use RTGI, so DDGI lights it even when RTGI lights the rest of the scene
-            auto volume = scene->irradianceVolume;
-            bool ddgiEnabled = volume && volume->enable && scene->IsRtDataValid();
+            auto volume = scene->renderState.irradianceVolume;
+            bool ddgiEnabled = volume && scene->IsRtDataValid();
             if (cloudShadowsEnabled)
                 clouds->shadowTexture.Bind(commandList, 3, 15);
 
             {
-                Graphics::Profiler::BeginQuery("Caustics");
+                GPUProfiler::BeginQuery("Caustics");
 
                 const int32_t groupSize = 8;
                 auto res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
@@ -193,7 +194,7 @@ namespace Atlas {
             bool oceanReflections = target->HasSeparateReflectionData();
 
             {
-                Graphics::Profiler::EndAndBeginQuery("Surface");
+                GPUProfiler::EndAndBeginQuery("Surface");
 
                 commandList->BeginRenderPass(target->afterLightingFrameBufferWithStencil->renderPass,
                     target->afterLightingFrameBufferWithStencil);
@@ -207,7 +208,7 @@ namespace Atlas {
                 if (ocean->rippleTexture.IsLoaded()) config.AddMacro("RIPPLE_TEXTURE");
                 if (ocean->foamTexture.IsLoaded()) config.AddMacro("FOAM_TEXTURE");
                 if (oceanReflections) config.AddMacro("REFLECTION");
-                if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+                if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
                 auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -217,8 +218,8 @@ namespace Atlas {
 
                 auto uniforms = GetUniforms(scene);
 
-                if (scene->sky.atmosphere)
-                    uniforms.sunAngularRadius = glm::radians(0.5f * glm::max(scene->sky.atmosphere->sunDiskSize, 0.01f));
+                if (scene->renderState.sky.atmosphere)
+                    uniforms.sunAngularRadius = glm::radians(0.5f * glm::max(scene->renderState.sky.atmosphere->sunDiskSize, 0.01f));
 
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
                 ocean->simulation.normalMap.Bind(commandList, 3, 1);
@@ -232,7 +233,7 @@ namespace Atlas {
 
                 if (cloudsEnabled) {
                     target->volumetricCloudsTexture.Bind(commandList, 3, 16);
-                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->baseAltitude;
+                    uniforms.innerCloudRadius = scene->renderState.sky.planetRadius + clouds->baseAltitude;
                 }
 
                 if (oceanReflections) {
@@ -243,8 +244,8 @@ namespace Atlas {
                 depthTexture.Bind(commandList, 3, 5);
                 target->oceanDepthTexture.Bind(commandList, 3, 20);
 
-                if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid())
-                    scene->terrain->shoreLine.Bind(commandList, 3, 9);
+                if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid())
+                    scene->renderState.terrain->shoreLine.Bind(commandList, 3, 9);
 
                 if (fogEnabled) {
                     target->volumetricTexture.Bind(commandList, 3, 7);
@@ -312,7 +313,7 @@ namespace Atlas {
                 }
 
                 if (ocean->underwaterShader) {
-                    Graphics::Profiler::EndAndBeginQuery("Underwater");
+                    GPUProfiler::EndAndBeginQuery("Underwater");
 
                     auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
 
@@ -339,7 +340,7 @@ namespace Atlas {
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid());
+                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid());
                     auto pipeline = PipelineManager::GetPipeline(underWaterPipelineConfig);
 
                     commandList->BindPipeline(pipeline);
@@ -361,17 +362,16 @@ namespace Atlas {
                     commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
 
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 
         void OceanRenderer::RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Ocean reflection data");
+            CPUProfiler::Scope profilerScope("Ocean reflection data");
+            GPUProfiler::Scope gpuScope("Ocean reflection data");
 
             auto rt = target->GetData(FULL_RES);
             auto reflectionRt = target->GetReflectionData(FULL_RES);
@@ -386,7 +386,7 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(reflectionDataPipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            uint32_t oceanMaterialIdx = scene->renderState.materialMap[scene->ocean.get()];
+            uint32_t oceanMaterialIdx = scene->renderState.materialMap[scene->renderState.ocean.get()];
             commandList->PushConstants("constants", &oceanMaterialIdx);
 
             commandList->BindImage(rt->depthTexture->image, nearestSampler, 3, 0);
@@ -432,21 +432,19 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void OceanRenderer::ComputeSurfaceQueries(Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto ocean = scene->ocean;
+            auto ocean = scene->renderState.ocean;
             if (!ocean || !ocean->enable || !ocean->physics)
                 return;
 
             auto uniforms = GetUniforms(scene);
 
-            bool shoreLine = scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid();
+            bool shoreLine = scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid();
             if (shoreLine)
-                scene->terrain->shoreLine.Bind(commandList, 3, 9);
+                scene->renderState.terrain->shoreLine.Bind(commandList, 3, 9);
 
             ocean->simulation.displacementMap.Bind(commandList, 3, 0);
             ocean->simulation.normalMap.Bind(commandList, 3, 1);
@@ -461,20 +459,21 @@ namespace Atlas {
 
         void OceanRenderer::RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->ocean || !scene->ocean->enable)
+            if (!scene->renderState.ocean || !scene->renderState.ocean->enable)
                 return;
 
-            Graphics::Profiler::BeginQuery("Ocean depth");
+            CPUProfiler::Scope profilerScope("Ocean depth");
+            GPUProfiler::Scope gpuScope("Ocean depth");
 
-            auto ocean = scene->ocean;
+            auto ocean = scene->renderState.ocean;
 
-            Graphics::Profiler::BeginQuery("Rendering");
+            GPUProfiler::Scope sectionScope("Rendering");
 
             commandList->BeginRenderPass(target->oceanDepthOnlyFrameBuffer->renderPass,
                 target->oceanDepthOnlyFrameBuffer);
 
             auto config = GeneratePipelineConfig(target, true, ocean->wireframe);
-            if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+            if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
             if (ocean->rippleTexture.IsLoaded()) config.AddMacro("RIPPLE_TEXTURE");
 
             auto pipeline = PipelineManager::GetPipeline(config);
@@ -493,16 +492,16 @@ namespace Atlas {
             else
                 dummyTexture.Bind(commandList, 3, 2);
 
-            if (scene->sky.GetProbe()) {
-                scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
+            if (scene->renderState.sky.GetProbe()) {
+                scene->renderState.sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
             }
 
             // Normals are only computed where the ocean isn't hidden by the scene
             auto sceneDepthTexture = target->GetData(FULL_RES)->depthTexture;
             commandList->BindImage(sceneDepthTexture->image, nearestSampler, 3, 5);
 
-            if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid())
-                scene->terrain->shoreLine.Bind(commandList, 3, 9);
+            if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid())
+                scene->renderState.terrain->shoreLine.Bind(commandList, 3, 9);
 
             if (ocean->rippleTexture.IsLoaded())
                 ocean->rippleTexture->Bind(commandList, 3, 10);
@@ -537,14 +536,11 @@ namespace Atlas {
 
             commandList->EndRenderPass();
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
-
         }
 
         OceanRenderer::Uniforms OceanRenderer::GetUniforms(const Ref<Scene::Scene>& scene) const {
 
-            auto ocean = scene->ocean;
+            auto ocean = scene->renderState.ocean;
 
             Uniforms uniforms = {
                 .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
@@ -579,7 +575,7 @@ namespace Atlas {
                 .foamSize = ocean->simulation.foamSize,
             };
 
-            auto terrain = scene->terrain;
+            auto terrain = scene->renderState.terrain;
             if (terrain.IsLoaded() && terrain->shoreLine.IsValid()) {
                 uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
                 uniforms.terrainSideLength = terrain->sideLength;

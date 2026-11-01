@@ -17,17 +17,18 @@ namespace Atlas {
 
         void IndirectLightRenderer::RenderIndirectDiffuse(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Indirect diffuse lighting");
+            CPUProfiler::Scope profilerScope("Indirect diffuse lighting");
+            GPUProfiler::Scope gpuScope("Indirect diffuse lighting");
 
-            auto volume = scene->irradianceVolume;
-            auto reflection = scene->reflection;
-            auto ssgi = scene->ssgi;
-            auto rtgi = scene->rtgi;
+            auto volume = scene->renderState.irradianceVolume;
+            auto reflection = scene->renderState.reflection;
+            auto ssgi = scene->renderState.ssgi;
+            auto rtgi = scene->renderState.rtgi;
 
             auto rtDataValid = scene->IsRtDataValid();
             auto rtgiEnabled = rtgi && rtgi->enable && rtDataValid;
-            auto ddgiEnabled = volume && volume->enable && !rtgiEnabled && rtDataValid;
-            auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
+            auto ddgiEnabled = volume && !rtgiEnabled && rtDataValid;
+            auto ddgiVisibility = volume && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && (rtDataValid || reflection->ssr);
             auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
             bool ssgiAo = ssgiEnabled && ssgi->enableAo;            
@@ -52,7 +53,7 @@ namespace Atlas {
                 .reflectionDownsampled2x = target->GetReflectionResolution() == RenderResolution::HALF_RES,
                 .giDownsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
                 .aoStrength =  ssgiAo ? ssgi->aoStrength / sqrt(ssgi->radius) : 1.0f,
-                .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->GetCubemap().image->mipLevels : 1)
+                .specularProbeMipLevels = int32_t(scene->renderState.sky.GetProbe() ? scene->renderState.sky.GetProbe()->GetCubemap().image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
 
@@ -69,23 +70,22 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void IndirectLightRenderer::RenderIndirectSpecular(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Indirect specular lighting");
+            CPUProfiler::Scope profilerScope("Indirect specular lighting");
+            GPUProfiler::Scope gpuScope("Indirect specular lighting");
 
-            auto volume = scene->irradianceVolume;
-            auto reflection = scene->reflection;
-            auto ssgi = scene->ssgi;
-            auto rtgi = scene->rtgi;
+            auto volume = scene->renderState.irradianceVolume;
+            auto reflection = scene->renderState.reflection;
+            auto ssgi = scene->renderState.ssgi;
+            auto rtgi = scene->renderState.rtgi;
 
             auto rtDataValid = scene->IsRtDataValid();
             auto rtgiEnabled = rtgi && rtgi->enable && rtDataValid;
-            auto ddgiEnabled = volume && volume->enable && !rtgiEnabled && rtDataValid;
-            auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
+            auto ddgiEnabled = volume && !rtgiEnabled && rtDataValid;
+            auto ddgiVisibility = volume && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && (rtDataValid || reflection->ssr);
             auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
             bool ssgiAo = ssgiEnabled && ssgi->enableAo;
@@ -120,7 +120,7 @@ namespace Atlas {
                 .reflectionDownsampled2x = target->GetReflectionResolution() == RenderResolution::HALF_RES,
                 .giDownsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
                 .aoStrength =  ssgiAo ? ssgi->aoStrength / sqrt(ssgi->radius) : 1.0f,
-                .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->GetCubemap().image->mipLevels : 1)
+                .specularProbeMipLevels = int32_t(scene->renderState.sky.GetProbe() ? scene->renderState.sky.GetProbe()->GetCubemap().image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
 
@@ -136,8 +136,6 @@ namespace Atlas {
             groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

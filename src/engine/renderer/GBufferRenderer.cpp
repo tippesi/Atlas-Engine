@@ -18,7 +18,8 @@ namespace Atlas {
 
         void GBufferRenderer::Downscale(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Downsample GBuffer");
+            CPUProfiler::Scope profilerScope("Downsample GBuffer");
+            GPUProfiler::Scope gpuScope("Downsample GBuffer");
 
             auto pipeline = PipelineManager::GetPipeline(downscalePipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -28,13 +29,12 @@ namespace Atlas {
 
             Downscale(rt, downsampledRt, commandList);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void GBufferRenderer::DownscaleDepthOnly(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Downsample GBuffer depth only");
+            CPUProfiler::Scope profilerScope("Downsample GBuffer depth only");
+            GPUProfiler::Scope gpuScope("Downsample GBuffer depth only");
 
             auto pipeline = PipelineManager::GetPipeline(downscaleDepthOnlyPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -44,13 +44,12 @@ namespace Atlas {
 
             Downscale(rt, downsampledRt, commandList);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void GBufferRenderer::Patch(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Patch GBuffer");
+            CPUProfiler::Scope profilerScope("Patch GBuffer");
+            GPUProfiler::Scope gpuScope("Patch GBuffer");
 
             auto pipeline = PipelineManager::GetPipeline(patchNormalPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -91,13 +90,12 @@ namespace Atlas {
             };
             commandList->PipelineBarrier(postPatchBarriers, {});
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void GBufferRenderer::GenerateReactiveMask(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Generate reactive mask");
+            CPUProfiler::Scope profilerScope("Generate reactive mask");
+            GPUProfiler::Scope gpuScope("Generate reactive mask");
 
             auto pipeline = PipelineManager::GetPipeline(generateReactiveMaskPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -131,8 +129,6 @@ namespace Atlas {
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
             commandList->ImageMemoryBarrier(reactiveMaskTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

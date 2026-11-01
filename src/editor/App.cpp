@@ -8,6 +8,8 @@
 #include "ui/panels/PopupPanels.h"
 #include "tools/FileSystemHelper.h"
 #include <ImGuizmo.h>
+#include <profiler/CPUProfiler.h>
+#include <profiler/HitchRecorder.h>
 #include <imgui_internal.h>
 
 #include <filesystem>
@@ -29,6 +31,15 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 namespace Atlas::Editor {
 
     void App::LoadContent() {
+
+        // --log-hitches [ms] logs frames that take much longer than the ones before with their CPU profile
+        for (size_t i = 0; i < args.size(); i++) {
+            if (args[i] != "--log-hitches")
+                continue;
+            HitchRecorder::log = true;
+            if (i + 1 < args.size() && std::isdigit(static_cast<unsigned char>(args[i + 1][0])))
+                HitchRecorder::minimumFrameTime = std::stof(args[i + 1]);
+        }
 
         ContentDiscovery::Update();
 
@@ -100,9 +111,11 @@ namespace Atlas::Editor {
 
         const ImGuiIO& io = ImGui::GetIO();
 
+        CPUProfiler::Scope sectionScope("Content discovery");
         // Will lead to frame time spikes, don't do it if content can't be seen
         if (!playingMaximized)
             ContentDiscovery::Update();
+        sectionScope.Next("ImGui update");
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
         Singletons::blockingOperation->Update();
@@ -110,7 +123,9 @@ namespace Atlas::Editor {
         if (Singletons::blockingOperation->block)
             return;
 
+        sectionScope.Next("Content browser update");
         contentBrowserWindow.Update();
+        sectionScope.Next("Scene windows update");
 
         // Create new windows for fully loaded scenes
         for (size_t i = 0; i < waitToLoadScenes.size(); i++) {
@@ -236,6 +251,7 @@ namespace Atlas::Editor {
             else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, Atlas::Graphics::SRGB_NONLINEAR);
         }
 
+        CPUProfiler::Scope sectionScope("ImGui new frame");
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
@@ -256,7 +272,9 @@ namespace Atlas::Editor {
                 ImGui::GetColorU32(Theme::Base()));
 
             // Status bar first, it reduces the work area of the viewport
+            sectionScope.Next("Status bar");
             RenderStatusBar();
+            sectionScope.Next("Dockspace");
 
             // The host covers the work area, which excludes the main menu bar and the status bar
             ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -285,6 +303,7 @@ namespace Atlas::Editor {
             if (sceneWindows.empty())
                 RenderEmptyState(mainDsId);
 
+            sectionScope.Next("Main menu bar");
             if (ImGui::BeginMainMenuBar()) {
                 static bool newScene = false;
                 bool saveScene = false, exitEditor = false;
@@ -354,22 +373,29 @@ namespace Atlas::Editor {
                 ImGui::EndMainMenuBar();
             }            
 
+            sectionScope.Next("Scene windows");
             for (auto& sceneWindow : sceneWindows) {
                 sceneWindow->Render();
             }
 
             // This does active changes to the scene, render after scene windows
+            sectionScope.Next("Geometry brush window");
             geometryBrushWindow.Render(activeSceneWindow);
 
+            sectionScope.Next("Content browser");
             contentBrowserWindow.Render();
+            sectionScope.Next("Log window");
             logWindow.Render();
+            sectionScope.Next("Profiler window");
             profilerWindow.Render();
 
             ImGui::End();
         }
         else {
+            sectionScope.Next("Maximized scene");
             RenderSceneMaximized();
         }
+        sectionScope.Next("Popups and notifications");
 
         // Global shortcut for the command palette
 #ifdef AE_OS_MACOS
@@ -388,7 +414,9 @@ namespace Atlas::Editor {
         commandPalette.Render();
 
         // Inactive viewports can still have scene jobs that enqueue GPU work
+        sectionScope.Next("Wait for scene updates");
         waitForSceneUpdates();
+        sectionScope.Next("ImGui render");
         ImGui::Render();
         Singletons::imguiWrapper->Render(true);
 
@@ -417,7 +445,7 @@ namespace Atlas::Editor {
         ImGui::Image(set, renderArea);
 
         if (activeSceneWindow->perfOverlayMaximized) {
-            auto gpuProfilerData = Graphics::Profiler::GetQueriesAverage(32, Graphics::Profiler::OrderBy::MAX_TIME);
+            auto gpuProfilerData = GPUProfiler::GetQueriesAverage(32, GPUProfiler::OrderBy::MAX_TIME);
 
             std::string perfString;
             double slowestTime = 0.0;
@@ -425,7 +453,7 @@ namespace Atlas::Editor {
                 const auto& threadData = gpuProfilerData[i];
                 double threadTime = 0.0;
                 for (const auto& query : threadData.queries) {
-                    threadTime += query.timer.elapsedTime;
+                    threadTime += query.elapsedTime;
                 }
                 if (threadTime > slowestTime) {
                     slowestTime = threadTime;

@@ -17,12 +17,9 @@ namespace Atlas {
 
         void TextRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto textSubset = scene->GetSubset<TextComponent>();
-
             // This whole thing isn't really optimized right now, but as long as it's not a bottleneck it's fine right now
-            for (auto entity : textSubset) {
+            for (const auto& textComp : scene->renderState.texts) {
 
-                auto textComp = textSubset.Get(entity);
                 if (!textComp.font.IsLoaded())
                     continue;
                 

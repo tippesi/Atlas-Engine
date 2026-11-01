@@ -13,26 +13,24 @@ namespace Atlas {
 
         void TerrainShadowRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->terrain.IsLoaded())
+            if (!scene->renderState.terrain.IsLoaded())
                 return;
 
-            Graphics::Profiler::BeginQuery("Terrain shadows");
+            CPUProfiler::Scope profilerScope("Terrain shadows");
+            GPUProfiler::Scope gpuScope("Terrain shadows");
 
-            auto terrain = scene->terrain;
+            auto terrain = scene->renderState.terrain;
 
             terrain->distanceVertexArray.Bind(commandList);
 
-            auto lightSubset = scene->GetSubset<LightComponent>();
-
             LightMap usedLightMap;
-            for (auto& lightEntity : lightSubset) {
+            for (const auto& [lightEntity, light, updateShadow] : scene->renderState.allLights) {
 
-                auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.shadow || !light.shadow->update || !light.shadow->allowTerrain)
+                if (!updateShadow || !light.shadow->allowTerrain)
                     continue;
 
                 auto shadow = light.shadow;
-                auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+                auto frameBuffer = GetOrCreateFrameBuffer(lightEntity, light);
                 usedLightMap[lightEntity] = frameBuffer;
 
                 if (frameBuffer->depthAttachment.layer != 0) {
@@ -108,8 +106,6 @@ namespace Atlas {
 
             lightMap = usedLightMap;
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         PipelineConfig TerrainShadowRenderer::GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
@@ -131,9 +127,7 @@ namespace Atlas {
 
         }
 
-        Ref<Graphics::FrameBuffer> TerrainShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity) {
-
-            auto& light = entity.GetComponent<LightComponent>();
+        Ref<Graphics::FrameBuffer> TerrainShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light) {
 
             auto shadow = light.shadow;
 

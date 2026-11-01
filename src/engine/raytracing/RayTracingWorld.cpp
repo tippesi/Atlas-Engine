@@ -5,7 +5,7 @@
 #include "mesh/MeshData.h"
 #include "volume/BVH.h"
 #include "graphics/ASBuilder.h"
-#include "graphics/Profiler.h"
+#include "profiler/GPUProfiler.h"
 #include "pipeline/PipelineManager.h"
 #include "common/ColorConverter.h"
 #include "common/Packing.h"
@@ -691,7 +691,7 @@ namespace Atlas {
 
             auto& pending = *pendingInstances;
 
-            Graphics::Profiler::BeginQuery("TLAS update");
+            GPUProfiler::BeginQuery("TLAS update");
 
             // The written and copied instances are read by the build and the readback
             commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -709,7 +709,7 @@ namespace Atlas {
             commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
                 VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
             pendingInstances.reset();
 
@@ -846,8 +846,8 @@ namespace Atlas {
             if (skinnedBlases.empty())
                 return;
 
-            Graphics::Profiler::BeginThread("Skinning", commandList);
-            Graphics::Profiler::BeginQuery("Skin BLASes");
+            GPUProfiler::BeginThread("Skinning", commandList);
+            GPUProfiler::BeginQuery("Skin BLASes");
 
             // The buffers might still be read by the previous frame
             commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT,
@@ -938,8 +938,8 @@ namespace Atlas {
             commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndThread();
+            GPUProfiler::EndQuery();
+            GPUProfiler::EndThread();
 
         }
 

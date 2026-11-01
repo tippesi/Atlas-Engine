@@ -1,5 +1,6 @@
 #include "PhysicsWorld.h"
 #include "PhysicsManager.h"
+#include "../profiler/CPUProfiler.h"
 #include "MathConversion.h"
 #include "../renderer/PrimitiveBatch.h"
 #include "../tools/PerformanceCounter.h"
@@ -99,6 +100,8 @@ namespace Atlas {
         void PhysicsWorld::Update(float deltaTime) {
 
             if (pauseSimulation) return;
+
+            CPUProfiler::Scope profilerScope("Physics simulation");
 
             // A long frame (the first one after loading, a hitch) doesn't take giant steps, which throw floating
             // bodies out of the water: the simulation falls behind instead

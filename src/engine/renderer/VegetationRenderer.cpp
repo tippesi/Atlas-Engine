@@ -31,11 +31,12 @@ namespace Atlas {
                 float windWiggleScale;
             };
 
-            if (!scene->clutter) return;
+            if (!scene->renderState.clutter) return;
 
-            Graphics::Profiler::BeginQuery("Vegetation");
+            CPUProfiler::Scope profilerScope("Vegetation");
+            GPUProfiler::Scope gpuScope("Vegetation");
 
-            auto& vegetation = *scene->clutter;
+            auto& vegetation = *scene->renderState.clutter;
 
             auto meshes = vegetation.GetMeshes();
 
@@ -77,7 +78,7 @@ namespace Atlas {
                     if (material->HasDisplacementMap())
                         material->displacementMap->Bind(commandList, 3, 6);
 
-                    scene->wind.noiseMap.Bind(commandList, 3, 7);
+                    scene->renderState.wind.noiseMap.Bind(commandList, 3, 7);
 
                     auto pushConstants = PushConstants {
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
@@ -97,8 +98,6 @@ namespace Atlas {
                     commandList->DrawIndexedIndirect(commandBuffer->Get(), stride * offset, helper.binCount, stride);
                 }
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 

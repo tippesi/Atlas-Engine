@@ -1,7 +1,7 @@
 #include "SceneRenderState.h"
 #include "Scene.h"
 #include "renderer/helper/CommonStructures.h"
-#include "graphics/Profiler.h"
+#include "profiler/GPUProfiler.h"
 
 #include "common/ColorConverter.h"
 #include "common/Packing.h"
@@ -477,11 +477,11 @@ namespace Atlas::Scene {
 
             auto commandList = device->GetCommandList();
             commandList->BeginCommands();
-            Graphics::Profiler::BeginThread("GPU scene", commandList);
+            GPUProfiler::BeginThread("GPU scene", commandList);
 
             gpuScene.UpdateBuffers(commandList);
 
-            Graphics::Profiler::EndThread();
+            GPUProfiler::EndThread();
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
             });
@@ -782,7 +782,110 @@ namespace Atlas::Scene {
 
     }
 
+    void SceneRenderState::Extract() {
+
+        // The renderers jitter the copy of the camera, the jitter of the last frame is part of the history
+        auto lastCamera = camera;
+        hasCamera = scene->HasMainCamera();
+        if (hasCamera) {
+            camera = scene->GetMainCamera();
+            camera.jitterVector = lastCamera.jitterVector;
+            camera.lastJitterVector = lastCamera.lastJitterVector;
+            camera.jitteredMatrix = lastCamera.jitteredMatrix;
+            camera.lastJitteredMatrix = lastCamera.lastJitteredMatrix;
+        }
+
+        mainLight.reset();
+        allLights.clear();
+        auto lightSubset = scene->GetSubset<LightComponent>();
+        for (auto& lightEntity : lightSubset) {
+            auto& light = lightEntity.GetComponent<LightComponent>();
+            auto& extracted = allLights.emplace_back(LightEntity{ lightEntity, light });
+            // Scripts can request a shadow update again while this frame renders
+            if (light.shadow) {
+                extracted.updateShadow = light.shadow->update;
+                light.shadow->update = false;
+            }
+            if (light.type == LightType::DirectionalLight && (!mainLight || !mainLight->isMain))
+                mainLight = light;
+        }
+
+        texts.clear();
+        auto textSubset = scene->GetSubset<TextComponent>();
+        for (auto& textEntity : textSubset)
+            texts.push_back(textEntity.GetComponent<TextComponent>());
+
+        time = scene->GetTime();
+        deltaTime = scene->GetDeltaTime();
+
+        auto copy = [](auto& target, const auto& source) {
+            if (!source)
+                target = nullptr;
+            else if (!target)
+                target = CreateRef<std::remove_cvref_t<decltype(*source)>>(*source);
+            else
+                *target = *source;
+            };
+
+        wind = scene->wind;
+
+        // Scripts can request new cloud noise or atmosphere tables again while this frame renders. A request stays
+        // in the render state until a frame renders it
+        auto clouds = sky.clouds;
+        auto needsNoiseUpdate = clouds && clouds->needsNoiseUpdate;
+        sky = scene->sky;
+        copy(clouds, scene->sky.clouds);
+        if (clouds) {
+            clouds->needsNoiseUpdate = needsNoiseUpdate || scene->sky.clouds->needsNoiseUpdate;
+            scene->sky.clouds->needsNoiseUpdate = false;
+        }
+        sky.clouds = clouds;
+        if (scene->sky.atmosphere) {
+            atmosphereNeedsUpdate |= scene->sky.atmosphere->needsUpdate;
+            scene->sky.atmosphere->needsUpdate = false;
+        }
+        copy(fog, scene->fog);
+        copy(rtgi, scene->rtgi);
+        copy(ssgi, scene->ssgi);
+        copy(reflection, scene->reflection);
+        copy(sss, scene->sss);
+        postProcessing = scene->postProcessing;
+
+        irradianceVolume = scene->irradianceVolume && scene->irradianceVolume->enable ? scene->irradianceVolume : nullptr;
+        ocean = scene->ocean;
+        terrain = scene->terrain;
+        clutter = scene->clutter;
+        rayTracingWorld = scene->rayTracingWorld;
+
+    }
+
+    const LightEntity* SceneRenderState::GetLight(ECS::Entity entity) const {
+
+        for (const auto& light : allLights) {
+            if (light.entity == entity)
+                return &light;
+        }
+
+        return nullptr;
+
+    }
+
     void SceneRenderState::WaitForAsyncWorkCompletion() {
+
+        WaitForJobs();
+
+        // A frame that wasn't rendered leaves its render list and its shadow updates behind
+        if (!renderList.wasCleared) {
+            renderList.Clear();
+            for (const auto& light : allLights) {
+                if (light.updateShadow)
+                    light.comp.shadow->update = true;
+            }
+        }
+
+    }
+
+    void SceneRenderState::WaitForJobs() {
 
         JobSystem::Wait(newFrameRenderListJob);
         JobSystem::Wait(bindlessBlasMapUpdateJob);
@@ -795,9 +898,6 @@ namespace Atlas::Scene {
         JobSystem::Wait(fillGPUShadowRenderPassesJob);
         JobSystem::Wait(gpuSceneUpdateJob);
         JobSystem::Wait(cullAndSortLightsJob);
-
-        if (!renderList.wasCleared)
-            renderList.Clear();
 
     }
 

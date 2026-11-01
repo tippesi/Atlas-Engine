@@ -21,7 +21,8 @@ namespace Atlas {
                 uint32_t materialIdx;
             };
 
-            Graphics::Profiler::BeginQuery("Impostors");
+            CPUProfiler::Scope profilerScope("Impostors");
+            GPUProfiler::Scope gpuScope("Impostors");
 
             auto mainPass = renderList->GetMainPass();
 
@@ -72,8 +73,6 @@ namespace Atlas {
                 bindImpostor(draw.mesh, true);
                 renderList->DrawGPUCulled(commandList, draw);
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 

@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "Entity.h"
+#include "../profiler/CPUProfiler.h"
 #include "SceneSerializer.h"
 #include "components/Components.h"
 #include "components/LuaScriptComponent.h"
@@ -153,7 +154,12 @@ namespace Atlas {
             this->deltaTime = paused ? 0.0f : deltaTime;
             time += this->deltaTime;
 
+            CPUProfiler::Scope profilerScope("Scene update");
+            CPUProfiler::Scope sectionScope("Wait for async work");
+
             WaitForAsyncWorkCompletion();
+
+            sectionScope.Next("Cleanup and transform history");
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
@@ -173,6 +179,7 @@ namespace Atlas {
                 JobSystem::Wait(historyJobGroup);
             }
 
+            sectionScope.Next("Scripts");
             // Paused scenes don't execute their scripts, the queries of the scripts only age while they are running
             if (ocean && !paused)
                 ocean->surfaceQueries.Update();
@@ -201,6 +208,7 @@ namespace Atlas {
 
             JobGroup terrainOceanJobGroup{ "Terrain and ocean update", JobPriority::High};
 
+            sectionScope.Next("Terrain, ocean and animations");
             // Do these updates before anything else (doesn't have newest camera position, but that doesn't matter too much
             if (HasMainCamera()) {
                 auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
@@ -270,6 +278,7 @@ namespace Atlas {
 
             JobGroup jobGroup{ "Scene update", JobPriority::High};
 
+            sectionScope.Next("Transforms");
             // Start the hierarchy update as early as possible in the frame (we need to move this further down if we need terrain info in the future)
             // Update hierarchy and their entities
             for (const auto& [entity, level] : changedTransformSet) {
@@ -316,6 +325,7 @@ namespace Atlas {
 
             JobSystem::Wait(jobGroup);
 
+            sectionScope.Next("Physics");
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
 
@@ -598,6 +608,7 @@ namespace Atlas {
                 physicsWorld->contactEvents.clear();
             }
 
+            sectionScope.Next("Cameras, meshes and lights");
             // Do camera update while we find changed meshes
             FindChangedMeshes([&]() {
                 // Don't do anything in parallel here, we don't expect to have many cameras
@@ -787,6 +798,9 @@ namespace Atlas {
             firstTimestep = false;
 
             JobSystem::Wait(jobGroup);
+
+            sectionScope.Next("Extract");
+            renderState.Extract();
 
         }
 

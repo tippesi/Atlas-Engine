@@ -41,7 +41,7 @@ namespace Atlas {
             PipelineConfig GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
                 Ref<Terrain::Terrain>& terrain);
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light);
 
             LightMap lightMap;
 

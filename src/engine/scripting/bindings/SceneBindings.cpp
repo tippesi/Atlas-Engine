@@ -428,9 +428,6 @@ namespace Atlas::Scripting::Bindings {
         );
 
         ns->new_usertype<CameraComponent>("CameraComponent",
-            "GetJitter", &CameraComponent::GetJitter,
-            "GetLastJitter", &CameraComponent::GetLastJitter,
-            "GetLastJitteredMatrix", &CameraComponent::GetLastJitteredMatrix,
             "GetLocation", &CameraComponent::GetLocation,
             "GetLastLocation", &CameraComponent::GetLastLocation,
             "GetFrustumCorners", &CameraComponent::GetFrustumCorners,

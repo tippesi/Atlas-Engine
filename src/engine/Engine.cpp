@@ -1,6 +1,8 @@
 #include "Engine.h"
 #include "graphics/Extensions.h"
-#include "graphics/Profiler.h"
+#include "profiler/GPUProfiler.h"
+#include "profiler/CPUProfiler.h"
+#include "profiler/HitchRecorder.h"
 #include "EngineInstance.h"
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
@@ -103,7 +105,7 @@ namespace Atlas {
 
         JobSystem::Shutdown();
         Graphics::ShaderCompiler::Shutdown();
-        Graphics::Profiler::Shutdown();
+        GPUProfiler::Shutdown();
         PipelineManager::Shutdown();
         Physics::PhysicsManager::Shutdown();
         Texture::Texture::Shutdown();
@@ -118,19 +120,29 @@ namespace Atlas {
 #endif
     }
 
-    void Engine::Update() {
+    void Engine::Update(bool renderThread) {
 
         Clock::Update();
-        Graphics::Profiler::BeginFrame();
+        CPUProfiler::BeginFrame();
+        HitchRecorder::Update(Clock::GetDelta() * 1000.0f);
+        CPUProfiler::Scope profilerScope("Engine update");
+        if (!renderThread)
+            BeginRenderFrame();
         // First reset keyboard state before new events
         Input::KeyboardMap::Update();
         Input::ControllerMap::Update();
         Events::EventManager::Update();
-        PipelineManager::Update();
         Audio::AudioManager::Update();
         Physics::ShapesManager::Update();
         RayTracing::RayTracingManager::Update();
         Terrain::TerrainManager::Update();
+
+    }
+
+    void Engine::BeginRenderFrame() {
+
+        GPUProfiler::BeginFrame();
+        PipelineManager::Update();
 
     }
 

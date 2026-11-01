@@ -34,9 +34,10 @@ namespace Atlas {
             if (!scene->IsRtDataValid())
                 return;
 
-            Graphics::Profiler::BeginQuery("Path tracing");
+            CPUProfiler::Scope profilerScope("Path tracing");
+            GPUProfiler::Scope gpuScope("Path tracing");
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
             auto width = renderTarget->GetScaledWidth();
             auto height = renderTarget->GetScaledHeight();
 
@@ -163,7 +164,7 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == tileResolution.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 8 == tileResolution.y) ? 0 : 1);
 
-            Graphics::Profiler::BeginQuery("Ray generation");
+            GPUProfiler::BeginQuery("Ray generation");
 
             helper.DispatchRayGen(scene, commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
                 ivec3(groupCount.x, groupCount.y, samplesPerFrame), false,
@@ -195,7 +196,7 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
+                GPUProfiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
                 helper.DispatchHitClosest(scene, commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
                     [=]() {
@@ -205,7 +206,7 @@ namespace Atlas {
                     );
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
             if (realTime) {
 
@@ -249,7 +250,7 @@ namespace Atlas {
                     float maxRadiance;
                 };
 
-                Graphics::Profiler::BeginQuery("Temporal");
+                GPUProfiler::Scope sectionScope("Temporal");
 
                 PushConstants constants = {
                     .historyClipMax = historyClipMax,
@@ -271,8 +272,6 @@ namespace Atlas {
                 groupCount.y += ((groupCount.y * 16 == resolution.y) ? 0 : 1);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                Graphics::Profiler::EndQuery();
 
             }
 
@@ -296,8 +295,6 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             helper.InvalidateRayBuffer(commandList);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

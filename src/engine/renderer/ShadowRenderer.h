@@ -26,7 +26,7 @@ namespace Atlas {
             void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
                 RenderList* renderList, Ref<RenderList::Pass> shadowPass);
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);

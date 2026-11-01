@@ -618,7 +618,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Use F11 to hide/unhide the UI");
             }
             if (ImGui::CollapsingHeader("Profiler")) {
-                gpuProfilerPanel.Render();
+                profilerPanel.Render();
             }
         }
 

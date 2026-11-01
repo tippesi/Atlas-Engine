@@ -1,6 +1,6 @@
 #include "OceanSimulation.h"
 #include "../Clock.h"
-#include "../graphics/Profiler.h"
+#include "../profiler/GPUProfiler.h"
 #include "../pipeline/PipelineManager.h"
 #include "../common/NoiseGenerator.h"
 
@@ -89,7 +89,7 @@ namespace Atlas {
                 float waveSurpression = 1.0f;
             };
 
-            Graphics::Profiler::BeginQuery("Compute ocean spectrum");
+            GPUProfiler::Scope gpuScope("Compute ocean spectrum");
 
             auto pipeline = PipelineManager::GetPipeline(h0Config);
             commandList->BindPipeline(pipeline);
@@ -120,8 +120,6 @@ namespace Atlas {
 
             commandList->ImageMemoryBarrier(h0K.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void OceanSimulation::Compute(Graphics::CommandList* commandList) {
@@ -138,7 +136,7 @@ namespace Atlas {
                 updateSpectrum = false;
             }
 
-            Graphics::Profiler::BeginQuery("Compute ocean simulation");
+            GPUProfiler::Scope gpuScope("Compute ocean simulation");
 
             // displacementMapPrev.Copy(displacementMap);
 
@@ -168,7 +166,7 @@ namespace Atlas {
                 hTDSlopes = Texture::Texture2DArray();
 
             {
-                Graphics::Profiler::BeginQuery("Compute h(t) and horizontal iFFT");
+                GPUProfiler::Scope sectionScope("Compute h(t) and horizontal iFFT");
 
                 auto pipeline = PipelineManager::GetPipeline(horizontalFFTConfig);
                 commandList->BindPipeline(pipeline);
@@ -189,12 +187,10 @@ namespace Atlas {
                 }
 
                 commandList->Dispatch(1, N, C);
-
-                Graphics::Profiler::EndQuery();
             }
 
             {
-                Graphics::Profiler::BeginQuery("Compute vertical iFFT and displacement");
+                GPUProfiler::Scope sectionScope("Compute vertical iFFT and displacement");
 
                 auto pipeline = PipelineManager::GetPipeline(verticalFFTConfig);
                 commandList->BindPipeline(pipeline);
@@ -221,8 +217,6 @@ namespace Atlas {
                 }
 
                 commandList->Dispatch(N, 1, C);
-
-                Graphics::Profiler::EndQuery();
             }
 
             if (!fftNormals) {
@@ -238,7 +232,7 @@ namespace Atlas {
                     float temporalThreshold = 1.0f;
                 };
 
-                Graphics::Profiler::BeginQuery("Compute normal map");
+                GPUProfiler::Scope sectionScope("Compute normal map");
 
                 auto pipeline = PipelineManager::GetPipeline(normalConfig);
                 commandList->BindPipeline(pipeline);
@@ -266,11 +260,9 @@ namespace Atlas {
                 commandList->BindImage(normalMap.image, 3, 1);
 
                 commandList->Dispatch(N / 16, N / 16, C);
-
-                Graphics::Profiler::EndQuery();
             }
 
-            Graphics::Profiler::BeginQuery("Build normal map mips");
+            GPUProfiler::Scope sectionScope("Build normal map mips");
 
             commandList->ImageMemoryBarrier(normalMap.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -295,9 +287,6 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
 
         }
 

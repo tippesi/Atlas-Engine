@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 namespace Atlas {
 
@@ -60,6 +61,8 @@ namespace Atlas {
                 int32_t count;
             };
 
+            // Scripts use the queries while a render thread computes them, the pointer keeps the ocean movable
+            std::unique_ptr<std::mutex> mutex = std::make_unique<std::mutex>();
             std::unordered_map<uint32_t, Query> queries;
             uint32_t queryCounter = 0;
 

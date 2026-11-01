@@ -2,7 +2,7 @@
 
 #include "Window.h"
 
-#include <ImguiExtension/panels/GPUProfilerPanel.h>
+#include <ImguiExtension/panels/ProfilerPanel.h>
 
 namespace Atlas::Editor::UI {
 
@@ -14,7 +14,7 @@ namespace Atlas::Editor::UI {
         void Render();
 
     private:
-        ImguiExtension::GPUProfilerPanel gpuProfilerPanel;
+        ImguiExtension::ProfilerPanel profilerPanel;
 
     };
 

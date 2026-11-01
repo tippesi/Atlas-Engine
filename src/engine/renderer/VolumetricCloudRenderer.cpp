@@ -35,10 +35,10 @@ namespace Atlas {
 
             frameCount++;
 
-            auto clouds = scene->sky.clouds;
+            auto clouds = scene->renderState.sky.clouds;
 
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!clouds || !clouds->enable || !mainLightEntity.IsValid()) return;
+            auto& mainLight = scene->renderState.mainLight;
+            if (!clouds || !clouds->enable || !mainLight) return;
 
             // Resolution settings are shared with the volumetric fog
             bool halfResolution = clouds->quality < 2;
@@ -47,7 +47,8 @@ namespace Atlas {
             else if (!halfResolution && target->GetVolumetricResolution() != FULL_RES)
                 target->SetVolumetricResolution(FULL_RES);
 
-            Graphics::Profiler::BeginQuery("Volumetric clouds");
+            CPUProfiler::Scope profilerScope("Volumetric clouds");
+            GPUProfiler::Scope gpuScope("Volumetric clouds");
 
             if (clouds->needsNoiseUpdate) {
                 GenerateTextures(scene, commandList);
@@ -73,16 +74,16 @@ namespace Atlas {
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             
             {
-                Graphics::Profiler::BeginQuery("Integrate");
+                GPUProfiler::Scope sectionScope("Integrate");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-                auto uniforms = GetUniformStructure(scene, mainLightEntity);
+                auto uniforms = GetUniformStructure(scene);
                 volumetricUniformBuffer.SetData(&uniforms, 0);
 
-                auto ocean = scene->ocean;
+                auto ocean = scene->renderState.ocean;
                 bool oceanEnabled = ocean && ocean->enable;
 
                 integratePipelineConfig.ManageMacro("OCEAN", oceanEnabled);
@@ -109,12 +110,10 @@ namespace Atlas {
                 }                
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                Graphics::Profiler::EndQuery();
             }
 
             {
-                Graphics::Profiler::BeginQuery("Temporal accumulation");
+                GPUProfiler::Scope sectionScope("Temporal accumulation");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
@@ -148,31 +147,28 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-                Graphics::Profiler::EndQuery();
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 
         void VolumetricCloudRenderer::RenderShadow(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto clouds = scene->sky.clouds;
+            auto clouds = scene->renderState.sky.clouds;
             
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!clouds || !clouds->enable || !clouds->castShadow || !mainLightEntity.IsValid()) return;
+            auto& mainLight = scene->renderState.mainLight;
+            if (!clouds || !clouds->enable || !clouds->castShadow || !mainLight) return;
 
-            auto& light = mainLightEntity.GetComponent<LightComponent>();
+            auto& light = *mainLight;
 
-            Graphics::Profiler::BeginQuery("Volumetric cloud shadow");
+            CPUProfiler::Scope profilerScope("Volumetric cloud shadow");
+            GPUProfiler::Scope gpuScope("Volumetric cloud shadow");
 
             if (clouds->needsNoiseUpdate) {
                 GenerateTextures(scene, commandList);
                 clouds->needsNoiseUpdate = false;
             }
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
             auto shadowMap = clouds->shadowTexture;
 
             auto res = ivec2(shadowMap.width, shadowMap.height);
@@ -202,7 +198,7 @@ namespace Atlas {
             shadowUniforms.shadowSampleFraction = 4;
             shadowUniformBuffer.SetData(&shadowUniforms, 0);
 
-            auto uniforms = GetUniformStructure(scene, mainLightEntity);
+            auto uniforms = GetUniformStructure(scene);
             uniforms.distanceLimit = 10e9f;
             shadowVolumetricUniformBuffer.SetData(&uniforms, 0);
 
@@ -214,13 +210,11 @@ namespace Atlas {
             commandList->ImageMemoryBarrier(clouds->shadowTexture.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void VolumetricCloudRenderer::GenerateTextures(Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto clouds = scene->sky.clouds;
+            auto clouds = scene->renderState.sky.clouds;
             if (!clouds) return;
 
             GenerateShapeTexture(commandList, &clouds->shapeTexture, clouds->variationSeed);
@@ -242,7 +236,7 @@ namespace Atlas {
         void VolumetricCloudRenderer::GenerateShapeTexture(Graphics::CommandList* commandList,
             Texture::Texture3D* texture, float seed) {
 
-            Graphics::Profiler::BeginQuery("Generate shape cloud texture");
+            GPUProfiler::Scope gpuScope("Generate shape cloud texture");
 
             // Expect the resolution to be a power of 2 and larger equal 4
             ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
@@ -262,14 +256,12 @@ namespace Atlas {
             commandList->ImageMemoryBarrier(texture->image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void VolumetricCloudRenderer::GenerateDetailTexture(Graphics::CommandList* commandList,
             Texture::Texture3D* texture, float seed) {
 
-            Graphics::Profiler::BeginQuery("Generate detail cloud texture");
+            GPUProfiler::Scope gpuScope("Generate detail cloud texture");
 
             // Expect the resolution to be a power of 2 and larger equal 4
             ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
@@ -289,19 +281,18 @@ namespace Atlas {
             commandList->ImageMemoryBarrier(texture->image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         VolumetricCloudRenderer::CloudUniforms VolumetricCloudRenderer::GetUniformStructure(
-            Ref<Scene::Scene> scene, Scene::Entity mainLightEntity) {
+            Ref<Scene::Scene> scene) {
 
-            auto clouds = scene->sky.clouds;
+            auto clouds = scene->renderState.sky.clouds;
+            auto& mainLight = scene->renderState.mainLight;
 
             /*
-            auto& camera = scene->GetMainCamera();
-            float cloudsInnerRadius = scene->sky.planetRadius + clouds->minHeight;
-            float cloudsOuterRadius = scene->sky.planetRadius + clouds->maxHeight;
+            auto& camera = scene->renderState.camera;
+            float cloudsInnerRadius = scene->renderState.sky.planetRadius + clouds->minHeight;
+            float cloudsOuterRadius = scene->renderState.sky.planetRadius + clouds->maxHeight;
 
             // This is an option for the future to make the clouds wrap down at the distance limit into the horizon
             float radiusDiff = cloudsOuterRadius - cloudsInnerRadius;
@@ -309,30 +300,30 @@ namespace Atlas {
             float outerRadius = 5.0f * clouds->distanceLimit;
             float innerRadius = 5.0f * clouds->distanceLimit - radiusDiff;
 
-            float innerHeight = cloudsInnerRadius - scene->sky.planetRadius;
+            float innerHeight = cloudsInnerRadius - scene->renderState.sky.planetRadius;
 
-            vec3 planetCenterDir = normalize(camera.GetLocation() - scene->sky.planetCenter);
-            vec3 surfacePos = scene->sky.planetCenter + planetCenterDir * scene->sky.planetRadius;
+            vec3 planetCenterDir = normalize(camera.GetLocation() - scene->renderState.sky.planetCenter);
+            vec3 surfacePos = scene->renderState.sky.planetCenter + planetCenterDir * scene->renderState.sky.planetRadius;
 
             vec3 cloudCenter = surfacePos - (innerRadius - innerHeight) * planetCenterDir;
             */        
 
-            float innerRadius = scene->sky.planetRadius + clouds->baseAltitude;
+            float innerRadius = scene->renderState.sky.planetRadius + clouds->baseAltitude;
             float outerRadius = innerRadius + clouds->layerThickness;
-            vec3 cloudCenter = scene->sky.planetCenter;
+            vec3 cloudCenter = scene->renderState.sky.planetCenter;
 
             // Low, medium, high and ultra quality
             const int32_t sampleCounts[] = { 48, 96, 160, 256 };
             const int32_t occlusionSampleCounts[] = { 4, 8, 12, 16 };
             auto quality = glm::clamp(clouds->quality, 0, 3);
 
-            auto windVelocity = glm::length(scene->wind.direction) > 0.0f ?
-                glm::normalize(scene->wind.direction) * scene->wind.speed : vec2(0.0f);
+            auto windVelocity = glm::length(scene->renderState.wind.direction) > 0.0f ?
+                glm::normalize(scene->renderState.wind.direction) * scene->renderState.wind.speed : vec2(0.0f);
             // The seed moves the weather map, such that a different seed gives different cloud placements
             auto coverageOffset = glm::fract(vec2(0.137f, 0.271f) * (clouds->variationSeed - 4.23f));
 
             CloudUniforms uniforms{
-                .planetRadius = scene->sky.planetRadius,
+                .planetRadius = scene->renderState.sky.planetRadius,
                 .innerRadius = innerRadius,
                 .outerRadius = outerRadius,
                 .distanceLimit = clouds->distanceLimit,
@@ -357,7 +348,7 @@ namespace Atlas {
                 .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
                 .phaseAlpha = clouds->scattering.phaseAlpha,
 
-                .time = scene->GetTime(),
+                .time = scene->renderState.time,
                 .frameSeed = frameCount,
 
                 .sampleCount = sampleCounts[quality],
@@ -368,10 +359,10 @@ namespace Atlas {
                 .windAndCoverageOffset = vec4(windVelocity, coverageOffset)
             };
 
-            if (mainLightEntity.IsValid()) {
-                auto& light = mainLightEntity.GetComponent<LightComponent>();
+            if (mainLight) {
+                auto& light = *mainLight;
                 auto direction = normalize(light.transformedProperties.directional.direction);
-                auto transmittance = scene->sky.GetDirectLightTransmittance(scene->GetMainCamera().GetLocation(), direction);
+                auto transmittance = scene->renderState.sky.GetDirectLightTransmittance(scene->renderState.camera.GetLocation(), direction);
                 uniforms.light.direction = vec4(direction, 0.0f);
                 uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color) * transmittance, 1.0f);
                 uniforms.light.intensity = light.intensity;

@@ -12,7 +12,24 @@
 #include "renderer/helper/CommonStructures.h"
 #include "renderer/helper/RenderList.h"
 
+#include "Wind.h"
+#include "Clutter.h"
+#include "components/CameraComponent.h"
+#include "components/TextComponent.h"
+#include "lighting/Sky.h"
+#include "lighting/Fog.h"
+#include "lighting/IrradianceVolume.h"
+#include "lighting/RTGI.h"
+#include "lighting/SSGI.h"
+#include "lighting/Reflection.h"
+#include "lighting/SSS.h"
+#include "postprocessing/PostProcessing.h"
+#include "ocean/Ocean.h"
+#include "terrain/Terrain.h"
+#include "raytracing/RayTracingWorld.h"
+
 #include <unordered_map>
+#include <optional>
 
 namespace Atlas::Scene {
 
@@ -21,6 +38,8 @@ namespace Atlas::Scene {
     struct LightEntity {
         Entity entity;
         LightComponent comp;
+        // The shadow is rendered in this frame, the request of the shadow was taken by the extraction
+        bool updateShadow = false;
     };
 
     struct MaterialTextureIndices {
@@ -62,7 +81,47 @@ namespace Atlas::Scene {
 
         void WaitForAsyncWorkCompletion();
 
+        // Waits for the jobs without clearing the render list, which can still be in use by a render thread
+        void WaitForJobs();
+
+        // Copies what the renderers read from the scene, the scene can be updated for the next frame while this one renders
+        void Extract();
+
+        const LightEntity* GetLight(ECS::Entity entity) const;
+
+        bool HasMainLight() const { return mainLight && mainLight->isMain; }
+
         Scene* scene;
+
+        // Extracted scene state. The settings are copies, objects with GPU state the renderers update are shared
+        CameraComponent camera;
+        bool hasCamera = false;
+        // A directional light, the main one if there is one
+        std::optional<LightComponent> mainLight;
+        std::vector<LightEntity> allLights;
+        std::vector<TextComponent> texts;
+        float time = 0.0f;
+        float deltaTime = 0.0f;
+
+        Wind wind;
+        // The clouds are a copy as well, the atmosphere, the probe and the irradiance volume are shared
+        Lighting::Sky sky;
+        // Requests of the shared atmosphere, taken by the extraction and cleared when they are rendered
+        bool atmosphereNeedsUpdate = false;
+        Ref<Lighting::Fog> fog;
+        Ref<Lighting::RTGI> rtgi;
+        Ref<Lighting::SSGI> ssgi;
+        Ref<Lighting::Reflection> reflection;
+        Ref<Lighting::SSS> sss;
+        PostProcessing::PostProcessing postProcessing;
+
+        // Only set while the volume is enabled
+        Ref<Lighting::IrradianceVolume> irradianceVolume;
+        Ref<Ocean::Ocean> ocean;
+        ResourceHandle<Terrain::Terrain> terrain;
+        Ref<Clutter> clutter;
+        Ref<RayTracing::RayTracingWorld> rayTracingWorld;
+
         RenderList renderList;
         GPUScene gpuScene;
 

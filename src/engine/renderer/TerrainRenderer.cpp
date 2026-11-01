@@ -28,13 +28,14 @@ namespace Atlas {
         void TerrainRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t>& materialMap) {
 
-            if (!scene->terrain.IsLoaded())
+            if (!scene->renderState.terrain.IsLoaded())
                 return;
 
-            Graphics::Profiler::BeginQuery("Terrain");
+            CPUProfiler::Scope profilerScope("Terrain");
+            GPUProfiler::BeginQuery("Terrain");
 
-            auto& camera = scene->GetMainCamera();
-            auto terrain = scene->terrain;
+            auto& camera = scene->renderState.camera;
+            auto terrain = scene->renderState.terrain;
 
             terrain->UpdateRenderlist(camera.frustum, camera.GetLocation());
 
@@ -130,17 +131,17 @@ namespace Atlas {
                 switch (i) {
                 case 0: config = GeneratePipelineConfig(target, terrain.Get(), true, true);
                     terrain->vertexArray.Bind(commandList);
-                    Graphics::Profiler::BeginQuery("Detail with displacement");
+                    GPUProfiler::BeginQuery("Detail with displacement");
                     nodes = detailDisplacementNodes;
                     break;
                 case 1: config = GeneratePipelineConfig(target, terrain.Get(), false, true);
                     terrain->distanceVertexArray.Bind(commandList);
-                    Graphics::Profiler::BeginQuery("Detail");
+                    GPUProfiler::BeginQuery("Detail");
                     nodes = detailNodes;
                     break;
                 case 2: config = GeneratePipelineConfig(target, terrain.Get(), false, false);
                     terrain->distanceVertexArray.Bind(commandList);
-                    Graphics::Profiler::BeginQuery("Distance");
+                    GPUProfiler::BeginQuery("Distance");
                     nodes = distanceNodes;
                     break;
                 default: break;
@@ -181,11 +182,11 @@ namespace Atlas {
 
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
 
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
         }
 

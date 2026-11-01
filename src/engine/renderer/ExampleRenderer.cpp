@@ -172,12 +172,12 @@ namespace Atlas {
 
             auto commandList = device->GetCommandList(Graphics::GraphicsQueue);
             
-            Graphics::Profiler::BeginThread("Main thread", commandList);
+            GPUProfiler::BeginThread("Main thread", commandList);
 
             commandList->BeginCommands();
 
-            Graphics::Profiler::BeginQuery("Main renderer");
-            Graphics::Profiler::BeginQuery("Main model");
+            GPUProfiler::BeginQuery("Main renderer");
+            GPUProfiler::BeginQuery("Main model");
 
             mainFrameBuffer->Refresh();
 
@@ -217,7 +217,7 @@ namespace Atlas {
                 commandList->EndRenderPass();
             }
 
-            Graphics::Profiler::EndAndBeginQuery("Compute pass");
+            GPUProfiler::EndAndBeginQuery("Compute pass");
 
             {
                 commandList->BindPipeline(computePipeline);
@@ -232,7 +232,7 @@ namespace Atlas {
                 commandList->Dispatch(1920 / 8, 1080 / 8, 1);
             }
 
-            Graphics::Profiler::EndAndBeginQuery("Copy image");
+            GPUProfiler::EndAndBeginQuery("Copy image");
 
             {
                 Graphics::ImageBarrier imageBarriers[] = {
@@ -250,7 +250,7 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
             }
 
-            Graphics::Profiler::EndAndBeginQuery("Post processing/render to swap chain");
+            GPUProfiler::EndAndBeginQuery("Post processing/render to swap chain");
 
             {
                 swapChain->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
@@ -264,9 +264,9 @@ namespace Atlas {
                 commandList->EndRenderPass();
             }
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndThread();
+            GPUProfiler::EndQuery();
+            GPUProfiler::EndQuery();
+            GPUProfiler::EndThread();
 
             commandList->EndCommands();
 

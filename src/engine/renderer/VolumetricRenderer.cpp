@@ -66,11 +66,12 @@ namespace Atlas {
 
         void VolumetricRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Render volumetric");
+            CPUProfiler::Scope profilerScope("Render volumetric");
+            GPUProfiler::Scope gpuScope("Render volumetric");
 
             auto renderState = &scene->renderState;
-            auto& camera = scene->GetMainCamera();
-            auto fog = scene->fog;
+            auto& camera = scene->renderState.camera;
+            auto fog = scene->renderState.fog;
 
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
             auto depthTexture = target->GetData(FULL_RES)->depthTexture;
@@ -85,7 +86,7 @@ namespace Atlas {
 
             ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 
-            auto mainLightEntity = GetMainLightEntity(scene);
+            auto& mainLight = scene->renderState.mainLight;
 
             VolumetricUniforms uniforms;
             uniforms.sampleCount = fog ? fog->rayMarchStepCount : 1;
@@ -121,7 +122,7 @@ namespace Atlas {
             lightCullingBuffer.Bind(commandList, 3, 10);
 
             if (!useFroxels) {
-                Graphics::Profiler::BeginQuery("Light culling");
+                GPUProfiler::Scope sectionScope("Light culling");
 
                 commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
 
@@ -134,13 +135,11 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                 commandList->BufferMemoryBarrier(lightCullingBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
-
-                Graphics::Profiler::EndQuery();
             }
 
-            Graphics::Profiler::BeginQuery(useFroxels ? "Froxels" : "Ray marching");
+            GPUProfiler::BeginQuery(useFroxels ? "Froxels" : "Ray marching");
 
-            auto ocean = scene->ocean;
+            auto ocean = scene->renderState.ocean;
             bool oceanEnabled = ocean && ocean->enable;
 
             if (oceanEnabled) {
@@ -167,24 +166,23 @@ namespace Atlas {
                 fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
             }
 
-            auto clouds = scene->sky.clouds;
-            bool cloudsEnabled = clouds && clouds->enable && mainLightEntity.IsValid();
+            auto clouds = scene->renderState.sky.clouds;
+            bool cloudsEnabled = clouds && clouds->enable && mainLight;
             bool cloudShadowsEnabled = cloudsEnabled && clouds->castShadow;
 
             if (cloudsEnabled) {
                 target->volumetricCloudsTexture.Bind(commandList, 3, 5);
 
-                float cloudInnerRadius = scene->sky.planetRadius + clouds->baseAltitude;
-                uniforms.planetCenterAndRadius = vec4(scene->sky.planetCenter, cloudInnerRadius);
+                float cloudInnerRadius = scene->renderState.sky.planetRadius + clouds->baseAltitude;
+                uniforms.planetCenterAndRadius = vec4(scene->renderState.sky.planetCenter, cloudInnerRadius);
             }
 
             if (cloudShadowsEnabled) {
-                auto& mainLight = mainLightEntity.GetComponent<LightComponent>();
                 auto& cloudShadowUniform = uniforms.cloudShadow;
 
                 clouds->shadowTexture.Bind(commandList, 3, 2);
 
-                clouds->GetShadowMatrices(camera, normalize(mainLight.transformedProperties.directional.direction),
+                clouds->GetShadowMatrices(camera, normalize(mainLight->transformedProperties.directional.direction),
                     cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
                 cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
@@ -215,10 +213,10 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
             if (fog && fog->enable && fog->rayMarching && !useFroxels) {
-                Graphics::Profiler::BeginQuery("Bilateral blur");
+                GPUProfiler::Scope sectionScope("Bilateral blur");
 
                 const int32_t blurGroupSize = 256;
 
@@ -264,8 +262,6 @@ namespace Atlas {
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
                 }
-
-                Graphics::Profiler::EndQuery();
             }
 
             Graphics::ImageBarrier imageBarriers[] = {
@@ -275,7 +271,7 @@ namespace Atlas {
             commandList->PipelineBarrier(imageBarriers, {});
 
             {
-                Graphics::Profiler::BeginQuery("Resolve");
+                GPUProfiler::Scope sectionScope("Resolve");
 
                 const int32_t groupSize = 8;
 
@@ -285,10 +281,10 @@ namespace Atlas {
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                auto clouds = scene->sky.clouds;
-                auto cloudsEnabled = clouds && clouds->enable && mainLightEntity.IsValid();
+                auto clouds = scene->renderState.sky.clouds;
+                auto cloudsEnabled = clouds && clouds->enable && mainLight;
 
-                auto fog = scene->fog;
+                auto fog = scene->renderState.fog;
                 bool fogEnabled = fog && fog->enable;
 
                 resolvePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
@@ -305,13 +301,13 @@ namespace Atlas {
 
                 ResolveUniforms uniforms;
                 
-                if (scene->HasMainLight()) {
-                    auto& mainLight = scene->GetMainLight();
-                    auto& lightDirection = mainLight.transformedProperties.directional.direction;
-                    auto lightColor = Common::ColorConverter::ConvertSRGBToLinear(mainLight.color);
-                    auto transmittance = scene->sky.GetDirectLightTransmittance(camera.GetLocation(), lightDirection);
+                if (scene->renderState.HasMainLight()) {
+                    auto& light = *mainLight;
+                    auto& lightDirection = light.transformedProperties.directional.direction;
+                    auto lightColor = Common::ColorConverter::ConvertSRGBToLinear(light.color);
+                    auto transmittance = scene->renderState.sky.GetDirectLightTransmittance(camera.GetLocation(), lightDirection);
 
-                    uniforms.mainLightColor = vec4(lightColor * transmittance * mainLight.intensity, 0.0f);
+                    uniforms.mainLightColor = vec4(lightColor * transmittance * light.intensity, 0.0f);
                     uniforms.mainLightDirection = vec4(lightDirection, 0.0f);
                 }
                 else {
@@ -335,10 +331,10 @@ namespace Atlas {
                 }
 
                 if (cloudsEnabled) {
-                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->baseAltitude;
-                    uniforms.planetRadius = scene->sky.planetRadius;
+                    uniforms.innerCloudRadius = scene->renderState.sky.planetRadius + clouds->baseAltitude;
+                    uniforms.planetRadius = scene->renderState.sky.planetRadius;
                     uniforms.cloudDistanceLimit = clouds->distanceLimit;
-                    uniforms.planetCenter = vec4(scene->sky.planetCenter, 1.0f);
+                    uniforms.planetCenter = vec4(scene->renderState.sky.planetCenter, 1.0f);
                     commandList->BindImage(target->volumetricCloudsTexture.image, target->volumetricCloudsTexture.sampler, 3, 3);
                 }
 
@@ -346,14 +342,10 @@ namespace Atlas {
                 commandList->BindBuffer(resolveUniformBuffer.Get(), 3, 5);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                Graphics::Profiler::EndQuery();
             }
 
             commandList->ImageMemoryBarrier(target->lightingTexture.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 
@@ -361,8 +353,8 @@ namespace Atlas {
             ivec2 resolution, int32_t lightCount, bool cloudsEnabled, bool cloudShadowsEnabled, bool oceanEnabled,
             Graphics::CommandList* commandList) {
 
-            auto fog = scene->fog;
-            auto& camera = scene->GetMainCamera();
+            auto fog = scene->renderState.fog;
+            auto& camera = scene->renderState.camera;
 
             auto tileSize = glm::clamp(fog->froxelTileSize, 4, 32);
             ivec2 columnCount = resolution / tileSize;
@@ -422,7 +414,7 @@ namespace Atlas {
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
 
             {
-                Graphics::Profiler::BeginQuery("Light culling");
+                GPUProfiler::BeginQuery("Light culling");
 
                 auto pipeline = PipelineManager::GetPipeline(froxelCullingPipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -434,7 +426,7 @@ namespace Atlas {
             }
 
             {
-                Graphics::Profiler::EndAndBeginQuery("Inject");
+                GPUProfiler::EndAndBeginQuery("Inject");
 
                 froxelInjectPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
                 froxelInjectPipelineConfig.ManageMacro("LOCAL_LIGHTS", fog->enable && fog->localLights);
@@ -456,7 +448,7 @@ namespace Atlas {
 
             auto integrateInputTexture = &target->froxelTexture;
             if (fog->froxelFilter) {
-                Graphics::Profiler::EndAndBeginQuery("Filter");
+                GPUProfiler::EndAndBeginQuery("Filter");
 
                 ivec3 groupCount = froxelCount / 4;
                 groupCount.x += ((froxelCount.x % 4 == 0) ? 0 : 1);
@@ -498,7 +490,7 @@ namespace Atlas {
             }
 
             {
-                Graphics::Profiler::EndAndBeginQuery("Integrate");
+                GPUProfiler::EndAndBeginQuery("Integrate");
 
                 froxelIntegratePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 auto pipeline = PipelineManager::GetPipeline(froxelIntegratePipelineConfig);
@@ -522,7 +514,7 @@ namespace Atlas {
             }
 
             {
-                Graphics::Profiler::EndAndBeginQuery("Apply");
+                GPUProfiler::EndAndBeginQuery("Apply");
 
                 froxelApplyPipelineConfig.ManageMacro("OCEAN", oceanEnabled);
                 auto pipeline = PipelineManager::GetPipeline(froxelApplyPipelineConfig);
@@ -543,7 +535,7 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
             std::swap(target->froxelTexture, target->historyFroxelTexture);
 

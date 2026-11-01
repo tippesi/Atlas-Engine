@@ -3,7 +3,7 @@
 #include "../../common/RandomHelper.h"
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
-#include "../../graphics/Profiler.h"
+#include "../../profiler/GPUProfiler.h"
 #include "../../pipeline/PipelineManager.h"
 #include <glm/gtx/norm.hpp>
 
@@ -99,7 +99,7 @@ namespace Atlas {
                         }
                     }
                     else if (lights.size() > lightCount && !stochasticLightSelection) {
-                        auto& camera = scene->GetMainCamera();
+                        auto& camera = scene->renderState.camera;
                         auto cameraLocation = camera.GetLocation();
 
                         std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {  
@@ -126,11 +126,11 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    const auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->renderState.rayTracingWorld;
 
-                    if (scene->sky.GetProbe())
-                        commandList->BindImage(scene->sky.GetProbe()->GetCubemap().image,
-                            scene->sky.GetProbe()->GetCubemap().sampler, 2, 6);
+                    if (scene->renderState.sky.GetProbe())
+                        commandList->BindImage(scene->renderState.sky.GetProbe()->GetCubemap().image,
+                            scene->renderState.sky.GetProbe()->GetCubemap().sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
@@ -200,7 +200,7 @@ namespace Atlas {
                         }
                     }
                     else if (lights.size() > lightCount && !stochasticLightSelection) {
-                        auto& camera = scene->GetMainCamera();
+                        auto& camera = scene->renderState.camera;
                         auto cameraLocation = camera.GetLocation();
 
                         std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {
@@ -264,11 +264,11 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    const auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->renderState.rayTracingWorld;
 
-                    if (scene->sky.GetProbe())
-                        commandList->BindImage(scene->sky.GetProbe()->GetCubemap().image,
-                            scene->sky.GetProbe()->GetCubemap().sampler, 2, 6);
+                    if (scene->renderState.sky.GetProbe())
+                        commandList->BindImage(scene->renderState.sky.GetProbe()->GetCubemap().image,
+                            scene->renderState.sky.GetProbe()->GetCubemap().sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
@@ -286,7 +286,7 @@ namespace Atlas {
                     }
                 }
 
-                Graphics::Profiler::BeginQuery("Setup command buffer");
+                GPUProfiler::BeginQuery("Setup command buffer");
 
                 commandList->BindBuffer(indirectDispatchBuffer.Get(), 2, 12);
 
@@ -343,7 +343,7 @@ namespace Atlas {
                 /*
                 if (binning) {
 
-                    Graphics::Profiler::EndAndBeginQuery("Binning offsets");
+                    GPUProfiler::EndAndBeginQuery("Binning offsets");
 
                     // Calculate binning offsets
                     {
@@ -358,7 +358,7 @@ namespace Atlas {
                         // glDispatchCompute(1, 1, 1);
                     }
 
-                    Graphics::Profiler::EndAndBeginQuery("Binning rays");
+                    GPUProfiler::EndAndBeginQuery("Binning rays");
 
                     // Order rays by their bins
                     {
@@ -382,7 +382,7 @@ namespace Atlas {
                 }
                 */
 
-                Graphics::Profiler::EndAndBeginQuery("Trace rays");
+                GPUProfiler::EndAndBeginQuery("Trace rays");
 
                 // Trace rays for closest intersection
                 {
@@ -402,7 +402,7 @@ namespace Atlas {
                     commandList->DispatchIndirect(indirectDispatchBuffer.Get());
                 }
 
-                Graphics::Profiler::EndAndBeginQuery("Execute hit shader");
+                GPUProfiler::EndAndBeginQuery("Execute hit shader");
 
                 Graphics::BufferBarrier preShaderBufferBarriers[3] = {
                     { rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
@@ -436,7 +436,7 @@ namespace Atlas {
                     commandList->DispatchIndirect(indirectDispatchBuffer.Get());
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
 
                 dispatchCounter++;
 
@@ -475,16 +475,15 @@ namespace Atlas {
 
                 lights.clear();
 
-                auto& camera = scene->GetMainCamera();
+                auto& camera = scene->renderState.camera;
                 auto cameraLocation = camera.GetLocation();
 
-                auto lightSubset = scene->GetSubset<LightComponent>();
-                for (auto& lightEntity : lightSubset) {
-                    auto& light = lightEntity.GetComponent<LightComponent>();
+                for (const auto& lightEntity : scene->renderState.allLights) {
+                    const auto& light = lightEntity.comp;
 
                     auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light.color) * light.intensity;
                     if (light.type == LightType::DirectionalLight)
-                        radiance *= scene->sky.GetDirectLightTransmittance(cameraLocation, light.transformedProperties.directional.direction);
+                        radiance *= scene->renderState.sky.GetDirectLightTransmittance(cameraLocation, light.transformedProperties.directional.direction);
                     auto brightness = dot(radiance, vec3(0.3333f));
 
                     vec3 P = vec3(0.0f);
@@ -544,7 +543,7 @@ namespace Atlas {
                 }
 
                 if (useEmissivesAsLights && scene->IsRtDataValid()) {
-                    const auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->renderState.rayTracingWorld;
                     lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
                 

@@ -18,7 +18,8 @@ namespace Atlas {
 
         void TemporalAARenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("TAA");
+            CPUProfiler::Scope profilerScope("TAA");
+            GPUProfiler::Scope gpuScope("TAA");
 
             pipelineConfig.ManageMacro("PATHTRACE", false);
 
@@ -32,7 +33,7 @@ namespace Atlas {
             groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
             groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
 
             auto targetData = target->GetData(FULL_RES);
 
@@ -75,8 +76,6 @@ namespace Atlas {
 
             commandList->ImageMemoryBarrier(lastHistory->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

@@ -813,11 +813,11 @@ namespace Atlas::Renderer {
 			CreateContext(target, device);
 		}
 
-		Graphics::Profiler::BeginQuery("FSR2");
+		GPUProfiler::Scope gpuScope("FSR2");
 
-		auto& postProcessing = scene->postProcessing;
+		auto& postProcessing = scene->renderState.postProcessing;
 		auto& sharpen = postProcessing.sharpen;
-		auto& camera = scene->GetMainCamera();
+		auto& camera = scene->renderState.camera;
 
 		auto targetData = target->GetData(FULL_RES);
 
@@ -827,7 +827,7 @@ namespace Atlas::Renderer {
 		auto depthImage = targetData->depthTexture->image;
 		auto outputImage = target->hdrTexture.image;
 
-		auto& taa = scene->postProcessing.taa;
+		auto& taa = scene->renderState.postProcessing.taa;
 
 		Graphics::ImageBarrier imageBarriers[] = {{outputImage,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT}};
 		commandList->PipelineBarrier(imageBarriers, {});
@@ -851,7 +851,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.reset = !target->HasHistory();
 		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
-		dispatchParameters.frameTimeDelta = scene->GetDeltaTime() * 1000.0f;
+		dispatchParameters.frameTimeDelta = scene->renderState.deltaTime * 1000.0f;
 		dispatchParameters.preExposure = 1.0f;
 		dispatchParameters.renderSize.width = uint32_t(target->GetScaledWidth());
 		dispatchParameters.renderSize.height = uint32_t(target->GetScaledHeight());
@@ -865,8 +865,6 @@ namespace Atlas::Renderer {
 		commandList->ImageMemoryBarrier(outputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-		Graphics::Profiler::EndQuery();
 
 	}
 

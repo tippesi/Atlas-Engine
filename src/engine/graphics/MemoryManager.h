@@ -114,7 +114,8 @@ namespace Atlas {
                 }
             }
 
-            const size_t framesToDeletion = 3;
+            // One frame more than the frames in flight need, objects can be released while a render thread records
+            const size_t framesToDeletion = 4;
 
             size_t frameIndex = 0;
             std::deque<DeleteLambda> deleteRawAllocations;

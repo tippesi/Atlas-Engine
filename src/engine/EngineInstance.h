@@ -3,6 +3,8 @@
 #include "Engine.h"
 
 #include <vector>
+#include <thread>
+#include <semaphore>
 
 namespace Atlas {
 
@@ -61,6 +63,24 @@ namespace Atlas {
         void Update();
 
         /**
+         * Renders the frame and submits it, on the render thread if renderThread is set. Is being called
+         * from the outside.
+         * @return False once the graphics device is lost.
+         */
+        bool RenderFrame(float deltaTime);
+
+        /**
+         * Waits until the render thread finished the last frame. Update(float) has to call it before it changes
+         * anything rendering reads, at the latest before the scene update. Does nothing without a render thread.
+         */
+        void WaitForRender();
+
+        /**
+         * Returns renderThread as it was after LoadContent(), it can't be switched while a frame renders
+         */
+        bool UsesRenderThread();
+
+        /**
          * Returns the exit code passed to Exit(), which main returns.
          */
         int32_t GetExitCode() const { return exitCode; }
@@ -80,6 +100,13 @@ namespace Atlas {
          * @note This member will be first available when LoadContent() is called.
          */
         std::vector<std::string> args;
+
+        /**
+         * Renders a frame on a separate thread while the next one is updated. Render(float) then only reads
+         * the extracted render state of the scene and data the update doesn't change before WaitForRender().
+         * @note Set it in LoadContent(), later changes have no effect.
+         */
+        bool renderThread = false;
 
     protected:
         /**
@@ -103,7 +130,19 @@ namespace Atlas {
         std::vector<Display> displays;
 
     private:
+        void RenderLoop();
+
         int32_t exitCode = 0;
+
+        std::thread renderer;
+        std::binary_semaphore renderStart{ 0 };
+        std::binary_semaphore renderDone{ 0 };
+        float renderDeltaTime = 0.0f;
+        bool rendering = false;
+        bool renderFrameBegun = false;
+        bool usesRenderThread = false;
+        bool renderThreadKnown = false;
+        bool stopRendering = false;
 
     };
 

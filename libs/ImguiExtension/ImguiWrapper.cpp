@@ -8,7 +8,10 @@
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_clipboard.h>
 #include <graphics/Instance.h>
+#include <profiler/CPUProfiler.h>
 #include <ImguiVulkan.h>
+
+#include <cstring>
 
 namespace Atlas::ImguiExtension {
 
@@ -81,6 +84,11 @@ namespace Atlas::ImguiExtension {
 
         pool.reset();
 
+        for (auto list : drawListCopies)
+            IM_DELETE(list);
+        drawListCopies.clear();
+        drawDataCopy.Clear();
+
         SDL_free(clipboardText);
         clipboardText = nullptr;
 
@@ -128,6 +136,8 @@ namespace Atlas::ImguiExtension {
 
     void ImguiWrapper::Render(bool clearSwapChain) {
 
+        Atlas::CPUProfiler::Scope profilerScope("ImGui");
+
         ImGuiIO &io = ImGui::GetIO();
 
         ImGui_ImplVulkan_NewFrame();
@@ -142,19 +152,58 @@ namespace Atlas::ImguiExtension {
 
         commandList->BeginCommands();
 
-        Atlas::Graphics::Profiler::BeginThread("ImGui thread", commandList);
-        Atlas::Graphics::Profiler::BeginQuery("ImGui");
+        Atlas::GPUProfiler::BeginThread("ImGui thread", commandList);
+        Atlas::GPUProfiler::BeginQuery("ImGui");
 
         commandList->BeginRenderPass(swapChain, clearSwapChain);
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
+        ImGui_ImplVulkan_RenderDrawData(hasDrawDataCopy ? &drawDataCopy : ImGui::GetDrawData(), commandList->commandBuffer);
         commandList->EndRenderPass();
 
-        Atlas::Graphics::Profiler::EndQuery();
-        Atlas::Graphics::Profiler::EndThread();
+        Atlas::GPUProfiler::EndQuery();
+        Atlas::GPUProfiler::EndThread();
 
         commandList->EndCommands();
 
         device->SubmitCommandList(commandList);
+
+    }
+
+    void ImguiWrapper::CopyDrawData() {
+
+        auto copyVector = [](auto& destination, const auto& source) {
+            destination.resize(source.Size);
+            if (source.Size)
+                std::memcpy(destination.Data, source.Data, source.size_in_bytes());
+            };
+
+        drawDataCopy.Clear();
+        hasDrawDataCopy = true;
+
+        auto drawData = ImGui::GetDrawData();
+        if (!drawData)
+            return;
+
+        drawDataCopy.Valid = drawData->Valid;
+        drawDataCopy.CmdListsCount = drawData->CmdListsCount;
+        drawDataCopy.TotalIdxCount = drawData->TotalIdxCount;
+        drawDataCopy.TotalVtxCount = drawData->TotalVtxCount;
+        drawDataCopy.DisplayPos = drawData->DisplayPos;
+        drawDataCopy.DisplaySize = drawData->DisplaySize;
+        drawDataCopy.FramebufferScale = drawData->FramebufferScale;
+        drawDataCopy.OwnerViewport = drawData->OwnerViewport;
+
+        for (int32_t i = 0; i < drawData->CmdLists.Size; i++) {
+            auto source = drawData->CmdLists[i];
+            if (i >= drawListCopies.Size)
+                drawListCopies.push_back(IM_NEW(ImDrawList)(source->_Data));
+
+            auto copy = drawListCopies[i];
+            copyVector(copy->CmdBuffer, source->CmdBuffer);
+            copyVector(copy->IdxBuffer, source->IdxBuffer);
+            copyVector(copy->VtxBuffer, source->VtxBuffer);
+            copy->Flags = source->Flags;
+            drawDataCopy.CmdLists.push_back(copy);
+        }
 
     }
 

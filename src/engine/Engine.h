@@ -56,8 +56,14 @@ namespace Atlas {
         /**
          * Updates the engine and the system events. Must be called in thread
          * where the engine was initialized.
+         * @param renderThread With a render thread, BeginRenderFrame() is called once the last frame is rendered.
          */
-        static void Update();
+        static void Update(bool renderThread = false);
+
+        /**
+         * Starts the frame of the profiler and reloads changed shaders. Rendering must not run meanwhile.
+         */
+        static void BeginRenderFrame();
 
         /**
          * Returns the size of the screen.

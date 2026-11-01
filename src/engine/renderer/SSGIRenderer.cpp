@@ -48,12 +48,13 @@ namespace Atlas {
 
         void SSGIRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto ssgi = scene->ssgi;
+            auto ssgi = scene->renderState.ssgi;
             if (!ssgi || !ssgi->enable) return;
             
             ivec2 res = ivec2(target->giTexture.width, target->giTexture.height);
 
-            Graphics::Profiler::BeginQuery("Render SSGI");
+            CPUProfiler::Scope profilerScope("Render SSGI");
+            GPUProfiler::Scope gpuScope("Render SSGI");
 
             if (ssgi->halfResolution && target->GetGIResolution() == FULL_RES)
                 target->SetGIResolution(HALF_RES, false);
@@ -76,9 +77,9 @@ namespace Atlas {
 
             // Try to get a shadow map
             Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
+            auto& mainLight = scene->renderState.mainLight;
+            if (mainLight)
+                shadow = mainLight->shadow;
 
             auto downsampledRT = target->GetData(target->GetGIResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetGIResolution());
@@ -113,7 +114,7 @@ namespace Atlas {
 
             commandList->BindImage(downsampledRT->hiZTexture->image, downsampledRT->hiZTexture->sampler, 3, 14);
 
-            Graphics::Profiler::BeginQuery("Main pass");
+            GPUProfiler::BeginQuery("Main pass");
 
             {
                 static int32_t frameCount = 0;
@@ -123,10 +124,10 @@ namespace Atlas {
                 groupCount.y += ((res.y % 4 == 0) ? 0 : 1);
 
                 auto rtDataValid = scene->IsRtDataValid();
-                auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable && rtDataValid;
-                auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+                auto ddgiEnabled = scene->renderState.irradianceVolume && rtDataValid;
+                auto ddgiVisibility = ddgiEnabled && scene->renderState.irradianceVolume->visibility;
 
-                ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
+                ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
                 ssgiPipelineConfig.ManageMacro("DDGI", ssgi->ddgi && ddgiEnabled);
                 ssgiPipelineConfig.ManageMacro("VISIBILITY_VOLUME", ssgi->ddgi && ddgiVisibility);
 
@@ -157,7 +158,7 @@ namespace Atlas {
             }
 
             {
-                Graphics::Profiler::EndAndBeginQuery("Temporal filter");
+                GPUProfiler::EndAndBeginQuery("Temporal filter");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
@@ -203,7 +204,7 @@ namespace Atlas {
             }
 
             {
-                Graphics::Profiler::EndAndBeginQuery("Blur");
+                GPUProfiler::EndAndBeginQuery("Blur");
 
                 const int32_t groupSize = 256;
 
@@ -263,8 +264,7 @@ namespace Atlas {
             commandList->ImageMemoryBarrier(target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT);
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
         }
 

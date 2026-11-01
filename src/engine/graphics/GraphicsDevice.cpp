@@ -1,5 +1,6 @@
 #include "GraphicsDevice.h"
 #include "Instance.h"
+#include "../profiler/CPUProfiler.h"
 #include "StructureChainBuilder.h"
 #include "../EngineInstance.h"
 
@@ -488,6 +489,8 @@ namespace Atlas {
         }
 
         void GraphicsDevice::SubmitFrame() {
+
+            CPUProfiler::Scope profilerScope("Submit frame");
 
             bool recreateSwapChain = false;
 

@@ -4,6 +4,7 @@
 
 #include "Signal.h"
 #include "ThreadSafeJobQueue.h"
+#include "../profiler/CPUProfiler.h"
 
 #include <thread>
 
@@ -55,7 +56,10 @@ namespace Atlas {
                 .userData = job.userData
             };
 
-            job.function(data);
+            {
+                CPUProfiler::Scope profilerScope(job.name ? job.name : "Job");
+                job.function(data);
+            }
 
             job.counter->fetch_sub(1);
 

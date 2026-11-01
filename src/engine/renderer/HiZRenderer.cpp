@@ -21,7 +21,8 @@ namespace Atlas {
             auto paddedResolution = ivec2(hiZImage->width, hiZImage->height);
             auto levelCount = std::min(data->hiZLevelCount, int32_t(hiZImage->mipLevels));
 
-            Graphics::Profiler::BeginQuery("Hierarchical depth");
+            CPUProfiler::Scope profilerScope("Hierarchical depth");
+            GPUProfiler::Scope gpuScope("Hierarchical depth");
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -65,8 +66,6 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(hiZImage, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 

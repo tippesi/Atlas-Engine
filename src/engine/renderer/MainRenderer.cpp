@@ -70,21 +70,23 @@ namespace Atlas {
 		void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
 			std::span<Ref<PrimitiveBatch>> primitiveBatches, Texture::Texture2D* texture) {
 
-			if (!device->swapChain->isComplete || !scene->HasMainCamera())
+			if (!device->swapChain->isComplete || !scene->renderState.hasCamera)
 				return;
+
+			CPUProfiler::Scope profilerScope("Render scene");
 
 			if (target->IsUsedForPathTracing())
 				target->UseForPathTracing(false);
 
-			auto& camera = scene->GetMainCamera();
+			auto& camera = scene->renderState.camera;
 			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
 			commandList->BeginCommands();
 
-			auto& taa = scene->postProcessing.taa;
-			if (taa.enable || scene->postProcessing.fsr2) {
+			auto& taa = scene->renderState.postProcessing.taa;
+			if (taa.enable || scene->renderState.postProcessing.fsr2) {
 				vec2 jitter = vec2(0.0f);
-				if (scene->postProcessing.fsr2) {
+				if (scene->renderState.postProcessing.fsr2) {
 					jitter = fsr2Renderer.GetJitter(target, frameCount);
 				}
 				else {
@@ -103,8 +105,8 @@ namespace Atlas {
 
 			auto renderState = &scene->renderState;
 
-			Graphics::Profiler::BeginThread("Main renderer", commandList);
-			Graphics::Profiler::BeginQuery("Render scene");
+			GPUProfiler::BeginThread("Main renderer", commandList);
+			GPUProfiler::BeginQuery("Render scene");
 
 			SetUniforms(target, scene, camera);
 
@@ -114,28 +116,27 @@ namespace Atlas {
 			commandList->BindSampler(globalNearestSampler, 1, 16);
 			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
 
-			if (scene->clutter)
-				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
+			if (scene->renderState.clutter)
+				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->renderState.clutter, camera, commandList);
 
-			if (scene->ocean && scene->ocean->enable) {
-				scene->ocean->simulation.Compute(commandList);
+			if (scene->renderState.ocean && scene->renderState.ocean->enable) {
+				scene->renderState.ocean->simulation.Compute(commandList);
 				oceanRenderer.ComputeSurfaceQueries(scene, commandList);
 			}
 
-			if (scene->sky.probe) {
-				if (scene->sky.probe->update) {
-					FilterProbe(scene->sky.probe, commandList);
+			if (scene->renderState.sky.probe) {
+				if (scene->renderState.sky.probe->update) {
+					FilterProbe(scene->renderState.sky.probe, commandList);
 					//scene->sky.probe->update = false;
 				}
 			}
-			else if (scene->sky.atmosphere) {
-				atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
-				FilterProbe(scene->sky.atmosphere->probe, commandList);
+			else if (scene->renderState.sky.atmosphere) {
+				atmosphereRenderer.Render(scene->renderState.sky.atmosphere->probe, scene, commandList);
+				FilterProbe(scene->renderState.sky.atmosphere->probe, commandList);
 			}
 
-			if (scene->irradianceVolume) {
-				commandList->BindBuffer(ddgiUniformBuffer, 2, 27);
-			}
+			// Shaders read whether the volume is enabled from the uniforms
+			commandList->BindBuffer(ddgiUniformBuffer, 2, 27);
 
 			volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
@@ -167,13 +168,13 @@ namespace Atlas {
 			// The main and directional shadow passes are culled together
 			JobSystem::WaitSpin(renderState->fillGPUShadowRenderPassesJob);
 			JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
-			renderState->gpuScene.Cull(renderState->renderList, scene->GetMainCamera().GetLocation(), commandList);
+			renderState->gpuScene.Cull(renderState->renderList, scene->renderState.camera.GetLocation(), commandList);
 			renderState->gpuScene.Bind(commandList);
 
 			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
 			// Better orders are: Shadow, DDGI, Main or. DDGI, Shadow, Main or DDGI Main, Shadow
 			{
-				Graphics::Profiler::BeginQuery("Main render pass");
+				GPUProfiler::Scope gpuScope("Main render pass");
 
 				commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
 
@@ -188,8 +189,6 @@ namespace Atlas {
 				impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
 				commandList->EndRenderPass();
-
-				Graphics::Profiler::EndQuery();
 			}
 
 			{
@@ -198,11 +197,11 @@ namespace Atlas {
 				terrainShadowRenderer.Render(target, scene, commandList);
 			}
 
-			if (scene->sky.GetProbe()) {
-				commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-					scene->sky.GetProbe()->filteredSpecular.sampler, 1, 11);
-				commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-					scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
+			if (scene->renderState.sky.GetProbe()) {
+				commandList->BindImage(scene->renderState.sky.GetProbe()->filteredSpecular.image,
+					scene->renderState.sky.GetProbe()->filteredSpecular.sampler, 1, 11);
+				commandList->BindImage(scene->renderState.sky.GetProbe()->filteredDiffuse.image,
+					scene->renderState.sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
 			}
             
             JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
@@ -212,8 +211,8 @@ namespace Atlas {
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
 			// Written separately from the culling, so the main pass doesn't wait for the ray tracing world update
-			if (scene->rayTracingWorld)
-				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, scene->GetMainCamera().GetLocation(),
+			if (scene->renderState.rayTracingWorld)
+				renderState->gpuScene.WriteRayTracingInstances(*scene->renderState.rayTracingWorld, scene->renderState.camera.GetLocation(),
 					commandList);
 
 			renderState->lightBuffer.Bind(commandList, 1, 18);
@@ -259,10 +258,10 @@ namespace Atlas {
 			}
 
 			{
-				if (scene->sky.probe) {
+				if (scene->renderState.sky.probe) {
 					skyboxRenderer.Render(target, scene, commandList);
 				}
-				else if (scene->sky.atmosphere) {
+				else if (scene->renderState.sky.atmosphere) {
 					atmosphereRenderer.Render(target, scene, commandList);
 				}
 			}
@@ -283,9 +282,9 @@ namespace Atlas {
 			commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
 				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-			if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
-				if (scene->ssgi && scene->ssgi->enable) {
-					auto resolution = scene->ssgi->halfResolution ? HALF_RES : FULL_RES;
+			if (!scene->renderState.rtgi || !scene->renderState.rtgi->enable || !scene->IsRtDataValid()) {
+				if (scene->renderState.ssgi && scene->renderState.ssgi->enable) {
+					auto resolution = scene->renderState.ssgi->halfResolution ? HALF_RES : FULL_RES;
 					hiZRenderer.Generate(target->GetData(resolution), 4.0f, commandList);
 				}
 				ssgiRenderer.Render(target, scene, commandList);
@@ -301,11 +300,11 @@ namespace Atlas {
 			commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-			auto reflection = scene->reflection;
+			auto reflection = scene->renderState.reflection;
 
 			// The reflections start on the ocean surface where it's visible, which isn't part of the G-buffer
 			auto reflectionEnabled = reflection && reflection->enable && (reflection->ssr || scene->IsRtDataValid());
-			auto oceanReflections = reflectionEnabled && scene->ocean && scene->ocean->enable;
+			auto oceanReflections = reflectionEnabled && scene->renderState.ocean && scene->renderState.ocean->enable;
 			target->SetSeparateReflectionData(oceanReflections);
 			if (oceanReflections) {
 				oceanRenderer.RenderReflectionData(target, scene, commandList);
@@ -363,9 +362,9 @@ namespace Atlas {
 			oceanRenderer.Render(target, scene, commandList);
 
 			for (const auto& primitiveBatch : primitiveBatches)
-				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
+				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->renderState.camera, commandList);
 
-			if (scene->postProcessing.fsr2) {
+			if (scene->renderState.postProcessing.fsr2) {
 				gBufferRenderer.GenerateReactiveMask(target, commandList);
 
 				fsr2Renderer.Render(target, scene, commandList);
@@ -378,8 +377,8 @@ namespace Atlas {
 
 			postProcessRenderer.Render(target, scene, commandList, texture);
 
-			Graphics::Profiler::EndQuery();
-			Graphics::Profiler::EndThread();
+			GPUProfiler::EndQuery();
+			GPUProfiler::EndThread();
 
 			commandList->EndCommands();
 			device->SubmitCommandList(commandList);
@@ -391,7 +390,7 @@ namespace Atlas {
 		void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
 			Ref<Scene::Scene> scene, Texture::Texture2D* texture, std::span<Ref<PrimitiveBatch>> primitiveBatches) {
 
-			if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
+			if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->renderState.hasCamera)
 				return;
 
 			if (!target->IsUsedForPathTracing())
@@ -399,14 +398,14 @@ namespace Atlas {
 
 			auto renderState = &scene->renderState;
 
-			auto& camera = scene->GetMainCamera();
+			auto& camera = scene->renderState.camera;
 
 			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
-			auto& taa = scene->postProcessing.taa;
-			if (taa.enable || scene->postProcessing.fsr2) {
+			auto& taa = scene->renderState.postProcessing.taa;
+			if (taa.enable || scene->renderState.postProcessing.fsr2) {
 				vec2 jitter = vec2(0.0f);
-				if (scene->postProcessing.fsr2) {
+				if (scene->renderState.postProcessing.fsr2) {
 					jitter = fsr2Renderer.GetJitter(target, frameCount);
 				}
 				else {
@@ -425,8 +424,9 @@ namespace Atlas {
 
 			commandList->BeginCommands();
 
-			Graphics::Profiler::BeginThread("Path tracing", commandList);
-			Graphics::Profiler::BeginQuery("Buffer operations");
+			CPUProfiler::Scope profilerScope("Path trace scene");
+			GPUProfiler::BeginThread("Path tracing", commandList);
+			GPUProfiler::BeginQuery("Buffer operations");
 
 			auto globalUniforms = GlobalUniforms{
 				.vMatrix = camera.viewMatrix,
@@ -445,12 +445,12 @@ namespace Atlas {
 				.cameraDirection = vec4(camera.direction, 0.0f),
 				.cameraUp = vec4(camera.up, 0.0f),
 				.cameraRight = vec4(camera.right, 0.0f),
-				.planetCenter = vec4(scene->sky.planetCenter, 0.0f),
-				.windDir = glm::normalize(scene->wind.direction),
-				.windSpeed = scene->wind.speed,
-				.planetRadius = scene->sky.planetRadius,
-				.time = scene->GetTime(),
-				.deltaTime = scene->GetDeltaTime(),
+				.planetCenter = vec4(scene->renderState.sky.planetCenter, 0.0f),
+				.windDir = glm::normalize(scene->renderState.wind.direction),
+				.windSpeed = scene->renderState.wind.speed,
+				.planetRadius = scene->renderState.sky.planetRadius,
+				.time = scene->renderState.time,
+				.deltaTime = scene->renderState.deltaTime,
 				.frameCount = frameCount,
 				.mipLodBias = -1.0f / target->GetScalingFactor(),
 				.cameraNearPlane = camera.nearPlane,
@@ -464,9 +464,9 @@ namespace Atlas {
 			JobSystem::WaitSpin(renderState->materialUpdateJob);
 
 			// Writes the hardware ray tracing instances and builds the acceleration structure
-			if (scene->rayTracingWorld) {
+			if (scene->renderState.rayTracingWorld) {
 				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
-				renderState->gpuScene.WriteRayTracingInstances(*scene->rayTracingWorld, camera.GetLocation(), commandList);
+				renderState->gpuScene.WriteRayTracingInstances(*scene->renderState.rayTracingWorld, camera.GetLocation(), commandList);
 			}
 
 			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
@@ -486,13 +486,13 @@ namespace Atlas {
 				commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
 			}
 
-			Graphics::Profiler::EndQuery();
+			GPUProfiler::EndQuery();
 
 			UpdateShadowImageLayouts(scene, commandList);
 
 			// No probe filtering required
-			if (scene->sky.atmosphere) {
-				atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
+			if (scene->renderState.sky.atmosphere) {
+				atmosphereRenderer.Render(scene->renderState.sky.atmosphere->probe, scene, commandList);
 			}
 
 			pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
@@ -502,10 +502,10 @@ namespace Atlas {
 				for (const auto& primitiveBatch : primitiveBatches)
 					RenderPrimitiveBatch(viewport, target, primitiveBatch, camera, commandList);
 
-				if (scene->postProcessing.fsr2) {
+				if (scene->renderState.postProcessing.fsr2) {
 					fsr2Renderer.Render(target, scene, commandList);
 				}
-				else if (scene->postProcessing.taa.enable) {
+				else if (scene->renderState.postProcessing.taa.enable) {
 					taaRenderer.Render(target, scene, commandList);
 				}
 
@@ -514,7 +514,7 @@ namespace Atlas {
 				postProcessRenderer.Render(target, scene, commandList, texture);
 			}
 			else {
-				Graphics::Profiler::BeginQuery("Post processing");
+				GPUProfiler::Scope gpuScope("Post processing");
 
 				if (device->swapChain->isComplete && !texture) {
 					commandList->BeginRenderPass(device->swapChain, true);
@@ -529,17 +529,17 @@ namespace Atlas {
 				}
 
 				target->Swap();
-
-				Graphics::Profiler::EndQuery();
 			}
 
-			Graphics::Profiler::EndThread();
+			GPUProfiler::EndThread();
 
 			commandList->EndCommands();
 
 			device->SubmitCommandList(commandList);
 
-			renderState->WaitForAsyncWorkCompletion();
+			// Path tracing takes the shadow requests of the frame like rendering does
+			renderState->WaitForJobs();
+			renderState->renderList.Clear();
 
 		}
 
@@ -816,9 +816,9 @@ namespace Atlas {
 
 		void MainRenderer::FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList) {
 
-			Graphics::Profiler::BeginQuery("Filter probe");
+			GPUProfiler::Scope gpuScope("Filter probe");
 
-			Graphics::Profiler::BeginQuery("Filter diffuse probe");
+			GPUProfiler::Scope sectionScope("Filter diffuse probe");
 
 			auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
 			auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -854,7 +854,7 @@ namespace Atlas {
 				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			Graphics::Profiler::EndAndBeginQuery("Filter specular probe");
+			sectionScope.Next("Filter specular probe");
 
 			pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
 			pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -875,7 +875,7 @@ namespace Atlas {
 			int32_t height = int32_t(probe->filteredSpecular.height);
 
 			for (uint32_t i = 0; i < probe->filteredSpecular.image->mipLevels; i++) {
-				Graphics::Profiler::BeginQuery("Mip level " + std::to_string(i));
+				GPUProfiler::BeginQuery("Mip level " + std::to_string(i));
 
 				ivec2 mipResolution = ivec2(width, height);
 
@@ -897,7 +897,7 @@ namespace Atlas {
 				width /= 2;
 				height /= 2;
 
-				Graphics::Profiler::EndQuery();
+				GPUProfiler::EndQuery();
 
 			}
 
@@ -905,10 +905,6 @@ namespace Atlas {
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
 				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-			Graphics::Profiler::EndQuery();
-
-			Graphics::Profiler::EndQuery();
 
 		}
 
@@ -981,7 +977,7 @@ namespace Atlas {
 
 		void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
-			bool mipBias = scene->postProcessing.fsr2 || scene->postProcessing.taa.enable;
+			bool mipBias = scene->renderState.postProcessing.fsr2 || scene->renderState.postProcessing.taa.enable;
 
 			auto globalUniforms = GlobalUniforms{
 				.vMatrix = camera.viewMatrix,
@@ -1000,12 +996,12 @@ namespace Atlas {
 				.cameraDirection = vec4(camera.direction, 0.0f),
 				.cameraUp = vec4(camera.up, 0.0f),
 				.cameraRight = vec4(camera.right, 0.0f),
-				.planetCenter = vec4(scene->sky.planetCenter, 0.0f),
-				.windDir = glm::normalize(scene->wind.direction),
-				.windSpeed = scene->wind.speed,
-				.planetRadius = scene->sky.planetRadius,
-				.time = scene->GetTime(),
-				.deltaTime = scene->GetDeltaTime(),
+				.planetCenter = vec4(scene->renderState.sky.planetCenter, 0.0f),
+				.windDir = glm::normalize(scene->renderState.wind.direction),
+				.windSpeed = scene->renderState.wind.speed,
+				.planetRadius = scene->renderState.sky.planetRadius,
+				.time = scene->renderState.time,
+				.deltaTime = scene->renderState.deltaTime,
 				.frameCount = frameCount,
 				.mipLodBias = mipBias ? log2f(target->GetScalingFactor()) - 1.0f : 0.0f,
 				.cameraNearPlane = camera.nearPlane,
@@ -1017,8 +1013,8 @@ namespace Atlas {
 
 			globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
-			if (scene->irradianceVolume) {
-				auto volume = scene->irradianceVolume;
+			if (scene->renderState.irradianceVolume) {
+				auto volume = scene->renderState.irradianceVolume;
 
 				if (volume->scroll) {
 					auto pos = camera.GetLocation();
@@ -1045,7 +1041,7 @@ namespace Atlas {
 					.volumeStrength = volume->strength,
 					.depthSharpness = volume->sharpness,
 					.optimizeProbes = volume->optimizeProbes ? 1 : 0,
-					.volumeEnabled = volume->enable ? 1 : 0,
+					.volumeEnabled = 1,
 					.volumeStorageScale = volume->storageScale
 				};
 
@@ -1076,9 +1072,9 @@ namespace Atlas {
 				ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
 			}
 
-			auto clouds = scene->sky.clouds;
-			if (clouds && clouds->enable && clouds->castShadow && scene->HasMainLight()) {
-				const auto& light = scene->GetMainLight();
+			auto clouds = scene->renderState.sky.clouds;
+			if (clouds && clouds->enable && clouds->castShadow && scene->renderState.HasMainLight()) {
+				const auto& light = *scene->renderState.mainLight;
 
 				CloudShadow cloudShadowUniform;
 				clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
@@ -1149,16 +1145,13 @@ namespace Atlas {
 			VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-			auto lightSubset = scene->GetSubset<LightComponent>();
 			shadowImageBarriers.clear();
 
-			for (auto& lightEntity : lightSubset) {
-				auto& light = lightEntity.GetComponent<LightComponent>();
-				if (!light.shadow || !light.shadow->update)
+			for (const auto& [lightEntity, light, updateShadow] : scene->renderState.allLights) {
+				if (!updateShadow)
 					continue;
 
 				auto shadow = light.shadow;
-				shadow->update = false;
 				shadowImageBarriers.push_back({ shadow->useCubemap ?
 					shadow->cubemap->image : shadow->maps->image, layout, access });
 			}

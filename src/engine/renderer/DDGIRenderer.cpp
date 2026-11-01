@@ -33,16 +33,17 @@ namespace Atlas {
 
         void DDGIRenderer::TraceAndUpdateProbes(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
 
-            auto volume = scene->irradianceVolume;
-            if (!volume || !volume->enable || !volume->update || !scene->IsRtDataValid())
+            auto volume = scene->renderState.irradianceVolume;
+            if (!volume || !volume->update || !scene->IsRtDataValid())
                 return;
 
-            Graphics::Profiler::BeginQuery("DDGI");
+            CPUProfiler::Scope profilerScope("DDGI");
+            GPUProfiler::Scope gpuScope("DDGI");
 
-            auto clouds = scene->sky.clouds;
+            auto clouds = scene->renderState.sky.clouds;
             auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
-            rayHitPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
+            rayHitPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
             rayHitPipelineConfig.ManageMacro("VISIBILITY_VOLUME", volume->visibility);
             // The hit shader has a low occupancy with software ray tracing
             bool deferredShadowRays = !device->support.hardwareRayTracing;
@@ -61,7 +62,7 @@ namespace Atlas {
 
             auto totalRayCount = rayCount * totalProbeCount;
 
-            Graphics::Profiler::BeginQuery("Scene update");
+            GPUProfiler::BeginQuery("Scene update");
 
             if (totalRayCount != rayHitBuffer.GetElementCount()) {
                 helper.SetRayBufferSize(totalRayCount);
@@ -84,7 +85,7 @@ namespace Atlas {
 
             auto probeCount = volume->probeCount * ivec3(1, volume->cascadeCount, 1);
 
-            Graphics::Profiler::EndAndBeginQuery("Ray generation");
+            GPUProfiler::EndAndBeginQuery("Ray generation");
 
             commandList->BufferMemoryBarrier(historyProbeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
@@ -120,7 +121,7 @@ namespace Atlas {
 
             commandList->BufferMemoryBarrier(historyProbeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
 
-            Graphics::Profiler::EndAndBeginQuery("Ray evaluation");
+            GPUProfiler::EndAndBeginQuery("Ray evaluation");
 
             commandList->BindImage(lastIrradianceArray.image, lastIrradianceArray.sampler, 2, 24);
             commandList->BindImage(lastRadianceArray.image, lastRadianceArray.sampler, 2, 25);
@@ -150,7 +151,7 @@ namespace Atlas {
                     RayHitUniforms uniforms;
                     uniforms.seed = Common::Random::SampleUniformFloat();
 
-                    if (cloudShadowEnabled && scene->HasMainLight()) {
+                    if (cloudShadowEnabled && scene->renderState.HasMainLight()) {
                         clouds->shadowTexture.Bind(commandList, 3, 1);
                     }
 
@@ -165,7 +166,7 @@ namespace Atlas {
             );
 
             if (deferredShadowRays) {
-                Graphics::Profiler::EndAndBeginQuery("Shadow rays");
+                GPUProfiler::EndAndBeginQuery("Shadow rays");
 
                 Graphics::BufferBarrier bufferBarriers[] = {
                     { rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
@@ -194,7 +195,7 @@ namespace Atlas {
             historyProbeStateBuffer.Bind(commandList, 3, 2);
             historyProbeOffsetBuffer.Bind(commandList, 3, 3);
 
-            Graphics::Profiler::EndAndBeginQuery("Update probe states");
+            GPUProfiler::EndAndBeginQuery("Update probe states");
 
             // Update the states of the probes
             {
@@ -215,11 +216,11 @@ namespace Atlas {
             commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-            Graphics::Profiler::EndAndBeginQuery("Update probes");
+            GPUProfiler::EndAndBeginQuery("Update probes");
 
             // Update the probes
             {
-                Graphics::Profiler::BeginQuery("Update irradiance");
+                GPUProfiler::BeginQuery("Update irradiance");
 
                 commandList->BindImage(irradianceArray.image, 3, 0);
 
@@ -229,7 +230,7 @@ namespace Atlas {
                 commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 
                 if (volume->radiance) {
-                    Graphics::Profiler::EndAndBeginQuery("Update radiance");
+                    GPUProfiler::EndAndBeginQuery("Update radiance");
 
                     commandList->BindImage(radianceArray.image, 3, 0);
 
@@ -243,7 +244,7 @@ namespace Atlas {
                 }
 
                 if (volume->visibility) {
-                    Graphics::Profiler::EndAndBeginQuery("Update moments");
+                    GPUProfiler::EndAndBeginQuery("Update moments");
 
                     commandList->BindImage(momentsArray.image, 3, 0);
 
@@ -254,7 +255,7 @@ namespace Atlas {
                     commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
             }
 
             helper.InvalidateRayBuffer(commandList);
@@ -276,16 +277,15 @@ namespace Atlas {
             commandList->BindImage(radianceArray.image, radianceArray.sampler, 2, 25);
             commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 26);
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
         }
 
         void DDGIRenderer::DebugProbes(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t>& materialMap) {
 
-            auto volume = scene->irradianceVolume;
-            if (!volume || !volume->enable || !volume->update || !volume->debug)
+            auto volume = scene->renderState.irradianceVolume;
+            if (!volume || !volume->update || !volume->debug)
                 return;
 
             const auto& internalVolume = volume->internal;

@@ -2,6 +2,7 @@
 #include "EngineInstance.h"
 #include "graphics/Instance.h"
 #include "common/Path.h"
+#include "profiler/CPUProfiler.h"
 
 #include <SDL3/SDL_main.h>
 
@@ -17,6 +18,8 @@
 extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {
+
+    Atlas::CPUProfiler::SetThreadName("Main");
     
     // Automatically change working directory to load
     // shaders properly.
@@ -82,22 +85,22 @@ int main(int argc, char* argv[]) {
 
     while (!quit) {
 
-        Atlas::Engine::Update();
+        Atlas::Engine::Update(engineInstance->UsesRenderThread());
         
         auto deltaTime = Atlas::Clock::GetDelta();
 
         engineInstance->Update();
 
-        engineInstance->Update(deltaTime);
-        engineInstance->Render(deltaTime);
-
-        graphicsDevice->SubmitFrame();
-
-        if (graphicsDevice->isDeviceLost)
+        {
+            Atlas::CPUProfiler::Scope profilerScope("Update");
+            engineInstance->Update(deltaTime);
+        }
+        if (!engineInstance->RenderFrame(deltaTime))
             break;
 
     }
 
+    engineInstance->WaitForRender();
     engineInstance->UnloadContent();
     auto exitCode = graphicsDevice->isDeviceLost ? -1 : engineInstance->GetExitCode();
     delete engineInstance;

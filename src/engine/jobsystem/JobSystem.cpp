@@ -212,6 +212,9 @@ namespace Atlas {
         if (group.HasFinished())
             return;
 
+        CPUProfiler::Scope waitScope("Wait for jobs");
+        CPUProfiler::Scope groupScope(group.name ? group.name : "Jobs");
+
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
 
         auto& worker = priorityPool.GetNextWorker();
@@ -224,6 +227,9 @@ namespace Atlas {
 
     void JobSystem::WaitSpin(JobGroup& group) {
 
+        if (group.HasFinished())
+            return;
+
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
 
         auto spinCount = priorityPool.spinCounter.fetch_sub(1);
@@ -234,6 +240,8 @@ namespace Atlas {
             Wait(group);
         }
         else {
+            CPUProfiler::Scope waitScope("Wait for jobs");
+            CPUProfiler::Scope groupScope(group.name ? group.name : "Jobs");
             while (!group.HasFinished());
             priorityPool.spinCounter.fetch_add(1);
         }
