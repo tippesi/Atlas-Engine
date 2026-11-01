@@ -44,7 +44,7 @@ namespace Atlas {
                 if (glm::length(move) > 0.0f) {
                     auto direction = Helper::Math::NormalizeOrZero(vec3(camera.direction.x, 0.0f, camera.direction.z));
                     auto velocity = direction * -move.y + camera.right * move.x;
-                    auto run = glm::length(move) > 0.95f || ControllerMap::IsButtonPressed(AE_CONTROLLERBUTTON_LEFTSTICK);
+                    auto run = glm::length(move) > 0.95f || (runButton >= 0 && ControllerMap::IsButtonPressed(runButton));
                     player.SetInputVelocity(velocity * (run ? player.fastVelocity : player.slowVelocity));
 
                     // Running forward or sideways, not towards the camera
@@ -58,10 +58,10 @@ namespace Atlas {
                     }
                 }
 
-                if (controllerJump && ControllerMap::IsButtonPressed(AE_CONTROLLERBUTTON_A, false))
+                if (controllerJump && ControllerMap::IsButtonPressed(jumpButton, false))
                     player.Jump();
 
-                if (controllerCrouch && ControllerMap::IsButtonPressed(AE_CONTROLLERBUTTON_B))
+                if (controllerCrouch && ControllerMap::IsButtonPressed(crouchButton))
                     player.Crouch();
             }
 

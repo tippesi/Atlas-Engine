@@ -29,6 +29,14 @@ namespace Atlas {
             float speed = 7.0f;
             float reactivity = 6.0f;
 
+            // The keys of a player: jump, run while held (walk while held with alwaysRun), slide and crouch,
+            // KeyUnknown leaves an action out
+            Keycode jumpKey = Keycode::KeySpace;
+            Keycode runKey = Keycode::KeyLeftShift;
+            Keycode slideKey = Keycode::KeyLeftControl;
+            Keycode crouchKey = Keycode::KeyC;
+            bool alwaysRun = false;
+
         private:
             void RegisterEvent();
 

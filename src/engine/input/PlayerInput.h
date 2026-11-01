@@ -3,6 +3,7 @@
 #include "System.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+#include "events/ControllerButtonEvent.h"
 
 namespace Atlas {
 
@@ -14,9 +15,10 @@ namespace Atlas {
 
         /**
          * Controls the players of a scene with keyboard and mouse: W, A, S and D move a player relative to
-         * the direction of its camera, Left Shift runs, Space jumps, C crouches and the mouse rotates the camera.
-         * Game controllers move with the left stick (fully deflected or with a stick click to run), look
-         * with the right stick, jump with A and crouch with B.
+         * the direction of its camera, the mouse rotates the camera, the keys to jump, run and crouch are set in the
+         * keyboard handler (Space, Left Shift and C by default). Game controllers move with the left stick (fully
+         * deflected or with the run button held to run), look with the right stick, jump with the jump button and
+         * crouch with the crouch button.
          * Only players with a camera component are controlled.
          */
         class PlayerInput {
@@ -41,9 +43,13 @@ namespace Atlas {
             float controllerFollowSpeed = 0.0f;
             float controllerFollowDeadZone = 0.5f;
 
-            // A jumps and B crouches, false leaves the button to the application, e.g. while a modifier makes it another action
+            // The jump and crouch buttons, false leaves the button to the application, e.g. while it is another action
             bool controllerJump = true;
             bool controllerCrouch = true;
+            int32_t jumpButton = AE_CONTROLLERBUTTON_A;
+            int32_t crouchButton = AE_CONTROLLERBUTTON_B;
+            // Held runs, -1 runs only at full deflection
+            int32_t runButton = AE_CONTROLLERBUTTON_LEFTSTICK;
 
         private:
             float lookIdleTime = 0.0f;
