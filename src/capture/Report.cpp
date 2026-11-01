@@ -3,9 +3,11 @@
 #include "graphics/GraphicsDevice.h"
 #include "graphics/Instance.h"
 #include "graphics/MemoryManager.h"
-#include "graphics/Profiler.h"
+#include "profiler/GPUProfiler.h"
+#include "profiler/CPUProfiler.h"
 #include "resource/ResourceManager.h"
 #include "texture/Texture2D.h"
+#include "Clock.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -234,7 +236,7 @@ namespace Atlas::Capture {
         exitCode = 0;
         written = false;
         reportPath.clear();
-        cpuFrameTimes.clear();
+        frameTimes.clear();
 
         std::lock_guard lock(validationMutex);
         validationMessages.clear();
@@ -398,21 +400,12 @@ namespace Atlas::Capture {
 
     void Report::BeginFrame(int32_t profileFrames) {
 
-        auto now = std::chrono::steady_clock::now();
-        if (profileFrames > 0 && frameStart.time_since_epoch().count() != 0) {
-            currentCpuTimes.frame = std::chrono::duration<float, std::milli>(now - frameStart).count();
-            cpuFrameTimes.push_back(currentCpuTimes);
-            if (cpuFrameTimes.size() > size_t(profileFrames))
-                cpuFrameTimes.pop_front();
-        }
-        frameStart = now;
-        currentCpuTimes = {};
+        if (profileFrames <= 0)
+            return;
 
-    }
-
-    float Report::GetFrameMilliseconds() const {
-
-        return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - frameStart).count();
+        frameTimes.push_back(Clock::GetDelta() * 1000.0f);
+        if (frameTimes.size() > size_t(profileFrames))
+            frameTimes.pop_front();
 
     }
 
@@ -454,57 +447,126 @@ namespace Atlas::Capture {
 
     void Report::WriteProfile(int32_t frames) {
 
-        auto threads = Graphics::Profiler::GetQueriesAverage(uint32_t(frames));
+        // The queries of a thread with their total, printed as well if requested
+        auto addThread = [&](const Profiler::ThreadData& thread, const std::string& label, bool print) {
 
-        json queries = json::array();
-        std::function<void(const Graphics::Profiler::Query&, const std::string&, int32_t)> addQuery =
-            [&](const Graphics::Profiler::Query& query, const std::string& parent, int32_t depth) {
+            double total = 0.0;
+            auto threadJson = ThreadToJson(thread, 0.0, total);
 
-            auto path = parent.empty() ? query.name : parent + " / " + query.name;
-            auto milliseconds = double(query.timer.elapsedTime) / 1000000.0;
-            queries.push_back({ { "query", path }, { "depth", depth }, { "ms", Round(milliseconds, 4) } });
-            for (const auto& child : query.children)
-                addQuery(child, path, depth + 1);
+            if (print) {
+                Print(label + " " + thread.name + ": " + FormatFloat(float(total), 3) + " ms per frame");
+                for (const auto& query : threadJson["queries"])
+                    if (query["depth"].get<int32_t>() <= 1 && query["ms"].get<double>() >= 0.05)
+                        Print("  " + FormatFloat(query["ms"].get<float>(), 3) + " ms  " + query["query"].get<std::string>());
+            }
+
+            return threadJson;
 
         };
 
         json profile;
         profile["frames"] = frames;
-        for (const auto& thread : threads) {
-            queries = json::array();
-            double total = 0.0;
-            for (const auto& query : thread.queries) {
-                total += double(query.timer.elapsedTime) / 1000000.0;
-                addQuery(query, "", 0);
-            }
-            profile["threads"].push_back({ { "thread", thread.name }, { "ms", Round(total, 4) }, { "queries", queries } });
+        for (const auto& thread : GPUProfiler::GetQueriesAverage(uint32_t(frames)))
+            profile["threads"].push_back(addThread(thread, "GPU", true));
 
-            Print("GPU " + thread.name + ": " + FormatFloat(float(total), 3) + " ms per frame");
-            for (const auto& query : queries)
-                if (query["depth"].get<int32_t>() <= 1 && query["ms"].get<double>() >= 0.05)
-                    Print("  " + FormatFloat(query["ms"].get<float>(), 3) + " ms  " + query["query"].get<std::string>());
-        }
+        auto cpuThreads = CPUProfiler::GetQueriesAverage(uint32_t(frames));
 
-        if (!cpuFrameTimes.empty()) {
-            auto average = [&](float CpuFrameTimes::* member) {
-                double sum = 0.0;
-                for (const auto& times : cpuFrameTimes)
-                    sum += times.*member;
-                return Round(sum / double(cpuFrameTimes.size()), 4);
-            };
+        // The frame times come from the engine clock, the parts of the main thread from the CPU profiler
+        if (!frameTimes.empty()) {
+            double frameSum = 0.0;
             float maxFrame = 0.0f;
-            for (const auto& times : cpuFrameTimes)
-                maxFrame = std::max(maxFrame, times.frame);
-            profile["cpu"] = { { "frames", cpuFrameTimes.size() }, { "frameMs", average(&CpuFrameTimes::frame) },
-                { "maxFrameMs", Round(maxFrame, 4) }, { "waitForGpuMs", average(&CpuFrameTimes::wait) },
-                { "sceneUpdateMs", average(&CpuFrameTimes::update) }, { "renderMs", average(&CpuFrameTimes::render) } };
+            for (auto frameTime : frameTimes) {
+                frameSum += frameTime;
+                maxFrame = std::max(maxFrame, frameTime);
+            }
+
+            std::function<double(const std::vector<Profiler::Query>&, const std::string&)> findMilliseconds =
+                [&](const std::vector<Profiler::Query>& queries, const std::string& name) {
+                double milliseconds = 0.0;
+                for (const auto& query : queries)
+                    milliseconds += query.name == name ? double(query.elapsedTime) / 1000000.0 : findMilliseconds(query.children, name);
+                return milliseconds;
+            };
+            auto mainThread = std::find_if(cpuThreads.begin(), cpuThreads.end(), [](const auto& thread) { return thread.name == "Main"; });
+            auto mainMilliseconds = [&](const std::string& name) {
+                return mainThread != cpuThreads.end() ? Round(findMilliseconds(mainThread->queries, name), 4) : 0.0;
+            };
+
+            profile["cpu"] = { { "frames", frameTimes.size() }, { "frameMs", Round(frameSum / double(frameTimes.size()), 4) },
+                { "maxFrameMs", Round(maxFrame, 4) }, { "waitForGpuMs", mainMilliseconds("Wait for previous frame") },
+                { "sceneUpdateMs", mainMilliseconds("Scene update") }, { "renderMs", mainMilliseconds("Capture render") } };
             Print("CPU frame " + FormatFloat(float(profile["cpu"]["frameMs"].get<double>()), 3) + " ms: scene update " +
                 FormatFloat(float(profile["cpu"]["sceneUpdateMs"].get<double>()), 3) + " ms, render " +
                 FormatFloat(float(profile["cpu"]["renderMs"].get<double>()), 3) + " ms, waiting for the GPU " +
                 FormatFloat(float(profile["cpu"]["waitForGpuMs"].get<double>()), 3) + " ms");
         }
 
+        // The workers are only in the file
+        for (const auto& thread : cpuThreads)
+            profile["cpuThreads"].push_back(addThread(thread, "CPU", thread.name == "Main" || thread.name == "Render"));
+
         WriteJson("profile.json", profile);
+
+    }
+
+    void Report::WriteHitches(const std::vector<HitchRecorder::Hitch>& hitches) {
+
+        json hitchesJson = json::array();
+        for (const auto& hitch : hitches) {
+            // Only the scopes that took a noticeable part of the frame
+            auto minimumMilliseconds = double(hitch.frameTime) * 0.05;
+
+            json threads = json::array();
+            std::string summary;
+            for (const auto& thread : hitch.threads) {
+                double total = 0.0;
+                auto threadJson = ThreadToJson(thread, minimumMilliseconds, total);
+                if (total < minimumMilliseconds)
+                    continue;
+
+                threads.push_back(threadJson);
+                if (thread.name == "Main" || thread.name == "Render")
+                    for (const auto& query : threadJson["queries"])
+                        if (query["depth"].get<int32_t>() <= 2)
+                            summary += "\n    " + thread.name + ": " + FormatFloat(query["ms"].get<float>(), 1) + " ms  " +
+                                query["query"].get<std::string>();
+            }
+
+            hitchesJson.push_back({ { "time", Round(hitch.time, 3) }, { "frameMs", Round(hitch.frameTime, 2) },
+                { "averageMs", Round(hitch.averageFrameTime, 2) }, { "threads", threads } });
+            Print("  Hitch " + FormatFloat(hitch.frameTime, 1) + " ms (average " + FormatFloat(hitch.averageFrameTime, 1) +
+                " ms) at " + FormatFloat(hitch.time, 1) + " s" + summary);
+        }
+
+        Print("Hitches: " + std::to_string(hitches.size()) + (hitches.empty() ? "" : ", see hitches.json"));
+        WriteJson("hitches.json", { { "hitches", hitchesJson } });
+
+    }
+
+    json Report::ThreadToJson(const Profiler::ThreadData& thread, double minimumMilliseconds, double& totalMilliseconds) const {
+
+        json queries = json::array();
+        std::function<void(const Profiler::Query&, const std::string&, int32_t)> addQuery =
+            [&](const Profiler::Query& query, const std::string& parent, int32_t depth) {
+
+            auto milliseconds = double(query.elapsedTime) / 1000000.0;
+            if (milliseconds < minimumMilliseconds)
+                return;
+
+            auto path = parent.empty() ? query.name : parent + " / " + query.name;
+            queries.push_back({ { "query", path }, { "depth", depth }, { "calls", query.calls }, { "ms", Round(milliseconds, 4) } });
+            for (const auto& child : query.children)
+                addQuery(child, path, depth + 1);
+
+        };
+
+        totalMilliseconds = 0.0;
+        for (const auto& query : thread.queries) {
+            totalMilliseconds += double(query.elapsedTime) / 1000000.0;
+            addQuery(query, "", 0);
+        }
+
+        return json { { "thread", thread.name }, { "ms", Round(totalMilliseconds, 4) }, { "queries", queries } };
 
     }
 

@@ -230,6 +230,14 @@ namespace Atlas::Capture {
 
     };
 
+    // Frames that take longer than the minimum and the average of the frames before times the relative threshold
+    struct HitchesSpec {
+
+        float minimumFrameTime = 40.0f;
+        float relativeThreshold = 2.0f;
+
+    };
+
     struct OverlaySpec {
 
         std::vector<std::string> bounds;
@@ -316,6 +324,7 @@ namespace Atlas::Capture {
 
         // Number of last frames the GPU timings are averaged over, 0 disables the profile
         int32_t profileFrames = 0;
+        std::optional<HitchesSpec> hitches;
 
         // Only set by --validation, the engine enables the validation layers before the job is read
         bool validation = false;

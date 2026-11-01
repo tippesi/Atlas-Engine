@@ -1,5 +1,6 @@
 #include "Job.h"
 
+#include <cctype>
 #include <fstream>
 #include <set>
 #include <stdexcept>
@@ -283,7 +284,7 @@ namespace Atlas::Capture {
         CheckKeys(j,
             { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow", "realTime", "pathTrace",
                 "settings", "variants", "inspect", "queries", "edit", "shots", "play", "duration", "timeline", "strips", "observer",
-                "scripts", "track", "overlay", "checks", "profile", "$schema", "description" },
+                "scripts", "track", "overlay", "checks", "profile", "hitches", "$schema", "description" },
             "job");
 
         Job job;
@@ -482,6 +483,20 @@ namespace Atlas::Capture {
             }
         }
 
+        if (j.contains("hitches")) {
+            auto& hitches = j["hitches"];
+            if (hitches.is_object()) {
+                CheckKeys(hitches, { "minimumMs", "relativeThreshold" }, "hitches");
+                job.hitches = HitchesSpec {
+                    .minimumFrameTime = hitches.value("minimumMs", 40.0f),
+                    .relativeThreshold = hitches.value("relativeThreshold", 2.0f)
+                };
+            }
+            else if (hitches.get<bool>()) {
+                job.hitches = HitchesSpec();
+            }
+        }
+
         if (j.contains("overlay")) {
             auto& overlay = j["overlay"];
             OverlaySpec spec;
@@ -617,6 +632,10 @@ namespace Atlas::Capture {
                 j["overlay"] = true;
             else if (arg == "--validation")
                 validation = true;
+            else if (arg == "--hitches")
+                // Only a number is the minimum, a job file can follow as well
+                j["hitches"] = hasValue() && std::isdigit(static_cast<unsigned char>(args[i + 1][0])) ?
+                    json { { "minimumMs", std::stof(next()) } } : json(true);
             else if (arg == "--sound")
                 sound = true;
             else if (arg == "--inspect")
@@ -720,6 +739,7 @@ Options:
   --fast                  Play as fast as possible in the shown window
   --overlay               Draw debug lines: players, tracked paths and query hits
   --validation            Enable all Vulkan validation layer features and write validation.json (slow)
+  --hitches [ms]          Write the frames over the time (default 40) with their CPU profile to hitches.json
   --sound                 Play the sound of the scene (muted by default)
   --inspect [file]        Write a scene summary (default scene.json)
   --play <seconds>        Play the scene for the given time

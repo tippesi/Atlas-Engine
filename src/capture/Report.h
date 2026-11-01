@@ -5,6 +5,7 @@
 
 #include "Log.h"
 #include "graphics/Common.h"
+#include "profiler/HitchRecorder.h"
 
 #include <chrono>
 #include <deque>
@@ -19,16 +20,6 @@ namespace Atlas::Capture {
     class Report {
 
     public:
-        // CPU milliseconds of a frame: whole frame, waiting for the GPU, scene update, render
-        struct CpuFrameTimes {
-
-            float frame = 0.0f;
-            float wait = 0.0f;
-            float update = 0.0f;
-            float render = 0.0f;
-
-        };
-
         // Crashes write a report with the status "crashed" and exit with code 3
         void InstallCrashHandlers();
 
@@ -66,17 +57,17 @@ namespace Atlas::Capture {
         // Engine log entries before this are not reported
         void SkipLog();
 
-        // Measures the CPU times of the last frames, only while the profile is enabled
+        // Keeps the frame times of the last frames for the profile, the other CPU times come from the CPU profiler
         void BeginFrame(int32_t profileFrames);
-
-        // Since the frame began
-        float GetFrameMilliseconds() const;
 
         // Returns false if the validation layers aren't available
         bool EnableValidation();
 
         // Writes the GPU timings averaged over the last frames and the CPU times to profile.json
         void WriteProfile(int32_t frames);
+
+        // Writes the hitches of the job with their CPU profile to hitches.json and prints them
+        void WriteHitches(const std::vector<HitchRecorder::Hitch>& hitches);
 
         // Writes the validation messages grouped by their id to validation.json
         void WriteValidation();
@@ -95,8 +86,6 @@ namespace Atlas::Capture {
 
         int32_t exitCode = 0;
         std::string runId;
-
-        CpuFrameTimes currentCpuTimes;
 
         // Lines of the output panel of a shown window
         std::deque<CaptureRenderer::TextLine> outputLines;
@@ -118,6 +107,9 @@ namespace Atlas::Capture {
 
         void WriteCrash(const std::string& reason);
 
+        // The queries of a thread as a flat list with paths, queries below the minimum time are left out
+        json ThreadToJson(const Profiler::ThreadData& thread, double minimumMilliseconds, double& totalMilliseconds) const;
+
         std::string jobName;
         fs::path outputDirectory;
         fs::path lockPath;
@@ -129,8 +121,7 @@ namespace Atlas::Capture {
         std::ofstream logFile;
         size_t logIndex = 0;
 
-        std::deque<CpuFrameTimes> cpuFrameTimes;
-        std::chrono::steady_clock::time_point frameStart;
+        std::deque<float> frameTimes;
 
         // Message id -> message, the validation layers call back from any thread
         VkDebugUtilsMessengerEXT validationMessenger = VK_NULL_HANDLE;

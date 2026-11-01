@@ -163,7 +163,8 @@ All keys are optional except `scene`. Unknown keys are rejected to catch typos.
     "strips": [ ... ],
     "track": { "entities": ["Kingdom Guard*"], "interval": 0.25 },
     "checks": { ... },
-    "profile": { "frames": 64 }
+    "profile": { "frames": 64 },
+    "hitches": { "minimumMs": 40 }
 }
 ```
 
@@ -448,13 +449,23 @@ check that a level placed below the terrain only shows at its entrance.
 
 ### Profile
 
-`"profile": true` (or `{ "frames": 64 }`, default 32) averages the GPU profiler timings over the
-last frames of the run, prints the passes that take at least 0.05 ms and writes all of them to
-`profile.json`. `cpu` in the file averages the CPU times of the same frames: the whole frame,
-waiting for the previous GPU frame, the scene update (scripts, physics, animation) and recording the
-render. Play the scene for long enough that the last frames are representative. Work that
-only runs on changes (e.g. the atmosphere tables) can be forced every frame with a script to
-measure it.
+`"profile": true` (or `{ "frames": 64 }`, default 32, at most 64) averages the GPU and the CPU profiler timings
+over the last frames of the run, prints the GPU passes that take at least 0.05 ms and writes all of them to
+`profile.json`. `cpu` in the file sums up the main thread of the same frames: the whole frame (average and
+maximum, from the engine clock) and, from the CPU profiler, waiting for the previous frame (`Wait for previous
+frame`), the scene update (`Scene update`: scripts, physics, animation) and recording the render (`Capture
+render`). `cpuThreads` has the CPU profiler scopes of every thread with their calls and milliseconds per frame,
+the main and the render thread are printed. Play the scene for long enough that the last frames are
+representative. Work that only runs on changes (e.g. the atmosphere tables) can be forced every frame with a
+script to measure it.
+
+### Hitches
+
+`"hitches": true` (or `{ "minimumMs": 40, "relativeThreshold": 2 }`, `--hitches [ms]` on the command line)
+records the frames that take longer than the minimum and longer than the average of the frames before times the
+relative threshold, from the start of the shots or of playing on. `hitches.json` lists them with their time,
+frame time, average and the CPU profiler scopes of every thread that took at least 5 % of the frame. The scopes
+of the main and the render thread are printed.
 
 ### Validation
 
@@ -720,7 +731,8 @@ busy"). Wait for it to finish, or close it if it is stopped in the debugger, the
 | `queries.json` | Query results |
 | `trace.json` | Tracked entities |
 | `edit_diff.json` | Changes of an edit |
-| `profile.json` | GPU timings per pass in milliseconds |
+| `profile.json` | GPU timings per pass and CPU profiler scopes in milliseconds |
+| `hitches.json` | Frames over the hitch threshold with their CPU profile |
 | `validation.json` | Validation messages with `--validation` |
 
 ## Workflow for scene changes

@@ -8,7 +8,10 @@
 #include "scripting/Script.h"
 #include "scene/components/LuaScriptComponent.h"
 #include "graphics/GraphicsDevice.h"
-#include "graphics/Profiler.h"
+#include "profiler/CPUProfiler.h"
+#include "profiler/GPUProfiler.h"
+#include "profiler/HitchRecorder.h"
+#include "Clock.h"
 #include "audio/AudioManager.h"
 
 #include <SDL3/SDL.h>
@@ -250,8 +253,13 @@ namespace Atlas::Capture {
             window.Hide();
         }
 
-        // The profiler is disabled by default in release builds
-        Graphics::Profiler::enable = job.profileFrames > 0;
+        // The profilers are disabled by default in release builds, hitches need the CPU profile
+        CPUProfiler::enable = job.profileFrames > 0 || job.hitches.has_value();
+        GPUProfiler::enable = job.profileFrames > 0;
+        if (job.hitches) {
+            HitchRecorder::minimumFrameTime = job.hitches->minimumFrameTime;
+            HitchRecorder::relativeThreshold = job.hitches->relativeThreshold;
+        }
 
         if (job.sound)
             Audio::AudioManager::Unmute();
@@ -380,20 +388,26 @@ namespace Atlas::Capture {
             return;
 
         report.BeginFrame(job.profileFrames);
-        graphicsDevice->WaitForPreviousFrameSubmission();
-        report.currentCpuTimes.wait = report.GetFrameMilliseconds();
+        {
+            CPUProfiler::Scope profilerScope("Wait for previous frame");
+            graphicsDevice->WaitForPreviousFrameSubmission();
+        }
 
         try {
+            CPUProfiler::Scope sectionScope("Readback");
             ProcessReadback();
+            sectionScope.Next("Collect log");
             CollectLog();
 
             frameCount++;
 
             switch (phase) {
             case Phase::Idle:
+                sectionScope.Next("Commands");
                 ProcessNextCommand();
                 break;
             case Phase::Loading: {
+                sectionScope.Next("Loading");
                 UpdateSceneWithCaptureCamera(*activeCamera);
                 auto elapsed = std::chrono::duration<float>(std::chrono::steady_clock::now() - loadStartTime).count();
                 if (IsSceneReady()) {
@@ -422,18 +436,23 @@ namespace Atlas::Capture {
                 break;
             }
             case Phase::Prepare:
+                sectionScope.Next("Prepare");
                 Prepare();
                 break;
             case Phase::EditSave:
+                sectionScope.Next("Edit save");
                 FinishEdit();
                 break;
             case Phase::Shots:
+                sectionScope.Next("Shots");
                 UpdateShots();
                 break;
             case Phase::Play:
+                sectionScope.Next("Play");
                 UpdatePlay();
                 break;
             case Phase::Finish:
+                sectionScope.Next("Finish");
                 if (!HasPendingCaptures())
                     Finish();
                 break;
@@ -469,10 +488,9 @@ namespace Atlas::Capture {
                     passes.push_back(pass);
 
         try {
-            auto renderStart = std::chrono::steady_clock::now();
+            CPUProfiler::Scope profilerScope("Capture render");
             BuildOverlay();
             captureRenderer.Render(scene, passes, overlay->GetBatches(), job.pathTrace);
-            report.currentCpuTimes.render = std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - renderStart).count();
         }
         catch (const std::exception& e) {
             // E.g. validation errors, which the engine throws in non-release builds
@@ -591,12 +609,13 @@ namespace Atlas::Capture {
 
     void App::Prepare() {
 
-        // The renderer expects a scene update in every frame
-        UpdateSceneWithCaptureCamera(*activeCamera);
-
+        // The settings come first, the scene update extracts what the next frame renders
         if (!job.settings.empty())
             ApplySettings(*scene, job.settings);
         baseSettings = ExportSettings(*scene);
+
+        // The renderer expects a scene update in every frame
+        UpdateSceneWithCaptureCamera(*activeCamera);
         report.Print("Rendering at " + std::to_string(job.resolution.x) + "x" + std::to_string(job.resolution.y) + GetRenderDescription());
 
         EntitySet excluded = { captureCameraEntity };
@@ -652,6 +671,9 @@ namespace Atlas::Capture {
         // Checks of a static scene run once, while playing they run continuously
         if (!job.play)
             checkRunner->Run(*scene, 0.0f);
+
+        // Hitches of loading and editing aren't reported, only those of frames from here on
+        hitchesStartTime = Clock::Get();
 
         if (!job.shots.empty())
             phase = Phase::Shots;
@@ -1130,6 +1152,12 @@ namespace Atlas::Capture {
 
         if (job.profileFrames > 0)
             report.WriteProfile(job.profileFrames);
+        if (job.hitches) {
+            // A hitch is recorded at the end of its frame
+            auto hitches = HitchRecorder::GetHitches();
+            std::erase_if(hitches, [&](const auto& hitch) { return hitch.time - hitch.frameTime / 1000.0f < hitchesStartTime; });
+            report.WriteHitches(hitches);
+        }
 
         if (report.IsValidationEnabled())
             report.WriteValidation();
@@ -1442,10 +1470,8 @@ namespace Atlas::Capture {
         if (scene->rayTracingWorld)
             scene->rayTracingWorld->includeObjectHistory = job.pathTrace;
 
-        auto updateStart = std::chrono::steady_clock::now();
         scene->Update(deltaTime < 0.0f ? job.fixedDeltaTime : deltaTime, useCaptureCamera ? captureCameraEntity : Scene::Entity());
         sceneUpdated = true;
-        report.currentCpuTimes.update += std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - updateStart).count();
 
     }
 

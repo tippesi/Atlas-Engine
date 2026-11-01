@@ -279,6 +279,8 @@ namespace Atlas::Capture {
         static constexpr size_t outputLineCount = 12;
         Ref<Font> font;
         std::chrono::steady_clock::time_point playStartTime;
+        // Clock time from which on hitches are reported
+        float hitchesStartTime = 0.0f;
 
     };
 
