@@ -24,8 +24,8 @@ namespace Atlas {
         std::atomic<float> AudioManager::masterVolume = 1.0f;
         std::atomic_bool AudioManager::muted = false;
 
-        ReverbSettings AudioManager::reverbSettings;
-        std::unique_ptr<Reverb> AudioManager::reverb;
+        AudioReverbSettings AudioManager::reverbSettings;
+        std::unique_ptr<AudioReverb> AudioManager::reverb;
         
         bool AudioManager::Configure(int32_t frequency, uint8_t channels, uint32_t samples) {
 
@@ -42,7 +42,7 @@ namespace Atlas {
                 AudioManager::Callback, nullptr);
             if (deviceStream) {
 
-                reverb = std::make_unique<Reverb>(audioSpec.freq);
+                reverb = std::make_unique<AudioReverb>(audioSpec.freq);
 
                 Resume();
 
@@ -97,14 +97,14 @@ namespace Atlas {
 
         }
 
-        void AudioManager::SetReverb(const ReverbSettings& settings) {
+        void AudioManager::SetReverb(const AudioReverbSettings& settings) {
 
             std::lock_guard<std::mutex> lock(mutex);
             reverbSettings = settings;
 
         }
 
-        ReverbSettings AudioManager::GetReverb() {
+        AudioReverbSettings AudioManager::GetReverb() {
 
             std::lock_guard<std::mutex> lock(mutex);
             return reverbSettings;

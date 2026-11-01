@@ -50,13 +50,13 @@ namespace Atlas::Scripting::Bindings {
         audio.set_function("SetReverb", &Audio::AudioManager::SetReverb);
         audio.set_function("GetReverb", &Audio::AudioManager::GetReverb);
 
-        ns->new_usertype<Audio::ReverbSettings>("ReverbSettings",
+        ns->new_usertype<Audio::AudioReverbSettings>("AudioReverbSettings",
             sol::call_constructor,
-            sol::constructors<Audio::ReverbSettings()>(),
-            "roomSize", &Audio::ReverbSettings::roomSize,
-            "damping", &Audio::ReverbSettings::damping,
-            "wet", &Audio::ReverbSettings::wet,
-            "width", &Audio::ReverbSettings::width
+            sol::constructors<Audio::AudioReverbSettings()>(),
+            "roomSize", &Audio::AudioReverbSettings::roomSize,
+            "damping", &Audio::AudioReverbSettings::damping,
+            "wet", &Audio::AudioReverbSettings::wet,
+            "width", &Audio::AudioReverbSettings::width
             );
 
     }

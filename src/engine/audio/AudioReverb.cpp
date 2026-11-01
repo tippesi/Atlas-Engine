@@ -1,4 +1,4 @@
-#include "Reverb.h"
+#include "AudioReverb.h"
 #include "../common/MathHelper.h"
 
 #include <algorithm>
@@ -14,7 +14,7 @@ namespace Atlas {
         static constexpr float inputGain = 0.015f;
         static constexpr float allpassFeedback = 0.5f;
 
-        Reverb::Reverb(int32_t sampleRate) {
+        AudioReverb::AudioReverb(int32_t sampleRate) {
 
             auto scale = float(sampleRate) / 44100.0f;
             for (int32_t channel = 0; channel < 2; channel++) {
@@ -33,7 +33,7 @@ namespace Atlas {
 
         }
 
-        void Reverb::Process(const float* input, float* output, int32_t frameCount) {
+        void AudioReverb::Process(const float* input, float* output, int32_t frameCount) {
 
             // A block is a few milliseconds, the settings reach the target within a few hundred
             const float fade = 0.02f;

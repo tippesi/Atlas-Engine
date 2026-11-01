@@ -8,7 +8,7 @@ namespace Atlas {
 
     namespace Audio {
 
-        struct ReverbSettings {
+        struct AudioReverbSettings {
 
             // How long the reverb rings, 0 a small room, 1 a large hall or cave
             float roomSize = 0.5f;
@@ -25,15 +25,15 @@ namespace Atlas {
          * A stereo reverb of parallel comb filters and serial allpass filters (Freeverb), with the delays
          * scaled to the sample rate. The settings fade towards the ones set, changing rooms doesn't click.
          */
-        class Reverb {
+        class AudioReverb {
 
         public:
-            explicit Reverb(int32_t sampleRate = 48000);
+            explicit AudioReverb(int32_t sampleRate = 48000);
 
             // Interleaved stereo frames, the reverb of the input is added to the output
             void Process(const float* input, float* output, int32_t frameCount);
 
-            ReverbSettings target;
+            AudioReverbSettings target;
 
         private:
             struct Comb {
@@ -50,7 +50,7 @@ namespace Atlas {
             std::vector<Comb> combs[2];
             std::vector<Allpass> allpasses[2];
 
-            ReverbSettings current;
+            AudioReverbSettings current;
             bool silent = false;
 
         };
