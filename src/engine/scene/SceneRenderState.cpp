@@ -638,6 +638,8 @@ namespace Atlas::Scene {
                     const auto& prop = light.transformedProperties;
                     if (light.type == LightType::DirectionalLight) {
                         lightUniform.direction = camera.viewMatrix * vec4(prop.directional.direction, 0.0f);
+                        auto transmittance = scene->sky.GetDirectLightTransmittance(camera.GetLocation(), prop.directional.direction);
+                        lightUniform.color = vec4(vec3(lightUniform.color) * transmittance, packedType);
                     }
                     else if (light.type == LightType::PointLight) {
                         lightUniform.location = camera.viewMatrix * vec4(prop.point.position, 1.0f);

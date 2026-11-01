@@ -36,6 +36,10 @@ namespace Atlas::ImguiExtension {
             atmosphere->needsUpdate |= atmosphereChanged;
             ImGui::DragFloat("Sun disk size", &atmosphere->sunDiskSize, 0.01f, 0.01f, 20.0f, "%.2f deg");
             ImGui::SetItemTooltip("Angular diameter of the sun, the real sun has about 0.53 degrees");
+            ImGui::SliderFloat("Direct light", &atmosphere->directLight, 0.0f, 1.0f);
+            ImGui::SetItemTooltip("How much the air colors and dims the sun's light, red and weak near the horizon at 1");
+            ImGui::SliderFloat("Indirect light", &atmosphere->indirectLight, 0.0f, 2.0f);
+            ImGui::SetItemTooltip("How much the sky lights the scene: ambient light, global illumination and sky reflections");
 
             atmosphere->rayleighScatteringCoeff /= 1e6f;
             atmosphere->mieScatteringCoeff /= 1e6f;

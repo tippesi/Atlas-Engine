@@ -22,6 +22,12 @@ namespace Atlas {
             float mieHeightScale = 1.2e3f;
             // Angular diameter of the sun disk in degrees
             float sunDiskSize = 0.535f;
+            // How much the air between the camera and the sun colors and dims the direct light of the main light,
+            // from not at all (0) to the full transmittance (1): red and weak near the horizon
+            float directLight = 0.0f;
+            // Scales how much the sky lights the scene indirectly (the probe of the atmosphere: ambient light,
+            // global illumination and reflections of the sky), the visible sky stays as it is
+            float indirectLight = 1.0f;
             bool needsUpdate = true;
 
             Ref<EnvironmentProbe> probe;

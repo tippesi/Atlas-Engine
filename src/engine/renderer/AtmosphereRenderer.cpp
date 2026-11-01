@@ -147,7 +147,8 @@ namespace Atlas {
                 .cameraLocation = vec4(probe->GetPosition(), 1.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
                 .sunDirection = vec4(sunDirection, 0.0f),
-                .sunRadiance = vec4(sunRadiance, 0.0f),
+                // The probe only lights the scene, its radiance follows the sun's
+                .sunRadiance = vec4(sunRadiance * glm::max(atmosphere->indirectLight, 0.0f), 0.0f),
                 .atmosphere = atmosphereParameters
             };
             uniformBuffer.SetData(&uniforms, 1);

@@ -35,6 +35,8 @@ namespace Atlas::Lighting {
             {"rayleighHeightScale", p.rayleighHeightScale},
             {"mieHeightScale", p.mieHeightScale},
             {"sunDiskSize", p.sunDiskSize},
+            {"directLight", p.directLight},
+            {"indirectLight", p.indirectLight},
             {"probeResolution", p.probe->GetCubemap().width}
         };
     }
@@ -49,6 +51,8 @@ namespace Atlas::Lighting {
         try_get_json(j, "rayleighHeightScale", p.rayleighHeightScale);
         try_get_json(j, "mieHeightScale", p.mieHeightScale);
         try_get_json(j, "sunDiskSize", p.sunDiskSize);
+        try_get_json(j, "directLight", p.directLight);
+        try_get_json(j, "indirectLight", p.indirectLight);
     }
 
     void to_json(json& j, const Fog& p) {

@@ -63,7 +63,8 @@ namespace Atlas {
 
             Light lightUniform;
             lightUniform.direction = vec4(light.transformedProperties.directional.direction, 0.0);
-            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
+            auto transmittance = scene->sky.GetDirectLightTransmittance(scene->GetMainCamera().GetLocation(), direction);
+            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color) * transmittance, 0.0);
             lightUniform.intensity = light.intensity;
 
             if (fog && fog->enable && fog->rayMarching) {

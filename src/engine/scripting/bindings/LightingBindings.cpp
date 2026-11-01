@@ -62,6 +62,8 @@ namespace Atlas::Scripting::Bindings {
             "rayleighHeightScale", &Lighting::Atmosphere::rayleighHeightScale,
             "mieHeightScale", &Lighting::Atmosphere::mieHeightScale,
             "sunDiskSize", &Lighting::Atmosphere::sunDiskSize,
+            "directLight", &Lighting::Atmosphere::directLight,
+            "indirectLight", &Lighting::Atmosphere::indirectLight,
             "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 

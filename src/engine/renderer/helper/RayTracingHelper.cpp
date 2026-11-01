@@ -483,6 +483,8 @@ namespace Atlas {
                     auto& light = lightEntity.GetComponent<LightComponent>();
 
                     auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light.color) * light.intensity;
+                    if (light.type == LightType::DirectionalLight)
+                        radiance *= scene->sky.GetDirectLightTransmittance(cameraLocation, light.transformedProperties.directional.direction);
                     auto brightness = dot(radiance, vec3(0.3333f));
 
                     vec3 P = vec3(0.0f);

@@ -309,8 +309,9 @@ namespace Atlas {
                     auto& mainLight = scene->GetMainLight();
                     auto& lightDirection = mainLight.transformedProperties.directional.direction;
                     auto lightColor = Common::ColorConverter::ConvertSRGBToLinear(mainLight.color);
+                    auto transmittance = scene->sky.GetDirectLightTransmittance(camera.GetLocation(), lightDirection);
 
-                    uniforms.mainLightColor = vec4(lightColor * mainLight.intensity, 0.0f);
+                    uniforms.mainLightColor = vec4(lightColor * transmittance * mainLight.intensity, 0.0f);
                     uniforms.mainLightDirection = vec4(lightDirection, 0.0f);
                 }
                 else {
