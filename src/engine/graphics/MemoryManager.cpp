@@ -24,6 +24,8 @@ namespace Atlas {
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
             allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+            // Smaller blocks than the default 256 MB empty out more often, so memory the streaming frees is returned
+            allocatorInfo.preferredLargeHeapBlockSize = 64ull << 20;
 
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 

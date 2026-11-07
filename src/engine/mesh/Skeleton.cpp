@@ -46,6 +46,30 @@ namespace Atlas {
 
         }
 
+        void Skeleton::UpdateGlobalMatrices(const std::vector<JointPose>& pose, std::vector<mat4>& globalMatrices,
+            std::initializer_list<int32_t> changedJoints) const {
+
+            std::vector<bool> changed(joints.size());
+            auto firstJoint = int32_t(joints.size());
+            for (auto jointIdx : changedJoints) {
+                changed[jointIdx] = true;
+                firstJoint = glm::min(firstJoint, jointIdx);
+            }
+
+            for (size_t i = size_t(firstJoint); i < joints.size(); i++) {
+                auto parentIdx = joints[i].parentIdx;
+                if (parentIdx >= 0 && changed[parentIdx])
+                    changed[i] = true;
+                if (!changed[i])
+                    continue;
+
+                auto localMatrix = glm::translate(pose[i].position) * glm::mat4_cast(pose[i].rotation) *
+                    glm::scale(pose[i].scale);
+                globalMatrices[i] = parentIdx >= 0 ? globalMatrices[parentIdx] * localMatrix : localMatrix;
+            }
+
+        }
+
         void Skeleton::UpdateRestPose() {
 
             std::vector<JointPose> pose;

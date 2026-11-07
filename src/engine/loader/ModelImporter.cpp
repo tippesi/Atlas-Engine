@@ -8,6 +8,8 @@
 #include "../Log.h"
 #include "../common/Path.h"
 #include "../graphics/Instance.h"
+#include "../resource/ResourceLoadException.h"
+#include "../streaming/TextureStreaming.h"
 
 #include <vector>
 #include <limits>
@@ -284,6 +286,13 @@ namespace Atlas {
             mesh->invertUVs = true;
             mesh->UpdateData();
 
+            if (isSkinned) {
+                for (const auto& animation : ImportAnimations(filename, saveToDisk)) {
+                    meshData.animations.push_back(ResourceManager<Animation::Animation>::AddResource(
+                        GetAnimationFilename(filename, animation->name), ResourceOrigin::User, animation));
+                }
+            }
+
             auto meshFilename = state.paths.meshPath + mesh->name + ".aemesh";
             if (saveToDisk) {
                 Log::Message("Imported mesh " + meshFilename);
@@ -294,22 +303,183 @@ namespace Atlas {
 
         }
 
+        JobGroup ModelImporter::backgroundImports{ "Scene import", JobPriority::Medium };
+        std::mutex ModelImporter::completedImportsMutex;
+        std::vector<ModelImporter::SceneImportResult> ModelImporter::completedImports;
+
         Ref<Scene::Scene> ModelImporter::ImportScene(const std::string& filename, vec3 min, vec3 max,
             int32_t depth, bool saveToDisk, bool makeMeshesStatic,
-            bool invertUVs, int32_t maxTextureResolution, ImportTextureFormat textureFormat) {
+            bool invertUVs, int32_t maxTextureResolution, ImportTextureFormat textureFormat, bool background) {
 
-            ImporterState state;
+            auto importerState = CreateRef<ImporterState>();
+            auto& state = *importerState;
             InitImporterState(state, filename, false);
 
-            auto materials = ImportMaterials(state, maxTextureResolution, textureFormat, saveToDisk);
+            // The main thread helps with high priority jobs while it waits for the scene update
+            if (background)
+                state.jobPriority = JobPriority::Medium;
 
-            struct MeshInfo {
-                ResourceHandle<Mesh::Mesh> mesh;
-                vec3 offset;
+            std::vector<SceneMesh> meshes(state.scene->mNumMeshes);
+            for (uint32_t i = 0; i < state.scene->mNumMeshes; i++) {
+                auto assimpMesh = state.scene->mMeshes[i];
+
+                auto meshMin = vec3(std::numeric_limits<float>::max());
+                auto meshMax = vec3(-std::numeric_limits<float>::max());
+                for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
+                    auto vertex = vec3(assimpMesh->mVertices[j].x, assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z);
+                    meshMin = glm::min(vertex, meshMin);
+                    meshMax = glm::max(vertex, meshMax);
+                }
+
+                auto& sceneMesh = meshes[i];
+                sceneMesh.name = std::string(assimpMesh->mName.C_Str());
+                sceneMesh.path = state.paths.meshPath + sceneMesh.name + "_" + std::to_string(i) + ".aemesh";
+                sceneMesh.isSkinned = assimpMesh->mNumBones > 0;
+                // Skinned meshes stay in their bind space
+                sceneMesh.offset = sceneMesh.isSkinned ? vec3(0.0f) : (meshMax + meshMin) * 0.5f;
+
+                bool alreadyExisted;
+                sceneMesh.mesh = ResourceManager<Mesh::Mesh>::AddResource(sceneMesh.path,
+                    CreateRef<Resource<Mesh::Mesh>>(sceneMesh.path, ResourceOrigin::System), alreadyExisted);
+                sceneMesh.created = !alreadyExisted;
+            }
+
+            auto scene = CreateRef<Scene::Scene>(filename, min, max, depth);
+
+            std::map<std::string, aiLight*> lightMap;
+            for (uint32_t i = 0; i < state.scene->mNumLights; i++) {
+                auto light = state.scene->mLights[i];
+                lightMap[light->mName.C_Str()] = light;
+            }
+
+            std::map<std::string, aiCamera*> cameraMap;
+            for (uint32_t i = 0; i < state.scene->mNumCameras; i++) {
+                auto camera = state.scene->mCameras[i];
+                cameraMap[camera->mName.C_Str()] = camera;
+            }
+
+            auto rootEntity = scene->CreateEntity();
+            rootEntity.AddComponent<NameComponent>("Root");
+            auto& rootHierarchy = rootEntity.AddComponent<HierarchyComponent>();
+            rootHierarchy.root = true;
+
+            std::function<void(aiNode*, Scene::Entity, mat4)> traverseNodeTree;
+            traverseNodeTree = [&](aiNode* node, Scene::Entity parentEntity, mat4 parentMatrix) {
+                auto nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+
+                auto& parentNameComp = parentEntity.GetComponent<NameComponent>();
+
+                for (uint32_t i = 0; i < node->mNumMeshes; i++) {
+                    auto meshId = node->mMeshes[i];
+                    auto& meshInfo = meshes[meshId];
+
+                    auto instanceTransform = glm::translate(meshInfo.offset);
+                    // Skinned meshes are posed in the space of the model, independent of their node
+                    auto transform = meshInfo.isSkinned ? glm::inverse(parentMatrix) :
+                        nodeTransform * instanceTransform;
+
+                    auto entity = scene->CreatePrefab<Scene::Prefabs::MeshInstance>(
+                        meshInfo.mesh, transform, makeMeshesStatic);
+
+                    auto name = meshInfo.name + "_" + std::to_string(entity);
+                    entity.AddComponent<NameComponent>(name);
+
+                    parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
+                }
+
+                if (lightMap.contains(node->mName.C_Str()) && node->mNumChildren == 0) {
+                    auto light = lightMap[node->mName.C_Str()];
+
+                    auto lightType = LightType::DirectionalLight;
+                    switch (light->mType) {
+                    case aiLightSource_POINT: lightType = LightType::PointLight; break;
+                    case aiLightSource_SPOT: lightType = LightType::SpotLight; break;
+                    default: lightType = LightType::PointLight; break;
+                    }
+
+                    auto& lightComp = parentEntity.AddComponent<LightComponent>(lightType, LightMobility::StationaryLight);
+                    lightComp.color = vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b);
+                    lightComp.intensity = std::max(lightComp.color.r, std::max(lightComp.color.g, lightComp.color.b));
+                    lightComp.color /= std::max(lightComp.intensity, 1e-9f);
+                    lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(lightComp.color);
+
+                    float intensityRadius = glm::sqrt(lightComp.intensity / 0.15f);
+
+                    if (lightType == LightType::PointLight) {
+                        lightComp.properties.point.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
+                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
+                        lightComp.AddPointShadow(3.0f, 1024);
+                    }
+                    if (lightType == LightType::SpotLight) {
+                        lightComp.properties.spot.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
+                        lightComp.properties.spot.direction = vec3(light->mDirection.x, light->mDirection.y, light->mDirection.z);
+                        lightComp.properties.spot.innerConeAngle = light->mAngleInnerCone;
+                        lightComp.properties.spot.outerConeAngle = light->mAngleOuterCone;
+                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
+                        lightComp.AddSpotShadow(3.0f, 1024);
+                    }
+                }
+
+                if (cameraMap.contains(node->mName.C_Str())) {
+                    auto camera = cameraMap[node->mName.C_Str()];
+
+                    float verticalFOV = glm::degrees(camera->mHorizontalFOV) / camera->mAspect;
+                    vec3 position = vec3(camera->mPosition.x, camera->mPosition.y, camera->mPosition.z);
+                    vec2 rotation = vec2(0.0f);
+                    parentEntity.AddComponent<CameraComponent>(verticalFOV, camera->mAspect, camera->mClipPlaneNear,
+                        camera->mClipPlaneFar, position, rotation);
+                }
+
+                for (uint32_t i = 0; i < node->mNumChildren; i++) {
+                    auto nodeEntity = scene->CreatePrefab<Scene::Prefabs::Node>(node->mChildren[i]->mName.C_Str(), nodeTransform);
+                    auto const& hierarchy = nodeEntity.GetComponent<HierarchyComponent>();
+
+                    parentEntity.GetComponent<HierarchyComponent>().AddChild(nodeEntity);
+
+                    traverseNodeTree(node->mChildren[i], nodeEntity, parentMatrix * nodeTransform);
+                }
             };
 
-            std::vector<MeshInfo> meshes;
-            meshes.resize(state.scene->mNumMeshes);
+            traverseNodeTree(state.scene->mRootNode, rootEntity, mat4(1.0f));
+
+            auto importMeshes = [importerState, meshes, invertUVs, maxTextureResolution, textureFormat, saveToDisk, background](JobData&) mutable {
+                ImportSceneMeshes(*importerState, meshes, invertUVs, maxTextureResolution, textureFormat, saveToDisk, background);
+                };
+
+            if (background) {
+                JobSystem::Execute(backgroundImports, importMeshes);
+            }
+            else {
+                JobData jobData;
+                importMeshes(jobData);
+            }
+
+            return scene;
+
+        }
+
+        void ModelImporter::WaitForBackgroundImports() {
+
+            JobSystem::Wait(backgroundImports);
+
+        }
+
+        void ModelImporter::ImportSceneMeshes(ImporterState& state, std::vector<SceneMesh>& meshes, bool invertUVs,
+            int32_t maxTextureResolution, ImportTextureFormat textureFormat, bool saveToDisk, bool background) {
+
+            // The meshes are imported first, their materials get the maps of the textures afterwards
+            std::vector<ResourceHandle<Material>> materials;
+            std::vector<bool> materialsCreated;
+            for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
+                auto material = CreateRef<Material>();
+                LoadMaterial(state, state.scene->mMaterials[i], *material);
+                material->vertexColors = true;
+
+                bool existed = false;
+                materials.push_back(ResourceManager<Material>::AddResource(
+                    state.paths.materialPath + material->name + ".aematerial", material, existed));
+                materialsCreated.push_back(!existed);
+            }
 
             // All skinned meshes share one skeleton
             Mesh::Skeleton skeleton;
@@ -322,7 +492,7 @@ namespace Atlas {
             
             std::mutex vertexColorMutex;
 
-            JobGroup group{ "Mesh import", JobPriority::High };
+            JobGroup group{ "Mesh import", state.jobPriority };
             JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](const JobData& data) {
                 auto i = data.idx;
 
@@ -340,9 +510,9 @@ namespace Atlas {
                 auto mesh = CreateRef<Mesh::Mesh>();
                 auto& meshData = mesh->data;
 
-                if (material->HasNormalMap())
-                    hasTangents = true;
-                if (material->HasDisplacementMap())
+                auto assimpMaterial = state.scene->mMaterials[materialIdx];
+                if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
+                    assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0)
                     hasTangents = true;
 
                 if (vertexCount > 65535) {
@@ -482,9 +652,12 @@ namespace Atlas {
                 mesh->invertUVs = invertUVs;
                 mesh->UpdateData();
 
-                auto meshFilename = state.paths.meshPath + mesh->name + "_" + std::to_string(i) + ".aemesh";
-                auto handle = ResourceManager<Mesh::Mesh>::AddResource(meshFilename, mesh);
-                meshes[i] = { handle, offset };
+                // The entities use the handle since the start of the import, existing resources stay as they are
+                const auto& meshFilename = meshes[i].path;
+                if (meshes[i].created) {
+                    auto meshResourceData = mesh;
+                    meshes[i].mesh.GetResource()->Swap(meshResourceData);
+                }
 
                 if (saveToDisk) {
                     Log::Message("Imported mesh " + meshFilename);
@@ -493,107 +666,71 @@ namespace Atlas {
                 });
             JobSystem::Wait(group);
 
-            auto scene = CreateRef<Scene::Scene>(filename, min, max, depth);
+            auto textures = PrepareMaterialTextures(state, maxTextureResolution, textureFormat);
 
-            std::map<std::string, aiLight*> lightMap;
-            for (uint32_t i = 0; i < state.scene->mNumLights; i++) {
-                auto light = state.scene->mLights[i];
-                lightMap[light->mName.C_Str()] = light;
+            SceneImportResult result;
+            for (const auto& mesh : meshes) {
+                if (mesh.created)
+                    result.meshes.push_back(mesh.mesh);
             }
 
-            std::map<std::string, aiCamera*> cameraMap;
-            for (uint32_t i = 0; i < state.scene->mNumCameras; i++) {
-                auto camera = state.scene->mCameras[i];
-                cameraMap[camera->mName.C_Str()] = camera;
+            for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
+                auto material = CreateRef<Material>();
+                LoadMaterial(state, state.scene->mMaterials[i], *material);
+                material->vertexColors = materials[i]->vertexColors;
+
+                if (saveToDisk)
+                    Loader::MaterialLoader::SaveMaterial(material, state.paths.materialPath + material->name + ".aematerial");
+
+                if (materialsCreated[i])
+                    result.materials.push_back({ materials[i], material });
             }
 
-            auto rootEntity = scene->CreateEntity();
-            rootEntity.AddComponent<NameComponent>("Root");
-            auto& rootHierarchy = rootEntity.AddComponent<HierarchyComponent>();
-            rootHierarchy.root = true;
+            if (background) {
+                std::scoped_lock lock(completedImportsMutex);
+                completedImports.push_back(std::move(result));
+            }
+            else {
+                ApplyMaterialMaps(result);
+            }
 
-            std::function<void(aiNode*, Scene::Entity, mat4)> traverseNodeTree;
-            traverseNodeTree = [&](aiNode* node, Scene::Entity parentEntity, mat4 parentMatrix) {
-                auto nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
-
-                auto& parentNameComp = parentEntity.GetComponent<NameComponent>();
-
-                for (uint32_t i = 0; i < node->mNumMeshes; i++) {
-                    auto meshId = node->mMeshes[i];
-                    auto& meshInfo = meshes[meshId];
-
-                    auto instanceTransform = glm::translate(meshInfo.offset);
-                    // Skinned meshes are posed in the space of the model, independent of their node
-                    auto transform = meshInfo.mesh->data.IsSkinned() ? glm::inverse(parentMatrix) :
-                        nodeTransform * instanceTransform;
-
-                    auto entity = scene->CreatePrefab<Scene::Prefabs::MeshInstance>(
-                        meshInfo.mesh, transform, makeMeshesStatic);
-
-                    auto name = std::string(meshInfo.mesh->name) + "_" + std::to_string(entity);
-                    entity.AddComponent<NameComponent>(name);
-                    
-                    parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
-                }
-
-                if (lightMap.contains(node->mName.C_Str()) && node->mNumChildren == 0) {
-                    auto light = lightMap[node->mName.C_Str()];
-
-                    auto lightType = LightType::DirectionalLight;
-                    switch (light->mType) {
-                    case aiLightSource_POINT: lightType = LightType::PointLight; break;
-                    case aiLightSource_SPOT: lightType = LightType::SpotLight; break;
-                    default: lightType = LightType::PointLight; break;
-                    }
-
-                    auto& lightComp = parentEntity.AddComponent<LightComponent>(lightType, LightMobility::StationaryLight);
-                    lightComp.color = vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b);
-                    lightComp.intensity = std::max(lightComp.color.r, std::max(lightComp.color.g, lightComp.color.b));
-                    lightComp.color /= std::max(lightComp.intensity, 1e-9f);
-                    lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(lightComp.color);
-
-                    float intensityRadius = glm::sqrt(lightComp.intensity / 0.15f);
-
-                    if (lightType == LightType::PointLight) {                       
-                        lightComp.properties.point.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
-                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
-                        lightComp.AddPointShadow(3.0f, 1024);
-                    }
-                    if (lightType == LightType::SpotLight) {
-                        lightComp.properties.spot.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
-                        lightComp.properties.spot.direction = vec3(light->mDirection.x, light->mDirection.y, light->mDirection.z);
-                        lightComp.properties.spot.innerConeAngle = light->mAngleInnerCone;
-                        lightComp.properties.spot.outerConeAngle = light->mAngleOuterCone;
-                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
-                        lightComp.AddSpotShadow(3.0f, 1024);
-                    }
-                }
-
-                if (cameraMap.contains(node->mName.C_Str())) {
-                    auto camera = cameraMap[node->mName.C_Str()];
-
-                    float verticalFOV = glm::degrees(camera->mHorizontalFOV) / camera->mAspect;
-                    vec3 position = vec3(camera->mPosition.x, camera->mPosition.y, camera->mPosition.z);
-                    vec2 rotation = vec2(0.0f);
-                    parentEntity.AddComponent<CameraComponent>(verticalFOV, camera->mAspect, camera->mClipPlaneNear,
-                        camera->mClipPlaneFar, position, rotation);
-                }
-
-                for (uint32_t i = 0; i < node->mNumChildren; i++) {
-                    auto nodeEntity = scene->CreatePrefab<Scene::Prefabs::Node>(node->mChildren[i]->mName.C_Str(), nodeTransform);
-                    auto const& hierarchy = nodeEntity.GetComponent<HierarchyComponent>();
-
-                    parentEntity.GetComponent<HierarchyComponent>().AddChild(nodeEntity);
-
-                    traverseNodeTree(node->mChildren[i], nodeEntity, parentMatrix * nodeTransform);
-                }
-            };
-
-            traverseNodeTree(state.scene->mRootNode, rootEntity, mat4(1.0f));
+            CreateMaterialTextures(state, textures, textureFormat, saveToDisk);
 
             state.importer.FreeScene();
 
-            return scene;
+        }
+
+        void ModelImporter::ApplyBackgroundImports() {
+
+            std::vector<SceneImportResult> results;
+            {
+                std::scoped_lock lock(completedImportsMutex);
+                results.swap(completedImports);
+            }
+
+            for (const auto& result : results)
+                ApplyMaterialMaps(result);
+
+        }
+
+        void ModelImporter::ApplyMaterialMaps(const SceneImportResult& result) {
+
+            for (const auto& [material, maps] : result.materials) {
+                material->baseColorMap = maps->baseColorMap;
+                material->opacityMap = maps->opacityMap;
+                material->normalMap = maps->normalMap;
+                material->roughnessMap = maps->roughnessMap;
+                material->metalnessMap = maps->metalnessMap;
+                material->aoMap = maps->aoMap;
+                material->displacementMap = maps->displacementMap;
+                material->emissiveMap = maps->emissiveMap;
+                material->twoSided = maps->twoSided;
+            }
+
+            for (const auto& mesh : result.meshes) {
+                if (mesh.IsLoaded())
+                    mesh->UpdatePipelines();
+            }
 
         }
 
@@ -841,27 +978,8 @@ namespace Atlas {
         std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution,
             ImportTextureFormat textureFormat, bool saveToDisk) {
 
-            JobGroup group{ "Material import", JobPriority::High };
-            JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](const JobData& data) {
-                LoadMaterialImages(state, state.scene->mMaterials[data.idx], true, maxTextureResolution);
-                });
-            JobSystem::Wait(group);
-
-            if (textureFormat == ImportTextureFormat::KTX2)
-                ConvertImagesToKtx(state);
-
-            auto imagesToSave = ImagesToTextures(state);
-
-            if (saveToDisk) {
-                JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](const JobData& data) {
-                    auto& image = imagesToSave[data.idx];
-                    if (state.images.ktxImages.contains(image))
-                        KtxLoader::SaveImage(state.images.ktxImages.at(image), image->fileName);
-                    else
-                        ImageLoader::SaveImage(image, image->fileName);
-                    });
-                JobSystem::Wait(group);
-            }
+            auto textures = PrepareMaterialTextures(state, maxTextureResolution, textureFormat);
+            CreateMaterialTextures(state, textures, textureFormat, saveToDisk);
 
             std::vector<ResourceHandle<Material>> materials;
             for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
@@ -882,6 +1000,94 @@ namespace Atlas {
             }
 
             return materials;
+
+        }
+
+        std::vector<ModelImporter::MaterialTexture> ModelImporter::PrepareMaterialTextures(ImporterState& state,
+            int32_t maxTextureResolution, ImportTextureFormat textureFormat) {
+
+            JobGroup group{ "Material import", state.jobPriority };
+            JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](const JobData& data) {
+                LoadMaterialImages(state, state.scene->mMaterials[data.idx], true, maxTextureResolution);
+                });
+            JobSystem::Wait(group);
+
+            // The images tell which maps exist. The materials get them right away, like when loading a material from
+            // a file the textures are filled in once they are ready
+            std::vector<MaterialTexture> textures;
+
+            auto addTextures = [&](MaterialImageType type, const auto& imageMap, auto& textureMap) {
+                for (const auto& [path, image] : imageMap) {
+                    image->fileName = GetMaterialImageImportPath(state, type, path, textureFormat);
+
+                    // Models sharing a texture reuse the loaded one
+                    auto texture = ResourceManager<Texture::Texture2D>::GetResource(image->fileName);
+                    if (!texture.IsValid()) {
+                        texture = ResourceManager<Texture::Texture2D>::AddResource(image->fileName,
+                            CreateRef<Resource<Texture::Texture2D>>(image->fileName, ResourceOrigin::System));
+                        textures.push_back({ texture, image, type, path });
+                    }
+                    textureMap[path] = texture;
+                }
+                };
+
+            auto& images = state.images;
+            addTextures(MaterialImageType::BaseColor, images.baseColorImages, images.baseColorTextures);
+            addTextures(MaterialImageType::Opacity, images.opacityImages, images.opacityTextures);
+            addTextures(MaterialImageType::Normal, images.normalImages, images.normalTextures);
+            addTextures(MaterialImageType::Roughness, images.roughnessImages, images.roughnessTextures);
+            addTextures(MaterialImageType::Metallic, images.metallicImages, images.metallicTextures);
+            addTextures(MaterialImageType::Displacement, images.displacementImages, images.displacementTextures);
+            addTextures(MaterialImageType::Emissive, images.emissiveImages, images.emissiveTextures);
+
+            return textures;
+
+        }
+
+        void ModelImporter::CreateMaterialTextures(const ImporterState& state, std::vector<MaterialTexture>& textures,
+            ImportTextureFormat textureFormat, bool saveToDisk) {
+
+            // The conversions take long, the editor shouldn't feel them
+            JobGroup group{ "Image conversion", JobPriority::Medium };
+            JobSystem::ExecuteMultiple(group, int32_t(textures.size()), [&](const JobData& data) {
+                auto& texture = textures[data.idx];
+
+                Ref<Texture::Texture2D> created;
+                if (textureFormat == ImportTextureFormat::KTX2) {
+                    auto ktxImage = CreateRef<KtxImage>();
+                    ktxImage->fileData = KtxLoader::EncodeImage({ texture.image });
+                    if (!ktxImage->fileData.empty()) {
+                        if (saveToDisk)
+                            KtxLoader::SaveImage(ktxImage, texture.image->fileName);
+
+                        // Streamed like after loading the scene again
+                        try {
+                            created = Streaming::TextureStreaming::LoadTextureFromMemory(std::move(ktxImage->fileData),
+                                texture.image->fileName, false, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+                            texture.image->GetData().clear();
+
+                            Log::Message("Converted image " + texture.image->fileName + " to ktx2 format");
+                        }
+                        catch (const ResourceLoadException&) {
+                            // Logged by the exception, the original image is used instead
+                        }
+                    }
+
+                    if (!created) {
+                        Log::Error("Couldn't convert image " + texture.image->fileName + " to ktx2 format");
+                        texture.image->fileName = GetMaterialImageImportPath(state, texture.type, texture.path, ImportTextureFormat::Original);
+                    }
+                }
+
+                if (!created) {
+                    created = std::make_shared<Texture::Texture2D>(texture.image);
+                    if (saveToDisk)
+                        ImageLoader::SaveImage(texture.image, texture.image->fileName);
+                }
+
+                texture.texture.GetResource()->Swap(created);
+                });
+            JobSystem::Wait(group);
 
         }
 
@@ -1248,80 +1454,6 @@ namespace Atlas {
                 return nullptr;
 
             return image;
-
-        }
-
-        void ModelImporter::ConvertImagesToKtx(ImporterState& state) {
-
-            auto& images = state.images;
-            std::vector<Ref<Common::Image<uint8_t>>> imagesToConvert;
-
-            for (const auto imageMap : { &images.baseColorImages, &images.opacityImages, &images.normalImages,
-                &images.roughnessImages, &images.metallicImages, &images.displacementImages, &images.emissiveImages }) {
-                for (const auto& [path, image] : *imageMap)
-                    imagesToConvert.push_back(image);
-            }
-
-            std::vector<Ref<KtxImage>> ktxImages(imagesToConvert.size());
-
-            JobGroup group{ "Image conversion", JobPriority::High };
-            JobSystem::ExecuteMultiple(group, int32_t(imagesToConvert.size()), [&](const JobData& data) {
-                try {
-                    ktxImages[data.idx] = KtxLoader::ConvertImage(imagesToConvert[data.idx]);
-                    imagesToConvert[data.idx]->GetData().clear();
-                }
-                catch (const std::exception& exception) {
-                    Log::Error("Couldn't convert image " + imagesToConvert[data.idx]->fileName + ": " + exception.what());
-                }
-                });
-            JobSystem::Wait(group);
-
-            for (size_t i = 0; i < imagesToConvert.size(); i++) {
-                if (ktxImages[i])
-                    images.ktxImages[imagesToConvert[i]] = ktxImages[i];
-            }
-
-        }
-
-        std::vector<Ref<Common::Image<uint8_t>>> ModelImporter::ImagesToTextures(ImporterState& state) {
-
-            auto& images = state.images;
-            std::vector<Ref<Common::Image<uint8_t>>> imagesToSave;
-
-            // Models sharing a texture reuse the loaded one, otherwise importing many models in a row creates a
-            // GPU texture per model that is only released frames later
-            auto addTexture = [&](MaterialImageType type, const std::string& path,
-                const Ref<Common::Image<uint8_t>>& image) -> ResourceHandle<Texture::Texture2D> {
-                auto isKtx = images.ktxImages.contains(image);
-                image->fileName = GetMaterialImageImportPath(state, type, path,
-                    isKtx ? ImportTextureFormat::KTX2 : ImportTextureFormat::Original);
-                imagesToSave.push_back(image);
-
-                auto texture = ResourceManager<Texture::Texture2D>::GetResource(image->fileName);
-                if (texture.IsValid())
-                    return texture;
-
-                auto created = isKtx ? std::make_shared<Texture::Texture2D>(images.ktxImages[image]) :
-                    std::make_shared<Texture::Texture2D>(image);
-                return ResourceManager<Texture::Texture2D>::AddResource(image->fileName, created);
-                };
-
-            for (const auto& [path, image] : images.baseColorImages)
-                images.baseColorTextures[path] = addTexture(MaterialImageType::BaseColor, path, image);
-            for (const auto& [path, image] : images.opacityImages)
-                images.opacityTextures[path] = addTexture(MaterialImageType::Opacity, path, image);
-            for (const auto& [path, image] : images.normalImages)
-                images.normalTextures[path] = addTexture(MaterialImageType::Normal, path, image);
-            for (const auto& [path, image] : images.roughnessImages)
-                images.roughnessTextures[path] = addTexture(MaterialImageType::Roughness, path, image);
-            for (const auto& [path, image] : images.metallicImages)
-                images.metallicTextures[path] = addTexture(MaterialImageType::Metallic, path, image);
-            for (const auto& [path, image] : images.displacementImages)
-                images.displacementTextures[path] = addTexture(MaterialImageType::Displacement, path, image);
-            for (const auto& [path, image] : images.emissiveImages)
-                images.emissiveTextures[path] = addTexture(MaterialImageType::Emissive, path, image);
-
-            return imagesToSave;
 
         }
 

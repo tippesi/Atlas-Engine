@@ -25,6 +25,30 @@ namespace Atlas {
 
         void Mesh::UpdateData() {
 
+            if (data.indices.ContainsData() && data.vertices.ContainsData() && data.texCoords.ContainsData()) {
+                const auto& indices = data.indices.Get();
+                const auto& vertices = data.vertices.Get();
+                const auto& texCoords = data.texCoords.Get();
+
+                for (auto& subData : data.subData) {
+                    float area = 0.0f, uvArea = 0.0f;
+                    for (uint32_t i = subData.indicesOffset; i + 2 < subData.indicesOffset + subData.indicesCount; i += 3) {
+                        auto i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
+                        area += glm::length(glm::cross(vertices[i1] - vertices[i0], vertices[i2] - vertices[i0]));
+                        auto uv1 = texCoords[i1] - texCoords[i0], uv2 = texCoords[i2] - texCoords[i0];
+                        uvArea += glm::abs(uv1.x * uv2.y - uv1.y * uv2.x);
+                    }
+                    subData.uvScale = uvArea > 0.0f ? glm::sqrt(area / uvArea) : 0.0f;
+                }
+            }
+
+            CreateBuffers();
+            geometryResident = true;
+
+        }
+
+        void Mesh::CreateBuffers() {
+
             bool hostAccessible = usage & MeshUsageBits::HostAccessBit;
 
             if (data.indices.ContainsData()) {
@@ -67,10 +91,25 @@ namespace Atlas {
 
             for (auto& subData : data.subData) {
                 subData.material = data.materials[subData.materialIdx];
-                subData.mainConfig = PipelineConfig();
-                subData.shadowConfig = PipelineConfig();
-                subData.mainReversedWindingConfig = PipelineConfig();
-                subData.shadowReversedWindingConfig = PipelineConfig();
+                subData.ResetPipelines();
+            }
+
+            UpdateRenderBounds();
+
+        }
+
+        Volume::AABB Mesh::GetRenderBounds() const {
+
+            return Volume::AABB(data.aabb.min - vec3(renderBoundsPadding), data.aabb.max + vec3(renderBoundsPadding));
+
+        }
+
+        void Mesh::UpdateRenderBounds() {
+
+            renderBoundsPadding = 0.0f;
+            for (const auto& material : data.materials) {
+                if (material.IsLoaded() && material->HasGraph())
+                    renderBoundsPadding = glm::max(renderBoundsPadding, material->graph->maxDisplacement);
             }
 
         }
@@ -132,7 +171,7 @@ namespace Atlas {
                     geometryRegions.emplace_back(Graphics::ASGeometryRegion{
                         .indexCount = subData.indicesCount,
                         .indexOffset = subData.indicesOffset,
-                        .opaque = !subData.material->HasOpacityMap() && subData.material->opacity == 1.0f
+                        .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f
                         });
                 }
 
@@ -183,6 +222,55 @@ namespace Atlas {
         bool Mesh::IsBVHBuilt() const {
 
             return blasCreated && blas && blas->IsBuilt();
+
+        }
+
+        void Mesh::UnloadGeometry() {
+
+            geometryResident = false;
+
+            // The configs point into the vertex array, they are created again on the next draw
+            for (auto& subData : data.subData)
+                subData.ResetPipelines();
+
+            vertexArray = Buffer::VertexArray();
+            indexBuffer = {};
+            vertexBuffer = {};
+            normalBuffer = {};
+            texCoordBuffer = {};
+            tangentBuffer = {};
+            colorBuffer = {};
+            jointBuffer = {};
+            weightBuffer = {};
+            restVertexBuffer = {};
+
+            blasCreated = false;
+            blas = nullptr;
+
+        }
+
+        bool Mesh::IsGeometryResident() const {
+
+            return geometryResident;
+
+        }
+
+        size_t Mesh::GetGeometrySize() const {
+
+            size_t size = 0;
+            auto addSize = [&](const Ref<Graphics::Buffer>& buffer) {
+                if (buffer)
+                    size += buffer->size;
+                };
+
+            addSize(indexBuffer.buffer);
+            addSize(vertexBuffer.buffer);
+            addSize(normalBuffer.buffer);
+            addSize(texCoordBuffer.buffer);
+            addSize(tangentBuffer.buffer);
+            addSize(colorBuffer.buffer);
+
+            return size;
 
         }
 

@@ -146,6 +146,10 @@ namespace Atlas {
 
             bool HasBuoyancy(BodyID bodyId) const;
 
+            std::vector<BodyID> GetBuoyantBodies() const;
+
+            std::vector<BodyID> GetActiveBodies() const;
+
             Volume::AABB GetBodyBounds(BodyID bodyId) const;
 
             uint32_t GetBodyCount() const;

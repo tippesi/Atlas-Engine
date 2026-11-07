@@ -258,6 +258,7 @@ namespace Atlas::Scene {
         j["sky"] = scene->sky;
         j["postProcessing"] = scene->postProcessing;
         j["wind"] = scene->wind;
+        j["occlusionCulling"] = scene->occlusionCulling;
 
         if (scene->fog)
             j["fog"] = *scene->fog;
@@ -306,6 +307,7 @@ namespace Atlas::Scene {
         readSettings("sky", scene->sky);
         readSettings("postProcessing", scene->postProcessing);
         readSettings("wind", scene->wind);
+        readSettings("occlusionCulling", scene->occlusionCulling);
 
         readFeature("fog", scene->fog);
         readFeature("irradianceVolume", scene->irradianceVolume);

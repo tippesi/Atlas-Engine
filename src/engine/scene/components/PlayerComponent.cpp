@@ -73,9 +73,17 @@ namespace Atlas::Scene::Components {
         }
         else {
             newVelocity += GetLinearVelocity();
-            // Add reduced input velocity such that jumping doesn't feel weird
-            if (allowInput)
-                newVelocity += inputVelocity * 0.01f;
+            // Add reduced input velocity such that jumping doesn't feel weird. It steers, but doesn't make the
+            // character faster than the input or the speed it left the ground with
+            if (allowInput) {
+                auto horizontal = newVelocity - up * glm::dot(newVelocity, up);
+                auto steered = horizontal + inputVelocity * 0.01f;
+                auto maxSpeed = glm::max(glm::length(horizontal), glm::length(inputVelocity));
+                auto speed = glm::length(steered);
+                if (speed > maxSpeed)
+                    steered *= maxSpeed / speed;
+                newVelocity += steered - horizontal;
+            }
             // Just walked off an edge: the jump still counts, the fall so far is cancelled
             airTime += deltaTime;
             if (jumpRequest > 0.0f && !jumped && airTime <= coyoteTime) {
@@ -96,7 +104,25 @@ namespace Atlas::Scene::Components {
         walkStairsStepUpDist = up * walkStairStepUpDistance;
 
         Player::Update(deltaTime);
+
+        UpdateStepOffset(up, deltaTime);
         
+    }
+
+    void PlayerComponent::UpdateStepOffset(const vec3& up, float deltaTime) {
+
+        const float smoothingTime = 0.08f;
+        const float maxOffset = 0.3f;
+
+        stepOffset *= glm::exp(-deltaTime / smoothingTime);
+
+        // The entity stays where it was before a step up a stair or down onto the floor and follows it from there
+        stepOffset -= up * glm::dot(stepMovement, up);
+
+        auto length = glm::length(stepOffset);
+        if (length > maxOffset)
+            stepOffset *= maxOffset / length;
+
     }
 
     void PlayerComponent::UpdateCrouching() {

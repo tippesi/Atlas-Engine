@@ -42,7 +42,7 @@
     VkResult err = x;                                                               \
     if (err == VK_ERROR_DEVICE_LOST)                                                \
     {                                                                               \
-        Atlas::Graphics::HandleDeviceLost();                                        \
+        Atlas::Graphics::GraphicsDevice::HandleDeviceLost();                        \
     }                                                                               \
     else if (err)                                                                   \
     {                                                                               \
@@ -57,7 +57,7 @@
     VkResult err = x;                                                               \
     if (err == VK_ERROR_DEVICE_LOST)                                                \
     {                                                                               \
-        Atlas::Graphics::HandleDeviceLost();                                        \
+        Atlas::Graphics::GraphicsDevice::HandleDeviceLost();                        \
     }                                                                               \
     else if (err)                                                                   \
     {                                                                               \
@@ -71,9 +71,6 @@
 namespace Atlas {
 
     namespace Graphics {
-
-        // Defined in GraphicsDevice.cpp
-        void HandleDeviceLost();
 
         inline std::string VkResultToString(VkResult result) {
             switch (result) {

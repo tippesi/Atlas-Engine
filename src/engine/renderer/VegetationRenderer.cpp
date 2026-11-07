@@ -46,6 +46,10 @@ namespace Atlas {
 
             // How we order the execution of rendering commands doesn't matter here
             for (auto mesh : meshes) {
+                // Clutter can share meshes with the scene, the streaming might have unloaded them
+                if (!mesh->IsGeometryResident())
+                    continue;
+
                 auto buffers = vegetation.GetBuffers(mesh);
 
                 mesh->vertexArray.Bind(commandList);
@@ -63,19 +67,19 @@ namespace Atlas {
 
                     auto material = subData.material;
 
-                    if (material->HasBaseColorMap())
+                    if (material->baseColorMap.IsLoaded())
                         material->baseColorMap->Bind(commandList, 3, 0);
-                    if (material->HasOpacityMap())
+                    if (material->opacityMap.IsLoaded())
                         material->opacityMap->Bind(commandList, 3, 1);
-                    if (material->HasNormalMap())
+                    if (material->normalMap.IsLoaded())
                         material->normalMap->Bind(commandList, 3, 2);
-                    if (material->HasRoughnessMap())
+                    if (material->roughnessMap.IsLoaded())
                         material->roughnessMap->Bind(commandList, 3, 3);
-                    if (material->HasMetalnessMap())
+                    if (material->metalnessMap.IsLoaded())
                         material->metalnessMap->Bind(commandList, 3, 4);
-                    if (material->HasAoMap())
+                    if (material->aoMap.IsLoaded())
                         material->aoMap->Bind(commandList, 3, 5);
-                    if (material->HasDisplacementMap())
+                    if (material->displacementMap.IsLoaded())
                         material->displacementMap->Bind(commandList, 3, 6);
 
                     scene->renderState.wind.noiseMap.Bind(commandList, 3, 7);
@@ -129,7 +133,7 @@ namespace Atlas {
                 for (auto& subData : mesh->data.subData) {
                     auto material = subData.material;
 
-                    if (material->HasOpacityMap())
+                    if (material->opacityMap.IsLoaded())
                         material->opacityMap->Bind(1);
 
                     auto offset = helper.GetCommandBufferOffset(*mesh, subData);
@@ -163,25 +167,25 @@ namespace Atlas {
             }
 
             std::vector<std::string> macros;
-            if (material->HasBaseColorMap()) {
+            if (material->baseColorMap.IsLoaded()) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            if (material->HasOpacityMap()) {
+            if (material->opacityMap.IsLoaded()) {
                 macros.push_back("OPACITY_MAP");
             }
-            if (material->HasNormalMap()) {
+            if (material->normalMap.IsLoaded()) {
                 macros.push_back("NORMAL_MAP");
             }
-            if (material->HasRoughnessMap()) {
+            if (material->roughnessMap.IsLoaded()) {
                 macros.push_back("ROUGHNESS_MAP");
             }
-            if (material->HasMetalnessMap()) {
+            if (material->metalnessMap.IsLoaded()) {
                 macros.push_back("METALNESS_MAP");
             }
-            if (material->HasAoMap()) {
+            if (material->aoMap.IsLoaded()) {
                 macros.push_back("AO_MAP");
             }
-            if (material->HasDisplacementMap()) {
+            if (material->displacementMap.IsLoaded()) {
                 macros.push_back("HEIGHT_MAP");
             }
             // This is a check if we have any maps at all (no macros, no maps)

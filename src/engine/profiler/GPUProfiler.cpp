@@ -5,14 +5,14 @@
 
 namespace Atlas {
 
-    std::atomic_int GPUProfiler::threadContextCount = 0;
-    std::vector<GPUProfiler::ThreadContext> GPUProfiler::threadContexts;
+    std::shared_mutex GPUProfiler::threadContextsMutex;
+    std::vector<Ref<GPUProfiler::ThreadContext>> GPUProfiler::threadContexts;
 
     std::mutex GPUProfiler::unevaluatedThreadContextsMutex;
     std::deque<GPUProfiler::ThreadContext> GPUProfiler::unevaluatedThreadContexts;
 
     std::unordered_map<std::string, GPUProfiler::ThreadHistory> GPUProfiler::queryHistory;
-    size_t GPUProfiler::frameIdx = -1;
+    std::atomic_size_t GPUProfiler::frameIdx = size_t(-1);
 
     bool GPUProfiler::supportsDebugMarkers = false;
 
@@ -24,13 +24,18 @@ namespace Atlas {
 
     void GPUProfiler::BeginFrame() {
 
-        threadContextCount = 0;
-        threadContexts.clear();
-        threadContexts.resize(GPU_PROFILER_MAX_THREADS);
+        {
+            std::scoped_lock lock(threadContextsMutex);
+            std::erase_if(threadContexts, [](const Ref<ThreadContext>& context) {
+                return !enable || context->frameIdx + maxContextFrames < frameIdx;
+                });
+        }
 
         if (!enable) return;
 
         frameIdx++;
+
+        std::scoped_lock lock(unevaluatedThreadContextsMutex);
 
         if (!unevaluatedThreadContexts.size()) return;
 
@@ -39,14 +44,15 @@ namespace Atlas {
         std::unordered_map<std::string, ThreadHistory> newHistory;
         while(unevaluatedThreadContexts.size() && unevaluatedThreadContexts.front().frameIdx + FRAME_DATA_COUNT <= frameIdx) {
             auto& context = unevaluatedThreadContexts.front();
+            // The history gets moved, copying all queries of all frames each frame is expensive. Several
+            // contexts of a thread continue the same history
             ThreadHistory history;
-            // Check if we can find an old history to fill
-            if (queryHistory.contains(context.name)) {
-                history = queryHistory[context.name];
-            }
-            else {
+            if (auto iter = newHistory.find(context.name); iter != newHistory.end())
+                history = std::move(iter->second);
+            else if (auto oldIter = queryHistory.find(context.name); oldIter != queryHistory.end())
+                history = std::move(oldIter->second);
+            else
                 history.history.resize(historyLength);
-            }
 
             std::vector<uint64_t> timeData(context.poolIdx);
             // Due to fences and multibuffering all queries should be ready for retrievel
@@ -60,18 +66,22 @@ namespace Atlas {
             history.history[history.historyIdx] = std::move(queries);
 
             history.historyIdx = (history.historyIdx + 1) % historyLength;
-            newHistory[context.name] = history;
+            newHistory[context.name] = std::move(history);
 
             unevaluatedThreadContexts.pop_front();
         }
 
-        queryHistory = newHistory;
+        // The queries of the last frames aren't necessarily ready yet, which is no reason to forget the older ones
+        if (!newHistory.empty())
+            queryHistory = std::move(newHistory);
 
         supportsDebugMarkers = Graphics::GraphicsDevice::DefaultDevice->support.debugMarker;
 
     }
 
     void GPUProfiler::Shutdown() {
+
+        std::scoped_lock lock(threadContextsMutex, unevaluatedThreadContextsMutex);
 
         threadContexts.clear();
         unevaluatedThreadContexts.clear();
@@ -89,19 +99,18 @@ namespace Atlas {
         };
 
         // Create thread context
-        auto context = ThreadContext {
+        auto context = CreateRef<ThreadContext>(ThreadContext {
           .id = std::this_thread::get_id(),
           .name = name,
           .commandList = nullptr,
           .queryPool = Graphics::GraphicsDevice::DefaultDevice->CreateQueryPool(queryPoolDesc),
-          .frameIdx = frameIdx,
-          .isValid = true
-        };
+          .frameIdx = frameIdx
+        });
 
-        auto idx = threadContextCount.fetch_add(1);
-        AE_ASSERT(idx < GPU_PROFILER_MAX_THREADS && "Too many threads for this frame");
-
-        threadContexts[idx] = context;
+        {
+            std::scoped_lock lock(threadContextsMutex);
+            threadContexts.push_back(context);
+        }
 
         // Then set the command list
         if (commandList) SetCommandList(commandList);
@@ -112,12 +121,20 @@ namespace Atlas {
 
         if (!enable) return;
 
-        std::lock_guard lock(unevaluatedThreadContextsMutex);
+        auto context = GetThreadContext();
+        AE_ASSERT(context && "Thread context not found. Missing a BeginThread() call somewhere");
+        if (!context) return;
 
-        auto& context = GetThreadContext();
+        {
+            std::scoped_lock lock(threadContextsMutex);
+            std::erase(threadContexts, context);
+        }
 
-        context.isValid = false;
-        unevaluatedThreadContexts.push_back(context);
+        // Readable once the frame this recording ended in is done, which isn't always the one it started in
+        context->frameIdx = frameIdx;
+
+        std::scoped_lock lock(unevaluatedThreadContextsMutex);
+        unevaluatedThreadContexts.push_back(std::move(*context));
 
     }
 
@@ -125,8 +142,11 @@ namespace Atlas {
 
         if (!enable) return;
 
-        auto& context = GetThreadContext();
-        context.commandList = commandList;
+        auto context = GetThreadContext();
+        AE_ASSERT(context && "Thread context not found. Missing a BeginThread() call somewhere");
+        if (!context) return;
+
+        context->commandList = commandList;
 
     }
 
@@ -136,23 +156,25 @@ namespace Atlas {
 
         AE_ASSERT(name.length() > 0 && "Query names shouldn't be empty");
 
-        auto& context = GetThreadContext();
+        auto context = GetThreadContext();
+        AE_ASSERT(context && "Thread context not found. Missing a BeginThread() call somewhere");
+        if (!context) return false;
 
-        AE_ASSERT(context.commandList && "A command list must be set before \
+        AE_ASSERT(context->commandList && "A command list must be set before \
             the first BeginQuery() call in the current thread");
 
         if (supportsDebugMarkers)
-            context.commandList->BeginDebugMarker(name);
+            context->commandList->BeginDebugMarker(name);
 
         TimestampQuery query;
 
         query.name = name;
-        query.startId = context.poolIdx++;
-        query.endId = context.poolIdx++;
+        query.startId = context->poolIdx++;
+        query.endId = context->poolIdx++;
 
-        context.stack.push_back(query);
+        context->stack.push_back(query);
 
-        context.commandList->Timestamp(context.queryPool, query.startId);
+        context->commandList->Timestamp(context->queryPool, query.startId);
 
         return true;
 
@@ -161,14 +183,11 @@ namespace Atlas {
     void GPUProfiler::EndQuery() {
 
         // Queries that began are ended even if the profiler was disabled meanwhile
-        auto threadId = std::this_thread::get_id();
-        auto it = std::find_if(threadContexts.begin(), threadContexts.end(), [&](const ThreadContext& context) {
-            return threadId == context.id && context.isValid;
-            });
-        if (it == threadContexts.end() || it->stack.empty())
+        auto contextRef = GetThreadContext();
+        if (!contextRef || contextRef->stack.empty())
             return;
 
-        auto& context = *it;
+        auto& context = *contextRef;
 
         if (supportsDebugMarkers)
             context.commandList->EndDebugMarker();
@@ -250,19 +269,16 @@ namespace Atlas {
 
     }
 
-    GPUProfiler::ThreadContext &GPUProfiler::GetThreadContext() {
+    Ref<GPUProfiler::ThreadContext> GPUProfiler::GetThreadContext() {
 
         auto threadId = std::this_thread::get_id();
 
-        auto it = std::find_if(threadContexts.begin(), threadContexts.end(),
-            [&](const ThreadContext& context) {
-                return threadId == context.id && context.isValid;
-            });
+        std::shared_lock lock(threadContextsMutex);
 
-        AE_ASSERT(it != threadContexts.end() && "Thread context not found. Missing a \
-            BeginThread() call somewhere");
+        auto it = std::find_if(threadContexts.rbegin(), threadContexts.rend(),
+            [&](const Ref<ThreadContext>& context) { return threadId == context->id; });
 
-        return *it;
+        return it != threadContexts.rend() ? *it : nullptr;
 
     }
 

@@ -16,6 +16,7 @@ namespace Atlas::Scene {
         scatterPipelineConfig = PipelineConfig("culling/scatter.csh");
         cullPipelineConfig = PipelineConfig("culling/cull.csh");
         cullRayTracingPipelineConfig = PipelineConfig("culling/cull.csh", { "RAY_TRACING_INSTANCES" });
+        cullOcclusionPipelineConfig = PipelineConfig("culling/cull.csh", { "OCCLUSION" });
         drawsPipelineConfig = PipelineConfig("culling/draws.csh");
 
     }
@@ -29,6 +30,15 @@ namespace Atlas::Scene {
         updateIndices.clear();
         history.clear();
         refreshEntities.clear();
+
+        {
+            std::scoped_lock lock(meshDistancesMutex);
+            for (size_t i = 0; i < std::min(visibleMeshIds.size(), slots.size()); i++) {
+                if (slots[i].mesh.IsValid() && slots[i].mesh.GetID() == visibleMeshIds[i])
+                    slots[i].drawEarly = visibleMeshes[i] > 0;
+            }
+            visibleMeshIds.clear();
+        }
 
         if (!valid) {
             meshSlots.clear();
@@ -92,6 +102,7 @@ namespace Atlas::Scene {
                 }
                 else {
                     slot.entities[state.slotPosition] = entity;
+                    instance.visibleLastFrame = keepVisibleLastFrame;
                 }
 
                 slot.reversedWindingCount += reversedWinding ? 1 : 0;
@@ -196,6 +207,7 @@ namespace Atlas::Scene {
 
         pass->frustum = frustum;
         pass->gpuDraws.clear();
+        pass->gpuLateDraws.clear();
 
         for (uint32_t slotIdx = 1; slotIdx < uint32_t(slots.size()); slotIdx++) {
             const auto& slot = slots[slotIdx];
@@ -236,9 +248,19 @@ namespace Atlas::Scene {
                 hasImpostors = maxDistanceSqr >= impostorDistance * impostorDistance;
             }
 
+            auto occluded = !shadow && scene->occlusionCulling;
             auto addDraw = [&](Mesh::MeshSubData* subData, RenderList::GPUDrawType type) {
-                pass->gpuDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type });
+                if (occluded)
+                    pass->gpuLateDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type });
+                if (!occluded || slot.drawEarly || slot.dontCullCount)
+                    pass->gpuDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type });
             };
+
+            // Meshes without resident geometry are drawn as impostors only
+            if (!slot.geometry) {
+                hasMeshes = false;
+                hasImpostors = true;
+            }
 
             if (hasMeshes) {
                 for (auto& subData : mesh->data.subData) {
@@ -257,13 +279,18 @@ namespace Atlas::Scene {
 
     }
 
-    void GPUScene::Cull(RenderList& renderList, vec3 cameraLocation, Graphics::CommandList* commandList) {
+    void GPUScene::Cull(RenderList& renderList, vec3 cameraLocation, float focalLength, Graphics::CommandList* commandList) {
 
+        lastFocalLength = focalLength;
+
+        auto device = Graphics::GraphicsDevice::DefaultDevice;
         auto slotCount = uint32_t(cullMeshes.size());
 
         std::vector<GPUCullView> views;
         std::vector<GPUDrawRequest> requests;
         const auto& passes = renderList.gpuCulledPasses;
+        auto occlusionView = 0xFFFFFFFFu;
+        lateRequestCount = 0;
         for (size_t i = 0; i < passes.size(); i++) {
             const auto& pass = passes[i];
             auto viewIdx = uint32_t(i);
@@ -288,12 +315,42 @@ namespace Atlas::Scene {
                     .firstIndex = draw.subData ? draw.subData->indicesOffset : 0
                     });
             }
+
+            if (!pass->gpuLateDraws.empty())
+                occlusionView = viewIdx;
         }
 
-        EnsureCullBuffers(views.size(), requests.size());
+        // The draws after the occlusion test have a view of their own
+        auto cullViewCount = uint32_t(views.size());
+        occlusionViewOffset = occlusionView != 0xFFFFFFFFu ?
+            VkDeviceSize(sizeof(uint32_t) * occlusionView * slotCount * drawTypeCount) : 0;
+        lateFirstRequest = uint32_t(requests.size());
+        if (occlusionView != 0xFFFFFFFFu) {
+            lateView = cullViewCount;
+            GPUCullView view = views[occlusionView];
+            view.indexOffset = lateView * totalCapacity;
+            view.impostorIndexOffset = lateView * impostorCapacity;
+            view.counterOffset = lateView * slotCount * drawTypeCount;
+            views.push_back(view);
+
+            for (auto& draw : passes[occlusionView]->gpuLateDraws) {
+                draw.command = uint32_t(requests.size());
+                requests.push_back(GPUDrawRequest {
+                    .meshIdx = draw.slot,
+                    .view = lateView,
+                    .type = uint32_t(draw.type),
+                    .indexCount = draw.subData ? draw.subData->indicesCount : 0,
+                    .firstIndex = draw.subData ? draw.subData->indicesOffset : 0
+                    });
+            }
+            lateRequestCount = uint32_t(requests.size()) - lateFirstRequest;
+        }
+
+        EnsureCullBuffers(views.size(), requests.size(), lateRequestCount > 0);
         renderList.gpuCommandBuffer = commandBuffer;
 
-        if (requests.empty())
+        // Without any draw the instances are still culled for the streaming, streamed out meshes have no draws
+        if (requests.empty() && instanceCount == 0)
             return;
 
         CPUProfiler::Scope profilerScope("GPU culling");
@@ -302,6 +359,92 @@ namespace Atlas::Scene {
         auto viewBuffer = uploadBufferPool.Upload(views.data(), views.size() * sizeof(GPUCullView));
         auto requestBuffer = uploadBufferPool.Upload(requests.data(), requests.size() * sizeof(GPUDrawRequest));
 
+        cullViewBuffer = viewBuffer;
+        cullRequestBuffer = requestBuffer;
+        cullCameraLocation = cameraLocation;
+        cullFocalLength = focalLength;
+
+        // A scene that is culled multiple times in a frame reads back the distances of its first culling only
+        // The GPU finished the copy into this frame copy of the readback buffer FRAME_DATA_COUNT frames ago
+        auto frameIndex = device->GetFrameIndex();
+        auto readbackDistances = instanceCount > 0 && distanceFrameIndex != frameIndex;
+        readbackVisibility = readbackDistances && lateRequestCount > 0;
+        if (readbackDistances) {
+            distanceFrameIndex = frameIndex;
+
+            auto& frameVisibilityIds = visibilityMeshIds[frameIndex % FRAME_DATA_COUNT];
+            if (!frameVisibilityIds.empty()) {
+                visibilityReadbackBuffer->Invalidate();
+                auto counters = static_cast<uint32_t*>(visibilityReadbackBuffer->Map());
+
+                // The counters of each slot of the first and the late draws
+                auto slotCounters = size_t(drawTypeCount);
+                auto copiedSlots = frameVisibilityIds.size();
+                std::scoped_lock lock(meshDistancesMutex);
+                visibleMeshes.resize(copiedSlots);
+                for (size_t i = 0; i < copiedSlots; i++) {
+                    uint32_t count = 0;
+                    for (size_t j = 0; j < slotCounters; j++)
+                        count += counters[i * slotCounters + j] + counters[(copiedSlots + i) * slotCounters + j];
+                    visibleMeshes[i] = count > 0 ? 1 : 0;
+                }
+                visibleMeshIds = std::move(frameVisibilityIds);
+
+                visibilityReadbackBuffer->Unmap();
+            }
+            frameVisibilityIds.clear();
+
+            auto visibilitySize = 2 * sizeof(uint32_t) * drawTypeCount * std::max(size_t(slotCount), size_t(1));
+            if (!visibilityReadbackBuffer || visibilityReadbackBuffer->size < visibilitySize) {
+                Graphics::BufferDesc desc = {
+                    .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                    .domain = Graphics::BufferDomain::Host,
+                    .hostAccess = Graphics::BufferHostAccess::Random,
+                    .size = visibilitySize * 2
+                };
+                visibilityReadbackBuffer = device->CreateMultiBuffer(desc);
+
+                // Copies that are still in flight went into the old buffer
+                for (auto& meshIds : visibilityMeshIds)
+                    meshIds.clear();
+            }
+
+            auto& frameMeshIds = distanceMeshIds[frameIndex % FRAME_DATA_COUNT];
+            if (!frameMeshIds.empty()) {
+                meshDistanceReadbackBuffer->Invalidate();
+                auto distances = static_cast<float*>(meshDistanceReadbackBuffer->Map());
+
+                // Two distances per slot, see culling/cull.csh
+                std::scoped_lock lock(meshDistancesMutex);
+                meshDistances.distances.resize(frameMeshIds.size());
+                meshDistances.positionDistances.resize(frameMeshIds.size());
+                for (size_t i = 0; i < frameMeshIds.size(); i++) {
+                    meshDistances.distances[i] = distances[2 * i];
+                    meshDistances.positionDistances[i] = distances[2 * i + 1];
+                }
+                meshDistances.meshIds = std::move(frameMeshIds);
+                hasMeshDistances = true;
+
+                meshDistanceReadbackBuffer->Unmap();
+            }
+            frameMeshIds.clear();
+
+            auto readbackSize = 2 * sizeof(uint32_t) * std::max(size_t(slotCount), size_t(1));
+            if (!meshDistanceReadbackBuffer || meshDistanceReadbackBuffer->size < readbackSize) {
+                Graphics::BufferDesc desc = {
+                    .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                    .domain = Graphics::BufferDomain::Host,
+                    .hostAccess = Graphics::BufferHostAccess::Random,
+                    .size = readbackSize * 2
+                };
+                meshDistanceReadbackBuffer = device->CreateMultiBuffer(desc);
+
+                // Copies that are still in flight went into the old buffer
+                for (auto& meshIds : distanceMeshIds)
+                    meshIds.clear();
+            }
+        }
+
         // The previous frame might still draw with the commands and indices
         commandList->MemoryBarrier(VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_SHADER_READ_BIT,
             VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT,
@@ -309,6 +452,12 @@ namespace Atlas::Scene {
 
         uint32_t zero = 0;
         commandList->FillBuffer(counterBuffer, &zero);
+        if (lateRequestCount > 0)
+            commandList->FillBuffer(occlusionInstanceBuffer, &zero);
+        if (readbackDistances) {
+            auto maxDistance = 0xFFFFFFFFu;
+            commandList->FillBuffer(meshDistanceBuffer, &maxDistance);
+        }
 
         commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -318,11 +467,15 @@ namespace Atlas::Scene {
             commandList->BindPipeline(pipeline);
 
             BindCullBuffers(viewBuffer, commandList);
+            commandList->BindBuffer(meshDistanceBuffer, 3, 12);
+            commandList->BindBuffer(occlusionInstanceBuffer, 3, 14);
 
             auto constants = CullPushConstants {
                 .cameraLocation = vec4(cameraLocation, 1.0f),
                 .instanceCount = instanceCount,
-                .viewCount = uint32_t(views.size())
+                .viewCount = cullViewCount,
+                .focalLength = focalLength,
+                .occlusionView = occlusionView
             };
             commandList->PushConstants("constants", &constants);
             commandList->Dispatch((instanceCount + 63) / 64, 1, 1);
@@ -331,26 +484,124 @@ namespace Atlas::Scene {
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         }
 
+        if (lateFirstRequest > 0)
+            WriteDrawCommands(0, lateFirstRequest, commandList);
+
+        if (readbackDistances) {
+            commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            VkBufferCopy copy = { .size = 2 * sizeof(uint32_t) * slotCount };
+            commandList->CopyBuffer(meshDistanceBuffer, meshDistanceReadbackBuffer, copy);
+
+            commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+
+            distanceMeshIds[frameIndex % FRAME_DATA_COUNT] = cullMeshIds;
+        }
+
+    }
+
+    void GPUScene::CullForStreaming(vec3 cameraLocation, float focalLength, Graphics::CommandList* commandList) {
+
+        RenderList renderList;
+        Cull(renderList, cameraLocation, focalLength, commandList);
+
+    }
+
+    float GPUScene::GetFocalLength() const {
+
+        return lastFocalLength;
+
+    }
+
+    void GPUScene::CullOcclusion(const Ref<Texture::Texture2D>& hiZTexture, ivec2 depthResolution, int32_t hiZLevelCount,
+        Graphics::CommandList* commandList) {
+
+        CPUProfiler::Scope profilerScope("GPU occlusion culling");
+        GPUProfiler::Scope gpuScope("GPU occlusion culling");
+
+        // The first draws read the commands and the indices, which are written next to them
+        commandList->MemoryBarrier(VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_SHADER_READ_BIT,
+            VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+        auto pipeline = PipelineManager::GetPipeline(cullOcclusionPipelineConfig);
+        commandList->BindPipeline(pipeline);
+
+        BindCullBuffers(cullViewBuffer, commandList);
+        commandList->BindImage(hiZTexture->image, hiZTexture->sampler, 3, 13);
+        commandList->BindBuffer(occlusionInstanceBuffer, 3, 14);
+
+        auto constants = CullPushConstants {
+            .cameraLocation = vec4(cullCameraLocation, 1.0f),
+            .instanceCount = instanceCount,
+            .viewCount = 1,
+            .focalLength = cullFocalLength,
+            .firstView = lateView,
+            .depthResolution = depthResolution,
+            .hiZLevelCount = hiZLevelCount
+        };
+        commandList->PushConstants("constants", &constants);
+        commandList->DispatchIndirect(occlusionInstanceBuffer);
+
+        commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+        WriteDrawCommands(lateFirstRequest, lateRequestCount, commandList);
+
+        if (readbackVisibility) {
+            commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            auto slotCount = uint32_t(cullMeshes.size());
+            auto viewSize = VkDeviceSize(sizeof(uint32_t) * drawTypeCount * slotCount);
+            commandList->CopyBuffer(counterBuffer, visibilityReadbackBuffer,
+                VkBufferCopy{ .srcOffset = occlusionViewOffset, .dstOffset = 0, .size = viewSize });
+            commandList->CopyBuffer(counterBuffer, visibilityReadbackBuffer,
+                VkBufferCopy{ .srcOffset = lateView * viewSize, .dstOffset = viewSize, .size = viewSize });
+
+            commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+
+            visibilityMeshIds[Graphics::GraphicsDevice::DefaultDevice->GetFrameIndex() % FRAME_DATA_COUNT] = cullMeshIds;
+        }
+
+    }
+
+    void GPUScene::WriteDrawCommands(uint32_t firstRequest, uint32_t requestCount, Graphics::CommandList* commandList) {
+
         auto pipeline = PipelineManager::GetPipeline(drawsPipelineConfig);
         commandList->BindPipeline(pipeline);
 
         commandList->BindBuffer(meshBuffer, 3, 0);
-        commandList->BindBuffer(viewBuffer, 3, 1);
+        commandList->BindBuffer(cullViewBuffer, 3, 1);
         commandList->BindBuffer(counterBuffer, 3, 2);
-        commandList->BindBuffer(requestBuffer, 3, 3);
+        commandList->BindBuffer(cullRequestBuffer, 3, 3);
         commandList->BindBuffer(commandBuffer, 3, 4);
 
-        auto drawRequestCount = uint32_t(requests.size());
-        commandList->PushConstants("constants", &drawRequestCount);
-        commandList->Dispatch((drawRequestCount + 63) / 64, 1, 1);
+        auto constants = DrawsPushConstants { .firstRequest = firstRequest, .requestCount = requestCount };
+        commandList->PushConstants("constants", &constants);
+        commandList->Dispatch((requestCount + 63) / 64, 1, 1);
 
         commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_SHADER_READ_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 
     }
 
+    void GPUScene::TakeMeshDistances(MeshDistances& distances) {
+
+        std::scoped_lock lock(meshDistancesMutex);
+        if (!hasMeshDistances)
+            return;
+
+        std::swap(distances, meshDistances);
+        hasMeshDistances = false;
+
+    }
+
     void GPUScene::WriteRayTracingInstances(RayTracing::RayTracingWorld& rayTracingWorld, vec3 cameraLocation,
-        Graphics::CommandList* commandList) {
+        float focalLength, Graphics::CommandList* commandList) {
 
         auto pendingInstances = rayTracingWorld.GetPendingInstances();
         if (!pendingInstances)
@@ -380,7 +631,8 @@ namespace Atlas::Scene {
                 .instanceCount = instanceCount,
                 .viewCount = 0,
                 .maxRayTracingInstanceCount = pendingInstances->instanceBound,
-                .includeObjectHistory = pendingInstances->includeObjectHistory ? 1u : 0u
+                .includeObjectHistory = pendingInstances->includeObjectHistory ? 1u : 0u,
+                .focalLength = focalLength
             };
             commandList->PushConstants("constants", &constants);
             commandList->Dispatch((instanceCount + 63) / 64, 1, 1);
@@ -452,7 +704,7 @@ namespace Atlas::Scene {
 
     void GPUScene::GrowBounds(MeshSlot& slot, const mat4& globalMatrix) {
 
-        auto bounds = slot.mesh->data.aabb.Transform(globalMatrix);
+        auto bounds = slot.mesh->GetRenderBounds().Transform(globalMatrix);
         // Impostors are chosen by the distance to the origin of the instance
         bounds.Grow(vec3(globalMatrix[3]));
         if (slot.hasBounds)
@@ -468,6 +720,7 @@ namespace Atlas::Scene {
         auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
 
         cullMeshes.resize(slots.size());
+        cullMeshIds.resize(slots.size());
         totalCapacity = 0;
         impostorCapacity = 0;
 
@@ -477,35 +730,46 @@ namespace Atlas::Scene {
             slot.drawable = false;
             slot.skinned = false;
             slot.impostor = false;
+            slot.geometry = false;
 
-            if (slotIdx > 0 && !slot.entities.empty() && slot.mesh.IsLoaded()) {
+            auto loaded = slotIdx > 0 && !slot.entities.empty() && slot.mesh.IsLoaded();
+            if (loaded) {
                 slot.skinned = slot.mesh->data.IsSkinned();
-                slot.drawable = !slot.skinned;
-                slot.impostor = slot.drawable && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated;
+                slot.geometry = !slot.skinned && slot.mesh->IsGeometryResident();
+                slot.impostor = !slot.skinned && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated &&
+                    slot.mesh->impostor->IsResident();
+                // Without resident geometry the instances are drawn as impostors
+                slot.drawable = slot.geometry || slot.impostor;
             }
 
             // The mesh might have been loaded after its instances were added
-            if (slot.drawable && !slot.hasBounds) {
+            if (loaded && !slot.skinned && !slot.hasBounds) {
                 for (auto entity : slot.entities)
                     GrowBounds(slot, transformComponentPool.Get(entity).globalMatrix);
             }
 
+            // Meshes which aren't drawable are culled as well, the streaming needs their distances
             GPUCullMesh cullMesh = {};
-            if (slot.drawable) {
+            if (loaded && !slot.skinned) {
                 const auto& mesh = slot.mesh;
-                auto count = uint32_t(slot.entities.size());
+                auto count = slot.drawable ? uint32_t(slot.entities.size()) : 0u;
 
                 slot.regionOffset = totalCapacity;
                 slot.impostorRegionOffset = impostorCapacity;
                 totalCapacity += count;
                 impostorCapacity += slot.impostor ? count : 0;
 
+                auto renderBounds = mesh->GetRenderBounds();
+
                 cullMesh = GPUCullMesh {
-                    .aabbMin = vec4(mesh->data.aabb.min, mesh->distanceCulling),
-                    .aabbMax = vec4(mesh->data.aabb.max, mesh->shadowDistanceCulling),
+                    .aabbMin = vec4(renderBounds.min, mesh->distanceCulling),
+                    .aabbMax = vec4(renderBounds.max, mesh->shadowDistanceCulling),
                     .impostorDistance = mesh->impostorDistance,
                     .impostorShadowDistance = mesh->impostorShadowDistance,
-                    .flags = MeshDrawable | (mesh->castShadow ? MeshCastShadow : 0u) | (slot.impostor ? MeshImpostor : 0u),
+                    .flags = (slot.drawable ? MeshDrawable : 0u) | (mesh->castShadow ? MeshCastShadow : 0u) |
+                        (slot.impostor ? MeshImpostor : 0u) | (slot.geometry ? MeshGeometry : 0u) |
+                        (slot.drawEarly || slot.dontCullCount ? MeshDrawEarly : 0u),
+                    .minScreenSize = mesh->minScreenSize,
                     .regionOffset = slot.regionOffset,
                     .regionCapacity = count,
                     .impostorRegionOffset = slot.impostorRegionOffset
@@ -513,19 +777,25 @@ namespace Atlas::Scene {
             }
 
             cullMeshes[slotIdx] = cullMesh;
+            cullMeshIds[slotIdx] = loaded && !slot.skinned ? slot.mesh.GetID() : 0;
         }
 
     }
 
-    void GPUScene::EnsureCullBuffers(size_t viewCount, size_t requestCount) {
+    void GPUScene::EnsureCullBuffers(size_t viewCount, size_t requestCount, bool occlusion) {
 
         auto usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         viewCount = std::max(viewCount, size_t(1));
         auto slotCount = cullMeshes.size();
-        EnsureBuffer(counterBuffer, sizeof(uint32_t) * drawTypeCount * viewCount * slotCount, usage);
+        EnsureBuffer(counterBuffer, sizeof(uint32_t) * drawTypeCount * viewCount * slotCount,
+            usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         EnsureBuffer(indexBuffer, sizeof(uint32_t) * std::max(viewCount * totalCapacity, size_t(1)), usage);
         EnsureBuffer(impostorIndexBuffer, sizeof(uint32_t) * std::max(viewCount * impostorCapacity, size_t(1)), usage);
         EnsureBuffer(commandBuffer, RenderList::gpuDrawCommandSize * std::max(requestCount, size_t(1)),
+            usage | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+        EnsureBuffer(meshDistanceBuffer, 2 * sizeof(uint32_t) * std::max(slotCount, size_t(1)),
+            usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        EnsureBuffer(occlusionInstanceBuffer, sizeof(uint32_t) * (4 + (occlusion ? size_t(instanceCount) : size_t(1))),
             usage | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
         // In case no update was recorded yet
         EnsureBuffer(instanceBuffer, sizeof(GPUInstance), usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);

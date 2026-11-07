@@ -257,7 +257,7 @@ void main() {
         // This normally only accounts for diffuse occlusion, we need seperate terms
         // for diffuse and specular.
 #ifdef SSGI
-        float ao = Uniforms.giDownsampled2x > 0 ? upsampleResult.ao : texelFetch(giTexture, pixel, 0).r;
+        float ao = Uniforms.giDownsampled2x > 0 ? upsampleResult.ao : texelFetch(giTexture, pixel, 0).a;
         indirect *= vec3(pow(ao, Uniforms.aoStrength));
 #endif
 

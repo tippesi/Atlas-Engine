@@ -15,7 +15,7 @@ namespace Atlas {
 
         void ImpostorRenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList, RenderList* renderList,
-            std::unordered_map<void*, uint16_t>& materialMap) {
+            std::unordered_map<void*, uint16_t>& materialMap, bool lateDraws) {
 
             struct alignas(16) PushConstants {
                 uint32_t materialIdx;
@@ -28,27 +28,36 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            // The instances are read from the instance buffer, except the ones of skinned meshes
+            // The instances are read from the instance buffer, except the ones of skinned meshes. All impostors share
+            // a few pipeline variants, a pipeline is only looked up and bound when the variant changes
+            int32_t boundVariant = -1;
+            const Graphics::PushConstantRange* constantsRange = nullptr;
             auto bindImpostor = [&](Mesh::Mesh* mesh, bool useInstanceBuffer) {
-                auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset,
-                    useInstanceBuffer);
-                auto pipeline = PipelineManager::GetPipeline(config);
+                auto& impostor = mesh->impostor;
+                auto variant = int32_t(impostor->interpolation) | int32_t(impostor->pixelDepthOffset) << 1 | int32_t(useInstanceBuffer) << 2;
+                if (variant != boundVariant) {
+                    boundVariant = variant;
+                    auto config = GetPipelineConfig(target->gBufferFrameBuffer, impostor->interpolation, impostor->pixelDepthOffset,
+                        useInstanceBuffer);
+                    auto pipeline = PipelineManager::GetPipeline(config);
+                    commandList->BindPipeline(pipeline);
+                    constantsRange = pipeline->shader->GetPushConstantRange("constants");
+                }
 
-                commandList->BindPipeline(pipeline);
-
-                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
-                mesh->impostor->roughnessMetalnessAoTexture->Bind(commandList, 3, 1);
-                mesh->impostor->normalTexture->Bind(commandList, 3, 2);
-                mesh->impostor->depthTexture->Bind(commandList, 3, 3);
+                impostor->baseColorTexture->Bind(commandList, 3, 0);
+                impostor->roughnessMetalnessAoTexture->Bind(commandList, 3, 1);
+                impostor->normalTexture->Bind(commandList, 3, 2);
+                impostor->depthTexture->Bind(commandList, 3, 3);
 
                 // Base 0 is used by the materials
-                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
-                mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
+                impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
+                impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
 
+                auto material = materialMap.find(impostor.Get().get());
                 PushConstants constants = {
-                    .materialIdx = uint32_t(materialMap[mesh->impostor.Get().get()]),
+                    .materialIdx = material != materialMap.end() ? uint32_t(material->second) : 0u,
                 };
-                commandList->PushConstants("constants", &constants);
+                commandList->PushConstants(constantsRange, &constants);
             };
 
             for (const auto& item : mainPass->meshToInstancesMap) {
@@ -57,7 +66,7 @@ namespace Atlas {
                 auto instance = item.second;
 
                 // If there aren't any impostors there won't be a buffer
-                if (!instance.impostorCount)
+                if (!instance.impostorCount || lateDraws)
                     continue;
 
                 const auto& mesh = renderList->meshIdToMeshMap[meshId];
@@ -66,7 +75,7 @@ namespace Atlas {
                 commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
             }
 
-            for (const auto& draw : mainPass->gpuDraws) {
+            for (const auto& draw : lateDraws ? mainPass->gpuLateDraws : mainPass->gpuDraws) {
                 if (draw.type != RenderList::GPUDrawType::Impostor)
                     continue;
 
@@ -147,19 +156,19 @@ namespace Atlas {
 
                     commandList->BindPipeline(pipeline);
 
-                    if (material->HasBaseColorMap())
+                    if (material->baseColorMap.IsLoaded())
                         commandList->BindImage(material->baseColorMap->image, material->baseColorMap->sampler, 3, 0);
-                    if (material->HasOpacityMap())
+                    if (material->opacityMap.IsLoaded())
                         commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
-                    if (material->HasNormalMap())
+                    if (material->normalMap.IsLoaded())
                         commandList->BindImage(material->normalMap->image, material->normalMap->sampler, 3, 2);
-                    if (material->HasRoughnessMap())
+                    if (material->roughnessMap.IsLoaded())
                         commandList->BindImage(material->roughnessMap->image, material->roughnessMap->sampler, 3, 3);
-                    if (material->HasMetalnessMap())
+                    if (material->metalnessMap.IsLoaded())
                         commandList->BindImage(material->metalnessMap->image, material->metalnessMap->sampler, 3, 4);
-                    if (material->HasAoMap())
+                    if (material->aoMap.IsLoaded())
                         commandList->BindImage(material->aoMap->image, material->aoMap->sampler, 3, 5);
-                    if (material->HasDisplacementMap())
+                    if (material->displacementMap.IsLoaded())
                         commandList->BindImage(material->displacementMap->image, material->displacementMap->sampler, 3, 6);
 
                     auto pushConstants = PushConstants {
@@ -317,25 +326,25 @@ namespace Atlas {
             }
 
             std::vector<std::string> macros;
-            if (material->HasBaseColorMap()) {
+            if (material->baseColorMap.IsLoaded()) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            if (material->HasOpacityMap()) {
+            if (material->opacityMap.IsLoaded()) {
                 macros.push_back("OPACITY_MAP");
             }
-            if (material->HasNormalMap()) {
+            if (material->normalMap.IsLoaded()) {
                 macros.push_back("NORMAL_MAP");
             }
-            if (material->HasRoughnessMap()) {
+            if (material->roughnessMap.IsLoaded()) {
                 macros.push_back("ROUGHNESS_MAP");
             }
-            if (material->HasMetalnessMap()) {
+            if (material->metalnessMap.IsLoaded()) {
                 macros.push_back("METALNESS_MAP");
             }
-            if (material->HasAoMap()) {
+            if (material->aoMap.IsLoaded()) {
                 macros.push_back("AO_MAP");
             }
-            if (material->HasDisplacementMap()) {
+            if (material->displacementMap.IsLoaded()) {
                 macros.push_back("HEIGHT_MAP");
             }
             // This is a check if we have any maps at all (no macros, no maps)

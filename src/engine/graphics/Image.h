@@ -72,6 +72,9 @@ namespace Atlas {
 
             VkImageType GetImageType() const;
 
+            // Device memory the image would need with another size, without creating it
+            size_t GetMemorySize(uint32_t width, uint32_t height, uint32_t mipLevels) const;
+
             VkImage image;
             VmaAllocation allocation;
 
@@ -88,6 +91,7 @@ namespace Atlas {
             uint32_t depth = 1;
             uint32_t layers = 1;
             VkFormat format;
+            VkImageUsageFlags usageFlags;
 
             uint32_t bitDepth = 8;
 

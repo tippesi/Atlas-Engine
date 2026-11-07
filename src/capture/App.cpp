@@ -11,6 +11,8 @@
 #include "profiler/CPUProfiler.h"
 #include "profiler/GPUProfiler.h"
 #include "profiler/HitchRecorder.h"
+#include "streaming/StreamingManager.h"
+#include "materialgraph/PipelineCache.h"
 #include "Clock.h"
 #include "audio/AudioManager.h"
 
@@ -106,6 +108,16 @@ namespace Atlas::Capture {
 
         startTime = std::chrono::steady_clock::now();
         report.InstallCrashHandlers();
+
+        // Pictures never show the fallback of a material graph
+        MaterialGraph::PipelineCache::asynchronous = false;
+
+        // Jobs edit, save and bake resources and take pictures right away, --streaming measures the streaming instead
+        if (std::find(args.begin(), args.end(), "--streaming") == args.end()) {
+            Streaming::StreamingManager::settings.textures.enable = false;
+            Streaming::StreamingManager::settings.impostors.enable = false;
+            Streaming::StreamingManager::settings.meshes.enable = false;
+        }
 
         if (auto composeExitCode = RunCompose(args)) {
             phase = Phase::Done;

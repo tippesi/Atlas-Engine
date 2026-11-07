@@ -10,6 +10,7 @@
 #include <vector>
 #include <atomic>
 #include <functional>
+#include <mutex>
 
 #define RESOURCE_RETENTION_FRAME_COUNT 30
 
@@ -130,6 +131,20 @@ namespace Atlas {
 
         }
 
+        // An async load held back by the resource manager doesn't wait for the hold anymore
+        void StartHeldLoad() {
+
+            std::function<void()> load;
+            {
+                std::scoped_lock lock(heldLoadMutex);
+                load.swap(heldLoad);
+            }
+
+            if (load)
+                load();
+
+        }
+
         Hash ID = 0;
 
         ResourceOrigin origin = System;
@@ -147,6 +162,9 @@ namespace Atlas {
 
         std::atomic_bool isLoaded = false;
         JobGroup jobGroup{ "Load resource", JobPriority::Low};
+
+        std::function<void()> heldLoad;
+        static inline std::mutex heldLoadMutex;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };
@@ -183,8 +201,11 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (IsValid()) {
-                while (!resource->isLoaded && !resource->errorOnLoad)
+                while (!resource->isLoaded && !resource->errorOnLoad) {
+                    // Whoever waits could be the one the hold depends on
+                    resource->StartHeldLoad();
                     JobSystem::Wait(resource->jobGroup);
+                }
             }
         }
 

@@ -34,6 +34,9 @@ namespace Atlas {
 
             void AllocateTextures();
 
+            // Streaming takes the textures of impostors nobody needs off the GPU, everything else stays
+            bool IsResident() const;
+
             Ref<Texture::Texture2DArray> baseColorTexture;
             Ref<Texture::Texture2DArray> roughnessMetalnessAoTexture;
             Ref<Texture::Texture2DArray> normalTexture;

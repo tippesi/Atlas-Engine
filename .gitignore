@@ -33,6 +33,16 @@
 !/data/shader/
 !/data/sponza/
 
+# Import output stays local, only these default assets are tracked
+/data/materials/*
+!/data/materials/CapsuleMaterial.aematerial
+!/data/materials/Chrome.aematerial
+!/data/materials/Material.001.aematerial
+/data/meshes/*
+!/data/meshes/capsule.aemesh
+!/data/meshes/chromesphere.aemesh
+!/data/meshes/metallicwall.aemesh
+
 !/data/README.md
 !/data/capsule.gltf
 !/data/chromesphere.bin

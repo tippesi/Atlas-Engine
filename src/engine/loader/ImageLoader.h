@@ -140,10 +140,11 @@ namespace Atlas {
              * Save an image to the hard drive.
              * @param image The image to be stored
              * @param filename The filename that the image should have
+             * @return Whether the file was written
              * @note By changing the fileFormat in the Image object the output file changes as well.
              */
             template<typename T>
-            static void SaveImage(Ref<Common::Image<T>>& image, const std::string& filename) {
+            static bool SaveImage(Ref<Common::Image<T>>& image, const std::string& filename) {
 
                 const auto normalizedFileName = Common::Path::Normalize(filename);
 
@@ -151,7 +152,7 @@ namespace Atlas {
 
                 if (!imageStream.is_open()) {
                     Log::Error("Couldn't write image " + normalizedFileName);
-                    return;
+                    return false;
                 }
 
                 /*
@@ -197,6 +198,13 @@ namespace Atlas {
                 }
 
                 imageStream.close();
+
+                if (imageStream.fail()) {
+                    Log::Error("Couldn't write image " + normalizedFileName);
+                    return false;
+                }
+
+                return true;
 
             }
 

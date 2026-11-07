@@ -5,6 +5,7 @@
 #include "mesh/MeshData.h"
 #include "volume/BVH.h"
 #include "graphics/ASBuilder.h"
+#include "profiler/CPUProfiler.h"
 #include "profiler/GPUProfiler.h"
 #include "pipeline/PipelineManager.h"
 #include "common/ColorConverter.h"
@@ -62,6 +63,7 @@ namespace Atlas {
 
             auto renderState = &scene->renderState;
 
+            CPUProfiler::Scope profilerScope("Blas infos");
             buildBlases.clear();
             refitBlases.clear();
 
@@ -70,26 +72,25 @@ namespace Atlas {
 
             JobSystem::Wait(renderState->bindlessBlasMapUpdateJob);
 
-            std::swap(prevBlasInfos, blasInfos);
-            blasInfos.clear();
+            blasInfoUpdate++;
 
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
-                if (!mesh.IsLoaded() || !renderState->blasToBindlessIdx.contains(mesh->blas))
+                if (!mesh.IsLoaded())
+                    continue;
+                auto bindlessIdx = renderState->blasToBindlessIdx.find(mesh->blas);
+                if (bindlessIdx == renderState->blasToBindlessIdx.end())
                     continue;
 
-                if (!prevBlasInfos.contains(mesh->blas)) {
-                    blasInfos[mesh->blas] = BlasInfo{
-                        .mesh = mesh,
-                    };
+                auto [blasInfoIt, inserted] = blasInfos.try_emplace(mesh->blas);
+                auto& blasInfo = blasInfoIt->second;
+                if (inserted) {
+                    blasInfo.mesh = mesh;
                     BuildTriangleLightsForMesh(mesh);
                 }
-                else {
-                    std::swap(blasInfos[mesh->blas], prevBlasInfos[mesh->blas]);
-                }
 
-                auto &blasInfo = blasInfos[mesh->blas];
-                blasInfo.offset = int32_t(renderState->blasToBindlessIdx[mesh->blas]);
+                blasInfo.update = blasInfoUpdate;
+                blasInfo.offset = int32_t(bindlessIdx->second);
                 blasInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
 
                 // Some extra path for hardware raytracing, don't want to do work twice
@@ -105,27 +106,27 @@ namespace Atlas {
 
             for (const auto node : renderState->terrainLeafNodes) {
 
-                if (!node->cell || !node->cell->IsLoaded() || !renderState->blasToBindlessIdx.contains(node->cell->blas))
+                if (!node->cell || !node->cell->IsLoaded())
                     continue;
-
-                if (!prevBlasInfos.contains(node->cell->blas)) {
-                    blasInfos[node->cell->blas] = {};
-                }
-                else {
-                    std::swap(blasInfos[node->cell->blas], prevBlasInfos[node->cell->blas]);
-                }
+                auto bindlessIdx = renderState->blasToBindlessIdx.find(node->cell->blas);
+                if (bindlessIdx == renderState->blasToBindlessIdx.end())
+                    continue;
 
                 auto &blasInfo = blasInfos[node->cell->blas];
 
+                blasInfo.update = blasInfoUpdate;
                 blasInfo.node = node;
-                blasInfo.offset = int32_t(renderState->blasToBindlessIdx[node->cell->blas]);
+                blasInfo.offset = int32_t(bindlessIdx->second);
                 blasInfo.cullingDistanceSqr = 100000000000.0f;
             }
 
+            profilerScope.Next("Skinned blases");
             UpdateSkinnedBlases(meshCount);
 
+            std::erase_if(blasInfos, [&](const auto& entry) { return entry.second.update != blasInfoUpdate; });
+
             // Skinning has to be done before the dynamic BLASes are built
-            if (!skinnedBlases.empty() || hardwareRayTracing && !buildBlases.empty()) {
+            if (!jointMatrices.empty() || hardwareRayTracing && !buildBlases.empty()) {
                 auto commandList = device->GetCommandList();
                 commandList->BeginCommands();
                 SkinBlases(commandList);
@@ -140,10 +141,12 @@ namespace Atlas {
                 device->SubmitCommandList(commandList);
             }
 
+            profilerScope.Next("Materials");
             JobSystem::Wait(renderState->materialUpdateJob);
 
             UpdateMaterials();
 
+            profilerScope.Next("Instances");
             vec3 cameraLocation = vec3(0.0f);
             auto hasCamera = scene->HasMainCamera();
             if (hasCamera)
@@ -237,31 +240,31 @@ namespace Atlas {
                         gpuMaterial.cullBackFaces = mesh.IsLoaded() ? (mesh->cullBackFaces ? 1 : 0) : 0;
                         gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
-                        if (material->HasBaseColorMap()) {
+                        if (material->baseColorMap.IsLoaded()) {
                             gpuMaterial.baseColorTexture = sceneState->GetBindlessTextureIdx(material->baseColorMap.Get());
                         }
 
-                        if (material->HasOpacityMap()) {
+                        if (material->opacityMap.IsLoaded()) {
                             gpuMaterial.opacityTexture = sceneState->GetBindlessTextureIdx(material->opacityMap.Get());
                         }
 
-                        if (material->HasNormalMap()) {
+                        if (material->normalMap.IsLoaded()) {
                             gpuMaterial.normalTexture = sceneState->GetBindlessTextureIdx(material->normalMap.Get());
                         }
 
-                        if (material->HasRoughnessMap()) {
+                        if (material->roughnessMap.IsLoaded()) {
                             gpuMaterial.roughnessTexture = sceneState->GetBindlessTextureIdx(material->roughnessMap.Get());
                         }
 
-                        if (material->HasMetalnessMap()) {
+                        if (material->metalnessMap.IsLoaded()) {
                             gpuMaterial.metalnessTexture = sceneState->GetBindlessTextureIdx(material->metalnessMap.Get());
                         }
 
-                        if (material->HasAoMap()) {
+                        if (material->aoMap.IsLoaded()) {
                             gpuMaterial.aoTexture = sceneState->GetBindlessTextureIdx(material->aoMap.Get());
                         }
 
-                        if (material->HasEmissiveMap()) {
+                        if (material->emissiveMap.IsLoaded()) {
                             gpuMaterial.emissiveTexture = sceneState->GetBindlessTextureIdx(material->emissiveMap.Get());
                         }
 
@@ -457,7 +460,7 @@ namespace Atlas {
                 const auto& slot = gpuScene.slots[i];
 
                 GPURTMesh rtMesh;
-                if (slot.drawable && slot.mesh->rayTrace && isUsable(slot.mesh->blas)) {
+                if (slot.geometry && slot.mesh->rayTrace && isUsable(slot.mesh->blas)) {
                     const auto& blas = slot.mesh->blas;
                     const auto& blasInfo = blasInfos[blas];
                     rtMesh = GPURTMesh {
@@ -791,34 +794,37 @@ namespace Atlas {
 
                 const auto& mesh = meshComponent->mesh;
                 // The hardware BLAS needs to be created again when switching between refits and builds
-                if (item == skinnedBlases.end() || item->second.mesh.GetID() != mesh.GetID() ||
-                    hardwareRayTracing && item->second.blas->blas->allowUpdate != refitSkinnedBlases)
+                auto created = item == skinnedBlases.end() || item->second.mesh.GetID() != mesh.GetID() ||
+                    hardwareRayTracing && item->second.blas->blas->allowUpdate != refitSkinnedBlases;
+                if (created)
                     item = skinnedBlases.insert_or_assign(entity, CreateSkinnedBlas(mesh)).first;
 
                 auto& skinnedBlas = item->second;
                 skinnedBlas.used = true;
-                skinnedBlas.jointOffset = uint32_t(jointMatrices.size());
-                jointMatrices.insert(jointMatrices.end(), animationComponent.jointMatrices.begin(),
-                    animationComponent.jointMatrices.end());
+                skinnedBlas.skin = created || animationComponent.IsPoseUpdated();
+                if (skinnedBlas.skin) {
+                    skinnedBlas.jointOffset = uint32_t(jointMatrices.size());
+                    jointMatrices.insert(jointMatrices.end(), animationComponent.jointMatrices.begin(),
+                        animationComponent.jointMatrices.end());
+                }
 
                 // The BLAS is used once the bindless buffers are updated in the next frame
                 if (!renderState->blasToBindlessIdx.contains(skinnedBlas.blas))
                     continue;
 
-                if (!prevBlasInfos.contains(skinnedBlas.blas))
-                    blasInfos[skinnedBlas.blas] = BlasInfo{ .mesh = mesh };
-                else
-                    std::swap(blasInfos[skinnedBlas.blas], prevBlasInfos[skinnedBlas.blas]);
-
-                auto& blasInfo = blasInfos[skinnedBlas.blas];
+                auto [blasInfoIt, inserted] = blasInfos.try_emplace(skinnedBlas.blas);
+                auto& blasInfo = blasInfoIt->second;
+                if (inserted)
+                    blasInfo.mesh = mesh;
+                blasInfo.update = blasInfoUpdate;
                 blasInfo.offset = int32_t(renderState->blasToBindlessIdx[skinnedBlas.blas]);
                 blasInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
 
                 if (hardwareRayTracing) {
                     const auto& graphicsBlas = skinnedBlas.blas->blas;
-                    if (graphicsBlas->allowUpdate && graphicsBlas->isBuilt)
+                    if (skinnedBlas.skin && graphicsBlas->allowUpdate && graphicsBlas->isBuilt)
                         refitBlases.push_back(graphicsBlas);
-                    else
+                    else if (skinnedBlas.skin || !graphicsBlas->isBuilt)
                         buildBlases.push_back(graphicsBlas);
                     skinnedBlas.blas->needsBvhRefresh = false;
 
@@ -843,7 +849,8 @@ namespace Atlas {
 
         void RayTracingWorld::SkinBlases(Graphics::CommandList* commandList) {
 
-            if (skinnedBlases.empty())
+            // Only the skinned BLASes with a changed pose have joint matrices
+            if (jointMatrices.empty())
                 return;
 
             GPUProfiler::BeginThread("Skinning", commandList);
@@ -859,6 +866,9 @@ namespace Atlas {
             jointMatricesBuffer.Bind(commandList, 3, 1);
 
             for (auto& [entity, skinnedBlas] : skinnedBlases) {
+                if (!skinnedBlas.skin)
+                    continue;
+
                 auto& blas = skinnedBlas.blas;
                 auto triangleCount = uint32_t(blas->triangleIndices.size());
 
@@ -882,6 +892,9 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 for (auto& [entity, skinnedBlas] : skinnedBlases) {
+                    if (!skinnedBlas.skin)
+                        continue;
+
                     auto vertexCount = uint32_t(skinnedBlas.vertexBuffer.elementCount);
 
                     skinVertexBuffers[skinnedBlas.mesh.GetID()].Bind(commandList, 3, 0);
@@ -907,13 +920,14 @@ namespace Atlas {
 
                 size_t levelCount = 0;
                 for (const auto& [entity, skinnedBlas] : skinnedBlases)
-                    levelCount = std::max(levelCount, skinnedBlas.levelOffsets.size() - 1);
+                    if (skinnedBlas.skin)
+                        levelCount = std::max(levelCount, skinnedBlas.levelOffsets.size() - 1);
 
                 // The levels of all BLASes are updated together, starting with the deepest one
                 for (int32_t level = int32_t(levelCount) - 1; level >= 0; level--) {
                     for (auto& [entity, skinnedBlas] : skinnedBlases) {
                         const auto& levelOffsets = skinnedBlas.levelOffsets;
-                        if (level + 1 >= int32_t(levelOffsets.size()))
+                        if (!skinnedBlas.skin || level + 1 >= int32_t(levelOffsets.size()))
                             continue;
 
                         auto& blas = skinnedBlas.blas;
@@ -978,7 +992,7 @@ namespace Atlas {
                     geometryRegions.emplace_back(Graphics::ASGeometryRegion{
                         .indexCount = subData.indicesCount,
                         .indexOffset = subData.indicesOffset,
-                        .opaque = !subData.material->HasOpacityMap() && subData.material->opacity == 1.0f
+                        .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f
                         });
                 }
 

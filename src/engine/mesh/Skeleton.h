@@ -3,6 +3,7 @@
 #include "../System.h"
 #include "../volume/AABB.h"
 
+#include <initializer_list>
 #include <vector>
 
 namespace Atlas {
@@ -41,6 +42,10 @@ namespace Atlas {
             void GetRestPose(std::vector<JointPose>& pose) const;
 
             void GetGlobalMatrices(const std::vector<JointPose>& pose, std::vector<mat4>& globalMatrices) const;
+
+            // Updates the changed joints and their children, the other global matrices have to fit the pose already
+            void UpdateGlobalMatrices(const std::vector<JointPose>& pose, std::vector<mat4>& globalMatrices,
+                std::initializer_list<int32_t> changedJoints) const;
 
             /**
              * Updates the skinning matrices of the rest pose, needs to be called after the joints changed

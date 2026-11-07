@@ -4,6 +4,103 @@
 
 namespace Atlas::Scripting::Bindings {
 
+    // Replace sol's metamethods of T for speed, other keys go to sol's metamethod (upvalue 1). Vectors and quaternions
+    // take x, y, z and w, matrices the 1-based index of an element, column by column like glm
+    template<class T>
+    static float* Components(lua_State* state) {
+
+        return reinterpret_cast<float*>(*static_cast<T**>(sol::detail::align_usertype_pointer(lua_touserdata(state, 1))));
+
+    }
+
+    template<class T, bool indexed>
+    static int ComponentIndex(lua_State* state) {
+
+        constexpr int count = int(sizeof(T) / sizeof(float));
+        if constexpr (indexed) {
+            if (!lua_isinteger(state, 2))
+                return -1;
+            auto index = int(lua_tointeger(state, 2)) - 1;
+            return index >= 0 && index < count ? index : -1;
+        }
+        else {
+            size_t length = 0;
+            auto key = lua_type(state, 2) == LUA_TSTRING ? lua_tolstring(state, 2, &length) : nullptr;
+            if (length != 1)
+                return -1;
+            auto index = key[0] == 'w' ? 3 : key[0] - 'x';
+            return index >= 0 && index < count ? index : -1;
+        }
+
+    }
+
+    static int ForwardComponentAccess(lua_State* state, int arguments) {
+
+        auto original = lua_upvalueindex(1);
+        if (lua_type(state, original) == LUA_TFUNCTION) {
+            lua_pushvalue(state, original);
+            lua_insert(state, 1);
+            lua_call(state, arguments, arguments == 2 ? 1 : 0);
+            return arguments == 2 ? 1 : 0;
+        }
+
+        if (arguments == 2) {
+            lua_pushvalue(state, 2);
+            lua_gettable(state, original);
+            return 1;
+        }
+        lua_pushvalue(state, 2);
+        lua_pushvalue(state, 3);
+        lua_settable(state, original);
+        return 0;
+
+    }
+
+    template<class T, bool indexed>
+    static int IndexComponent(lua_State* state) {
+
+        auto index = ComponentIndex<T, indexed>(state);
+        if (index < 0)
+            return ForwardComponentAccess(state, 2);
+
+        lua_pushnumber(state, Components<T>(state)[index]);
+        return 1;
+
+    }
+
+    template<class T, bool indexed>
+    static int NewIndexComponent(lua_State* state) {
+
+        auto index = ComponentIndex<T, indexed>(state);
+        if (index < 0)
+            return ForwardComponentAccess(state, 3);
+
+        Components<T>(state)[index] = float(luaL_checknumber(state, 3));
+        return 0;
+
+    }
+
+    // Values, references and constant references of T, unique pointers to glm types aren't used
+    template<class T, bool indexed = false>
+    static void AddComponentAccess(lua_State* state) {
+
+        for (const auto& metatable : { sol::usertype_traits<T>::metatable(), sol::usertype_traits<T*>::metatable(),
+            sol::usertype_traits<const T*>::metatable(), sol::usertype_traits<const T>::metatable() }) {
+            if (luaL_getmetatable(state, metatable.c_str()) != LUA_TTABLE) {
+                lua_pop(state, 1);
+                continue;
+            }
+            lua_getfield(state, -1, "__index");
+            lua_pushcclosure(state, &IndexComponent<T, indexed>, 1);
+            lua_setfield(state, -2, "__index");
+            lua_getfield(state, -1, "__newindex");
+            lua_pushcclosure(state, &NewIndexComponent<T, indexed>, 1);
+            lua_setfield(state, -2, "__newindex");
+            lua_pop(state, 1);
+        }
+
+    }
+
     // The arithmetic of each type written into an existing object, the operators create a new one every time
     template<class... T>
     static void GenerateArithmeticToBindings(sol::table* ns) {
@@ -64,11 +161,18 @@ namespace Atlas::Scripting::Bindings {
             "z", &glm::vec4::z,
             "w", &glm::vec4::w);
 
+        AddComponentAccess<glm::vec2>(ns->lua_state());
+        AddComponentAccess<glm::vec3>(ns->lua_state());
+        AddComponentAccess<glm::vec4>(ns->lua_state());
+
         GenerateGlmTypeBinding<glm::mat3, float>(ns, "Mat3",
             sol::constructors<glm::mat3(float)>());
 
         GenerateGlmTypeBinding<glm::mat4, float>(ns, "Mat4",
             sol::constructors<glm::mat4(float), glm::mat4(const glm::mat4&)>());
+
+        AddComponentAccess<glm::mat3, true>(ns->lua_state());
+        AddComponentAccess<glm::mat4, true>(ns->lua_state());
 
          auto quat_multiplication_overloads = sol::overload(
             [](const glm::quat& v0, const glm::quat& v1) { return v0 * v1; },
@@ -85,6 +189,8 @@ namespace Atlas::Scripting::Bindings {
             "z", &glm::quat::z,
             "w", &glm::quat::w
             );
+
+        AddComponentAccess<glm::quat>(ns->lua_state());
 
         ns->set_function("Dot", sol::overload(
             [](const glm::vec2& v0, const glm::vec2& v1) { return glm::dot(v0, v1); },
@@ -146,7 +252,8 @@ namespace Atlas::Scripting::Bindings {
         ns->set_function("Polar", [](const glm::vec3& vec) { return vec2(glm::polar(vec)); });
 
         // Variants that write into an existing object instead of returning a new one
-        GenerateArithmeticToBindings<glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4>(ns);
+        // sol tries the overloads in order, the scripts use matrices and 3D vectors most
+        GenerateArithmeticToBindings<glm::mat4, glm::vec3, glm::vec2, glm::vec4, glm::mat3>(ns);
 
         ns->set_function("TranslateTo", sol::overload(
             [](glm::mat4& out, const glm::vec3& vec) { out = glm::translate(vec); },

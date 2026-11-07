@@ -215,6 +215,13 @@ namespace Atlas {
             // Halts scripts, physics and players of a running simulation while keeping their state
             bool paused = false;
 
+            // Bodies with a mesh shape wait for it instead of building it during the update. They exist a few
+            // frames later, so this is for scenes where nothing simulates yet, e.g. in the editor
+            bool buildMeshShapesInBackground = false;
+
+            // Tests the instances of the main pass against the depth of the ones visible in the last frame
+            bool occlusionCulling = true;
+
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
@@ -287,6 +294,7 @@ namespace Atlas {
             Entity mainLightEntity;
             float time = 0.0f;
             float deltaTime = 0.0f;
+            uint32_t animationFrame = 0;
 
             std::vector<ContactEvent> contactEvents;
             // Ocean surface queries below the corners of the bodies with buoyancy
@@ -304,6 +312,8 @@ namespace Atlas {
             std::vector<ECS::Entity> dirtyEntities;
             std::vector<ECS::Entity> frameDirtyEntities;
             std::vector<ECS::Entity> lastFrameDirtyEntities;
+            // Entities of the bodies the simulation moved in the last update
+            std::vector<ECS::Entity> movedBodyEntities;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 

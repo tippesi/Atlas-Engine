@@ -165,7 +165,6 @@ auto testingValues = testing::Values(
     AppConfiguration { .ddgi = false },
     AppConfiguration { .rtgi = false },
     AppConfiguration { .reflection = false },
-    AppConfiguration { .volumetric = false },
     AppConfiguration { .localVolumetric = false },
     AppConfiguration { .sharpen = false },
     AppConfiguration { .light = false },

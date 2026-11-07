@@ -27,7 +27,9 @@
 #include "ocean/Ocean.h"
 #include "terrain/Terrain.h"
 #include "raytracing/RayTracingWorld.h"
+#include "streaming/StreamingManager.h"
 
+#include <functional>
 #include <unordered_map>
 #include <optional>
 
@@ -51,6 +53,29 @@ namespace Atlas::Scene {
         uint32_t ao = 0;
         uint32_t height = 0;
         uint32_t emissive = 0;
+    };
+
+    struct MaterialGraphData {
+        // Entry in the material buffer, graphs with a surface have their own one for the G-buffer
+        uint32_t materialIdx = 0;
+        // Position of the values in the parameter buffer
+        uint32_t parameterOffset = 0;
+    };
+
+    struct MaterialGraphCache {
+        struct TextureParameter {
+            const ResourceHandle<Texture::Texture2D>* handle = nullptr;
+            uint32_t offset = 0;
+            MaterialGraph::DefaultTexture fallback = MaterialGraph::DefaultTexture::White;
+        };
+
+        // A new material at the same address must not find this entry
+        Ref<Material> material;
+        Ref<const MaterialGraph::CompiledGraph> compiled;
+        uint32_t version = 0;
+        std::vector<uint32_t> words;
+        std::vector<TextureParameter> textures;
+        uint32_t lastUsedFrame = 0;
     };
 
     class SceneRenderState {
@@ -78,6 +103,9 @@ namespace Atlas::Scene {
         void FillShadowRenderPass(Entity entity);
 
         void CullAndSortLights();
+
+        // Requests the meshes and the texture resolutions the closest instances of the meshes need
+        void RequestStreamedResources();
 
         void WaitForAsyncWorkCompletion();
 
@@ -126,6 +154,7 @@ namespace Atlas::Scene {
         GPUScene gpuScene;
 
         Buffer::Buffer materialBuffer;
+        Buffer::Buffer materialGraphBuffer;
         Buffer::Buffer lightBuffer;
         Buffer::Buffer volumetricLightBuffer;
         Buffer::Buffer volumetricShadowBuffer;
@@ -144,6 +173,11 @@ namespace Atlas::Scene {
         std::vector<Ref<Material>> uniqueMaterials;
         std::vector<MaterialTextureIndices> materialTextureIndices;
         std::unordered_map<void*, uint16_t> materialMap;
+        // Only filled for materials with a graph
+        std::vector<Ref<Material>> graphMaterials;
+        std::unordered_map<void*, MaterialGraphData> materialGraphMap;
+        std::unordered_map<Material*, MaterialGraphCache> materialGraphCaches;
+        std::vector<uint32_t> materialGraphParameters;
         std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
         std::unordered_map<Ref<Texture::Texture2DArray>, uint32_t> textureArrayToBindlessIdx;
         std::unordered_map<Ref<Texture::Cubemap>, uint32_t> cubemapToBindlessIdx;
@@ -181,6 +215,9 @@ namespace Atlas::Scene {
 
         void UpdateTextureBindlessData();
 
+        void UpdateMaterialGraphParameters(const std::function<uint32_t(const ResourceHandle<Texture::Texture2D>&,
+            MaterialGraph::DefaultTexture)>& requestTexture);
+
         uint32_t RequestBindlessTexture(const Ref<Texture::Texture2D>& texture, DefaultTextureSlot defaultSlot);
 
         void CreateDefaultBindlessTextures();
@@ -197,6 +234,13 @@ namespace Atlas::Scene {
         uint32_t textureFrameCount = 0;
         uint32_t newTextureSlotCount = 0;
         uint32_t textureEvictionIdx = 0;
+
+        GPUScene::MeshDistances meshDistances;
+        std::unordered_map<Material*, float> materialResolutions;
+        std::vector<Streaming::TextureStreaming::MaterialRequest> materialRequests;
+        std::vector<Streaming::MeshStreaming::MeshRequest> meshRequests;
+        std::vector<Streaming::ImpostorStreaming::ImpostorRequest> impostorRequests;
+        size_t streamingRequestOffset = 0;
 
     };
 

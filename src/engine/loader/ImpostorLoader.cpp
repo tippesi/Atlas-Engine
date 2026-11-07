@@ -4,40 +4,57 @@
 #include "graphics/Format.h"
 #include "mesh/MeshSerializer.h"
 
+#include <cstring>
 
 namespace Atlas::Loader {
 
-    Ref<Mesh::Impostor> ImpostorLoader::LoadImpostor(const std::string& filename, bool binaryJson) {
+    bool ImpostorLoader::ImpostorTextures::IsComplete() const {
 
-        Loader::AssetLoader::UnpackFile(filename);
-        auto path = Loader::AssetLoader::GetFullPath(filename);
+        return baseColor && roughnessMetalnessAo && normal && depth;
 
-        auto fileStream = Loader::AssetLoader::ReadFile(path, std::ios::in | std::ios::binary);
+    }
 
-        if (!fileStream.is_open()) {
-            throw ResourceLoadException(filename, "Couldn't open impostor file stream: " + std::string(strerror(errno)));
-        }
+    Ref<Mesh::Impostor> ImpostorLoader::LoadImpostorFromMemory(const std::vector<char>& data, const std::string& filename,
+        bool binaryJson, int32_t maxResolution) {
 
-        json j;
-        if (binaryJson) {
-            auto data = Loader::AssetLoader::GetFileContent(fileStream);
-            // We don't want to keep the file stream open longer than we need
-            fileStream.close();
-            j = json::from_msgpack(data);
-        }
-        else {
-            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                std::istreambuf_iterator<char>());
-            fileStream.close();
-            j = json::parse(serialized);
-        }
+        auto j = ParseFile(data, binaryJson);
 
         auto impostor = CreateRef<Mesh::Impostor>();
         from_json(j, *impostor);
 
         impostor->RefreshViewPlaneBuffer();
 
-        auto jsonToTexture = [&](const char* name, Ref<Texture::Texture2DArray>& texture, bool depth) {    
+        auto textures = LoadTextures(j, filename, impostor->resolution, impostor->views, maxResolution);
+        impostor->baseColorTexture = textures.baseColor;
+        impostor->roughnessMetalnessAoTexture = textures.roughnessMetalnessAo;
+        impostor->normalTexture = textures.normal;
+        impostor->depthTexture = textures.depth;
+
+        impostor->isGenerated = textures.IsComplete();
+
+        return impostor;
+
+    }
+
+    ImpostorLoader::ImpostorTextures ImpostorLoader::LoadImpostorTextures(const std::vector<char>& data,
+        const std::string& filename, bool binaryJson, int32_t maxResolution) {
+
+        auto j = ParseFile(data, binaryJson);
+
+        return LoadTextures(j, filename, j.at("resolution").get<int32_t>(), j.at("views").get<int32_t>(), maxResolution);
+
+    }
+
+    json ImpostorLoader::ParseFile(const std::vector<char>& data, bool binaryJson) {
+
+        return binaryJson ? json::from_msgpack(data) : json::parse(data.begin(), data.end());
+
+    }
+
+    ImpostorLoader::ImpostorTextures ImpostorLoader::LoadTextures(json& j, const std::string& filename,
+        int32_t fileResolution, int32_t views, int32_t maxResolution) {
+
+        auto jsonToTexture = [&](const char* name, Ref<Texture::Texture2DArray>& texture, bool depth) {
 
             auto& t = j[name];
 
@@ -46,15 +63,63 @@ namespace Atlas::Loader {
                 std::vector<char> ktxData;
                 try_get_binary_json(t, "ktx2", ktxData);
 
-                auto image = KtxLoader::LoadImageFromMemory(ktxData, filename);
+                auto image = KtxLoader::LoadImageFromMemory(ktxData, filename, false, maxResolution);
                 texture = CreateRef<Texture::Texture2DArray>(image,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
                 return;
             }
 
             // Only uncompressed textures are uploaded into allocated arrays, a compressed one would hold both
-            texture = CreateRef<Texture::Texture2DArray>(impostor->resolution, impostor->resolution,
-                impostor->views * impostor->views, depth ? VK_FORMAT_R16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM,
+            // Below the resolution of the file every step-th texel is kept, averages would mix in empty texels
+            auto resolution = fileResolution;
+            while (resolution > maxResolution && resolution > 1)
+                resolution /= 2;
+            auto step = fileResolution / resolution;
+            auto texelSize = depth ? sizeof(uint16_t) : 4 * sizeof(uint8_t);
+            auto layerSize = size_t(resolution) * size_t(resolution) * texelSize;
+
+            // All layers are uploaded at once, every upload transitions the whole array
+            std::vector<uint8_t> layerData(layerSize * t.size());
+            auto copyLayer = [&](const uint8_t* texels, size_t layer) {
+                auto destination = layerData.data() + layer * layerSize;
+                if (step == 1) {
+                    std::memcpy(destination, texels, layerSize);
+                    return;
+                }
+                for (int32_t y = 0; y < resolution; y++) {
+                    for (int32_t x = 0; x < resolution; x++) {
+                        auto source = (size_t(y * step) * size_t(fileResolution) + size_t(x * step)) * texelSize;
+                        std::memcpy(destination + (size_t(y) * size_t(resolution) + size_t(x)) * texelSize,
+                            texels + source, texelSize);
+                    }
+                }
+                };
+
+            auto fileLayerSize = size_t(fileResolution) * size_t(fileResolution) * texelSize;
+            size_t layerCount = 0;
+            for (auto& jsonLayer : t) {
+                const auto& binary = jsonLayer["data"].get_binary();
+                if (depth) {
+                    if (binary.size() != fileLayerSize)
+                        throw ResourceLoadException(filename, "Impostor depth layer has the wrong size");
+                    copyLayer(binary.data(), layerCount++);
+                }
+                else {
+                    int32_t width, height, channels;
+                    auto pixels = stbi_load_from_memory(binary.data(), int32_t(binary.size()), &width, &height, &channels, 4);
+                    if (!pixels)
+                        throw ResourceLoadException(filename, "Couldn't decode impostor layer");
+                    if (width != fileResolution || height != fileResolution) {
+                        stbi_image_free(pixels);
+                        throw ResourceLoadException(filename, "Impostor layer has the wrong size");
+                    }
+                    copyLayer(pixels, layerCount++);
+                    stbi_image_free(pixels);
+                }
+            }
+
+            texture = CreateRef<Texture::Texture2DArray>(resolution, resolution,
+                views * views, depth ? VK_FORMAT_R16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
@@ -64,51 +129,22 @@ namespace Atlas::Loader {
 
             VkOffset3D offset{ 0, 0, 0 };
             VkExtent3D extent{ texture->image->width, texture->image->height, 1 };
+            transferManager.UploadImageData(layerData.data(), texture->image.get(), offset, extent, 0, uint32_t(layerCount));
 
-            std::vector<uint8_t> jsonData;
-
-            int32_t layerCount = 0;
-            for (auto& jsonLayer : t) {                
-                if (depth) {
-                    try_get_binary_json(jsonLayer, "data", jsonData);
-
-                    transferManager.UploadImageData(jsonData.data(), texture->image.get(),
-                        offset, extent, layerCount++, 1);
-                }
-                else {
-                    try_get_binary_json(jsonLayer, "data", jsonData);
-
-                    int32_t width, height, channels;
-                    void* data = stbi_load_from_memory(jsonData.data(),
-                        (int32_t)jsonData.size(), &width, &height, &channels, 0);
-
-                    transferManager.UploadImageData(data, texture->image.get(),
-                        offset, extent, layerCount++, 1);
-
-                    stbi_image_free(data);
-                }                
-            }
-            
             transferManager.EndMultiTransfer();
             };
-        
-        if (j.contains("baseColor")) {
-            jsonToTexture("baseColor", impostor->baseColorTexture, false);
-        }
-        if (j.contains("roughnessMetalnessAo")) {
-            jsonToTexture("roughnessMetalnessAo", impostor->roughnessMetalnessAoTexture, false);
-        }
-        if (j.contains("normal")) {
-            jsonToTexture("normal", impostor->normalTexture, false);
-        }
-        if (j.contains("depth")) {
-            jsonToTexture("depth", impostor->depthTexture, true);
-        }
 
-        impostor->isGenerated = impostor->baseColorTexture && impostor->roughnessMetalnessAoTexture &&
-            impostor->normalTexture && impostor->depthTexture;
+        ImpostorTextures textures;
+        if (j.contains("baseColor"))
+            jsonToTexture("baseColor", textures.baseColor, false);
+        if (j.contains("roughnessMetalnessAo"))
+            jsonToTexture("roughnessMetalnessAo", textures.roughnessMetalnessAo, false);
+        if (j.contains("normal"))
+            jsonToTexture("normal", textures.normal, false);
+        if (j.contains("depth"))
+            jsonToTexture("depth", textures.depth, true);
 
-        return impostor;
+        return textures;
 
     }
 

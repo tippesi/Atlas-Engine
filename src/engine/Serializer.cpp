@@ -54,6 +54,18 @@ namespace Atlas {
 
         Ref<Scene::Scene> Serializer::DeserializeScene(const std::string& filename, bool binaryJson) {
 
+            // The meshes are requested while the scene is read, textures must not start between them
+            struct TextureLoadHold {
+                TextureLoadHold() {
+                    ResourceManager<Texture::Texture2D>::HoldAsyncLoads();
+                    ResourceManager<Mesh::Impostor>::HoldAsyncLoads();
+                }
+                ~TextureLoadHold() {
+                    ResourceManager<Texture::Texture2D>::ReleaseAsyncLoads();
+                    ResourceManager<Mesh::Impostor>::ReleaseAsyncLoads();
+                }
+            } textureLoadHold;
+
             Loader::AssetLoader::UnpackFile(filename);
             auto path = Loader::AssetLoader::GetFullPath(filename);
 

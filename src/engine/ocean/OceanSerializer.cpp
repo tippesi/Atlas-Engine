@@ -92,7 +92,7 @@ namespace Atlas::Ocean {
 
         // Normals and foam are data, not colors
         auto loadTexture = [&](const char* key) {
-            return j.contains(key) ? ResourceManager<Texture::Texture2D>::GetOrLoadResource(j[key], false,
+            return j.contains(key) ? ResourceManager<Texture::Texture2D>::GetOrLoadResourceAsync(j[key], false,
                 Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0) : ResourceHandle<Texture::Texture2D>();
         };
         p.rippleTexture = loadTexture("rippleTexture");

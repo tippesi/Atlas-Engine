@@ -65,7 +65,10 @@ namespace Atlas::Loader {
 
         fileStream.close();
 
-        if (saveImpostor && mesh->impostor.IsLoaded()) {
+        // Impostors the streaming reduced keep the file they were loaded from
+        const auto& impostor = mesh->impostor;
+        if (saveImpostor && impostor.IsLoaded() && impostor->IsResident() &&
+            impostor->baseColorTexture->width == impostor->resolution) {
             ImpostorLoader::SaveImpostor(mesh->impostor.Get(), mesh->impostor.GetResource()->path, binaryJson);
         }
 

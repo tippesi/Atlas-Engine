@@ -24,6 +24,7 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Exposure compensation (EV)", &postProcessing.exposureCompensation, -10.0f, 10.0f);
         ImGui::Checkbox("Filmic tonemapping", &postProcessing.filmicTonemapping);
         ImGui::ColorEdit3("Tint", glm::value_ptr(postProcessing.tint));
+        ImGui::SetItemTooltip("Multiplies the linear colors before tone mapping, bright surfaces stay white");
         ImGui::SliderFloat("Saturation", &postProcessing.saturation, 0.0f, 2.0f);
         ImGui::SliderFloat("Contrast", &postProcessing.contrast, 0.0f, 2.0f);
         ImGui::SliderFloat("Paper white luminance", &postProcessing.paperWhiteLuminance, 0.0f, 300.0f);

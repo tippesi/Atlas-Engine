@@ -7,11 +7,10 @@
 #include <atomic>
 #include <deque>
 #include <mutex>
+#include <shared_mutex>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#define GPU_PROFILER_MAX_THREADS 32
 
 namespace Atlas {
 
@@ -114,7 +113,6 @@ namespace Atlas {
             uint32_t poolIdx = 0;
 
             size_t frameIdx = 0;
-            bool isValid = false;
         };
 
         struct ThreadHistory {
@@ -128,16 +126,21 @@ namespace Atlas {
 
         static std::vector<ThreadData> GetThreadData(uint32_t frameCount, OrderBy order);
 
-        static ThreadContext& GetThreadContext();
+        // Null if the thread doesn't record, the latest context if it records several at once
+        static Ref<ThreadContext> GetThreadContext();
 
-        static std::atomic_int threadContextCount;
-        static std::vector<ThreadContext> threadContexts;
+        // Threads recording right now. Jobs of a frame which wasn't rendered can still record during the next frame
+        static std::shared_mutex threadContextsMutex;
+        static std::vector<Ref<ThreadContext>> threadContexts;
 
         static std::mutex unevaluatedThreadContextsMutex;
         static std::deque<ThreadContext> unevaluatedThreadContexts;
 
         static std::unordered_map<std::string, ThreadHistory> queryHistory;
-        static size_t frameIdx;
+        static std::atomic_size_t frameIdx;
+
+        // Contexts of threads which never ended their recording are dropped after this many frames
+        static constexpr size_t maxContextFrames = 64;
 
         static bool supportsDebugMarkers;
 

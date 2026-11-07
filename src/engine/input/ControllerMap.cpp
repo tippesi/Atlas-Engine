@@ -1,9 +1,12 @@
 #include "ControllerMap.h"
+#include "common/MathHelper.h"
 
 namespace Atlas::Input {
 
     std::unordered_map<uint8_t, ControllerMap::ButtonState> ControllerMap::buttons;
     std::unordered_map<uint8_t, float> ControllerMap::axes;
+    bool ControllerMap::connected = false;
+    bool ControllerMap::connectionChanged = true;
 
     void ControllerMap::Init() {
 
@@ -28,7 +31,12 @@ namespace Atlas::Input {
 
     bool ControllerMap::IsConnected() {
 
-        return SDL_HasGamepad();
+        // SDL_HasGamepad enumerates the joysticks under a lock, scripts ask many times per frame
+        if (connectionChanged) {
+            connected = SDL_HasGamepad();
+            connectionChanged = false;
+        }
+        return connected;
 
     }
 
@@ -49,6 +57,24 @@ namespace Atlas::Input {
 
     }
 
+    void ControllerMap::Rumble(float low, float high, float seconds) {
+
+        if (!IsConnected())
+            return;
+
+        auto strength = [](float value) { return Uint16(Helper::Math::Saturate(value) * 65535.0f); };
+        auto milliseconds = Uint32(glm::max(seconds, 0.0f) * 1000.0f);
+
+        int32_t count = 0;
+        auto ids = SDL_GetGamepads(&count);
+        for (int32_t i = 0; ids && i < count; i++) {
+            if (auto gamepad = SDL_GetGamepadFromID(ids[i]))
+                SDL_RumbleGamepad(gamepad, strength(low), strength(high), milliseconds);
+        }
+        SDL_free(ids);
+
+    }
+
     void ControllerMap::HandleButtonEvent(const Events::ControllerButtonEvent& event) {
 
         buttons[event.button] = ButtonState {
@@ -66,6 +92,7 @@ namespace Atlas::Input {
 
     void ControllerMap::HandleDeviceEvent(const Events::ControllerDeviceEvent& event) {
 
+        connectionChanged = true;
         // Pressed buttons and deflected sticks of a removed controller would otherwise stay
         if (event.type == AE_CONTROLLER_REMOVED && !IsConnected()) {
             buttons.clear();

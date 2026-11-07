@@ -299,14 +299,10 @@ void main() {
 
     // At the edge we have invalid information we want to get rid of
     historyLength = mix(min(historyLength, 8.0), historyLength, EdgeFadeOut(uv, 0.05));
-    float factor = 31.0 / 32.0;
-    factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
-         || uv.y > 1.0) ? 0.0 : factor;
-    
-    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
-    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
+    float factor = max(0.75, 31.0 / 32.0 - 20.0 * max(abs(velocity.x), abs(velocity.y)));
 
-    if (factor == 0.0 || !valid) {
+    bool offscreen = uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0;
+    if (offscreen || pushConstants.resetHistory > 0 || !valid) {
         historyLength = 0.0;
     }
 

@@ -107,6 +107,8 @@ namespace Atlas {
             bool gpuCulled = false;
             Volume::Frustum frustum;
             std::vector<GPUDraw> gpuDraws;
+            // The same draws for the instances which are drawn after the occlusion test of the main pass
+            std::vector<GPUDraw> gpuLateDraws;
 
             Ref<Graphics::MultiBuffer> currentMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;

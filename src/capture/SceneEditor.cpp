@@ -21,6 +21,7 @@
 #include "scene/components/ComponentSerializer.h"
 #include "scene/components/LuaScriptComponent.h"
 #include "scripting/Script.h"
+#include "materialgraph/Baker.h"
 #include "tools/ImpostorTool.h"
 #include "Serializer.h"
 
@@ -266,6 +267,34 @@ namespace Atlas::Capture {
 
     }
 
+    // The animation files matching a pattern or a list of patterns, e.g. "models/skinned/animations/Horse_*.aeanimation"
+    static std::vector<std::string> FindAnimationFiles(const json& j) {
+
+        std::vector<std::string> paths;
+        for (const auto& pattern : ToAssetPatterns(j)) {
+            auto directory = fs::path(pattern).parent_path();
+            if (!fs::is_directory(GetAssetDirectory() / directory))
+                throw std::runtime_error("animations: no directory " + directory.generic_string());
+            for (const auto& file : fs::directory_iterator(GetAssetDirectory() / directory)) {
+                auto path = (directory / file.path().filename()).generic_string();
+                if (file.is_regular_file() && file.path().extension() == ".aeanimation" && Helper::String::MatchWildcard(pattern, path))
+                    paths.push_back(path);
+            }
+        }
+        std::sort(paths.begin(), paths.end());
+        return paths;
+
+    }
+
+    static std::vector<std::string> GetAnimationFiles(const Mesh::Mesh& mesh) {
+
+        std::vector<std::string> paths;
+        for (const auto& animation : mesh.data.animations)
+            paths.push_back(animation.GetResource()->path);
+        return paths;
+
+    }
+
     // Settings of the meshCopy and meshSettings operations
     static void ApplyMeshSettings(Mesh::Mesh& mesh, const json& settings) {
 
@@ -274,6 +303,16 @@ namespace Atlas::Capture {
         mesh.vegetation = settings.value("vegetation", mesh.vegetation);
         mesh.castShadow = settings.value("castShadow", mesh.castShadow);
         mesh.rayTrace = settings.value("rayTrace", mesh.rayTrace);
+        mesh.minScreenSize = settings.value("minScreenSize", mesh.minScreenSize);
+        mesh.animationLodDistance = settings.value("animationLodDistance", mesh.animationLodDistance);
+        mesh.animationMaxInterval = settings.value("animationMaxInterval", mesh.animationMaxInterval);
+        if (settings.contains("animations")) {
+            mesh.data.animations.clear();
+            for (const auto& path : FindAnimationFiles(settings["animations"])) {
+                mesh.data.animations.push_back(ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoader(
+                    path, ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true));
+            }
+        }
         // Instances moved by the physics need the motion of the last frame
         if (settings.contains("movable"))
             mesh.mobility = settings["movable"].get<bool>() ? Mesh::MeshMobility::Movable : Mesh::MeshMobility::Stationary;
@@ -974,6 +1013,10 @@ namespace Atlas::Capture {
                 settings.value("vegetation", mesh->vegetation) == mesh->vegetation &&
                 settings.value("castShadow", mesh->castShadow) == mesh->castShadow &&
                 settings.value("rayTrace", mesh->rayTrace) == mesh->rayTrace &&
+                settings.value("minScreenSize", mesh->minScreenSize) == mesh->minScreenSize &&
+                settings.value("animationLodDistance", mesh->animationLodDistance) == mesh->animationLodDistance &&
+                settings.value("animationMaxInterval", mesh->animationMaxInterval) == mesh->animationMaxInterval &&
+                (!settings.contains("animations") || FindAnimationFiles(settings["animations"]) == GetAnimationFiles(*mesh.Get())) &&
                 settings.value("movable", mesh->mobility == Mesh::MeshMobility::Movable) == (mesh->mobility == Mesh::MeshMobility::Movable);
             auto bake = settings.contains("impostor") && (!unchanged || !IsImpostorCurrent(mesh, file.path(), settings["impostor"]));
             if (unchanged && !bake)
@@ -1250,8 +1293,8 @@ namespace Atlas::Capture {
         auto& state = context.state;
         json affected = json::array();
 
-        // Converts the textures of all materials below the directories into compressed KTX2 files next to the
-        // sources and points the materials to them, a .backup of each changed material file is kept
+        // Converts the textures of all materials and material graphs below the directories into compressed KTX2 files
+        // next to the sources and points the files to them, a .backup of each changed file is kept
         std::map<std::string, std::string> conversions;
         std::vector<std::pair<fs::path, json>> materials;
         for (const auto& directory : operation.at("directories")) {
@@ -1259,16 +1302,17 @@ namespace Atlas::Capture {
             if (!fs::is_directory(root))
                 throw std::runtime_error("compressTextures: " + directory.get<std::string>() + " isn't a directory");
             for (const auto& file : fs::recursive_directory_iterator(root, fs::directory_options::follow_directory_symlink)) {
-                if (!file.is_regular_file() || file.path().extension() != ".aematerial")
+                auto extension = file.path().extension();
+                if (!file.is_regular_file() || (extension != ".aematerial" && extension != ".aematgraph"))
                     continue;
                 std::ifstream input(file.path());
                 auto material = json::parse(input);
                 auto materialDirectory = fs::relative(file.path().parent_path(), GetAssetDirectory());
                 bool changed = false;
-                for (auto& [key, value] : material.items()) {
-                    if (!key.ends_with("MapPath") || !value.is_string() || Loader::KtxLoader::IsKtxFile(value.get<std::string>()))
-                        continue;
-                    // References inside packages are relative to the material
+                auto convert = [&](json& value) {
+                    if (!value.is_string() || Loader::KtxLoader::IsKtxFile(value.get<std::string>()))
+                        return;
+                    // References inside packages are relative to the file
                     auto reference = value.get<std::string>();
                     auto source = reference.starts_with("./") || reference.starts_with("../") ?
                         (materialDirectory / reference).lexically_normal().generic_string() : reference;
@@ -1276,6 +1320,20 @@ namespace Atlas::Capture {
                     conversions[source] = target;
                     value = fs::path(reference).replace_extension(".ktx2").generic_string();
                     changed = true;
+                    };
+                for (auto& [key, value] : material.items()) {
+                    if (key.ends_with("MapPath"))
+                        convert(value);
+                }
+                if (material.contains("graphTextures")) {
+                    for (auto& [_, value] : material["graphTextures"].items())
+                        convert(value);
+                }
+                if (material.contains("nodes")) {
+                    for (auto& node : material["nodes"]) {
+                        if (node.contains("texturePath"))
+                            convert(node["texturePath"]);
+                    }
                 }
                 if (changed)
                     materials.emplace_back(file.path(), material);
@@ -1296,7 +1354,7 @@ namespace Atlas::Capture {
 
         // The encoder runs single threaded per image
         std::vector<std::string> failed(pending.size());
-        JobGroup group{ "Compress textures", JobPriority::Medium };
+        JobGroup group{ "Compress textures", JobPriority::High };
         JobSystem::ParallelFor(group, int32_t(pending.size()), int32_t(pending.size()), [&](JobData&, int32_t idx) {
             const auto& [source, target] = pending[idx];
             if (!fs::exists(GetAssetDirectory() / source)) {
@@ -1348,20 +1406,52 @@ namespace Atlas::Capture {
 
     }
 
+    static json EditBakeMaterial(EditContext& context, const json& operation) {
+
+        auto path = ToAssetPath(operation.at("material").get<std::string>());
+        auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(path, ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+        if (!material.IsLoaded())
+            throw std::runtime_error("bakeMaterial: couldn't load " + path);
+
+        auto meshPath = operation.at("mesh").get<std::string>();
+        auto mesh = LoadMeshForScene(meshPath);
+
+        auto& settings = material->graphBake;
+        settings.mode = operation.value("mode", std::string("textures")) == "average" ? MaterialGraph::BakeMode::Average : MaterialGraph::BakeMode::Textures;
+        settings.resolution = operation.value("resolution", 1024);
+        settings.time = operation.value("time", 0.0f);
+        settings.meshPath = ToAssetPath(meshPath);
+
+        // Pipelines of the graph don't change, the compiled state decides whether a bake is up to date
+        if (material->HasGraph() && !material->graph->GetCompiled())
+            material->graph->Compile();
+
+        auto result = MaterialGraph::Baker::Bake(material, mesh);
+        if (!result.success)
+            throw std::runtime_error("bakeMaterial: " + result.error);
+
+        Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
+
+        return { { "material", path }, { "maps", result.maps }, { "baseColor", { material->baseColor.x, material->baseColor.y, material->baseColor.z } },
+            { "roughness", material->roughness }, { "metalness", material->metalness }, { "emissiveIntensity", material->emissiveIntensity } };
+
+    }
+
     static json EditMeshMaterials(EditContext& context, const json& operation) {
 
         json affected = json::array();
 
         // Replaces materials of mesh files, e.g. of copies made by meshCopy
-        const auto& replace = operation.at("replace");
+        auto replace = operation.value("replace", json::object());
+        auto replacementForAll = operation.value("all", std::string());
         for (const auto& meshPath : operation.at("meshes")) {
             auto mesh = LoadMeshForScene(meshPath.get<std::string>());
             int32_t replaced = 0;
             for (auto& material : mesh->data.materials) {
                 auto path = material.GetResource()->path;
-                if (!replace.contains(path))
+                if (replacementForAll.empty() && !replace.contains(path))
                     continue;
-                auto newPath = ToAssetPath(replace[path].get<std::string>());
+                auto newPath = ToAssetPath(replacementForAll.empty() ? replace[path].get<std::string>() : replacementForAll);
                 auto newMaterial = ResourceManager<Material>::GetOrLoadResourceWithLoader(newPath,
                     ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
                 if (!newMaterial.IsLoaded())
@@ -1614,6 +1704,7 @@ namespace Atlas::Capture {
         { "constraint", EditConstraint },
         { "materialCopy", EditMaterialCopy },
         { "compressTextures", EditCompressTextures },
+        { "bakeMaterial", EditBakeMaterial },
         { "meshMaterials", EditMeshMaterials },
         { "meshCopy", EditMeshCopy },
         { "makePrefab", EditMakePrefab },

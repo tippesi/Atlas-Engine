@@ -163,8 +163,69 @@ namespace Atlas::Physics {
         settings.mStickToFloorStepDown = VecToJPHVec(stickToGroundDist);
         settings.mWalkStairsStepUp = VecToJPHVec(walkStairsStepUpDist);
 
-        character->ExtendedUpdate(deltaTime, VecToJPHVec(gravityVector), settings,
-            broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+        // The steps of CharacterVirtual::ExtendedUpdate, done here to know how far sticking to the floor and walking
+        // up stairs moved the character (stepMovement)
+        stepMovement = vec3(0.0f);
+        character->StartTrackingContactChanges();
+
+        auto up = character->GetUp();
+        auto desiredVelocity = character->GetLinearVelocity();
+        character->SetLinearVelocity(character->CancelVelocityTowardsSteepSlopes(desiredVelocity));
+
+        auto oldPosition = character->GetPosition();
+        auto groundToAir = character->IsSupported();
+
+        character->Update(deltaTime, VecToJPHVec(gravityVector), broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+
+        if (character->IsSupported())
+            groundToAir = false;
+
+        // Going from supported to not supported without moving up the character sticks to the floor
+        if (groundToAir && !settings.mStickToFloorStepDown.IsNearZero()) {
+            auto velocity = JPH::Vec3(character->GetPosition() - oldPosition).Dot(up) / deltaTime;
+            if (velocity <= 1.0e-6f) {
+                auto position = character->GetPosition();
+                character->StickToFloor(settings.mStickToFloorStepDown, broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+
+                // Only the drop that the slope of the floor doesn't explain is a step, walking down a slope isn't
+                auto movement = JPH::Vec3(character->GetPosition() - oldPosition);
+                auto horizontal = (movement - movement.Dot(up) * up).Length();
+                auto cosSlope = glm::clamp(character->GetGroundNormal().Dot(up), 0.01f, 1.0f);
+                auto slopeDrop = horizontal * glm::sqrt(1.0f - cosSlope * cosSlope) / cosSlope;
+                auto drop = -JPH::Vec3(character->GetPosition() - position).Dot(up);
+                if (drop > slopeDrop)
+                    stepMovement -= JPHVecToVec(up) * (drop - slopeDrop);
+            }
+        }
+
+        // Held back by a slope that is too steep the character tries to walk up a stair
+        auto desiredStep = desiredVelocity * deltaTime;
+        desiredStep -= desiredStep.Dot(up) * up;
+        auto desiredStepLength = desiredStep.Length();
+        if (!settings.mWalkStairsStepUp.IsNearZero() && desiredStepLength > 0.0f) {
+            auto forward = desiredStep / desiredStepLength;
+            auto achievedStep = JPH::Vec3(character->GetPosition() - oldPosition);
+            auto achievedStepLength = glm::max(0.0f, achievedStep.Dot(forward));
+
+            if (achievedStepLength + 1.0e-4f < desiredStepLength && character->CanWalkStairs(desiredVelocity)) {
+                auto stepForward = forward * glm::max(settings.mWalkStairsMinStepForward, desiredStepLength - achievedStepLength);
+
+                // Tests for the floor in the direction of the ground normal, unless it points away from the movement
+                auto stepForwardTest = -character->GetGroundNormal();
+                stepForwardTest -= stepForwardTest.Dot(up) * up;
+                stepForwardTest = stepForwardTest.NormalizedOr(forward);
+                if (stepForwardTest.Dot(forward) < settings.mWalkStairsCosAngleForwardContact)
+                    stepForwardTest = forward;
+                stepForwardTest *= settings.mWalkStairsStepForwardTest;
+
+                auto position = character->GetPosition();
+                character->WalkStairs(deltaTime, settings.mWalkStairsStepUp, stepForward, stepForwardTest,
+                    settings.mWalkStairsStepDownExtra, broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+                stepMovement += JPHVecToVec(JPH::Vec3(character->GetPosition() - position));
+            }
+        }
+
+        character->FinishTrackingContactChanges();
 
     }
 

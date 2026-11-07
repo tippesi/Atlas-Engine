@@ -2,7 +2,16 @@
 #include <wind.hsh>
 
 layout(location=0) in vec3 vPosition;
-#ifdef OPACITY_MAP
+#ifdef MATERIAL_GRAPH
+layout(location=1) in vec4 vNormal;
+#ifdef TANGENTS
+layout(location=3) in vec4 vTangent;
+#endif
+#ifdef VERTEX_COLORS
+layout(location=4) in vec4 vVertexColors;
+#endif
+#endif
+#if defined(OPACITY_MAP) || (defined(MATERIAL_GRAPH) && defined(TEX_COORDS))
 layout(location=2) in vec2 vTexCoord;
 #endif
 #ifdef SKINNED
@@ -10,8 +19,17 @@ layout(location=5) in uvec4 vJoints;
 layout(location=6) in vec4 vWeights;
 #endif
 
-#ifdef OPACITY_MAP
+#if defined(OPACITY_MAP) || defined(MATERIAL_GRAPH_SURFACE)
 layout(location=0) out vec2 texCoordVS;
+#endif
+
+#ifdef MATERIAL_GRAPH_SURFACE
+layout(location=1) out vec3 worldPositionVS;
+layout(location=2) out vec3 worldNormalVS;
+layout(location=3) out vec4 vertexColorsVS;
+layout(location=10) out vec3 objectPositionVS;
+layout(location=11) out vec3 instancePositionVS;
+layout(location=12) out vec3 objectNormalVS;
 #endif
 
 #ifdef INSTANCE_BUFFER
@@ -41,6 +59,9 @@ layout(push_constant) uniform constants {
     uint jointOffset;
     uint jointCount;
     uint instanceOffset;
+#ifdef MATERIAL_GRAPH
+    uint materialGraphOffset;
+#endif
 } PushConstants;
 
 void main() {
@@ -68,6 +89,46 @@ void main() {
         weights.w * jointMatrices[jointOffset + vJoints.w];
 
     position = vec4(vPosition, 1.0) * skinMatrix;
+#endif
+
+#ifdef MATERIAL_GRAPH
+    vec3 graphNormal = vNormal.xyz;
+    vec2 graphTexCoord = vec2(0.0);
+    vec3 graphTangent = vec3(1.0, 0.0, 0.0);
+    vec4 graphColor = vec4(1.0);
+#ifdef SKINNED
+    graphNormal = vec4(graphNormal, 0.0) * skinMatrix;
+#endif
+#ifdef TEX_COORDS
+    graphTexCoord = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+#endif
+#ifdef TANGENTS
+    graphTangent = vTangent.xyz;
+#endif
+#ifdef VERTEX_COLORS
+    graphColor = vVertexColors;
+#endif
+
+    MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, graphNormal, graphTangent, graphTexCoord, graphColor,
+        mMatrix, globalData.time, PushConstants.materialGraphOffset);
+    WriteMaterialVaryings(graphInput);
+
+#ifdef MATERIAL_GRAPH_SURFACE
+    texCoordVS = graphTexCoord;
+    objectPositionVS = vPosition;
+    objectNormalVS = graphNormal;
+    instancePositionVS = vec3(mMatrix[3]);
+    worldNormalVS = graphInput.worldNormal;
+    vertexColorsVS = graphColor;
+#endif
+
+#ifdef MATERIAL_GRAPH_VERTEX_OFFSET
+    position += EvaluateMaterialVertexOffset(graphInput);
+#endif
+
+#ifdef MATERIAL_GRAPH_SURFACE
+    worldPositionVS = vec3(mMatrix * vec4(position, 1.0));
+#endif
 #endif
 
     if (PushConstants.vegetation > 0) {

@@ -24,25 +24,22 @@ endif()
 
 # Set built type macros ###########################################################################
 if (DEFINED CMAKE_BUILD_TYPE)
-    # We want the better/safer usertypes, such that we don't crash everything
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
     elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO)
     else()
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG)
     endif()
 else()
     # This is for non-single config generators like XCode
-    # Release compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Release>:AE_BUILDTYPE_RELEASE>" 
-        "$<$<CONFIG:Release>:SOL_ALL_SAFETIES_ON>")
-    # RelWithDebInfo compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:RelWithDebInfo>:AE_BUILDTYPE_RELWITHDEBINFO>" 
-        "$<$<CONFIG:RelWithDebInfo>:SOL_ALL_SAFETIES_ON>")
-    # Debug compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>" 
-        "$<$<CONFIG:Debug>:SOL_ALL_SAFETIES_ON>")
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Release>:AE_BUILDTYPE_RELEASE>"
+        "$<$<CONFIG:RelWithDebInfo>:AE_BUILDTYPE_RELWITHDEBINFO>" "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>")
+endif()
+
+# Checked usertypes and calls, such that a script error doesn't crash everything
+if(ATLAS_LUA_SAFETIES)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} SOL_ALL_SAFETIES_ON)
 endif()
 
 # Configure platform specific stuff ###############################################################

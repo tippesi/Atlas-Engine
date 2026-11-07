@@ -18,6 +18,7 @@
 #include "bindings/PostProcessingBindings.h"
 #include "bindings/ResourceBindings.h"
 #include "bindings/SceneBindings.h"
+#include "bindings/StreamingBindings.h"
 #include "bindings/UtilityBindings.h"
 
 namespace Atlas::Scripting {
@@ -51,6 +52,7 @@ namespace Atlas::Scripting {
         Bindings::GenerateControllerBindings(atlasNs);
         Bindings::GenerateGraphicBindings(atlasNs);
         Bindings::GenerateResourceManagerBindings(atlasNs);
+        Bindings::GenerateStreamingBindings(atlasNs);
 
     }    
 

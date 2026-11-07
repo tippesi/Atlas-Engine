@@ -14,7 +14,9 @@ namespace Atlas {
             bool enable = true;
             bool enableAo = true;
 
-            float radius = 1.0f;
+            float radius = 1000.0f;
+            // Surface thickness per meter of view distance
+            float thickness = 0.032f;
             
             int32_t rayCount = 2;
             int32_t sampleCount = 8;

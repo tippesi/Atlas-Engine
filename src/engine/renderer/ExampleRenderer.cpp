@@ -207,7 +207,7 @@ namespace Atlas {
 
                 for (auto &subData: mesh->data.subData) {
                     auto baseColorTexture = subData.material->baseColorMap;
-                    if (subData.material->HasBaseColorMap()) {
+                    if (subData.material->baseColorMap.IsLoaded()) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
                     }
 

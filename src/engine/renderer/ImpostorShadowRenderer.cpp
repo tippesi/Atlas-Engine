@@ -30,27 +30,32 @@ namespace Atlas {
 
             auto lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
 
-            // The instances are read from the instance buffer, except the ones of skinned meshes
+            PushConstants constants = {
+                .lightSpaceMatrix = lightSpaceMatrix,
+
+                .lightLocation = vec4(lightLocation, 1.0f),
+                .lightUp = glm::transpose(lightViewMatrix)[1],
+                .lightRight = glm::transpose(lightViewMatrix)[0]
+            };
+
+            // The instances are read from the instance buffer, except the ones of skinned meshes. All impostors share
+            // a few pipeline variants, a pipeline is only looked up and bound when the variant changes
+            int32_t boundVariant = -1;
             auto bindImpostor = [&](Mesh::Mesh* mesh, bool useInstanceBuffer) {
-                auto config = GetPipelineConfig(frameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset,
-                    useInstanceBuffer);
-                auto pipeline = PipelineManager::GetPipeline(config);
+                auto& impostor = mesh->impostor;
+                auto variant = int32_t(impostor->interpolation) | int32_t(impostor->pixelDepthOffset) << 1 | int32_t(useInstanceBuffer) << 2;
+                if (variant != boundVariant) {
+                    boundVariant = variant;
+                    auto config = GetPipelineConfig(frameBuffer, impostor->interpolation, impostor->pixelDepthOffset, useInstanceBuffer);
+                    auto pipeline = PipelineManager::GetPipeline(config);
+                    commandList->BindPipeline(pipeline);
+                    commandList->PushConstants(pipeline->shader->GetPushConstantRange("constants"), &constants);
+                }
 
-                commandList->BindPipeline(pipeline);
-
-                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
-                mesh->impostor->depthTexture->Bind(commandList, 3, 1);
-                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 2);
-                mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 3);
-
-                PushConstants constants = {
-                    .lightSpaceMatrix = lightSpaceMatrix,
-
-                    .lightLocation = vec4(lightLocation, 1.0f),
-                    .lightUp = glm::transpose(lightViewMatrix)[1],
-                    .lightRight = glm::transpose(lightViewMatrix)[0]
-                };
-                commandList->PushConstants("constants", &constants);
+                impostor->baseColorTexture->Bind(commandList, 3, 0);
+                impostor->depthTexture->Bind(commandList, 3, 1);
+                impostor->viewPlaneBuffer.Bind(commandList, 3, 2);
+                impostor->impostorInfoBuffer.Bind(commandList, 3, 3);
             };
 
             for (const auto& item : renderPass->meshToInstancesMap) {

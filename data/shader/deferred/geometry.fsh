@@ -28,6 +28,12 @@ layout(location=5) in vec4 vertexColorsVS;
 layout(location=7) in mat3 TBN;
 #endif
 
+#ifdef MATERIAL_GRAPH_SURFACE
+layout(location=10) in vec3 objectPositionVS;
+layout(location=11) in vec3 instancePositionVS;
+layout(location=12) in vec3 objectNormalVS;
+#endif
+
 layout(push_constant) uniform constants {
     uint vegetation;
     uint invertUVs;
@@ -53,6 +59,9 @@ layout(push_constant) uniform constants {
     uint jointOffset;
     uint jointCount;
     uint instanceOffset;
+#ifdef MATERIAL_GRAPH
+    uint materialGraphOffset;
+#endif
 } PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
@@ -103,10 +112,55 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
 void main() {
 
+#ifdef MATERIAL_GRAPH_SURFACE
+    vec2 graphTexCoord = vec2(0.0);
+    vec4 graphColor = vec4(1.0);
+#ifdef TEX_COORDS
+    graphTexCoord = texCoordVS;
+#endif
+#ifdef VERTEX_COLORS
+    graphColor = vertexColorsVS;
+#endif
+
+    float graphFrontFacing = gl_FrontFacing ? 1.0 : -1.0;
+    vec3 graphGeometryNormal = normalize(normalVS) * (PushConstants.twoSided > 0 ? graphFrontFacing : 1.0);
+    mat3 graphTangentFrame = mat3(1.0);
+#if defined(MATERIAL_GRAPH_WRITES_NORMAL) || defined(MATERIAL_GRAPH_USES_TANGENTS)
+#ifdef NORMAL_MAP
+    graphTangentFrame = TBN;
+#else
+    graphTangentFrame = MGCotangentFrame(graphGeometryNormal, positionVS, graphTexCoord);
+#endif
+#endif
+
+    MaterialSurfaceInput surfaceInput = CreateMaterialSurfaceInput(objectPositionVS, normalize(objectNormalVS),
+        vec3(globalData.ivMatrix * vec4(positionVS, 1.0)), normalize(mat3(globalData.ivMatrix) * graphGeometryNormal),
+        instancePositionVS, graphTangentFrame, graphTexCoord, 0.5 * ndcCurrentVS.xy / ndcCurrentVS.z + 0.5,
+        graphColor, graphFrontFacing, PushConstants.materialGraphOffset);
+    MaterialSurfaceOutput surface = EvaluateMaterialSurface(surfaceInput);
+
+#ifdef MATERIAL_GRAPH_OPACITY
+    if (surface.opacity < 0.2)
+        discard;
+#endif
+
+    baseColorFS = surface.baseColor;
+    emissiveFS = surface.emissive;
+    roughnessMetalnessAoFS = vec3(surface.roughness, surface.metalness, surface.ao);
+    geometryNormalFS = EncodeNormal(graphGeometryNormal);
+
+#ifdef MATERIAL_GRAPH_WRITES_NORMAL
+    vec3 graphNormal = normalize(graphTangentFrame * surface.normal);
+    graphNormal *= dot(graphGeometryNormal, graphNormal) < 0.0 ? -1.0 : 1.0;
+    normalFS = EncodeNormal(graphNormal);
+#else
+    normalFS = geometryNormalFS;
+#endif
+#else
 #ifdef TEX_COORDS
     vec2 texCoords = texCoordVS;
 #endif
-    
+
     // Check if usage is valid (otherwise texCoords won't be used)
 #if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP) || defined(EMISSIVE_MAP)) 
     vec3 viewDir = normalize(transpose(TBN) * -positionVS);
@@ -178,6 +232,7 @@ void main() {
 #ifdef AO_MAP
     aoFactor *= SampleAo(texCoords, PushConstants.aoTextureIdx, globalData.mipLodBias);
     roughnessMetalnessAoFS.b = aoFactor;
+#endif
 #endif
 
     // Calculate velocity

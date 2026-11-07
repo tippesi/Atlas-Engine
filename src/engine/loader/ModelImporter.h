@@ -43,7 +43,13 @@ namespace Atlas {
             static Ref<Scene::Scene> ImportScene(const std::string& filename, vec3 min, vec3 max,
                 int32_t depth, bool saveToDisk = true, bool makeMeshesStatic = false,
                 bool invertUVs = false, int32_t maxTextureResolution = 4096,
-                ImportTextureFormat textureFormat = ImportTextureFormat::Original);
+                ImportTextureFormat textureFormat = ImportTextureFormat::Original, bool background = false);
+
+            // Materials and meshes of scenes imported in the background are still being imported until this returns
+            static void WaitForBackgroundImports();
+
+            // Gives the materials of finished background imports their maps, has to be called while nothing renders
+            static void ApplyBackgroundImports();
 
             static std::vector<Ref<Animation::Animation>> ImportAnimations(const std::string& filename,
                 bool saveToDisk = false);
@@ -87,8 +93,6 @@ namespace Atlas {
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> normalTextures;
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> displacementTextures;
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> emissiveTextures;
-
-                std::map<Ref<Common::Image<uint8_t>>, Ref<KtxImage>> ktxImages;
 
                 std::mutex mutexes[static_cast<int>(MaterialImageType::Count)];
 
@@ -154,7 +158,52 @@ namespace Atlas {
                 const aiScene* scene;
 
                 bool isObj;
+
+                JobPriority jobPriority = JobPriority::High;
             };
+
+            struct MaterialTexture {
+                ResourceHandle<Texture::Texture2D> texture;
+                Ref<Common::Image<uint8_t>> image;
+                MaterialImageType type;
+                std::string path;
+            };
+
+            struct SceneMesh {
+                ResourceHandle<Mesh::Mesh> mesh;
+                std::string name;
+                std::string path;
+                vec3 offset = vec3(0.0f);
+                bool isSkinned = false;
+                // Whether the import fills the resource or it was already there
+                bool created = false;
+            };
+
+            struct SceneImportResult {
+                struct MaterialMaps {
+                    ResourceHandle<Material> material;
+                    Ref<Material> maps;
+                };
+
+                std::vector<MaterialMaps> materials;
+                std::vector<ResourceHandle<Mesh::Mesh>> meshes;
+            };
+
+            static void ImportSceneMeshes(ImporterState& state, std::vector<SceneMesh>& meshes, bool invertUVs,
+                int32_t maxTextureResolution, ImportTextureFormat textureFormat, bool saveToDisk, bool background);
+
+            // Loads the images and gives them texture resources, which are empty until they are created
+            static std::vector<MaterialTexture> PrepareMaterialTextures(ImporterState& state, int32_t maxTextureResolution,
+                ImportTextureFormat textureFormat);
+
+            static void CreateMaterialTextures(const ImporterState& state, std::vector<MaterialTexture>& textures,
+                ImportTextureFormat textureFormat, bool saveToDisk);
+
+            static void ApplyMaterialMaps(const SceneImportResult& result);
+
+            static JobGroup backgroundImports;
+            static std::mutex completedImportsMutex;
+            static std::vector<SceneImportResult> completedImports;
 
             static void ImportSkeleton(ImporterState& state, Mesh::Skeleton& skeleton, bool rigidMeshJoints);
 
@@ -179,10 +228,6 @@ namespace Atlas {
 
             static Ref<Common::Image<uint8_t>> LoadMaterialImage(const ImporterState& state, const aiString& aiPath,
                 bool colorSpaceConversion, int32_t forceChannels, int32_t maxTextureResolution);
-
-            static void ConvertImagesToKtx(ImporterState& state);
-
-            static std::vector<Ref<Common::Image<uint8_t>>> ImagesToTextures(ImporterState& state);
 
             static Paths GetPaths(const std::string& filename);
 

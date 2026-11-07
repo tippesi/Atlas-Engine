@@ -1,4 +1,5 @@
 #include "ShadowRenderer.h"
+#include "../materialgraph/PipelineCache.h"
 
 #include "../Clock.h"
 
@@ -26,8 +27,11 @@ namespace Atlas {
             while (!scene->renderState.fillShadowRenderPassesJob.HasFinished() || shadowPass != nullptr) {
                 if (!shadowPass) {
                     // We might need to wait for the next pass to be processed and culled
-                    std::this_thread::yield();
-                    shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
+                    CPUProfiler::Scope waitScope("Wait for shadow passes");
+                    while (!shadowPass && !scene->renderState.fillShadowRenderPassesJob.HasFinished()) {
+                        std::this_thread::yield();
+                        shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
+                    }
                     continue;
                 }
 
@@ -36,11 +40,12 @@ namespace Atlas {
                 shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
             }
 
-            // It might be that between asking for the last pass and checking doneProcessing, that 
-            // another push to the queue has been happening. So check again here
+            // Several workers might have pushed to the queue between asking for the last pass and checking
+            // that the job finished, so empty it now
             shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
-            if (shadowPass != nullptr) {
+            while (shadowPass != nullptr) {
                 ProcessPass(target, scene, commandList, renderList, shadowPass);
+                shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
             }
 
             // Need to also keep track of non processed layer (e.g. long range layers)
@@ -61,6 +66,7 @@ namespace Atlas {
         void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             RenderList* renderList, Ref<RenderList::Pass> shadowPass) {
 
+            CPUProfiler::Scope profilerScope("Shadow pass");
             GPUProfiler::Scope gpuScope("Entity pass " + std::to_string(shadowPass->lightEntity) + " layer " + std::to_string(shadowPass->layer));
 
             auto lightEntity = shadowPass->lightEntity;
@@ -116,6 +122,9 @@ namespace Atlas {
             // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
             scene->renderState.wind.noiseMap.Bind(commandList, 3, 0);
 
+            if (!scene->renderState.materialGraphParameters.empty())
+                scene->renderState.materialGraphBuffer.Bind(commandList, 3, 9);
+
             int32_t subDataCount = 0;
             // Retrieve all possible materials
             for (auto& [meshId, instances] : shadowPass->meshToInstancesMap) {
@@ -149,12 +158,19 @@ namespace Atlas {
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, _, mesh, gpuDraw] = subDatas[i];
                 const auto& material = subData->material;
+                if (subData->shadowGraphPending)
+                    UpdateGraphPipelines(subData, mesh, frameBuffer);
                 if (subData->shadowConfig.IsValid()) continue;
 
                 subData->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
                 subData->shadowReversedWindingConfig = subData->shadowConfig.GetReversedWindingVariant();
                 subData->shadowConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                 subData->shadowReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+
+                if (material->HasGraph()) {
+                    subData->shadowGraphPending = true;
+                    UpdateGraphPipelines(subData, mesh, frameBuffer);
+                }
             }
 
             auto getConfig = [](const auto& entry) -> PipelineConfig& {
@@ -172,6 +188,7 @@ namespace Atlas {
             Hash prevHash = 0;
             Hash prevMesh = 0;
             Ref<Graphics::Pipeline> currentPipeline = nullptr;
+            const Graphics::PushConstantRange* constantsRange = nullptr;
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, meshID, mesh, gpuDraw] = subDatas[i];
                 auto instances = gpuDraw ? RenderList::MeshInstances{} : shadowPass->meshToInstancesMap[meshID];
@@ -187,6 +204,7 @@ namespace Atlas {
                     currentPipeline = PipelineManager::GetPipeline(config);
                     config.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
+                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
                     prevHash = config.variantHash;
                 }
 
@@ -195,7 +213,8 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-                auto materialIdx = uint32_t(sceneState->materialMap[material.Get().get()]);
+                auto materialIt = sceneState->materialMap.find(material.Get().get());
+                auto materialIdx = materialIt != sceneState->materialMap.end() ? uint32_t(materialIt->second) : 0u;
                 auto opacityTextureIdx = materialIdx < sceneState->materialTextureIndices.size() ?
                     sceneState->materialTextureIndices[materialIdx].opacity : 0u;
 
@@ -211,7 +230,14 @@ namespace Atlas {
                     .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
                     .instanceOffset = uint32_t(instances.offset),
                 };
-                commandList->PushConstants("constants", &pushConstants);
+
+                if (subData->shadowUsesGraph) {
+                    auto graphData = sceneState->materialGraphMap.find(material.Get().get());
+                    if (graphData != sceneState->materialGraphMap.end())
+                        pushConstants.materialGraphOffset = graphData->second.parameterOffset;
+                }
+
+                commandList->PushConstants(constantsRange, &pushConstants);
 
                 if (gpuDraw) {
                     renderList->DrawGPUCulled(commandList, *gpuDraw);
@@ -229,7 +255,8 @@ namespace Atlas {
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
                     reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
-                    commandList->PushConstants("constants", &pushConstants);
+                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
+                    commandList->PushConstants(constantsRange, &pushConstants);
                     commandList->DrawIndexed(subData->indicesCount, instances.reversedWindingCount, subData->indicesOffset,
                         0, instances.reversedWindingOffset);
                     prevHash = reversedWindingConfig.variantHash;
@@ -237,6 +264,7 @@ namespace Atlas {
 
             }
 
+            profilerScope.Next("Shadow impostors");
             impostorRenderer.Render(frameBuffer, commandList, renderList,
                 shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
@@ -283,20 +311,55 @@ namespace Atlas {
 
         }
 
+        void ShadowRenderer::UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+
+            using PipelineState = MaterialGraph::PipelineCache::State;
+
+            const auto& graph = subData->material->graph;
+            auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
+            // Graphs which neither move vertices nor cut out parts have the shadows of the regular pipeline
+            if (!compiled || !compiled->valid || !compiled->UsesShadowPipeline()) {
+                subData->shadowGraphPending = false;
+                return;
+            }
+
+            auto config = GetPipelineConfigForSubData(subData, mesh, frameBuffer, compiled.get());
+            auto reversedWindingConfig = config.GetReversedWindingVariant();
+
+            auto blocking = graph->blockingPipelineUsers > 0;
+            auto state = MaterialGraph::PipelineCache::Request(config, blocking);
+            auto reversedWindingState = MaterialGraph::PipelineCache::Request(reversedWindingConfig, blocking);
+            if (state == PipelineState::Pending || reversedWindingState == PipelineState::Pending)
+                return;
+
+            subData->shadowGraphPending = false;
+            if (state == PipelineState::Failed || reversedWindingState == PipelineState::Failed)
+                return;
+
+            config.graphicsPipelineDesc.frameBuffer = nullptr;
+            reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+            subData->shadowConfig = config;
+            subData->shadowReversedWindingConfig = reversedWindingConfig;
+
+            subData->shadowUsesGraph = true;
+
+        }
+
         PipelineConfig ShadowRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+            Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer, const MaterialGraph::CompiledGraph* graph) {
 
             auto material = subData->material;
 
             bool hasTexCoords = mesh->data.texCoords.ContainsData();
-            bool hasOpacityMap = material->HasOpacityMap() && hasTexCoords;
+            bool hasOpacityMap = material->HasOpacityMap() && hasTexCoords && (!graph || !graph->hasSurface);
+            bool hasGraphOpacity = graph && graph->hasOpacity;
 
             // Without an opacity map only depth is written, which doesn't need a fragment shader
             auto shaderConfig = ShaderConfig {
-                {"shadowMapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {graph ? graph->shadowVertexFile : "shadowMapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
             };
-            if (hasOpacityMap) {
-                shaderConfig.push_back({"shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT});
+            if (hasOpacityMap || hasGraphOpacity) {
+                shaderConfig.push_back({graph ? graph->shadowFragmentFile : "shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT});
             }
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
@@ -309,8 +372,21 @@ namespace Atlas {
             }
 
             std::vector<std::string> macros;
+            // Pipelines are rebound when the variant hash changes, which doesn't know about shaders
+            if (graph) {
+                macros.push_back("MATERIAL_GRAPH_" + std::to_string(graph->hash));
+            }
             if (hasOpacityMap) {
                 macros.push_back("OPACITY_MAP");
+            }
+            if (graph && hasTexCoords) {
+                macros.push_back("TEX_COORDS");
+            }
+            if (graph && mesh->data.tangents.ContainsData()) {
+                macros.push_back("TANGENTS");
+            }
+            if (graph && mesh->data.colors.ContainsData()) {
+                macros.push_back("VERTEX_COLORS");
             }
             if (mesh->data.IsSkinned()) {
                 macros.push_back("SKINNED");

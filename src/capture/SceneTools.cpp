@@ -10,11 +10,19 @@
 #include "mesh/MeshSerializer.h"
 #include "resource/ResourceManager.h"
 #include "common/MathHelper.h"
+#include "graphics/ShaderCompiler.h"
+#include "jobsystem/JobSystem.h"
+#include "loader/AssetLoader.h"
+#include "loader/MaterialGraphLoader.h"
+#include "loader/ShaderLoader.h"
+#include "materialgraph/Compiler.h"
 #include "common/MatrixDecomposition.h"
 
 #include <algorithm>
 #include <array>
 #include <cfloat>
+#include <filesystem>
+#include <fstream>
 #include <map>
 #include <optional>
 #include <set>
@@ -793,6 +801,192 @@ namespace Atlas::Capture {
 
     }
 
+    // Compiles shaders of material graphs for all the meshes they can be used with. Without a graph directory it
+    // only checks each node of the library, in each stage and with each input type
+    static json QueryMaterialGraphShaders(const QueryContext& context, const json& query) {
+
+        using namespace MaterialGraph;
+        namespace fs = std::filesystem;
+
+        std::vector<Ref<Graph>> graphs;
+        std::vector<std::string> names;
+
+        if (query.contains("directory")) {
+            auto directory = Loader::AssetLoader::GetFullPath(query["directory"].get<std::string>());
+            for (const auto& file : fs::directory_iterator(directory)) {
+                if (file.path().extension() != ".aematgraph")
+                    continue;
+                auto path = query["directory"].get<std::string>() + "/" + file.path().filename().string();
+                graphs.push_back(Loader::MaterialGraphLoader::LoadGraph(path));
+                names.push_back(file.path().filename().string());
+            }
+        }
+
+        // Every node with the types of its generic inputs, connected to the output of every stage it can be used in
+        if (query.value("library", true)) {
+            const std::vector<std::string> sources = { "Float", "Vector 2", "Vector 3", "Vector 4" };
+            for (const auto& definition : NodeLibrary::GetDefinitions()) {
+                if (definition.kind == NodeKind::VertexOutput || definition.kind == NodeKind::SurfaceOutput ||
+                    definition.kind == NodeKind::Comment)
+                    continue;
+
+                auto isGeneric = std::any_of(definition.inputs.begin(), definition.inputs.end(),
+                    [](const auto& input) { return input.type == ValueType::Generic; });
+
+                for (const auto& source : sources) {
+                    if (!isGeneric && source != sources.front())
+                        break;
+
+                    for (const auto& output : definition.outputs) {
+                        for (auto stage : { VertexStage, SurfaceStage }) {
+                            if (!(definition.stages & stage) || output.type == ValueType::Texture)
+                                continue;
+
+                            auto graph = CreateRef<Graph>();
+                            auto vertexOutput = graph->AddNode(NodeLibrary::vertexOutputType).id;
+                            auto surfaceOutput = graph->AddNode(NodeLibrary::surfaceOutputType).id;
+
+                            auto nodeId = graph->AddNode(definition.type).id;
+                            graph->GetNode(nodeId)->name = "Value";
+
+                            for (const auto& input : definition.inputs) {
+                                if (input.type == ValueType::Texture) {
+                                    auto textureId = graph->AddNode("Texture parameter").id;
+                                    graph->GetNode(textureId)->name = "Texture";
+                                    graph->Connect(textureId, "Value", nodeId, input.name);
+                                }
+                                else if (input.type == ValueType::Generic) {
+                                    auto sourceId = graph->AddNode(source).id;
+                                    graph->Connect(sourceId, "Value", nodeId, input.name);
+                                }
+                            }
+
+                            if (stage == VertexStage)
+                                graph->Connect(nodeId, output.name, vertexOutput, NodeLibrary::positionOffsetPin);
+                            else
+                                graph->Connect(nodeId, output.name, surfaceOutput, NodeLibrary::emissivePin);
+
+                            graph->Compile();
+                            graphs.push_back(graph);
+                            names.push_back(definition.type + " / " + output.name + " / " + source +
+                                (stage == VertexStage ? " / vertex" : " / surface"));
+                        }
+                    }
+                }
+            }
+        }
+
+        // The macros the renderers can set, a mesh has or doesn't have each of the attributes
+        std::vector<std::vector<std::string>> meshMacros;
+        for (int32_t texCoords = 0; texCoords < 2; texCoords++) {
+            for (int32_t tangents = 0; tangents < 2; tangents++) {
+                for (int32_t colors = 0; colors < 2; colors++) {
+                    for (int32_t skinned = 0; skinned < 2; skinned++) {
+                        std::vector<std::string> macros;
+                        if (texCoords) macros.push_back("TEX_COORDS");
+                        if (tangents) macros.push_back("TANGENTS");
+                        if (colors) macros.push_back("VERTEX_COLORS");
+                        macros.push_back(skinned ? "SKINNED" : "INSTANCE_BUFFER");
+                        meshMacros.push_back(macros);
+                    }
+                }
+            }
+        }
+
+        struct Compilation {
+            std::string name;
+            std::string file;
+            VkShaderStageFlagBits stage;
+            std::vector<std::string> macros;
+            bool success = false;
+        };
+
+        std::vector<Compilation> compilations;
+        auto add = [&](const std::string& name, const std::string& file, VkShaderStageFlagBits stage, const std::vector<std::string>& macros) {
+            if (!file.empty())
+                compilations.push_back({ name, file, stage, macros });
+            };
+
+        int32_t graphErrors = 0;
+        json failedGraphs = json::array();
+
+        auto allMeshMacros = query.value("allMeshes", true);
+        for (size_t i = 0; i < graphs.size(); i++) {
+            auto compiled = graphs[i]->GetCompiled();
+            if (!compiled || !compiled->valid) {
+                graphErrors++;
+                failedGraphs.push_back({ { "graph", names[i] }, { "error", compiled && !compiled->errors.empty() ? compiled->errors.front().message : "" } });
+                continue;
+            }
+
+            // Checking the library once is enough, the macros only matter for the code around the nodes
+            for (const auto& macros : meshMacros) {
+                add(names[i], compiled->mainVertexFile, VK_SHADER_STAGE_VERTEX_BIT, macros);
+                add(names[i], compiled->mainFragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT, macros);
+                add(names[i], compiled->shadowVertexFile, VK_SHADER_STAGE_VERTEX_BIT, macros);
+                add(names[i], compiled->hasOpacity ? compiled->shadowFragmentFile : std::string(), VK_SHADER_STAGE_FRAGMENT_BIT, macros);
+
+                // Without a surface of the graph the regular maps of a material are used
+                if (!compiled->hasSurface) {
+                    auto withMaps = macros;
+                    for (auto map : { "BASE_COLOR_MAP", "OPACITY_MAP", "ROUGHNESS_MAP", "METALNESS_MAP", "AO_MAP", "EMISSIVE_MAP" })
+                        withMaps.push_back(map);
+                    if (std::find(macros.begin(), macros.end(), "TANGENTS") != macros.end()) {
+                        withMaps.push_back("NORMAL_MAP");
+                        withMaps.push_back("HEIGHT_MAP");
+                    }
+                    if (std::find(macros.begin(), macros.end(), "TEX_COORDS") != macros.end()) {
+                        add(names[i], compiled->mainVertexFile, VK_SHADER_STAGE_VERTEX_BIT, withMaps);
+                        add(names[i], compiled->mainFragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT, withMaps);
+                        auto shadowMacros = macros;
+                        shadowMacros.push_back("OPACITY_MAP");
+                        add(names[i], compiled->shadowVertexFile, VK_SHADER_STAGE_VERTEX_BIT, shadowMacros);
+                        add(names[i], compiled->shadowFragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT, shadowMacros);
+                    }
+                }
+
+                if (!allMeshMacros)
+                    break;
+            }
+        }
+
+        auto spirvDirectory = query.value("spirvDirectory", std::string());
+        if (!spirvDirectory.empty())
+            fs::create_directories(spirvDirectory);
+
+        JobGroup group{ "Material graph shaders", JobPriority::Medium };
+        JobSystem::ExecuteMultiple(group, int32_t(compilations.size()), [&](JobData& data) {
+            auto& compilation = compilations[data.idx];
+            auto stageFile = Loader::ShaderLoader::LoadFile(compilation.file, compilation.stage);
+            auto binary = Graphics::ShaderCompiler::Compile(stageFile, compilation.macros, false, compilation.success);
+
+            if (compilation.success && !spirvDirectory.empty()) {
+                auto suffix = compilation.stage == VK_SHADER_STAGE_VERTEX_BIT ? ".vert.spv" : ".frag.spv";
+                std::ofstream file(spirvDirectory + "/" + std::to_string(data.idx) + suffix, std::ios::binary);
+                file.write(reinterpret_cast<const char*>(binary.data()), binary.size() * sizeof(uint32_t));
+            }
+            });
+        JobSystem::Wait(group);
+
+        json failed = json::array();
+        int32_t succeeded = 0;
+        for (const auto& compilation : compilations) {
+            if (compilation.success) {
+                succeeded++;
+                continue;
+            }
+            std::string macros;
+            for (const auto& macro : compilation.macros)
+                macros += macro + " ";
+            if (failed.size() < 40)
+                failed.push_back({ { "graph", compilation.name }, { "file", compilation.file }, { "macros", macros } });
+        }
+
+        return { { "graphs", graphs.size() }, { "invalidGraphs", graphErrors }, { "failedGraphs", failedGraphs },
+            { "compilations", compilations.size() }, { "succeeded", succeeded }, { "failed", failed } };
+
+    }
+
     static json QueryAround(const QueryContext& context, const json& query) {
 
         auto& scene = context.scene;
@@ -1102,6 +1296,7 @@ namespace Atlas::Capture {
         { "ground", QueryGround },
         { "entity", QueryEntity },
         { "around", QueryAround },
+        { "materialGraphShaders", QueryMaterialGraphShaders },
         { "clearance", QueryClearance },
         { "pick", QueryPick },
         { "path", QueryPath },

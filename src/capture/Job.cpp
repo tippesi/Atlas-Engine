@@ -638,6 +638,9 @@ namespace Atlas::Capture {
                     json { { "minimumMs", std::stof(next()) } } : json(true);
             else if (arg == "--sound")
                 sound = true;
+            else if (arg == "--streaming") {
+                // Read by the app before any job, streaming has to be set up before the scene loads
+            }
             else if (arg == "--inspect")
                 j["inspect"] = hasValue() ? json(next()) : json(true);
             else if (arg == "--play") {
@@ -740,6 +743,7 @@ Options:
   --overlay               Draw debug lines: players, tracked paths and query hits
   --validation            Enable all Vulkan validation layer features and write validation.json (slow)
   --hitches [ms]          Write the frames over the time (default 40) with their CPU profile to hitches.json
+  --streaming             Keep texture, impostor and mesh streaming enabled (disabled by default)
   --sound                 Play the sound of the scene (muted by default)
   --inspect [file]        Write a scene summary (default scene.json)
   --play <seconds>        Play the scene for the given time

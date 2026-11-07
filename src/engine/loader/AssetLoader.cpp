@@ -167,16 +167,17 @@ namespace Atlas {
 
             const int32_t tryCount = 2;
 
-            auto fileTime = defaultTime;
+            auto fullPath = Common::Path::IsAbsolute(path) ? path : GetFullPath(path);
+
+            // Missing files are expected here, exceptions would stop the process for each of them under a debugger
             for (int32_t i = 0; i < tryCount; i++) {
-                try {
-                    auto fullPath = Common::Path::IsAbsolute(path) ? path : GetFullPath(path);
-                    fileTime = std::filesystem::last_write_time(fullPath);
-                }
-                catch (...) {}
+                std::error_code errorCode;
+                auto fileTime = std::filesystem::last_write_time(fullPath, errorCode);
+                if (!errorCode)
+                    return fileTime;
             }
 
-            return fileTime;
+            return defaultTime;
 
         }
 

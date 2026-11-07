@@ -153,7 +153,7 @@ void main() {
                 vec2 hitPixel;
                 vec3 hitPoint;
                 if (traceScreenSpaceHiZ(viewRayOrigin, viewDir, hiZTexture, uniforms.hiZLevelCount, vec2(textureSize(depthTexture, 0)),
-                    32, 1000.0, false, hitPixel, hitPoint)) {
+                    32, rayLength, false, hitPixel, hitPoint)) {
                     vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
                     vec3 stepViewNorm = normalize(DecodeNormal(texelFetch(normalTexture, ivec2(hitPixel), 0).rg));
                     float depth = texelFetch(depthTexture, ivec2(hitPixel), 0).r;
@@ -162,7 +162,10 @@ void main() {
                     float NdotV = saturate(dot(-viewDir, stepViewNorm));
                     NdotL = saturate(dot(viewNorm, hitPoint));
                     if (NdotV > 0.0) {
-                        irradiance += textureLod(directLightTexture, hitTexCoord, 0).rgb;
+                        vec3 radiance = textureLod(directLightTexture, hitTexCoord, 0).rgb;
+                        float radianceMax = max(max(max(radiance.r,
+                            max(radiance.g, radiance.b)), radianceLimit), 1e-12);
+                        irradiance += radiance * (radianceLimit / radianceMax);
                     }
                     else {
                         aoHits += 1.0;
@@ -171,10 +174,6 @@ void main() {
                 }
             }
 
-            float irradianceMax = max(max(max(irradiance.r,
-                max(irradiance.g, irradiance.b)), radianceLimit), 1e-12);
-            irradiance *= (radianceLimit / irradianceMax);
-            
             // Supplement misses with the probe irradiance
             irradiance += float(uniforms.rayCount - hits) * probeIrradiance;
             irradiance /= (float(uniforms.rayCount));

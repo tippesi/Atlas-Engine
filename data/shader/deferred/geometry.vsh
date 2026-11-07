@@ -70,6 +70,12 @@ layout(location=5) out vec4 vertexColorsVS;
 layout(location=7) out mat3 TBN;
 #endif
 
+#ifdef MATERIAL_GRAPH_SURFACE
+layout(location=10) out vec3 objectPositionVS;
+layout(location=11) out vec3 instancePositionVS;
+layout(location=12) out vec3 objectNormalVS;
+#endif
+
 layout(set = 3, binding = 8) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
@@ -97,6 +103,9 @@ layout(push_constant) uniform constants {
     uint jointOffset;
     uint jointCount;
     uint instanceOffset;
+#ifdef MATERIAL_GRAPH
+    uint materialGraphOffset;
+#endif
 } PushConstants;
 
 // Functions
@@ -144,6 +153,44 @@ void main() {
     normal = vec4(normal, 0.0) * skinMatrix;
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     tangent = vec4(tangent, 0.0) * skinMatrix;
+#endif
+#endif
+
+#ifdef MATERIAL_GRAPH
+    vec2 graphTexCoord = vec2(0.0);
+    vec3 graphTangent = vec3(1.0, 0.0, 0.0);
+    vec4 graphColor = vec4(1.0);
+#ifdef TEX_COORDS
+    graphTexCoord = texCoordVS;
+#endif
+#ifdef TANGENTS
+    graphTangent = vTangent.xyz;
+#endif
+#ifdef VERTEX_COLORS
+    graphColor = vVertexColors;
+#endif
+
+    MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, normal, graphTangent, graphTexCoord, graphColor,
+        mMatrix, globalData.time, PushConstants.materialGraphOffset);
+    WriteMaterialVaryings(graphInput);
+
+#ifdef MATERIAL_GRAPH_SURFACE
+    // Patterns stay on the surface when it moves
+    objectPositionVS = vPosition;
+    instancePositionVS = vec3(mMatrix[3]);
+#endif
+
+#ifdef MATERIAL_GRAPH_VERTEX_OFFSET
+    normal = EvaluateMaterialVertexNormal(graphInput);
+    position += EvaluateMaterialVertexOffset(graphInput);
+
+    graphInput = CreateMaterialVertexInput(vPosition, lastPosition, graphInput.normal, graphTangent, graphTexCoord, graphColor,
+        mMatrixLast, globalData.time - globalData.deltaTime, PushConstants.materialGraphOffset);
+    lastPosition += EvaluateMaterialVertexOffset(graphInput);
+#endif
+
+#ifdef MATERIAL_GRAPH_SURFACE
+    objectNormalVS = normal;
 #endif
 #endif
 

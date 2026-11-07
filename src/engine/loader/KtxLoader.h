@@ -13,6 +13,10 @@ namespace Atlas::Loader {
         int32_t height = 0;
         int32_t layers = 1;
         uint32_t mipLevels = 1;
+        // Levels of the file above the loaded resolution and the size of its largest level
+        uint32_t skippedMipLevels = 0;
+        int32_t fileWidth = 0;
+        int32_t fileHeight = 0;
 
         VkFormat format = VK_FORMAT_UNDEFINED;
 

@@ -22,6 +22,7 @@
 #include "../jobsystem/JobSystem.h"
 
 #include <optional>
+#include <functional>
 #include <vector>
 #include <mutex>
 #include <set>
@@ -79,38 +80,9 @@ namespace Atlas {
 
             std::vector<CommandListSubmission> submissions;
 
-            void WaitAndReset(VkDevice device) {
-                if (submittedCommandLists.size() > 0) {
-                    std::vector<VkFence> fences;
-                    for (auto commandList : submittedCommandLists) {
-                        fences.push_back(commandList->fence);
-                    }
-                    auto result = vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 30000000000);
-                    // Try to recover here
-                    if (result == VK_TIMEOUT)
-                        vkDeviceWaitIdle(device);
-                    VK_CHECK(result)
-                    VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
-                }
+            void WaitAndReset(VkDevice device);
 
-                for (auto commandList : submittedCommandLists) {
-                    commandList->ResetDescriptors();
-                    commandList->frameBufferInUse = nullptr;
-                    commandList->renderPassInUse = nullptr;
-                    commandList->pipelineInUse = nullptr;
-                    commandList->wasSwapChainAccessed = false;
-                    commandList->isLocked = false;
-                }
-                submittedCommandLists.clear();
-                submissions.clear();
-            }
-
-            void RecreateSemaphore(VkDevice device) {
-                vkDestroySemaphore(device, semaphore, nullptr);
-
-                VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-                VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
-            }
+            void RecreateSemaphore(VkDevice device);
         };
 
         class GraphicsDevice {
@@ -184,6 +156,8 @@ namespace Atlas {
 
             void ForceMemoryCleanup();
 
+            static void HandleDeviceLost();
+
             void SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle);
 
             template <class T>
@@ -214,6 +188,8 @@ namespace Atlas {
             VkPhysicalDeviceVulkan12Features availableFeatures12 = {};
             VkPhysicalDeviceVulkan13Features availableFeatures13 = {};
             VkPhysicalDeviceRobustness2FeaturesEXT availableRobustness2Features = {};
+            VkPhysicalDeviceCooperativeMatrixFeaturesKHR availableCooperativeMatrixFeatures = {};
+            VkPhysicalDeviceShaderFloat8FeaturesEXT availableFloat8Features = {};
 
             DeviceDesc desc;
             DeviceSupport support;

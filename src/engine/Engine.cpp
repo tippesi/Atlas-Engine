@@ -7,8 +7,14 @@
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
 #include "pipeline/PipelineManager.h"
+#include "materialgraph/PipelineCache.h"
 #include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
+#include "texture/Texture2D.h"
+#include "mesh/Mesh.h"
+#include "mesh/Impostor.h"
+#include "resource/ResourceManager.h"
+#include "streaming/StreamingManager.h"
 #include "input/KeyboardMap.h"
 #include "input/ControllerMap.h"
 #include "events/EventManager.h"
@@ -27,6 +33,16 @@ namespace Atlas {
     Window* Engine::DefaultWindow = nullptr;
 
     void Engine::Init(EngineConfig config) {
+
+        // Textures and impostors only start loading when no meshes are left to load
+        ResourceManager<Mesh::Mesh>::onAsyncLoadRequested = []() {
+            ResourceManager<Texture::Texture2D>::HoldAsyncLoads();
+            ResourceManager<Mesh::Impostor>::HoldAsyncLoads();
+            };
+        ResourceManager<Mesh::Mesh>::onAsyncLoadFinished = []() {
+            ResourceManager<Texture::Texture2D>::ReleaseAsyncLoads();
+            ResourceManager<Mesh::Impostor>::ReleaseAsyncLoads();
+            };
 
 #ifdef AE_NO_APP
         SDL_SetMainReady();
@@ -61,9 +77,9 @@ namespace Atlas {
             .enableExtendedValidation = config.deviceDesc.enableExtendedValidation,
             .validationLayerSeverity = config.deviceDesc.validationLayerSeverity,
 #ifndef AE_HEADLESS
-            .requiredExtensions = requiredExtensions
+            .requiredExtensions = requiredExtensions,
 #else
-            .requiredExtensions = { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME }
+            .requiredExtensions = { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME },
 #endif
         };
 
@@ -103,6 +119,9 @@ namespace Atlas {
 
     void Engine::Shutdown() {
 
+        // Waits for its jobs, which still need the job system and the shader compiler
+        MaterialGraph::PipelineCache::Shutdown();
+        Streaming::StreamingManager::Shutdown();
         JobSystem::Shutdown();
         Graphics::ShaderCompiler::Shutdown();
         GPUProfiler::Shutdown();

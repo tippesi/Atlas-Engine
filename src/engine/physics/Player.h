@@ -83,6 +83,9 @@ namespace Atlas::Physics {
 
 		Ref<JPH::CharacterVirtual> character = nullptr;
 
+		// How far sticking to the floor and walking up stairs moved the character in the last update
+		vec3 stepMovement = vec3(0.0f);
+
 		PhysicsWorld* world = nullptr;
 
     };

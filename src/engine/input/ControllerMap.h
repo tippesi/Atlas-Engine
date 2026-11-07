@@ -25,6 +25,10 @@ namespace Atlas::Input {
         // Sticks are in [-1, 1] with positive values to the right and down, triggers in [0, 1]
         static float GetAxis(uint8_t axis);
 
+        // Rumbles all connected controllers: the strong low frequency and the light high frequency motor in [0, 1]
+        // for the given seconds, a new rumble replaces the running one
+        static void Rumble(float low, float high, float seconds);
+
     private:
         struct ButtonState {
             bool pressed;
@@ -39,6 +43,8 @@ namespace Atlas::Input {
 
         static std::unordered_map<uint8_t, ButtonState> buttons;
         static std::unordered_map<uint8_t, float> axes;
+        static bool connected;
+        static bool connectionChanged;
 
     };
 

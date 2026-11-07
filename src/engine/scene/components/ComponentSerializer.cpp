@@ -21,6 +21,44 @@ namespace Atlas::Scene::Components {
 
         if (p.animation.IsValid() && !p.animation.IsGenerated())
             j["resourcePath"] = p.animation.GetResource()->path;
+
+        auto layers = json::array();
+        for (const auto& layer : p.layers) {
+            json layerJson = {
+                {"mode", static_cast<int>(layer.mode)},
+                {"time", layer.time},
+                {"speed", layer.speed},
+                {"loop", layer.loop},
+                {"playing", layer.playing},
+                {"weight", layer.GetTargetWeight()},
+                {"maskRoot", layer.GetMaskRoot()},
+                {"maskBlendJoints", layer.GetMaskBlendJoints()},
+            };
+
+            if (layer.animation.IsValid() && !layer.animation.IsGenerated())
+                layerJson["resourcePath"] = layer.animation.GetResource()->path;
+
+            layers.push_back(layerJson);
+        }
+        if (!layers.empty())
+            j["layers"] = layers;
+
+        auto ikChains = json::array();
+        for (const auto& chain : p.ikChains) {
+            ikChains.push_back(json {
+                {"upperJoint", chain.GetUpperJoint()},
+                {"middleJoint", chain.GetMiddleJoint()},
+                {"endJoint", chain.GetEndJoint()},
+                {"target", chain.target},
+                {"relativeTarget", chain.relativeTarget},
+                {"weight", chain.weight},
+                {"pole", chain.pole},
+                {"normal", chain.normal},
+                {"normalWeight", chain.normalWeight},
+            });
+        }
+        if (!ikChains.empty())
+            j["ikChains"] = ikChains;
     }
 
     void from_json(const json& j, AnimationComponent& p) {
@@ -35,6 +73,56 @@ namespace Atlas::Scene::Components {
 
             p.animation = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(resourcePath,
                 ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
+        }
+
+        if (j.contains("layers")) {
+            for (const auto& layerJson : j["layers"]) {
+                auto& layer = p.GetLayer(p.GetLayerCount());
+
+                int mode = 0;
+                float weight = 1.0f;
+                std::string maskRoot;
+                int32_t maskBlendJoints = 0;
+                try_get_json(layerJson, "mode", mode);
+                try_get_json(layerJson, "time", layer.time);
+                try_get_json(layerJson, "speed", layer.speed);
+                try_get_json(layerJson, "loop", layer.loop);
+                try_get_json(layerJson, "playing", layer.playing);
+                try_get_json(layerJson, "weight", weight);
+                try_get_json(layerJson, "maskRoot", maskRoot);
+                try_get_json(layerJson, "maskBlendJoints", maskBlendJoints);
+
+                layer.mode = static_cast<AnimationBlendMode>(mode);
+                layer.FadeTo(weight);
+                layer.SetMask(maskRoot, maskBlendJoints);
+
+                if (layerJson.contains("resourcePath")) {
+                    std::string resourcePath;
+                    layerJson.at("resourcePath").get_to(resourcePath);
+
+                    layer.animation = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                        ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
+                }
+            }
+        }
+
+        if (j.contains("ikChains")) {
+            for (const auto& chainJson : j["ikChains"]) {
+                auto& chain = p.GetIKChain(p.GetIKChainCount());
+
+                std::string upperJoint, middleJoint, endJoint;
+                try_get_json(chainJson, "upperJoint", upperJoint);
+                try_get_json(chainJson, "middleJoint", middleJoint);
+                try_get_json(chainJson, "endJoint", endJoint);
+                chain.SetJoints(upperJoint, middleJoint, endJoint);
+
+                try_get_json(chainJson, "target", chain.target);
+                try_get_json(chainJson, "relativeTarget", chain.relativeTarget);
+                try_get_json(chainJson, "weight", chain.weight);
+                try_get_json(chainJson, "pole", chain.pole);
+                try_get_json(chainJson, "normal", chain.normal);
+                try_get_json(chainJson, "normalWeight", chain.normalWeight);
+            }
         }
     }
 
@@ -339,6 +427,7 @@ namespace Atlas::Scene::Components {
             {"allowInput", p.allowInput},
             {"crouchHeight", p.crouchHeight},
             {"crouchVelocity", p.crouchVelocity},
+            {"walkStairStepUpDistance", p.walkStairStepUpDistance},
         };
 
         if (p.creationSettings != nullptr)
@@ -354,6 +443,7 @@ namespace Atlas::Scene::Components {
         try_get_json(j, "deceleration", p.deceleration);
         try_get_json(j, "crouchHeight", p.crouchHeight);
         try_get_json(j, "crouchVelocity", p.crouchVelocity);
+        try_get_json(j, "walkStairStepUpDistance", p.walkStairStepUpDistance);
 
         if (j.contains("creationSettings")) {
             p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();

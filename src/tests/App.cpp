@@ -55,7 +55,8 @@ void App::LoadContent(AppConfiguration config) {
     
     Atlas::PipelineManager::EnableHotReload();
 
-    scene->postProcessing.fsr2 = config.fsr;
+    using Atlas::PostProcessing::Upscaler;
+    scene->postProcessing.upscaler = config.fsr ? Upscaler::FSR2 : (config.taa ? Upscaler::TAA : Upscaler::None);
 
     if (config.light) {
         auto directionalLightEntity = scene->CreateEntity();
@@ -94,7 +95,6 @@ void App::LoadContent(AppConfiguration config) {
         scene->fog->heightFalloff = 0.0284f;
         scene->fog->height = 0.0f;
 
-        scene->fog->rayMarching = config.volumetric;
         scene->fog->localLights = config.localVolumetric;
     }
 

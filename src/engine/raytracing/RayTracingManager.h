@@ -8,6 +8,7 @@
 #include "mesh/Mesh.h"
 
 #include <atomic>
+#include <mutex>
 
 namespace Atlas::RayTracing {
 
@@ -17,6 +18,9 @@ namespace Atlas::RayTracing {
 		static void Update();
 
 		static void RequestMeshBVHs();
+
+		// Held while the BVHs of meshes are built, their geometry can't be unloaded meanwhile
+		static std::mutex meshBuildMutex;
 
 	private:
 		static void BuildStaticBLAS(std::vector<ResourceHandle<Mesh::Mesh>>& meshes,

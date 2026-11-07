@@ -168,7 +168,9 @@ namespace Atlas {
 			// The main and directional shadow passes are culled together
 			JobSystem::WaitSpin(renderState->fillGPUShadowRenderPassesJob);
 			JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
-			renderState->gpuScene.Cull(renderState->renderList, scene->renderState.camera.GetLocation(), commandList);
+			// Texture streaming targets the output resolution, not the scaled one
+			auto focalLength = float(target->GetHeight()) / (2.0f * glm::tan(0.5f * glm::radians(camera.fieldOfView)));
+			renderState->gpuScene.Cull(renderState->renderList, camera.GetLocation(), focalLength, commandList);
 			renderState->gpuScene.Bind(commandList);
 
 			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
@@ -189,6 +191,32 @@ namespace Atlas {
 				impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
 				commandList->EndRenderPass();
+
+				// The instances which weren't visible in the last frame are tested against the depth of the ones which were
+				if (renderState->gpuScene.HasOcclusionDraws()) {
+					auto occlusionData = target->GetData(FULL_RES);
+
+					commandList->MemoryBarrier(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+						VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+					hiZRenderer.Generate(occlusionData, 0.0f, commandList);
+					renderState->gpuScene.CullOcclusion(occlusionData->hiZTexture,
+						ivec2(occlusionData->depthTexture->width, occlusionData->depthTexture->height),
+						occlusionData->hiZLevelCount, commandList);
+
+					commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT,
+						VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+						VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+						VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+
+					commandList->BeginRenderPass(target->gBufferLoadRenderPass, target->gBufferLoadFrameBuffer);
+
+					opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap, true);
+
+					impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap, true);
+
+					commandList->EndRenderPass();
+				}
 			}
 
 			{
@@ -213,7 +241,7 @@ namespace Atlas {
 			// Written separately from the culling, so the main pass doesn't wait for the ray tracing world update
 			if (scene->renderState.rayTracingWorld)
 				renderState->gpuScene.WriteRayTracingInstances(*scene->renderState.rayTracingWorld, scene->renderState.camera.GetLocation(),
-					commandList);
+					focalLength, commandList);
 
 			renderState->lightBuffer.Bind(commandList, 1, 18);
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
@@ -284,8 +312,9 @@ namespace Atlas {
 
 			if (!scene->renderState.rtgi || !scene->renderState.rtgi->enable || !scene->IsRtDataValid()) {
 				if (scene->renderState.ssgi && scene->renderState.ssgi->enable) {
-					auto resolution = scene->renderState.ssgi->halfResolution ? HALF_RES : FULL_RES;
-					hiZRenderer.Generate(target->GetData(resolution), 4.0f, commandList);
+					auto& ssgi = scene->renderState.ssgi;
+					auto resolution = ssgi->halfResolution ? HALF_RES : FULL_RES;
+					hiZRenderer.Generate(target->GetData(resolution), ssgi->thickness, commandList);
 				}
 				ssgiRenderer.Render(target, scene, commandList);
 			}
@@ -313,7 +342,7 @@ namespace Atlas {
 			if (reflection && reflection->enable && reflection->ssr) {
 				// Upscaled reflections trace from full resolution, surfaces have no thickness when ray tracing continues the rays
 				auto resolution = !reflection->halfResolution || reflection->upsampleBeforeFiltering ? FULL_RES : HALF_RES;
-				hiZRenderer.Generate(target->GetData(resolution), reflection->rt ? 0.0f : 1.0f, commandList);
+				hiZRenderer.Generate(target->GetData(resolution), reflection->rt ? 0.0f : 0.008f, commandList);
 			}
 
 			rtrRenderer.Render(target, scene, commandList);
@@ -466,7 +495,11 @@ namespace Atlas {
 			// Writes the hardware ray tracing instances and builds the acceleration structure
 			if (scene->renderState.rayTracingWorld) {
 				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
-				renderState->gpuScene.WriteRayTracingInstances(*scene->renderState.rayTracingWorld, camera.GetLocation(), commandList);
+				auto focalLength = float(target->GetHeight()) / (2.0f * glm::tan(0.5f * glm::radians(camera.fieldOfView)));
+				// Nothing else culls here, the streaming still needs the distances
+				renderState->gpuScene.CullForStreaming(camera.GetLocation(), focalLength, commandList);
+				renderState->gpuScene.WriteRayTracingInstances(*scene->renderState.rayTracingWorld, camera.GetLocation(),
+					focalLength, commandList);
 			}
 
 			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
@@ -1089,7 +1122,7 @@ namespace Atlas {
 			}
 
 			for (auto& mesh : scene->renderState.meshes) {
-				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated) continue;
+				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated || !mesh->impostor->IsResident()) continue;
 
 				auto& impostor = mesh->impostor;
 				Mesh::Impostor::ImpostorInfo impostorInfo = {

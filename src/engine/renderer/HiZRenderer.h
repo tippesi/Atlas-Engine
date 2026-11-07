@@ -13,14 +13,15 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Generate(const RenderTargetData* data, float thickness, Graphics::CommandList* commandList);
+            // Surfaces are distanceThickness * min(distance, 500) deep in the farthest depth
+            void Generate(const RenderTargetData* data, float distanceThickness, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) PushConstants {
                 ivec2 inputSize;
                 int32_t fromDepth;
                 int32_t levelCount;
-                float thickness;
+                float distanceThickness;
             };
 
             PipelineConfig pipelineConfig;

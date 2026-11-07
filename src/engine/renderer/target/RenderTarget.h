@@ -262,6 +262,9 @@ namespace Atlas::Renderer {
 
         Ref<Graphics::RenderPass> gBufferRenderPass;
         Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
+        // Continues the G-buffer, compatible with the pipelines of the render pass above
+        Ref<Graphics::RenderPass> gBufferLoadRenderPass;
+        Ref<Graphics::FrameBuffer> gBufferLoadFrameBuffer;
 
         Ref<Graphics::RenderPass> afterLightingRenderPass;
         Ref<Graphics::FrameBuffer> afterLightingFrameBuffer;

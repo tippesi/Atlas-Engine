@@ -10,10 +10,11 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Half resolution", &ssgi->halfResolution);
 
         ImGui::Checkbox("Enable ambient occlusion", &ssgi->enableAo);
-        ImGui::SliderInt("Ray count", &ssgi->rayCount, 1, 8);
-        ImGui::SliderInt("Sample count", &ssgi->sampleCount, 1, 16);
-        ImGui::SliderFloat("Radius", &ssgi->radius, 0.0f, 10.0f);
-        ImGui::SliderFloat("Ao strength", &ssgi->aoStrength, 0.0f, 10.0f);
+        ImGui::DragInt("Ray count", &ssgi->rayCount, 0.1f, 1, 8);
+        ImGui::DragInt("Sample count", &ssgi->sampleCount, 0.1f, 1, 16);
+        ImGui::DragFloat("Radius", &ssgi->radius, 1.0f, 0.0f, 2000.0f);
+        ImGui::DragFloat("Thickness", &ssgi->thickness, 0.001f, 0.0f, 0.2f, "%.3f");
+        ImGui::DragFloat("Ao strength", &ssgi->aoStrength, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Irradiance limit", &ssgi->irradianceLimit, 0.1f, 0.0f, 1000.0f);
 
         ImGui::PopID();

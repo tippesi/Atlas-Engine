@@ -1,5 +1,6 @@
 #include "ShapesManager.h"
 #include "MathConversion.h"
+#include "../Log.h"
 
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -20,6 +21,8 @@ namespace Atlas {
 
         std::unordered_map<Hash, ShapesManager::CacheItem<Mesh::Mesh>> ShapesManager::meshShapeCache;
         std::mutex ShapesManager::meshShapeCacheMutex;
+        std::unordered_set<Hash> ShapesManager::pendingMeshShapes;
+        JobGroup ShapesManager::meshShapeJobs{ "Mesh shape build" };
 
         std::unordered_map<Hash, ShapeRef> ShapesManager::heightFieldShapeCache;
         std::mutex ShapesManager::heightFieldShapeCacheMutex;
@@ -28,6 +31,36 @@ namespace Atlas {
         std::mutex ShapesManager::convexHullShapeCacheMutex;
 
         const float ShapesManager::epsilon = 0.00001f;
+
+        bool ShapesManager::PrepareMeshShape(const ResourceHandle<Mesh::Mesh>& mesh) {
+
+            if (!mesh.IsLoaded())
+                return false;
+
+            {
+                std::scoped_lock lock(meshShapeCacheMutex);
+                if (meshShapeCache.contains(mesh.GetID()))
+                    return true;
+
+                if (!pendingMeshShapes.insert(mesh.GetID()).second)
+                    return false;
+            }
+
+            JobSystem::Execute(meshShapeJobs, [mesh](JobData&) {
+                Shape shape;
+                MeshShapeSettings settings;
+                settings.mesh = mesh;
+
+                // A failed build stays pending, it would fail again
+                if (TryCreateShapeFromMesh(&shape, settings)) {
+                    std::scoped_lock lock(meshShapeCacheMutex);
+                    pendingMeshShapes.erase(mesh.GetID());
+                }
+                });
+
+            return false;
+
+        }
 
         bool ShapesManager::TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings) {
 
@@ -65,8 +98,11 @@ namespace Atlas {
                 JPH::MeshShapeSettings meshShapeSettings(vertexList, triangleList);
                 auto result = meshShapeSettings.Create();
 
-                if (!result.IsValid())
+                if (!result.IsValid()) {
+                    Log::Warning("Couldn't create the physics shape of mesh " + mesh.GetResource()->path + ": " +
+                        std::string(result.GetError().c_str()));
                     return false;
+                }
 
                 shape->ref = result.Get();
 

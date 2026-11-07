@@ -206,6 +206,7 @@ namespace Atlas {
 
         gpuCulled = false;
         gpuDraws.clear();
+        gpuLateDraws.clear();
 
         std::erase_if(meshToEntityMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
         std::erase_if(meshToInstancesMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
@@ -271,7 +272,7 @@ namespace Atlas {
 
             auto isSkinned = mesh->data.IsSkinned();
             auto jointCount = size_t(mesh->data.skeleton.GetJointCount());
-            auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated && !isSkinned;
+            auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated && mesh->impostor->IsResident() && !isSkinned;
             auto needsHistory = mesh->mobility != Mesh::MeshMobility::Stationary
                 && type != RenderPassType::Shadow;
 
@@ -447,6 +448,7 @@ namespace Atlas {
 
         gpuCulled = false;
         gpuDraws.clear();
+        gpuLateDraws.clear();
 
         wasUsed = false;
         scene = nullptr;

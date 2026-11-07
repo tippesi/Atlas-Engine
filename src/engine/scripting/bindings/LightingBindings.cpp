@@ -78,6 +78,7 @@ namespace Atlas::Scripting::Bindings {
             "enable", &Lighting::SSGI::enable,
             "enableAo", &Lighting::SSGI::enableAo,
             "radius", &Lighting::SSGI::radius,
+            "thickness", &Lighting::SSGI::thickness,
             "rayCount", &Lighting::SSGI::rayCount,
             "sampleCount", &Lighting::SSGI::sampleCount,
             "irradianceLimit", &Lighting::SSGI::irradianceLimit,

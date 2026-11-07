@@ -126,7 +126,7 @@ namespace Atlas {
             }
 
             if (bloom.enable) {
-                GenerateBloom(bloom, &target->hdrTexture, &target->bloomTexture, commandList);
+                GenerateBloom(bloom, readTexture, &target->hdrTexture, &target->bloomTexture, commandList);
             }
 
             {
@@ -282,8 +282,8 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture,
-            Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList) {
+        void PostProcessRenderer::GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* sourceTexture,
+            Texture::Texture2D* hdrTexture, Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList) {
 
             const uint32_t maxDownsampleCount = 12;
             ivec2 resolutions[maxDownsampleCount];
@@ -291,7 +291,8 @@ namespace Atlas {
             GPUProfiler::BeginQuery("Bloom");
             GPUProfiler::BeginQuery("Copy texture");
 
-            CopyToTexture(hdrTexture, bloomTexture, commandList);
+            // The lower mips of the hdr texture are only used as scratch space for the downsample and upsample
+            CopyToTexture(sourceTexture, bloomTexture, commandList);
 
             auto mipLevels = std::min(bloom.mipLevels, bloomTexture->image->mipLevels);
             mipLevels = std::min(mipLevels, maxDownsampleCount);
@@ -410,7 +411,7 @@ namespace Atlas {
                 {dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
             };
             commandList->PipelineBarrier(preImageBarriers, {},
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             commandList->BlitImage(srcImage, dstImage);
 
@@ -419,7 +420,7 @@ namespace Atlas {
                 {dstImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
             commandList->PipelineBarrier(postImageBarriers, {},
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
         }
 

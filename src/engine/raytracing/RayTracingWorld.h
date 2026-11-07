@@ -100,6 +100,8 @@ namespace Atlas {
                 float cullingDistanceSqr = 0.0f;
 
                 int32_t idx = 0;
+                // The last update that found the BLAS
+                uint64_t update = 0;
 
                 std::vector<GPULight> triangleLights;
             };
@@ -119,6 +121,8 @@ namespace Atlas {
 
                 uint32_t jointOffset = 0;
                 bool used = false;
+                // Poses that didn't change keep their skinned triangles
+                bool skin = false;
             };
 
             struct alignas(16) SkinPushConstants {
@@ -214,8 +218,9 @@ namespace Atlas {
             uint32_t readbackFrameCount = 0;
             Graphics::UploadBufferPool uploadBufferPool;
 
+            // Kept from update to update, the infos of BLASes that are gone are removed
             std::unordered_map<Ref<BLAS>, BlasInfo> blasInfos;
-            std::unordered_map<Ref<BLAS>, BlasInfo> prevBlasInfos;
+            uint64_t blasInfoUpdate = 0;
 
             std::vector<GPUMaterial> materials;
             std::vector<JobContext> jobContexts;

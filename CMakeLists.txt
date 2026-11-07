@@ -32,6 +32,7 @@ option(ATLAS_IMGUI "Activate ImGui integration" OFF)
 option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 option(ATLAS_HEADLESS "Activate support for running the engine in headless mode" OFF)
 option(ATLAS_BUNDLE "Allows the applications to be bundled and installed on MacOS" OFF)
+option(ATLAS_LUA_SAFETIES "Check the arguments of Lua binding calls, wrong ones raise Lua errors instead of crashing" ON)
 option(ATLAS_MSVC_HOT_RELOAD "Configures all targets to be hot-reloadable" OFF)
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})

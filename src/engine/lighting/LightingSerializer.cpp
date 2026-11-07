@@ -66,7 +66,6 @@ namespace Atlas::Lighting {
             {"height", p.height},
             {"heightFalloff", p.heightFalloff},
             {"scatteringAnisotropy", p.scatteringAnisotropy},
-            {"rayMarching", p.rayMarching},
             {"localLights", p.localLights},
             {"rayMarchStepCount", p.rayMarchStepCount},
             {"froxels", p.froxels},
@@ -87,8 +86,6 @@ namespace Atlas::Lighting {
         j.at("height").get_to(p.height);
         j.at("heightFalloff").get_to(p.heightFalloff);
         j.at("scatteringAnisotropy").get_to(p.scatteringAnisotropy);
-        j.at("rayMarching").get_to(p.rayMarching);
-        j.at("rayMarchStepCount").get_to(p.rayMarchStepCount);
         j.at("volumetricIntensity").get_to(p.volumetricIntensity);
 
         try_get_json(j, "localLights", p.localLights);
@@ -304,7 +301,8 @@ namespace Atlas::Lighting {
             {"sampleCount", p.sampleCount},
             {"irradianceLimit", p.irradianceLimit},
             {"aoStrength", p.aoStrength},
-            {"halfResolution", p.halfResolution}
+            {"halfResolution", p.halfResolution},
+            {"thickness", p.thickness}
         };
     }
 
@@ -317,6 +315,7 @@ namespace Atlas::Lighting {
         j.at("irradianceLimit").get_to(p.irradianceLimit);
         j.at("aoStrength").get_to(p.aoStrength);
         try_get_json(j, "halfResolution", p.halfResolution);
+        try_get_json(j, "thickness", p.thickness);
     }
 
     void to_json(json& j, const SSS& p) {

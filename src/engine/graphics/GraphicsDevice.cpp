@@ -17,15 +17,40 @@ namespace Atlas {
 
         GraphicsDevice* GraphicsDevice::DefaultDevice = nullptr;
 
-        void HandleDeviceLost() {
+        void FrameData::WaitAndReset(VkDevice device) {
 
-            auto device = GraphicsDevice::DefaultDevice;
-            if (!device || device->isDeviceLost.exchange(true))
-                return;
+            if (submittedCommandLists.size() > 0) {
+                std::vector<VkFence> fences;
+                for (auto commandList : submittedCommandLists) {
+                    fences.push_back(commandList->fence);
+                }
+                auto result = vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 30000000000);
+                // Try to recover here
+                if (result == VK_TIMEOUT)
+                    vkDeviceWaitIdle(device);
+                VK_CHECK(result)
+                VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
+            }
 
-            Log::Error("Graphics device lost on " + std::string(device->deviceProperties.properties.deviceName) +
-                " (driver " + std::string(device->driverProperties.driverInfo) + "), shutting down");
-            AE_LOG_STACKTRACE();
+            for (auto commandList : submittedCommandLists) {
+                commandList->ResetDescriptors();
+                commandList->frameBufferInUse = nullptr;
+                commandList->renderPassInUse = nullptr;
+                commandList->pipelineInUse = nullptr;
+                commandList->wasSwapChainAccessed = false;
+                commandList->isLocked = false;
+            }
+            submittedCommandLists.clear();
+            submissions.clear();
+
+        }
+
+        void FrameData::RecreateSemaphore(VkDevice device) {
+
+            vkDestroySemaphore(device, semaphore, nullptr);
+
+            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+            VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
 
         }
 
@@ -633,6 +658,17 @@ namespace Atlas {
 
         }
 
+        void GraphicsDevice::HandleDeviceLost() {
+
+            if (!DefaultDevice || DefaultDevice->isDeviceLost.exchange(true))
+                return;
+
+            Log::Error("Graphics device lost on " + std::string(DefaultDevice->deviceProperties.properties.deviceName) +
+                " (driver " + std::string(DefaultDevice->driverProperties.driverInfo) + "), shutting down");
+            AE_LOG_STACKTRACE();
+
+        }
+
         void GraphicsDevice::SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle) {
 
             if (!support.debugMarker)
@@ -1010,15 +1046,25 @@ namespace Atlas {
             availableFeatures13 = {};
             availableFeatures13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
-            // Point to the next features
-            availableFeatures.pNext = &availableFeatures11;
-            availableFeatures11.pNext = &availableFeatures12;
-            availableFeatures12.pNext = &availableFeatures13;
+            StructureChainBuilder featureBuilder(availableFeatures);
+            featureBuilder.Append(availableFeatures11);
+            featureBuilder.Append(availableFeatures12);
+            featureBuilder.Append(availableFeatures13);
 
             availableRobustness2Features = {};
             availableRobustness2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
             if (supportedExtensions.contains(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME))
-                availableFeatures13.pNext = &availableRobustness2Features;
+                featureBuilder.Append(availableRobustness2Features);
+
+            availableCooperativeMatrixFeatures = {};
+            availableCooperativeMatrixFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR;
+            if (supportedExtensions.contains(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME))
+                featureBuilder.Append(availableCooperativeMatrixFeatures);
+
+            availableFloat8Features = {};
+            availableFloat8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME))
+                featureBuilder.Append(availableFloat8Features);
 
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
@@ -1134,6 +1180,9 @@ namespace Atlas {
             features12.hostQueryReset = availableFeatures12.hostQueryReset;
             features12.bufferDeviceAddress = availableFeatures12.bufferDeviceAddress;
             features12.shaderFloat16 = availableFeatures12.shaderFloat16;
+            features12.shaderInt8 = availableFeatures12.shaderInt8;
+            features12.storageBuffer8BitAccess = availableFeatures12.storageBuffer8BitAccess;
+            features12.uniformAndStorageBuffer8BitAccess = availableFeatures12.uniformAndStorageBuffer8BitAccess;
 
             features13.synchronization2 = availableFeatures13.synchronization2;
             features13.dynamicRendering = availableFeatures13.dynamicRendering;

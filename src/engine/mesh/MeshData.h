@@ -7,6 +7,7 @@
 #include "DataComponent.h"
 #include "Skeleton.h"
 #include "Material.h"
+#include "animation/Animation.h"
 #include "pipeline/PipelineConfig.h"
 
 #include <vector>
@@ -31,11 +32,24 @@ namespace Atlas {
 
             Volume::AABB aabb;
 
+            // Mesh units covered by one unit of the texture coordinates, texture streaming derives resolutions from it
+            float uvScale = 0.0f;
+
+            // Graphs of the material are compiled in the background, the regular pipelines are used until they are done
+            // Renderers read these for every draw, so they are next to the other members draws need
+            bool mainGraphPending = false;
+            bool shadowGraphPending = false;
+            // The configs below are the ones of the graph
+            bool mainUsesGraph = false;
+            bool shadowUsesGraph = false;
+
             PipelineConfig mainConfig;
             PipelineConfig shadowConfig;
             // Used for instances with reversed winding
             PipelineConfig mainReversedWindingConfig;
             PipelineConfig shadowReversedWindingConfig;
+
+            void ResetPipelines();
         
         };
 
@@ -121,6 +135,8 @@ namespace Atlas {
             Skeleton skeleton;
 
             std::vector<ResourceHandle<Material>> materials;
+            // The clips of the skeleton, they load with the mesh
+            std::vector<ResourceHandle<Animation::Animation>> animations;
             std::vector<MeshSubData> subData;
 
             int32_t primitiveType = 0;

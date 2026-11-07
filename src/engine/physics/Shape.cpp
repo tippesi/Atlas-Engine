@@ -6,6 +6,15 @@
 
 namespace Atlas::Physics {
 
+    bool Shape::PrepareInBackground() {
+
+        if (type != ShapeType::Mesh || IsValid())
+            return true;
+
+        return ShapesManager::PrepareMeshShape(static_cast<MeshShapeSettings*>(settings.get())->mesh);
+
+    }
+
     bool Shape::TryCreate() {
 
         if (type == ShapeType::Mesh) {

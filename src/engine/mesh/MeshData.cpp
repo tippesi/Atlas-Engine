@@ -6,6 +6,20 @@ namespace Atlas {
 
     namespace Mesh {
 
+        void MeshSubData::ResetPipelines() {
+
+            mainConfig = PipelineConfig();
+            shadowConfig = PipelineConfig();
+            mainReversedWindingConfig = PipelineConfig();
+            shadowReversedWindingConfig = PipelineConfig();
+
+            mainGraphPending = false;
+            shadowGraphPending = false;
+            mainUsesGraph = false;
+            shadowUsesGraph = false;
+
+        }
+
         MeshData::MeshData(const MeshData& that) {
 
             DeepCopy(that);
@@ -124,7 +138,7 @@ namespace Atlas {
                     }
 
                     triangles[k].materialIdx = sub.materialIdx;
-                    triangles[k].opacity = sub.material->HasOpacityMap() ? -1.0f : sub.material->opacity;
+                    triangles[k].opacity = sub.material->opacityMap.IsValid() ? -1.0f : sub.material->opacity;
 
                 }
 
@@ -201,6 +215,8 @@ namespace Atlas {
 
             materials.clear();
             subData.clear();
+
+            animations = that.animations;
 
             materials.resize(that.materials.size());
             subData.resize(that.subData.size());

@@ -448,6 +448,24 @@ namespace Atlas {
 
         }
 
+        std::vector<BodyID> PhysicsWorld::GetBuoyantBodies() const {
+
+            std::vector<BodyID> bodies;
+            bodies.reserve(bodyToBuoyancyMap.size());
+            for (const auto& [bodyId, buoyancy] : bodyToBuoyancyMap)
+                bodies.push_back(bodyId);
+            return bodies;
+
+        }
+
+        std::vector<BodyID> PhysicsWorld::GetActiveBodies() const {
+
+            JPH::BodyIDVector bodies;
+            system->GetActiveBodies(JPH::EBodyType::RigidBody, bodies);
+            return std::vector<BodyID>(bodies.begin(), bodies.end());
+
+        }
+
         Volume::AABB PhysicsWorld::GetBodyBounds(BodyID bodyId) const {
 
             auto& bodyInterface = system->GetBodyInterface();

@@ -29,7 +29,10 @@ namespace Atlas {
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer, const MaterialGraph::CompiledGraph* graph = nullptr);
+
+            // Switches to the pipelines of the graph once they are created
+            void UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
             using LightMap = std::map<Scene::Entity, Ref<Graphics::FrameBuffer>>;
 
@@ -44,6 +47,8 @@ namespace Atlas {
                 uint32_t jointOffset;
                 uint32_t jointCount;
                 uint32_t instanceOffset;
+                // Only part of the push constants of graphs, the others don't push it
+                uint32_t materialGraphOffset;
             };
 
             LightMap prevLightMap;

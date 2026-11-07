@@ -15,6 +15,9 @@ namespace Atlas {
             AE_ASSERT(!desc.shader->isCompute && "Can't create a graphics pipeline with a compute shader");
             if (desc.shader->isCompute) return;
 
+            AE_ASSERT(desc.shader->isComplete && "Can't create a graphics pipeline with a shader which didn't compile");
+            if (!desc.shader->isComplete) return;
+
             AE_ASSERT((desc.swapChain || desc.frameBuffer) && "Must provide a swap chain or a frame buffer");
 
             GeneratePipelineLayoutFromShader();

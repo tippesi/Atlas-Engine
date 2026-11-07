@@ -1,6 +1,7 @@
 #include "SceneBindings.h"
 #include "MemberBindings.h"
 
+#include "Log.h"
 #include "scene/Scene.h"
 #include "scene/components/LuaScriptComponent.h"
 #include "volume/Ray.h"
@@ -32,8 +33,9 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
+    // A filter skips entities before their triangles are tested, cheaper than casting again past them
     static RayHit CastRay(Scene::Scene& scene, const Volume::Ray& inputRay,
-        Scene::SceneQueryComponents components, Scene::Entity ignored) {
+        Scene::SceneQueryComponents components, Scene::Entity ignored, const sol::protected_function* filter = nullptr) {
 
         RayHit hit;
 
@@ -43,7 +45,18 @@ namespace Atlas::Scripting::Bindings {
         // Normalized such that distances are in world units
         auto ray = Volume::Ray(inputRay.origin, glm::normalize(inputRay.direction), inputRay.tMin, inputRay.tMax);
         auto result = scene.CastRay(ray, components, [&](const Scene::Entity& entity) {
-            return IsIgnored(scene, entity, ignored);
+            if (IsIgnored(scene, entity, ignored))
+                return true;
+            if (!filter)
+                return false;
+            // Errors can't be raised in the middle of the query, they are logged
+            sol::protected_function_result skip = (*filter)(entity);
+            if (!skip.valid()) {
+                sol::error error = skip;
+                Log::Error(std::string("Error in the filter of a ray cast: ") + error.what());
+                return false;
+            }
+            return skip.get_type() == sol::type::boolean && skip.get<bool>();
             });
 
         if (!result.valid)
@@ -96,16 +109,92 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
+    // Registry keys of the tables each Lua state keeps per component type, their addresses are unique
+    template<class Comp>
+    struct ComponentRefKeys {
+        static inline char methods = 0;
+        static inline char makeForward = 0;
+        static inline char metatable = 0;
+    };
+
+    // The metamethods are only reached through the metatable of the reference, the userdata holds one
+    template<class Comp>
+    static ComponentRef<Comp>& ComponentRefAt(lua_State* state, int index) {
+
+        return **static_cast<ComponentRef<Comp>**>(sol::detail::align_usertype_pointer(lua_touserdata(state, index)));
+
+    }
+
+    // Components are accessed many times per frame, so these use the Lua API directly instead of sol's checked
+    // conversions and references
+    template<class Comp>
+    static int ResolveComponentRef(lua_State* state) {
+
+        auto isRef = lua_getmetatable(state, 1) != 0;
+        if (isRef) {
+            lua_rawgetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::metatable);
+            isRef = lua_rawequal(state, -1, -2) != 0;
+            lua_pop(state, 2);
+        }
+        if (!isRef)
+            return luaL_error(state, "Expected a component reference as self");
+
+        auto component = ResolveComponent(ComponentRefAt<Comp>(state, 1), state);
+        sol::stack::push(state, component);
+        return 1;
+
+    }
+
+    template<class Comp>
+    static int IndexComponentRef(lua_State* state) {
+
+        lua_settop(state, 2);
+        lua_rawgetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::methods);
+        lua_pushvalue(state, 2);
+        lua_rawget(state, 3);
+        if (lua_type(state, 4) == LUA_TFUNCTION)
+            return 1;
+        lua_settop(state, 3);
+
+        auto component = ResolveComponent(ComponentRefAt<Comp>(state, 1), state);
+        sol::stack::push(state, component);
+        lua_pushvalue(state, 2);
+        lua_gettable(state, 4);
+        if (lua_type(state, 5) != LUA_TFUNCTION)
+            return 1;
+
+        // Methods are called with the reference as self and need the component instead
+        lua_rawgetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::makeForward);
+        lua_pushvalue(state, 5);
+        lua_call(state, 1, 1);
+        lua_pushvalue(state, 2);
+        lua_pushvalue(state, 6);
+        lua_rawset(state, 3);
+        return 1;
+
+    }
+
+    template<class Comp>
+    static int NewIndexComponentRef(lua_State* state) {
+
+        lua_settop(state, 3);
+        auto component = ResolveComponent(ComponentRefAt<Comp>(state, 1), state);
+        sol::stack::push(state, component);
+        lua_pushvalue(state, 2);
+        lua_pushvalue(state, 3);
+        lua_settable(state, 4);
+        return 0;
+
+    }
+
     template<class Comp>
     static void GenerateComponentRefBindings(sol::table* ns, const std::string& name) {
 
-        sol::state_view lua(ns->lua_state());
+        auto state = ns->lua_state();
+        sol::state_view lua(state);
 
-        // Methods are called with the reference as self and need the component instead. Forwarding happens
-        // in Lua, so errors of the method propagate as they are.
-        auto resolve = [](const ComponentRef<Comp>& ref, sol::this_state state) {
-            return ResolveComponent(ref, state);
-        };
+        // Forwarding happens in Lua, so errors of the method propagate as they are. Forwarding functions don't
+        // depend on the component, they are created once per method
         sol::protected_function makeForwardFactory = lua.load(R"(
             local resolve = ...
             return function(method)
@@ -114,52 +203,23 @@ namespace Atlas::Scripting::Bindings {
                 end
             end
         )");
-        sol::protected_function makeForward = makeForwardFactory(sol::as_function(resolve));
+        sol::protected_function makeForward = makeForwardFactory(&ResolveComponentRef<Comp>);
 
-        // Forwarding functions don't depend on the component, they are created once per method
-        auto methodsName = name + "RefMethods";
-        auto makeForwardName = name + "RefMakeForward";
-        lua.registry()[methodsName] = lua.create_table();
-        lua.registry()[makeForwardName] = makeForward;
+        lua_newtable(state);
+        lua_rawsetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::methods);
+        makeForward.push();
+        lua_rawsetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::makeForward);
 
         ns->new_usertype<ComponentRef<Comp>>(name + "Ref", sol::no_constructor,
-            sol::meta_function::index, [methodsName, makeForwardName](const ComponentRef<Comp>& ref, sol::stack_object key,
-                sol::this_state state) -> sol::object {
-                {
-                    sol::table methods = sol::state_view(state).registry()[methodsName];
-                    sol::object forward = methods[key];
-                    if (forward.get_type() == sol::type::function)
-                        return forward;
-                }
-
-                auto component = ResolveComponent(ref, state);
-                sol::stack::push(state, component);
-                key.push(state);
-                lua_gettable(state, -2);
-                sol::stack_object value(state, lua_absindex(state, -1));
-                if (value.get_type() != sol::type::function)
-                    return value;
-
-                auto registry = sol::state_view(state).registry();
-                sol::table methods = registry[methodsName];
-                sol::protected_function makeForward = registry[makeForwardName];
-                sol::object forward = makeForward(value);
-                methods[key] = forward;
-                return forward;
-            },
-            sol::meta_function::new_index, [](const ComponentRef<Comp>& ref, sol::stack_object key, sol::stack_object value,
-                sol::this_state state) {
-                auto component = ResolveComponent(ref, state);
-                sol::stack::push(state, component);
-                key.push(state);
-                value.push(state);
-                lua_settable(state, -3);
-                lua_pop(state, 1);
-            },
+            sol::meta_function::index, &IndexComponentRef<Comp>,
+            sol::meta_function::new_index, &NewIndexComponentRef<Comp>,
             sol::meta_function::equal_to, [](const ComponentRef<Comp>& a, const ComponentRef<Comp>& b) {
                 return a.entity == b.entity;
             }
         );
+
+        luaL_getmetatable(state, sol::usertype_traits<ComponentRef<Comp>>::metatable().c_str());
+        lua_rawsetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::metatable);
 
     }
 
@@ -224,6 +284,11 @@ namespace Atlas::Scripting::Bindings {
             },
             [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components, Scene::Entity ignored) {
                 return CastRay(scene, ray, components, ignored);
+            },
+            // skip(entity) returns true for entities the ray passes through
+            [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components, Scene::Entity ignored,
+                const sol::protected_function& skip) {
+                return CastRay(scene, ray, components, ignored, &skip);
             }
         );
 
@@ -265,6 +330,19 @@ namespace Atlas::Scripting::Bindings {
             },
             [](Scene::Scene& scene, const Volume::AABB& aabb, uint32_t components) {
                 return sol::as_table(scene.QueryAABB(aabb, components));
+            },
+            // Only entities with a name that contains one of the parts, scripts searching for a kind of mesh would
+            // otherwise look at every name in Lua
+            [](Scene::Scene& scene, const Volume::AABB& aabb, uint32_t components, const sol::table& nameTable) {
+                auto nameParts = nameTable.as<std::vector<std::string>>();
+                auto entities = scene.QueryAABB(aabb, components);
+                std::erase_if(entities, [&](Scene::Entity entity) {
+                    auto nameComponent = entity.TryGetComponent<NameComponent>();
+                    return !nameComponent || std::none_of(nameParts.begin(), nameParts.end(), [&](const std::string& part) {
+                        return nameComponent->name.find(part) != std::string::npos;
+                        });
+                    });
+                return sol::as_table(entities);
             }
         );
 
@@ -310,6 +388,7 @@ namespace Atlas::Scripting::Bindings {
                 return scene.PlayAudio(data, location, volume.value_or(1.0f), falloffFactor.value_or(0.5f));
             },
             "paused", &Scene::Scene::paused,
+            "occlusionCulling", &Scene::Scene::occlusionCulling,
             "wind", &Scene::Scene::wind,
             "sky", &Scene::Scene::sky,
             "fog", &Scene::Scene::fog,
@@ -399,8 +478,70 @@ namespace Atlas::Scripting::Bindings {
             }
         );
 
+        ns->new_enum<AnimationBlendMode>("AnimationBlendMode", {
+            { "Override", AnimationBlendMode::Override },
+            { "Additive", AnimationBlendMode::Additive }
+            });
+
+        auto layerPlayOverload = sol::overload(
+            [](AnimationLayer& layer, const ResourceHandle<Animation::Animation>& animation) {
+                layer.Play(animation);
+            },
+            [](AnimationLayer& layer, const ResourceHandle<Animation::Animation>& animation, float blendTime) {
+                layer.Play(animation, blendTime);
+            }
+        );
+
+        auto layerFadeOverload = sol::overload(
+            [](AnimationLayer& layer, float weight) { layer.FadeTo(weight); },
+            [](AnimationLayer& layer, float weight, float fadeTime) { layer.FadeTo(weight, fadeTime); }
+        );
+
+        auto layerMaskOverload = sol::overload(
+            [](AnimationLayer& layer, const std::string& rootJoint) { layer.SetMask(rootJoint); },
+            [](AnimationLayer& layer, const std::string& rootJoint, int32_t blendJoints) { layer.SetMask(rootJoint, blendJoints); }
+        );
+
+        ns->new_usertype<AnimationLayer>("AnimationLayer",
+            "Play", layerPlayOverload,
+            "FadeTo", layerFadeOverload,
+            "SetMask", layerMaskOverload,
+            "GetWeight", &AnimationLayer::GetWeight,
+            "GetTargetWeight", &AnimationLayer::GetTargetWeight,
+            "animation", &AnimationLayer::animation,
+            "mode", &AnimationLayer::mode,
+            "time", &AnimationLayer::time,
+            "speed", &AnimationLayer::speed,
+            "loop", &AnimationLayer::loop,
+            "playing", &AnimationLayer::playing
+        );
+
+        ns->new_usertype<AnimationIKChain>("AnimationIKChain",
+            "SetJoints", &AnimationIKChain::SetJoints,
+            "GetUpperJoint", &AnimationIKChain::GetUpperJoint,
+            "GetMiddleJoint", &AnimationIKChain::GetMiddleJoint,
+            "GetEndJoint", &AnimationIKChain::GetEndJoint,
+            "GetAnimatedEndPosition", &AnimationIKChain::GetAnimatedEndPosition,
+            "GetAnimatedEndLocalPosition", &AnimationIKChain::GetAnimatedEndLocalPosition,
+            "IsValid", &AnimationIKChain::IsValid,
+            "target", &AnimationIKChain::target,
+            "relativeTarget", &AnimationIKChain::relativeTarget,
+            "weight", &AnimationIKChain::weight,
+            "pole", &AnimationIKChain::pole,
+            "normal", &AnimationIKChain::normal,
+            "normalWeight", &AnimationIKChain::normalWeight
+        );
+
         ns->new_usertype<AnimationComponent>("AnimationComponent",
             "Play", playOverload,
+            "GetLayer", &AnimationComponent::GetLayer,
+            "GetLayerCount", &AnimationComponent::GetLayerCount,
+            "GetIKChain", &AnimationComponent::GetIKChain,
+            "GetIKChainCount", &AnimationComponent::GetIKChainCount,
+            "SetJointRotationOffset", &AnimationComponent::SetJointRotationOffset,
+            "ClearJointRotationOffsets", &AnimationComponent::ClearJointRotationOffsets,
+            "SetJointTranslationOffset", &AnimationComponent::SetJointTranslationOffset,
+            "ClearJointTranslationOffsets", &AnimationComponent::ClearJointTranslationOffsets,
             "GetJointMatrix", &AnimationComponent::GetJointMatrix,
             "animation", &AnimationComponent::animation,
             "time", &AnimationComponent::time,
@@ -628,11 +769,13 @@ namespace Atlas::Scripting::Bindings {
             "SetLinearVelocity", &PlayerComponent::SetLinearVelocity,
             "GetLinearVelocity", &PlayerComponent::GetLinearVelocity,
             "GetGroundVelocity", &PlayerComponent::GetGroundVelocity,
+            "SetInputVelocity", &PlayerComponent::SetInputVelocity,
             "IsOnGround", &PlayerComponent::IsOnGround,
             "Crouch", &PlayerComponent::Crouch,
             "IsCrouching", &PlayerComponent::IsCrouching,
             "stickToGroundDist", &PlayerComponent::stickToGroundDist,
             "walkStairsStepUpDist", &PlayerComponent::walkStairsStepUpDist,
+            "walkStairStepUpDistance", &PlayerComponent::walkStairStepUpDistance,
             "slowVelocity", &PlayerComponent::slowVelocity,
             "fastVelocity", &PlayerComponent::fastVelocity,
             "jumpVelocity", &PlayerComponent::jumpVelocity,

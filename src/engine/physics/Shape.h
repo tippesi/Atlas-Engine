@@ -96,6 +96,9 @@ namespace Atlas::Physics {
 
         bool TryCreate();
 
+        // Starts expensive work of creating the shape in the background, returns true once TryCreate doesn't need to do it
+        bool PrepareInBackground();
+
         bool Scale(const vec3& scale);
 
         ShapeRef ref = nullptr;

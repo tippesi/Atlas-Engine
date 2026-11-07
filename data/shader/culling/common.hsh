@@ -9,6 +9,8 @@
 #define MESH_DRAWABLE 1u
 #define MESH_CAST_SHADOW 2u
 #define MESH_IMPOSTOR 4u
+#define MESH_GEOMETRY 8u
+#define MESH_DRAW_EARLY 16u
 
 #define DRAW_DEFAULT_WINDING 0u
 #define DRAW_REVERSED_WINDING 1u
@@ -21,7 +23,8 @@ struct Instance {
     uint meshIdx;
     uint flags;
     uint historyIdx;
-    uint padding0;
+    // Whether the main view saw the instance in its last occlusion test
+    uint visibleLastFrame;
 };
 
 struct CullMesh {
@@ -31,7 +34,8 @@ struct CullMesh {
     float impostorDistance;
     float impostorShadowDistance;
     uint flags;
-    uint padding0;
+    // Instances with a smaller bounding sphere in pixels are culled
+    float minScreenSize;
     uint regionOffset;
     uint regionCapacity;
     uint impostorRegionOffset;

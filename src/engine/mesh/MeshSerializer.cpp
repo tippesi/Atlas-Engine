@@ -2,7 +2,11 @@
 #include "common/MathHelper.h"
 #include "resource/ResourceManager.h"
 #include "loader/MaterialLoader.h"
+#include "loader/MaterialGraphLoader.h"
+#include "loader/AnimationLoader.h"
 #include "loader/ImpostorLoader.h"
+#include "streaming/TextureStreaming.h"
+#include "streaming/ImpostorStreaming.h"
 
 namespace Atlas::Mesh {
 
@@ -28,6 +32,9 @@ namespace Atlas::Mesh {
             {"rayTraceDistanceCulling", p.rayTraceDistanceCulling},
             {"impostorDistance", p.impostorDistance},
             {"impostorShadowDistance", p.impostorShadowDistance},
+            {"minScreenSize", p.minScreenSize},
+            {"animationLodDistance", p.animationLodDistance},
+            {"animationMaxInterval", p.animationMaxInterval},
             {"invertUVs", p.invertUVs},
             {"data", p.data},
         };
@@ -59,14 +66,19 @@ namespace Atlas::Mesh {
         j.at("invertUVs").get_to(p.invertUVs);
         j.at("data").get_to(p.data);
 
+        p.UpdateRenderBounds();
+
         try_get_json(j, "rayTrace", p.rayTrace);
         try_get_json(j, "rayTraceDistanceCulling", p.rayTraceDistanceCulling);
+        try_get_json(j, "minScreenSize", p.minScreenSize);
+        try_get_json(j, "animationLodDistance", p.animationLodDistance);
+        try_get_json(j, "animationMaxInterval", p.animationMaxInterval);
 
         p.impostor = ResourceHandle<Impostor>();
         if (j.contains("impostor")) {
             std::string path = j["impostor"];
             p.impostor = ResourceManager<Impostor>::GetOrLoadResourceWithLoaderAsync(
-                path, ResourceOrigin::User, Loader::ImpostorLoader::LoadImpostor, true);
+                path, ResourceOrigin::User, Streaming::ImpostorStreaming::LoadImpostor, true);
         }
 
         p.mobility = static_cast<MeshMobility>(mobility);
@@ -116,6 +128,10 @@ namespace Atlas::Mesh {
             j["materials"][i] = path;
         }
 
+        for (size_t i = 0; i < p.animations.size(); i++) {
+            j["animations"][i] = p.animations[i].GetResource()->path;
+        }
+
     }
 
     void from_json(const json& j, MeshData& p) {
@@ -159,6 +175,14 @@ namespace Atlas::Mesh {
 
             for (auto& subData : p.subData) {
                 subData.material = p.materials[subData.materialIdx];
+            }
+        }
+
+        p.animations.clear();
+        if (j.contains("animations")) {
+            for (auto& path : j["animations"]) {
+                p.animations.push_back(ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoader(path,
+                    ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true));
             }
         }
 
@@ -325,6 +349,46 @@ namespace Atlas {
         if (p.emissiveMap.IsValid() && !p.emissiveMap.IsGenerated())
             j["emissiveMapPath"] = p.emissiveMap.GetResource()->path;
 
+        if (p.graph.IsValid() && !p.graph.IsGenerated())
+            j["graphPath"] = p.graph.GetResource()->path;
+        if (!p.graphValues.empty()) {
+            auto values = json::object();
+            for (const auto& [name, value] : p.graphValues)
+                values[name] = value;
+            j["graphValues"] = values;
+        }
+        if (!p.graphTextures.empty()) {
+            auto textures = json::object();
+            for (const auto& [name, texture] : p.graphTextures) {
+                if (texture.IsValid() && !texture.IsGenerated())
+                    textures[name] = texture.GetResource()->path;
+            }
+            j["graphTextures"] = textures;
+        }
+        if (p.graphBake.bakedState != 0 || !p.graphBake.meshPath.empty()) {
+            j["graphBake"] = json{
+                {"mode", int32_t(p.graphBake.mode)},
+                {"resolution", p.graphBake.resolution},
+                {"time", p.graphBake.time},
+                {"meshPath", p.graphBake.meshPath},
+                {"bakedState", p.graphBake.bakedState}
+            };
+        }
+        if (p.graphBake.bakedState != 0) {
+            const auto& unbaked = p.graphBake.unbaked;
+            j["graphBake"]["unbaked"] = json{
+                {"baseColor", unbaked.baseColor},
+                {"emissiveColor", unbaked.emissiveColor},
+                {"emissiveIntensity", unbaked.emissiveIntensity},
+                {"opacity", unbaked.opacity},
+                {"roughness", unbaked.roughness},
+                {"metalness", unbaked.metalness},
+                {"ao", unbaked.ao},
+                {"normalScale", unbaked.normalScale},
+                {"maps", unbaked.maps}
+            };
+        }
+
     }
 
     void from_json(const json& j, Material& p) {
@@ -354,21 +418,66 @@ namespace Atlas {
 
         try_get_json(j, "uvAnimation", p.uvAnimation);
 
-        // Maps are only written when set, a missing one removes the map
-        auto readMap = [&](const char* key, ResourceHandle<Texture::Texture2D>& map, bool priority = false) {
-            map = j.contains(key) ? ResourceManager<Texture::Texture2D>::GetOrLoadResource(j[key], false,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0, false, priority) :
+        // Maps are only written when set, a missing one removes the map. They load in the background, the material
+        // uses them once they are loaded (Scene::WaitForResourceLoad waits for them)
+        auto readMap = [&](const char* key, ResourceHandle<Texture::Texture2D>& map) {
+            map = j.contains(key) ? ResourceManager<Texture::Texture2D>::GetOrLoadResourceWithLoaderAsync(j[key],
+                Streaming::TextureStreaming::LoadTexture, false, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic) :
                 ResourceHandle<Texture::Texture2D>();
             };
 
         readMap("baseColorMapPath", p.baseColorMap);
-        readMap("opacityMapPath", p.opacityMap, true);
+        readMap("opacityMapPath", p.opacityMap);
         readMap("normalMapPath", p.normalMap);
         readMap("roughnessMapPath", p.roughnessMap);
         readMap("metalnessMapPath", p.metalnessMap);
         readMap("aoMapPath", p.aoMap);
         readMap("displacementMapPath", p.displacementMap);
         readMap("emissiveMapPath", p.emissiveMap);
+
+        // The bounds of meshes depend on the graph, so it is loaded right away like materials are for meshes
+        p.graph = j.contains("graphPath") ? ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoader(
+            j["graphPath"], ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph) : ResourceHandle<MaterialGraph::Graph>();
+
+        p.graphParameterVersion++;
+        p.graphValues.clear();
+        if (j.contains("graphValues")) {
+            for (const auto& [name, value] : j["graphValues"].items())
+                p.graphValues[name] = value.get<vec4>();
+        }
+
+        p.graphBake = {};
+        if (j.contains("graphBake")) {
+            const auto& bake = j["graphBake"];
+            int32_t mode = 0;
+            try_get_json(bake, "mode", mode);
+            p.graphBake.mode = MaterialGraph::BakeMode(mode);
+            try_get_json(bake, "resolution", p.graphBake.resolution);
+            try_get_json(bake, "time", p.graphBake.time);
+            try_get_json(bake, "meshPath", p.graphBake.meshPath);
+            try_get_json(bake, "bakedState", p.graphBake.bakedState);
+
+            if (bake.contains("unbaked")) {
+                const auto& unbaked = bake["unbaked"];
+                try_get_json(unbaked, "baseColor", p.graphBake.unbaked.baseColor);
+                try_get_json(unbaked, "emissiveColor", p.graphBake.unbaked.emissiveColor);
+                try_get_json(unbaked, "emissiveIntensity", p.graphBake.unbaked.emissiveIntensity);
+                try_get_json(unbaked, "opacity", p.graphBake.unbaked.opacity);
+                try_get_json(unbaked, "roughness", p.graphBake.unbaked.roughness);
+                try_get_json(unbaked, "metalness", p.graphBake.unbaked.metalness);
+                try_get_json(unbaked, "ao", p.graphBake.unbaked.ao);
+                try_get_json(unbaked, "normalScale", p.graphBake.unbaked.normalScale);
+                try_get_json(unbaked, "maps", p.graphBake.unbaked.maps);
+            }
+        }
+
+        p.graphTextures.clear();
+        if (j.contains("graphTextures")) {
+            for (const auto& [name, path] : j["graphTextures"].items()) {
+                p.graphTextures[name] = ResourceManager<Texture::Texture2D>::GetOrLoadResourceWithLoaderAsync(path.get<std::string>(),
+                    Streaming::TextureStreaming::LoadTexture, false, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            }
+        }
 
     }
 

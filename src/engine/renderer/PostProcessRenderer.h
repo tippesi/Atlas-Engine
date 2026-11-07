@@ -45,8 +45,8 @@ namespace Atlas {
                 vec4 tintColor;
             };
 
-            void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture,
-                Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
+            void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* sourceTexture,
+                Texture::Texture2D* hdrTexture, Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
 
             void SetUniforms(const CameraComponent& camera, const Ref<RenderTarget>& target,  
                 const Ref<Scene::Scene>& scene);

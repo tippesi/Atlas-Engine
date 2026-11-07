@@ -44,13 +44,11 @@ namespace Atlas::PostProcessing {
 
     void to_json(json& j, const TAA& p) {
         j = json {
-            {"enable", p.enable},
             {"jitterRange", p.jitterRange},
         };
     }
 
     void from_json(const json& j, TAA& p) {
-        j.at("enable").get_to(p.enable);
         j.at("jitterRange").get_to(p.jitterRange);
     }
 
@@ -96,7 +94,7 @@ namespace Atlas::PostProcessing {
 
         try_get_json(j, "dirtStrength", p.dirtStrength);
 
-        p.dirtMap = j.contains("dirtMap") ? ResourceManager<Texture::Texture2D>::GetOrLoadResource(j["dirtMap"], false,
+        p.dirtMap = j.contains("dirtMap") ? ResourceManager<Texture::Texture2D>::GetOrLoadResourceAsync(j["dirtMap"], false,
             Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0) : ResourceHandle<Texture::Texture2D>();
     }
 

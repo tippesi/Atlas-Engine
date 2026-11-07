@@ -152,7 +152,8 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<Input::ControllerMap>("ControllerMap",
             "IsConnected", Input::ControllerMap::IsConnected,
             "IsButtonPressed", Input::ControllerMap::IsButtonPressed,
-            "GetAxis", Input::ControllerMap::GetAxis
+            "GetAxis", Input::ControllerMap::GetAxis,
+            "Rumble", Input::ControllerMap::Rumble
         );
 
     }

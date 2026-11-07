@@ -1,6 +1,7 @@
 #include "OpaqueRenderer.h"
 
 #include "../Clock.h"
+#include "../materialgraph/PipelineCache.h"
 
 #include <mutex>
 #include <tuple>
@@ -16,12 +17,12 @@ namespace Atlas {
         }
 
         void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
-            RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap) {
+            RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap, bool lateDraws) {
 
             CPUProfiler::Scope profilerScope("Opaque geometry");
             GPUProfiler::Scope gpuScope("Opaque geometry");
 
-            auto mainPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
+            auto mainPass = lateDraws ? renderList->GetMainPass() : renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
             if (!mainPass)
                 return;
 
@@ -36,10 +37,13 @@ namespace Atlas {
             // Bind wind map
             scene->renderState.wind.noiseMap.Bind(commandList, 3, 8);
 
+            if (!sceneState->materialGraphParameters.empty())
+                sceneState->materialGraphBuffer.Bind(commandList, 3, 9);
+
             int32_t subDataCount = 0;
             // Retrieve all possible materials;
             for (const auto& [meshId, instances] : mainPass->meshToInstancesMap) {
-                if (!instances.count) continue;
+                if (!instances.count || lateDraws) continue;
 
                 auto& mesh = renderList->meshIdToMeshMap[meshId];
                 for (auto& subData : mesh->data.subData) {
@@ -54,7 +58,7 @@ namespace Atlas {
                 }
             }
 
-            for (const auto& draw : mainPass->gpuDraws) {
+            for (const auto& draw : lateDraws ? mainPass->gpuLateDraws : mainPass->gpuDraws) {
                 if (!draw.subData)
                     continue;
 
@@ -69,12 +73,19 @@ namespace Atlas {
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, _, mesh, gpuDraw] = subDatas[i];
                 const auto& material = subData->material;
+                if (subData->mainGraphPending)
+                    UpdateGraphPipelines(subData, mesh, target);
                 if (subData->mainConfig.IsValid()) continue;
 
                 subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
                 subData->mainReversedWindingConfig = subData->mainConfig.GetReversedWindingVariant();
                 subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                 subData->mainReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+
+                if (material->HasGraph()) {
+                    subData->mainGraphPending = true;
+                    UpdateGraphPipelines(subData, mesh, target);
+                }
             }
 
             auto getConfig = [](const auto& entry) -> PipelineConfig& {
@@ -92,6 +103,7 @@ namespace Atlas {
             Hash prevMesh = 0;
             Hash prevHash = 0;
             Ref<Graphics::Pipeline> currentPipeline;
+            const Graphics::PushConstantRange* constantsRange = nullptr;
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, meshID, mesh, gpuDraw] = subDatas[i];
                 auto instances = gpuDraw ? RenderList::MeshInstances{} : mainPass->meshToInstancesMap[meshID];
@@ -107,6 +119,7 @@ namespace Atlas {
                     currentPipeline = PipelineManager::GetPipeline(config);
                     config.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
+                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
                     prevHash = config.variantHash;
                 }
 
@@ -145,7 +158,16 @@ namespace Atlas {
                     .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
                     .instanceOffset = uint32_t(instances.offset),
                 };
-                commandList->PushConstants("constants", &pushConstants);
+
+                if (subData->mainUsesGraph) {
+                    auto graphData = sceneState->materialGraphMap.find(material.Get().get());
+                    if (graphData != sceneState->materialGraphMap.end()) {
+                        pushConstants.materialIdx = graphData->second.materialIdx;
+                        pushConstants.materialGraphOffset = graphData->second.parameterOffset;
+                    }
+                }
+
+                commandList->PushConstants(constantsRange, &pushConstants);
 
                 if (gpuDraw) {
                     renderList->DrawGPUCulled(commandList, *gpuDraw);
@@ -163,7 +185,8 @@ namespace Atlas {
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
                     reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
-                    commandList->PushConstants("constants", &pushConstants);
+                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
+                    commandList->PushConstants(constantsRange, &pushConstants);
                     commandList->DrawIndexed(subData->indicesCount, instances.reversedWindingCount, subData->indicesOffset,
                         0, instances.reversedWindingOffset);
                     prevHash = reversedWindingConfig.variantHash;
@@ -173,12 +196,45 @@ namespace Atlas {
 
         }
 
+        void OpaqueRenderer::UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const Ref<RenderTarget>& target) {
+
+            using PipelineState = MaterialGraph::PipelineCache::State;
+
+            const auto& graph = subData->material->graph;
+            auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
+            if (!compiled || !compiled->valid || compiled->mainVertexFile.empty()) {
+                subData->mainGraphPending = false;
+                return;
+            }
+
+            auto config = GetPipelineConfigForSubData(subData, mesh, target, compiled.get());
+            auto reversedWindingConfig = config.GetReversedWindingVariant();
+
+            auto blocking = graph->blockingPipelineUsers > 0;
+            auto state = MaterialGraph::PipelineCache::Request(config, blocking);
+            auto reversedWindingState = MaterialGraph::PipelineCache::Request(reversedWindingConfig, blocking);
+            if (state == PipelineState::Pending || reversedWindingState == PipelineState::Pending)
+                return;
+
+            subData->mainGraphPending = false;
+            if (state == PipelineState::Failed || reversedWindingState == PipelineState::Failed)
+                return;
+
+            config.graphicsPipelineDesc.frameBuffer = nullptr;
+            reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+            subData->mainConfig = config;
+            subData->mainReversedWindingConfig = reversedWindingConfig;
+
+            subData->mainUsesGraph = true;
+
+        }
+
         PipelineConfig OpaqueRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh* mesh, const Ref<RenderTarget>& target) {
+            Mesh::Mesh* mesh, const Ref<RenderTarget>& target, const MaterialGraph::CompiledGraph* graph) {
 
             auto shaderConfig = ShaderConfig {
-                {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                {"deferred/geometry.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                {graph ? graph->mainVertexFile : "deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {graph ? graph->mainFragmentFile : "deferred/geometry.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                 .frameBuffer = target->gBufferFrameBuffer,
@@ -194,29 +250,37 @@ namespace Atlas {
             bool hasTangents = mesh->data.tangents.ContainsData();
             bool hasTexCoords = mesh->data.texCoords.ContainsData();
 
+            // The surface of a graph replaces all the maps
+            auto usesMaps = !graph || !graph->hasSurface;
+
             std::vector<std::string> macros;
-            if (material->HasBaseColorMap() && hasTexCoords) {
+            // Pipelines are rebound when the variant hash changes, which doesn't know about shaders
+            // Regular materials are sorted by it, so it has to stay as it is for them
+            if (graph) {
+                macros.push_back("MATERIAL_GRAPH_" + std::to_string(graph->hash));
+            }
+            if (usesMaps && material->HasBaseColorMap() && hasTexCoords) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            if (material->HasOpacityMap() && hasTexCoords) {
+            if (usesMaps && material->HasOpacityMap() && hasTexCoords) {
                 macros.push_back("OPACITY_MAP");
             }
-            if (material->HasNormalMap() && hasTangents && hasTexCoords) {
+            if (usesMaps && material->HasNormalMap() && hasTangents && hasTexCoords) {
                 macros.push_back("NORMAL_MAP");
             }
-            if (material->HasRoughnessMap() && hasTexCoords) {
+            if (usesMaps && material->HasRoughnessMap() && hasTexCoords) {
                 macros.push_back("ROUGHNESS_MAP");
             }
-            if (material->HasMetalnessMap() && hasTexCoords) {
+            if (usesMaps && material->HasMetalnessMap() && hasTexCoords) {
                 macros.push_back("METALNESS_MAP");
             }
-            if (material->HasAoMap() && hasTexCoords) {
+            if (usesMaps && material->HasAoMap() && hasTexCoords) {
                 macros.push_back("AO_MAP");
             }
-            if (material->HasDisplacementMap() && hasTangents && hasTexCoords) {
+            if (usesMaps && material->HasDisplacementMap() && hasTangents && hasTexCoords) {
                 macros.push_back("HEIGHT_MAP");
             }
-            if (material->HasEmissiveMap() && hasTexCoords) {
+            if (usesMaps && material->HasEmissiveMap() && hasTexCoords) {
                 macros.push_back("EMISSIVE_MAP");
             }
             // This is a check if we have any maps at all (no macros, no maps)
@@ -226,7 +290,7 @@ namespace Atlas {
             if (hasTangents) {
                 macros.push_back("TANGENTS");
             }
-            if (glm::length(material->emissiveColor) > 0.0f) {
+            if (usesMaps && glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");
             }
             if (mesh->data.colors.ContainsData()) {

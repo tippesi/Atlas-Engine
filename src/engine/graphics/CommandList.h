@@ -81,6 +81,9 @@ namespace Atlas {
 
             void PushConstants(const std::string& pushConstantRangeName, void* data, uint32_t size = 0);
 
+            // For many draws with one pipeline: the range looked up once with the shader's GetPushConstantRange
+            void PushConstants(const PushConstantRange* pushConstantRange, void* data, uint32_t size = 0);
+
             void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type);
 
             void BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding);
@@ -108,6 +111,9 @@ namespace Atlas {
             void BindTLAS(const Ref<TLAS>& tlas, uint32_t set, uint32_t binding);
 
             void ResetBindings();
+
+            // Forgets the bound pipeline and descriptor sets after commands were recorded directly into the command buffer
+            void InvalidateBoundState();
 
             void ImageMemoryBarrier(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask,
                 VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -338,6 +344,8 @@ namespace Atlas {
 
             // The sets bound in the command buffer for the graphics and the compute bind point
             BoundDescriptorSet boundDescriptorSets[2][DESCRIPTOR_SET_COUNT];
+            // Whether a binding or the pipeline changed since the last draw or dispatch
+            bool descriptorsChanged = true;
 
             std::atomic_bool isLocked = true;
             std::atomic_bool isSubmitted = true;

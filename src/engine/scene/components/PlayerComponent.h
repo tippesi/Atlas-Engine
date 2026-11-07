@@ -33,6 +33,9 @@ namespace Atlas::Scene {
 
 			vec3 GetInputVelocity() const { return inputVelocity; }
 
+			// The entity lags behind steps up stairs and down onto the floor and follows them smoothly
+			vec3 GetStepOffset() const { return stepOffset; }
+
             float slowVelocity = 1.6f;
             float fastVelocity = 4.0f;
             float jumpVelocity = 4.0f;
@@ -67,6 +70,8 @@ namespace Atlas::Scene {
 
 			vec3 FollowInput(const vec3& groundVelocity, const vec3& up, float deltaTime) const;
 
+			void UpdateStepOffset(const vec3& up, float deltaTime);
+
 			void InsertIntoPhysicsWorld(const TransformComponent& transformComponent,
 				Physics::PhysicsWorld* physicsWorld);
 
@@ -82,6 +87,7 @@ namespace Atlas::Scene {
 			vec3 inputVelocity = vec3(0.0f);
 
 			vec3 lastGravityAcceleration = vec3(0.0f);
+			vec3 stepOffset = vec3(0.0f);
 
 			friend Scene;
 

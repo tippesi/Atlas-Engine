@@ -1,5 +1,6 @@
 #include "CommandList.h"
 #include "GraphicsDevice.h"
+#include "../profiler/CPUProfiler.h"
 
 #include <cassert>
 #include <thread>
@@ -82,6 +83,7 @@ namespace Atlas {
             for (auto& sets : boundDescriptorSets)
                 for (auto& set : sets)
                     set = {};
+            descriptorsChanged = true;
 
             // Shader-read access is not supported by transfer-only queues.
             // This is only effective for the first time it's called.
@@ -306,6 +308,7 @@ namespace Atlas {
             
 
             pipelineInUse = pipeline;
+            descriptorsChanged = true;
 
             vkCmdBindPipeline(commandBuffer, pipeline->bindPoint, pipeline->pipeline);
 
@@ -413,8 +416,14 @@ namespace Atlas {
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
-            auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
-            if (!pushConstantRange) return;
+            PushConstants(pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName), data, size);
+
+        }
+
+        void CommandList::PushConstants(const PushConstantRange* pushConstantRange, void* data, uint32_t size) {
+
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse || !pushConstantRange) return;
 
             size = size != 0 ? size : pushConstantRange->range.size;
             vkCmdPushConstants(commandBuffer, pipelineInUse->layout, pushConstantRange->range.stageFlags,
@@ -476,6 +485,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), 0u };
@@ -499,6 +509,7 @@ namespace Atlas {
             bool changed = boundBuffer != buffer.get();
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Only indicate a change if the buffer changed, not just the offset
             descriptorBindingData.changed[set] |= changed;
@@ -527,6 +538,7 @@ namespace Atlas {
             }
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffersArray[set][binding] = { buffersPtr };
@@ -545,6 +557,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer->GetCurrent(), 0 };
@@ -564,6 +577,7 @@ namespace Atlas {
             bool changed = descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Only indicate a change of the buffer has changed, not just the offset
             descriptorBindingData.changed[set] |= changed;
@@ -585,6 +599,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.images[set][binding] = { image.get(), mipLevel };
             descriptorBindingData.maxImageBinding[set] = std::max(descriptorBindingData.maxImageBinding[set], binding);
@@ -602,6 +617,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
             descriptorBindingData.maxSampledImageBinding[set] = std::max(descriptorBindingData.maxSampledImageBinding[set], binding);
@@ -621,6 +637,7 @@ namespace Atlas {
             for (const auto& image : images) imagesPtr.push_back(image.get());
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // We don't do any checks here if the same things were bound already
             descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr };
@@ -638,6 +655,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.samplers[set][binding] = sampler.get();
             descriptorBindingData.maxSamplerBinding[set] = std::max(descriptorBindingData.maxSamplerBinding[set], binding);
@@ -654,6 +672,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.tlases[set][binding] = tlas.get();
             descriptorBindingData.maxTLASBinding[set] = std::max(descriptorBindingData.maxTLASBinding[set], binding);
@@ -664,6 +683,19 @@ namespace Atlas {
         void CommandList::ResetBindings() {
 
             descriptorBindingData.Reset();
+            descriptorsChanged = true;
+
+        }
+
+        void CommandList::InvalidateBoundState() {
+
+            pipelineInUse = nullptr;
+            for (auto& sets : boundDescriptorSets)
+                for (auto& set : sets)
+                    set = {};
+            for (auto& changed : descriptorBindingData.changed)
+                changed = true;
+            descriptorsChanged = true;
 
         }
 
@@ -991,6 +1023,11 @@ namespace Atlas {
 
         void CommandList::BindDescriptorSets() {
 
+            // Draws in a row with the same bindings, e.g. one per mesh, don't need to check them again
+            if (!descriptorsChanged)
+                return;
+            descriptorsChanged = false;
+
             auto& setWrites = descriptorBindingData.setWrites;
             auto& bufferInfos = descriptorBindingData.bufferInfos;
             auto& imageInfos = descriptorBindingData.imageInfos;
@@ -1023,6 +1060,7 @@ namespace Atlas {
 
                 // We could run into issue
                 if (descriptorBindingData.changed[i] && shader->sets[i].bindingCount > 0) {
+                    CPUProfiler::Scope profilerScope("Update descriptor set");
                     uint32_t bindingCounter = 0;
                     uint32_t imageInfoCounter = 0;
                     uint32_t bufferInfoCounter = 0;
@@ -1374,6 +1412,7 @@ namespace Atlas {
 
             descriptorBindingData.Reset();
             descriptorPool->ResetAllocationCounters();
+            descriptorsChanged = true;
 
         }
 

@@ -23,7 +23,8 @@ namespace Atlas {
                 Scene = 0,
                 Entity,
                 Mesh,
-                Material
+                Material,
+                MaterialGraph
             };
 
             /**

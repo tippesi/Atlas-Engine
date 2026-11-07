@@ -12,7 +12,8 @@ namespace Atlas {
 
         }
 
-        void HiZRenderer::Generate(const RenderTargetData* data, float thickness, Graphics::CommandList* commandList) {
+        void HiZRenderer::Generate(const RenderTargetData* data, float distanceThickness,
+            Graphics::CommandList* commandList) {
 
             auto depthTexture = data->depthTexture;
             auto resolution = ivec2(depthTexture->width, depthTexture->height);
@@ -57,7 +58,7 @@ namespace Atlas {
                     .inputSize = inputSize,
                     .fromDepth = fromDepth ? 1 : 0,
                     .levelCount = dispatchLevelCount,
-                    .thickness = thickness
+                    .distanceThickness = distanceThickness
                 };
                 commandList->PushConstants("constants", &constants);
 

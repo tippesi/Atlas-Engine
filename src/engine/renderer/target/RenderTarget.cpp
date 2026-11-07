@@ -496,6 +496,20 @@ namespace Atlas::Renderer {
                 .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
             };
             gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
+
+            for (auto& attachment : colorAttachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            depthAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            auto gBufferLoadRenderPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3],
+                                     colorAttachments[4], colorAttachments[5], colorAttachments[6], colorAttachments[7]},
+                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
+            };
+            gBufferLoadRenderPass = graphicsDevice->CreateRenderPass(gBufferLoadRenderPassDesc);
         }
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {
@@ -600,6 +614,9 @@ namespace Atlas::Renderer {
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
+
+        gBufferFrameBufferDesc.renderPass = gBufferLoadRenderPass;
+        gBufferLoadFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
 
         auto afterLightingFrameBufferDesc = Graphics::FrameBufferDesc{
                .renderPass = afterLightingRenderPass,

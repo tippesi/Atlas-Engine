@@ -7,6 +7,7 @@
 #include "../volume/AABB.h"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <mutex>
 
 namespace Atlas::Physics {
@@ -21,6 +22,9 @@ namespace Atlas::Physics {
         static T GetShapeSettings(ShapeRef shapeRef);
 
         static void Update();
+
+        // Builds the shape of the mesh in a job, returns true once shapes of the mesh can be created without building it
+        static bool PrepareMeshShape(const ResourceHandle<Mesh::Mesh>& mesh);
 
     private:
         template<class T>
@@ -40,6 +44,8 @@ namespace Atlas::Physics {
 
         static std::unordered_map<Hash, CacheItem<Mesh::Mesh>> meshShapeCache;
         static std::mutex meshShapeCacheMutex;
+        static std::unordered_set<Hash> pendingMeshShapes;
+        static JobGroup meshShapeJobs;
 
         static std::unordered_map<Hash, ShapeRef> heightFieldShapeCache;
         static std::mutex heightFieldShapeCacheMutex;

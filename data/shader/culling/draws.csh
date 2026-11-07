@@ -36,15 +36,16 @@ layout(std430, set = 3, binding = 4) writeonly buffer Commands {
 };
 
 layout(push_constant) uniform constants {
+    uint firstRequest;
     uint requestCount;
 } PushConstants;
 
 void main() {
 
-    uint idx = gl_GlobalInvocationID.x;
-    if (idx >= PushConstants.requestCount)
+    if (gl_GlobalInvocationID.x >= PushConstants.requestCount)
         return;
 
+    uint idx = PushConstants.firstRequest + gl_GlobalInvocationID.x;
     DrawRequest request = requests[idx];
     CullMesh mesh = meshes[request.meshIdx];
     CullView view = views[request.view];

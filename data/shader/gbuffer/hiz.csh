@@ -19,7 +19,7 @@ layout(push_constant) uniform constants {
     ivec2 inputSize;
     int fromDepth;
     int levelCount;
-    float thickness;
+    float distanceThickness;
 } pushConstants;
 
 shared vec2 sharedMinMax[16][16];
@@ -31,12 +31,12 @@ vec2 FetchTexel(ivec2 texel) {
 
     if (pushConstants.fromDepth > 0) {
         float depth = texelFetch(depthIn, texel, 0).r;
-        if (depth >= 1.0 || pushConstants.thickness <= 0.0)
+        if (depth >= 1.0 || pushConstants.distanceThickness <= 0.0)
             return vec2(depth);
 
         vec2 viewSpace = (globalData.ipMatrix * vec4(0.0, 0.0, depth, 1.0)).zw;
         float viewZ = viewSpace.x / viewSpace.y;
-        viewZ -= pushConstants.thickness * mix(0.0, 4.0, min(1.0, -viewZ * 0.002));
+        viewZ -= pushConstants.distanceThickness * min(-viewZ, 500.0);
         vec4 clipSpace = globalData.pMatrix * vec4(0.0, 0.0, viewZ, 1.0);
         return vec2(depth, clipSpace.z / clipSpace.w);
     }

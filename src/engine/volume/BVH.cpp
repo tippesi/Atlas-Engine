@@ -107,7 +107,8 @@ namespace Atlas {
 
             auto builder = new BVHBuilder(aabb, 0, refs.size(), 128);
 
-            JobGroup group { "Build tlas structure", JobPriority::Medium};
+            // The frame waits for the top level structure
+            JobGroup group { "Build tlas structure", JobPriority::High};
             builder->Build(refs, group, parallelBuild);
             JobSystem::Wait(group);
 

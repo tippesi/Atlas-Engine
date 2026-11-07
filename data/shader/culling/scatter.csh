@@ -2,7 +2,7 @@
 
 layout (local_size_x = 64) in;
 
-layout(std430, set = 3, binding = 0) writeonly buffer Instances {
+layout(std430, set = 3, binding = 0) buffer Instances {
     Instance instances[];
 };
 
@@ -24,6 +24,11 @@ void main() {
     if (idx >= PushConstants.updateCount)
         return;
 
-    instances[updateIndices[idx]] = updates[idx];
+    uint instanceIdx = updateIndices[idx];
+    Instance update = updates[idx];
+    // Has to match GPUScene::keepVisibleLastFrame
+    if (update.visibleLastFrame == 2u)
+        update.visibleLastFrame = instances[instanceIdx].visibleLastFrame;
+    instances[instanceIdx] = update;
 
 }

@@ -63,6 +63,13 @@ namespace Atlas {
 
         }
 
+        void MouseHandler::Reset() {
+
+            angularVelocity = vec2(0.0f);
+            interpolatedAngularVelocity = vec2(0.0f);
+
+        }
+
         void MouseHandler::SetActivationButton(uint8_t mouseButton) {
 
             activationButton = mouseButton;
