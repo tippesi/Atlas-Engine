@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Renderer.h"
+#include "UpscalingRenderer.h"
 #include <fsr2/ffx-fsr2-api/ffx_fsr2.h>
 
 namespace Atlas::Renderer {
 
-    class FSR2Renderer : public Renderer {
+    class FSR2Renderer : public UpscalingRenderer {
 
     public:
         FSR2Renderer() = default;
@@ -14,9 +14,15 @@ namespace Atlas::Renderer {
 
         void Init(Graphics::GraphicsDevice* device);
 
-        void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
+        bool UsesReactiveMask() const override { return true; }
 
-        vec2 GetJitter(const Ref<RenderTarget>& target, uint32_t index) const;
+        bool Sharpens() const override { return true; }
+
+        void Release() override { DestroyContext(); }
+
+        vec2 GetJitter(const Ref<RenderTarget>& target, uint32_t frameIndex) const override;
+
+        void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) override;
 
     private:
         void CreateContext(const Ref<RenderTarget>& target, Graphics::GraphicsDevice* device);

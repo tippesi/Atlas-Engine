@@ -136,7 +136,7 @@ void main() {
     bloom = Uniforms.bloomDirtStrength * textureLod(bloomDirtTexture, texCoord, 0.0).r * bloom + bloom;
 #endif
 
-    color += bloom;
+    color = color * Uniforms.tintColor.rgb + bloom;
 
     color *= Uniforms.exposure;
 #ifdef AUTO_EXPOSURE
@@ -186,8 +186,6 @@ void main() {
     color = pow(color, vec3(gamma));
 #endif
 #endif
-
-    color = color * Uniforms.tintColor.rgb;
 
     color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
 

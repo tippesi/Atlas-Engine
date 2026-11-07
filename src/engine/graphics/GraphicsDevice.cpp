@@ -87,6 +87,17 @@ namespace Atlas {
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
 
+			// Request optional extensions from the device, e.g. for ML upscalers
+            std::vector<std::string> requestedExtensions;
+            if (desc.optionalExtensions)
+                requestedExtensions = desc.optionalExtensions(instance->instance, physicalDevice);
+            for (const auto& extension : requestedExtensions) {
+                auto isEqual = [&](const char* name) { return extension == name; };
+                if (std::none_of(requiredExtensions.begin(), requiredExtensions.end(), isEqual) &&
+                    std::none_of(optionalExtensions.begin(), optionalExtensions.end(), isEqual))
+                    optionalExtensions.push_back(extension.c_str());
+            }
+
             auto availableOptionalExtension = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
             requiredExtensions.insert(requiredExtensions.end(), availableOptionalExtension.begin(),
                 availableOptionalExtension.end());
@@ -1188,6 +1199,24 @@ namespace Atlas {
             features13.dynamicRendering = availableFeatures13.dynamicRendering;
             features13.maintenance4 = availableFeatures13.maintenance4;
             features13.subgroupSizeControl = availableFeatures13.subgroupSizeControl;
+            features13.computeFullSubgroups = availableFeatures13.computeFullSubgroups;
+            features13.shaderIntegerDotProduct = availableFeatures13.shaderIntegerDotProduct;
+
+            // Machine learning features, e.g. for upscalers, the extensions are only enabled on request
+            auto isEnabled = [&](const char* extension) {
+                return std::any_of(extensions.begin(), extensions.end(),
+                    [&](const char* name) { return std::string_view(name) == extension; });
+            };
+
+            auto cooperativeMatrixFeatures = availableCooperativeMatrixFeatures;
+            cooperativeMatrixFeatures.pNext = nullptr;
+            if (isEnabled(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME))
+                featureBuilder.Append(cooperativeMatrixFeatures);
+
+            auto float8Features = availableFloat8Features;
+            float8Features.pNext = nullptr;
+            if (isEnabled(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME))
+                featureBuilder.Append(float8Features);
 
             // Check for ray tracing extension support
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&

@@ -48,6 +48,8 @@ namespace Atlas {
             bool enableExtendedValidation = false;
             // Configures which messages of the validation layers to log
             Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
+            // Device extensions enabled where the selected physical device supports them
+            std::function<std::vector<std::string>(VkInstance, VkPhysicalDevice)> optionalExtensions;
         };
 
         struct DeviceSupport {

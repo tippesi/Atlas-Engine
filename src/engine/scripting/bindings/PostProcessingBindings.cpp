@@ -6,6 +6,14 @@ namespace Atlas::Scripting::Bindings {
 
     void GeneratePostProcessingBindings(sol::table* ns) {
 
+        ns->new_enum<PostProcessing::Upscaler>("Upscaler", {
+            { "None", PostProcessing::Upscaler::None },
+            { "TAA", PostProcessing::Upscaler::TAA },
+            { "FSR2", PostProcessing::Upscaler::FSR2 },
+            { "FSR4", PostProcessing::Upscaler::FSR4 },
+            { "DLSS", PostProcessing::Upscaler::DLSS },
+        });
+
         ns->new_usertype<PostProcessing::AutoExposure>("AutoExposure",
             sol::no_constructor,
             "enable", &PostProcessing::AutoExposure::enable,
@@ -49,12 +57,12 @@ namespace Atlas::Scripting::Bindings {
         );
 
         ns->new_usertype<PostProcessing::TAA>("TAA",
-            "enable", &PostProcessing::TAA::enable,
             "jitterRange", &PostProcessing::TAA::jitterRange
         );
 
         ns->new_usertype<PostProcessing::PostProcessing>("PostProcessing",
             sol::no_constructor,
+            "GetUpscalerName", &PostProcessing::PostProcessing::GetUpscalerName,
             "exposureCompensation", &PostProcessing::PostProcessing::exposureCompensation,
             "saturation", &PostProcessing::PostProcessing::saturation,
             "contrast", &PostProcessing::PostProcessing::contrast,
@@ -62,7 +70,7 @@ namespace Atlas::Scripting::Bindings {
             "screenMaxLuminance", &PostProcessing::PostProcessing::screenMaxLuminance,
             "paperWhiteLuminance", &PostProcessing::PostProcessing::paperWhiteLuminance,
             "filmicTonemapping", &PostProcessing::PostProcessing::filmicTonemapping,
-            "fsr2", &PostProcessing::PostProcessing::fsr2,
+            "upscaler", &PostProcessing::PostProcessing::upscaler,
             "taa", &PostProcessing::PostProcessing::taa,
             "vignette", &PostProcessing::PostProcessing::vignette,
             "chromaticAberration", &PostProcessing::PostProcessing::chromaticAberration,

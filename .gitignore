@@ -20,6 +20,9 @@
 !/src/
 !/wiki/
 
+# Vendor SDKs of the optional upscalers are downloaded separately (see libs/upscalers/README.md)
+/libs/upscalers/*/sdk/
+
 # data/: engine assets only. The large sample asset folders are downloaded separately (see data/README.md)
 !/data/
 /data/*

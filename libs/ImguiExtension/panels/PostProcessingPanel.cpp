@@ -8,11 +8,10 @@ namespace Atlas::ImguiExtension {
 
         // Settings of disabled effects are shown, but greyed out
         ImGui::SeparatorText("Anti-aliasing and upscaling");
-        ImGui::Checkbox("Temporal anti-aliasing##TAA", &postProcessing.taa.enable);
-        ImGui::BeginDisabled(!postProcessing.taa.enable);
+        RenderUpscalerSelection(postProcessing.upscaler, isUpscalerSupported);
+        ImGui::BeginDisabled(postProcessing.upscaler == PostProcessing::Upscaler::None);
         ImGui::SliderFloat("Jitter range", &postProcessing.taa.jitterRange, 0.001f, 0.999f);
         ImGui::EndDisabled();
-        ImGui::Checkbox("FSR2##FSR2", &postProcessing.fsr2);
 
         ImGui::SeparatorText("Sharpen filter");
         ImGui::Checkbox("Enable##Sharpen", &postProcessing.sharpen.enable);
@@ -76,6 +75,18 @@ namespace Atlas::ImguiExtension {
         ImGui::EndDisabled();
 
         ImGui::PopID();
+
+    }
+
+    void PostProcessingPanel::RenderUpscalerSelection(PostProcessing::Upscaler& upscaler,
+        const std::function<bool(PostProcessing::Upscaler)>& isSupported) {
+
+        const auto& names = PostProcessing::PostProcessing::upscalerNames;
+        auto selected = static_cast<int>(upscaler);
+        if (ImGui::Combo("Upscaler", &selected, names, IM_ARRAYSIZE(names)))
+            upscaler = static_cast<PostProcessing::Upscaler>(selected);
+        if (isSupported && !isSupported(upscaler))
+            ImGui::TextDisabled("Not available on this device, FSR 2 is used instead");
 
     }
 

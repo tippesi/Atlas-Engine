@@ -28,6 +28,8 @@ namespace Atlas {
             Log::Severity validationLayerSeverity = Log::Severity::SEVERITY_LOW;
 
             std::vector<const char*> requiredExtensions;
+            // Enabled where the instance supports them
+            std::vector<std::string> optionalExtensions;
         };
 
         class Instance {

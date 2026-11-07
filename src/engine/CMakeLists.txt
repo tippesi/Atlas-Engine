@@ -184,3 +184,6 @@ message(${VULKAN_HEADERS_INCLUDE_DIRS})
     
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})
+
+# Optional vendor upscalers ########################################################################
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../libs/upscalers/Upscalers.cmake)

@@ -14,8 +14,8 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget>& target, Ref<Scene::Scene>& scene,
-                Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
+            void Render(Ref<RenderTarget>& target, Ref<Scene::Scene>& scene, Graphics::CommandList* commandList,
+                bool upscalerSharpens, Texture::Texture2D* texture = nullptr);
 
             void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
                 Graphics::CommandList* commandList);

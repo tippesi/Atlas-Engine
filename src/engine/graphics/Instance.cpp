@@ -69,6 +69,12 @@ namespace Atlas {
             if (supportedExtensions.contains(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) && validationLayersEnabled) {
                 requiredExtensions.push_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
             }
+            for (const auto& extension : desc.optionalExtensions) {
+                auto enabled = std::any_of(requiredExtensions.begin(), requiredExtensions.end(),
+                    [&](const char* name) { return extension == name; });
+                if (!enabled && supportedExtensions.contains(extension))
+                    requiredExtensions.push_back(extension.c_str());
+            }
 
             CheckExtensionSupport(requiredExtensions);
 

@@ -11,9 +11,7 @@ namespace Atlas {
         public:
             TAA() = default;
 
-            TAA(float jitterRange) : enable(true), jitterRange(jitterRange) {}
-
-            bool enable = false;
+            TAA(float jitterRange) : jitterRange(jitterRange) {}
 
             float jitterRange = 0.99f;
 

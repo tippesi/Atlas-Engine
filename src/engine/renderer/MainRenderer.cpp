@@ -1,6 +1,5 @@
 #include "MainRenderer.h"
 #include "helper/GeometryHelper.h"
-#include "helper/HaltonSequence.h"
 
 #include "../common/Packing.h"
 #include "../tools/PerformanceCounter.h"
@@ -17,8 +16,6 @@ namespace Atlas {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
-
-			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
 
 			PreintegrateBRDF();
 
@@ -62,6 +59,8 @@ namespace Atlas {
 			postProcessRenderer.Init(device);
 			pathTracingRenderer.Init(device);
 			fsr2Renderer.Init(device);
+			fsr4Renderer = UpscalerAddons::Create(PostProcessing::Upscaler::FSR4, device);
+			dlssRenderer = UpscalerAddons::Create(PostProcessing::Upscaler::DLSS, device);
 			textRenderer.Init(device);
 			textureRenderer.Init(device);
 
@@ -83,25 +82,10 @@ namespace Atlas {
 
 			commandList->BeginCommands();
 
-			auto& taa = scene->renderState.postProcessing.taa;
-			if (taa.enable || scene->renderState.postProcessing.fsr2) {
-				vec2 jitter = vec2(0.0f);
-				if (scene->renderState.postProcessing.fsr2) {
-					jitter = fsr2Renderer.GetJitter(target, frameCount);
-				}
-				else {
-					jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-					jitter.x /= (float)target->GetScaledWidth();
-					jitter.y /= (float)target->GetScaledHeight();
-				}
-
-				camera.Jitter(jitter * taa.jitterRange);
-			}
-			else {
-				// Even if there is no TAA we need to update the jitter for other techniques
-				// E.g. the reflections and ambient occlusion use reprojection
-				camera.Jitter(vec2(0.0f));
-			}
+			auto upscaler = PrepareUpscaler(target, scene, commandList);
+			// Even without an upscaler the jitter is updated, e.g. the reflections and ambient occlusion use reprojection
+			auto jitter = upscaler ? upscaler->GetJitter(target, frameCount) : vec2(0.0f);
+			camera.Jitter(jitter * scene->renderState.postProcessing.taa.jitterRange);
 
 			auto renderState = &scene->renderState;
 
@@ -393,18 +377,16 @@ namespace Atlas {
 			for (const auto& primitiveBatch : primitiveBatches)
 				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->renderState.camera, commandList);
 
-			if (scene->renderState.postProcessing.fsr2) {
-				gBufferRenderer.GenerateReactiveMask(target, commandList);
+			if (upscaler) {
+				if (upscaler->UsesReactiveMask())
+					gBufferRenderer.GenerateReactiveMask(target, commandList);
 
-				fsr2Renderer.Render(target, scene, commandList);
-			}
-			else {
-				taaRenderer.Render(target, scene, commandList);
+				upscaler->Render(target, scene, commandList);
 			}
 
 			target->Swap();
 
-			postProcessRenderer.Render(target, scene, commandList, texture);
+			postProcessRenderer.Render(target, scene, commandList, upscaler && upscaler->Sharpens(), texture);
 
 			GPUProfiler::EndQuery();
 			GPUProfiler::EndThread();
@@ -431,27 +413,14 @@ namespace Atlas {
 
 			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
-			auto& taa = scene->renderState.postProcessing.taa;
-			if (taa.enable || scene->renderState.postProcessing.fsr2) {
-				vec2 jitter = vec2(0.0f);
-				if (scene->renderState.postProcessing.fsr2) {
-					jitter = fsr2Renderer.GetJitter(target, frameCount);
-				}
-				else {
-					jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-					jitter.x /= (float)target->GetScaledWidth() * 0.75f;
-					jitter.y /= (float)target->GetScaledHeight() * 0.75f;
-				}
-
-				camera.Jitter(jitter * taa.jitterRange);
-			}
-			else {
-				// Even if there is no TAA we need to update the jitter for other techniques
-				// E.g. the reflections and ambient occlusion use reprojection
-				camera.Jitter(vec2(0.0f));
-			}
-
 			commandList->BeginCommands();
+
+			auto upscaler = PrepareUpscaler(target, scene, commandList);
+			auto jitter = upscaler ? upscaler->GetJitter(target, frameCount) : vec2(0.0f);
+			// The path traced TAA resolve uses a wider jitter
+			if (upscaler == &taaRenderer)
+				jitter /= 0.75f;
+			camera.Jitter(jitter * scene->renderState.postProcessing.taa.jitterRange);
 
 			CPUProfiler::Scope profilerScope("Path trace scene");
 			GPUProfiler::BeginThread("Path tracing", commandList);
@@ -535,16 +504,12 @@ namespace Atlas {
 				for (const auto& primitiveBatch : primitiveBatches)
 					RenderPrimitiveBatch(viewport, target, primitiveBatch, camera, commandList);
 
-				if (scene->renderState.postProcessing.fsr2) {
-					fsr2Renderer.Render(target, scene, commandList);
-				}
-				else if (scene->renderState.postProcessing.taa.enable) {
-					taaRenderer.Render(target, scene, commandList);
-				}
+				if (upscaler)
+					upscaler->Render(target, scene, commandList);
 
 				target->Swap();
 
-				postProcessRenderer.Render(target, scene, commandList, texture);
+				postProcessRenderer.Render(target, scene, commandList, upscaler && upscaler->Sharpens(), texture);
 			}
 			else {
 				GPUProfiler::Scope gpuScope("Post processing");
@@ -945,8 +910,45 @@ namespace Atlas {
 
 			textRenderer.Update();
 
-			haltonIndex = (haltonIndex + 1) % haltonSequence.size();
 			frameCount++;
+
+		}
+
+		bool MainRenderer::IsUpscalerSupported(PostProcessing::Upscaler upscaler) {
+
+			auto renderer = GetUpscalingRenderer(upscaler);
+			return upscaler == PostProcessing::Upscaler::None || (renderer && renderer->IsSupported());
+
+		}
+
+		UpscalingRenderer* MainRenderer::PrepareUpscaler(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
+			Graphics::CommandList* commandList) {
+
+			// Upscalers of vendor SDKs fall back to FSR2 when they aren't built in or not supported by the GPU
+			auto selected = scene->renderState.postProcessing.upscaler;
+			auto upscaler = IsUpscalerSupported(selected) ? GetUpscalingRenderer(selected) : &fsr2Renderer;
+			if (upscaler && !upscaler->Prepare(target, commandList))
+				upscaler = &fsr2Renderer;
+
+			if (upscaler != activeUpscaler) {
+				if (activeUpscaler)
+					activeUpscaler->Release();
+				activeUpscaler = upscaler;
+			}
+
+			return upscaler;
+
+		}
+
+		UpscalingRenderer* MainRenderer::GetUpscalingRenderer(PostProcessing::Upscaler upscaler) {
+
+			switch (upscaler) {
+			case PostProcessing::Upscaler::TAA: return &taaRenderer;
+			case PostProcessing::Upscaler::FSR2: return &fsr2Renderer;
+			case PostProcessing::Upscaler::FSR4: return fsr4Renderer.get();
+			case PostProcessing::Upscaler::DLSS: return dlssRenderer.get();
+			default: return nullptr;
+			}
 
 		}
 
@@ -1010,7 +1012,7 @@ namespace Atlas {
 
 		void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
-			bool mipBias = scene->renderState.postProcessing.fsr2 || scene->renderState.postProcessing.taa.enable;
+			bool mipBias = scene->renderState.postProcessing.upscaler != PostProcessing::Upscaler::None;
 
 			auto globalUniforms = GlobalUniforms{
 				.vMatrix = camera.viewMatrix,

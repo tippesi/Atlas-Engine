@@ -21,6 +21,7 @@
 #include "raytracing/RayTracingManager.h"
 #include "terrain/TerrainManager.h"
 #include "jobsystem/JobSystem.h"
+#include "renderer/UpscalerAddons.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -81,7 +82,10 @@ namespace Atlas {
 #else
             .requiredExtensions = { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME },
 #endif
+            .optionalExtensions = Renderer::UpscalerAddons::GetInstanceExtensions()
         };
+        if (!config.deviceDesc.optionalExtensions)
+            config.deviceDesc.optionalExtensions = Renderer::UpscalerAddons::GetDeviceExtensions;
 
         Graphics::Instance::DefaultInstance = new Graphics::Instance(instanceDesc);
         Graphics::Surface* surface;

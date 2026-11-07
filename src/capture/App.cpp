@@ -1458,8 +1458,10 @@ namespace Atlas::Capture {
 
     std::string App::GetRenderDescription() const {
 
-        const auto& postProcessing = scene->postProcessing;
-        auto upscaler = postProcessing.fsr2 ? "FSR2" : (postProcessing.taa.enable ? "TAA" : "no upscaling");
+        using PostProcessing::Upscaler;
+        auto upscaler = std::string(PostProcessing::PostProcessing::GetUpscalerName(scene->postProcessing.upscaler));
+        if (!mainRenderer->IsUpscalerSupported(scene->postProcessing.upscaler))
+            upscaler += std::string(" not available, ") + PostProcessing::PostProcessing::GetUpscalerName(Upscaler::FSR2);
         return ", render scale " + FormatFloat(captureRenderer.GetRenderScale(), 2) + " (" + upscaler + ")";
 
     }

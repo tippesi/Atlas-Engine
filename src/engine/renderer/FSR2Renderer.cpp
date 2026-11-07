@@ -791,12 +791,12 @@ namespace Atlas::Renderer {
 
 	}
 
-	vec2 FSR2Renderer::GetJitter(const Ref<RenderTarget>& target, uint32_t index) const {
+	vec2 FSR2Renderer::GetJitter(const Ref<RenderTarget>& target, uint32_t frameIndex) const {
 
 		vec2 jitter;
 
 		const int32_t jitterPhaseCount = ffxFsr2GetJitterPhaseCount(target->GetScaledWidth(), target->GetWidth());
-		ffxFsr2GetJitterOffset(&jitter.x, &jitter.y, index, jitterPhaseCount);
+		ffxFsr2GetJitterOffset(&jitter.x, &jitter.y, frameIndex, jitterPhaseCount);
 
 		return vec2(2.0f * jitter.x / (float)target->GetScaledWidth(), 2.0f * jitter.y / (float)target->GetScaledHeight());
 
@@ -826,8 +826,6 @@ namespace Atlas::Renderer {
 		auto reactiveMaskImage = target->reactiveMaskTexture.image;
 		auto depthImage = targetData->depthTexture->image;
 		auto outputImage = target->hdrTexture.image;
-
-		auto& taa = scene->renderState.postProcessing.taa;
 
 		Graphics::ImageBarrier imageBarriers[] = {{outputImage,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT}};
 		commandList->PipelineBarrier(imageBarriers, {});

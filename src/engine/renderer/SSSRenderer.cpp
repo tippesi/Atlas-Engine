@@ -53,7 +53,7 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 2);
 
-                bool temporalEnabled = scene->renderState.postProcessing.fsr2 || scene->renderState.postProcessing.taa.enable;
+                bool temporalEnabled = scene->renderState.postProcessing.upscaler != PostProcessing::Upscaler::None;
 
                 PushConstants constants = {
                     .lightDirection = vec4(lightDirection, 0.0),

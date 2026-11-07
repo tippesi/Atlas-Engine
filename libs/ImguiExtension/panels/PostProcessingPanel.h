@@ -15,6 +15,12 @@ namespace Atlas::ImguiExtension {
 
         void Render(PostProcessing::PostProcessing& postProcessing, TextureSelector textureSelector = {});
 
+        // Unsupported upscalers fall back to FSR2, the selection tells this when isSupported is set
+        static void RenderUpscalerSelection(PostProcessing::Upscaler& upscaler,
+            const std::function<bool(PostProcessing::Upscaler)>& isSupported);
+
+        std::function<bool(PostProcessing::Upscaler)> isUpscalerSupported;
+
     };
 
 }

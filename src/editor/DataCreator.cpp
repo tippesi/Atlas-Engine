@@ -70,7 +70,7 @@ namespace Atlas::Editor {
         int32_t depth, bool invertUVs, bool addRigidBodies, bool makeMeshesStatic, Loader::ImportTextureFormat textureFormat) {
 
         auto scene = Loader::ModelImporter::ImportScene(filename, min, max, depth,
-            true, makeMeshesStatic, invertUVs, 4096, textureFormat);
+            true, makeMeshesStatic, invertUVs, 4096, textureFormat, true);
 
         auto rootEntity = scene->GetRootEntity();
         auto& mainHierarchy = rootEntity.GetComponent<HierarchyComponent>();
@@ -120,29 +120,20 @@ namespace Atlas::Editor {
         scene->physicsWorld->pauseSimulation = true;
 
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
-        scene->postProcessing.fsr2 = true;
+        scene->postProcessing.upscaler = PostProcessing::Upscaler::FSR2;
 
-        scene->Update(1.0f);
+        // This runs in a job while frames are running, only the main thread may update a scene. The global
+        // transforms don't exist yet, the bodies are created once their meshes are imported
+        std::function<void(Scene::Entity, const mat4&)> addBodies;
+        addBodies = [&](Scene::Entity entity, const mat4& parentMatrix) {
+            auto transformComponent = entity.TryGetComponent<TransformComponent>();
+            auto globalMatrix = transformComponent ? parentMatrix * transformComponent->matrix : parentMatrix;
 
-        min = glm::vec3(std::numeric_limits<float>::max());
-        max = glm::vec3(-std::numeric_limits<float>::max());
-
-        Volume::AABB aabb(min, max);
-        auto meshSubset = scene->GetSubset<MeshComponent>();
-        for (auto entity : meshSubset) {
-            const auto& meshComponent = meshSubset.Get(entity);
-
-            aabb.Grow(meshComponent.aabb);
-        }
-
-        if (addRigidBodies) {
-            for (auto entity : meshSubset) {
-                const auto& meshComponent = meshSubset.Get(entity);
-
-                auto transformComponent = entity.GetComponent<TransformComponent>();
+            auto meshComponent = entity.TryGetComponent<MeshComponent>();
+            if (meshComponent && transformComponent) {
                 Atlas::Physics::MeshShapeSettings settings = {
-                    .mesh = meshComponent.mesh,
-                    .scale = transformComponent.DecomposeGlobal().scale
+                    .mesh = meshComponent->mesh,
+                    .scale = Common::MatrixDecomposition(globalMatrix).scale
                 };
                 auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
@@ -152,7 +143,16 @@ namespace Atlas::Editor {
                 };
                 entity.AddComponent<RigidBodyComponent>(bodySettings);
             }
-        }
+
+            auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+            if (hierarchyComponent) {
+                for (auto child : hierarchyComponent->GetChildren())
+                    addBodies(child, globalMatrix);
+            }
+            };
+
+        if (addRigidBodies)
+            addBodies(rootEntity, mat4(1.0f));
 
         scene->physicsWorld->OptimizeBroadphase();
 

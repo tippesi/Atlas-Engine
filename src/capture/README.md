@@ -196,15 +196,16 @@ per variant, a `<shot>_variants.png` sheet compares the variants side by side.
 ### Render scale and upscaling
 
 The scene renders into a render target scaled by `renderScale` (`--render-scale`), which is
-upscaled to the job resolution like in the editor: with FSR2 if `postProcessing.fsr2` is set (the
-default), otherwise with TAA if `postProcessing.taa.enable` is set. A variant can override the
-scale, e.g. to compare upscalers and quality modes:
+upscaled to the job resolution like in the editor with `postProcessing.upscaler`: 0 none, 1 TAA,
+2 FSR2 (the default), 3 FSR4 and 4 DLSS. FSR4 and DLSS fall back to FSR2 when the engine was built
+without them or the GPU doesn't support them. A variant can override the scale, e.g. to compare
+upscalers and quality modes:
 
 ```jsonc
 "variants": [
-    { "name": "native", "renderScale": 1.0, "settings": { "postProcessing": { "fsr2": false } } },
-    { "name": "fsr2Quality", "renderScale": 0.67, "settings": { "postProcessing": { "fsr2": true } } },
-    { "name": "fsr2Performance", "renderScale": 0.5, "settings": { "postProcessing": { "fsr2": true } } }
+    { "name": "native", "renderScale": 1.0, "settings": { "postProcessing": { "upscaler": 0 } } },
+    { "name": "fsr2Quality", "renderScale": 0.67, "settings": { "postProcessing": { "upscaler": 2 } } },
+    { "name": "fsr2Performance", "renderScale": 0.5, "settings": { "postProcessing": { "upscaler": 2 } } }
 ]
 ```
 

@@ -21,7 +21,7 @@ namespace Atlas {
         }
 
         void PostProcessRenderer::Render(Ref<RenderTarget>& target, Ref<Scene::Scene>& scene,
-            Graphics::CommandList* commandList, Texture::Texture2D* texture) {
+            Graphics::CommandList* commandList, bool upscalerSharpens, Texture::Texture2D* texture) {
 
             CPUProfiler::Scope profilerScope("Postprocessing");
             GPUProfiler::BeginQuery("Postprocessing");
@@ -31,7 +31,6 @@ namespace Atlas {
             auto& camera = scene->renderState.camera;
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
-            const auto& taa = postProcessing.taa;
             auto& sharpen = postProcessing.sharpen;
             const auto& bloom = postProcessing.bloom;
 
@@ -41,10 +40,12 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-            bool fsr2 = postProcessing.fsr2;
+            // Temporal upscalers write the full resolution into the hdr texture
+            auto upscaler = postProcessing.upscaler;
+            bool temporalUpscaling = upscaler != PostProcessing::Upscaler::None && upscaler != PostProcessing::Upscaler::TAA;
             bool autoExposure = postProcessing.autoExposure.enable;
-            bool spatialUpscalingEnabled = !fsr2 && target->GetScalingFactor() != 1.0f;
-            bool shapenEnabled = !fsr2 && sharpen.enable;
+            bool spatialUpscalingEnabled = !temporalUpscaling && target->GetScalingFactor() != 1.0f;
+            bool shapenEnabled = !upscalerSharpens && sharpen.enable;
 
             Texture::Texture2D* writeTexture = &target->hdrTexture, * readTexture;
 
@@ -53,17 +54,17 @@ namespace Atlas {
             }
 
             // Want to have the last pass to always write into the hdr texture
-            if (shapenEnabled && spatialUpscalingEnabled) {
+            if (shapenEnabled && (spatialUpscalingEnabled || temporalUpscaling)) {
                 writeTexture = &target->outputTexture;
             }
             else {
                 writeTexture = &target->hdrTexture;
             }
 
-            if (fsr2) {
+            if (temporalUpscaling) {
                 readTexture = &target->hdrTexture;
             }
-            else if (taa.enable) {
+            else if (upscaler == PostProcessing::Upscaler::TAA) {
                 readTexture = target->GetHistory();
             }
             else {
@@ -123,6 +124,12 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
                 std::swap(readTexture, writeTexture);
+
+                // The sharpened upscaler image was written to the output texture, which the main pass can render to
+                if (temporalUpscaling) {
+                    CopyToTexture(readTexture, &target->hdrTexture, commandList);
+                    readTexture = &target->hdrTexture;
+                }
             }
 
             if (bloom.enable) {

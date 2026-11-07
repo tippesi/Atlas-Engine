@@ -1,5 +1,6 @@
 #include "TemporalAARenderer.h"
 #include "helper/GeometryHelper.h"
+#include "helper/HaltonSequence.h"
 
 #include "Clock.h"
 
@@ -14,9 +15,18 @@ namespace Atlas {
             pipelineConfig = PipelineConfig("taa.csh");
             PipelineManager::AddPipeline(pipelineConfig);
 
+            haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
+
         }
 
-        void TemporalAARenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        vec2 TemporalAARenderer::GetJitter(const Ref<RenderTarget>& target, uint32_t frameIndex) const {
+
+            auto jitter = 2.0f * haltonSequence[frameIndex % haltonSequence.size()] - 1.0f;
+            return jitter / vec2(float(target->GetScaledWidth()), float(target->GetScaledHeight()));
+
+        }
+
+        void TemporalAARenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
 
             CPUProfiler::Scope profilerScope("TAA");
             GPUProfiler::Scope gpuScope("TAA");
@@ -67,8 +77,9 @@ namespace Atlas {
                 .resolution = vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
                 .invResolution = 1.0f / vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
                 .jitter = camera.GetJitter(),
-                .resetHistory = !target->HasHistory() ? 1 : 0
+                .resetHistory = historyInvalid || !target->HasHistory() ? 1 : 0
             };
+            historyInvalid = false;
 
             commandList->PushConstants("constants", &constants);
 

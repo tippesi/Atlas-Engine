@@ -33,6 +33,7 @@
 #include "TextureRenderer.h"
 #include "PathTracingRenderer.h"
 #include "FSR2Renderer.h"
+#include "UpscalerAddons.h"
 
 namespace Atlas {
 
@@ -61,6 +62,9 @@ namespace Atlas {
 
             void Update();
 
+            // FSR4 and DLSS are only supported when they are built in and the GPU supports them, otherwise FSR2 is used
+            bool IsUpscalerSupported(PostProcessing::Upscaler upscaler);
+
             TextRenderer textRenderer;
             TextureRenderer textureRenderer;
             OceanRenderer oceanRenderer;
@@ -75,6 +79,11 @@ namespace Atlas {
             void PreintegrateBRDF();
 
             void UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
+
+            UpscalingRenderer* PrepareUpscaler(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
+                Graphics::CommandList* commandList);
+
+            UpscalingRenderer* GetUpscalingRenderer(PostProcessing::Upscaler upscaler);
 
             PipelineConfig GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
                 Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth, bool manualDepthTest = false);
@@ -120,9 +129,10 @@ namespace Atlas {
             VolumetricRenderer volumetricRenderer;
             VolumetricCloudRenderer volumetricCloudRenderer;
             FSR2Renderer fsr2Renderer;
+            Ref<UpscalingRenderer> fsr4Renderer;
+            Ref<UpscalingRenderer> dlssRenderer;
+            UpscalingRenderer* activeUpscaler = nullptr;
 
-            std::vector<vec2> haltonSequence;
-            size_t haltonIndex = 0;
             uint32_t frameCount = 0;
 
             std::vector<Graphics::ImageBarrier> shadowImageBarriers;

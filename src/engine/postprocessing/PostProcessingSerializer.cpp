@@ -126,7 +126,7 @@ namespace Atlas::PostProcessing {
             {"screenMaxLuminance", p.screenMaxLuminance},
             {"filmicTonemapping", p.filmicTonemapping},
             {"taa", p.taa},
-            {"fsr2", p.fsr2},
+            {"upscaler", static_cast<int>(p.upscaler)},
             {"vignette", p.vignette},
             {"chromaticAberration", p.chromaticAberration},
             {"filmGrain", p.filmGrain},
@@ -145,7 +145,14 @@ namespace Atlas::PostProcessing {
         j.at("screenMaxLuminance").get_to(p.screenMaxLuminance);
         j.at("filmicTonemapping").get_to(p.filmicTonemapping);
         j.at("taa").get_to(p.taa);
-        j.at("fsr2").get_to(p.fsr2);
+        if (j.contains("upscaler")) {
+            p.upscaler = static_cast<Upscaler>(j.at("upscaler").get<int>());
+        }
+        else {
+            // Older scenes have separate switches for FSR2 and TAA, FSR2 took precedence
+            auto taa = j.at("taa").value("enable", false);
+            p.upscaler = j.at("fsr2").get<bool>() ? Upscaler::FSR2 : (taa ? Upscaler::TAA : Upscaler::None);
+        }
         j.at("vignette").get_to(p.vignette);
         j.at("chromaticAberration").get_to(p.chromaticAberration);
         j.at("filmGrain").get_to(p.filmGrain);
