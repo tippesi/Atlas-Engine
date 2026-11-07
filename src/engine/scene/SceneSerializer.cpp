@@ -49,6 +49,9 @@ namespace Atlas::Scene {
         if (p.HasComponent<AudioVolumeComponent>()) {
             j["audioVolume"] = p.GetComponent<AudioVolumeComponent>();
         }
+        if (p.HasComponent<FogVolumeComponent>()) {
+            j["fogVolume"] = p.GetComponent<FogVolumeComponent>();
+        }
         if (p.HasComponent<RigidBodyComponent>()) {
             j["rigidBody"] = p.GetComponent<RigidBodyComponent>();
         }
@@ -112,6 +115,10 @@ namespace Atlas::Scene {
         if (j.contains("audioVolume")) {
             AudioVolumeComponent comp = j["audioVolume"];
             p.AddComponent<AudioVolumeComponent>(comp);
+        }
+        if (j.contains("fogVolume")) {
+            FogVolumeComponent comp = j["fogVolume"];
+            p.AddComponent<FogVolumeComponent>(comp);
         }
         if (j.contains("rigidBody")) {
             RigidBodyComponent comp = j["rigidBody"];

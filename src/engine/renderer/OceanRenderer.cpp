@@ -68,7 +68,7 @@ namespace Atlas {
             lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color) * transmittance, 0.0);
             lightUniform.intensity = light.intensity;
 
-            if (fog && fog->enable && fog->rayMarching) {
+            if (fog && fog->enable) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 

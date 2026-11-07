@@ -186,6 +186,8 @@ namespace Atlas::Scene {
         std::vector<LightEntity> lightEntities;
         std::vector<Renderer::Light> lights;
         std::vector<Renderer::VolumetricLight> volumetricLights;
+        // The closest visible volumes, written by the extraction
+        std::vector<Renderer::FogVolume> fogVolumes;
         std::vector<Renderer::Shadow> volumetricShadows;
 
         JobGroup materialUpdateJob{ "Material update", JobPriority::High};

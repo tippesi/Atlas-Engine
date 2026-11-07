@@ -19,6 +19,10 @@ namespace Atlas::Scene::Components {
 
     void from_json(const json& j, AudioVolumeComponent& p);
 
+    void to_json(json& j, const FogVolumeComponent& p);
+
+    void from_json(const json& j, FogVolumeComponent& p);
+
     void to_json(json& j, const CameraComponent& p);
 
     void from_json(const json& j, CameraComponent& p);

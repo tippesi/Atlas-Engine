@@ -133,12 +133,11 @@ namespace Atlas::Scripting::Bindings {
             "heightFalloff", &Lighting::Fog::heightFalloff,
             "scatteringAnisotropy", &Lighting::Fog::scatteringAnisotropy,
             "ambientFactor", &Lighting::Fog::ambientFactor,
-            "rayMarching", &Lighting::Fog::rayMarching,
-            "rayMarchStepCount", &Lighting::Fog::rayMarchStepCount,
-            "froxels", &Lighting::Fog::froxels,
             "froxelTileSize", &Lighting::Fog::froxelTileSize,
             "froxelSliceCount", &Lighting::Fog::froxelSliceCount,
             "froxelFilter", &Lighting::Fog::froxelFilter,
+            "froxelFarDistance", &Lighting::Fog::froxelFarDistance,
+            "froxelDistributionExponent", &Lighting::Fog::froxelDistributionExponent,
             "volumetricIntensity", &Lighting::Fog::volumetricIntensity
         );
 

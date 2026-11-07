@@ -184,6 +184,49 @@ namespace Atlas::Scene::Components {
         }
     }
 
+    void to_json(json& j, const FogVolumeComponent& p) {
+        j = json {
+            {"enable", p.enable},
+            {"shape", static_cast<int32_t>(p.shape)},
+            {"density", p.density},
+            {"scatteringColor", p.scatteringColor},
+            {"emissiveColor", p.emissiveColor},
+            {"ambientFactor", p.ambientFactor},
+            {"selfShadowing", p.selfShadowing},
+            {"edgeFade", p.edgeFade},
+            {"heightFalloff", p.heightFalloff},
+            {"noiseAmount", p.noiseAmount},
+            {"noiseScale", p.noiseScale},
+            {"noiseCoverage", p.noiseCoverage},
+            {"noiseSharpness", p.noiseSharpness},
+            {"noiseOctaves", p.noiseOctaves},
+            {"windInfluence", p.windInfluence},
+            {"fadeDistance", p.fadeDistance}
+        };
+    }
+
+    void from_json(const json& j, FogVolumeComponent& p) {
+        auto shape = static_cast<int32_t>(p.shape);
+        try_get_json(j, "shape", shape);
+        p.shape = static_cast<FogVolumeShape>(shape);
+
+        try_get_json(j, "enable", p.enable);
+        try_get_json(j, "density", p.density);
+        try_get_json(j, "scatteringColor", p.scatteringColor);
+        try_get_json(j, "emissiveColor", p.emissiveColor);
+        try_get_json(j, "ambientFactor", p.ambientFactor);
+        try_get_json(j, "selfShadowing", p.selfShadowing);
+        try_get_json(j, "edgeFade", p.edgeFade);
+        try_get_json(j, "heightFalloff", p.heightFalloff);
+        try_get_json(j, "noiseAmount", p.noiseAmount);
+        try_get_json(j, "noiseScale", p.noiseScale);
+        try_get_json(j, "noiseCoverage", p.noiseCoverage);
+        try_get_json(j, "noiseSharpness", p.noiseSharpness);
+        try_get_json(j, "noiseOctaves", p.noiseOctaves);
+        try_get_json(j, "windInfluence", p.windInfluence);
+        try_get_json(j, "fadeDistance", p.fadeDistance);
+    }
+
     void to_json(json& j, const CameraComponent& p) {
         j = json {
             {"location", p.location},

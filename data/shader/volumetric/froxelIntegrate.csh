@@ -12,14 +12,10 @@ layout(set = 3, binding = 1) uniform sampler3D froxelTexture;
 layout(set = 3, binding = 5) uniform sampler2D volumetricCloudTexture;
 
 layout(std140, set = 3, binding = 7) uniform UniformBuffer {
-    int sampleCount;
     float intensity;
-    int fogEnabled;
-    float oceanHeight;
-    int lightCount;
-    int offsetX;
-    int offsetY;
     int directionalLightCount;
+    int padding0;
+    int padding1;
     vec4 planetCenterAndRadius;
     Fog fog;
     CloudShadow cloudShadow;
@@ -54,18 +50,14 @@ void main() {
         float sliceEnd = GetFroxelSliceDepth(float(i + 1));
         float stepLength = (sliceEnd - sliceStart) * distancePerDepth;
 
-        vec4 froxel = texelFetch(froxelTexture, ivec3(column, i), 0);
-        float density = froxel.a;
+        vec4 froxel = texelFetch(froxelTexture, ivec3(column, i), 0) / FROXEL_DATA_SCALE;
 
-        vec3 scatteringCoefficient = uniforms.fog.scatteringFactor *
-            uniforms.fog.extinctionCoefficients.rgb * density;
-        vec4 extinctionCoefficient = uniforms.fog.extinctionFactor *
-            uniforms.fog.extinctionCoefficients * density;
+        vec4 extinctionCoefficient = uniforms.fog.extinctionCoefficients * froxel.a;
 
         vec4 clampedExtinction = max(extinctionCoefficient, 0.0000001);
         vec4 stepExtinction = exp(-extinctionCoefficient * stepLength);
 
-        vec3 stepScattering = scatteringCoefficient * froxel.rgb;
+        vec3 stepScattering = froxel.rgb;
         vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction.rgb) / clampedExtinction.rgb;
 
 #ifdef CLOUDS
@@ -75,17 +67,17 @@ void main() {
             worldDirection * (0.5 * (sliceStart + sliceEnd) * distancePerDepth);
         float distToPlanetCenter = distance(worldPosition, planetCenter);
         if (distToPlanetCenter > cloudInnerRadius && !receivedCloudExtinction) {
-            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction * cloudExtinction : vec4(1.0);
+            extinctionWithClouds *= stepExtinction * cloudExtinction;
             receivedCloudExtinction = true;
         }
         else {
-            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction : vec4(1.0);
+            extinctionWithClouds *= stepExtinction;
         }
 #else
         foginess += luminanceIntegral * extinction.rgb;
 #endif
 
-        extinction *= uniforms.fogEnabled > 0 ? stepExtinction : vec4(1.0);
+        extinction *= stepExtinction;
 
         imageStore(integratedFroxelImage, ivec3(column, i), vec4(foginess * uniforms.intensity, extinction.a));
 

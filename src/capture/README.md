@@ -175,7 +175,7 @@ pattern matches a parent and its children, only the topmost matched entities are
 
 `settings` patches the scene's feature settings with JSON merge semantics. The keys and fields
 are the ones of the scene serializer: `sky` (including `clouds` and `atmosphere`),
-`postProcessing`, `wind`, `fog`, `irradianceVolume`, `reflection`, `rtgi`, `ssgi`, `sss` and `ocean`. The
+`postProcessing`, `wind`, `occlusionCulling`, `fog`, `irradianceVolume`, `reflection`, `rtgi`, `ssgi`, `sss` and `ocean`. The
 current values are in the `settings` section of an `--inspect` output. On the command line use
 `--set fog.density=0.02`. Patching `ocean` adds an ocean to a scene without one, e.g.
 `{ "ocean": { "translation": { "x": 0, "y": 0, "z": 0 }, "N": 512 } }`. Changing `N`, `size` or `LoDCount`
@@ -511,6 +511,8 @@ to measure the streaming with a `profile` or the memory of a scene.
         { "op": "add", "name": "Ramp", "mesh": "skate/models/kicker.gltf", "body": true, "position": [x, y, z], "rotation": [0, 180, 0] },
         { "op": "add", "name": "Ramp Light", "position": [x, y, z],
           "light": { "type": "spot", "color": [1, 0.2, 0.6], "intensity": 180, "radius": 18, "direction": [0, -1, 0], "innerAngle": 20, "outerAngle": 35 } },
+        { "op": "add", "name": "Mist", "position": [x, y, z], "scale": [20, 2, 20],   // the scale is the half size of the volume
+          "fogVolume": { "shape": 0, "density": 0.05, "scatteringColor": { "x": 1, "y": 1, "z": 1 }, "heightFalloff": 2, "noiseAmount": 0.5, "noiseScale": 8 } },
         { "op": "add", "name": "Game", "script": "skate/skate.lua" },
         { "op": "add", "name": "Blades", "parent": "Windmill", "mesh": "...", "localPosition": [0, 0.5, 0.55], "visible": false },
         { "op": "add", "name": "Fox", "mesh": "skinning/Fox.glb", "animation": "Run", "animationSpeed": 1.0, "animationTime": 0.0 },

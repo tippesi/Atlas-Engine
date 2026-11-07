@@ -224,8 +224,6 @@ namespace Atlas::Renderer {
 
         volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-        swapVolumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);

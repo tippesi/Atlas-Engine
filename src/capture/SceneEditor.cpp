@@ -861,6 +861,13 @@ namespace Atlas::Capture {
             added["light"] = operation["light"].value("type", std::string("point"));
         }
 
+        // The scale of the entity is the half size of the volume
+        if (operation.contains("fogVolume")) {
+            FogVolumeComponent fogVolume = operation["fogVolume"];
+            entity.AddComponent<FogVolumeComponent>(fogVolume);
+            added["fogVolume"] = true;
+        }
+
         if (hasScript) {
             auto scriptPath = ToAssetPath(operation["script"].get<std::string>());
             auto script = ResourceManager<Scripting::Script>::GetOrLoadResource(scriptPath, ResourceOrigin::User);

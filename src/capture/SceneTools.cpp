@@ -62,7 +62,7 @@ namespace Atlas::Capture {
     }
 
     static const char* componentNames[] = { "Name", "Transform", "Hierarchy", "Mesh", "Camera", "Light", "RigidBody", "Player",
-        "LuaScript", "Audio", "AudioVolume", "Text", "Spline" };
+        "LuaScript", "Audio", "AudioVolume", "Text", "Spline", "FogVolume" };
     static constexpr uint32_t meshBit = 1u << 3, scriptBit = 1u << 8;
 
     static uint32_t GetComponentMask(Scene::Entity entity) {
@@ -71,7 +71,7 @@ namespace Atlas::Capture {
             entity.HasComponent<HierarchyComponent>(), entity.HasComponent<MeshComponent>(), entity.HasComponent<CameraComponent>(),
             entity.HasComponent<LightComponent>(), entity.HasComponent<RigidBodyComponent>(), entity.HasComponent<PlayerComponent>(),
             entity.HasComponent<LuaScriptComponent>(), entity.HasComponent<AudioComponent>(), entity.HasComponent<AudioVolumeComponent>(),
-            entity.HasComponent<TextComponent>(), entity.HasComponent<SplineComponent>() };
+            entity.HasComponent<TextComponent>(), entity.HasComponent<SplineComponent>(), entity.HasComponent<FogVolumeComponent>() };
         uint32_t mask = 0;
         for (uint32_t i = 0; i < std::size(has); i++)
             mask |= has[i] ? 1u << i : 0u;
@@ -116,6 +116,8 @@ namespace Atlas::Capture {
             j["audio"] = *comp;
         if (auto comp = entity.TryGetComponent<AudioVolumeComponent>())
             j["audioVolume"] = *comp;
+        if (auto comp = entity.TryGetComponent<FogVolumeComponent>())
+            j["fogVolume"] = *comp;
         if (auto comp = entity.TryGetComponent<TextComponent>())
             j["text"] = *comp;
         if (auto comp = entity.TryGetComponent<SplineComponent>())

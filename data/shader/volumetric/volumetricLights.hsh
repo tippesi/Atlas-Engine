@@ -12,14 +12,10 @@ layout(set = 3, binding = 6) uniform sampler shadowSampler;
 layout(set = 3, binding = 12) uniform sampler shadowDepthSampler;
 
 layout(std140, set = 3, binding = 7) uniform UniformBuffer {
-    int sampleCount;
     float intensity;
-    int fogEnabled;
-    float oceanHeight;
-    int lightCount;
-    int offsetX;
-    int offsetY;
     int directionalLightCount;
+    int padding0;
+    int padding1;
     vec4 planetCenterAndRadius;
     Fog fog;
     CloudShadow cloudShadow;

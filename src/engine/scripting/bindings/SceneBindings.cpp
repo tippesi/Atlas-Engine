@@ -416,6 +416,7 @@ namespace Atlas::Scripting::Bindings {
             "AddAudioComponent", &AddComponentRef<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
             "AddAudioVolumeComponent", &AddComponentRef<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
             "AddCameraComponent", &AddComponentRef<CameraComponent, float, float, float, float, glm::vec3&, glm::vec2&>,
+            "AddFogVolumeComponent", &AddComponentRef<FogVolumeComponent>,
             "AddHierarchyComponent", &AddComponentRef<HierarchyComponent>,
             "AddLightComponent", &AddComponentRef<LightComponent>,
             "AddMeshComponent", &AddComponentRef<MeshComponent, ResourceHandle<Mesh::Mesh>&>,
@@ -435,6 +436,7 @@ namespace Atlas::Scripting::Bindings {
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
             "RemoveAudioVolumeComponent", &Scene::Entity::RemoveComponent<AudioVolumeComponent>,
             "RemoveCameraComponent", &Scene::Entity::RemoveComponent<CameraComponent>,
+            "RemoveFogVolumeComponent", &Scene::Entity::RemoveComponent<FogVolumeComponent>,
             "RemoveHierarchyComponent", &Scene::Entity::RemoveComponent<HierarchyComponent>,
             "RemoveLightComponent", &Scene::Entity::RemoveComponent<LightComponent>,
             "RemoveMeshComponent", &Scene::Entity::RemoveComponent<MeshComponent>,
@@ -452,6 +454,7 @@ namespace Atlas::Scripting::Bindings {
             "GetAudioComponent", &GetComponentRef<AudioComponent>,
             "GetAudioVolumeComponent", &GetComponentRef<AudioVolumeComponent>,
             "GetCameraComponent", &GetComponentRef<CameraComponent>,
+            "GetFogVolumeComponent", &GetComponentRef<FogVolumeComponent>,
             "GetHierarchyComponent", &GetComponentRef<HierarchyComponent>,
             "GetLightComponent", &GetComponentRef<LightComponent>,
             "GetMeshComponent", &GetComponentRef<MeshComponent>,
@@ -557,6 +560,30 @@ namespace Atlas::Scripting::Bindings {
             "cutoff", &AudioComponent::cutoff,
             "volume", &AudioComponent::volume,
             "stream", &AudioComponent::stream
+        );
+
+        ns->new_enum<FogVolumeShape>("FogVolumeShape", {
+            { "Box", FogVolumeShape::Box },
+            { "Ellipsoid", FogVolumeShape::Ellipsoid }
+            });
+
+        ns->new_usertype<FogVolumeComponent>("FogVolumeComponent",
+            "enable", &FogVolumeComponent::enable,
+            "shape", &FogVolumeComponent::shape,
+            "density", &FogVolumeComponent::density,
+            "scatteringColor", &FogVolumeComponent::scatteringColor,
+            "emissiveColor", &FogVolumeComponent::emissiveColor,
+            "ambientFactor", &FogVolumeComponent::ambientFactor,
+            "selfShadowing", &FogVolumeComponent::selfShadowing,
+            "edgeFade", &FogVolumeComponent::edgeFade,
+            "heightFalloff", &FogVolumeComponent::heightFalloff,
+            "noiseAmount", &FogVolumeComponent::noiseAmount,
+            "noiseScale", &FogVolumeComponent::noiseScale,
+            "noiseCoverage", &FogVolumeComponent::noiseCoverage,
+            "noiseSharpness", &FogVolumeComponent::noiseSharpness,
+            "noiseOctaves", &FogVolumeComponent::noiseOctaves,
+            "windInfluence", &FogVolumeComponent::windInfluence,
+            "fadeDistance", &FogVolumeComponent::fadeDistance
         );
 
         ns->new_usertype<AudioVolumeComponent>("AudioVolumeComponent",
@@ -864,6 +891,7 @@ namespace Atlas::Scripting::Bindings {
         GenerateComponentRefBindings<AudioComponent>(ns, "AudioComponent");
         GenerateComponentRefBindings<AudioVolumeComponent>(ns, "AudioVolumeComponent");
         GenerateComponentRefBindings<CameraComponent>(ns, "CameraComponent");
+        GenerateComponentRefBindings<FogVolumeComponent>(ns, "FogVolumeComponent");
         GenerateComponentRefBindings<HierarchyComponent>(ns, "HierarchyComponent");
         GenerateComponentRefBindings<LightComponent>(ns, "LightComponent");
         GenerateComponentRefBindings<MeshComponent>(ns, "MeshComponent");

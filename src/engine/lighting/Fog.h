@@ -26,23 +26,15 @@ namespace Atlas {
 
             float ambientFactor = 0.01f;
 
-            bool rayMarching = true;
             bool localLights = false;
-            int32_t rayMarchStepCount = 10;
 
-            bool froxels = true;
             int32_t froxelTileSize = 8;
             int32_t froxelSliceCount = 64;
             bool froxelFilter = false;
-
-            // Temporary froxel debug options
-            bool froxelDirectionalJitter = true;
-            int32_t froxelJitterMode = 0;
-            float froxelFarDistance = 0.0f;
-            float froxelDistributionExponent = 1.0f;
-            bool froxelLocalLightJitter = true;
-            int32_t froxelLocalLightSamples = 1;
-            float froxelHistoryWeight = 0.9f;
+            // End of the regular slices, 0 uses the camera far plane. The last slice reaches up to the far plane
+            float froxelFarDistance = 1000.0f;
+            // Below 1 moves slices from the near plane to the distance, the grid always starts at the near plane
+            float froxelDistributionExponent = 0.7f;
 
             float volumetricIntensity = 1.0f;
 

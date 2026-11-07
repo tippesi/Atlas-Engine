@@ -16,3 +16,4 @@
 #include "TextComponent.h"
 #include "ClutterComponent.h"
 #include "SplineComponent.h"
+#include "FogVolumeComponent.h"

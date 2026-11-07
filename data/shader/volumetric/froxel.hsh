@@ -1,4 +1,6 @@
 #define FROXEL_CLUSTER_SIZE 4
+// Thin fog is far below the normal range of the half floats of the froxels
+#define FROXEL_DATA_SCALE 256.0
 
 layout(push_constant) uniform constants {
     ivec2 columnCount;
@@ -9,15 +11,12 @@ layout(push_constant) uniform constants {
     float far;
     int lightCount;
     int resetHistory;
+    int fogVolumeCount;
     vec4 jitter;
     float extendedFar;
-    // Temporary debug options
-    float currentWeight;
     float distributionExponent;
-    int directionalJitter;
-    int localLightJitter;
-    int localLightSampleCount;
-    int jitterMode;
+    float padding1;
+    float padding2;
 } pushConstants;
 
 float GetRegularFroxelSliceDepth(float slice) {

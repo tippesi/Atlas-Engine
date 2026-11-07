@@ -1056,6 +1056,59 @@ namespace Atlas::Scene {
         time = scene->GetTime();
         deltaTime = scene->GetDeltaTime();
 
+        fogVolumes.clear();
+        if (hasCamera) {
+            auto cameraLocation = camera.GetLocation();
+            auto windDirection = Helper::Math::NormalizeOrZero(scene->wind.direction);
+            auto windOffset = vec3(windDirection.x, 0.0f, windDirection.y) * scene->wind.speed * time;
+
+            std::vector<std::pair<float, Renderer::FogVolume>> visibleFogVolumes;
+            auto fogVolumeSubset = scene->GetSubset<FogVolumeComponent>();
+            for (auto& fogVolumeEntity : fogVolumeSubset) {
+                const auto& volume = fogVolumeEntity.GetComponent<FogVolumeComponent>();
+                auto transform = fogVolumeEntity.TryGetComponent<TransformComponent>();
+                if (!volume.enable || volume.density <= 0.0f || !transform)
+                    continue;
+
+                auto aabb = Volume::AABB(vec3(-1.0f), vec3(1.0f)).Transform(transform->globalMatrix);
+                if (!camera.frustum.Intersects(aabb))
+                    continue;
+
+                auto distance = aabb.GetDistance(cameraLocation);
+                // Fades out over the last fifth of the distance
+                auto fade = volume.fadeDistance > 0.0f ?
+                    Helper::Math::Saturate((volume.fadeDistance - distance) / (0.2f * volume.fadeDistance)) : 1.0f;
+                if (fade <= 0.0f)
+                    continue;
+
+                auto worldToUnit = glm::transpose(glm::inverse(transform->globalMatrix));
+                visibleFogVolumes.emplace_back(distance, Renderer::FogVolume {
+                    .worldToUnit0 = worldToUnit[0],
+                    .worldToUnit1 = worldToUnit[1],
+                    .worldToUnit2 = worldToUnit[2],
+                    .scatteringAndDensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.scatteringColor), volume.density * fade),
+                    .emissiveAndEdgeFade = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.emissiveColor), volume.edgeFade),
+                    .noiseOffsetAndFrequency = vec4(windOffset * volume.windInfluence, 1.0f / volume.noiseScale),
+                    .noiseAmount = volume.noiseAmount,
+                    .noiseCoverage = volume.noiseCoverage,
+                    .noiseSharpness = volume.noiseSharpness,
+                    .noiseOctaves = volume.noiseOctaves,
+                    .heightFalloff = volume.heightFalloff,
+                    .ambientFactor = volume.ambientFactor,
+                    .shape = static_cast<int32_t>(volume.shape),
+                    .selfShadowing = volume.selfShadowing
+                    });
+            }
+
+            std::sort(visibleFogVolumes.begin(), visibleFogVolumes.end(),
+                [](const auto& volume0, const auto& volume1) { return volume0.first < volume1.first; });
+            if (visibleFogVolumes.size() > size_t(Renderer::MAX_FOG_VOLUMES))
+                visibleFogVolumes.resize(Renderer::MAX_FOG_VOLUMES);
+
+            for (const auto& [distance, volume] : visibleFogVolumes)
+                fogVolumes.push_back(volume);
+        }
+
         auto copy = [](auto& target, const auto& source) {
             if (!source)
                 target = nullptr;

@@ -1623,6 +1623,10 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<AudioVolumeComponent>();
                 dstEntity.AddComponent<AudioVolumeComponent>(otherComp);
             }
+            if (srcEntity.HasComponent<FogVolumeComponent>()) {
+                auto otherComp = srcEntity.GetComponent<FogVolumeComponent>();
+                dstEntity.AddComponent<FogVolumeComponent>(otherComp);
+            }
             if (srcEntity.HasComponent<LuaScriptComponent>()) {
                 // These have a proper copy constructor
                 auto otherComp = srcEntity.GetComponent<LuaScriptComponent>();

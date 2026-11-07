@@ -294,7 +294,7 @@ void main() {
 #ifdef CLOUDS
         volumetricClouds = textureLod(volumetricCloudTexture, ndcCoord, 0.0);
 #endif
-        color = ApplyVolumetrics(Uniforms.fog, color, volumetricFog, volumetricClouds,
+        color = ApplyVolumetrics(color, volumetricFog, volumetricClouds,
             eyeDir, globalData.planetCenter.xyz, Uniforms.innerCloudRadius);
     }
 

@@ -295,7 +295,6 @@ namespace Atlas::Renderer {
         Texture::Texture2D oceanNormalTexture;
 
         Texture::Texture2D volumetricTexture;
-        Texture::Texture2D swapVolumetricTexture;
 
         Texture::Texture2D volumetricCloudsTexture;
         Texture::Texture2D swapVolumetricCloudsTexture;
