@@ -36,7 +36,10 @@ namespace Atlas::Editor {
         MeshSource,
         EnvironmentImage,
         Trash,
-        Filter
+        Filter,
+        OpenInNew,
+        Reset,
+        MaterialGraph
     };
 
     class Icons {

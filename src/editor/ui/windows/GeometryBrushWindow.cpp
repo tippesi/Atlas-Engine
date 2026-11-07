@@ -257,6 +257,7 @@ namespace Atlas::Editor::UI {
 
             // Ray cast result is in global space
             entity.GetComponent<TransformComponent>().SetGlobal(matrix, parentEntity);
+            activeSceneWindow->hasUnsavedChanges = true;
         }
 
     }
@@ -284,6 +285,7 @@ namespace Atlas::Editor::UI {
                 continue;
 
             scene->DestroyEntity(entity, false);
+            activeSceneWindow->hasUnsavedChanges = true;
         }
 
     }

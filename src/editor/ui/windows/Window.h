@@ -25,6 +25,8 @@ namespace Atlas::Editor::UI {
 
         bool inFocus = false;
         bool resetDockingLayout = false;
+        // Docks the window as a tab next to the scenes when it is rendered the next time
+        bool requestDocking = false;
 
     protected:
         int32_t ID = GetID();

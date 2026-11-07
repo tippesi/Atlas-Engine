@@ -5,11 +5,13 @@
 #include "Notifications.h"
 #include "ContentDiscovery.h"
 #include "Theme.h"
+#include "DataCreator.h"
 #include "ui/panels/PopupPanels.h"
 #include "tools/FileSystemHelper.h"
 #include <ImGuizmo.h>
 #include <profiler/CPUProfiler.h>
 #include <profiler/HitchRecorder.h>
+#include <streaming/StreamingManager.h>
 #include <imgui_internal.h>
 
 #include <filesystem>
@@ -31,6 +33,13 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 namespace Atlas::Editor {
 
     void App::LoadContent() {
+
+        // Scenes don't wait behind the meshes and textures which are already loading
+        ResourceManager<Scene::Scene>::loadPriority = JobPriority::Medium;
+
+        // Meshes and impostors are saved and baked here, they stay resident unless the engine settings enable it
+        Streaming::StreamingManager::settings.impostors.enable = false;
+        Streaming::StreamingManager::settings.meshes.enable = false;
 
         // --log-hitches [ms] logs frames that take much longer than the ones before with their CPU profile
         for (size_t i = 0; i < args.size(); i++) {
@@ -87,6 +96,8 @@ namespace Atlas::Editor {
 
     void App::UnloadContent() {
 
+        Loader::ModelImporter::WaitForBackgroundImports();
+
         Singletons::imguiWrapper->Unload();
 
         CopyPasteHelper::Clear();
@@ -94,7 +105,8 @@ namespace Atlas::Editor {
         for (const auto& sceneWindow : sceneWindows) {
             if (sceneWindow->isPlaying)
                 sceneWindow->StopPlaying();
-            Serialization::SerializeSceneWindow(sceneWindow);
+            if (!sceneWindow->IsPrefab())
+                Serialization::SerializeSceneWindow(sceneWindow);
         }
 
         Serialization::SerializeContentBrowserWindow(contentBrowserWindow);
@@ -123,8 +135,34 @@ namespace Atlas::Editor {
         if (Singletons::blockingOperation->block)
             return;
 
+        Loader::ModelImporter::ApplyBackgroundImports();
+
         sectionScope.Next("Content browser update");
         contentBrowserWindow.Update();
+
+        if (!UI::ContentBrowserWindow::contentToEditPath.empty()) {
+            OpenInAssetEditor(UI::ContentBrowserWindow::contentToEditPath);
+            UI::ContentBrowserWindow::contentToEditPath.clear();
+        }
+
+        std::erase_if(assetEditorWindows, [](const auto& window) { return !window->show; });
+        if (activeAssetEditorWindow && !activeAssetEditorWindow->show)
+            activeAssetEditorWindow = nullptr;
+        for (const auto& assetEditorWindow : assetEditorWindows)
+            if (assetEditorWindow->inFocus)
+                activeAssetEditorWindow = assetEditorWindow;
+        // Drags outside of viewports, e.g. on a slider, must not turn the next camera that gets the focus
+        auto mouseMovedCamera = false;
+        for (const auto& assetEditorWindow : assetEditorWindows) {
+            if (!assetEditorWindow->viewportPanel.isFocused || !assetEditorWindow->cameraEntity.IsValid())
+                continue;
+            auto& camera = assetEditorWindow->cameraEntity.GetComponent<CameraComponent>();
+            keyboardHandler.speed = assetEditorWindow->cameraMovementSpeed;
+            mouseHandler.Update(camera, deltaTime);
+            keyboardHandler.Update(camera, deltaTime);
+            mouseMovedCamera = true;
+        }
+
         sectionScope.Next("Scene windows update");
 
         // Create new windows for fully loaded scenes
@@ -134,14 +172,19 @@ namespace Atlas::Editor {
 
                 // After the scene is loaded we can retrieve the window configuration and deserialize it
                 sceneWindows.emplace_back(Serialization::DeserializeSceneWindow(waitToLoadScenes.back()));
+                // Scenes opened for the first time join the others, known ones stay where they were left
+                sceneWindows.back()->requestDocking = !ImGui::FindWindowSettingsByID(ImHashStr(sceneWindows.back()->GetNameID()));
                 waitToLoadScenes.pop_back();
                 i--;
             }
         }
 
         // Quick quit
-        if (sceneWindows.empty())
+        if (sceneWindows.empty()) {
+            if (!mouseMovedCamera)
+                mouseHandler.Reset();
             return;
+        }
 
         auto& config = Singletons::config;
 
@@ -151,8 +194,8 @@ namespace Atlas::Editor {
         size_t sceneCounter = 0;
         for (const auto& sceneWindow : sceneWindows) {
 
-            // Delete windows not opened in the config (don't know when this does happen)
-            if (std::find(config->openedScenes.begin(), config->openedScenes.end(),
+            // Delete windows not opened in the config (don't know when this does happen), prefabs aren't part of it
+            if (!sceneWindow->IsPrefab() && std::find(config->openedScenes.begin(), config->openedScenes.end(),
                 sceneWindow->scene) == config->openedScenes.end()) {
                 toBeDeletedSceneWindows.push_back(sceneCounter++);
                 continue;
@@ -162,13 +205,16 @@ namespace Atlas::Editor {
             if (!sceneWindow->show) {
                 auto iter = std::find(config->openedScenes.begin(), config->openedScenes.end(),
                     sceneWindow->scene);
-                config->openedScenes.erase(iter);
+                if (iter != config->openedScenes.end())
+                    config->openedScenes.erase(iter);
                 toBeDeletedSceneWindows.push_back(sceneCounter++);
                 continue;
             }
 
-            if (sceneWindow->inFocus)
+            if (sceneWindow->inFocus) {
                 activeSceneIdx = sceneCounter;
+                activeAssetEditorWindow = nullptr;
+            }
 
             sceneCounter++;
         }
@@ -179,7 +225,8 @@ namespace Atlas::Editor {
             // Serialize window before erasing it
             if (sceneWindows[sceneWindowIdx]->isPlaying)
                 sceneWindows[sceneWindowIdx]->StopPlaying();
-            Serialization::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
+            if (!sceneWindows[sceneWindowIdx]->IsPrefab())
+                Serialization::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
             sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
         }
 
@@ -203,7 +250,11 @@ namespace Atlas::Editor {
 
             mouseHandler.Update(camera, deltaTime);
             keyboardHandler.Update(camera, deltaTime);
+            mouseMovedCamera = true;
         }
+
+        if (!mouseMovedCamera)
+            mouseHandler.Reset();
 
         if (activeSceneWindow->isPlaying && !activeSceneWindow->scene->paused) {
             playerInput.mouseHandler.sensibility = activeSceneWindow->cameraRotationSpeed;
@@ -212,7 +263,8 @@ namespace Atlas::Editor {
 
         // Update all scenes after input was applied
         for (auto& sceneWindow : sceneWindows) {
-            if (sceneWindow == activeSceneWindow)
+            // Only one viewport renders per frame, the last focused scene or mesh editor
+            if (sceneWindow == activeSceneWindow && !activeAssetEditorWindow)
                 sceneWindow->isActiveWindow = true;
             else
                 sceneWindow->isActiveWindow = false;
@@ -335,6 +387,7 @@ namespace Atlas::Editor {
                     ImGui::MenuItem("Content browser", nullptr, &contentBrowserWindow.show);
                     ImGui::MenuItem("Log", nullptr, &logWindow.show);
                     ImGui::MenuItem("Profiler", nullptr, &profilerWindow.show);
+                    ImGui::MenuItem("Engine settings", nullptr, &settingsWindow.show);
                     ImGui::MenuItem("Geometry brush", nullptr, &geometryBrushWindow.show);
 
                     ImGui::SeparatorText("Appearance");
@@ -375,7 +428,15 @@ namespace Atlas::Editor {
 
             sectionScope.Next("Scene windows");
             for (auto& sceneWindow : sceneWindows) {
+                DockNextToScenes(*sceneWindow);
                 sceneWindow->Render();
+            }
+
+            sectionScope.Next("Asset editor windows");
+            for (auto& assetEditorWindow : assetEditorWindows) {
+                assetEditorWindow->isActiveWindow = assetEditorWindow == activeAssetEditorWindow;
+                DockNextToScenes(*assetEditorWindow);
+                assetEditorWindow->Render();
             }
 
             // This does active changes to the scene, render after scene windows
@@ -388,6 +449,8 @@ namespace Atlas::Editor {
             logWindow.Render();
             sectionScope.Next("Profiler window");
             profilerWindow.Render();
+            sectionScope.Next("Settings window");
+            settingsWindow.Render();
 
             ImGui::End();
         }
@@ -564,6 +627,7 @@ namespace Atlas::Editor {
         registerWindow("content browser", &contentBrowserWindow.show);
         registerWindow("log", &logWindow.show);
         registerWindow("profiler", &profilerWindow.show);
+        registerWindow("engine settings", &settingsWindow.show);
         registerWindow("geometry brush", &geometryBrushWindow.show);
         commandPalette.Register({ .category = "Window", .name = "Reset layout",
             .action = [this]() { resetDockspaceLayout = true; } });
@@ -592,6 +656,23 @@ namespace Atlas::Editor {
 
         commandPalette.Register({ .category = "Viewport", .name = "Focus selection", .shortcut = "F",
             .action = [this]() { GetActiveSceneWindow()->FocusSelection(); }, .isEnabled = canEdit });
+        commandPalette.Register({ .category = "Viewport", .name = "Drop selection to ground", .shortcut = "End",
+            .action = [this]() { GetActiveSceneWindow()->DropSelectionToGround(); }, .isEnabled = canEdit });
+        auto isViewingCamera = [this, canEdit]() {
+            return canEdit() && GetActiveSceneWindow()->viewedCameraEntity.IsValid();
+            };
+        commandPalette.Register({ .category = "Viewport", .name = "View through selected camera",
+            .action = [this]() { auto window = GetActiveSceneWindow(); window->ViewThroughCamera(window->sceneHierarchyPanel.selectedEntity); },
+            .isEnabled = [this, canEdit]() {
+                if (!canEdit())
+                    return false;
+                auto entity = GetActiveSceneWindow()->sceneHierarchyPanel.selectedEntity;
+                return entity.IsValid() && entity.HasComponent<CameraComponent>();
+                } });
+        commandPalette.Register({ .category = "Viewport", .name = "Apply view to camera",
+            .action = [this]() { GetActiveSceneWindow()->ApplyViewToCamera(); }, .isEnabled = isViewingCamera });
+        commandPalette.Register({ .category = "Viewport", .name = "Back to editor camera",
+            .action = [this]() { GetActiveSceneWindow()->ReturnToEditorCamera(); }, .isEnabled = isViewingCamera });
         commandPalette.Register({ .category = "Viewport", .name = "Toggle grid", .shortcut = "G",
             .action = [this]() { auto window = GetActiveSceneWindow(); window->showGrid = !window->showGrid; },
             .isEnabled = canEdit,
@@ -644,6 +725,7 @@ namespace Atlas::Editor {
         registerCreate("Camera", UI::SceneHierarchyPanel::EntityTemplate::Camera);
         registerCreate("Audio source", UI::SceneHierarchyPanel::EntityTemplate::AudioSource);
         registerCreate("Text", UI::SceneHierarchyPanel::EntityTemplate::Text);
+        registerCreate("Fog volume", UI::SceneHierarchyPanel::EntityTemplate::FogVolume);
 
         // Scene
         commandPalette.Register({ .category = "Scene", .name = "Play",
@@ -654,6 +736,70 @@ namespace Atlas::Editor {
         commandPalette.Register({ .category = "Scene", .name = "Stop playing", .shortcut = "Ctrl+Q",
             .action = [this]() { GetActiveSceneWindow()->StopPlaying(); },
             .isEnabled = [this, hasScene]() { return hasScene() && GetActiveSceneWindow()->isPlaying; } });
+
+        // Material graph of the material editor in front
+        auto materialEditor = [this]() {
+            return std::dynamic_pointer_cast<UI::MaterialEditorWindow>(activeAssetEditorWindow);
+            };
+        auto hasMaterialGraph = [materialEditor]() {
+            auto window = materialEditor();
+            return window && window->material.IsLoaded() && window->material->HasGraph();
+            };
+        commandPalette.Register({ .category = "Material graph", .name = "Add node", .shortcut = "Space",
+            .action = [materialEditor]() { materialEditor()->graphPanel.OpenAddMenu(); }, .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Frame all nodes", .shortcut = "F",
+            .action = [materialEditor]() { materialEditor()->graphPanel.FrameAll(); }, .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Arrange nodes",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Arrange(*window->material->graph.Get()); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Show generated code",
+            .action = [materialEditor]() { materialEditor()->graphPanel.ShowGeneratedCode(); }, .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Undo", .shortcut = "Ctrl+Z",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Undo(window->material->graph); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Redo", .shortcut = "Ctrl+Y",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Redo(window->material->graph); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Select all nodes", .shortcut = "Ctrl+A",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.SelectAll(*window->material->graph.Get()); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Delete selected nodes", .shortcut = "Del",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.DeleteSelection(*window->material->graph.Get()); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Copy selected nodes", .shortcut = "Ctrl+C",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.CopySelection(*window->material->graph.Get()); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Paste nodes", .shortcut = "Ctrl+V",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Paste(*window->material->graph.Get()); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Duplicate selected nodes", .shortcut = "Ctrl+D",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.DuplicateSelection(*window->material->graph.Get()); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Frame selected nodes", .shortcut = "Ctrl+G",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.FrameSelection(*window->material->graph.Get()); },
+            .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Toggle maximized", .shortcut = "F11",
+            .action = [materialEditor]() { materialEditor()->graphPanel.ToggleMaximized(); }, .isEnabled = hasMaterialGraph });
+
+        // Asset editor in front
+        auto hasAssetEditor = [this]() { return activeAssetEditorWindow != nullptr; };
+        commandPalette.Register({ .category = "Asset editor", .name = "Save asset", .shortcut = "Ctrl+S",
+            .action = [this]() { activeAssetEditorWindow->Save(); }, .isEnabled = hasAssetEditor });
+        commandPalette.Register({ .category = "Asset editor", .name = "Focus asset", .shortcut = "F",
+            .action = [this]() { activeAssetEditorWindow->FocusAsset(); }, .isEnabled = hasAssetEditor });
+        commandPalette.Register({ .category = "Asset editor", .name = "Toggle grid", .shortcut = "G",
+            .action = [this]() { activeAssetEditorWindow->showGrid = !activeAssetEditorWindow->showGrid; }, .isEnabled = hasAssetEditor });
+
+        // Animation timeline of the mesh editor in front
+        auto meshEditor = [this]() {
+            return std::dynamic_pointer_cast<UI::MeshEditorWindow>(activeAssetEditorWindow);
+            };
+        commandPalette.Register({ .category = "Animation timeline", .name = "Save animation",
+            .action = [meshEditor]() { meshEditor()->timelinePanel.saveRequested = true; },
+            .isEnabled = [meshEditor]() { return meshEditor() != nullptr; } });
+        commandPalette.Register({ .category = "Animation timeline", .name = "Delete selected key", .shortcut = "Del",
+            .action = [meshEditor]() { meshEditor()->timelinePanel.deleteKeyRequested = true; },
+            .isEnabled = [meshEditor]() { auto window = meshEditor(); return window && window->timelinePanel.HasSelectedKey(); } });
 
         // Help
         commandPalette.Register({ .category = "Help", .name = "Keyboard shortcuts",
@@ -834,6 +980,17 @@ namespace Atlas::Editor {
             section("Terrain editing", {
                 { "Hold right mouse", "Paint with the active brush" },
                 });
+            section("Material graph", {
+                { "Space or right click", "Add a node, dropping a link on the canvas connects it" },
+                { "Middle or right mouse drag", "Move the canvas" },
+                { "Mouse wheel", "Zoom" },
+                { "Drag a pin", "Connect, drag an input to move its link" },
+                { "Alt+Click on a link", "Remove the link" },
+                { "Ctrl+C / V / D", "Copy, paste or duplicate the selection" },
+                { "Ctrl+Z / Y", "Undo / redo" },
+                { "F", "Show all nodes" },
+                { "Delete", "Delete the selection" },
+                });
         }
         ImGui::End();
 
@@ -867,6 +1024,7 @@ namespace Atlas::Editor {
         ImGui::DockBuilderFinish(dsID);
 
         profilerWindow.show = false;
+        settingsWindow.show = false;
         contentBrowserWindow.show = true;
         logWindow.show = true;
 
@@ -878,6 +1036,72 @@ namespace Atlas::Editor {
         }
 
         resetDockspaceLayout = false;
+
+    }
+
+    void App::OpenInAssetEditor(const std::string& path) {
+
+        auto type = Content::contentTypeMapping.at(Common::Path::GetFileType(path));
+        if (type == ContentType::Animation) {
+            // Animations play in the mesh editor focused last
+            Ref<UI::MeshEditorWindow> assetEditorWindow;
+            for (const auto& window : assetEditorWindows) {
+                auto candidate = std::dynamic_pointer_cast<UI::MeshEditorWindow>(window);
+                if (candidate && (!assetEditorWindow || candidate->lastFocusTime > assetEditorWindow->lastFocusTime))
+                    assetEditorWindow = candidate;
+            }
+            auto animation = FileImporter::ImportFile<Animation::Animation>(path);
+            if (!assetEditorWindow || !assetEditorWindow->Play(animation))
+                Notifications::Push({ .message = "Open a skinned mesh to play the animation on", .color = vec3(1.0f, 0.0f, 0.0f) });
+            return;
+        }
+
+        if (type == ContentType::Prefab) {
+            for (const auto& sceneWindow : sceneWindows) {
+                if (sceneWindow->prefabPath == path)
+                    return;
+            }
+
+            auto scene = DataCreator::CreateScene(Common::Path::GetFileName(path), vec3(-2048.0f), vec3(2048.0f), 8);
+            auto sceneWindow = CreateRef<UI::SceneWindow>(ResourceHandle<Scene::Scene>(scene), true);
+            sceneWindow->OpenPrefab(path);
+            sceneWindow->requestDocking = true;
+            sceneWindows.push_back(sceneWindow);
+            return;
+        }
+
+        auto iter = std::find_if(assetEditorWindows.begin(), assetEditorWindows.end(),
+            [&](const auto& window) { return window->GetAssetPath() == path; });
+        if (iter != assetEditorWindows.end()) {
+            (*iter)->requestFocus = true;
+            activeAssetEditorWindow = *iter;
+            return;
+        }
+
+        if (type == ContentType::Material)
+            assetEditorWindows.push_back(CreateRef<UI::MaterialEditorWindow>(FileImporter::ImportFile<Material>(path), true));
+        else if (type == ContentType::MaterialGraph)
+            assetEditorWindows.push_back(CreateRef<UI::MaterialEditorWindow>(FileImporter::ImportFile<MaterialGraph::Graph>(path), true));
+        else
+            assetEditorWindows.push_back(CreateRef<UI::MeshEditorWindow>(FileImporter::ImportFile<Mesh::Mesh>(path), true));
+        activeAssetEditorWindow = assetEditorWindows.back();
+        activeAssetEditorWindow->requestDocking = true;
+
+    }
+
+    void App::DockNextToScenes(UI::Window& window) {
+
+        if (!window.requestDocking)
+            return;
+        window.requestDocking = false;
+
+        for (const auto& sceneWindow : sceneWindows) {
+            auto imguiWindow = ImGui::FindWindowByName(sceneWindow->GetNameID());
+            if (sceneWindow.get() != &window && imguiWindow && imguiWindow->DockId) {
+                ImGui::SetNextWindowDockID(imguiWindow->DockId, ImGuiCond_Always);
+                return;
+            }
+        }
 
     }
 

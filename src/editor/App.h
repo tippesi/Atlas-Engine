@@ -13,8 +13,11 @@
 
 #include "ui/windows/ContentBrowserWindow.h"
 #include "ui/windows/SceneWindow.h"
+#include "ui/windows/MeshEditorWindow.h"
+#include "ui/windows/MaterialEditorWindow.h"
 #include "ui/windows/LogWindow.h"
 #include "ui/windows/ProfilerWindow.h"
+#include "ui/windows/SettingsWindow.h"
 #include "ui/windows/GeometryBrushWindow.h"
 #include "ui/popups/CommandPalette.h"
 
@@ -50,6 +53,13 @@ namespace Atlas::Editor {
 
         void RegisterCommands();
 
+        // Opens meshes and materials in their editors and prefabs in a scene window, animations play in the last
+        // focused mesh editor
+        void OpenInAssetEditor(const std::string& path);
+
+        // Asset editors and prefabs open as a tab next to the scenes
+        void DockNextToScenes(UI::Window& window);
+
         Ref<UI::SceneWindow> GetActiveSceneWindow() const;
 
         void SubscribeToResourceEvents();
@@ -63,6 +73,7 @@ namespace Atlas::Editor {
         UI::LogWindow logWindow = UI::LogWindow(true);
         UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(true);
         UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
+        UI::SettingsWindow settingsWindow = UI::SettingsWindow(false);
         UI::GeometryBrushWindow geometryBrushWindow = UI::GeometryBrushWindow(false);
 
         ImguiExtension::PerformanceGraphPanel performanceGraphPanel;
@@ -72,6 +83,8 @@ namespace Atlas::Editor {
 
         std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
         std::vector<Ref<UI::SceneWindow>> sceneWindows;
+        std::vector<Ref<UI::AssetEditorWindow>> assetEditorWindows;
+        Ref<UI::AssetEditorWindow> activeAssetEditorWindow;
 
         size_t activeSceneIdx = 0;
 

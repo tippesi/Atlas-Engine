@@ -26,6 +26,8 @@ namespace Atlas::Editor {
 		// Imguizmo translate mode
 		int32_t mode = 7;
 		bool objectSpace = false;
+		// Surface snapping (Shift while translating) also turns the up axis of the selection to the surface normal
+		bool alignToSurface = false;
 
 		bool needEnabled = false;
 

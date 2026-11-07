@@ -61,6 +61,12 @@ namespace Atlas::Editor::UI {
                     entity, audioVolumeComponentPanel, comp);
             }
 
+            if (entity.HasComponent<FogVolumeComponent>()) {
+                auto& comp = entity.GetComponent<FogVolumeComponent>();
+                RenderComponentPanel("Fog volume", scene,
+                    entity, fogVolumeComponentPanel, comp);
+            }
+
             if (entity.HasComponent<CameraComponent>()) {
                 auto& comp = entity.GetComponent<CameraComponent>();
                 RenderComponentPanel("Camera", scene,
@@ -166,6 +172,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<AudioComponent>();
                 if (!entity.HasComponent<AudioVolumeComponent>() && matches("Audio volume") && ImGui::MenuItem("Audio volume"))
                     entity.AddComponent<AudioVolumeComponent>();
+                if (!entity.HasComponent<FogVolumeComponent>() && matches("Fog volume") && ImGui::MenuItem("Fog volume"))
+                    entity.AddComponent<FogVolumeComponent>();
                 if (!entity.HasComponent<CameraComponent>() && matches("Camera") && ImGui::MenuItem("Camera"))
                     entity.AddComponent<CameraComponent>();
                 if (!entity.HasComponent<TextComponent>() && matches("Text") && ImGui::MenuItem("Text"))
@@ -230,6 +238,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<AudioComponent>();
                 if (entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Audio volume"))
                     entity.RemoveComponent<AudioVolumeComponent>();
+                if (entity.HasComponent<FogVolumeComponent>() && ImGui::MenuItem("Fog volume"))
+                    entity.RemoveComponent<FogVolumeComponent>();
                 if (entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Camera"))
                     entity.RemoveComponent<CameraComponent>();
                 if (entity.HasComponent<TextComponent>() && ImGui::MenuItem("Text"))
@@ -258,6 +268,7 @@ namespace Atlas::Editor::UI {
                 else if (HandleComponentPaste<LightComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioVolumeComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<FogVolumeComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<CameraComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<TextComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<LuaScriptComponent>(scene, entity)) {}

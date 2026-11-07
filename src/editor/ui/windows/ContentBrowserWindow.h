@@ -39,7 +39,9 @@ namespace Atlas::Editor::UI {
 			PrefabBit = (1 << 8),
 			TextureBit = (1 << 9),
 			EnvTextureBit = (1 << 10),
-			AllBit = (1 << 11) - 1
+			AnimationBit = (1 << 11),
+			MaterialGraphBit = (1 << 12),
+			AllBit = (1 << 13) - 1
 		} ContentFilterBits;
 
         std::string currentDirectory = Loader::AssetLoader::GetDataDirectory();
@@ -54,6 +56,8 @@ namespace Atlas::Editor::UI {
         static constexpr float maxIconSize = 160.0f;
         
         static inline std::string contentToShowPath = "";
+        // Mesh, material, prefab or animation the user wants to open in its editor
+        static inline std::string contentToEditPath = "";
 
     private:
         struct ContentCopy {

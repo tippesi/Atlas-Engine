@@ -17,6 +17,10 @@ namespace Atlas::Editor::UI {
         bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, AnimationComponent& animationComponent);
 
     private:
+        bool RenderLayer(AnimationLayer& layer, const Mesh::Skeleton* skeleton);
+
+        void RenderIKChain(AnimationIKChain& chain, const Mesh::Skeleton* skeleton);
+
         ResourceSelectionPanel<Animation::Animation> animationSelectionPanel;
 
         float blendTime = 0.2f;

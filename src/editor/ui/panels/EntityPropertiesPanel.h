@@ -10,6 +10,7 @@
 #include "components/LightComponentPanel.h"
 #include "components/AudioComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
+#include "components/FogVolumeComponentPanel.h"
 #include "components/LuaScriptComponentPanel.h"
 #include "components/RigidBodyComponentPanel.h"
 #include "components/PlayerComponentPanel.h"
@@ -49,6 +50,7 @@ namespace Atlas::Editor::UI {
         LightComponentPanel lightComponentPanel;
         AudioComponentPanel audioComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
+        FogVolumeComponentPanel fogVolumeComponentPanel;
         LuaScriptComponentPanel luaScriptComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
         PlayerComponentPanel playerComponentPanel;
@@ -109,15 +111,26 @@ namespace Atlas::Editor::UI {
                 auto buttonExtent = iconSize + 2.0f;
                 auto cursorPos = ImGui::GetCursorPos();
 
+                auto buttonPos = ImVec2(headerMax.x - buttonExtent - ImGui::GetStyle().FramePadding.x,
+                    headerMin.y + (headerMax.y - headerMin.y - buttonExtent) * 0.5f);
+
                 ImGui::SameLine();
-                ImGui::SetCursorScreenPos(ImVec2(headerMax.x - buttonExtent - ImGui::GetStyle().FramePadding.x,
-                    headerMin.y + (headerMax.y - headerMin.y - buttonExtent) * 0.5f));
+                ImGui::SetCursorScreenPos(buttonPos);
 
                 auto alpha = ImGui::IsMouseHoveringRect(headerMin, headerMax) ? 1.0f : 0.45f;
                 ImGui::PushID(name.c_str());
                 if (Widgets::IconButton("Remove component", Singletons::icons->Get(IconType::Trash),
                     iconSize, "Remove component", alpha))
                     removeComponent = true;
+
+                if constexpr (std::is_same_v<T, MeshComponent>) {
+                    if (component.mesh.IsValid()) {
+                        ImGui::SetCursorScreenPos(ImVec2(buttonPos.x - buttonExtent - ImGui::GetStyle().ItemSpacing.x, buttonPos.y));
+                        if (Widgets::IconButton("Open in mesh editor", Singletons::icons->Get(IconType::OpenInNew),
+                            iconSize, "Open in mesh editor", alpha))
+                            ContentBrowserWindow::contentToEditPath = component.mesh.GetResource()->path;
+                    }
+                }
                 ImGui::PopID();
 
                 ImGui::SetCursorPos(cursorPos);

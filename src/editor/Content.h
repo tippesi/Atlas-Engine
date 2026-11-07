@@ -19,6 +19,7 @@ namespace Atlas::Editor {
         Texture,
         EnvironmentTexture,
         Animation,
+        MaterialGraph,
         None
     };
 

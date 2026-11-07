@@ -52,6 +52,13 @@ namespace Atlas::Editor::UI {
                 ImGui::DragFloat("Distance culling", &mesh->distanceCulling, 1.0f);
                 ImGui::DragFloat("Shadow distance culling", &mesh->shadowDistanceCulling, 1.0f);
                 ImGui::DragFloat("Ray trace distance culling", &mesh->rayTraceDistanceCulling, 1.0f);
+                ImGui::DragFloat("Minimum screen size (px)", &mesh->minScreenSize, 0.1f, 0.0f, 64.0f);
+            }
+
+            if (mesh->data.IsSkinned()) {
+                ImGui::SeparatorText("Animation settings");
+                ImGui::DragFloat("Level of detail distance", &mesh->animationLodDistance, 1.0f, 0.0f, 500.0f);
+                ImGui::SliderInt("Maximum frames between updates", &mesh->animationMaxInterval, 1, 16);
             }
 
             {
@@ -106,7 +113,12 @@ namespace Atlas::Editor::UI {
             ImGui::SeparatorText("Materials");
             materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials, 
                 [&](ResourceHandle<Material> material) {
-                    return materialSelectionPanel.Render(material);
+                    auto selected = materialSelectionPanel.Render(material);
+                    if (selected.IsLoaded() && selected->HasGraph()) {
+                        ImGui::SameLine();
+                        ImGui::TextColored(Theme::TextMuted(), "Uses the graph %s", selected->graph.GetResource()->GetFileName().c_str());
+                    }
+                    return selected;
                 },
                 [&](ResourceHandle<Texture::Texture2D> texture) {
                     return textureSelectionPanel.Render(texture);

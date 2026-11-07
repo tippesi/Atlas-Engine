@@ -299,6 +299,66 @@ namespace Atlas::Editor {
 
     }
 
+    ImVec4 Theme::GraphBackground(float alpha) {
+
+        return dark ? Rgb(24, 25, 28, alpha) : Rgb(236, 237, 240, alpha);
+
+    }
+
+    ImVec4 Theme::GraphGrid(float alpha) {
+
+        return dark ? Rgb(255, 255, 255, 0.07f * alpha) : Rgb(0, 0, 0, 0.09f * alpha);
+
+    }
+
+    ImVec4 Theme::GraphNode(float alpha) {
+
+        return dark ? Rgb(44, 46, 51, alpha) : Rgb(250, 250, 252, alpha);
+
+    }
+
+    ImVec4 Theme::GraphNodeBorder(float alpha) {
+
+        return dark ? Rgb(255, 255, 255, 0.14f * alpha) : Rgb(0, 0, 0, 0.2f * alpha);
+
+    }
+
+    ImVec4 Theme::GraphNodeHeader(const char* category, float alpha) {
+
+        const std::string name = category;
+
+        vec3 color(0.45f, 0.47f, 0.52f);
+        if (name == "Input") color = vec3(0.68f, 0.28f, 0.33f);
+        else if (name == "Constant") color = vec3(0.32f, 0.42f, 0.55f);
+        else if (name == "Parameter") color = vec3(0.56f, 0.38f, 0.72f);
+        else if (name == "Texture") color = vec3(0.62f, 0.44f, 0.2f);
+        else if (name == "Math") color = vec3(0.24f, 0.46f, 0.6f);
+        else if (name == "Vector") color = vec3(0.22f, 0.52f, 0.5f);
+        else if (name == "Transform") color = vec3(0.3f, 0.5f, 0.4f);
+        else if (name == "Coordinates") color = vec3(0.42f, 0.5f, 0.28f);
+        else if (name == "Procedural") color = vec3(0.26f, 0.54f, 0.34f);
+        else if (name == "Normal") color = vec3(0.34f, 0.36f, 0.72f);
+        else if (name == "Logic") color = vec3(0.66f, 0.3f, 0.52f);
+        else if (name == "Output") color = vec3(0.72f, 0.42f, 0.14f);
+
+        // The text on top stays readable in both modes
+        return ImVec4(color.x * (dark ? 0.8f : 1.1f), color.y * (dark ? 0.8f : 1.1f), color.z * (dark ? 0.8f : 1.1f), alpha);
+
+    }
+
+    ImVec4 Theme::GraphValue(int32_t type, float alpha) {
+
+        switch (type) {
+        case 0: return Rgb(160, 200, 240, alpha);
+        case 1: return Rgb(110, 210, 160, alpha);
+        case 2: return Rgb(235, 200, 90, alpha);
+        case 3: return Rgb(235, 130, 160, alpha);
+        case 4: return Rgb(200, 140, 240, alpha);
+        default: return Rgb(200, 200, 200, alpha);
+        }
+
+    }
+
     ImVec4 Theme::OverlayBackground(float alpha) {
 
         return WithAlpha(dark ? Rgb(20, 21, 24, 0.78f) : Rgb(250, 250, 252, 0.85f), alpha);

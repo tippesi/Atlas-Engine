@@ -100,6 +100,30 @@ namespace Atlas::Editor::UI {
 
     }
 
+    bool Widgets::RemovableSectionHeader(const char* label, ImGuiTreeNodeFlags flags, bool& remove, const char* tooltip) {
+
+        bool open = SectionHeader(label, flags | ImGuiTreeNodeFlags_AllowOverlap);
+
+        auto headerMin = ImGui::GetItemRectMin();
+        auto headerMax = ImGui::GetItemRectMax();
+        auto iconSize = ImGui::GetTextLineHeight();
+        auto buttonExtent = iconSize + 2.0f;
+        auto cursorPos = ImGui::GetCursorPos();
+
+        ImGui::SameLine();
+        ImGui::SetCursorScreenPos(ImVec2(headerMax.x - buttonExtent - ImGui::GetStyle().FramePadding.x,
+            headerMin.y + (headerMax.y - headerMin.y - buttonExtent) * 0.5f));
+
+        auto alpha = ImGui::IsMouseHoveringRect(headerMin, headerMax) ? 1.0f : 0.45f;
+        if (IconButton("Remove", Singletons::icons->Get(IconType::Trash), iconSize, tooltip, alpha))
+            remove = true;
+
+        ImGui::SetCursorPos(cursorPos);
+
+        return open;
+
+    }
+
     bool Widgets::SegmentedControl(const char* label, int32_t& selection, const char* const items[], int32_t itemCount) {
 
         const auto& style = ImGui::GetStyle();

@@ -100,12 +100,17 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
-                postProcessingPanel.Render(t, 
+                postProcessingPanel.isUpscalerSupported = [](PostProcessing::Upscaler upscaler) {
+                    return Singletons::mainRenderer->IsUpscalerSupported(upscaler);
+                };
+                postProcessingPanel.Render(t,
                     [&](ResourceHandle<Texture::Texture2D> handle) {
                         return textureSelectionPanel.Render(handle);
                     });
             }
             else if constexpr (std::is_same_v<T, Ref<Scene::Scene>>) {
+                RenderHeading("Rendering");
+                ImGui::Checkbox("Occlusion culling", &t->occlusionCulling);
                 RenderHeading("Scene statistics");
                 sceneStatisticsPanel.Render(t);
             }

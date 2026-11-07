@@ -2,6 +2,7 @@
 
 #include <string>
 #include <imgui.h>
+#include <glm/glm.hpp>
 
 namespace Atlas::Editor::UI {
 
@@ -33,6 +34,9 @@ namespace Atlas::Editor::UI {
         static std::string ValidateSceneName(const std::string& name);
 
         static DialogResult RenderDialogFooter(const char* confirmLabel, const std::string& error);
+
+        // Bounds and depth of the octree of a new scene with the size of its cells
+        static void RenderOctreeSettings(glm::vec3& min, glm::vec3& max, int32_t& depth);
 
         static void RenderNewScenePopup();
 

@@ -59,6 +59,9 @@ namespace Atlas::Editor {
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
                 { IconType::Trash, Texture::Texture2D("editor/icons/delete.png") },
                 { IconType::Filter, Texture::Texture2D("editor/icons/filter.png") },
+                { IconType::OpenInNew, Texture::Texture2D("editor/icons/openInNew.png") },
+                { IconType::Reset, Texture::Texture2D("editor/icons/reset.png") },
+                { IconType::MaterialGraph, Texture::Texture2D("editor/icons/materialGraph.png") },
             };
         }
         else {
@@ -93,6 +96,9 @@ namespace Atlas::Editor {
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment_light.png") },
                 { IconType::Trash, Texture::Texture2D("editor/icons/delete_light.png") },
                 { IconType::Filter, Texture::Texture2D("editor/icons/filter_light.png") },
+                { IconType::OpenInNew, Texture::Texture2D("editor/icons/openInNew_light.png") },
+                { IconType::Reset, Texture::Texture2D("editor/icons/reset_light.png") },
+                { IconType::MaterialGraph, Texture::Texture2D("editor/icons/materialGraph_light.png") },
             };
         }
 

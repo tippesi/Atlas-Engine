@@ -323,6 +323,7 @@ namespace Atlas::Editor::UI {
             renderSingleBitOption("Mesh", ContentFilterBits::MeshBit);
             renderSingleBitOption("Mesh source", ContentFilterBits::MeshSourceBit);
             renderSingleBitOption("Material", ContentFilterBits::MaterialBit);
+            renderSingleBitOption("Material graph", ContentFilterBits::MaterialGraphBit);
             renderSingleBitOption("Terrain", ContentFilterBits::TerrainBit);
             renderSingleBitOption("Scene", ContentFilterBits::SceneBit);
             renderSingleBitOption("Script", ContentFilterBits::ScriptBit);
@@ -330,6 +331,7 @@ namespace Atlas::Editor::UI {
             renderSingleBitOption("Prefab", ContentFilterBits::PrefabBit);
             renderSingleBitOption("Texture", ContentFilterBits::TextureBit);
             renderSingleBitOption("Environment texture", ContentFilterBits::EnvTextureBit);
+            renderSingleBitOption("Animation", ContentFilterBits::AnimationBit);
 
             ImGui::EndPopup();
         }
@@ -436,6 +438,14 @@ namespace Atlas::Editor::UI {
                         .path = path,
                         .assetPath = path,
                         .type = ContentType::Material,
+                        });
+                }
+                if (ImGui::MenuItem("Material graph")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::MaterialGraph,
                         });
                 }
                 if (ImGui::MenuItem("Script")) {
@@ -559,6 +569,10 @@ namespace Atlas::Editor::UI {
                     nextDirectory = path.string();
                 else if (contentType == ContentType::Scene)
                     FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
+                else if (contentType == ContentType::Mesh || contentType == ContentType::Animation ||
+                    contentType == ContentType::Material || contentType == ContentType::Prefab ||
+                    contentType == ContentType::MaterialGraph)
+                    contentToEditPath = assetRelativePath;
             }
         }
 
@@ -580,6 +594,13 @@ namespace Atlas::Editor::UI {
                 PopupPanels::filename = assetRelativePath;
                 PopupPanels::isImportScenePopupVisible = true;
             }
+
+            auto hasAssetEditor = contentType == ContentType::Mesh || contentType == ContentType::Material ||
+                contentType == ContentType::MaterialGraph || contentType == ContentType::Prefab;
+            if (!isDirectory && hasAssetEditor && singleSelect && ImGui::MenuItem("Open"))
+                contentToEditPath = assetRelativePath;
+            if (!isDirectory && contentType == ContentType::Scene && singleSelect && ImGui::MenuItem("Open"))
+                FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
 
             // We shouldn't allow the user to delete the root entity
             if (singleSelect && ImGui::MenuItem("Open externally"))
@@ -716,6 +737,7 @@ namespace Atlas::Editor::UI {
         case ContentType::Mesh: return icons->Get(IconType::Mesh);
         case ContentType::MeshSource: return icons->Get(IconType::MeshSource);
         case ContentType::Material: return icons->Get(IconType::Material);
+        case ContentType::MaterialGraph: return icons->Get(IconType::MaterialGraph);
         case ContentType::Scene: return icons->Get(IconType::Scene);
         case ContentType::Font: return icons->Get(IconType::Font);
         case ContentType::Prefab: return icons->Get(IconType::Prefab);
@@ -731,7 +753,7 @@ namespace Atlas::Editor::UI {
         const std::string& searchQuery, ContentFilter filter, bool recursively) {
 
         for (const auto& file : directory->files) {
-            // Enum class and ContentFilterBits are in same order, so we can just bitshift the content type
+            // Enum class and ContentFilterBits are in same order, so we can just bitshift the content type.
             if (!((1 << static_cast<uint32_t>(file.type)) & filter)) {
                 continue;
             }
@@ -811,6 +833,12 @@ namespace Atlas::Editor::UI {
         if (type == ContentType::Material) {
             path.replace_extension("aematerial");            
             Loader::MaterialLoader::SaveMaterial(CreateRef<Material>(), path.string());
+            return;
+        }
+
+        if (type == ContentType::MaterialGraph) {
+            path.replace_extension("aematgraph");
+            Loader::MaterialGraphLoader::SaveGraph(MaterialGraph::Graph::CreateDefault(), path.string());
             return;
         }
 

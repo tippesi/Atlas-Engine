@@ -138,6 +138,9 @@ namespace Atlas::Editor {
         try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
         try_get_json(j, "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator);
         try_get_json(j, "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter);
+        // A filter saved before the fog volume bit with everything enabled
+        if (sceneWindow->sceneHierarchyPanel.hierarchyFilter == UI::SceneHierarchyPanel::HierarchyFilterBits::FogVolumeBit - 1)
+            sceneWindow->sceneHierarchyPanel.hierarchyFilter = UI::SceneHierarchyPanel::HierarchyFilterBits::AllBit;
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), false);
@@ -177,6 +180,9 @@ namespace Atlas::Editor {
             j.at("searchRecursively").get_to(contentBrowserWindow.searchRecursively);
         if (j.contains("contentFilter"))
             j.at("contentFilter").get_to(contentBrowserWindow.contentFilter);
+        // All types before animations and material graphs could be filtered
+        if (contentBrowserWindow.contentFilter == (1 << 11) - 1 || contentBrowserWindow.contentFilter == (1 << 12) - 1)
+            contentBrowserWindow.contentFilter = UI::ContentBrowserWindow::AllBit;
         if (j.contains("iconSize"))
             j.at("iconSize").get_to(contentBrowserWindow.iconSize);
     }

@@ -4,10 +4,12 @@
 #include "Singletons.h"
 #include "Notifications.h"
 #include "Theme.h"
+#include "ui/Widgets.h"
 #include "ui/popups/ResourceSelectionPopup.h"
 #include "tools/ResourcePayloadHelper.h"
 #include "ui/windows/ContentBrowserWindow.h"
 
+#include <Material.h>
 #include <ImguiExtension/UiElements.h>
 #include <type_traits>
 
@@ -41,6 +43,13 @@ namespace Atlas::Editor::UI {
             auto lineHeight = ImGui::GetTextLineHeight();
             auto deleteButtonSize = ImVec2(lineHeight, lineHeight);
             auto resourceButtonSize = region.x - (resourceHandle.IsValid() ? deleteButtonSize.x + 2.0f * padding : 0.0f);
+
+            // Materials and graphs open in their editor from here, like meshes do from their component
+            auto canOpen = false;
+            if constexpr (std::is_same_v<T, Material> || std::is_same_v<T, MaterialGraph::Graph>)
+                canOpen = resourceHandle.IsValid() && !resourceHandle.IsGenerated();
+            if (canOpen)
+                resourceButtonSize -= deleteButtonSize.x + 2.0f * padding;
 
             resourceChanged = false;
             auto buttonName = resourceHandle.IsValid() ? resourceHandle.GetResource()->GetFileName() :
@@ -96,9 +105,15 @@ namespace Atlas::Editor::UI {
                 resourceChanged = true;
             }
 
+            if (canOpen) {
+                ImGui::SameLine();
+                if (Widgets::IconButton("Open in material editor", Singletons::icons->Get(IconType::OpenInNew), lineHeight, "Open in material editor"))
+                    ContentBrowserWindow::contentToEditPath = resourceHandle.GetResource()->path;
+            }
+
             if (resourceHandle.IsValid()) {
                 ImGui::SameLine();
-                
+
                 auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
                 auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
 

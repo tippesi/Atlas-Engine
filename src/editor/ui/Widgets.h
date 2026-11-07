@@ -22,6 +22,9 @@ namespace Atlas::Editor::UI {
         // Collapsing header with a neutral background, the accent color is reserved for selections
         static bool SectionHeader(const char* label, ImGuiTreeNodeFlags flags = 0);
 
+        // Section header with a trash can on its right side, which sets remove when clicked
+        static bool RemovableSectionHeader(const char* label, ImGuiTreeNodeFlags flags, bool& remove, const char* tooltip);
+
         // Row of buttons where exactly one is selected, a more direct alternative to a combo with few items
         static bool SegmentedControl(const char* label, int32_t& selection, const char* const items[], int32_t itemCount);
 

@@ -39,6 +39,16 @@ namespace Atlas::Editor {
         static ImVec4 OverlayBackground(float alpha = 1.0f);
         static ImVec4 OverlayBorder(float alpha = 1.0f);
 
+        // Colors of the node editor
+        static ImVec4 GraphBackground(float alpha = 1.0f);
+        static ImVec4 GraphGrid(float alpha = 1.0f);
+        static ImVec4 GraphNode(float alpha = 1.0f);
+        static ImVec4 GraphNodeBorder(float alpha = 1.0f);
+        // The header shows the category of a node
+        static ImVec4 GraphNodeHeader(const char* category, float alpha = 1.0f);
+        // Pins and links show the type of their value, in the order of MaterialGraph::ValueType
+        static ImVec4 GraphValue(int32_t type, float alpha = 1.0f);
+
         static constexpr float overlayRounding = 6.0f;
 
     private:

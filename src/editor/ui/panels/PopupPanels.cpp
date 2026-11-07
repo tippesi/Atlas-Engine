@@ -9,6 +9,7 @@
 #include "Notifications.h"
 #include "Theme.h"
 #include "loader/AssetLoader.h"
+#include "scene/SpacePartitioning.h"
 
 #include <filesystem>
 #include <algorithm>
@@ -36,7 +37,7 @@ namespace Atlas::Editor::UI {
         static std::string name;
         static auto minSize = glm::vec3(-2048.0f);
         static auto maxSize = glm::vec3(2048.0f);
-        static int32_t octreeDepth = 6;
+        static int32_t octreeDepth = 8;
 
         bool popupNew = false;
 
@@ -55,10 +56,7 @@ namespace Atlas::Editor::UI {
                 ImGui::SetKeyboardFocusHere();
             ImGui::InputTextWithHint("Name", "Type scene name here", &name);
 
-            ImGui::SeparatorText("Bounds");
-            ImGui::DragFloat3("Min size", &minSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            ImGui::DragFloat3("Max size", &maxSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderInt("Octree depth", &octreeDepth, 1, 12);
+            RenderOctreeSettings(minSize, maxSize, octreeDepth);
 
             auto confirm = RenderDialogFooter("Create", ValidateSceneName(name));
 
@@ -92,11 +90,11 @@ namespace Atlas::Editor::UI {
         static std::string name;
         static auto minSize = glm::vec3(-2048.0f);
         static auto maxSize = glm::vec3(2048.0f);
-        static int32_t octreeDepth = 6;
+        static int32_t octreeDepth = 8;
         static bool invertUVs = true;
         static bool addRigidBodies = true;
         static bool makeMeshesStatic = false;
-        static bool convertTexturesToKtx = false;
+        static bool convertTexturesToKtx = true;
 
         bool popupNew = false;
 
@@ -119,10 +117,7 @@ namespace Atlas::Editor::UI {
                 ImGui::SetKeyboardFocusHere();
             ImGui::InputTextWithHint("Name", "Type scene name here", &name);
 
-            ImGui::SeparatorText("Bounds");
-            ImGui::DragFloat3("Min size", &minSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            ImGui::DragFloat3("Max size", &maxSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderInt("Octree depth", &octreeDepth, 1, 12);
+            RenderOctreeSettings(minSize, maxSize, octreeDepth);
 
             ImGui::SeparatorText("Import");
             ImGui::Checkbox("Invert UVs", &invertUVs);
@@ -150,7 +145,7 @@ namespace Atlas::Editor::UI {
                             return;
                         }
 
-                        Notifications::Push({ .message = "Imported scene " + scene->name });
+                        Notifications::Push({ .message = "Opened scene " + scene->name + ", its meshes and textures import in the background" });
                     });
             }
 
@@ -161,6 +156,30 @@ namespace Atlas::Editor::UI {
 
             ImGui::EndPopup();
 
+        }
+
+    }
+
+    void PopupPanels::RenderOctreeSettings(glm::vec3& min, glm::vec3& max, int32_t& depth) {
+
+        ImGui::SeparatorText("Octree");
+        ImGui::DragFloat3("Min size", &min[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::DragFloat3("Max size", &max[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        max = glm::max(max, min + 1.0f);
+
+        ImGui::SliderInt("Depth", &depth, 1, 12);
+
+        auto cellSize = Scene::SpacePartitioning::GetCellSize(min, max, depth);
+        ImGui::TextDisabled("Cells of %.1f x %.1f x %.1f m", cellSize.x, cellSize.y, cellSize.z);
+
+        // Coarse cells make the queries of large worlds with many small meshes slow
+        auto suggestedDepth = Scene::SpacePartitioning::GetSuggestedDepth(min, max);
+        if (depth != suggestedDepth) {
+            ImGui::SameLine();
+            auto label = "Use depth " + std::to_string(suggestedDepth) + " for " +
+                std::to_string(int32_t(Scene::SpacePartitioning::suggestedCellSize)) + " m cells";
+            if (ImGui::SmallButton(label.c_str()))
+                depth = suggestedDepth;
         }
 
     }

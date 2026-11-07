@@ -44,7 +44,8 @@ namespace Atlas::Editor::UI {
             CameraBit = (1 << 8),
             ScriptBit = (1 << 9),
             LightBit = (1 << 10),
-            AllBit = (1 << 11) - 1
+            FogVolumeBit = (1 << 11),
+            AllBit = (1 << 12) - 1
         } HierarchyFilterBits;       
 
         SceneHierarchyPanel() : Panel("Scene hierarchy") {}
@@ -59,13 +60,22 @@ namespace Atlas::Editor::UI {
 
         void ClearSelection();
 
+        // Opens the parents of the entity and scrolls to it in the next frame
+        void RevealEntity(const Ref<Scene::Scene>& scene, Scene::Entity entity);
+
         Scene::Entity selectedEntity;
         EntitySelectionType selectedType = EntitySelectionType::Entity;
 
         std::unordered_set<ECS::Entity> selectedEntities;
         SelectedProperty selectedProperty;
 
+        // Prefabs have no scene settings of their own
+        bool showSceneSettings = true;
+
         HierarchyFilter hierarchyFilter = HierarchyFilterBits::AllBit;
+
+        // Set when the hierarchy changed the scene, e.g. by deleting or renaming entities
+        bool sceneChanged = false;
 
         // Set when the user wants to focus the camera on the selection (double click, context menu)
         bool focusRequested = false;
@@ -78,7 +88,8 @@ namespace Atlas::Editor::UI {
             DirectionalLight,
             Camera,
             AudioSource,
-            Text
+            Text,
+            FogVolume
         };
 
         // Set by the create menus. The scene window creates the entity, since it knows the editor camera for the placement
@@ -94,6 +105,9 @@ namespace Atlas::Editor::UI {
 
     private:
         void StartRename(Scene::Entity entity);
+
+        ECS::Entity revealEntity = ECS::EntityConfig::InvalidEntity;
+        std::unordered_set<ECS::Entity> revealOpenSet;
 
         // Inline renaming of an entity in the hierarchy
         Scene::Entity renamingEntity;
@@ -116,12 +130,20 @@ namespace Atlas::Editor::UI {
             ECS::Storage cameraPool;
             ECS::Storage scriptPool;
             ECS::Storage lightPool;
+            ECS::Storage fogVolumePool;
             std::string search;
             HierarchyFilter filter;
         };        
 
-        void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
-            std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool searchChanged, bool* selectionChanged);
+        // Goes through the rows of the open tree, only the ones in the window are rendered
+        void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, bool* selectionChanged);
+
+        void TraverseChildren(Ref<Scene::Scene>& scene, Scene::Entity entity, bool* selectionChanged);
+
+        void RenderEntityRow(Ref<Scene::Scene>& scene, Scene::Entity entity, bool* selectionChanged);
+
+        // Advances the layout by the rows that weren't rendered
+        void FlushSkippedRows();
 
         void RenderExtendedHierarchy(const Ref<Scene::Scene>& scene, bool* selectionChanged);
 
@@ -145,6 +167,20 @@ namespace Atlas::Editor::UI {
         std::unordered_set<ECS::Entity> newMatchSet;
         std::unordered_set<ECS::Entity> nodeInvisibleSet;
         std::unordered_set<ECS::Entity> toggledOpenSet;
+
+        // Without a search or filter there is no match set
+        bool matchAll = true;
+        // Opens the matches of a new search and closes everything when it's cleared
+        bool openSearchMatches = false;
+        bool openSearchMatchesPending = false;
+        float lastSearchTime = 0.0f;
+
+        ECS::Pool<HierarchyComponent>* hierarchyPool = nullptr;
+        ECS::Entity rootEntity = ECS::EntityConfig::InvalidEntity;
+
+        float rowHeight = 20.0f;
+        int32_t skippedRows = 0;
+        int32_t renderedRows = 0;
 
         int32_t lastAliveEntityCount = 0;
         std::string lastEntitySearch;
