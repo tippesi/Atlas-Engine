@@ -20,7 +20,7 @@ namespace Atlas {
 
     }
 
-    bool JobGroup::HasFinished() {
+    bool JobGroup::HasFinished() const {
 
         return counter.load() == 0;
 

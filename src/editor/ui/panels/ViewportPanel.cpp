@@ -63,6 +63,11 @@ namespace Atlas::Editor::UI {
         if (drawOverlayFunc && !isBlocked)
             drawOverlayFunc();
 
+        if (frameColor.w > 0.0f) {
+            ImGui::GetWindowDrawList()->AddRect(windowPos, ImVec2(windowPos.x + region.x, windowPos.y + region.y),
+                ImGui::GetColorU32(frameColor), 0.0f, 0, 3.0f);
+        }
+
         ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
 
         if (drawMenuBarFunc && !isBlocked) {

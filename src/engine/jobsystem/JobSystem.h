@@ -51,6 +51,9 @@ namespace Atlas {
         static void WaitAll();
 
         static int32_t GetWorkerCount(const JobPriority priority);
+
+        // Jobs which are queued or still executing
+        static int32_t GetPendingJobCount(const JobPriority priority);
     
     private:
         static PriorityPool priorityPools[static_cast<int>(JobPriority::Count)];

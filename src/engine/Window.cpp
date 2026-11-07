@@ -3,6 +3,14 @@
 
 #include <SDL3/SDL_vulkan.h>
 
+#ifdef AE_OS_MACOS
+#include <objc/message.h>
+#include <objc/runtime.h>
+
+extern "C" void* objc_autoreleasePoolPush(void);
+extern "C" void objc_autoreleasePoolPop(void* pool);
+#endif
+
 namespace Atlas {
 
     Window::Window(const std::string& title, int32_t x, int32_t y, int32_t width, int32_t height,
@@ -100,6 +108,33 @@ namespace Atlas {
         SDL_SetWindowIcon(sdlWindow, surface);
 
         SDL_DestroySurface(surface);
+#endif
+
+    }
+
+    void Window::SetTitleBarColor(vec3 color, bool dark) {
+
+#ifdef AE_OS_MACOS
+        auto nsWindow = static_cast<id>(SDL_GetPointerProperty(SDL_GetWindowProperties(sdlWindow),
+            SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr));
+        if (!nsWindow)
+            return;
+
+        // The objects created here are autoreleased, there is no pool outside of the event handling
+        auto pool = objc_autoreleasePoolPush();
+
+        auto appearanceName = reinterpret_cast<id(*)(Class, SEL, const char*)>(objc_msgSend)(
+            objc_getClass("NSString"), sel_registerName("stringWithUTF8String:"), dark ? "NSAppearanceNameDarkAqua" : "NSAppearanceNameAqua");
+        auto appearance = reinterpret_cast<id(*)(Class, SEL, id)>(objc_msgSend)(
+            objc_getClass("NSAppearance"), sel_registerName("appearanceNamed:"), appearanceName);
+        auto nsColor = reinterpret_cast<id(*)(Class, SEL, double, double, double, double)>(objc_msgSend)(
+            objc_getClass("NSColor"), sel_registerName("colorWithSRGBRed:green:blue:alpha:"), color.r, color.g, color.b, 1.0);
+
+        reinterpret_cast<void(*)(id, SEL, id)>(objc_msgSend)(nsWindow, sel_registerName("setAppearance:"), appearance);
+        reinterpret_cast<void(*)(id, SEL, BOOL)>(objc_msgSend)(nsWindow, sel_registerName("setTitlebarAppearsTransparent:"), YES);
+        reinterpret_cast<void(*)(id, SEL, id)>(objc_msgSend)(nsWindow, sel_registerName("setBackgroundColor:"), nsColor);
+
+        objc_autoreleasePoolPop(pool);
 #endif
 
     }

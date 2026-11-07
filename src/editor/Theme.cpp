@@ -289,6 +289,22 @@ namespace Atlas::Editor {
 
     }
 
+    ImVec4 Theme::ContentIcon(ContentType type, float alpha) {
+
+        // Only folders stand out, files keep the color of the text
+        if (type != ContentType::None)
+            return WithAlpha(GetPalette(dark).text, alpha);
+
+        return dark ? Rgb(242, 199, 107, alpha) : Rgb(196, 140, 40, alpha);
+
+    }
+
+    ImVec4 Theme::Shadow(float alpha) {
+
+        return ImVec4(0.0f, 0.0f, 0.0f, (dark ? 0.3f : 0.15f) * alpha);
+
+    }
+
     ImVec4 Theme::Axis(int32_t axis, float alpha) {
 
         switch (axis) {

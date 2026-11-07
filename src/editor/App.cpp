@@ -79,6 +79,8 @@ namespace Atlas::Editor {
         Serialization::DeserializeConfig();
         Serialization::DeserializeContentBrowserWindow(contentBrowserWindow);
 
+        Serialization::DeserializeLogWindow(logWindow);
+
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
         Singletons::blockingOperation = CreateRef<BlockingOperation>();
@@ -88,7 +90,7 @@ namespace Atlas::Editor {
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
 
-        Theme::Apply(Singletons::config->darkMode);
+        ApplyTheme();
 
         RegisterCommands();
 
@@ -110,6 +112,7 @@ namespace Atlas::Editor {
         }
 
         Serialization::SerializeContentBrowserWindow(contentBrowserWindow);
+        Serialization::SerializeLogWindow(logWindow);
         Serialization::SerializeConfig();
         ContentDiscovery::Shutdown();
 
@@ -139,6 +142,11 @@ namespace Atlas::Editor {
 
         sectionScope.Next("Content browser update");
         contentBrowserWindow.Update();
+        logWindow.Update();
+
+        // Requests to show a file also have to work while the drawer is closed
+        if (!UI::ContentBrowserWindow::contentToShowPath.empty())
+            contentBrowserWindow.show = true;
 
         if (!UI::ContentBrowserWindow::contentToEditPath.empty()) {
             OpenInAssetEditor(UI::ContentBrowserWindow::contentToEditPath);
@@ -173,11 +181,24 @@ namespace Atlas::Editor {
                 // After the scene is loaded we can retrieve the window configuration and deserialize it
                 sceneWindows.emplace_back(Serialization::DeserializeSceneWindow(waitToLoadScenes.back()));
                 // Scenes opened for the first time join the others, known ones stay where they were left
-                sceneWindows.back()->requestDocking = !ImGui::FindWindowSettingsByID(ImHashStr(sceneWindows.back()->GetNameID()));
+                // and after a layout reset nobody has a place anymore
+                auto settings = ImGui::FindWindowSettingsByID(ImHashStr(sceneWindows.back()->GetNameID()));
+                sceneWindows.back()->requestDocking = !settings || dockLoadingScenes;
                 waitToLoadScenes.pop_back();
                 i--;
             }
         }
+
+        // Failed scenes are forgotten, such that they can be opened again once the problem is fixed
+        std::erase_if(waitToLoadScenes, [](const auto& handle) {
+            if (!handle.GetResource()->errorOnLoad)
+                return false;
+            std::erase(Singletons::config->openedScenes, handle);
+            return true;
+            });
+
+        if (waitToLoadScenes.empty())
+            dockLoadingScenes = false;
 
         // Quick quit
         if (sceneWindows.empty()) {
@@ -303,6 +324,11 @@ namespace Atlas::Editor {
             else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, Atlas::Graphics::SRGB_NONLINEAR);
         }
 
+
+
+
+
+
         CPUProfiler::Scope sectionScope("ImGui new frame");
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
@@ -348,12 +374,20 @@ namespace Atlas::Editor {
             if (!ImGui::DockBuilderGetNode(mainDsId) || resetDockspaceLayout) {
                 SetupMainDockspace(mainDsId);
             }
+            PrepareDrawerDocking(mainDsId);
 
-            ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+            // The tabs have close buttons, a second one at the end of the tab bar would just be confusing
+            ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoCloseButton;
             ImGui::DockSpace(mainDsId, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+            // Layouts saved before the drawers existed have no central node to dock into
+            if (!ImGui::DockBuilderGetCentralNode(mainDsId))
+                resetDockspaceLayout = true;
 
             if (sceneWindows.empty())
                 RenderEmptyState(mainDsId);
+            else
+                emptyStateVisible = false;
 
             sectionScope.Next("Main menu bar");
             if (ImGui::BeginMainMenuBar()) {
@@ -384,15 +418,21 @@ namespace Atlas::Editor {
 
                 if (ImGui::BeginMenu("View")) {
                     ImGui::SeparatorText("Windows");
-                    ImGui::MenuItem("Content browser", nullptr, &contentBrowserWindow.show);
-                    ImGui::MenuItem("Log", nullptr, &logWindow.show);
+                    ImGui::MenuItem("Content browser", "Ctrl+B", &contentBrowserWindow.show);
+                    ImGui::MenuItem("Log", "Ctrl+J", &logWindow.show);
                     ImGui::MenuItem("Profiler", nullptr, &profilerWindow.show);
                     ImGui::MenuItem("Engine settings", nullptr, &settingsWindow.show);
                     ImGui::MenuItem("Geometry brush", nullptr, &geometryBrushWindow.show);
 
+                    ImGui::SeparatorText("Drawers");
+                    if (ImGui::MenuItem("Dock content browser in layout", nullptr, contentBrowserWindow.pinned))
+                        contentBrowserWindow.SetPinned(!contentBrowserWindow.pinned);
+                    if (ImGui::MenuItem("Dock log in layout", nullptr, logWindow.pinned))
+                        logWindow.SetPinned(!logWindow.pinned);
+
                     ImGui::SeparatorText("Appearance");
                     if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
-                        Theme::Apply(config->darkMode);
+                        ApplyTheme();
                     }
                     ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
                     ImGui::EndMenu();
@@ -443,9 +483,13 @@ namespace Atlas::Editor {
             sectionScope.Next("Geometry brush window");
             geometryBrushWindow.Render(activeSceneWindow);
 
+            UpdateDrawers();
+
             sectionScope.Next("Content browser");
+            DockPinnedDrawer(contentBrowserWindow);
             contentBrowserWindow.Render();
             sectionScope.Next("Log window");
+            DockPinnedDrawer(logWindow);
             logWindow.Render();
             sectionScope.Next("Profiler window");
             profilerWindow.Render();
@@ -468,6 +512,10 @@ namespace Atlas::Editor {
 #endif
         if (commandDown && ImGui::IsKeyPressed(ImGuiKey_P, false) && !Singletons::blockingOperation->block)
             commandPalette.Open();
+        if (commandDown && ImGui::IsKeyPressed(ImGuiKey_B, false) && !playingMaximized)
+            contentBrowserWindow.show = !contentBrowserWindow.show;
+        if (commandDown && ImGui::IsKeyPressed(ImGuiKey_J, false) && !playingMaximized)
+            logWindow.show = !logWindow.show;
 
         if (!playingMaximized)
             RenderShortcutsWindow();
@@ -564,31 +612,80 @@ namespace Atlas::Editor {
 
     void App::RenderEmptyState(ImGuiID dsID) {
 
-        // The central node is transparent when nothing is docked, draw a hint behind all windows
         auto centralNode = ImGui::DockBuilderGetCentralNode(dsID);
         if (!centralNode || centralNode->Size.x <= 0.0f || centralNode->Size.y <= 0.0f)
             return;
 
-        bool loading = !waitToLoadScenes.empty();
-        const char* title = loading ? "Loading scene..." : "No scene open";
-        const char* subtitle = loading ? "" :
-            "Double-click a scene in the content browser or create one with File > New scene";
+        auto& config = Singletons::config;
 
-        auto drawList = ImGui::GetBackgroundDrawList(ImGui::GetMainViewport());
-        auto font = ImGui::GetFont();
-        auto fontSize = ImGui::GetFontSize();
-        auto titleSize = fontSize * 1.5f;
+        ImGui::SetNextWindowPos(ImVec2(centralNode->Pos.x + centralNode->Size.x * 0.5f,
+            centralNode->Pos.y + centralNode->Size.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-        auto center = ImVec2(centralNode->Pos.x + centralNode->Size.x * 0.5f,
-            centralNode->Pos.y + centralNode->Size.y * 0.5f);
+        // Stays behind everything else, e.g. the drawers
+        auto flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
+        ImGui::Begin("##Empty state", nullptr, flags);
 
-        auto titleWidth = font->CalcTextSizeA(titleSize, FLT_MAX, 0.0f, title).x;
-        auto subtitleWidth = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, subtitle).x;
+        if (!waitToLoadScenes.empty()) {
+            ImGui::SetWindowFontScale(1.5f);
+            ImGui::TextUnformatted("Loading scene...");
+            ImGui::SetWindowFontScale(1.0f);
+            ImGui::End();
+            return;
+        }
 
-        drawList->AddText(font, titleSize, ImVec2(center.x - titleWidth * 0.5f, center.y - titleSize),
-            ImGui::GetColorU32(ImGuiCol_Text), title);
-        drawList->AddText(font, fontSize, ImVec2(center.x - subtitleWidth * 0.5f, center.y + fontSize * 0.5f),
-            ImGui::GetColorU32(Theme::TextMuted()), subtitle);
+        ImGui::SetWindowFontScale(1.5f);
+        ImGui::TextUnformatted("No scene open");
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::TextDisabled("Create a new scene or open one from the content browser");
+
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+        Theme::PushPrimaryButton();
+        if (ImGui::Button("New scene..."))
+            UI::PopupPanels::isNewScenePopupVisible = true;
+        Theme::PopPrimaryButton();
+        ImGui::SameLine();
+        if (ImGui::Button("Content browser"))
+            contentBrowserWindow.show = true;
+
+        // Scenes might have been moved or deleted in the meantime, which is checked once when the state shows up
+        if (!emptyStateVisible) {
+            emptyStateScenes.clear();
+            for (const auto& path : config->recentScenes) {
+                if (emptyStateScenes.size() < 5 && std::filesystem::exists(Loader::AssetLoader::GetFullPath(path)))
+                    emptyStateScenes.push_back(path);
+            }
+        }
+        emptyStateVisible = true;
+
+        if (!emptyStateScenes.empty()) {
+            ImGui::Dummy(ImVec2(0.0f, 4.0f));
+            ImGui::SeparatorText("Recent scenes");
+        }
+
+        std::string openPath;
+        for (const auto& path : emptyStateScenes) {
+            auto name = Common::Path::GetFileNameWithoutExtension(path);
+            if (ImGui::Selectable((name + "##" + path).c_str()))
+                openPath = path;
+            ImGui::SetItemTooltip("%s", path.c_str());
+        }
+
+        ImGui::End();
+
+        if (!openPath.empty())
+            FileImporter::ImportFile<Scene::Scene>(openPath);
+
+    }
+
+    void App::ApplyTheme() {
+
+        Theme::Apply(Singletons::config->darkMode);
+
+        auto base = Theme::Base();
+        window.SetTitleBarColor(vec3(base.x, base.y, base.z), Singletons::config->darkMode);
 
     }
 
@@ -620,12 +717,19 @@ namespace Atlas::Editor {
             .action = [this]() { GetActiveSceneWindow()->SaveScene(); }, .isEnabled = canEdit });
 
         // Windows
-        auto registerWindow = [&](const char* name, bool* show) {
-            commandPalette.Register({ .category = "Window", .name = std::string("Toggle ") + name,
+        auto registerWindow = [&](const char* name, bool* show, const char* shortcut = "") {
+            commandPalette.Register({ .category = "Window", .name = std::string("Toggle ") + name, .shortcut = shortcut,
                 .action = [show]() { *show = !*show; }, .isChecked = [show]() { return *show; } });
             };
-        registerWindow("content browser", &contentBrowserWindow.show);
-        registerWindow("log", &logWindow.show);
+        registerWindow("content browser", &contentBrowserWindow.show, "Ctrl+B");
+        registerWindow("log", &logWindow.show, "Ctrl+J");
+        auto registerPin = [&](const char* name, UI::DrawerWindow* drawer) {
+            commandPalette.Register({ .category = "Window", .name = std::string("Dock ") + name + " in layout",
+                .action = [drawer]() { drawer->SetPinned(!drawer->pinned); },
+                .isChecked = [drawer]() { return drawer->pinned; } });
+            };
+        registerPin("content browser", &contentBrowserWindow);
+        registerPin("log", &logWindow);
         registerWindow("profiler", &profilerWindow.show);
         registerWindow("engine settings", &settingsWindow.show);
         registerWindow("geometry brush", &geometryBrushWindow.show);
@@ -634,7 +738,7 @@ namespace Atlas::Editor {
 
         // Appearance and renderer
         commandPalette.Register({ .category = "View", .name = "Toggle dark mode",
-            .action = [&config]() { config->darkMode = !config->darkMode; Theme::Apply(config->darkMode); },
+            .action = [this, &config]() { config->darkMode = !config->darkMode; ApplyTheme(); },
             .isChecked = [&config]() { return config->darkMode; } });
         commandPalette.Register({ .category = "Renderer", .name = "Toggle VSync",
             .action = [&config]() { config->vsync = !config->vsync; },
@@ -862,6 +966,31 @@ namespace Atlas::Editor {
         ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Theme::Base());
         if (ImGui::BeginViewportSideBar("##Status bar", viewport, ImGuiDir_Down, ImGui::GetFrameHeight(), flags)) {
             if (ImGui::BeginMenuBar()) {
+                // Dragging something onto the button opens the content browser as a drop target
+                auto contentBrowserHovered = RenderDrawerButton(contentBrowserWindow, "Content browser", "Ctrl+B");
+                auto isDragging = ImGui::IsDragDropActive();
+                drawerSpringTime = isDragging && contentBrowserHovered ? drawerSpringTime + ImGui::GetIO().DeltaTime : 0.0f;
+                if (drawerSpringTime > 0.35f)
+                    contentBrowserWindow.show = true;
+
+                ImGui::SameLine();
+                RenderDrawerButton(logWindow, "Log", "Ctrl+J");
+
+                auto warningCount = logWindow.GetUnseenWarningCount();
+                auto errorCount = logWindow.GetUnseenErrorCount();
+                if (warningCount > 0) {
+                    ImGui::SameLine(0.0f, 2.0f);
+                    ImGui::TextColored(Theme::Warning(), "%d", warningCount);
+                    ImGui::SetItemTooltip("%d new warnings", warningCount);
+                }
+                if (errorCount > 0) {
+                    ImGui::SameLine(0.0f, 4.0f);
+                    ImGui::TextColored(Theme::Error(), "%d", errorCount);
+                    ImGui::SetItemTooltip("%d new errors", errorCount);
+                }
+
+                divider();
+
                 auto sceneWindow = GetActiveSceneWindow();
                 if (sceneWindow && sceneWindow->scene.IsLoaded()) {
                     if (sceneWindow->isPlaying)
@@ -900,6 +1029,17 @@ namespace Atlas::Editor {
                     ImGui::TextDisabled("No scene open");
                 }
 
+                // Only long running work is worth to be mentioned, short jobs would just flicker
+                auto backgroundJobs = JobSystem::GetPendingJobCount(JobPriority::Medium) +
+                    JobSystem::GetPendingJobCount(JobPriority::Low);
+                backgroundJobTime = backgroundJobs > 0 ? backgroundJobTime + ImGui::GetIO().DeltaTime : 0.0f;
+                if (backgroundJobTime > 0.5f) {
+                    divider();
+                    const char* dots[] = { ".", "..", "..." };
+                    ImGui::TextDisabled("%d background %s%s", backgroundJobs, backgroundJobs == 1 ? "job" : "jobs",
+                        dots[int32_t(ImGui::GetTime() * 2.0) % 3]);
+                }
+
                 // Performance on the right side
                 auto frameTime = Clock::GetAverage() * 1000.0f;
                 char rightText[64];
@@ -907,6 +1047,33 @@ namespace Atlas::Editor {
                     frameTime, frameTime > 0.0f ? 1000.0f / frameTime : 0.0f);
                 auto rightWidth = ImGui::CalcTextSize(rightText).x + ImGui::GetStyle().ItemSpacing.x;
                 auto rightPos = ImGui::GetWindowContentRegionMax().x - rightWidth;
+
+                // The problem nobody has seen yet takes the room in between and opens the log
+                if (logWindow.GetUnseenWarningCount() + logWindow.GetUnseenErrorCount() > 0 && !logWindow.GetLastProblem().empty()) {
+                    divider();
+                    const auto& style = ImGui::GetStyle();
+                    auto maxWidth = rightPos - ImGui::GetCursorPosX() - 2.0f * style.ItemSpacing.x;
+                    const auto& problem = logWindow.GetLastProblem();
+                    auto textSize = ImGui::CalcTextSize(problem.c_str());
+
+                    if (maxWidth > 80.0f) {
+                        auto buttonWidth = std::min(textSize.x + 2.0f * style.FramePadding.x, maxWidth);
+                        ImGui::PushStyleColor(ImGuiCol_Text, logWindow.IsLastProblemError() ? Theme::Error() : Theme::Warning());
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+                        if (ImGui::ButtonEx("##Last problem", ImVec2(buttonWidth, 0.0f), ImGuiButtonFlags_PressedOnClick))
+                            logWindow.show = true;
+                        auto rectMin = ImGui::GetItemRectMin();
+                        auto rectMax = ImGui::GetItemRectMax();
+                        auto textMaxX = rectMax.x - style.FramePadding.x;
+                        ImGui::RenderTextEllipsis(ImGui::GetWindowDrawList(), ImVec2(rectMin.x + style.FramePadding.x, rectMin.y + style.FramePadding.y),
+                            ImVec2(textMaxX, rectMax.y), textMaxX, textMaxX, problem.c_str(), nullptr, &textSize);
+                        ImGui::PopStyleVar();
+                        ImGui::PopStyleColor(2);
+                        ImGui::SetItemTooltip("Open the log");
+                    }
+                }
+
                 if (rightPos > ImGui::GetCursorPosX()) {
                     ImGui::SameLine(rightPos);
                     ImGui::TextDisabled("%s", rightText);
@@ -918,6 +1085,99 @@ namespace Atlas::Editor {
         // Side bars always need to be ended
         ImGui::End();
         ImGui::PopStyleColor();
+
+    }
+
+    bool App::RenderDrawerButton(UI::DrawerWindow& drawer, const char* label, const char* shortcut) {
+
+        ImGui::PushStyleColor(ImGuiCol_Button, drawer.show ? Theme::Accent(0.3f) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, drawer.show ? Theme::Accent(0.4f) : ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, ImGui::GetStyle().FramePadding.y));
+
+        // Pressing on click, since a drawer that is open closes itself when the mouse goes down outside of it
+        if (ImGui::ButtonEx(label, ImVec2(0.0f, 0.0f), ImGuiButtonFlags_PressedOnClick))
+            drawer.show = !drawer.show;
+        auto hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
+        ImGui::PopStyleVar(3);
+        ImGui::PopStyleColor(2);
+
+        ImGui::SetItemTooltip("Toggle %s (%s), right-click for options", label, shortcut);
+
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Dock in layout", nullptr, drawer.pinned))
+                drawer.SetPinned(!drawer.pinned);
+            ImGui::EndPopup();
+        }
+
+        return hovered;
+
+    }
+
+    void App::UpdateDrawers() {
+
+        // Only one drawer is open at a time, the last one opened replaces the other one
+        if (contentBrowserWindow.IsOpening() && logWindow.show && !logWindow.pinned)
+            contentBrowserWindow.TakeOver(logWindow);
+        else if (logWindow.IsOpening() && contentBrowserWindow.show && !contentBrowserWindow.pinned)
+            logWindow.TakeOver(contentBrowserWindow);
+
+        // The source item of a drag isn't rendered anymore after the drawer closed
+        auto payload = ImGui::GetDragDropPayload();
+        if (payload && payload->IsDataType("ContentBrowserResource") && !contentBrowserWindow.IsVisible() &&
+            ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern)) {
+            ImGui::TextUnformatted(Common::Path::GetFileName(static_cast<const char*>(payload->Data)).c_str());
+            ImGui::TextDisabled("Drop on a matching resource slot");
+            ImGui::EndDragDropSource();
+        }
+
+    }
+
+    void App::PrepareDrawerDocking(ImGuiID dsID) {
+
+        // Pinned drawers without a place in the saved layout are docked again
+        auto requestDockingIfLost = [](UI::DrawerWindow& drawer) {
+            if (!drawer.pinned || drawer.requestDocking || ImGui::FindWindowByName(drawer.GetNameID()))
+                return;
+            auto settings = ImGui::FindWindowSettingsByID(ImHashStr(drawer.GetNameID()));
+            drawer.requestDocking = !settings || !settings->DockId;
+            };
+        requestDockingIfLost(contentBrowserWindow);
+        requestDockingIfLost(logWindow);
+
+        drawerDockNodeID = 0;
+        if (!contentBrowserWindow.requestDocking && !logWindow.requestDocking)
+            return;
+
+        // A drawer that is docked already shares its node with the new one
+        auto getDockID = [](const UI::DrawerWindow& drawer) -> ImGuiID {
+            auto window = ImGui::FindWindowByName(drawer.GetNameID());
+            return drawer.pinned && !drawer.requestDocking && window ? window->DockId : 0;
+            };
+        drawerDockNodeID = getDockID(contentBrowserWindow) ? getDockID(contentBrowserWindow) : getDockID(logWindow);
+        if (drawerDockNodeID)
+            return;
+
+        auto centralNode = ImGui::DockBuilderGetCentralNode(dsID);
+        if (!centralNode)
+            return;
+
+        ImGuiID dockIdUp;
+        ImGui::DockBuilderSplitNode(centralNode->ID, ImGuiDir_Down, 0.3f, &drawerDockNodeID, &dockIdUp);
+        ImGui::DockBuilderFinish(dsID);
+
+    }
+
+    void App::DockPinnedDrawer(UI::DrawerWindow& drawer) {
+
+        // A new layout has its central node only after the first update, the request waits until then
+        if (!drawer.requestDocking || !drawerDockNodeID)
+            return;
+        drawer.requestDocking = false;
+
+        ImGui::SetNextWindowDockID(drawerDockNodeID, ImGuiCond_Always);
 
     }
 
@@ -951,6 +1211,9 @@ namespace Atlas::Editor {
 
             section("General", {
                 { "Ctrl+P", "Open the command palette" },
+                { "Ctrl+B", "Toggle the content browser" },
+                { "Ctrl+J", "Toggle the log" },
+                { "Esc", "Close the open drawer" },
                 { "Ctrl+S", "Save the active scene" },
                 { "Ctrl+Q", "Stop playing" },
                 });
@@ -1002,40 +1265,28 @@ namespace Atlas::Editor {
         ImGui::SetWindowPos(ImVec2(640.0f, 55.0f));
 
         ImGui::DockBuilderRemoveNode(dsID);
-        ImGui::DockBuilderAddNode(dsID);
-
-        ImGuiID dsIdUp, dsIdDown;
-        ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Up, 0.7f, &dsIdUp, &dsIdDown);
+        ImGui::DockBuilderAddNode(dsID, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(dsID, ImGui::GetMainViewport()->WorkSize);
 
         for (auto& sceneWindow : sceneWindows) {
-            ImGui::DockBuilderDockWindow(sceneWindow->GetNameID(), dsIdUp);
-        }
-        upperDockNodeID = dsIdUp;
-
-        {
-            auto dsIdCopy = dsIdDown;
-            auto dsIdLeft = ImGui::DockBuilderSplitNode(dsIdCopy, ImGuiDir_Left, 0.5f, NULL, &dsIdCopy);
-            auto dsIdRight = ImGui::DockBuilderSplitNode(dsIdCopy, ImGuiDir_Right, 0.0f, NULL, &dsIdCopy);
-
-            ImGui::DockBuilderDockWindow(contentBrowserWindow.GetNameID(), dsIdLeft);
-            ImGui::DockBuilderDockWindow(logWindow.GetNameID(), dsIdRight);
+            ImGui::DockBuilderDockWindow(sceneWindow->GetNameID(), dsID);
         }
 
         ImGui::DockBuilderFinish(dsID);
 
         profilerWindow.show = false;
         settingsWindow.show = false;
-        contentBrowserWindow.show = true;
-        logWindow.show = true;
+        // Pinned drawers keep their place in the new layout
+        contentBrowserWindow.show = contentBrowserWindow.requestDocking = contentBrowserWindow.pinned;
+        logWindow.show = logWindow.requestDocking = logWindow.pinned;
 
-        contentBrowserWindow.resetDockingLayout = true;
-        logWindow.resetDockingLayout = true;
         for (const auto& sceneWindow : sceneWindows) {
             sceneWindow->resetDockingLayout = true;
             sceneWindow->show = true;
         }
 
         resetDockspaceLayout = false;
+        dockLoadingScenes = true;
 
     }
 
@@ -1103,6 +1354,11 @@ namespace Atlas::Editor {
             }
         }
 
+        // Nothing to join, so the window takes the free space of the layout
+        auto centralNode = ImGui::DockBuilderGetCentralNode(ImGui::GetID("MainDS"));
+        if (centralNode)
+            ImGui::SetNextWindowDockID(centralNode->ID, ImGuiCond_Always);
+
     }
 
     void App::SubscribeToResourceEvents() {
@@ -1116,7 +1372,8 @@ namespace Atlas::Editor {
 
         // Also kind of a resource event
         Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
-            if (!event.file.empty() && contentBrowserWindow.show) {
+            if (!event.file.empty()) {
+                contentBrowserWindow.show = true;
                 auto destinationDirectory = Common::Path::GetAbsolute(contentBrowserWindow.currentDirectory);
 
                 FileSystemHelper::Copy(event.file, destinationDirectory);

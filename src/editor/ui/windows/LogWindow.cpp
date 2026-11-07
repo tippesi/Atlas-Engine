@@ -12,6 +12,12 @@
 
 namespace Atlas::Editor::UI {
 
+    void LogWindow::Update() {
+
+        UpdateLines();
+
+    }
+
     void LogWindow::Render() {
 
         if (!Begin())
@@ -61,8 +67,6 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        UpdateLines();
-
         if (copyRequested)
             CopyLines(selection.Size > 0);
 
@@ -108,6 +112,17 @@ namespace Atlas::Editor::UI {
 
                 // Full width selectable in the background, the text is drawn on top of it
                 auto rowPos = ImGui::GetCursorPos();
+
+                // Problems stand out while scrolling through a long log
+                if (entry.type != Atlas::Log::Type::TYPE_MESSAGE) {
+                    auto rowScreenPos = ImGui::GetCursorScreenPos();
+                    auto rowEnd = ImVec2(rowScreenPos.x + ImGui::GetContentRegionAvail().x, rowScreenPos.y + lineHeight);
+                    auto isError = entry.type == Atlas::Log::Type::TYPE_ERROR;
+                    auto drawList = ImGui::GetWindowDrawList();
+                    drawList->AddRectFilled(rowScreenPos, rowEnd, ImGui::GetColorU32(isError ? Theme::Error(0.1f) : Theme::Warning(0.1f)));
+                    drawList->AddRectFilled(rowScreenPos, ImVec2(rowScreenPos.x + 2.0f, rowEnd.y), ImGui::GetColorU32(isError ? errorColor : warningColor));
+                }
+
                 ImGui::SetNextItemSelectionUserData(i);
                 ImGui::Selectable("##Line", selection.Contains(line.id), ImGuiSelectableFlags_AllowOverlap,
                     ImVec2(0.0f, lineHeight));
@@ -176,12 +191,15 @@ namespace Atlas::Editor::UI {
     void LogWindow::UpdateLines() {
 
         // A different filter shows different lines, so the lines and the selection have to be rebuilt
-        auto filterState = logSearch + (showMessages ? "1" : "0") + (showWarnings ? "1" : "0") + (showErrors ? "1" : "0");
-        if (filterState != lastFilterState) {
-            lastFilterState = filterState;
-            lowerSearch = logSearch;
-            std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
-            linesDirty = true;
+        if (show) {
+            auto filterState = logSearch + (showMessages ? "1" : "0") + (showWarnings ? "1" : "0") + (showErrors ? "1" : "0");
+            if (filterState != lastFilterState) {
+                lastFilterState = filterState;
+                lowerSearch = logSearch;
+                std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
+                linesDirty = true;
+            }
+            unseenWarningCount = unseenErrorCount = 0;
         }
 
         // Cheap check for new entries, only these are copied
@@ -199,9 +217,22 @@ namespace Atlas::Editor::UI {
             }
 
             for (size_t i = skip; i < newEntries.size(); i++) {
+                const auto& entry = newEntries[i];
+                if (entry.type != Atlas::Log::Type::TYPE_MESSAGE && !show) {
+                    unseenWarningCount += entry.type == Atlas::Log::Type::TYPE_WARNING ? 1 : 0;
+                    unseenErrorCount += entry.type == Atlas::Log::Type::TYPE_ERROR ? 1 : 0;
+                }
+                if (entry.type != Atlas::Log::Type::TYPE_MESSAGE) {
+                    lastProblem = entry.message.substr(0, entry.message.find('\n'));
+                    lastProblemIsError = entry.type == Atlas::Log::Type::TYPE_ERROR;
+                }
+
                 cachedEntries.push_back(std::move(newEntries[i]));
-                if (!linesDirty)
+                // The lines of a hidden log are only built once it is shown again
+                if (!linesDirty && show)
                     AppendLines(firstNewIdx + i);
+                else
+                    linesDirty = true;
             }
 
             // Trim in batches, every trim needs a rebuild of the lines
@@ -213,7 +244,7 @@ namespace Atlas::Editor::UI {
             }
         }
 
-        if (linesDirty)
+        if (linesDirty && show)
             RebuildLines();
 
     }

@@ -75,6 +75,9 @@ namespace Atlas::Editor::UI {
         std::function<void()> drawMenuBarFunc;
         std::function<void()> drawOverlayFunc;
 
+        // Frame around the viewport, shows e.g. that the scene is playing. Invisible with an alpha of zero
+        ImVec4 frameColor = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+
     private:
         void RenderVisualization(float exposure);
 

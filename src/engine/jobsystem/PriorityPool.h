@@ -17,15 +17,15 @@ namespace Atlas {
 
         Worker& GetNextWorker();
 
-        inline void Work(int32_t workerId) {
+        inline void Work(int32_t workerId, const JobGroup* waitGroup = nullptr) {
 
             auto& worker = workers[workerId];
-            auto executedJobs = worker.Work();
+            auto executedJobs = worker.Work(waitGroup);
 
-            for (int32_t i = 1; i < workerCount; i++) {
+            for (int32_t i = 1; i < workerCount && (!waitGroup || !waitGroup->HasFinished()); i++) {
                 auto stealIdx = (-i + workerId + workerCount) % workerCount;
                 auto& stealFrom = workers[stealIdx];
-                executedJobs += stealFrom.Work();
+                executedJobs += stealFrom.Work(waitGroup);
             }
 
             // Only touch the shared counter once per pass instead of once per job

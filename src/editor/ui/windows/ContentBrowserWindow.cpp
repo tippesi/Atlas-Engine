@@ -4,6 +4,7 @@
 #include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 #include "ui/Widgets.h"
+#include "Theme.h"
 #include "tools/CopyPasteHelper.h"
 #include "tools/FileSystemHelper.h"
 
@@ -24,7 +25,7 @@
 
 namespace Atlas::Editor::UI {
 
-    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Content browser", show) {
+    ContentBrowserWindow::ContentBrowserWindow(bool show) : DrawerWindow("Content browser", show) {
 
         selectionStorage.AdapterIndexToStorageId = [](ImGuiSelectionBasicStorage* self, int idx) {
             (void)self;
@@ -69,39 +70,18 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::Render() {
 
+        // A pinned browser can be behind another tab when a file should be shown
+        if (!contentToShowPath.empty())
+            ImGui::SetNextWindowFocus();
+
         if (!Begin())
             return;
 
-        ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
-        auto viewport = ImGui::GetWindowViewport();
+        const float minPanelWidth = 120.0f;
+        auto panelWidth = std::clamp(folderPanelWidth, minPanelWidth,
+            std::max(ImGui::GetWindowWidth() - 2.0f * minPanelWidth, minPanelWidth));
 
-        if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
-            ImGui::DockBuilderRemoveNode(dsID);
-            ImGui::DockBuilderAddNode(dsID, ImGuiDockNodeFlags_DockSpace);
-
-            ImGui::DockBuilderSetNodeSize(dsID, viewport->Size);
-
-            uint32_t dockIdLeft, dockIdRight;
-            ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.05f, &dockIdLeft, &dockIdRight);
-
-            ImGuiDockNode* leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
-            ImGuiDockNode* rightNode = ImGui::DockBuilderGetNode(dockIdRight);
-            leftNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
-            rightNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
-
-            // we now dock our windows into the docking node we made above
-            ImGui::DockBuilderDockWindow("ResourceTypeSelection", dockIdLeft);
-            ImGui::DockBuilderDockWindow("ResourceTypeOverview", dockIdRight);
-            ImGui::DockBuilderFinish(dsID);
-
-            resetDockingLayout = false;
-        }
-
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
-
-        End();
-
-        ImGui::Begin("ResourceTypeSelection", nullptr);
+        ImGui::BeginChild("ResourceTypeSelection", ImVec2(panelWidth, 0.0f));
 
         // Same height as the toolbar on the right side
         ImGui::AlignTextToFramePadding();
@@ -111,24 +91,43 @@ namespace Atlas::Editor::UI {
 
         RenderDirectoryControl();
 
-        ImGui::End();
+        ImGui::EndChild();
 
-        ImGui::Begin("ResourceTypeOverview", nullptr);
+        ImGui::SameLine(0.0f, 0.0f);
+
+        const float splitterWidth = 9.0f;
+        auto splitterPos = ImGui::GetCursorScreenPos();
+        auto splitterHeight = ImGui::GetContentRegionAvail().y;
+        ImGui::InvisibleButton("Folder splitter", ImVec2(splitterWidth, std::max(splitterHeight, 1.0f)));
+        if (ImGui::IsItemActive())
+            folderPanelWidth = panelWidth + ImGui::GetIO().MouseDelta.x;
+
+        auto splitterHighlighted = ImGui::IsItemActive() || ImGui::IsItemHovered();
+        if (splitterHighlighted)
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        auto splitterX = splitterPos.x + splitterWidth * 0.5f;
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(splitterX, splitterPos.y), ImVec2(splitterX, splitterPos.y + splitterHeight),
+            ImGui::GetColorU32(splitterHighlighted ? ImGuiCol_SeparatorActive : ImGuiCol_Separator), splitterHighlighted ? 2.0f : 1.0f);
+
+        ImGui::SameLine(0.0f, 0.0f);
+
+        ImGui::BeginChild("ResourceTypeOverview", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        RenderDirectoryContentControl();
+
+        ImGui::Separator();
 
         // Use a child as a dummy to create a drop target, since it doesn't work directly on a window
         // While Ctrl is held the mouse wheel zooms the icons instead of scrolling
         ImGui::BeginChild("ResourceTypeDropChild", ImVec2(0.0, 0.0), ImGuiChildFlags_None,
             ImGui::GetIO().KeyCtrl ? ImGuiWindowFlags_NoScrollWithMouse : ImGuiWindowFlags_None);
 
-        RenderDirectoryContentControl();
-
-        ImGui::Separator();
-
         RenderDirectoryContent();
 
         ImGui::EndChild();
 
-        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)) {
             ImGui::SetWindowFocus();
         }
 
@@ -181,7 +180,9 @@ namespace Atlas::Editor::UI {
         }
         contentToShowPath.clear();
 
-        ImGui::End();
+        ImGui::EndChild();
+
+        End();
 
     }
 
@@ -274,12 +275,25 @@ namespace Atlas::Editor::UI {
         auto buttonSize = ImVec2(lineHeight, lineHeight);
 
         // Wrap input text field into child, such that we can adjust the total size to not overlap anything
-        ImGui::BeginChild("Search field", ImVec2(std::max(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 100.0f), lineHeight + 2.0f * padding));
+        ImGui::BeginChild("Search field", ImVec2(std::max(region.x - 3.0f * (buttonSize.x + 2.0f * padding), 100.0f), lineHeight + 2.0f * padding));
         ImGui::SetNextItemWidth(-FLT_MIN);
         ImGui::InputTextWithHint("##Search", "Search files...", &assetSearch);
         ImGui::EndChild();
 
         region = ImGui::GetContentRegionAvail();
+        auto& viewIcon = Singletons::icons->Get(listView ? IconType::ViewGrid : IconType::ViewList);
+        set = Singletons::imguiWrapper->GetTextureId(&viewIcon);
+
+        ImGui::SetCursorPos(ImVec2(region.x - 3.0f * (buttonSize.x + 2.0f * padding), 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+        if (ImGui::ImageButton("View button", set, buttonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            listView = !listView;
+        }
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+        ImGui::SetItemTooltip(listView ? "Show as tiles" : "Show as list");
+
         auto& filterIcon = Singletons::icons->Get(IconType::Filter);
         set = Singletons::imguiWrapper->GetTextureId(&filterIcon);
 
@@ -319,19 +333,9 @@ namespace Atlas::Editor::UI {
                 contentFilter = isSet ? ContentFilterBits::AllBit : 0;
             }
             ImGui::Separator();
-            renderSingleBitOption("Audio", ContentFilterBits::AudioBit);
-            renderSingleBitOption("Mesh", ContentFilterBits::MeshBit);
-            renderSingleBitOption("Mesh source", ContentFilterBits::MeshSourceBit);
-            renderSingleBitOption("Material", ContentFilterBits::MaterialBit);
-            renderSingleBitOption("Material graph", ContentFilterBits::MaterialGraphBit);
-            renderSingleBitOption("Terrain", ContentFilterBits::TerrainBit);
-            renderSingleBitOption("Scene", ContentFilterBits::SceneBit);
-            renderSingleBitOption("Script", ContentFilterBits::ScriptBit);
-            renderSingleBitOption("Font", ContentFilterBits::FontBit);
-            renderSingleBitOption("Prefab", ContentFilterBits::PrefabBit);
-            renderSingleBitOption("Texture", ContentFilterBits::TextureBit);
-            renderSingleBitOption("Environment texture", ContentFilterBits::EnvTextureBit);
-            renderSingleBitOption("Animation", ContentFilterBits::AnimationBit);
+            // The filter bits are in the order of the content types
+            for (int32_t i = 0; i < static_cast<int32_t>(ContentType::None); i++)
+                renderSingleBitOption(GetTypeName(static_cast<ContentType>(i)), static_cast<ContentFilterBits>(1 << i));
 
             ImGui::EndPopup();
         }
@@ -375,7 +379,7 @@ namespace Atlas::Editor::UI {
         }
 
         auto itemSize = iconSize + 2.0f * padding;
-        auto columnCount = int32_t(totalWidth / itemSize);
+        auto columnCount = listView ? 1 : int32_t(totalWidth / itemSize);
         columnCount = columnCount <= 0 ? 1 : columnCount;
 
         float columnSize = totalWidth / float(columnCount);
@@ -410,12 +414,12 @@ namespace Atlas::Editor::UI {
             if (directory->assetPath.at(0) == '.')
                 continue;
 
-            RenderContentEntry(directory->path, directory->assetPath, ContentType::None,
+            RenderContentEntry(directory->path, directory->assetPath, ContentType::None, 0,
                 entryIdx++, columnCount, columnSize, columnHeight);
         }
 
         for (const auto& file : files) {
-            RenderContentEntry(file.path, file.assetPath, file.type,
+            RenderContentEntry(file.path, file.assetPath, file.type, file.size,
                 entryIdx++, columnCount, columnSize, columnHeight);
         }
 
@@ -493,10 +497,9 @@ namespace Atlas::Editor::UI {
         if (currentDirectory == directory->path)
             nodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-        // Get button size before removing spacing
-        float buttonSize = ImGui::GetTextLineHeightWithSpacing();
-
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(-2.0f, 0.0f));
+        auto rowPosY = ImGui::GetCursorPosY();
+        auto& style = ImGui::GetStyle();
+        auto iconSize = ImGui::GetTextLineHeight();
 
         bool nodeOpen = ImGui::TreeNodeEx(directory->name.c_str(), nodeFlags, "");
 
@@ -504,18 +507,18 @@ namespace Atlas::Editor::UI {
             currentDirectory = Common::Path::Normalize(directory->path.string());
         }
 
-        ImGui::SameLine();
-
-        auto folderIcon = Singletons::icons->Get(IconType::Folder);
+        auto folderIcon = Singletons::icons->GetTintable(IconType::Folder);
         auto set = Singletons::imguiWrapper->GetTextureId(&folderIcon);
 
-        ImGui::Image(set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f));
+        ImGui::SameLine(0.0f, 0.0f);
+        ImGui::SetCursorPosY(rowPosY + style.FramePadding.y);
+        ImGui::ImageWithBg(set, ImVec2(iconSize, iconSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f),
+            ImVec4(0.0f, 0.0f, 0.0f, 0.0f), Theme::ContentIcon(ContentType::None));
 
-        ImGui::PopStyleVar();
-
-        ImGui::SameLine();
-
-        ImGui::Text("%s", directory->name.c_str());
+        ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
+        ImGui::SetCursorPosY(rowPosY);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(directory->name.c_str());
 
         if (nodeOpen) {
             for (const auto& childDirectory : directory->directories)
@@ -527,13 +530,14 @@ namespace Atlas::Editor::UI {
     }
 
     void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath,
-        ContentType contentType, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight) {
+        ContentType contentType, uintmax_t fileSize, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight) {
 
         bool isDirectory = contentType == ContentType::None;
 
         auto filename = Common::Path::GetFileName(assetPath);
 
-        ImVec2 buttonSize = ImVec2(iconSize, iconSize);
+        auto lineHeight = ImGui::GetTextLineHeight();
+        ImVec2 buttonSize = listView ? ImVec2(columnSize - 2.0f * padding, lineHeight + 4.0f) : ImVec2(iconSize, iconSize);
         auto cursorPos = ImGui::GetCursorPos();
 
         ImGui::BeginGroup();
@@ -545,7 +549,7 @@ namespace Atlas::Editor::UI {
 
         Texture::Texture2D iconTexture;
         if (isDirectory)
-            iconTexture = Singletons::icons->Get(IconType::Folder);
+            iconTexture = Singletons::icons->GetTintable(IconType::Folder);
         else
             iconTexture = GetIcon(contentType);
         auto set = Singletons::imguiWrapper->GetTextureId(&iconTexture);
@@ -562,6 +566,10 @@ namespace Atlas::Editor::UI {
         bool selected = selectionStorage.Contains((ImGuiID)entryIdx);
         ImGui::SetNextItemSelectionUserData(entryIdx);
         ImGui::Selectable("##Selectable", &selected, ImGuiSelectableFlags_None, buttonSize);
+
+        // Files are dragged right away instead of starting a box selection
+        if (!isDirectory && ImGui::IsItemClicked())
+            ImGui::GetCurrentContext()->BoxSelectState.IsStarting = false;
 
         if (ImGui::IsItemHovered()) {
             if (ImGui::IsMouseDoubleClicked(0)) {
@@ -637,7 +645,11 @@ namespace Atlas::Editor::UI {
         if (isVisible) {
             ImGui::SameLine();
             ImGui::SetCursorPosX(cursorPos.x);
-            ImGui::Image(set, buttonSize);
+            if (listView)
+                ImGui::SetCursorPosY(cursorPos.y + 3.0f);
+            auto imageSize = listView ? ImVec2(lineHeight, lineHeight) : buttonSize;
+            ImGui::ImageWithBg(set, imageSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+                ImVec4(0.0f, 0.0f, 0.0f, 0.0f), Theme::ContentIcon(contentType));
         }
 
         ImGui::PopStyleVar();
@@ -647,7 +659,9 @@ namespace Atlas::Editor::UI {
             ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
             ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-            ImGui::SetNextItemWidth(buttonSize.x);
+            if (listView)
+                ImGui::SameLine();
+            ImGui::SetNextItemWidth(listView ? columnSize * 0.5f : buttonSize.x);
             if (editingChanged) {
                 ImGui::SetKeyboardFocusHere();
             }
@@ -678,26 +692,14 @@ namespace Atlas::Editor::UI {
             ImGui::PopStyleColor();
         }
         else if (isVisible) {
-            // Single centered line, which is truncated if too long. The full name is shown in the tooltip
-            auto maxWidth = std::min(columnSize - padding, iconSize + 2.0f * padding);
-            auto label = filename;
-            bool truncated = ImGui::CalcTextSize(label.c_str()).x > maxWidth;
-            if (truncated) {
-                while (!label.empty() && ImGui::CalcTextSize((label + "...").c_str()).x > maxWidth)
-                    label.pop_back();
-                label += "...";
-            }
-
-            auto textWidth = ImGui::CalcTextSize(label.c_str()).x;
-            auto cursorX = ImGui::GetCursorPosX();
-            ImGui::SetCursorPosX(std::max(0.0f, cursorX + (iconSize - textWidth) * 0.5f));
-            ImGui::TextUnformatted(label.c_str());
-            if (truncated)
-                ImGui::SetItemTooltip("%s", filename.c_str());
+            if (listView)
+                RenderListColumns(filename, contentType, fileSize, buttonSize.x);
+            else
+                RenderTileLabel(filename, columnSize);
         }
-        else {
+        else if (!listView) {
             // Keep the layout stable for invisible entries
-            ImGui::NewLine();
+            ImGui::Dummy(ImVec2(0.0f, 2.0f * lineHeight));
         }
 
         ImGui::PopID();
@@ -719,6 +721,91 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void ContentBrowserWindow::RenderTileLabel(const std::string& filename, float columnSize) {
+
+        auto maxWidth = std::min(columnSize - padding, iconSize + 2.0f * padding);
+        auto startX = ImGui::GetCursorPosX();
+        auto font = ImGui::GetFont();
+
+        const char* text = filename.c_str();
+        const char* textEnd = text + filename.size();
+
+        // The first line ends at a separator in its second half if there is one, the second one gets an ellipsis
+        auto firstLineEnd = font->CalcWordWrapPositionA(ImGui::GetFontSize() / font->FontSize, text, textEnd, maxWidth);
+        if (firstLineEnd == text)
+            firstLineEnd = textEnd;
+        for (auto separator = firstLineEnd - 1; firstLineEnd < textEnd && separator > text + (firstLineEnd - text) / 2; separator--) {
+            if (*separator == '_' || *separator == '-' || *separator == '.' || *separator == ' ') {
+                firstLineEnd = separator + 1;
+                break;
+            }
+        }
+
+        auto renderCentered = [&](const char* lineStart, const char* lineEnd) {
+            auto width = std::min(ImGui::CalcTextSize(lineStart, lineEnd).x, maxWidth);
+            ImGui::SetCursorPosX(std::max(0.0f, startX + (iconSize - width) * 0.5f));
+            return Widgets::TextEllipsis(lineStart, lineEnd, maxWidth);
+            };
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+        renderCentered(text, firstLineEnd);
+        if (firstLineEnd < textEnd && renderCentered(firstLineEnd, textEnd))
+            ImGui::SetItemTooltip("%s", text);
+        else if (firstLineEnd == textEnd)
+            ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeight()));
+        ImGui::PopStyleVar();
+
+    }
+
+    void ContentBrowserWindow::RenderListColumns(const std::string& filename, ContentType contentType, uintmax_t fileSize, float rowWidth) {
+
+        auto startX = ImGui::GetCursorPosX();
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        // Everything is on the row of the icon, which already moved the cursor to the next line
+        auto rowY = ImGui::GetCursorPosY() - lineHeight - ImGui::GetStyle().ItemSpacing.y - 1.0f;
+        auto nameX = startX + lineHeight + ImGui::GetStyle().ItemInnerSpacing.x;
+        auto typeX = startX + rowWidth * 0.6f;
+        auto sizeX = startX + rowWidth * 0.85f;
+
+        ImGui::SetCursorPos(ImVec2(nameX, rowY));
+        if (Widgets::TextEllipsis(filename.c_str(), filename.c_str() + filename.size(), typeX - nameX - padding))
+            ImGui::SetItemTooltip("%s", filename.c_str());
+
+        ImGui::SetCursorPos(ImVec2(typeX, rowY));
+        ImGui::TextDisabled("%s", contentType == ContentType::None ? "Folder" : GetTypeName(contentType));
+
+        if (contentType != ContentType::None) {
+            ImGui::SetCursorPos(ImVec2(sizeX, rowY));
+            if (fileSize >= 1024 * 1024)
+                ImGui::TextDisabled("%.1f MB", float(fileSize) / (1024.0f * 1024.0f));
+            else
+                ImGui::TextDisabled("%.1f KB", float(fileSize) / 1024.0f);
+        }
+
+    }
+
+    const char* ContentBrowserWindow::GetTypeName(ContentType contentType) const {
+
+        switch (contentType) {
+        case ContentType::Audio: return "Audio";
+        case ContentType::Mesh: return "Mesh";
+        case ContentType::MeshSource: return "Mesh source";
+        case ContentType::Material: return "Material";
+        case ContentType::Terrain: return "Terrain";
+        case ContentType::Scene: return "Scene";
+        case ContentType::Script: return "Script";
+        case ContentType::Font: return "Font";
+        case ContentType::Prefab: return "Prefab";
+        case ContentType::Texture: return "Texture";
+        case ContentType::EnvironmentTexture: return "Environment texture";
+        case ContentType::Animation: return "Animation";
+        case ContentType::MaterialGraph: return "Material graph";
+        default: return "File";
+        }
+
+    }
+
     bool ContentBrowserWindow::IsValidFileType(const std::string& filename) {
 
         std::string fileType = Common::Path::GetFileType(filename);
@@ -733,18 +820,18 @@ namespace Atlas::Editor::UI {
         auto& icons = Singletons::icons;
 
         switch (contentType) {
-        case ContentType::Audio: return icons->Get(IconType::Audio);
-        case ContentType::Mesh: return icons->Get(IconType::Mesh);
-        case ContentType::MeshSource: return icons->Get(IconType::MeshSource);
-        case ContentType::Material: return icons->Get(IconType::Material);
-        case ContentType::MaterialGraph: return icons->Get(IconType::MaterialGraph);
-        case ContentType::Scene: return icons->Get(IconType::Scene);
-        case ContentType::Font: return icons->Get(IconType::Font);
-        case ContentType::Prefab: return icons->Get(IconType::Prefab);
-        case ContentType::Texture: return icons->Get(IconType::Image);
-        case ContentType::EnvironmentTexture: return icons->Get(IconType::EnvironmentImage);
-        case ContentType::Terrain: return icons->Get(IconType::Terrain);
-        default: return icons->Get(IconType::Document);
+        case ContentType::Audio: return icons->GetTintable(IconType::Audio);
+        case ContentType::Mesh: return icons->GetTintable(IconType::Mesh);
+        case ContentType::MeshSource: return icons->GetTintable(IconType::MeshSource);
+        case ContentType::Material: return icons->GetTintable(IconType::Material);
+        case ContentType::MaterialGraph: return icons->GetTintable(IconType::MaterialGraph);
+        case ContentType::Scene: return icons->GetTintable(IconType::Scene);
+        case ContentType::Font: return icons->GetTintable(IconType::Font);
+        case ContentType::Prefab: return icons->GetTintable(IconType::Prefab);
+        case ContentType::Texture: return icons->GetTintable(IconType::Image);
+        case ContentType::EnvironmentTexture: return icons->GetTintable(IconType::EnvironmentImage);
+        case ContentType::Terrain: return icons->GetTintable(IconType::Terrain);
+        default: return icons->GetTintable(IconType::Document);
         }
 
     }

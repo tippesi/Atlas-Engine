@@ -70,7 +70,8 @@ namespace Atlas::Editor::UI {
             resetDockingLayout = false;
         }
 
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
+        // Panels which are alone in their node don't need a tab bar
+        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_AutoHideTabBar);
 
         inFocus = ImGui::IsWindowFocused() || propertiesPanel.isFocused || viewportPanel.isFocused || IsPanelFocused();
         if (inFocus)

@@ -36,7 +36,10 @@
     "spirv-tools",
     "nlohmann-json",
     "gtest",
-    "joltphysics",
+    {
+      "name": "joltphysics",
+      "features": [ "rtti" ]
+    },
     "imguizmo",
     "implot",
     "lua",

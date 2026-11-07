@@ -72,6 +72,13 @@ namespace Atlas {
         void SetIcon(Texture::Texture2D *icon);
 
         /**
+         * Sets the color of the title bar and whether it uses dark or bright text. Only supported on macOS.
+         * @param color The background color of the title bar
+         * @param dark True if the title bar is dark and gets bright text
+         */
+        void SetTitleBarColor(vec3 color, bool dark);
+
+        /**
          * Resets the position of the window to the given screen coordinates.
          * @param x The x position of the window on the screen in pixels
          * @param y The y position of the window on the screen in pixels

@@ -34,6 +34,9 @@ namespace Atlas::Editor::UI {
         // Small accent dot in the top right corner of the last item, e.g. to show that a filter is active
         static void ActiveIndicator();
 
+        // Text that ends with an ellipsis if it is wider than width, returns whether it was shortened
+        static bool TextEllipsis(const char* text, const char* textEnd, float width);
+
         // Image button without a background that only highlights on hover
         static bool IconButton(const char* id, const Texture::Texture2D& icon, float size,
             const char* tooltip = nullptr, float alpha = 1.0f);

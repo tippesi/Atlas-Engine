@@ -15,6 +15,7 @@ namespace Atlas::Editor {
     const std::string Serialization::configPath = ".config/";
     const std::string Serialization::configFilename = configPath + "config.json";
     const std::string Serialization::contentBrowserWindowFilename = configPath + "contentBrowserWindowConfig.json";
+    const std::string Serialization::logWindowFilename = configPath + "logWindowConfig.json";
 
     void Serialization::SerializeConfig() {
 
@@ -159,6 +160,10 @@ namespace Atlas::Editor {
             { "searchRecursively", contentBrowserWindow.searchRecursively },
             { "contentFilter", contentBrowserWindow.contentFilter },
             { "iconSize", contentBrowserWindow.iconSize },
+            { "folderPanelWidth", contentBrowserWindow.folderPanelWidth },
+            { "listView", contentBrowserWindow.listView },
+            { "pinned", contentBrowserWindow.pinned },
+            { "drawerHeight", contentBrowserWindow.height },
         };
 
         TryWriteToFile(contentBrowserWindowFilename, to_string(j));
@@ -185,6 +190,42 @@ namespace Atlas::Editor {
             contentBrowserWindow.contentFilter = UI::ContentBrowserWindow::AllBit;
         if (j.contains("iconSize"))
             j.at("iconSize").get_to(contentBrowserWindow.iconSize);
+        if (j.contains("folderPanelWidth"))
+            j.at("folderPanelWidth").get_to(contentBrowserWindow.folderPanelWidth);
+        if (j.contains("listView"))
+            j.at("listView").get_to(contentBrowserWindow.listView);
+        if (j.contains("pinned"))
+            j.at("pinned").get_to(contentBrowserWindow.pinned);
+        if (j.contains("drawerHeight"))
+            j.at("drawerHeight").get_to(contentBrowserWindow.height);
+        contentBrowserWindow.show = contentBrowserWindow.pinned;
+    }
+
+    void Serialization::SerializeLogWindow(const UI::LogWindow& logWindow) {
+
+        json j = {
+            { "pinned", logWindow.pinned },
+            { "drawerHeight", logWindow.height },
+        };
+
+        TryWriteToFile(logWindowFilename, to_string(j));
+
+    }
+
+    void Serialization::DeserializeLogWindow(UI::LogWindow& logWindow) {
+
+        auto serialized = TryReadFromFile(logWindowFilename);
+
+        if (serialized.empty())
+            return;
+
+        json j = json::parse(serialized);
+
+        if (j.contains("pinned"))
+            j.at("pinned").get_to(logWindow.pinned);
+        if (j.contains("drawerHeight"))
+            j.at("drawerHeight").get_to(logWindow.height);
+        logWindow.show = logWindow.pinned;
     }
 
     void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {

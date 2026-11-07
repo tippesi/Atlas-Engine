@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Content.h"
+
 #include <imgui.h>
 #include <cstdint>
 
@@ -31,6 +33,12 @@ namespace Atlas::Editor {
         static ImVec4 Error(float alpha = 1.0f);
 
         static ImVec4 TextMuted(float alpha = 1.0f);
+
+        // Tint of the content icons, only folders are colored
+        static ImVec4 ContentIcon(ContentType type, float alpha = 1.0f);
+
+        // Shadow of windows which float above the layout, e.g. drawers
+        static ImVec4 Shadow(float alpha = 1.0f);
 
         // X, Y and Z axis colors (index 0 to 2), matching the gizmo
         static ImVec4 Axis(int32_t axis, float alpha = 1.0f);

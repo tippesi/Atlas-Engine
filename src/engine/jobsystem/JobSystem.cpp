@@ -218,10 +218,12 @@ namespace Atlas {
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
 
         auto& worker = priorityPool.GetNextWorker();
-        priorityPool.Work(worker.workerId);
 
-        while (!group.HasFinished())
+        // New jobs of the group might be queued at this worker, which no sleeping worker would steal
+        while (!group.HasFinished()) {
+            priorityPool.Work(worker.workerId, &group);
             std::this_thread::yield();
+        }
 
     }
 
@@ -264,6 +266,12 @@ namespace Atlas {
                 priorityPool.Work(worker.workerId);
             }
         }
+
+    }
+
+    int32_t JobSystem::GetPendingJobCount(const JobPriority priority) {
+
+        return priorityPools[static_cast<int>(priority)].pendingJobs.load();
 
     }
 

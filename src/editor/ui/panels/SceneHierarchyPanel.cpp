@@ -599,36 +599,46 @@ namespace Atlas::Editor::UI {
         ImGui::Spacing();
         ImGui::SeparatorText("Scene settings");
 
-        RenderExtendedItem("Terrain", &selectedProperty.terrain, selectionChanged);
-        RenderExtendedItem("Ocean", &selectedProperty.ocean, selectionChanged);
-        RenderExtendedItem("Navigation", &selectedProperty.navigation, selectionChanged);
+        RenderExtendedItem("Terrain", IconType::Terrain, &selectedProperty.terrain, selectionChanged);
+        RenderExtendedItem("Ocean", IconType::Ocean, &selectedProperty.ocean, selectionChanged);
+        RenderExtendedItem("Navigation", IconType::Navigation, &selectedProperty.navigation, selectionChanged);
         if (scene->irradianceVolume)
-            RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
+            RenderExtendedItem("Irradiance volume", IconType::IrradianceVolume, &selectedProperty.irradianceVolume, selectionChanged);
         if (scene->rtgi)
-            RenderExtendedItem("Raytraced global illumination", &selectedProperty.rtgi, selectionChanged);
+            RenderExtendedItem("Raytraced global illumination", IconType::GlobalIllumination, &selectedProperty.rtgi, selectionChanged);
         if (scene->ssgi)
-            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi, selectionChanged);
+            RenderExtendedItem("Screen-space global illumination", IconType::GlobalIllumination, &selectedProperty.ssgi, selectionChanged);
         if (scene->reflection)
-            RenderExtendedItem("Reflection", &selectedProperty.reflection, selectionChanged);
+            RenderExtendedItem("Reflection", IconType::Reflection, &selectedProperty.reflection, selectionChanged);
         if (scene->sss)
-            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss, selectionChanged);
+            RenderExtendedItem("Screen-space shadows", IconType::Shadow, &selectedProperty.sss, selectionChanged);
         if (scene->sky.clouds)
-            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds, selectionChanged);
+            RenderExtendedItem("Volumetric clouds", IconType::Clouds, &selectedProperty.volumetricClouds, selectionChanged);
         if (scene->fog)
-            RenderExtendedItem("Fog", &selectedProperty.fog, selectionChanged);
-        RenderExtendedItem("Sky", &selectedProperty.sky, selectionChanged);
-        RenderExtendedItem("Wind", &selectedProperty.wind, selectionChanged);
-        RenderExtendedItem("Post processing", &selectedProperty.postProcessing, selectionChanged);
+            RenderExtendedItem("Fog", IconType::Fog, &selectedProperty.fog, selectionChanged);
+        RenderExtendedItem("Sky", IconType::Sky, &selectedProperty.sky, selectionChanged);
+        RenderExtendedItem("Wind", IconType::Wind, &selectedProperty.wind, selectionChanged);
+        RenderExtendedItem("Post processing", IconType::PostProcessing, &selectedProperty.postProcessing, selectionChanged);
 
     }
 
-    void SceneHierarchyPanel::RenderExtendedItem(const std::string& name, bool* selected, bool* selectionChanged) {
+    void SceneHierarchyPanel::RenderExtendedItem(const std::string& name, IconType iconType, bool* selected, bool* selectionChanged) {
 
         ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 
         nodeFlags |= *selected ? ImGuiTreeNodeFlags_Selected : 0;
         ImGui::TreeNodeEx(name.c_str(), nodeFlags);
+
+        // A leaf has no arrow, the icon takes its place
+        auto iconSize = ImGui::GetFontSize();
+        auto iconPos = ImGui::GetItemRectMin();
+        iconPos.x += ImGui::GetStyle().FramePadding.x;
+        iconPos.y += ImGui::GetStyle().FramePadding.y;
+        auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->Get(iconType));
+        ImGui::GetWindowDrawList()->AddImage(set, iconPos, ImVec2(iconPos.x + iconSize, iconPos.y + iconSize),
+            ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.75f)));
+
         if (ImGui::IsItemClicked()) {
             ClearSelection();
             *selected = true;

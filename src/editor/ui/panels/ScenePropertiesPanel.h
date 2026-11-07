@@ -30,6 +30,9 @@ namespace Atlas::Editor::UI {
 
             isFocused = ImGui::IsWindowFocused();
 
+            // Labels are on the right side of the widgets, they get a fixed room to not be cut off in narrow panels
+            ImGui::PushItemWidth(-std::min(150.0f, ImGui::GetContentRegionAvail().x * 0.5f));
+
             if constexpr (std::is_same_v<T, EntityProperties>) {
                 if (t.entity.IsValid()) {
                     RenderHeading("Entity");
@@ -117,6 +120,8 @@ namespace Atlas::Editor::UI {
 
             cubemapSelectionPanel.Reset();
             textureSelectionPanel.Reset();
+
+            ImGui::PopItemWidth();
 
             ImGui::End();
 

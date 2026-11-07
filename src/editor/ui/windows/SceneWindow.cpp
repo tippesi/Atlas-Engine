@@ -166,7 +166,7 @@ namespace Atlas::Editor::UI {
 
             uint32_t dockIdLeft, dockIdMiddle, dockIdRight;
             ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.15f, &dockIdLeft, &dockIdMiddle);
-            ImGui::DockBuilderSplitNode(dockIdMiddle, ImGuiDir_Left, 0.8f, &dockIdMiddle, &dockIdRight);
+            ImGui::DockBuilderSplitNode(dockIdMiddle, ImGuiDir_Left, 0.77f, &dockIdMiddle, &dockIdRight);
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow(sceneHierarchyPanel.GetNameID(), dockIdLeft);
@@ -177,7 +177,8 @@ namespace Atlas::Editor::UI {
             resetDockingLayout = false;
         }
 
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
+        // Panels which are alone in their node don't need a tab bar
+        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_AutoHideTabBar);
 
         // Due to docking it doesn't register child windows as focused as well, need to check in child itself
         inFocus = ImGui::IsWindowFocused() ||
@@ -281,6 +282,8 @@ namespace Atlas::Editor::UI {
         }
 
         sectionScope.Next("Viewport panel");
+        viewportPanel.frameColor = !isPlaying ? ImVec4(0.0f, 0.0f, 0.0f, 0.0f) :
+            scene->paused ? Theme::Warning() : Theme::Success();
         viewportPanel.Render(refScene, isActiveWindow);
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();

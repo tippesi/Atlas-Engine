@@ -147,7 +147,7 @@ namespace Atlas::Editor::UI {
 
         void RenderExtendedHierarchy(const Ref<Scene::Scene>& scene, bool* selectionChanged);
 
-        void RenderExtendedItem(const std::string& name, bool* selected, bool* selectionChanged);
+        void RenderExtendedItem(const std::string& name, IconType iconType, bool* selected, bool* selectionChanged);
 
         void RenderFilterPopup();
 

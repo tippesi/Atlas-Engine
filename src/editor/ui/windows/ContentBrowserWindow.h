@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Window.h"
+#include "DrawerWindow.h"
 #include "Singletons.h"
 #include "Icons.h"
 #include "ContentDiscovery.h"
@@ -14,7 +14,7 @@
 
 namespace Atlas::Editor::UI {
 
-    class ContentBrowserWindow : public Window {
+    class ContentBrowserWindow : public DrawerWindow {
 
     public:
         explicit ContentBrowserWindow(bool show);
@@ -54,6 +54,9 @@ namespace Atlas::Editor::UI {
         float iconSize = 64.0f;
         static constexpr float minIconSize = 32.0f;
         static constexpr float maxIconSize = 160.0f;
+
+        float folderPanelWidth = 220.0f;
+        bool listView = false;
         
         static inline std::string contentToShowPath = "";
         // Mesh, material, prefab or animation the user wants to open in its editor
@@ -78,11 +81,17 @@ namespace Atlas::Editor::UI {
         void RenderDirectoryEntry(const Ref<ContentDirectory>& directory);
 
         void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, 
-            ContentType contentType, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight);
+            ContentType contentType, uintmax_t fileSize, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight);
+
+        void RenderTileLabel(const std::string& filename, float columnSize);
+
+        void RenderListColumns(const std::string& filename, ContentType contentType, uintmax_t fileSize, float rowWidth);
 
         bool IsValidFileType(const std::string& filename);
 
         Texture::Texture2D& GetIcon(const ContentType contentType);
+
+        const char* GetTypeName(ContentType contentType) const;
 
         void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles,
             const std::string& searchQuery, ContentFilter filter, bool recursively);

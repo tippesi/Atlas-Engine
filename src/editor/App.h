@@ -45,7 +45,18 @@ namespace Atlas::Editor {
 
         void RenderEmptyState(ImGuiID dsID);
 
+        void ApplyTheme();
+
         void RenderStatusBar();
+
+        bool RenderDrawerButton(UI::DrawerWindow& drawer, const char* label, const char* shortcut);
+
+        void UpdateDrawers();
+
+        // Pinned drawers share one area at the bottom of the layout, which is split off before the dockspace is updated
+        void PrepareDrawerDocking(ImGuiID dsID);
+
+        void DockPinnedDrawer(UI::DrawerWindow& drawer);
 
         void RenderRecentScenesMenu();
 
@@ -70,8 +81,8 @@ namespace Atlas::Editor {
         Input::KeyboardHandler keyboardHandler;
         Input::PlayerInput playerInput;
 
-        UI::LogWindow logWindow = UI::LogWindow(true);
-        UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(true);
+        UI::LogWindow logWindow = UI::LogWindow(false);
+        UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(false);
         UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
         UI::SettingsWindow settingsWindow = UI::SettingsWindow(false);
         UI::GeometryBrushWindow geometryBrushWindow = UI::GeometryBrushWindow(false);
@@ -88,9 +99,16 @@ namespace Atlas::Editor {
 
         size_t activeSceneIdx = 0;
 
-        ImGuiID upperDockNodeID;
+        ImGuiID drawerDockNodeID = 0;
+
+        float drawerSpringTime = 0.0f;
+        float backgroundJobTime = 0.0f;
+
+        std::vector<std::string> emptyStateScenes;
+        bool emptyStateVisible = false;
 
         bool resetDockspaceLayout = false;
+        bool dockLoadingScenes = false;
         bool playingMaximized = false;
 
     };

@@ -2,6 +2,9 @@
 #include "../Singletons.h"
 #include "../Theme.h"
 
+#include <imgui_internal.h>
+#include <algorithm>
+
 namespace Atlas::Editor::UI {
 
     bool Widgets::DragVec3(const char* label, vec3& value, float speed, float resetValue,
@@ -217,6 +220,20 @@ namespace Atlas::Editor::UI {
             ImGui::SetItemTooltip("%s", tooltip);
 
         return pressed;
+
+    }
+
+    bool Widgets::TextEllipsis(const char* text, const char* textEnd, float width) {
+
+        auto textSize = ImGui::CalcTextSize(text, textEnd);
+        auto pos = ImGui::GetCursorScreenPos();
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        ImGui::Dummy(ImVec2(std::min(textSize.x, width), lineHeight));
+        ImGui::RenderTextEllipsis(ImGui::GetWindowDrawList(), pos, ImVec2(pos.x + width, pos.y + lineHeight),
+            pos.x + width, pos.x + width, text, textEnd, &textSize);
+
+        return textSize.x > width;
 
     }
 

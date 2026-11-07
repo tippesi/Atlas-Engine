@@ -137,11 +137,16 @@ namespace Atlas::Editor {
 				continue;
 
 			auto contentType = Content::contentTypeMapping.at(fileType);
+			std::error_code errorCode;
+			auto fileSize = dirEntry.file_size(errorCode);
+			if (errorCode)
+				fileSize = 0;
 			directory->files.emplace_back(Content {
 				.name = filename,
 				.path = path,
 				.assetPath = assetPath,
 				.type = contentType,
+				.size = fileSize,
 			});
 
 			result->contentTypeToContentMap[contentType].push_back(directory->files.back());
