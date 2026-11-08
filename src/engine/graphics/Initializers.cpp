@@ -76,21 +76,6 @@ namespace Atlas {
 
             }
 
-            VkFramebufferCreateInfo InitFramebufferCreateInfo(VkRenderPass renderPass, uint32_t attachmentCount,
-                uint32_t width, uint32_t height, uint32_t layers) {
-
-                VkFramebufferCreateInfo frameBufferInfo = {};
-                frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                frameBufferInfo.renderPass = renderPass;
-                frameBufferInfo.attachmentCount = 1;
-                frameBufferInfo.width = width;
-                frameBufferInfo.height = height;
-                frameBufferInfo.layers = layers;
-
-                return frameBufferInfo;
-
-            }
-
             VkFenceCreateInfo InitFenceCreateInfo(VkFenceCreateFlags flags) {
 
                 VkFenceCreateInfo fenceCreateInfo = {};

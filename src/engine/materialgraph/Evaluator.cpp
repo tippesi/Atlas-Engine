@@ -85,7 +85,8 @@ namespace Atlas::MaterialGraph {
 
     }
 
-    PipelineConfig Evaluator::GetPipelineConfig(const EvaluationShader& shader, const Ref<Graphics::FrameBuffer>& frameBuffer, Mesh::Mesh* mesh) {
+    PipelineConfig Evaluator::GetPipelineConfig(const EvaluationShader& shader, const Graphics::AttachmentFormats& attachmentFormats,
+        Mesh::Mesh* mesh) {
 
         auto shaderConfig = ShaderConfig{
             { "materialGraph/evaluate.vsh", VK_SHADER_STAGE_VERTEX_BIT },
@@ -93,7 +94,7 @@ namespace Atlas::MaterialGraph {
         };
 
         auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-            .frameBuffer = frameBuffer,
+            .attachmentFormats = attachmentFormats,
             .vertexInputInfo = mesh ? mesh->vertexArray.GetVertexInputState() : planeVertexArray.GetVertexInputState(),
             .depthStencilInputInfo = Graphics::Initializers::InitPipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_ALWAYS),
         };

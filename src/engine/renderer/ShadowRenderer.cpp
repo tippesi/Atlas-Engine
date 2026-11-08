@@ -20,8 +20,7 @@ namespace Atlas {
             CPUProfiler::Scope profilerScope("Shadows");
             GPUProfiler::Scope gpuScope("Shadows");
 
-            std::swap(prevLightMap, lightMap);
-            lightMap.clear();
+            processedLights.clear();
 
             Ref<RenderList::Pass> shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
             while (!scene->renderState.fillShadowRenderPassesJob.HasFinished() || shadowPass != nullptr) {
@@ -49,14 +48,13 @@ namespace Atlas {
             }
 
             // Need to also keep track of non processed layer (e.g. long range layers)
-            for (auto& [lightEntity, frameBuffer] : lightMap) {
+            for (auto lightEntity : processedLights) {
                 auto light = scene->renderState.GetLight(lightEntity);
                 
                 if (light && light->comp.type == LightType::DirectionalLight && light->comp.shadow->longRange) {
                     // Need to go through render passes to make sure images have transitioned
-                    frameBuffer->depthAttachment.layer = light->comp.shadow->viewCount - 1;
-                    commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
-                    commandList->EndRenderPass();
+                    commandList->BeginRendering(GetRendering(light->comp, light->comp.shadow->viewCount - 1));
+                    commandList->EndRendering();
                 }
             }
 
@@ -76,11 +74,10 @@ namespace Atlas {
             auto& light = extractedLight->comp;
 
             auto sceneState = &scene->renderState;
-            auto frameBuffer = GetOrCreateFrameBuffer(lightEntity, light);
+            auto rendering = GetRendering(light, shadowPass->layer);
+            auto attachmentFormats = Graphics::AttachmentFormats(rendering);
 
-            lightMap[lightEntity] = frameBuffer;
-
-            frameBuffer->depthAttachment.layer = shadowPass->layer;
+            processedLights.insert(lightEntity);
 
             auto shadow = light.shadow;
 
@@ -110,7 +107,7 @@ namespace Atlas {
                 commandList->BindBuffer(shadowPass->impostorInstanceIndicesBuffer, 1, 23);
             }
 
-            commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
+            commandList->BeginRendering(rendering);
 
             auto component = &shadow->views[shadowPass->layer];
             auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
@@ -155,17 +152,15 @@ namespace Atlas {
                 auto& [subData, _, mesh, gpuDraw] = subDatas[i];
                 const auto& material = subData->material;
                 if (subData->shadowGraphPending)
-                    UpdateGraphPipelines(subData, mesh, frameBuffer);
+                    UpdateGraphPipelines(subData, mesh, attachmentFormats);
                 if (subData->shadowConfig.IsValid()) continue;
 
-                subData->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
+                subData->shadowConfig = GetPipelineConfigForSubData(subData, mesh, attachmentFormats);
                 subData->shadowReversedWindingConfig = subData->shadowConfig.GetReversedWindingVariant();
-                subData->shadowConfig.graphicsPipelineDesc.frameBuffer = nullptr;
-                subData->shadowReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
                 if (material->HasGraph()) {
                     subData->shadowGraphPending = true;
-                    UpdateGraphPipelines(subData, mesh, frameBuffer);
+                    UpdateGraphPipelines(subData, mesh, attachmentFormats);
                 }
             }
 
@@ -194,11 +189,7 @@ namespace Atlas {
                 auto& config = getConfig(subDatas[i]);
 
                 if (config.variantHash != prevHash) {
-                    // The frame buffer is only needed to create the pipeline (assume these have the same format),
-                    // it isn't kept in the config to let it be able to be deleted
-                    config.graphicsPipelineDesc.frameBuffer = frameBuffer;
                     currentPipeline = PipelineManager::GetPipeline(config);
-                    config.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
                     constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
                     prevHash = config.variantHash;
@@ -247,9 +238,7 @@ namespace Atlas {
                 }
                 if (instances.reversedWindingCount) {
                     auto& reversedWindingConfig = subData->shadowReversedWindingConfig;
-                    reversedWindingConfig.graphicsPipelineDesc.frameBuffer = frameBuffer;
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
-                    reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
                     constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
                     commandList->PushConstants(constantsRange, &pushConstants);
@@ -261,53 +250,28 @@ namespace Atlas {
             }
 
             profilerScope.Next("Shadow impostors");
-            impostorRenderer.Render(frameBuffer, commandList, renderList,
+            impostorRenderer.Render(attachmentFormats, commandList, renderList,
                 shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
-            commandList->EndRenderPass();
+            commandList->EndRendering();
 
         }
 
-        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light) {
+        Graphics::RenderingDesc ShadowRenderer::GetRendering(const LightComponent& light, uint32_t layer) {
 
-            auto& shadow = light.shadow;
-            
-            if (prevLightMap.contains(entity)) {
-                auto frameBuffer = prevLightMap[entity];
-                // The image for a light entity might change
-                if (light.shadow->useCubemap && frameBuffer->GetDepthImage() == light.shadow->cubemap->image ||
-                    !light.shadow->useCubemap && frameBuffer->GetDepthImage() == light.shadow->maps->image) {
-                    // Also check if the resolution stayed the same
-                    if (frameBuffer->extent.width == shadow->resolution ||
-                        frameBuffer->extent.height == shadow->resolution) {
-                        return frameBuffer;
-                    }
+            const auto& shadow = light.shadow;
+            return Graphics::RenderingDesc{
+                .depthAttachment = {
+                    .image = shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image,
+                    .layer = layer,
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR
                 }
-            }
-
-            Graphics::RenderPassDepthAttachment attachment = {
-                .imageFormat = shadow->useCubemap ? shadow->cubemap->format :
-                               shadow->maps->format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             };
-            Graphics::RenderPassDesc renderPassDesc = {
-                .depthAttachment = { attachment }
-            };
-            auto renderPass = device->CreateRenderPass(renderPassDesc);
-
-            Graphics::FrameBufferDesc frameBufferDesc = {
-                .renderPass = renderPass,
-                .depthAttachment = { shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image, 0, true},
-                .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
-            };
-
-            return device->CreateFrameBuffer(frameBufferDesc);
 
         }
 
-        void ShadowRenderer::UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+        void ShadowRenderer::UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
+            const Graphics::AttachmentFormats& attachmentFormats) {
 
             using PipelineState = MaterialGraph::PipelineCache::State;
 
@@ -319,7 +283,7 @@ namespace Atlas {
                 return;
             }
 
-            auto config = GetPipelineConfigForSubData(subData, mesh, frameBuffer, compiled.get());
+            auto config = GetPipelineConfigForSubData(subData, mesh, attachmentFormats, compiled.get());
             auto reversedWindingConfig = config.GetReversedWindingVariant();
 
             auto blocking = graph->blockingPipelineUsers > 0;
@@ -332,8 +296,6 @@ namespace Atlas {
             if (state == PipelineState::Failed || reversedWindingState == PipelineState::Failed)
                 return;
 
-            config.graphicsPipelineDesc.frameBuffer = nullptr;
-            reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
             subData->shadowConfig = config;
             subData->shadowReversedWindingConfig = reversedWindingConfig;
 
@@ -342,7 +304,7 @@ namespace Atlas {
         }
 
         PipelineConfig ShadowRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer, const MaterialGraph::CompiledGraph* graph) {
+            Mesh::Mesh* mesh, const Graphics::AttachmentFormats& attachmentFormats, const MaterialGraph::CompiledGraph* graph) {
 
             auto material = subData->material;
 
@@ -359,7 +321,7 @@ namespace Atlas {
             }
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = frameBuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 

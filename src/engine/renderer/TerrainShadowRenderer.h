@@ -17,8 +17,6 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
-            using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
-
             struct alignas(16) PushConstants {
 
                 mat4 lightSpaceMatrix;
@@ -38,12 +36,8 @@ namespace Atlas {
 
             };
 
-            PipelineConfig GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
+            PipelineConfig GeneratePipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
                 Ref<Terrain::Terrain>& terrain);
-
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light);
-
-            LightMap lightMap;
 
             Buffer::UniformBuffer uniformBuffer;
 

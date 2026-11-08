@@ -156,7 +156,7 @@ namespace Atlas {
                 {"vegetation/vegetation.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = target->gBufferFrameBuffer,
+                .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 

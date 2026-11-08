@@ -34,8 +34,7 @@ namespace Atlas {
 
             for (auto commandList : submittedCommandLists) {
                 commandList->ResetDescriptors();
-                commandList->frameBufferInUse = nullptr;
-                commandList->renderPassInUse = nullptr;
+                commandList->renderingInUse.reset();
                 commandList->pipelineInUse = nullptr;
                 commandList->wasSwapChainAccessed = false;
                 commandList->isLocked = false;
@@ -160,16 +159,6 @@ namespace Atlas {
                 pipelineRef.reset();
             }
 
-            for (auto& frameBufferRef : frameBuffers.data) {
-                AE_ASSERT(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
-                frameBufferRef.reset();
-            }
-
-            for (auto& renderPassRef : renderPasses.data) {
-                AE_ASSERT(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
-                renderPassRef.reset();
-            }
-
             for (auto& shaderRef : shaders.data) {
                 AE_ASSERT(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
                 shaderRef.reset();
@@ -252,28 +241,6 @@ namespace Atlas {
             swapChain->AcquireImageIndex(frame->semaphore);
 
             return swapChain;
-
-        }
-
-        Ref<RenderPass> GraphicsDevice::CreateRenderPass(RenderPassDesc desc) {
-
-            auto renderPass = std::make_shared<RenderPass>(this, desc);
-
-            std::lock_guard<std::mutex> guard(renderPasses.mutex);
-            renderPasses.data.push_back(renderPass);
-
-            return renderPass;
-
-        }
-
-        Ref<FrameBuffer> GraphicsDevice::CreateFrameBuffer(FrameBufferDesc desc) {
-
-            auto frameBuffer = std::make_shared<FrameBuffer>(this, desc);
-
-            std::lock_guard<std::mutex> guard(frameBuffers.mutex);
-            frameBuffers.data.push_back(frameBuffer);
-
-            return frameBuffer;
 
         }
 
@@ -1405,8 +1372,6 @@ namespace Atlas {
 
         void GraphicsDevice::DestroyUnusedGraphicObjects() {
 
-            DeleteOutdatedResources<RenderPass>(renderPasses);
-            DeleteOutdatedResources<FrameBuffer>(frameBuffers);
             DeleteOutdatedResources<Shader>(shaders);
             DeleteOutdatedResources<Pipeline>(pipelines);
             DeleteOutdatedResources<Buffer>(buffers);

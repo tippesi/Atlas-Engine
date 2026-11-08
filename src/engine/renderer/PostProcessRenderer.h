@@ -53,7 +53,7 @@ namespace Atlas {
 
             PipelineConfig GetMainPipelineConfig();
 
-            PipelineConfig GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer);
+            PipelineConfig GetMainPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats);
 
             std::vector<std::string> GetMacros() const;
 

@@ -14,7 +14,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorShadowRenderer::Render(const Ref<Graphics::FrameBuffer>& frameBuffer,
+        void ImpostorShadowRenderer::Render(const Graphics::AttachmentFormats& attachmentFormats,
             Graphics::CommandList* commandList, RenderList* renderList, const RenderList::Pass* renderPass,
             mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 
@@ -46,7 +46,7 @@ namespace Atlas {
                 auto variant = int32_t(impostor->interpolation) | int32_t(impostor->pixelDepthOffset) << 1 | int32_t(useInstanceBuffer) << 2;
                 if (variant != boundVariant) {
                     boundVariant = variant;
-                    auto config = GetPipelineConfig(frameBuffer, impostor->interpolation, impostor->pixelDepthOffset, useInstanceBuffer);
+                    auto config = GetPipelineConfig(attachmentFormats, impostor->interpolation, impostor->pixelDepthOffset, useInstanceBuffer);
                     auto pipeline = PipelineManager::GetPipeline(config);
                     commandList->BindPipeline(pipeline);
                     commandList->PushConstants(pipeline->shader->GetPushConstantRange("constants"), &constants);
@@ -82,7 +82,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
+        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
             bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer) {
 
             auto shaderConfig = ShaderConfig {
@@ -90,7 +90,7 @@ namespace Atlas {
                 {"impostor/impostorShadow.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = frameBuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

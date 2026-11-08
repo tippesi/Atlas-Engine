@@ -141,27 +141,27 @@ namespace Atlas {
                 HashCombine(variantHash, vertexAttributeDesc.format);
             }
 
-            if (graphicsPipelineDesc.frameBuffer) {
-                for (int32_t i = 0; i < graphicsPipelineDesc.frameBuffer->renderPass->colorAttachmentCount; i++) {
-                    const auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->colorAttachments[i];
-                    if (!attachment.isValid) continue;
+            if (!graphicsPipelineDesc.swapChain) {
+                // Draws are sorted by this hash, the barrier masks are part of it to keep the established order
+                using Graphics::RenderingDesc;
+                const auto& formats = graphicsPipelineDesc.attachmentFormats;
+                for (int32_t i = 0; i < int32_t(formats.colorAttachmentCount); i++) {
+                    if (formats.colorFormats[i] == VK_FORMAT_UNDEFINED) continue;
 
                     HashCombine(variantHash, i);
-                    HashCombine(variantHash, attachment.imageFormat);
-                    HashCombine(variantHash, attachment.srcAccessMask);
-                    HashCombine(variantHash, attachment.dstAccessMask);
-                    HashCombine(variantHash, attachment.srcStageMask);
-                    HashCombine(variantHash, attachment.dstStageMask);
+                    HashCombine(variantHash, formats.colorFormats[i]);
+                    HashCombine(variantHash, RenderingDesc::colorAccessMask);
+                    HashCombine(variantHash, RenderingDesc::colorAccessMask);
+                    HashCombine(variantHash, RenderingDesc::colorStageMask);
+                    HashCombine(variantHash, RenderingDesc::colorStageMask);
                 }
 
-                const auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->depthAttachment;
-
-                if (attachment.isValid) {
-                    HashCombine(variantHash, attachment.imageFormat);
-                    HashCombine(variantHash, attachment.srcAccessMask);
-                    HashCombine(variantHash, attachment.dstAccessMask);
-                    HashCombine(variantHash, attachment.srcStageMask);
-                    HashCombine(variantHash, attachment.dstStageMask);
+                if (formats.depthFormat != VK_FORMAT_UNDEFINED) {
+                    HashCombine(variantHash, formats.depthFormat);
+                    HashCombine(variantHash, RenderingDesc::depthAccessMask);
+                    HashCombine(variantHash, RenderingDesc::depthAccessMask);
+                    HashCombine(variantHash, RenderingDesc::depthStageMask);
+                    HashCombine(variantHash, RenderingDesc::depthStageMask);
                 }
             }
             else {

@@ -85,7 +85,7 @@ namespace Atlas {
 
             UpscalingRenderer* GetUpscalingRenderer(PostProcessing::Upscaler upscaler);
 
-            PipelineConfig GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
+            PipelineConfig GetPipelineConfigForPrimitives(const Graphics::AttachmentFormats& attachmentFormats,
                 Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth, bool manualDepthTest = false);
 
             Graphics::GraphicsDevice* device = nullptr;

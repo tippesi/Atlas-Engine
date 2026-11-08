@@ -16,7 +16,7 @@ namespace Atlas::Editor::UI {
         mainRenderer = CreateRef<Renderer::MainRenderer>();
         mainRenderer->Init(Graphics::GraphicsDevice::DefaultDevice);
 
-        CreateRenderPass();
+        CreateRendering();
 
     }
 
@@ -102,7 +102,7 @@ namespace Atlas::Editor::UI {
             viewport->Set(pos.x, pos.y, size.x, size.y);
             renderViewport->Set(0, 0, renderSize.x, renderSize.y);
             viewportTexture.Resize(renderSize.x, renderSize.y);
-            CreateRenderPass();
+            CreateRendering();
         }
 
         if (scene != nullptr && validSize && !Singletons::blockingOperation->block) {
@@ -282,7 +282,7 @@ namespace Atlas::Editor::UI {
 
         auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
         commandList->BeginCommands();
-        commandList->BeginRenderPass(renderPass, frameBuffer, true);
+        commandList->BeginRendering(rendering);
 
         if (visualization == GBufferBaseColor) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->baseColorTexture.get(),
@@ -341,41 +341,21 @@ namespace Atlas::Editor::UI {
                 0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, exposure, false, true);
         }
 
-        commandList->EndRenderPass();
-
-        commandList->ImageMemoryBarrier(viewportTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        commandList->EndRendering();
 
         commandList->EndCommands();
         graphicsDevice->SubmitCommandList(commandList);
 
     }
 
-    void ViewportPanel::CreateRenderPass() {
+    void ViewportPanel::CreateRendering() {
 
-        auto device = Graphics::GraphicsDevice::DefaultDevice;
-
-        auto colorAttachment = Graphics::RenderPassColorAttachment{
-            .imageFormat = viewportTexture.image->format,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .outputLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        rendering = Graphics::RenderingDesc{
+            .colorAttachments = { {
+                .image = viewportTexture.image,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR
+            } }
         };
-
-        auto renderPassDesc = Graphics::RenderPassDesc{
-            .colorAttachments = { colorAttachment }
-        };
-
-        renderPass = device->CreateRenderPass(renderPassDesc);
-
-        auto frameBufferDesc = Graphics::FrameBufferDesc {
-            .renderPass = renderPass,
-            .colorAttachments = {
-                { viewportTexture.image, 0, true },
-            },
-            .extent = { uint32_t(viewportTexture.width), uint32_t(viewportTexture.height) }
-        };
-        frameBuffer = device->CreateFrameBuffer(frameBufferDesc);
 
     }
 

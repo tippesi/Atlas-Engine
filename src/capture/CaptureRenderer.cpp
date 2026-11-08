@@ -17,16 +17,6 @@ namespace Atlas::Capture {
         // Post-processing output is already tone mapped and gamma corrected
         outputTexture = CreateRef<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16G16B16A16_SFLOAT);
 
-        auto device = Graphics::GraphicsDevice::DefaultDevice;
-        // Passes keep negative values, e.g. of the velocity
-        auto colorAttachment = Graphics::RenderPassColorAttachment {
-            .imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .outputLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        };
-        passRenderPass = device->CreateRenderPass(Graphics::RenderPassDesc { .colorAttachments = { colorAttachment } });
-
     }
 
     void CaptureRenderer::Resize(ivec2 resolution) {
@@ -219,14 +209,15 @@ namespace Atlas::Capture {
 
         auto commandList = device->GetCommandList(Graphics::GraphicsQueue);
         commandList->BeginCommands();
-        commandList->BeginRenderPass(passRenderPass, target.frameBuffer, true);
+        commandList->BeginRendering(Graphics::RenderingDesc { .colorAttachments = { {
+            .image = target.texture->image,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR
+        } } });
 
         mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, texture, 0.0f, 0.0f,
             float(viewport->width), float(viewport->height), 0.0f, scale, false, true);
 
-        commandList->EndRenderPass();
-        commandList->ImageMemoryBarrier(target.texture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        commandList->EndRendering();
         commandList->EndCommands();
 
         device->SubmitCommandList(commandList);
@@ -242,13 +233,9 @@ namespace Atlas::Capture {
         if (it != passTargets.end())
             return it->second;
 
-        auto device = Graphics::GraphicsDevice::DefaultDevice;
-
+        // Passes keep negative values, e.g. of the velocity
         PassTarget target;
         target.texture = CreateRef<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16G16B16A16_SFLOAT);
-        target.frameBuffer = device->CreateFrameBuffer(Graphics::FrameBufferDesc { .renderPass = passRenderPass,
-            .colorAttachments = { { target.texture->image, 0, true } },
-            .extent = { uint32_t(resolution.x), uint32_t(resolution.y) } });
 
         return passTargets[pass] = target;
 

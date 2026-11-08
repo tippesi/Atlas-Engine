@@ -79,8 +79,6 @@ namespace Atlas {
 
                 subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
                 subData->mainReversedWindingConfig = subData->mainConfig.GetReversedWindingVariant();
-                subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
-                subData->mainReversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
                 if (material->HasGraph()) {
                     subData->mainGraphPending = true;
@@ -113,11 +111,7 @@ namespace Atlas {
                 auto& config = getConfig(subDatas[i]);
 
                 if (config.variantHash != prevHash) {
-                    // The frame buffer is only needed to create the pipeline (assume these have the same format),
-                    // it isn't kept in the config to let it be able to be deleted
-                    config.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
                     currentPipeline = PipelineManager::GetPipeline(config);
-                    config.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
                     constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
                     prevHash = config.variantHash;
@@ -181,9 +175,7 @@ namespace Atlas {
                 }
                 if (instances.reversedWindingCount) {
                     auto& reversedWindingConfig = subData->mainReversedWindingConfig;
-                    reversedWindingConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
-                    reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
                     commandList->BindPipeline(currentPipeline);
                     constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
                     commandList->PushConstants(constantsRange, &pushConstants);
@@ -220,8 +212,6 @@ namespace Atlas {
             if (state == PipelineState::Failed || reversedWindingState == PipelineState::Failed)
                 return;
 
-            config.graphicsPipelineDesc.frameBuffer = nullptr;
-            reversedWindingConfig.graphicsPipelineDesc.frameBuffer = nullptr;
             subData->mainConfig = config;
             subData->mainReversedWindingConfig = reversedWindingConfig;
 
@@ -237,7 +227,7 @@ namespace Atlas {
                 {graph ? graph->mainFragmentFile : "deferred/geometry.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = target->gBufferFrameBuffer,
+                .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 

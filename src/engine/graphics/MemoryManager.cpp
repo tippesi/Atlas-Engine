@@ -80,20 +80,6 @@ namespace Atlas {
 
         }
 
-        void MemoryManager::DestroyAllocation(Ref<RenderPass>& allocation) {
-
-            deleteRenderPassAllocations.
-                emplace_back(DeleteResource<RenderPass> { allocation, frameIndex + framesToDeletion });
-
-        }
-
-        void MemoryManager::DestroyAllocation(Ref<FrameBuffer>& allocation) {
-
-            deleteFrameBufferAllocations.
-                emplace_back(DeleteResource<FrameBuffer> { allocation, frameIndex + framesToDeletion });
-
-        }
-
         void MemoryManager::DestroyAllocation(Ref<Shader>& allocation) {
 
             deleteShaderAllocations.
@@ -208,8 +194,6 @@ namespace Atlas {
             DeleteAllocations(deleteTLASAllocations);
             DeleteAllocations(deleteBLASAllocations);
             DeleteAllocations(deletePipelineAllocations);
-            DeleteAllocations(deleteFrameBufferAllocations);
-            DeleteAllocations(deleteRenderPassAllocations);
             DeleteAllocations(deleteShaderAllocations);
             DeleteAllocations(deleteBufferAllocations);
             DeleteAllocations(deleteMultiBufferAllocations);

@@ -2,7 +2,7 @@
 
 #include "Common.h"
 #include "Shader.h"
-#include "Framebuffer.h"
+#include "Rendering.h"
 
 #include "../common/Ref.h"
 
@@ -14,10 +14,9 @@ namespace Atlas {
         class SwapChain;
 
         struct GraphicsPipelineDesc {
-            // These need to be set
-            // If renderPass isn't set, we need the swap chain
+            // These need to be set, the attachment formats are only used without a swap chain
             SwapChain* swapChain = nullptr;
-            Ref<FrameBuffer> frameBuffer = nullptr;
+            AttachmentFormats attachmentFormats;
             Ref<ShaderVariant> shader = nullptr;
 
                 // These have a valid default state
@@ -58,7 +57,6 @@ namespace Atlas {
             VkPipelineBindPoint bindPoint;
 
             Ref<ShaderVariant> shader = nullptr;
-            Ref<FrameBuffer> frameBuffer = nullptr;
 
             bool isComplete = false;
             bool isCompute = false;
@@ -71,8 +69,8 @@ namespace Atlas {
                 std::vector<VkVertexInputBindingDescription>& bindingDescriptions,
                 std::vector<VkVertexInputAttributeDescription>& attributeDescriptions);
 
-            std::vector<VkPipelineColorBlendAttachmentState> GenerateBlendAttachmentStateFromFrameBuffer(
-                VkPipelineColorBlendAttachmentState blendAttachmentState);
+            std::vector<VkPipelineColorBlendAttachmentState> GenerateBlendAttachmentStates(
+                const AttachmentFormats& attachmentFormats, VkPipelineColorBlendAttachmentState blendAttachmentState);
 
             GraphicsDevice* device;
 

@@ -34,26 +34,13 @@ namespace Atlas::Editor::UI {
 
     void MaterialGraphPreviews::Init() {
 
-        auto device = Graphics::GraphicsDevice::DefaultDevice;
-
         evaluator = std::make_unique<Evaluator>();
 
         auto size = slotSize * slotsPerRow;
         atlas = CreateRef<Texture::Texture2D>(size, size, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
             Texture::Filtering::Linear, false, true);
 
-        Graphics::RenderPassColorAttachment colorAttachment = {
-            .imageFormat = VK_FORMAT_R8G8B8A8_UNORM,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-            .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        };
-        renderPass = device->CreateRenderPass(Graphics::RenderPassDesc{ .colorAttachments = { colorAttachment } });
-        frameBuffer = device->CreateFrameBuffer(Graphics::FrameBufferDesc{
-            .renderPass = renderPass,
-            .colorAttachments = { { atlas->image, 0, true } },
-            .extent = { uint32_t(size), uint32_t(size) }
-            });
+        rendering = Graphics::RenderingDesc{ .colorAttachments = { { .image = atlas->image } } };
 
     }
 
@@ -86,7 +73,7 @@ namespace Atlas::Editor::UI {
                 entry.failed = !entry.shader.valid;
                 entry.rendered = false;
                 if (!entry.failed)
-                    entry.config = evaluator->GetPipelineConfig(entry.shader, frameBuffer, nullptr);
+                    entry.config = evaluator->GetPipelineConfig(entry.shader, Graphics::AttachmentFormats(rendering), nullptr);
             }
 
             if (entry.revision == revision && !entry.failed)
@@ -147,7 +134,7 @@ namespace Atlas::Editor::UI {
                     isAtlasPrepared = true;
                 }
 
-                commandList->BeginRenderPass(renderPass, frameBuffer);
+                commandList->BeginRendering(rendering);
             }
 
             auto pipeline = PipelineManager::GetPipeline(entry.config);
@@ -169,7 +156,7 @@ namespace Atlas::Editor::UI {
         }
 
         if (commandList) {
-            commandList->EndRenderPass();
+            commandList->EndRendering();
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
         }

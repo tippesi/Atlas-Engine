@@ -137,8 +137,8 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
-                auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
+                auto lightingImage = target->afterLightingRendering.colorAttachments[0].image;
+                auto depthImage = target->afterLightingRendering.depthAttachment.image;
 
                 commandList->BindImage(depthImage, nearestSampler, 3, 0);
                 commandList->BindImage(lightingImage, 3, 1);
@@ -152,7 +152,7 @@ namespace Atlas {
 
             // Update local texture copies
             {
-                auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                auto& colorImage = target->afterLightingRendering.colorAttachments[0].image;
                 if (refractionTexture.width != colorImage->width ||
                     refractionTexture.height != colorImage->height ||
                     refractionTexture.format != colorImage->format) {
@@ -160,7 +160,7 @@ namespace Atlas {
                         colorImage->format);
                 }
 
-                auto& depthImage = target->afterLightingFrameBuffer->GetDepthImage();
+                auto& depthImage = target->afterLightingRendering.depthAttachment.image;
                 if (depthTexture.width != depthImage->width ||
                     depthTexture.height != depthImage->height ||
                     depthTexture.format != depthImage->format) {
@@ -196,8 +196,7 @@ namespace Atlas {
             {
                 GPUProfiler::EndAndBeginQuery("Surface");
 
-                commandList->BeginRenderPass(target->afterLightingFrameBufferWithStencil->renderPass,
-                    target->afterLightingFrameBufferWithStencil);
+                commandList->BeginRendering(target->afterLightingRendering);
 
                 auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
                 if (fogEnabled) config.AddMacro("FOG");
@@ -294,7 +293,7 @@ namespace Atlas {
 
                 }
 
-                commandList->EndRenderPass();
+                commandList->EndRendering();
 
                 {
                     auto rtData = target->GetHistoryData(FULL_RES);
@@ -315,7 +314,7 @@ namespace Atlas {
                 if (ocean->underwaterShader) {
                     GPUProfiler::EndAndBeginQuery("Underwater");
 
-                    auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                    auto& colorImage = target->afterLightingRendering.colorAttachments[0].image;
 
                     Graphics::ImageBarrier preImageBarriers[] = {
                         {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
@@ -345,9 +344,9 @@ namespace Atlas {
 
                     commandList->BindPipeline(pipeline);
 
-                    auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
-                    auto stencilImage = target->afterLightingFrameBuffer->GetColorImage(2);
-                    auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
+                    auto lightingImage = target->afterLightingRendering.colorAttachments[0].image;
+                    auto stencilImage = target->afterLightingRendering.colorAttachments[2].image;
+                    auto depthImage = target->afterLightingRendering.depthAttachment.image;
 
                     refractionTexture.Bind(commandList, 3, 4);
                     commandList->BindImage(depthImage, nearestSampler, 3, 16);
@@ -469,8 +468,7 @@ namespace Atlas {
 
             GPUProfiler::Scope sectionScope("Rendering");
 
-            commandList->BeginRenderPass(target->oceanDepthOnlyFrameBuffer->renderPass,
-                target->oceanDepthOnlyFrameBuffer);
+            commandList->BeginRendering(target->oceanDepthRendering);
 
             auto config = GeneratePipelineConfig(target, true, ocean->wireframe);
             if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
@@ -534,7 +532,7 @@ namespace Atlas {
 
             }
 
-            commandList->EndRenderPass();
+            commandList->EndRendering();
 
         }
 
@@ -594,7 +592,7 @@ namespace Atlas {
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = depthOnly ? target->oceanDepthOnlyFrameBuffer : target->afterLightingFrameBufferWithStencil,
+                .attachmentFormats = Graphics::AttachmentFormats(depthOnly ? target->oceanDepthRendering : target->afterLightingRendering),
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

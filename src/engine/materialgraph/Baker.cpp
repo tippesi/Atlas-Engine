@@ -67,29 +67,16 @@ namespace Atlas::MaterialGraph {
                 Texture::Filtering::Nearest, false, true));
         }
 
-        Graphics::RenderPassColorAttachment colorAttachment = {
-            .imageFormat = format,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        };
-        auto renderPass = device->CreateRenderPass(Graphics::RenderPassDesc{
-            .colorAttachments = { colorAttachment, colorAttachment, colorAttachment, colorAttachment, colorAttachment },
+        Graphics::RenderingDesc rendering = {
             .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
-            });
-        auto frameBuffer = device->CreateFrameBuffer(Graphics::FrameBufferDesc{
-            .renderPass = renderPass,
-            .colorAttachments = {
-                { targets[0]->image, 0, true }, { targets[1]->image, 0, true }, { targets[2]->image, 0, true },
-                { targets[3]->image, 0, true }, { targets[4]->image, 0, true }
-            },
-            .extent = { uint32_t(resolution), uint32_t(resolution) }
-            });
+        };
+        for (size_t i = 0; i < targetCount; i++)
+            rendering.colorAttachments[i] = { .image = targets[i]->image, .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR };
 
         Evaluator evaluator;
         evaluator.UpdateParameters(shader.parameters, shader.parameterWords, material.Get().get());
 
-        auto config = evaluator.GetPipelineConfig(shader, frameBuffer, mesh.Get().get());
+        auto config = evaluator.GetPipelineConfig(shader, Graphics::AttachmentFormats(rendering), mesh.Get().get());
         auto pipeline = PipelineManager::GetPipeline(config);
         if (!pipeline->isComplete)
             return { .error = "The shader of the bake doesn't compile, the log has the details" };
@@ -97,7 +84,7 @@ namespace Atlas::MaterialGraph {
         auto commandList = device->GetCommandList(Graphics::GraphicsQueue, true);
         commandList->BeginCommands();
 
-        commandList->BeginRenderPass(renderPass, frameBuffer, true);
+        commandList->BeginRendering(rendering);
         commandList->BindPipeline(pipeline);
         evaluator.Bind(commandList);
 
@@ -114,7 +101,7 @@ namespace Atlas::MaterialGraph {
                 commandList->DrawIndexed(subData.indicesCount, 1, subData.indicesOffset);
         }
 
-        commandList->EndRenderPass();
+        commandList->EndRendering();
 
         commandList->EndCommands();
         device->FlushCommandList(commandList);

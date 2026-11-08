@@ -6,7 +6,7 @@
 #include "ImpostorShadowRenderer.h"
 
 #include <mutex>
-#include <map>
+#include <set>
 #include <tuple>
 
 namespace Atlas {
@@ -26,15 +26,14 @@ namespace Atlas {
             void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
                 RenderList* renderList, Ref<RenderList::Pass> shadowPass);
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light);
+            Graphics::RenderingDesc GetRendering(const LightComponent& light, uint32_t layer);
 
-            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer, const MaterialGraph::CompiledGraph* graph = nullptr);
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
+                const Graphics::AttachmentFormats& attachmentFormats, const MaterialGraph::CompiledGraph* graph = nullptr);
 
             // Switches to the pipelines of the graph once they are created
-            void UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
-
-            using LightMap = std::map<Scene::Entity, Ref<Graphics::FrameBuffer>>;
+            void UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
+                const Graphics::AttachmentFormats& attachmentFormats);
 
             struct alignas(16) PushConstants {
                 mat4 lightSpaceMatrix;
@@ -51,8 +50,7 @@ namespace Atlas {
                 uint32_t materialGraphOffset;
             };
 
-            LightMap prevLightMap;
-            LightMap lightMap;
+            std::set<Scene::Entity> processedLights;
 
             ImpostorShadowRenderer impostorRenderer;
 

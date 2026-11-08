@@ -7,8 +7,7 @@
 #include "Font.h"
 #include "renderer/MainRenderer.h"
 #include "texture/Texture2D.h"
-#include "graphics/RenderPass.h"
-#include "graphics/Framebuffer.h"
+#include "graphics/Rendering.h"
 
 #include <map>
 
@@ -65,7 +64,6 @@ namespace Atlas::Capture {
         struct PassTarget {
 
             Ref<Texture::Texture2D> texture;
-            Ref<Graphics::FrameBuffer> frameBuffer;
 
         };
 
@@ -79,7 +77,6 @@ namespace Atlas::Capture {
 
         Ref<Texture::Texture2D> outputTexture;
 
-        Ref<Graphics::RenderPass> passRenderPass;
         std::map<std::string, PassTarget> passTargets;
 
         bool hasFrame = false;

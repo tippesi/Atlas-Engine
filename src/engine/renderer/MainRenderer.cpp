@@ -160,7 +160,7 @@ namespace Atlas {
 			{
 				GPUProfiler::Scope gpuScope("Main render pass");
 
-				commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
+				commandList->BeginRendering(target->gBufferRendering);
 
 				opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
@@ -172,7 +172,7 @@ namespace Atlas {
 
 				impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
-				commandList->EndRenderPass();
+				commandList->EndRendering();
 
 				// The instances which weren't visible in the last frame are tested against the depth of the ones which were
 				if (renderState->gpuScene.HasOcclusionDraws()) {
@@ -191,13 +191,13 @@ namespace Atlas {
 						VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 						VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
 
-					commandList->BeginRenderPass(target->gBufferLoadRenderPass, target->gBufferLoadFrameBuffer);
+					commandList->BeginRendering(target->gBufferLoadRendering);
 
 					opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap, true);
 
 					impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap, true);
 
-					commandList->EndRenderPass();
+					commandList->EndRendering();
 				}
 			}
 
@@ -343,11 +343,11 @@ namespace Atlas {
 			// downscaleRenderer.Downscale(target, commandList);
 
 			{
-				commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBufferWithStencil);
+				commandList->BeginRendering(target->afterLightingRendering);
 
 				textRenderer.Render(target, scene, commandList);
 
-				commandList->EndRenderPass();
+				commandList->EndRendering();
 
 				auto rtData = target->GetData(FULL_RES);
 
@@ -566,7 +566,7 @@ namespace Atlas {
 			commandList->PipelineBarrier(preImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBufferWithStencil);
+			commandList->BeginRendering(target->afterLightingRendering);
 
 			// A path traced target has no depth attachment. The depth test is then done in the shader
 			// against the depth texture written by the path tracer
@@ -578,7 +578,7 @@ namespace Atlas {
 
 			if (batch->GetLineCount()) {
 
-				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
+				auto pipelineConfig = GetPipelineConfigForPrimitives(Graphics::AttachmentFormats(target->afterLightingRendering),
 					batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, hardwareDepthTest, manualDepthTest);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -594,7 +594,7 @@ namespace Atlas {
 
 			if (batch->GetTriangleCount()) {
 
-				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
+				auto pipelineConfig = GetPipelineConfigForPrimitives(Graphics::AttachmentFormats(target->afterLightingRendering),
 					batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, hardwareDepthTest, manualDepthTest);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -606,7 +606,7 @@ namespace Atlas {
 
 			}
 
-			commandList->EndRenderPass();
+			commandList->EndRendering();
 
 			Graphics::ImageBarrier postImageBarriers[] = {
 				{target->lightingTexture.image, layout, access},
@@ -1200,7 +1200,7 @@ namespace Atlas {
 
 		}
 
-		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
+		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(const Graphics::AttachmentFormats& attachmentFormats,
 			Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth, bool manualDepthTest) {
 
 			const auto shaderConfig = ShaderConfig{
@@ -1209,7 +1209,7 @@ namespace Atlas {
 			};
 
 			auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-				.frameBuffer = frameBuffer,
+				.attachmentFormats = attachmentFormats,
 				.vertexInputInfo = vertexArray.GetVertexInputState(),
 			};
 

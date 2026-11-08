@@ -139,70 +139,78 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
-            bool clear) {
+        void CommandList::BeginRendering(const RenderingDesc& desc) {
 
-            renderPassInUse = renderPass;
-            frameBufferInUse = frameBuffer;
-
-            AttachmentBarriers(true);
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "A render pass is already in use");
 
             VkRenderingAttachmentInfo colorAttachmentInfos[MAX_COLOR_ATTACHMENTS] = {};
-            for (uint32_t i = 0; i < renderPass->colorAttachmentCount; i++) {
-                const auto& rpAttachment = renderPass->colorAttachments[i];
-                const auto& fbAttachment = frameBuffer->colorAttachments[i];
+            uint32_t colorAttachmentCount = 0;
 
-                auto& attachmentInfo = colorAttachmentInfos[i];
-                attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-                if (!fbAttachment.isValid) continue;
+            auto fillAttachmentInfo = [&](const RenderingAttachment& attachment, VkImageLayout layout,
+                VkClearValue clearValue, VkRenderingAttachmentInfo& attachmentInfo) {
 
-                AE_ASSERT(fbAttachment.layer < fbAttachment.image->layers && "Image doesn't contain this layer");
-                attachmentInfo.imageView = fbAttachment.image->attachmentViews[fbAttachment.layer];
-                attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                attachmentInfo.loadOp = rpAttachment.loadOp;
+                AE_ASSERT(attachment.layer < attachment.image->layers && "Image doesn't contain this layer");
+                attachmentInfo.imageView = attachment.image->attachmentViews[attachment.layer];
+                attachmentInfo.imageLayout = layout;
+                attachmentInfo.loadOp = attachment.loadOp;
                 attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                attachmentInfo.clearValue = renderPass->colorClearValue;
+                attachmentInfo.clearValue = clearValue;
+
+            };
+
+            for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+                const auto& attachment = desc.colorAttachments[i];
+
+                colorAttachmentInfos[i].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+                if (!attachment.image) continue;
+
+                fillAttachmentInfo(attachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    desc.colorClearValue, colorAttachmentInfos[i]);
+                colorAttachmentCount = i + 1;
             }
 
             VkRenderingAttachmentInfo depthAttachmentInfo = {};
             depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-            const auto& fbDepthAttachment = frameBuffer->depthAttachment;
-            if (fbDepthAttachment.isValid) {
-                AE_ASSERT(fbDepthAttachment.layer < fbDepthAttachment.image->layers && "Image doesn't contain this layer");
-                depthAttachmentInfo.imageView = fbDepthAttachment.image->attachmentViews[fbDepthAttachment.layer];
-                depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                depthAttachmentInfo.loadOp = renderPass->depthAttachment.loadOp;
-                depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                depthAttachmentInfo.clearValue = renderPass->depthClearValue;
+            if (desc.depthAttachment.image) {
+                fillAttachmentInfo(desc.depthAttachment, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    desc.depthClearValue, depthAttachmentInfo);
             }
+
+            renderingInUse = desc;
+            renderingExtent = desc.GetExtent();
+
+            AttachmentBarriers(true);
 
             VkRenderingInfo renderingInfo = {};
             renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-            renderingInfo.renderArea.extent = frameBuffer->extent;
+            renderingInfo.renderArea.extent = renderingExtent;
             renderingInfo.layerCount = 1;
-            renderingInfo.colorAttachmentCount = renderPass->colorAttachmentCount;
+            renderingInfo.colorAttachmentCount = colorAttachmentCount;
             renderingInfo.pColorAttachments = colorAttachmentInfos;
-            renderingInfo.pDepthAttachment = fbDepthAttachment.isValid ? &depthAttachmentInfo : nullptr;
+            renderingInfo.pDepthAttachment = desc.depthAttachment.image ? &depthAttachmentInfo : nullptr;
 
             vkCmdBeginRendering(commandBuffer, &renderingInfo);
-
-            if (clear) ClearAttachments();
 
         }
 
         void CommandList::EndRenderPass() {
 
-            if (swapChainInUse) {
-                vkCmdEndRenderPass(commandBuffer);
-            }
-            if (renderPassInUse) {
-                vkCmdEndRendering(commandBuffer);
-                AttachmentBarriers(false);
-            }
+            AE_ASSERT(swapChainInUse && "No swap chain render pass is in use");
+            if (!swapChainInUse) return;
 
+            vkCmdEndRenderPass(commandBuffer);
             swapChainInUse = nullptr;
-            renderPassInUse = nullptr;
-            frameBufferInUse = nullptr;
+
+        }
+
+        void CommandList::EndRendering() {
+
+            AE_ASSERT(renderingInUse && "No rendering is in use");
+            if (!renderingInUse) return;
+
+            vkCmdEndRendering(commandBuffer);
+            AttachmentBarriers(false);
+            renderingInUse.reset();
 
         }
 
@@ -330,50 +338,21 @@ namespace Atlas {
 
         void CommandList::ClearAttachments() {
 
-            clearAttachments.clear();
+            // Renderings are cleared with their load operations
+            AE_ASSERT(swapChainInUse && "Only swap chain render passes can be cleared");
+            if (!swapChainInUse) return;
+
+            VkClearAttachment clears[2] = {};
+            clears[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            clears[0].clearValue = swapChainInUse->colorClearValue;
+            clears[1].aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            clears[1].clearValue = swapChainInUse->depthClearValue;
+
             VkClearRect clearRect = {};
-            if (swapChainInUse) {
-                VkClearAttachment colorClear = {}, depthClear = {};
-                colorClear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                colorClear.clearValue = swapChainInUse->colorClearValue;
-                colorClear.colorAttachment = 0;
-                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                depthClear.clearValue = swapChainInUse->depthClearValue;
-                depthClear.colorAttachment = 0;
-                clearAttachments.push_back(colorClear);
-                clearAttachments.push_back(depthClear);
+            clearRect.layerCount = 1;
+            clearRect.rect.extent = swapChainInUse->extent;
 
-                clearRect.layerCount = 1;
-                clearRect.baseArrayLayer = 0;
-                clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = swapChainInUse->extent;
-            }
-            if (renderPassInUse) {
-                VkClearAttachment colorClear = {}, depthClear = {};
-                colorClear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    if (!renderPassInUse->colorAttachments[i].isValid) continue;
-                    colorClear.clearValue = renderPassInUse->colorClearValue;
-                    colorClear.colorAttachment = i;
-                    clearAttachments.push_back(colorClear);
-                }
-
-                if (renderPassInUse->depthAttachment.isValid) {
-                    depthClear.clearValue = renderPassInUse->depthClearValue;
-                    depthClear.colorAttachment = 0;
-                    clearAttachments.push_back(depthClear);
-                }
-
-                clearRect.layerCount = 1;
-                clearRect.baseArrayLayer = 0;
-                clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = frameBufferInUse->extent;
-            }
-
-            vkCmdClearAttachments(commandBuffer, uint32_t(clearAttachments.size()),
-                clearAttachments.data(), 1, &clearRect);
+            vkCmdClearAttachments(commandBuffer, 2, clears, 1, &clearRect);
 
         }
 
@@ -785,7 +764,7 @@ namespace Atlas {
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
-            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT((swapChainInUse || renderingInUse) && "No render pass is in use");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
             AE_ASSERT(indexCount && instanceCount && "Index or instance count should not be zero");
@@ -799,7 +778,7 @@ namespace Atlas {
         void CommandList::DrawIndexedIndirect(const Ref<Graphics::Buffer> &buffer, size_t offset,
             uint32_t drawCount, uint32_t stride) {
 
-            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT((swapChainInUse || renderingInUse) && "No render pass is in use");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
@@ -825,7 +804,7 @@ namespace Atlas {
         void CommandList::DrawIndirect(const Ref<Graphics::Buffer>& buffer, size_t offset,
             uint32_t drawCount, uint32_t stride) {
 
-            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT((swapChainInUse || renderingInUse) && "No render pass is in use");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
@@ -837,7 +816,7 @@ namespace Atlas {
 
         void CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 
-            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for compute commands");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
             AE_ASSERT(groupCountX && groupCountY && groupCountZ && "Group counts have to be larger equal to one");
@@ -850,7 +829,7 @@ namespace Atlas {
 
         void CommandList::DispatchIndirect(const Ref<Buffer> &buffer, uint32_t offset) {
 
-            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for compute commands");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
@@ -1384,41 +1363,44 @@ namespace Atlas {
 
         void CommandList::AttachmentBarriers(bool beginPass) {
 
-            // Dynamic rendering doesn't transition the attachment layouts, the masks come from the render pass
+            // Dynamic rendering doesn't transition the attachment layouts, cleared attachments discard their content
             attachmentBarriers.clear();
             VkPipelineStageFlags srcStageMask = 0, dstStageMask = 0;
 
-            auto addBarrier = [&](const FrameBufferAttachment& attachment, const auto& rpAttachment, VkImageLayout attachmentLayout) {
+            auto addBarrier = [&](const RenderingAttachment& attachment, VkImageLayout attachmentLayout,
+                VkPipelineStageFlags stageMask, VkAccessFlags accessMask) {
 
                 auto& image = attachment.image;
+                auto initialLayout = attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD ?
+                    image->layout : VK_IMAGE_LAYOUT_UNDEFINED;
                 auto barrier = beginPass ?
-                    Initializers::InitImageMemoryBarrier(image->image, rpAttachment.initialLayout, attachmentLayout,
-                        rpAttachment.srcAccessMask, rpAttachment.dstAccessMask, image->aspectFlags) :
-                    Initializers::InitImageMemoryBarrier(image->image, attachmentLayout, rpAttachment.outputLayout,
-                        rpAttachment.dstAccessMask, VK_ACCESS_SHADER_READ_BIT, image->aspectFlags);
+                    Initializers::InitImageMemoryBarrier(image->image, initialLayout, attachmentLayout,
+                        accessMask, accessMask, image->aspectFlags) :
+                    Initializers::InitImageMemoryBarrier(image->image, attachmentLayout, attachment.outputLayout,
+                        accessMask, VK_ACCESS_SHADER_READ_BIT, image->aspectFlags);
                 barrier.subresourceRange.baseArrayLayer = attachment.layer;
                 attachmentBarriers.push_back(barrier);
 
-                srcStageMask |= beginPass ? rpAttachment.srcStageMask : rpAttachment.dstStageMask;
-                dstStageMask |= beginPass ? rpAttachment.dstStageMask : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+                srcStageMask |= stageMask;
+                dstStageMask |= beginPass ? stageMask : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
                 if (!beginPass) {
-                    image->layout = rpAttachment.outputLayout;
+                    image->layout = attachment.outputLayout;
                     image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
 
             };
 
-            for (uint32_t i = 0; i < renderPassInUse->colorAttachmentCount; i++) {
-                const auto& fbAttachment = frameBufferInUse->colorAttachments[i];
-                if (!fbAttachment.isValid) continue;
+            for (const auto& attachment : renderingInUse->colorAttachments) {
+                if (!attachment.image) continue;
 
-                addBarrier(fbAttachment, renderPassInUse->colorAttachments[i], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                addBarrier(attachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    RenderingDesc::colorStageMask, RenderingDesc::colorAccessMask);
             }
 
-            if (frameBufferInUse->depthAttachment.isValid) {
-                addBarrier(frameBufferInUse->depthAttachment, renderPassInUse->depthAttachment,
-                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            if (renderingInUse->depthAttachment.image) {
+                addBarrier(renderingInUse->depthAttachment, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    RenderingDesc::depthStageMask, RenderingDesc::depthAccessMask);
             }
 
             if (attachmentBarriers.empty()) return;
@@ -1435,8 +1417,8 @@ namespace Atlas {
             if (swapChainInUse) {
                 extent = swapChainInUse->extent;
             }
-            else if (renderPassInUse) {
-                extent = frameBufferInUse->extent;
+            else if (renderingInUse) {
+                extent = renderingExtent;
             }
             else {
                 AE_ASSERT(0 && "No valid render pass found");

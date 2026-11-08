@@ -15,7 +15,6 @@
 #include "QueryPool.h"
 #include "BLAS.h"
 #include "TLAS.h"
-#include "Framebuffer.h"
 #include "MemoryManager.h"
 
 #include "../common/Ref.h"
@@ -102,10 +101,6 @@ namespace Atlas {
 
             SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR,
                 ColorSpace preferredColorSpace = SRGB_NONLINEAR);
-
-            Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
-
-            Ref<FrameBuffer> CreateFrameBuffer(FrameBufferDesc desc);
 
             Ref<Shader> CreateShader(ShaderDesc desc);
 
@@ -197,8 +192,6 @@ namespace Atlas {
             DeviceSupport support;
             std::set<std::string> supportedExtensions;
 
-            Resources<RenderPass> renderPasses;
-            Resources<FrameBuffer> frameBuffers;
             Resources<Shader> shaders;
             Resources<Pipeline> pipelines;
             Resources<Buffer> buffers;

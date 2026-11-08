@@ -20,24 +20,22 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
             void Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font, const std::string& text,
-                float x, float y, vec4 color = vec4(1.0f), float scale = 1.0f,
-                const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
+                float x, float y, vec4 color = vec4(1.0f), float scale = 1.0f);
 
             void Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font, const std::string& text,
-                float x, float y, vec4 color, vec4 clipArea, vec4 blendArea, float scale = 1.0f,
-                const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
+                float x, float y, vec4 color, vec4 clipArea, vec4 blendArea, float scale = 1.0f);
 
             void RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
                 const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-                float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
+                float scale = 1.0f);
 
             void RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
                 const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-                vec4 clipArea, vec4 blendArea, float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
+                vec4 clipArea, vec4 blendArea, float scale = 1.0f);
 
             void RenderOutlined3D(Graphics::CommandList* commandList, Ref<Font> font, const std::string& text, 
                 vec3 position, quat rotation, vec2 halfSize, vec4 color, vec4 outlineColor, float outlineScale,
-                float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
+                float scale = 1.0f);
 
             void Update();
 
@@ -73,13 +71,14 @@ namespace Atlas {
             std::vector<vec4> CalculateCharacterInstances3D(Ref<Font>& font, const std::string& text, vec2 halfSize,
                 float textScale, int32_t* characterCount);
 
-            PipelineConfig GetPipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer, bool threeDimensional = false);
+            // Text is drawn into the rendering in use or the swap chain
+            PipelineConfig GetPipelineConfig(Graphics::CommandList* commandList, bool threeDimensional = false);
+
+            vec2 GetRenderArea(Graphics::CommandList* commandList, const Ref<Viewport>& viewport);
 
             void ReserveInstances(int32_t characterCount);
 
             Buffer::Buffer instanceBuffer;
-
-            Ref<Graphics::RenderPass> renderPass;
 
             uint32_t frameCharacterCount = 0;
 

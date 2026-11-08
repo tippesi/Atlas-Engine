@@ -74,8 +74,7 @@ namespace Atlas::Renderer {
         oceanNormalTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
 
-        CreateRenderPasses();
-        CreateFrameBuffers();
+        CreateRenderings();
 
         SetGIResolution(HALF_RES, false);
         SetVolumetricResolution(HALF_RES);
@@ -161,7 +160,7 @@ namespace Atlas::Renderer {
             reflectionHistoryDataDownsampled2x.Swap(reflectionDataDownsampled2x);
         }
 
-        CreateFrameBuffers();
+        CreateRenderings();
 
     }
 
@@ -447,9 +446,8 @@ namespace Atlas::Renderer {
         }
 
         // Pathtracing is kind of tricky with the depth buffer being in a SFLOAT format,
-        // so we can't attach this one to render passes or frame buffers
-        CreateRenderPasses();
-        CreateFrameBuffers();
+        // so we can't attach this one to render passes
+        CreateRenderings();
 
     }
 
@@ -459,121 +457,53 @@ namespace Atlas::Renderer {
 
     }
 
-    void RenderTarget::CreateRenderPasses() {
+    void RenderTarget::CreateRenderings() {
 
-        auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+        auto target = GetData(FULL_RES);
+        auto depthImage = useForPathTracing ? nullptr : target->depthTexture->image;
 
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = targetData.baseColorTexture->format},
-                {.imageFormat = targetData.normalTexture->format},
-                {.imageFormat = targetData.geometryNormalTexture->format},
-                {.imageFormat = targetData.roughnessMetallicAoTexture->format},
-                {.imageFormat = targetData.emissiveTexture->format},
-                {.imageFormat = targetData.materialIdxTexture->format},
-                {.imageFormat = targetData.velocityTexture->format},
-                {.imageFormat = targetData.stencilTexture->format},
-            };
+        auto clear = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        gBufferRendering = Graphics::RenderingDesc{
+            .colorAttachments = {
+                {.image = target->baseColorTexture->image, .loadOp = clear},
+                {.image = target->normalTexture->image, .loadOp = clear},
+                {.image = target->geometryNormalTexture->image, .loadOp = clear},
+                {.image = target->roughnessMetallicAoTexture->image, .loadOp = clear},
+                {.image = target->emissiveTexture->image, .loadOp = clear},
+                {.image = target->materialIdxTexture->image, .loadOp = clear},
+                {.image = target->velocityTexture->image, .loadOp = clear},
+                {.image = target->stencilTexture->image, .loadOp = clear, .writeEnabled = false},
+            },
+            .depthAttachment = {.image = depthImage, .loadOp = clear}
+        };
 
-            for (auto& attachment : colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        gBufferLoadRendering = gBufferRendering;
+        for (auto& attachment : gBufferLoadRendering.colorAttachments)
+            attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        gBufferLoadRendering.depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+        afterLightingRendering = Graphics::RenderingDesc{
+            .colorAttachments = {
+                {.image = lightingTexture.image},
+                {.image = target->velocityTexture->image},
+                {.image = target->stencilTexture->image},
+            },
+            .depthAttachment = {.image = depthImage}
+        };
+
+        oceanDepthRendering = Graphics::RenderingDesc{
+            .colorAttachments = {
+                {.image = oceanStencilTexture.image, .loadOp = clear},
+                {.image = oceanNormalTexture.image, .loadOp = clear},
+            },
+            .depthAttachment = {.image = oceanDepthTexture.image, .loadOp = clear}
+        };
+
+        outputRendering = Graphics::RenderingDesc{
+            .colorAttachments = {
+                {.image = outputTexture.image, .loadOp = clear}
             }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = targetData.depthTexture->format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3],
-                                     colorAttachments[4], colorAttachments[5], colorAttachments[6], colorAttachments[7]},
-                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
-            };
-            gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
-
-            for (auto& attachment : colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-            depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-            depthAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            auto gBufferLoadRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3],
-                                     colorAttachments[4], colorAttachments[5], colorAttachments[6], colorAttachments[7]},
-                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
-            };
-            gBufferLoadRenderPass = graphicsDevice->CreateRenderPass(gBufferLoadRenderPassDesc);
-        }
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = lightingTexture.format},
-                {.imageFormat = targetData.velocityTexture->format},
-                {.imageFormat = targetData.stencilTexture->format},
-            };
-
-            for (auto& attachment : colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = targetData.depthTexture->format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto afterLightingRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2]},
-                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
-            };
-            afterLightingRenderPass = graphicsDevice->CreateRenderPass(afterLightingRenderPassDesc);
-        }
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = oceanStencilTexture.format},
-                {.imageFormat = oceanNormalTexture.format}
-            };
-            for (auto& attachment : colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = oceanDepthTexture.format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto oceanRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1]},
-                .depthAttachment = depthAttachment
-            };
-            oceanRenderPass = graphicsDevice->CreateRenderPass(oceanRenderPassDesc);
-        }
-
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = outputTexture.format}
-            };
-            for (auto& attachment : colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            auto outputPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0]}
-            };
-            outputRenderPass = graphicsDevice->CreateRenderPass(outputPassDesc);
-        }
+        };
 
     }
 
@@ -587,78 +517,6 @@ namespace Atlas::Renderer {
         ivec2 halfRes = GetRelativeResolution(HALF_RES);
         reflectionDataDownsampled2x = RenderTargetData(halfRes, false, true);
         reflectionHistoryDataDownsampled2x = RenderTargetDataHistory(halfRes, false);
-
-    }
-
-    void RenderTarget::CreateFrameBuffers() {
-
-        auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
-
-        auto target = GetData(FULL_RES);
-
-        auto gBufferFrameBufferDesc = Graphics::FrameBufferDesc{
-               .renderPass = gBufferRenderPass,
-               .colorAttachments = {
-                   {target->baseColorTexture->image, 0, true},
-                   {target->normalTexture->image, 0, true},
-                   {target->geometryNormalTexture->image, 0, true},
-                   {target->roughnessMetallicAoTexture->image, 0, true},
-                   {target->emissiveTexture->image, 0, true},
-                   {target->materialIdxTexture->image, 0, true},
-                   {target->velocityTexture->image, 0, true},
-                   {target->stencilTexture->image, 0, false},
-               },
-               .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing },
-               .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
-        };
-        gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
-
-        gBufferFrameBufferDesc.renderPass = gBufferLoadRenderPass;
-        gBufferLoadFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
-
-        auto afterLightingFrameBufferDesc = Graphics::FrameBufferDesc{
-               .renderPass = afterLightingRenderPass,
-               .colorAttachments = {
-                   {lightingTexture.image, 0, true},
-                   {target->velocityTexture->image, 0, true},
-                   {target->stencilTexture->image, 0, false}
-               },
-               .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing},
-               .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
-        };
-        afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
-
-        afterLightingFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = afterLightingRenderPass,
-            .colorAttachments = {
-                {lightingTexture.image, 0, true},
-                {target->velocityTexture->image, 0, true},
-                {target->stencilTexture->image, 0, true}
-            },
-            .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing},
-            .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
-        };
-        afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
-
-        auto oceanDepthOnlyFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = oceanRenderPass,
-            .colorAttachments = {
-                {oceanStencilTexture.image, 0, true},
-                {oceanNormalTexture.image, 0, true},
-            },
-            .depthAttachment = {oceanDepthTexture.image, 0, true},
-            .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
-        };
-        oceanDepthOnlyFrameBuffer = graphicsDevice->CreateFrameBuffer(oceanDepthOnlyFrameBufferDesc);
-
-        auto outputFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = outputRenderPass,
-            .colorAttachments = {
-                {outputTexture.image, 0, true}
-            },
-            .extent = {uint32_t(width), uint32_t(height)}
-        };
-        outputFrameBuffer = graphicsDevice->CreateFrameBuffer(outputFrameBufferDesc);
 
     }
 

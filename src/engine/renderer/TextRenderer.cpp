@@ -25,64 +25,56 @@ namespace Atlas {
                 
                 RenderOutlined3D(commandList, textComp.font.Get(), textComp.text, textComp.GetTransformedPosition(),
                     textComp.GetTransformedRotation(), textComp.halfSize, textComp.textColor, textComp.outlineColor,
-                    textComp.outlineFactor, textComp.textScale, target->afterLightingFrameBufferWithStencil);
+                    textComp.outlineFactor, textComp.textScale);
 
             }
 
         }
 
         void TextRenderer::Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
-            const std::string& text, float x, float y, vec4 color, float scale,
-            const Ref<Graphics::FrameBuffer>& frameBuffer) {
+            const std::string& text, float x, float y, vec4 color, float scale) {
 
-            float width = (float)(frameBuffer == nullptr ? viewport->width : frameBuffer->extent.width);
-            float height = (float)(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
-
-            vec4 clipArea = vec4(0.0f, 0.0f, width, height);
-            vec4 blendArea = vec4(0.0f, 0.0f, width, height);
+            auto renderArea = GetRenderArea(commandList, viewport);
+            vec4 area = vec4(0.0f, 0.0f, renderArea);
 
             RenderOutlined(commandList, viewport, font, text, x, y, color, vec4(1.0f), 0.0f,
-                clipArea, blendArea, scale, frameBuffer);
+                area, area, scale);
 
         }
 
         void TextRenderer::Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
             const std::string& text, float x, float y, vec4 color, vec4 clipArea, vec4 blendArea,
-            float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
+            float scale) {
 
             RenderOutlined(commandList, viewport, font, text, x, y, color, vec4(1.0f), 0.0f,
-                clipArea, blendArea, scale, frameBuffer);
+                clipArea, blendArea, scale);
 
         }
 
         void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
             const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-            float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
+            float scale) {
 
-            float width = (float)(frameBuffer == nullptr ? viewport->width : frameBuffer->extent.width);
-            float height = (float)(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
-
-            vec4 clipArea = vec4(0.0f, 0.0f, width, height);
-            vec4 blendArea = vec4(0.0f, 0.0f, width, height);
+            auto renderArea = GetRenderArea(commandList, viewport);
+            vec4 area = vec4(0.0f, 0.0f, renderArea);
 
             RenderOutlined(commandList, viewport, font, text, x, y, color, outlineColor, outlineScale,
-                clipArea, blendArea, scale, frameBuffer);
+                area, area, scale);
 
         }
 
         void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
             const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-            vec4 clipArea, vec4 blendArea, float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
+            vec4 clipArea, vec4 blendArea, float scale) {
 
             int32_t characterCount;
 
-            auto pipelineConfig = GetPipelineConfig(frameBuffer);
+            auto pipelineConfig = GetPipelineConfig(commandList);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
             commandList->BindPipeline(pipeline);
 
-            float width = float(frameBuffer == nullptr ? viewport->width : frameBuffer->extent.width);
-            float height = float(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
+            auto renderArea = GetRenderArea(commandList, viewport);
 
             auto instances = CalculateCharacterInstances(font, text, &characterCount);
             ReserveInstances(characterCount);
@@ -94,7 +86,7 @@ namespace Atlas {
                 .characterColor = color,
                 .outlineColor = outlineColor,
                 .textOffset = vec2(x, y),
-                .renderArea = vec2(width, height),
+                .renderArea = renderArea,
                 .textScale = scale,
                 .outlineScale = outlineScale,
                 .edgeValue = float(font->edgeValue) / 255.0f,
@@ -116,13 +108,13 @@ namespace Atlas {
 
         void TextRenderer::RenderOutlined3D(Graphics::CommandList* commandList, Ref<Font> font, const std::string& text, 
                 vec3 position, quat rotation, vec2 halfSize, vec4 color, vec4 outlineColor, float outlineScale,
-                float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
+                float scale) {
 
             scale /= 16.0f;
 
             int32_t characterCount;
 
-            auto pipelineConfig = GetPipelineConfig(frameBuffer, true);
+            auto pipelineConfig = GetPipelineConfig(commandList, true);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
             commandList->BindPipeline(pipeline);
@@ -271,15 +263,27 @@ namespace Atlas {
 
         }
 
-        PipelineConfig TextRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer, bool threeDimensional) {
+        vec2 TextRenderer::GetRenderArea(Graphics::CommandList* commandList, const Ref<Viewport>& viewport) {
+
+            if (!commandList->renderingInUse)
+                return vec2(viewport->width, viewport->height);
+
+            auto extent = commandList->renderingInUse->GetExtent();
+            return vec2(extent.width, extent.height);
+
+        }
+
+        PipelineConfig TextRenderer::GetPipelineConfig(Graphics::CommandList* commandList, bool threeDimensional) {
+
+            const auto& rendering = commandList->renderingInUse;
 
             auto shaderConfig = ShaderConfig {
                 {"text.vsh", VK_SHADER_STAGE_VERTEX_BIT},
                 {"text.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             Graphics::GraphicsPipelineDesc pipelineDesc {
-                .swapChain = device->swapChain,
-                .frameBuffer = frameBuffer,
+                .swapChain = rendering ? nullptr : device->swapChain,
+                .attachmentFormats = rendering ? Graphics::AttachmentFormats(*rendering) : Graphics::AttachmentFormats(),
                 .assemblyInputInfo = Graphics::Initializers::InitPipelineInputAssemblyStateCreateInfo(
                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP),
                 .depthStencilInputInfo = Graphics::Initializers::InitPipelineDepthStencilStateCreateInfo(

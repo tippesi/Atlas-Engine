@@ -37,8 +37,8 @@ namespace Atlas {
                 auto variant = int32_t(impostor->interpolation) | int32_t(impostor->pixelDepthOffset) << 1 | int32_t(useInstanceBuffer) << 2;
                 if (variant != boundVariant) {
                     boundVariant = variant;
-                    auto config = GetPipelineConfig(target->gBufferFrameBuffer, impostor->interpolation, impostor->pixelDepthOffset,
-                        useInstanceBuffer);
+                    auto config = GetPipelineConfig(Graphics::AttachmentFormats(target->gBufferRendering),
+                        impostor->interpolation, impostor->pixelDepthOffset, useInstanceBuffer);
                     auto pipeline = PipelineManager::GetPipeline(config);
                     commandList->BindPipeline(pipeline);
                     constantsRange = pipeline->shader->GetPushConstantRange("constants");
@@ -110,7 +110,14 @@ namespace Atlas {
 
             commandList->BeginCommands();
 
-            auto frameBuffer = GenerateFrameBuffer(impostor);
+            Graphics::ImageDesc depthImageDesc = {
+                .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
+                .width = uint32_t(impostor->resolution),
+                .height = uint32_t(impostor->resolution),
+                .format = VK_FORMAT_D32_SFLOAT
+            };
+            auto depthImage = graphicsDevice->CreateImage(depthImageDesc);
 
             Buffer::UniformBuffer uniformBuffer(sizeof(Uniforms));
             Uniforms uniforms = {
@@ -122,7 +129,7 @@ namespace Atlas {
             mesh->vertexArray.Bind(commandList);
 
             {
-                // Transfer all framebuffer images including all mips into same layout/access as end of render pass
+                // Transfer all images including all mips into same layout/access as end of render pass
 
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
@@ -131,7 +138,6 @@ namespace Atlas {
                     {impostor->normalTexture->image,               layout, access},
                     {impostor->roughnessMetalnessAoTexture->image, layout, access},
                     {impostor->depthTexture->image, layout, access},
-                    {frameBuffer->GetDepthImage(), layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
@@ -139,18 +145,25 @@ namespace Atlas {
 
             for (size_t i = 0; i < viewMatrices.size(); i++) {
 
-                frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture->image, i, 0);
-                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture->image, i, 1);
-                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture->image, i, 2);
-                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture->image, i, 3);
-
-                commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
+                auto layer = uint32_t(i);
+                auto clear = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                auto rendering = Graphics::RenderingDesc{
+                    .colorAttachments = {
+                        {.image = impostor->baseColorTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->normalTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->roughnessMetalnessAoTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->depthTexture->image, .layer = layer, .loadOp = clear}
+                    },
+                    .depthAttachment = {.image = depthImage, .loadOp = clear},
+                    .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
+                };
+                commandList->BeginRendering(rendering);
 
                 for (size_t j = 0; j < mesh->data.subData.size(); j++) {
 
                     auto subData = &mesh->data.subData[j];
                     auto material = subData->material;
-                    auto config = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
+                    auto config = GetPipelineConfigForSubData(subData, mesh, Graphics::AttachmentFormats(rendering));
                     auto pipeline = PipelineManager::GetPipeline(config);
 
                     commandList->BindPipeline(pipeline);
@@ -188,7 +201,7 @@ namespace Atlas {
 
                 }
 
-                commandList->EndRenderPass();
+                commandList->EndRendering();
 
             }
 
@@ -227,62 +240,7 @@ namespace Atlas {
 
         }
 
-        Ref<Graphics::FrameBuffer> ImpostorRenderer::GenerateFrameBuffer(Mesh::Impostor *impostor) {
-
-            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
-
-            Graphics::ImageDesc imageDesc = {
-                .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
-                .width = uint32_t(impostor->resolution),
-                .height = uint32_t(impostor->resolution),
-                .format = VK_FORMAT_D32_SFLOAT
-            };
-            auto depthImage = graphicsDevice->CreateImage(imageDesc);
-
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_R16_SFLOAT}
-            };
-
-            for (auto &attachment : colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = VK_FORMAT_D32_SFLOAT,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            };
-
-            auto renderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3]},
-                .depthAttachment = depthAttachment,
-                .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
-            };
-            auto renderPass = graphicsDevice->CreateRenderPass(renderPassDesc);
-
-            auto frameBufferDesc = Graphics::FrameBufferDesc{
-                .renderPass = renderPass,
-                .colorAttachments = {
-                    {impostor->baseColorTexture->image, 0, true},
-                    {impostor->normalTexture->image, 0, true},
-                    {impostor->roughnessMetalnessAoTexture->image, 0, true},
-                    {impostor->depthTexture->image, 0, true}
-                },
-                .depthAttachment = {depthImage, 0, true},
-                .extent = {uint32_t(impostor->resolution), uint32_t(impostor->resolution)}
-            };
-            return graphicsDevice->CreateFrameBuffer(frameBufferDesc);
-
-        }
-
-        PipelineConfig ImpostorRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
+        PipelineConfig ImpostorRenderer::GetPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
             bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer) {
 
             auto shaderConfig = ShaderConfig {
@@ -290,7 +248,7 @@ namespace Atlas {
                 {"impostor/impostor.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = frameBuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 
@@ -307,7 +265,7 @@ namespace Atlas {
         }
 
         PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(const Mesh::MeshSubData *subData,
-            Mesh::Mesh *mesh, const Ref<Graphics::FrameBuffer>& frameBuffer) {
+            Mesh::Mesh *mesh, const Graphics::AttachmentFormats& attachmentFormats) {
 
             auto material = subData->material;
 
@@ -316,7 +274,7 @@ namespace Atlas {
                 {"impostor/generate.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = frameBuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 

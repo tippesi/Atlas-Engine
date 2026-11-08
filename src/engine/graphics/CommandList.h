@@ -5,7 +5,7 @@
 #include "Barrier.h"
 #include "MemoryManager.h"
 #include "SwapChain.h"
-#include "RenderPass.h"
+#include "Rendering.h"
 #include "Pipeline.h"
 #include "Buffer.h"
 #include "DescriptorPool.h"
@@ -15,6 +15,7 @@
 #include "../common/Ref.h"
 
 #include <atomic>
+#include <optional>
 #include <array>
 #include <vector>
 #include <span>
@@ -54,10 +55,11 @@ namespace Atlas {
 
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
-            void BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
-                bool clear = false);
-
             void EndRenderPass();
+
+            void BeginRendering(const RenderingDesc& desc);
+
+            void EndRendering();
 
             void BeginQuery(const Ref<QueryPool>& queryPool, uint32_t queryIdx);
 
@@ -204,9 +206,8 @@ namespace Atlas {
             QueueType queueType;
 
             SwapChain* swapChainInUse = nullptr;
-            Ref<RenderPass> renderPassInUse = nullptr;
+            std::optional<RenderingDesc> renderingInUse;
             Ref<Pipeline> pipelineInUse = nullptr;
-            Ref<FrameBuffer> frameBufferInUse = nullptr;
 
             std::vector<CommandList*> dependencies;
             ExecutionOrder executionOrder = ExecutionOrder::Sequential;
@@ -357,8 +358,9 @@ namespace Atlas {
 
             std::vector<Semaphore> semaphores;
 
+            VkExtent2D renderingExtent = {};
+
             // Resources that are used each frame where we don't want allocate memory each time
-            std::vector<VkClearAttachment> clearAttachments;
             std::vector<VkImageMemoryBarrier> attachmentBarriers;
 
         };

@@ -304,7 +304,7 @@ namespace Atlas {
                 {"ddgi/probeDebug.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = target->gBufferFrameBuffer,
+                .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                 .vertexInputInfo = sphereArray.GetVertexInputState(),
                 .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
                     VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)

@@ -85,12 +85,11 @@ namespace Atlas::Editor::UI {
     private:
         void RenderVisualization(float exposure);
 
-        void CreateRenderPass();
+        void CreateRendering();
 
         bool firstFrame = true;
 
-        Ref<Graphics::RenderPass> renderPass;
-        Ref<Graphics::FrameBuffer> frameBuffer;
+        Graphics::RenderingDesc rendering;
 
     };
 

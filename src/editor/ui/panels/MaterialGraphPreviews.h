@@ -47,8 +47,7 @@ namespace Atlas::Editor::UI {
         Scope<MaterialGraph::Evaluator> evaluator;
 
         Ref<Texture::Texture2D> atlas;
-        Ref<Graphics::RenderPass> renderPass;
-        Ref<Graphics::FrameBuffer> frameBuffer;
+        Graphics::RenderingDesc rendering;
         bool isAtlasPrepared = false;
 
         std::unordered_map<uint32_t, Entry> entries;

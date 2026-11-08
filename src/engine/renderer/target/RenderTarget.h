@@ -4,8 +4,7 @@
 #include "texture/Texture2D.h"
 #include "texture/Texture2DArray.h"
 #include "texture/Texture3D.h"
-#include "graphics/RenderPass.h"
-#include "graphics/Framebuffer.h"
+#include "graphics/Rendering.h"
 #include "graphics/CommandList.h"
 
 namespace Atlas::Renderer {
@@ -260,21 +259,12 @@ namespace Atlas::Renderer {
 
         bool IsUsedForPathTracing() const;
 
-        Ref<Graphics::RenderPass> gBufferRenderPass;
-        Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
-        // Continues the G-buffer, compatible with the pipelines of the render pass above
-        Ref<Graphics::RenderPass> gBufferLoadRenderPass;
-        Ref<Graphics::FrameBuffer> gBufferLoadFrameBuffer;
-
-        Ref<Graphics::RenderPass> afterLightingRenderPass;
-        Ref<Graphics::FrameBuffer> afterLightingFrameBuffer;
-        Ref<Graphics::FrameBuffer> afterLightingFrameBufferWithStencil;
-
-        Ref<Graphics::RenderPass> oceanRenderPass;
-        Ref<Graphics::FrameBuffer> oceanDepthOnlyFrameBuffer;
-
-        Ref<Graphics::RenderPass> outputRenderPass;
-        Ref<Graphics::FrameBuffer> outputFrameBuffer;
+        Graphics::RenderingDesc gBufferRendering;
+        // Continues the G-buffer, compatible with the pipelines of the pass above
+        Graphics::RenderingDesc gBufferLoadRendering;
+        Graphics::RenderingDesc afterLightingRendering;
+        Graphics::RenderingDesc oceanDepthRendering;
+        Graphics::RenderingDesc outputRendering;
 
         Texture::Texture2D outputTexture;
         Texture::Texture2D bloomTexture;
@@ -322,9 +312,7 @@ namespace Atlas::Renderer {
         int32_t sampleCount = 0;
 
     private:
-        void CreateRenderPasses();
-
-        void CreateFrameBuffers();
+        void CreateRenderings();
 
         void CreateReflectionData();
 

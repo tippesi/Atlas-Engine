@@ -148,9 +148,8 @@ namespace Atlas {
                         pipelineConfig = GetMainPipelineConfig();
                     }
                     else {
-                        commandList->BeginRenderPass(target->outputRenderPass,
-                            target->outputFrameBuffer, true);
-                        pipelineConfig = GetMainPipelineConfig(target->outputFrameBuffer);
+                        commandList->BeginRendering(target->outputRendering);
+                        pipelineConfig = GetMainPipelineConfig(Graphics::AttachmentFormats(target->outputRendering));
                     }
 
                     pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
@@ -181,9 +180,11 @@ namespace Atlas {
 
                     commandList->Draw(6, 1, 0, 0);
 
-                    commandList->EndRenderPass();
-
-                    if (texture) {
+                    if (!texture) {
+                        commandList->EndRenderPass();
+                    }
+                    else {
+                        commandList->EndRendering();
                         CopyToTexture(&target->outputTexture, texture, commandList);
                     }
                 }
@@ -494,14 +495,14 @@ namespace Atlas {
 
         }
 
-        PipelineConfig PostProcessRenderer::GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer) {
+        PipelineConfig PostProcessRenderer::GetMainPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats) {
 
             auto shaderConfig = ShaderConfig{
                 { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
                 { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = frameBuffer
+                .attachmentFormats = attachmentFormats
             };
             pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 

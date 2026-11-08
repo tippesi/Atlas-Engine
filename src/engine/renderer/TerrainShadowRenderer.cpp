@@ -23,17 +23,15 @@ namespace Atlas {
 
             terrain->distanceVertexArray.Bind(commandList);
 
-            LightMap usedLightMap;
             for (const auto& [lightEntity, light, updateShadow] : scene->renderState.allLights) {
 
                 if (!updateShadow || !light.shadow->allowTerrain)
                     continue;
 
                 auto shadow = light.shadow;
-                auto frameBuffer = GetOrCreateFrameBuffer(lightEntity, light);
-                usedLightMap[lightEntity] = frameBuffer;
-
-                frameBuffer->depthAttachment.layer = 0;
+                auto rendering = Graphics::RenderingDesc{
+                    .depthAttachment = {.image = shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image}
+                };
 
                 // We don't want to render to the long range component if it exists
                 auto componentCount = shadow->viewCount;
@@ -42,11 +40,11 @@ namespace Atlas {
 
                     auto component = &shadow->views[i];
 
-                    frameBuffer->depthAttachment.layer = i;
+                    rendering.depthAttachment.layer = uint32_t(i);
 
-                    commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer);
+                    commandList->BeginRendering(rendering);
 
-                    auto config = GeneratePipelineConfig(frameBuffer, terrain.Get());
+                    auto config = GeneratePipelineConfig(Graphics::AttachmentFormats(rendering), terrain.Get());
                     auto pipeline = PipelineManager::GetPipeline(config);
 
                     commandList->BindPipeline(pipeline);
@@ -92,17 +90,15 @@ namespace Atlas {
 
                     }
 
-                    commandList->EndRenderPass();
+                    commandList->EndRendering();
 
                 }
 
             }
 
-            lightMap = usedLightMap;
-
         }
 
-        PipelineConfig TerrainShadowRenderer::GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
+        PipelineConfig TerrainShadowRenderer::GeneratePipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
             Ref<Terrain::Terrain> &terrain) {
 
             const auto shaderConfig = ShaderConfig {
@@ -110,7 +106,7 @@ namespace Atlas {
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = framebuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = terrain->distanceVertexArray.GetVertexInputState(),
             };
 
@@ -118,40 +114,6 @@ namespace Atlas {
             pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 
             return PipelineConfig(shaderConfig, pipelineDesc);
-
-        }
-
-        Ref<Graphics::FrameBuffer> TerrainShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity, const LightComponent& light) {
-
-            auto shadow = light.shadow;
-
-            /*
-            if (lightMap.contains(entity)) {
-                return lightMap[entity];
-            }
-            else {
-                
-            }
-            */
-
-            Graphics::RenderPassDepthAttachment attachment = {
-                    .imageFormat = shadow->useCubemap ? shadow->cubemap->format :
-                                   shadow->maps->format,
-                    .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-                    .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-            Graphics::RenderPassDesc renderPassDesc = {
-                .depthAttachment = { attachment }
-            };
-            auto renderPass = device->CreateRenderPass(renderPassDesc);
-
-            Graphics::FrameBufferDesc frameBufferDesc = {
-                .renderPass = renderPass,
-                .depthAttachment = { shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image, 0, true},
-                .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
-            };
-            return device->CreateFrameBuffer(frameBufferDesc);
 
         }
 

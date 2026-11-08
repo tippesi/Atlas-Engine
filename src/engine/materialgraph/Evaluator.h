@@ -34,7 +34,8 @@ namespace Atlas::MaterialGraph {
         void Bind(Graphics::CommandList* commandList);
 
         // Without a mesh the shader draws a plane
-        PipelineConfig GetPipelineConfig(const EvaluationShader& shader, const Ref<Graphics::FrameBuffer>& frameBuffer, Mesh::Mesh* mesh);
+        PipelineConfig GetPipelineConfig(const EvaluationShader& shader, const Graphics::AttachmentFormats& attachmentFormats,
+            Mesh::Mesh* mesh);
 
         Buffer::VertexArray planeVertexArray;
 

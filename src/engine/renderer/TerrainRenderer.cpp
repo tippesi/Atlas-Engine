@@ -214,7 +214,7 @@ namespace Atlas {
                 };
 
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .frameBuffer = target->gBufferFrameBuffer,
+                    .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                     .vertexInputInfo = terrain->vertexArray.GetVertexInputState(),
                 };
 
@@ -233,7 +233,7 @@ namespace Atlas {
                 };
 
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .frameBuffer = target->gBufferFrameBuffer,
+                    .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                     .vertexInputInfo = terrain->distanceVertexArray.GetVertexInputState(),
                 };
 
