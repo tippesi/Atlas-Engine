@@ -867,6 +867,21 @@ namespace Atlas {
                 if (!physicalDeviceFeatures.samplerAnisotropy) {
                     return 0;
                 }
+
+                // Render passes are recorded with dynamic rendering
+                if (physicalDeviceProperties.apiVersion < VK_API_VERSION_1_3) {
+                    return 0;
+                }
+
+                VkPhysicalDeviceVulkan13Features features13 = {};
+                features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+                VkPhysicalDeviceFeatures2 features = {};
+                features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+                features.pNext = &features13;
+                vkGetPhysicalDeviceFeatures2(device, &features);
+                if (!features13.dynamicRendering) {
+                    return 0;
+                }
             }
 
             return score;

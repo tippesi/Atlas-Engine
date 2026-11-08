@@ -55,7 +55,7 @@ namespace Atlas {
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
             void BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
-                bool clear = false, bool autoAdjustImageLayouts = false);
+                bool clear = false);
 
             void EndRenderPass();
 
@@ -318,6 +318,8 @@ namespace Atlas {
 
             void ResetDescriptors();
 
+            void AttachmentBarriers(bool beginPass);
+
             const VkExtent2D GetRenderPassExtent() const;
 
             const VkSemaphore GetSemaphore(VkQueue queue);
@@ -354,8 +356,8 @@ namespace Atlas {
             std::vector<Semaphore> semaphores;
 
             // Resources that are used each frame where we don't want allocate memory each time
-            std::vector<VkClearValue> clearValues;
             std::vector<VkClearAttachment> clearAttachments;
+            std::vector<VkImageMemoryBarrier> attachmentBarriers;
 
         };
 

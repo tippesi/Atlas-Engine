@@ -3,8 +3,6 @@
 #include "Common.h"
 #include "Image.h"
 
-#include <vector>
-
 namespace Atlas {
 
     namespace Graphics {
@@ -47,47 +45,22 @@ namespace Atlas {
 
             VkClearValue colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 1.0f } } };
             VkClearValue depthClearValue = { .depthStencil = {.depth = 1.0f } };
-
-            bool completeInConstructor = true;
         };
 
+        // Describes the attachments of a pass, which is recorded with dynamic rendering
         class RenderPass {
 
         public:
             RenderPass(GraphicsDevice* device, const RenderPassDesc& desc);
 
-            ~RenderPass();
-
-            void AttachColor(const RenderPassColorAttachment& attachment, uint32_t slot);
-
-            void AttachDepth(const RenderPassDepthAttachment& attachment);
-
-            void Complete();
-
-            VkRenderPass renderPass = {};
-
             RenderPassColorAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
             RenderPassDepthAttachment depthAttachment;
 
+            // Number of color attachment slots up to the last valid one
             uint32_t colorAttachmentCount = 0;
 
             VkClearValue colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 1.0f } } };
             VkClearValue depthClearValue = { .depthStencil = {.depth = 1.0f } };
-
-            bool isComplete = false;
-        
-        private:
-            void CompleteColorAttachment(const RenderPassColorAttachment& attachment, uint32_t slot);
-
-            void CompleteDepthAttachment(const RenderPassDepthAttachment& attachment);
-
-            std::vector<VkAttachmentDescription2> attachmentDescriptions;
-            std::vector<VkSubpassDependency2> subPassDependencies;
-
-            std::vector<VkAttachmentReference2> colorAttachmentReferences;
-            VkAttachmentReference2 depthAttachmentReference;
-
-            GraphicsDevice* device;
 
         };
 

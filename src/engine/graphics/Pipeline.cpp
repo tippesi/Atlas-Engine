@@ -90,11 +90,31 @@ namespace Atlas {
             pipelineInfo.pTessellationState = desc.tessellationInfo.patchControlPoints > 0 ? &desc.tessellationInfo : VK_NULL_HANDLE;
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.layout = layout;
-            pipelineInfo.renderPass = frameBuffer ? frameBuffer->renderPass->renderPass : desc.swapChain->renderPass;
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.basePipelineIndex = 0;
             pipelineInfo.pDynamicState = &dynamicStateInfo;
+
+            // Frame buffer passes use dynamic rendering, the swap chain still has a render pass
+            VkFormat colorAttachmentFormats[MAX_COLOR_ATTACHMENTS] = {};
+            VkPipelineRenderingCreateInfo renderingInfo = {};
+            renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+            if (frameBuffer) {
+                const auto& renderPass = frameBuffer->renderPass;
+                for (uint32_t i = 0; i < renderPass->colorAttachmentCount; i++) {
+                    const auto& attachment = renderPass->colorAttachments[i];
+                    colorAttachmentFormats[i] = attachment.isValid ? attachment.imageFormat : VK_FORMAT_UNDEFINED;
+                }
+                renderingInfo.colorAttachmentCount = renderPass->colorAttachmentCount;
+                renderingInfo.pColorAttachmentFormats = colorAttachmentFormats;
+                if (renderPass->depthAttachment.isValid)
+                    renderingInfo.depthAttachmentFormat = renderPass->depthAttachment.imageFormat;
+
+                pipelineInfo.pNext = &renderingInfo;
+            }
+            else {
+                pipelineInfo.renderPass = desc.swapChain->renderPass;
+            }
 
             auto result = vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1,
                 &pipelineInfo, nullptr, &pipeline);
@@ -220,16 +240,13 @@ namespace Atlas {
             std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
 
             auto& renderPass = frameBuffer->renderPass;
-            for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+            for (uint32_t i = 0; i < renderPass->colorAttachmentCount; i++) {
                 auto& rpColorAttachment = renderPass->colorAttachments[i];
                 auto& fbColorAttachment = frameBuffer->colorAttachments[i];
 
-                // No valid attachment in the render pass, continue
-                if (!rpColorAttachment.isValid) continue;
-
                 auto blendAttachment = blendAttachmentState;
                 // Disable writing to attachments that are not in the frame buffer
-                if (!fbColorAttachment.writeEnabled) {
+                if (!rpColorAttachment.isValid || !fbColorAttachment.writeEnabled) {
                     blendAttachment.colorWriteMask = 0;
                 }
                 colorBlendAttachments.push_back(blendAttachment);

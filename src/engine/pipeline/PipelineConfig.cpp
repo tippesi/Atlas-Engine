@@ -124,14 +124,8 @@ namespace Atlas {
         }
 
         if (!isCompute) {
-            auto renderPass = graphicsPipelineDesc.frameBuffer ?
-                              graphicsPipelineDesc.frameBuffer->renderPass->renderPass
-                              : graphicsPipelineDesc.swapChain->renderPass;
-
             // To get correct results we would need to hash all the state, but that doesn't
             // really work well in terms of performance.
-            // Note: We have to keep the amount of 
-            // HashCombine(variantHash, renderPass);
             HashCombine(variantHash, graphicsPipelineDesc.colorBlendAttachment.blendEnable);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.polygonMode);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.cullMode);

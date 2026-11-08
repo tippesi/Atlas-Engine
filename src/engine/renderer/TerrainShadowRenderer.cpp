@@ -33,10 +33,7 @@ namespace Atlas {
                 auto frameBuffer = GetOrCreateFrameBuffer(lightEntity, light);
                 usedLightMap[lightEntity] = frameBuffer;
 
-                if (frameBuffer->depthAttachment.layer != 0) {
-                    frameBuffer->depthAttachment.layer = 0;
-                    frameBuffer->Refresh();
-                }
+                frameBuffer->depthAttachment.layer = 0;
 
                 // We don't want to render to the long range component if it exists
                 auto componentCount = shadow->viewCount;
@@ -45,10 +42,7 @@ namespace Atlas {
 
                     auto component = &shadow->views[i];
 
-                    if (frameBuffer->depthAttachment.layer != i) {
-                        frameBuffer->depthAttachment.layer = i;
-                        frameBuffer->Refresh();
-                    }
+                    frameBuffer->depthAttachment.layer = i;
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer);
 

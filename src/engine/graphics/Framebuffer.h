@@ -23,7 +23,6 @@ namespace Atlas {
             FrameBufferAttachmentDesc depthAttachment;
 
             VkExtent2D extent;
-            uint32_t layers = 1;
         };
 
         struct FrameBufferAttachment {
@@ -34,13 +33,10 @@ namespace Atlas {
             bool writeEnabled = true;
         };
 
+        // The images a render pass renders into, their views are taken when the pass begins
         class FrameBuffer {
         public:
             FrameBuffer(GraphicsDevice* device, const FrameBufferDesc& desc);
-
-            ~FrameBuffer();
-
-            void Refresh();
 
             void ChangeColorAttachmentImage(const Ref<Image>& image, const uint32_t slot);
 
@@ -52,22 +48,12 @@ namespace Atlas {
 
             Ref<Image>& GetDepthImage();
 
-            VkFramebuffer frameBuffer;
-
             Ref<RenderPass> renderPass;
 
             FrameBufferAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
             FrameBufferAttachment depthAttachment;
 
-            std::vector<VkImageView> imageViews;
-
             VkExtent2D extent;
-            uint32_t layers;
-
-            bool isComplete = false;
-
-        private:
-            GraphicsDevice* device;
 
         };
 

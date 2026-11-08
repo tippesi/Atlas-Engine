@@ -55,7 +55,6 @@ namespace Atlas {
                 if (light && light->comp.type == LightType::DirectionalLight && light->comp.shadow->longRange) {
                     // Need to go through render passes to make sure images have transitioned
                     frameBuffer->depthAttachment.layer = light->comp.shadow->viewCount - 1;
-                    frameBuffer->Refresh();
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
                     commandList->EndRenderPass();
                 }
@@ -81,10 +80,7 @@ namespace Atlas {
 
             lightMap[lightEntity] = frameBuffer;
 
-            if (frameBuffer->depthAttachment.layer != shadowPass->layer) {
-                frameBuffer->depthAttachment.layer = shadowPass->layer;
-                frameBuffer->Refresh();
-            }
+            frameBuffer->depthAttachment.layer = shadowPass->layer;
 
             auto shadow = light.shadow;
 

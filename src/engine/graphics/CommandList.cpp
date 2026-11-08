@@ -140,71 +140,51 @@ namespace Atlas {
         }
 
         void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
-            bool clear, bool autoAdjustImageLayouts) {
+            bool clear) {
 
-            if (autoAdjustImageLayouts) {
-                std::vector<VkImageMemoryBarrier> barriers;
-                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    auto& rpAttachment = renderPass->colorAttachments[i];
-                    auto& fbAttachment = frameBuffer->colorAttachments[i];
-                    if (!fbAttachment.isValid) continue;
-                    if (fbAttachment.image->layout != rpAttachment.initialLayout) {
-                        auto barrier = Initializers::InitImageMemoryBarrier(fbAttachment.image->image,
-                            fbAttachment.image->layout, rpAttachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
-                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-
-                        barriers.push_back(barrier);
-                        fbAttachment.image->layout = rpAttachment.initialLayout;
-                    }
-                }
-
-                auto& rpAttachment = renderPass->depthAttachment;
-                auto& fbAttachment = frameBuffer->depthAttachment;
-                if (fbAttachment.isValid && fbAttachment.image->layout != rpAttachment.initialLayout) {
-                    auto barrier = Initializers::InitImageMemoryBarrier(fbAttachment.image->image,
-                        fbAttachment.image->layout, rpAttachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
-                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-                    barriers.push_back(barrier);
-                    fbAttachment.image->layout = rpAttachment.initialLayout;
-                }
-
-                if (barriers.size()) {
-                    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                        0, 0, nullptr, 0, nullptr, uint32_t(barriers.size()), barriers.data());
-                }
-            }
-
-            VkRenderPassBeginInfo rpInfo = {};
-            rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            rpInfo.pNext = nullptr;
-            rpInfo.renderPass = renderPass->renderPass;
-            rpInfo.renderArea.offset.x = 0;
-            rpInfo.renderArea.offset.y = 0;
-            rpInfo.renderArea.extent = frameBuffer->extent;
-            rpInfo.framebuffer = frameBuffer->frameBuffer;
-
-            clearValues.clear();
-            for (auto& attachment : renderPass->colorAttachments) {
-                if (!attachment.isValid) continue;
-                if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                    clearValues.push_back(renderPass->colorClearValue);
-                }
-            }
-            auto& attachment = renderPass->depthAttachment;
-            if (attachment.isValid && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                clearValues.push_back(renderPass->depthClearValue);
-            }
-
-            if (clearValues.size()) {
-                rpInfo.clearValueCount = uint32_t(clearValues.size());
-                rpInfo.pClearValues = clearValues.data();
-            }
-
-            vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
             renderPassInUse = renderPass;
             frameBufferInUse = frameBuffer;
+
+            AttachmentBarriers(true);
+
+            VkRenderingAttachmentInfo colorAttachmentInfos[MAX_COLOR_ATTACHMENTS] = {};
+            for (uint32_t i = 0; i < renderPass->colorAttachmentCount; i++) {
+                const auto& rpAttachment = renderPass->colorAttachments[i];
+                const auto& fbAttachment = frameBuffer->colorAttachments[i];
+
+                auto& attachmentInfo = colorAttachmentInfos[i];
+                attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+                if (!fbAttachment.isValid) continue;
+
+                AE_ASSERT(fbAttachment.layer < fbAttachment.image->layers && "Image doesn't contain this layer");
+                attachmentInfo.imageView = fbAttachment.image->attachmentViews[fbAttachment.layer];
+                attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                attachmentInfo.loadOp = rpAttachment.loadOp;
+                attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                attachmentInfo.clearValue = renderPass->colorClearValue;
+            }
+
+            VkRenderingAttachmentInfo depthAttachmentInfo = {};
+            depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+            const auto& fbDepthAttachment = frameBuffer->depthAttachment;
+            if (fbDepthAttachment.isValid) {
+                AE_ASSERT(fbDepthAttachment.layer < fbDepthAttachment.image->layers && "Image doesn't contain this layer");
+                depthAttachmentInfo.imageView = fbDepthAttachment.image->attachmentViews[fbDepthAttachment.layer];
+                depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                depthAttachmentInfo.loadOp = renderPass->depthAttachment.loadOp;
+                depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                depthAttachmentInfo.clearValue = renderPass->depthClearValue;
+            }
+
+            VkRenderingInfo renderingInfo = {};
+            renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+            renderingInfo.renderArea.extent = frameBuffer->extent;
+            renderingInfo.layerCount = 1;
+            renderingInfo.colorAttachmentCount = renderPass->colorAttachmentCount;
+            renderingInfo.pColorAttachments = colorAttachmentInfos;
+            renderingInfo.pDepthAttachment = fbDepthAttachment.isValid ? &depthAttachmentInfo : nullptr;
+
+            vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
             if (clear) ClearAttachments();
 
@@ -212,26 +192,12 @@ namespace Atlas {
 
         void CommandList::EndRenderPass() {
 
-            vkCmdEndRenderPass(commandBuffer);
-
-            // We need to keep track of the image layouts
             if (swapChainInUse) {
-                // TODO...
+                vkCmdEndRenderPass(commandBuffer);
             }
             if (renderPassInUse) {
-                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    const auto& rpAttachment = renderPassInUse->colorAttachments[i];
-                    const auto& fbAttachment = frameBufferInUse->colorAttachments[i];
-                    if (!fbAttachment.isValid) continue;
-                    fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
-                }
-                if (frameBufferInUse->depthAttachment.isValid) {
-                    const auto& rpAttachment = renderPassInUse->depthAttachment;
-                    const auto& fbAttachment = frameBufferInUse->depthAttachment;
-                    fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
-                }
+                vkCmdEndRendering(commandBuffer);
+                AttachmentBarriers(false);
             }
 
             swapChainInUse = nullptr;
@@ -1413,6 +1379,52 @@ namespace Atlas {
             descriptorBindingData.Reset();
             descriptorPool->ResetAllocationCounters();
             descriptorsChanged = true;
+
+        }
+
+        void CommandList::AttachmentBarriers(bool beginPass) {
+
+            // Dynamic rendering doesn't transition the attachment layouts, the masks come from the render pass
+            attachmentBarriers.clear();
+            VkPipelineStageFlags srcStageMask = 0, dstStageMask = 0;
+
+            auto addBarrier = [&](const FrameBufferAttachment& attachment, const auto& rpAttachment, VkImageLayout attachmentLayout) {
+
+                auto& image = attachment.image;
+                auto barrier = beginPass ?
+                    Initializers::InitImageMemoryBarrier(image->image, rpAttachment.initialLayout, attachmentLayout,
+                        rpAttachment.srcAccessMask, rpAttachment.dstAccessMask, image->aspectFlags) :
+                    Initializers::InitImageMemoryBarrier(image->image, attachmentLayout, rpAttachment.outputLayout,
+                        rpAttachment.dstAccessMask, VK_ACCESS_SHADER_READ_BIT, image->aspectFlags);
+                barrier.subresourceRange.baseArrayLayer = attachment.layer;
+                attachmentBarriers.push_back(barrier);
+
+                srcStageMask |= beginPass ? rpAttachment.srcStageMask : rpAttachment.dstStageMask;
+                dstStageMask |= beginPass ? rpAttachment.dstStageMask : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+                if (!beginPass) {
+                    image->layout = rpAttachment.outputLayout;
+                    image->accessMask = VK_ACCESS_SHADER_READ_BIT;
+                }
+
+            };
+
+            for (uint32_t i = 0; i < renderPassInUse->colorAttachmentCount; i++) {
+                const auto& fbAttachment = frameBufferInUse->colorAttachments[i];
+                if (!fbAttachment.isValid) continue;
+
+                addBarrier(fbAttachment, renderPassInUse->colorAttachments[i], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            }
+
+            if (frameBufferInUse->depthAttachment.isValid) {
+                addBarrier(frameBufferInUse->depthAttachment, renderPassInUse->depthAttachment,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            }
+
+            if (attachmentBarriers.empty()) return;
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr,
+                uint32_t(attachmentBarriers.size()), attachmentBarriers.data());
 
         }
 

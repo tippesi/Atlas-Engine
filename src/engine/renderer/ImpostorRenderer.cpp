@@ -143,7 +143,6 @@ namespace Atlas {
                 frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture->image, i, 1);
                 frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture->image, i, 2);
                 frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture->image, i, 3);
-                frameBuffer->Refresh();
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 

@@ -179,8 +179,6 @@ namespace Atlas {
             GPUProfiler::BeginQuery("Main renderer");
             GPUProfiler::BeginQuery("Main model");
 
-            mainFrameBuffer->Refresh();
-
             {
                 mainRenderPass->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
                 commandList->BeginRenderPass(mainRenderPass, mainFrameBuffer, true);
