@@ -40,9 +40,8 @@ namespace Atlas::Editor::UI {
 
         void ShowGeneratedCode();
 
-        void Undo(const ResourceHandle<MaterialGraph::Graph>& graph);
-
-        void Redo(const ResourceHandle<MaterialGraph::Graph>& graph);
+        // The graph got an earlier state, e.g. by an undo of the editor
+        void OnGraphRestored(const MaterialGraph::Graph& graph);
 
         void SelectAll(const MaterialGraph::Graph& graph);
 
@@ -169,12 +168,6 @@ namespace Atlas::Editor::UI {
 
         std::vector<uint32_t> GetNodesInFrame(const MaterialGraph::Graph& graph, const MaterialGraph::Node& frame) const;
 
-        void PushUndo(const MaterialGraph::Graph& graph);
-
-        void RestoreState(MaterialGraph::Graph& graph, const std::string& state);
-
-        std::string Serialize(const MaterialGraph::Graph& graph) const;
-
         void Frame(const MaterialGraph::Graph& graph);
 
         vec2 GetNodeSize(const MaterialGraph::Node& node) const;
@@ -230,9 +223,6 @@ namespace Atlas::Editor::UI {
         bool compileRequested = false;
         // The picker of a color is a popup, its item doesn't tell when the value is final
         bool colorEdited = false;
-
-        std::vector<std::string> undoStack;
-        std::vector<std::string> redoStack;
 
         static std::string clipboard;
 

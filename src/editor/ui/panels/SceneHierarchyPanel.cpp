@@ -497,7 +497,11 @@ namespace Atlas::Editor::UI {
 
             if (finished) {
                 if (!cancelled && !renameBuffer.empty() && renameBuffer != nameComponent->name) {
+                    if (history)
+                        history->BeginEdit(scene, { entity });
                     nameComponent->name = renameBuffer;
+                    if (history)
+                        history->EndEdit("Rename " + renameBuffer);
                     sceneChanged = true;
                 }
                 renamingEntity = Scene::Entity();
@@ -525,7 +529,13 @@ namespace Atlas::Editor::UI {
             ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, iconAlpha))) {
             isNodeVisible = !isNodeVisible;
 
+            std::vector<Scene::Entity> meshEntities;
+            CollectMeshEntities(entity, meshEntities);
+            if (history)
+                history->BeginEdit(scene, meshEntities);
             ToggleHierarchyVisibility(entity, isNodeVisible);
+            if (history)
+                history->EndEdit(isNodeVisible ? "Show " + nodeName : "Hide " + nodeName);
             sceneChanged = true;
 
             // We are checking the new state here
@@ -574,15 +584,21 @@ namespace Atlas::Editor::UI {
         *selectionChanged |= createEntity | deleteEntity | duplicateEntity;
 
         if (droppedEntities) {
+            std::vector<Scene::Entity> movedEntities;
             for (auto ecsEntity : selectedEntities) {
                 Scene::Entity dropEntity(ecsEntity, &scene->entityManager);
+                if (entity != dropEntity)
+                    movedEntities.push_back(dropEntity);
+            }
 
-                if (entity == dropEntity)
-                    continue;
-
+            if (history)
+                history->BeginChange(scene, movedEntities);
+            for (auto dropEntity : movedEntities) {
                 dropEntity.SetParent(entity);
                 sceneChanged = true;
             }
+            if (history)
+                history->EndChange("Move entities", movedEntities);
 
         }
 
@@ -719,11 +735,21 @@ namespace Atlas::Editor::UI {
 
         sceneChanged |= !selectedEntities.empty();
 
+        std::vector<Scene::Entity> deletedEntities;
         for (auto ecsEntity : selectedEntities) {
             Scene::Entity entity(ecsEntity, &scene->entityManager);
             if (entity.IsValid())
-                scene->DestroyEntity(entity);
+                deletedEntities.push_back(entity);
         }
+
+        if (history)
+            history->BeginChange(scene, deletedEntities);
+        // Descendants of deleted entities are already gone
+        for (auto entity : deletedEntities)
+            if (entity.IsValid())
+                scene->DestroyEntity(entity);
+        if (history)
+            history->EndChange(deletedEntities.size() == 1 ? "Delete entity" : "Delete entities", {});
 
         ClearSelection();
 
@@ -737,6 +763,9 @@ namespace Atlas::Editor::UI {
 
         ClearSelection();
 
+        if (history)
+            history->BeginChange(scene, {});
+
         for (auto ecsEntity : oldSelectedEntites) {
             Scene::Entity entity(ecsEntity, &scene->entityManager);
             if (!entity.IsValid())
@@ -749,6 +778,13 @@ namespace Atlas::Editor::UI {
                 newEntity.SetParent(scene->GetRootEntity());
 
             SelectEntity(newEntity, true);
+        }
+
+        if (history) {
+            std::vector<Scene::Entity> newEntities;
+            for (auto ecsEntity : selectedEntities)
+                newEntities.emplace_back(ecsEntity, &scene->entityManager);
+            history->EndChange(newEntities.size() == 1 ? "Duplicate entity" : "Duplicate entities", newEntities);
         }
 
     }
@@ -812,6 +848,20 @@ namespace Atlas::Editor::UI {
             matchSet.insert(entity);
 
         return matches;
+
+    }
+
+    void SceneHierarchyPanel::CollectMeshEntities(Scene::Entity entity, std::vector<Scene::Entity>& entities) {
+
+        if (entity.HasComponent<MeshComponent>())
+            entities.push_back(entity);
+
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+        if (!hierarchyComponent)
+            return;
+
+        for (auto child : hierarchyComponent->GetChildren())
+            CollectMeshEntities(child, entities);
 
     }
 

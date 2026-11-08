@@ -56,6 +56,11 @@ namespace Atlas::Editor::UI {
 
         void AcceptViewportDrop() override;
 
+        // The settings and materials of the mesh, the mesh data isn't edited
+        json SaveState() const override;
+
+        void RestoreState(const json& j) override;
+
     private:
         void RenderSkeleton();
 

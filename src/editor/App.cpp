@@ -309,12 +309,19 @@ namespace Atlas::Editor {
                     sceneWindow->scene->WaitForAsyncWorkCompletion();
             }
 
+            // The preview scenes of asset editors are updated even if their viewport isn't rendered
+            for (const auto& assetEditorWindow : assetEditorWindows) {
+                if (assetEditorWindow->scene)
+                    assetEditorWindow->scene->WaitForAsyncWorkCompletion();
+            }
+
         };
 
         if (window.IsOccluded()) {
             waitForSceneUpdates();
             return;
         }
+
 
         auto& config = Singletons::config;
 
@@ -413,6 +420,17 @@ namespace Atlas::Editor {
                     ImGui::Separator();
                     ImGui::MenuItem("Import files", nullptr, &importFiles);
                     */
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("Edit")) {
+                    auto history = GetActiveHistory();
+                    auto undoName = history ? history->GetUndoName() : std::string();
+                    auto redoName = history ? history->GetRedoName() : std::string();
+                    if (ImGui::MenuItem(undoName.empty() ? "Undo" : ("Undo " + undoName).c_str(), "Ctrl+Z", false, CanUndo()))
+                        Undo();
+                    if (ImGui::MenuItem(redoName.empty() ? "Redo" : ("Redo " + redoName).c_str(), "Ctrl+Shift+Z", false, CanRedo()))
+                        Redo();
                     ImGui::EndMenu();
                 }
 
@@ -689,6 +707,58 @@ namespace Atlas::Editor {
 
     }
 
+    void App::Undo() {
+
+        if (activeAssetEditorWindow) {
+            activeAssetEditorWindow->Undo();
+            return;
+        }
+
+        auto sceneWindow = GetActiveSceneWindow();
+        if (sceneWindow && !sceneWindow->isPlaying && sceneWindow->history.Undo())
+            sceneWindow->ApplyHistoryChange();
+
+    }
+
+    void App::Redo() {
+
+        if (activeAssetEditorWindow) {
+            activeAssetEditorWindow->Redo();
+            return;
+        }
+
+        auto sceneWindow = GetActiveSceneWindow();
+        if (sceneWindow && !sceneWindow->isPlaying && sceneWindow->history.Redo())
+            sceneWindow->ApplyHistoryChange();
+
+    }
+
+    bool App::CanUndo() const {
+
+        auto history = GetActiveHistory();
+        return history && history->CanUndo();
+
+    }
+
+    bool App::CanRedo() const {
+
+        auto history = GetActiveHistory();
+        return history && history->CanRedo();
+
+    }
+
+    const UndoHistory* App::GetActiveHistory() const {
+
+        if (activeAssetEditorWindow)
+            return &activeAssetEditorWindow->history;
+
+        auto sceneWindow = GetActiveSceneWindow();
+        if (!sceneWindow || sceneWindow->isPlaying)
+            return nullptr;
+        return &sceneWindow->history.history;
+
+    }
+
     Ref<UI::SceneWindow> App::GetActiveSceneWindow() const {
 
         if (sceneWindows.empty())
@@ -841,6 +911,14 @@ namespace Atlas::Editor {
             .action = [this]() { GetActiveSceneWindow()->StopPlaying(); },
             .isEnabled = [this, hasScene]() { return hasScene() && GetActiveSceneWindow()->isPlaying; } });
 
+        // Undo of the asset editor or scene in front
+        commandPalette.Register({ .category = "Edit", .name = "Undo", .shortcut = "Ctrl+Z",
+            .action = [this]() { Undo(); },
+            .isEnabled = [this]() { return CanUndo(); } });
+        commandPalette.Register({ .category = "Edit", .name = "Redo", .shortcut = "Ctrl+Shift+Z",
+            .action = [this]() { Redo(); },
+            .isEnabled = [this]() { return CanRedo(); } });
+
         // Material graph of the material editor in front
         auto materialEditor = [this]() {
             return std::dynamic_pointer_cast<UI::MaterialEditorWindow>(activeAssetEditorWindow);
@@ -858,12 +936,6 @@ namespace Atlas::Editor {
             .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Show generated code",
             .action = [materialEditor]() { materialEditor()->graphPanel.ShowGeneratedCode(); }, .isEnabled = hasMaterialGraph });
-        commandPalette.Register({ .category = "Material graph", .name = "Undo", .shortcut = "Ctrl+Z",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Undo(window->material->graph); },
-            .isEnabled = hasMaterialGraph });
-        commandPalette.Register({ .category = "Material graph", .name = "Redo", .shortcut = "Ctrl+Y",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Redo(window->material->graph); },
-            .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Select all nodes", .shortcut = "Ctrl+A",
             .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.SelectAll(*window->material->graph.Get()); },
             .isEnabled = hasMaterialGraph });
@@ -957,76 +1029,77 @@ namespace Atlas::Editor {
         auto viewport = ImGui::GetMainViewport();
         auto flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
 
-        auto divider = []() {
-            ImGui::SameLine();
-            ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-            ImGui::SameLine();
+        auto gap = [](float width) {
+            ImGui::SameLine(0.0f, width);
+            };
+
+        // Plain text shares the vertical center with the labels of the chips
+        auto text = [&](const char* str, ImGuiCol color) {
+            auto pos = ImGui::GetCursorScreenPos();
+            auto height = ImGui::GetFrameHeight();
+            ImGui::Dummy(ImVec2(ImGui::CalcTextSize(str).x, height));
+            ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x, GetCapCenteredTextY(pos.y + height * 0.5f)),
+                ImGui::GetColorU32(color), str);
             };
 
         ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Theme::Base());
-        if (ImGui::BeginViewportSideBar("##Status bar", viewport, ImGuiDir_Down, ImGui::GetFrameHeight(), flags)) {
+        if (ImGui::BeginViewportSideBar("##Status bar", viewport, ImGuiDir_Down, ImGui::GetFrameHeight() + 4.0f, flags)) {
             if (ImGui::BeginMenuBar()) {
+                auto window = ImGui::GetCurrentWindow();
+                window->DrawList->AddLine(window->Pos, ImVec2(window->Pos.x + window->Size.x, window->Pos.y),
+                    ImGui::GetColorU32(ImGuiCol_Border));
+
                 // Dragging something onto the button opens the content browser as a drop target
-                auto contentBrowserHovered = RenderDrawerButton(contentBrowserWindow, "Content browser", "Ctrl+B");
+                auto contentBrowserHovered = RenderDrawerButton(contentBrowserWindow, IconType::Folder, "Content browser", "Ctrl+B");
                 auto isDragging = ImGui::IsDragDropActive();
                 drawerSpringTime = isDragging && contentBrowserHovered ? drawerSpringTime + ImGui::GetIO().DeltaTime : 0.0f;
                 if (drawerSpringTime > 0.35f)
                     contentBrowserWindow.show = true;
 
-                ImGui::SameLine();
-                RenderDrawerButton(logWindow, "Log", "Ctrl+J");
-
                 auto warningCount = logWindow.GetUnseenWarningCount();
                 auto errorCount = logWindow.GetUnseenErrorCount();
-                if (warningCount > 0) {
-                    ImGui::SameLine(0.0f, 2.0f);
-                    ImGui::TextColored(Theme::Warning(), "%d", warningCount);
-                    ImGui::SetItemTooltip("%d new warnings", warningCount);
-                }
-                if (errorCount > 0) {
-                    ImGui::SameLine(0.0f, 4.0f);
-                    ImGui::TextColored(Theme::Error(), "%d", errorCount);
-                    ImGui::SetItemTooltip("%d new errors", errorCount);
-                }
 
-                divider();
+                gap(4.0f);
+                RenderDrawerButton(logWindow, IconType::Log, "Log", "Ctrl+J", errorCount, warningCount);
 
+                gap(16.0f);
+
+                // Context is plain information, it stays quiet next to the things that can be clicked
                 auto sceneWindow = GetActiveSceneWindow();
+                std::string guizmoText;
                 if (sceneWindow && sceneWindow->scene.IsLoaded()) {
-                    if (sceneWindow->isPlaying)
-                        ImGui::TextColored(Theme::Success(), "Playing");
-                    else
-                        ImGui::TextDisabled("Editing");
+                    if (sceneWindow->isPlaying) {
+                        RenderStatusChip("##Playing", IconType::Play, "Playing", Theme::Success(), Theme::Success(0.16f), Theme::Success(0.16f));
+                        gap(8.0f);
+                    }
 
-                    divider();
-                    ImGui::TextUnformatted(sceneWindow->scene->name.c_str());
+                    text(sceneWindow->scene->name.c_str(), ImGuiCol_Text);
 
-                    divider();
                     const auto& selection = sceneWindow->sceneHierarchyPanel.selectedEntities;
                     auto selectedEntity = sceneWindow->sceneHierarchyPanel.selectedEntity;
-                    if (selection.empty()) {
-                        ImGui::TextDisabled("Nothing selected");
-                    }
-                    else if (selection.size() == 1 && selectedEntity.IsValid()) {
-                        auto nameComponent = selectedEntity.TryGetComponent<NameComponent>();
-                        auto name = nameComponent ? nameComponent->name : "Entity " + std::to_string(selectedEntity);
-                        ImGui::TextDisabled("Selected");
-                        ImGui::SameLine();
-                        ImGui::TextUnformatted(name.c_str());
-                    }
-                    else {
-                        ImGui::Text("%d entities selected", int32_t(selection.size()));
+                    if (!selection.empty()) {
+                        gap(6.0f);
+                        text("/", ImGuiCol_TextDisabled);
+                        gap(6.0f);
+                        if (selection.size() == 1 && selectedEntity.IsValid()) {
+                            auto nameComponent = selectedEntity.TryGetComponent<NameComponent>();
+                            auto name = nameComponent ? nameComponent->name : "Entity " + std::to_string(selectedEntity);
+                            text(name.c_str(), ImGuiCol_Text);
+                        }
+                        else {
+                            text((std::to_string(selection.size()) + " entities").c_str(), ImGuiCol_Text);
+                        }
                     }
 
-                    divider();
                     const auto& guizmo = sceneWindow->guizmo;
-                    const char* modeName = guizmo.mode == ImGuizmo::OPERATION::ROTATE ? "Rotate" :
+                    guizmoText = guizmo.mode == ImGuizmo::OPERATION::ROTATE ? "Rotate" :
                         guizmo.mode == ImGuizmo::OPERATION::SCALE ? "Scale" : "Translate";
-                    ImGui::TextDisabled("%s, %s%s", modeName, guizmo.objectSpace ? "local" : "world",
-                        guizmo.snappingEnabled ? ", snapping" : "");
+                    guizmoText += guizmo.objectSpace ? " \xC2\xB7 Local" : " \xC2\xB7 World";
+                    if (guizmo.snappingEnabled)
+                        guizmoText += " \xC2\xB7 Snapping";
                 }
                 else {
-                    ImGui::TextDisabled("No scene open");
+                    text("No scene open", ImGuiCol_TextDisabled);
                 }
 
                 // Only long running work is worth to be mentioned, short jobs would just flicker
@@ -1034,49 +1107,41 @@ namespace Atlas::Editor {
                     JobSystem::GetPendingJobCount(JobPriority::Low);
                 backgroundJobTime = backgroundJobs > 0 ? backgroundJobTime + ImGui::GetIO().DeltaTime : 0.0f;
                 if (backgroundJobTime > 0.5f) {
-                    divider();
+                    gap(16.0f);
                     const char* dots[] = { ".", "..", "..." };
-                    ImGui::TextDisabled("%d background %s%s", backgroundJobs, backgroundJobs == 1 ? "job" : "jobs",
+                    char jobText[64];
+                    std::snprintf(jobText, sizeof(jobText), "%d background %s%s", backgroundJobs, backgroundJobs == 1 ? "job" : "jobs",
                         dots[int32_t(ImGui::GetTime() * 2.0) % 3]);
+                    text(jobText, ImGuiCol_TextDisabled);
                 }
 
-                // Performance on the right side
+                // Gizmo mode and performance on the right side
                 auto frameTime = Clock::GetAverage() * 1000.0f;
-                char rightText[64];
-                std::snprintf(rightText, sizeof(rightText), "%.1f ms  %.0f fps",
-                    frameTime, frameTime > 0.0f ? 1000.0f / frameTime : 0.0f);
+                char rightText[128];
+                std::snprintf(rightText, sizeof(rightText), "%s%s%.1f ms \xC2\xB7 %.0f fps", guizmoText.c_str(),
+                    guizmoText.empty() ? "" : "     ", frameTime, frameTime > 0.0f ? 1000.0f / frameTime : 0.0f);
                 auto rightWidth = ImGui::CalcTextSize(rightText).x + ImGui::GetStyle().ItemSpacing.x;
                 auto rightPos = ImGui::GetWindowContentRegionMax().x - rightWidth;
 
                 // The problem nobody has seen yet takes the room in between and opens the log
-                if (logWindow.GetUnseenWarningCount() + logWindow.GetUnseenErrorCount() > 0 && !logWindow.GetLastProblem().empty()) {
-                    divider();
-                    const auto& style = ImGui::GetStyle();
-                    auto maxWidth = rightPos - ImGui::GetCursorPosX() - 2.0f * style.ItemSpacing.x;
-                    const auto& problem = logWindow.GetLastProblem();
-                    auto textSize = ImGui::CalcTextSize(problem.c_str());
-
+                if (warningCount + errorCount > 0 && !logWindow.GetLastProblem().empty()) {
+                    gap(16.0f);
+                    auto maxWidth = rightPos - ImGui::GetCursorPosX() - 16.0f;
+                    auto isError = logWindow.IsLastProblemError();
+                    auto color = isError ? Theme::Error() : Theme::Warning();
+                    auto background = isError ? Theme::Error(0.1f) : Theme::Warning(0.1f);
+                    auto backgroundHovered = isError ? Theme::Error(0.22f) : Theme::Warning(0.22f);
                     if (maxWidth > 80.0f) {
-                        auto buttonWidth = std::min(textSize.x + 2.0f * style.FramePadding.x, maxWidth);
-                        ImGui::PushStyleColor(ImGuiCol_Text, logWindow.IsLastProblemError() ? Theme::Error() : Theme::Warning());
-                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-                        if (ImGui::ButtonEx("##Last problem", ImVec2(buttonWidth, 0.0f), ImGuiButtonFlags_PressedOnClick))
+                        if (RenderStatusChip("##Last problem", isError ? IconType::Error : IconType::Warning,
+                            logWindow.GetLastProblem().c_str(), color, background, backgroundHovered, maxWidth))
                             logWindow.show = true;
-                        auto rectMin = ImGui::GetItemRectMin();
-                        auto rectMax = ImGui::GetItemRectMax();
-                        auto textMaxX = rectMax.x - style.FramePadding.x;
-                        ImGui::RenderTextEllipsis(ImGui::GetWindowDrawList(), ImVec2(rectMin.x + style.FramePadding.x, rectMin.y + style.FramePadding.y),
-                            ImVec2(textMaxX, rectMax.y), textMaxX, textMaxX, problem.c_str(), nullptr, &textSize);
-                        ImGui::PopStyleVar();
-                        ImGui::PopStyleColor(2);
-                        ImGui::SetItemTooltip("Open the log");
+                        ImGui::SetItemTooltip("%s\nClick to open the log", logWindow.GetLastProblem().c_str());
                     }
                 }
 
                 if (rightPos > ImGui::GetCursorPosX()) {
                     ImGui::SameLine(rightPos);
-                    ImGui::TextDisabled("%s", rightText);
+                    text(rightText, ImGuiCol_TextDisabled);
                 }
 
                 ImGui::EndMenuBar();
@@ -1088,23 +1153,123 @@ namespace Atlas::Editor {
 
     }
 
-    bool App::RenderDrawerButton(UI::DrawerWindow& drawer, const char* label, const char* shortcut) {
+    bool App::RenderStatusChip(const char* id, IconType icon, const char* text, ImVec4 color,
+        ImVec4 background, ImVec4 backgroundHovered, float maxWidth, float trailingWidth) {
 
-        ImGui::PushStyleColor(ImGuiCol_Button, drawer.show ? Theme::Accent(0.3f) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, drawer.show ? Theme::Accent(0.4f) : ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, ImGui::GetStyle().FramePadding.y));
+        const float padding = 8.0f;
+        const float iconGap = 5.0f;
+
+        auto fontSize = ImGui::GetFontSize();
+        auto iconSize = fontSize;
+        auto textSize = ImGui::CalcTextSize(text);
+        auto width = std::min(padding + iconSize + iconGap + textSize.x + trailingWidth + padding, maxWidth);
+        auto height = ImGui::GetFrameHeight();
 
         // Pressing on click, since a drawer that is open closes itself when the mouse goes down outside of it
-        if (ImGui::ButtonEx(label, ImVec2(0.0f, 0.0f), ImGuiButtonFlags_PressedOnClick))
+        auto pos = ImGui::GetCursorScreenPos();
+        auto pressed = ImGui::InvisibleButton(id, ImVec2(width, height), ImGuiButtonFlags_PressedOnClick);
+        auto hovered = ImGui::IsItemHovered();
+
+        auto drawList = ImGui::GetWindowDrawList();
+        auto min = ImVec2(pos.x, pos.y + 2.0f);
+        auto max = ImVec2(pos.x + width, pos.y + height - 2.0f);
+        drawList->AddRectFilled(min, max, ImGui::GetColorU32(hovered ? backgroundHovered : background), 5.0f);
+
+        auto centerY = (min.y + max.y) * 0.5f;
+        auto iconMin = ImVec2(min.x + padding, centerY - iconSize * 0.5f);
+        auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->GetTintable(icon));
+        drawList->AddImage(set, iconMin, ImVec2(iconMin.x + iconSize, iconMin.y + iconSize),
+            ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f), ImGui::GetColorU32(color));
+
+        auto textMin = ImVec2(iconMin.x + iconSize + iconGap, GetCapCenteredTextY(centerY));
+        auto textMaxX = max.x - padding - trailingWidth;
+        ImGui::PushStyleColor(ImGuiCol_Text, color);
+        ImGui::RenderTextEllipsis(drawList, textMin, ImVec2(textMaxX, max.y), textMaxX, textMaxX, text, nullptr, &textSize);
+        ImGui::PopStyleColor();
+
+        return pressed;
+
+    }
+
+    float App::GetCapCenteredTextY(float centerY) {
+
+        // The line height includes room for descenders, labels look centered when their capitals are
+        auto font = ImGui::GetFont();
+        auto scale = ImGui::GetFontSize() / font->FontSize;
+        auto glyph = font->FindGlyph('H');
+        return centerY - (glyph->Y0 + glyph->Y1) * 0.5f * scale;
+
+    }
+
+    bool App::RenderDrawerButton(UI::DrawerWindow& drawer, IconType icon, const char* label, const char* shortcut,
+        int32_t errorCount, int32_t warningCount) {
+
+        const float badgeGap = 6.0f;
+        const float badgePadding = 5.0f;
+        const float badgeIconGap = 3.0f;
+
+        auto color = drawer.show ? ImGui::GetStyleColorVec4(ImGuiCol_Text) : Theme::TextMuted();
+        auto background = drawer.show ? Theme::Accent(0.35f) : Theme::TextMuted(0.12f);
+        auto backgroundHovered = drawer.show ? Theme::Accent(0.45f) : Theme::TextMuted(0.22f);
+
+        // New warnings and errors are shown as badges inside of the button
+        struct Badge {
+            IconType icon;
+            ImVec4 color;
+            int32_t count;
+            const char* name;
+            char text[16];
+            float width;
+        };
+        Badge badges[] = {
+            { IconType::Error, Theme::Error(), errorCount, "errors" },
+            { IconType::Warning, Theme::Warning(), warningCount, "warnings" }
+        };
+
+        auto badgeIconSize = ImGui::GetFontSize() * 0.9f;
+        auto trailingWidth = 0.0f;
+        for (auto& badge : badges) {
+            if (badge.count <= 0)
+                continue;
+            std::snprintf(badge.text, sizeof(badge.text), "%d", badge.count);
+            badge.width = badgePadding + badgeIconSize + badgeIconGap + ImGui::CalcTextSize(badge.text).x + badgePadding;
+            trailingWidth += badgeGap + badge.width;
+        }
+
+        if (RenderStatusChip(label, icon, label, color, background, backgroundHovered, FLT_MAX, trailingWidth))
             drawer.show = !drawer.show;
         auto hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
-        ImGui::PopStyleVar(3);
-        ImGui::PopStyleColor(2);
+        auto drawList = ImGui::GetWindowDrawList();
+        auto itemMin = ImGui::GetItemRectMin();
+        auto itemMax = ImGui::GetItemRectMax();
+        auto fontSize = ImGui::GetFontSize();
+        auto x = itemMax.x - 8.0f - trailingWidth;
+        const Badge* hoveredBadge = nullptr;
+        for (const auto& badge : badges) {
+            if (badge.count <= 0)
+                continue;
+            x += badgeGap;
+            auto min = ImVec2(x, itemMin.y + 5.0f);
+            auto max = ImVec2(x + badge.width, itemMax.y - 5.0f);
+            drawList->AddRectFilled(min, max, ImGui::GetColorU32(ImVec4(badge.color.x, badge.color.y, badge.color.z, 0.2f)), 4.0f);
 
-        ImGui::SetItemTooltip("Toggle %s (%s), right-click for options", label, shortcut);
+            auto iconMin = ImVec2(min.x + badgePadding, (itemMin.y + itemMax.y - badgeIconSize) * 0.5f);
+            auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->GetTintable(badge.icon));
+            drawList->AddImage(set, iconMin, ImVec2(iconMin.x + badgeIconSize, iconMin.y + badgeIconSize),
+                ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f), ImGui::GetColorU32(badge.color));
+            drawList->AddText(ImVec2(iconMin.x + badgeIconSize + badgeIconGap, GetCapCenteredTextY((itemMin.y + itemMax.y) * 0.5f)),
+                ImGui::GetColorU32(badge.color), badge.text);
+
+            if (hovered && ImGui::IsMouseHoveringRect(min, max))
+                hoveredBadge = &badge;
+            x += badge.width;
+        }
+
+        if (hoveredBadge)
+            ImGui::SetItemTooltip("%d new %s", hoveredBadge->count, hoveredBadge->name);
+        else
+            ImGui::SetItemTooltip("Toggle %s (%s), right-click for options", label, shortcut);
 
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Dock in layout", nullptr, drawer.pinned))
@@ -1215,6 +1380,8 @@ namespace Atlas::Editor {
                 { "Ctrl+J", "Toggle the log" },
                 { "Esc", "Close the open drawer" },
                 { "Ctrl+S", "Save the active scene" },
+                { "Ctrl+Z", "Undo in the scene or asset editor in front" },
+                { "Ctrl+Shift+Z / Y", "Redo" },
                 { "Ctrl+Q", "Stop playing" },
                 });
             section("Viewport", {
@@ -1250,7 +1417,6 @@ namespace Atlas::Editor {
                 { "Drag a pin", "Connect, drag an input to move its link" },
                 { "Alt+Click on a link", "Remove the link" },
                 { "Ctrl+C / V / D", "Copy, paste or duplicate the selection" },
-                { "Ctrl+Z / Y", "Undo / redo" },
                 { "F", "Show all nodes" },
                 { "Delete", "Delete the selection" },
                 });

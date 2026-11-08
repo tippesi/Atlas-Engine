@@ -30,6 +30,9 @@ namespace Atlas::Editor {
                 { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource.png") },
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
                 { IconType::MaterialGraph, Texture::Texture2D("editor/icons/materialGraph.png") },
+                { IconType::Log, Texture::Texture2D("editor/icons/log.png") },
+                { IconType::Error, Texture::Texture2D("editor/icons/error.png") },
+                { IconType::Warning, Texture::Texture2D("editor/icons/warning.png") },
             };
         }
 
@@ -106,6 +109,9 @@ namespace Atlas::Editor {
                 { IconType::PostProcessing, Texture::Texture2D("editor/icons/postProcessing.png") },
                 { IconType::ViewList, Texture::Texture2D("editor/icons/viewList.png") },
                 { IconType::ViewGrid, Texture::Texture2D("editor/icons/viewGrid.png") },
+                { IconType::Log, Texture::Texture2D("editor/icons/log.png") },
+                { IconType::Error, Texture::Texture2D("editor/icons/error.png") },
+                { IconType::Warning, Texture::Texture2D("editor/icons/warning.png") },
             };
         }
         else {
@@ -156,6 +162,9 @@ namespace Atlas::Editor {
                 { IconType::PostProcessing, Texture::Texture2D("editor/icons/postProcessing_light.png") },
                 { IconType::ViewList, Texture::Texture2D("editor/icons/viewList_light.png") },
                 { IconType::ViewGrid, Texture::Texture2D("editor/icons/viewGrid_light.png") },
+                { IconType::Log, Texture::Texture2D("editor/icons/log_light.png") },
+                { IconType::Error, Texture::Texture2D("editor/icons/error_light.png") },
+                { IconType::Warning, Texture::Texture2D("editor/icons/warning_light.png") },
             };
         }
 

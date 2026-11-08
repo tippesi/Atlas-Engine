@@ -49,7 +49,25 @@ namespace Atlas::Editor {
 
         void RenderStatusBar();
 
-        bool RenderDrawerButton(UI::DrawerWindow& drawer, const char* label, const char* shortcut);
+        // Undo and redo act on the asset editor or scene in front
+        void Undo();
+
+        void Redo();
+
+        bool CanUndo() const;
+
+        bool CanRedo() const;
+
+        const UndoHistory* GetActiveHistory() const;
+
+        bool RenderDrawerButton(UI::DrawerWindow& drawer, IconType icon, const char* label, const char* shortcut,
+            int32_t errorCount = 0, int32_t warningCount = 0);
+
+        // Clickable items of the status bar carry a background, such that they stand out from plain information
+        bool RenderStatusChip(const char* id, IconType icon, const char* text, ImVec4 color,
+            ImVec4 background, ImVec4 backgroundHovered, float maxWidth = FLT_MAX, float trailingWidth = 0.0f);
+
+        float GetCapCenteredTextY(float centerY);
 
         void UpdateDrawers();
 

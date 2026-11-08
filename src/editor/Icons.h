@@ -52,7 +52,10 @@ namespace Atlas::Editor {
         Wind,
         PostProcessing,
         ViewList,
-        ViewGrid
+        ViewGrid,
+        Log,
+        Error,
+        Warning
     };
 
     class Icons {

@@ -102,6 +102,9 @@ namespace Atlas::Editor::UI {
         bool typing = ImGui::GetIO().WantTextInput;
         if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false))
             Save();
+        if (inFocus && history.HandleShortcuts())
+            lastState = SaveState();
+        UpdateHistory();
         auto viewportShortcuts = inFocus && !controlDown && !typing && AllowsViewportShortcuts();
         if (viewportShortcuts && ImGui::IsKeyPressed(ImGuiKey_F, false))
             FocusAsset();
@@ -154,6 +157,46 @@ namespace Atlas::Editor::UI {
         auto distance = radius / std::sin(glm::radians(camera.fieldOfView) * 0.5f);
 
         camera.location = center - camera.direction * distance;
+
+    }
+
+    void AssetEditorWindow::Undo() {
+
+        if (history.Undo())
+            lastState = SaveState();
+
+    }
+
+    void AssetEditorWindow::Redo() {
+
+        if (history.Redo())
+            lastState = SaveState();
+
+    }
+
+    void AssetEditorWindow::UpdateHistory() {
+
+        auto interactionFinished = history.IsInteractionFinished();
+
+        if (lastState.is_null()) {
+            lastState = SaveState();
+            return;
+        }
+
+        if (!interactionFinished)
+            return;
+
+        auto state = SaveState();
+        if (state == lastState)
+            return;
+
+        auto before = lastState;
+        history.Push({
+            .name = "Edit " + Common::Path::GetFileName(GetAssetPath()),
+            .undo = [this, before]() { RestoreState(before); },
+            .redo = [this, state]() { RestoreState(state); }
+        });
+        lastState = state;
 
     }
 

@@ -9,6 +9,7 @@
 #include "loader/MaterialGraphLoader.h"
 #include "materialgraph/Baker.h"
 #include "materialgraph/MaterialGraphSerializer.h"
+#include "mesh/MeshSerializer.h"
 #include "loader/MeshLoader.h"
 #include "loader/MaterialLoader.h"
 
@@ -466,6 +467,35 @@ namespace Atlas::Editor::UI {
 
         AttachGraph(ResourceManager<MaterialGraph::Graph>::AddResource(path, ResourceOrigin::User, graph));
         graphPanel.FrameAll();
+
+    }
+
+    json MaterialEditorWindow::SaveState() const {
+
+        json j;
+        j["material"] = *material.Get();
+        if (material->HasGraph())
+            j["graph"] = *material->graph.Get();
+        return j;
+
+    }
+
+    void MaterialEditorWindow::RestoreState(const json& j) {
+
+        auto graph = material->graph;
+        j["material"].get_to(*material.Get());
+
+        // Graphs without a file aren't part of the material state, the attached one stays
+        auto restoredGraph = j["material"].contains("graphPath") ? material->graph :
+            j.contains("graph") ? graph : ResourceHandle<MaterialGraph::Graph>();
+        material->graph = graph;
+        if (restoredGraph.GetResource() != graph.GetResource())
+            AttachGraph(restoredGraph);
+
+        if (j.contains("graph") && material->HasGraph()) {
+            j["graph"].get_to(*material->graph.Get());
+            graphPanel.OnGraphRestored(*material->graph.Get());
+        }
 
     }
 

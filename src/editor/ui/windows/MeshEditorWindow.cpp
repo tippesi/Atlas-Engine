@@ -6,6 +6,8 @@
 #include "../Widgets.h"
 
 #include "loader/MeshLoader.h"
+#include "loader/MaterialLoader.h"
+#include "mesh/MeshSerializer.h"
 #include "physics/ShapesManager.h"
 
 #include <imgui_stdlib.h>
@@ -22,6 +24,94 @@ namespace Atlas::Editor::UI {
 
         Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
         Notifications::Push({ .message = "Saved mesh " + mesh.GetResource()->GetFileName() });
+
+    }
+
+    json MeshEditorWindow::SaveState() const {
+
+        if (!mesh.IsLoaded())
+            return json();
+
+        json j = {
+            {"mobility", int32_t(mesh->mobility)},
+            {"invertUVs", mesh->invertUVs},
+            {"cullBackFaces", mesh->cullBackFaces},
+            {"rayTrace", mesh->rayTrace},
+            {"vegetation", mesh->vegetation},
+            {"castShadow", mesh->castShadow},
+            {"allowedShadowCascades", mesh->allowedShadowCascades},
+            {"distanceCulling", mesh->distanceCulling},
+            {"shadowDistanceCulling", mesh->shadowDistanceCulling},
+            {"rayTraceDistanceCulling", mesh->rayTraceDistanceCulling},
+            {"minScreenSize", mesh->minScreenSize},
+            {"animationLodDistance", mesh->animationLodDistance},
+            {"animationMaxInterval", mesh->animationMaxInterval},
+            {"impostorDistance", mesh->impostorDistance},
+            {"impostorShadowDistance", mesh->impostorShadowDistance},
+            {"windNoiseTextureLod", mesh->windNoiseTextureLod},
+            {"windBendScale", mesh->windBendScale},
+            {"windWiggleScale", mesh->windWiggleScale},
+        };
+
+        auto materials = json::array();
+        for (const auto& material : mesh->data.materials) {
+            json materialJson;
+            if (material.IsLoaded())
+                materialJson["material"] = *material.Get();
+            if (material.IsValid() && !material.IsGenerated())
+                materialJson["path"] = material.GetResource()->path;
+            materials.push_back(materialJson);
+        }
+        j["materials"] = materials;
+
+        return j;
+
+    }
+
+    void MeshEditorWindow::RestoreState(const json& j) {
+
+        if (!mesh.IsLoaded() || j.is_null())
+            return;
+
+        mesh->mobility = Mesh::MeshMobility(j["mobility"].get<int32_t>());
+        j.at("invertUVs").get_to(mesh->invertUVs);
+        j.at("cullBackFaces").get_to(mesh->cullBackFaces);
+        j.at("rayTrace").get_to(mesh->rayTrace);
+        j.at("vegetation").get_to(mesh->vegetation);
+        j.at("castShadow").get_to(mesh->castShadow);
+        j.at("allowedShadowCascades").get_to(mesh->allowedShadowCascades);
+        j.at("distanceCulling").get_to(mesh->distanceCulling);
+        j.at("shadowDistanceCulling").get_to(mesh->shadowDistanceCulling);
+        j.at("rayTraceDistanceCulling").get_to(mesh->rayTraceDistanceCulling);
+        j.at("minScreenSize").get_to(mesh->minScreenSize);
+        j.at("animationLodDistance").get_to(mesh->animationLodDistance);
+        j.at("animationMaxInterval").get_to(mesh->animationMaxInterval);
+        j.at("impostorDistance").get_to(mesh->impostorDistance);
+        j.at("impostorShadowDistance").get_to(mesh->impostorShadowDistance);
+        j.at("windNoiseTextureLod").get_to(mesh->windNoiseTextureLod);
+        j.at("windBendScale").get_to(mesh->windBendScale);
+        j.at("windWiggleScale").get_to(mesh->windWiggleScale);
+
+        const auto& materials = j["materials"];
+        for (size_t i = 0; i < std::min(materials.size(), mesh->data.materials.size()); i++) {
+            const auto& materialJson = materials[i];
+            auto& material = mesh->data.materials[i];
+
+            // Another material was selected for the slot
+            if (materialJson.contains("path") && (!material.IsValid() || material.IsGenerated() ||
+                material.GetResource()->path != materialJson["path"].get<std::string>())) {
+                material = ResourceManager<Material>::GetOrLoadResourceWithLoader(materialJson["path"],
+                    ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+                for (auto& subData : mesh->data.subData)
+                    if (subData.materialIdx == int32_t(i))
+                        subData.material = material;
+            }
+
+            if (materialJson.contains("material") && material.IsLoaded())
+                materialJson["material"].get_to(*material.Get());
+        }
+
+        mesh->UpdatePipelines();
 
     }
 

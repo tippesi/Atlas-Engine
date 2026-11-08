@@ -27,6 +27,8 @@ namespace Atlas::Editor::UI {
         // id stays the same while the label gets room for the unsaved marker
         nameID = scene->name + "###" + scene->name;
 
+        sceneHierarchyPanel.history = &history;
+
     }
 
     SceneWindow::~SceneWindow() {
@@ -91,6 +93,9 @@ namespace Atlas::Editor::UI {
         if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false) && !isPlaying) {
             SaveScene();
         }
+
+        if (inFocus && !isPlaying && scene.IsLoaded() && history.HandleShortcuts())
+            ApplyHistoryChange();
         
         if (controlDown && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
@@ -243,6 +248,9 @@ namespace Atlas::Editor::UI {
         if (!isPlaying && (propertiesEdited || sceneHierarchyPanel.sceneChanged))
             hasUnsavedChanges = true;
         sceneHierarchyPanel.sceneChanged = false;
+
+        if (!isPlaying && scene.IsLoaded())
+            history.Update(scene.Get(), sceneHierarchyPanel.selectedEntities);
         sectionScope.Next("Overlays");
 
         if (sceneHierarchyPanel.focusRequested) {
@@ -288,8 +296,10 @@ namespace Atlas::Editor::UI {
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
         if (!path.empty()) {
+            history.BeginChange(scene.Get(), {});
             auto entity = Serializer::DeserializePrefab(scene.Get(), path);
             PushEntityIntoSceneHierarchy(entity);
+            history.EndChange("Add " + Common::Path::GetFileNameWithoutExtension(path), { entity });
             hasUnsavedChanges = true;
         }
 
@@ -978,6 +988,8 @@ namespace Atlas::Editor::UI {
         default: break;
         }
 
+        history.BeginChange(scene.Get(), {});
+
         auto entity = scene->CreateEntity();
         entity.AddComponent<NameComponent>(name);
 
@@ -1034,9 +1046,33 @@ namespace Atlas::Editor::UI {
             break;
         }
 
+        history.EndChange("Create " + std::string(name), { entity });
+
         sceneHierarchyPanel.SelectEntity(entity);
 
         return entity;
+
+    }
+
+    void SceneWindow::ApplyHistoryChange() {
+
+        hasUnsavedChanges = true;
+
+        auto changedEntities = history.GetChangedEntities();
+        if (!changedEntities.empty()) {
+            sceneHierarchyPanel.ClearSelection();
+            for (auto entity : changedEntities)
+                sceneHierarchyPanel.SelectEntity(entity, true);
+        }
+        else {
+            std::erase_if(sceneHierarchyPanel.selectedEntities, [&](ECS::Entity entity) {
+                return !scene->entityManager.Valid(entity);
+                });
+            if (!sceneHierarchyPanel.selectedEntity.IsValid())
+                sceneHierarchyPanel.ClearSelection();
+        }
+
+        scenePropertiesPanel.entityPropertiesPanel.transformComponentPanel.Refresh();
 
     }
 
@@ -1154,6 +1190,8 @@ namespace Atlas::Editor::UI {
         if (!viewedCameraEntity.IsValid() || !viewedCameraEntity.HasComponent<CameraComponent>())
             return;
 
+        history.BeginEdit(scene.Get(), { viewedCameraEntity });
+
         const auto& camera = cameraEntity.GetComponent<CameraComponent>();
         auto& sceneCamera = viewedCameraEntity.GetComponent<CameraComponent>();
 
@@ -1173,6 +1211,8 @@ namespace Atlas::Editor::UI {
         sceneCamera.exposure = camera.exposure;
         sceneCamera.thirdPersonDistance = camera.thirdPersonDistance;
         hasUnsavedChanges = true;
+
+        history.EndEdit("Apply view to camera");
 
         auto nameComponent = viewedCameraEntity.TryGetComponent<NameComponent>();
         Notifications::Push({ .message = "Applied the view to " + (nameComponent ? nameComponent->name : std::string("the camera")) });

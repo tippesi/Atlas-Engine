@@ -55,6 +55,10 @@ namespace Atlas::Editor::UI {
 
         void RenderViewportSettings() override;
 
+        json SaveState() const override;
+
+        void RestoreState(const json& j) override;
+
     private:
         void Init();
 

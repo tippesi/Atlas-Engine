@@ -5,6 +5,8 @@
 #include "../panels/ViewportPanel.h"
 
 #include "scene/Scene.h"
+#include "../../UndoHistory.h"
+#include "common/SerializationHelper.h"
 
 namespace Atlas::Editor::UI {
 
@@ -26,6 +28,10 @@ namespace Atlas::Editor::UI {
         // Moves the camera such that the whole asset is in view
         void FocusAsset();
 
+        void Undo();
+
+        void Redo();
+
         Ref<Scene::Scene> scene;
         Scene::Entity entity;
         Scene::Entity cameraEntity;
@@ -42,6 +48,8 @@ namespace Atlas::Editor::UI {
 
         bool showGrid = true;
         bool showBounds = false;
+
+        UndoHistory history;
 
     protected:
         // Whether the asset is loaded and the preview can be created
@@ -84,6 +92,11 @@ namespace Atlas::Editor::UI {
         // Heading with the asset name, its path and the save button
         void RenderHeading(const char* saveTooltip);
 
+        // State of the asset for the undo history, it is compared once an interaction finished
+        virtual json SaveState() const { return json(); }
+
+        virtual void RestoreState(const json& j) {}
+
         Panel propertiesPanel = Panel("Properties");
 
     private:
@@ -91,7 +104,11 @@ namespace Atlas::Editor::UI {
 
         void RegisterViewportOverlay();
 
+        void UpdateHistory();
+
         bool focusRequested = false;
+
+        json lastState;
 
     };
 

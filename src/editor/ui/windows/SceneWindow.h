@@ -69,6 +69,9 @@ namespace Atlas::Editor::UI {
         // Draws the navigation mesh and the test path, right clicks set the points of the path
         void ApplyNavigationTools();
 
+        // Selects what the last undo or redo changed
+        void ApplyHistoryChange();
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel scenePropertiesPanel;
@@ -96,6 +99,8 @@ namespace Atlas::Editor::UI {
 
         // Shown as a red star in the title, cleared when saving
         bool hasUnsavedChanges = false;
+
+        SceneHistory history;
 
         bool hasMainCamera = false;
         bool hasPlayer = false;

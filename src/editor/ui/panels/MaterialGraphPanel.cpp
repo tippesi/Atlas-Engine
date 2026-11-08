@@ -166,23 +166,17 @@ namespace Atlas::Editor::UI {
         if (definition->kind == NodeKind::Parameter) {
             ImGui::InputTextWithHint("Group", "No group", &selected->group);
             ImGui::SetItemTooltip("Materials show parameters of the same group below a heading");
-            if (ImGui::IsItemActivated())
-                PushUndo(graph);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
 
             ImGui::InputInt("Order", &selected->order);
             ImGui::SetItemTooltip("Materials show smaller numbers first");
-            if (ImGui::IsItemActivated())
-                PushUndo(graph);
             if (ImGui::IsItemDeactivatedAfterEdit() || ImGui::IsItemEdited())
                 compileRequested = true;
 
             if (definition->valueType != ValueType::Texture && !definition->isColor) {
                 ImGui::DragFloatRange2("Range", &selected->range.x, &selected->range.y, 0.01f, 0.0f, 0.0f, "Min %.3g", "Max %.3g");
                 ImGui::SetItemTooltip("Materials get a slider within these limits. Without a range the values are free");
-                if (ImGui::IsItemActivated())
-                    PushUndo(graph);
                 if (ImGui::IsItemDeactivatedAfterEdit())
                     compileRequested = true;
             }
@@ -195,7 +189,6 @@ namespace Atlas::Editor::UI {
             auto texture = textureSelectionPanel.Render(selected->texture, textureChanged);
             textureSelectionPanel.Reset();
             if (textureChanged) {
-                PushUndo(graph);
                 selected->texture = texture;
                 compileRequested = true;
             }
@@ -203,7 +196,6 @@ namespace Atlas::Editor::UI {
             const char* fallbacks[] = { "White", "Black", "Flat normal" };
             auto fallback = int32_t(selected->value.y);
             if (ImGui::Combo("Without a texture", &fallback, fallbacks, IM_ARRAYSIZE(fallbacks))) {
-                PushUndo(graph);
                 selected->value.y = float(fallback);
                 compileRequested = true;
             }
@@ -218,7 +210,6 @@ namespace Atlas::Editor::UI {
         if (definition->kind == NodeKind::VertexOutput) {
             auto derive = selected->value.x > 0.0f;
             if (ImGui::Checkbox("Derive normals from displacement", &derive)) {
-                PushUndo(graph);
                 selected->value.x = derive ? 1.0f : 0.0f;
                 compileRequested = true;
             }
@@ -267,8 +258,6 @@ namespace Atlas::Editor::UI {
 
     void MaterialGraphPanel::Reset() {
 
-        undoStack.clear();
-        redoStack.clear();
         selection.clear();
         layouts.clear();
         movedWithFrames.clear();
@@ -307,25 +296,11 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void MaterialGraphPanel::Undo(const ResourceHandle<Graph>& graphHandle) {
+    void MaterialGraphPanel::OnGraphRestored(const Graph& graph) {
 
-        if (undoStack.empty() || !graphHandle.IsLoaded())
-            return;
-
-        redoStack.push_back(Serialize(*graphHandle.Get()));
-        RestoreState(*graphHandle.Get(), undoStack.back());
-        undoStack.pop_back();
-
-    }
-
-    void MaterialGraphPanel::Redo(const ResourceHandle<Graph>& graphHandle) {
-
-        if (redoStack.empty() || !graphHandle.IsLoaded())
-            return;
-
-        undoStack.push_back(Serialize(*graphHandle.Get()));
-        RestoreState(*graphHandle.Get(), redoStack.back());
-        redoStack.pop_back();
+        std::erase_if(selection, [&](uint32_t id) { return graph.GetNode(id) == nullptr; });
+        compileRequested = true;
+        modified = true;
 
     }
 
@@ -773,8 +748,6 @@ namespace Atlas::Editor::UI {
             changed = ImGui::DragScalarN("##Value", ImGuiDataType_Float, &value.x, components, 0.01f, nullptr, nullptr, "%.3g");
         }
 
-        if (ImGui::IsItemActivated())
-            PushUndo(*currentGraph);
         if (changed)
             node.inputValues[input.name] = value;
         // Values are part of the generated code, so they wait until the value is final
@@ -804,7 +777,6 @@ namespace Atlas::Editor::UI {
             auto isOn = node.value.x > 0.0f;
             auto changed = ImGui::Checkbox("On##Value", &isOn);
             if (changed) {
-                PushUndo(*currentGraph);
                 node.value.x = isOn ? 1.0f : 0.0f;
                 compileRequested = true;
             }
@@ -823,9 +795,6 @@ namespace Atlas::Editor::UI {
         else {
             changed = ImGui::DragScalarN("##Value", ImGuiDataType_Float, &node.value.x, components, 0.01f, nullptr, nullptr, "%.3g");
         }
-
-        if (ImGui::IsItemActivated())
-            PushUndo(*currentGraph);
 
         // The default of a parameter isn't part of the code, so it can be applied while dragging
         if (definition.kind == NodeKind::Parameter && changed)
@@ -1040,8 +1009,6 @@ namespace Atlas::Editor::UI {
 
         if (interaction == Interaction::MovingNodes) {
             if (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f) {
-                if (!nodesMoved)
-                    PushUndo(graph);
                 nodesMoved = true;
                 for (auto id : selection) {
                     if (auto node = graph.GetNode(id))
@@ -1103,11 +1070,8 @@ namespace Atlas::Editor::UI {
                 if (target.IsValid() && target.isOutput != draggedPin.isOutput) {
                     const auto& output = draggedPin.isOutput ? draggedPin : target;
                     const auto& input = draggedPin.isOutput ? target : draggedPin;
-                    PushUndo(graph);
                     if (graph.Connect(output.node, output.pin, input.node, input.pin))
                         compileRequested = true;
-                    else
-                        undoStack.pop_back();
                 }
                 else if (!target.IsValid() && isCanvasHovered) {
                     // Dropped on the canvas: choose the node for the other end
@@ -1151,7 +1115,6 @@ namespace Atlas::Editor::UI {
             // An input with a link gets picked up, the link can then be dropped somewhere else
             if (!pin.isOutput) {
                 if (auto link = graph.GetInputLink(pin.node, pin.pin)) {
-                    PushUndo(graph);
                     draggedPin = { link->fromNode, link->fromPin, true };
                     graph.Disconnect(pin.node, pin.pin);
                     compileRequested = true;
@@ -1178,7 +1141,6 @@ namespace Atlas::Editor::UI {
         // Alt click removes a link
         if (io.KeyAlt) {
             if (auto link = FindLink(graph, mouse)) {
-                PushUndo(graph);
                 graph.Disconnect(link->toNode, link->toPin);
                 compileRequested = true;
                 return;
@@ -1194,7 +1156,6 @@ namespace Atlas::Editor::UI {
                 const auto& layout = layouts[node];
                 auto corner = 14.0f;
                 if (mouse.x > layout.max.x - corner && mouse.y > layout.max.y - corner) {
-                    PushUndo(graph);
                     resizedFrame = node;
                     interaction = Interaction::ResizingFrame;
                     return;
@@ -1273,14 +1234,6 @@ namespace Atlas::Editor::UI {
             DuplicateSelection(graph);
         if (ImGui::IsKeyPressed(ImGuiKey_G, false))
             FrameSelection(graph);
-        if (ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
-            if (io.KeyShift)
-                Redo(graphHandle);
-            else
-                Undo(graphHandle);
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_Y, false))
-            Redo(graphHandle);
 
     }
 
@@ -1296,7 +1249,6 @@ namespace Atlas::Editor::UI {
         if (ImGui::MenuItem("Frame selection", "Ctrl+G"))
             FrameSelection(graph);
         if (ImGui::MenuItem("Disconnect")) {
-            PushUndo(graph);
             std::erase_if(graph.links, [&](const Link& link) {
                 return selection.contains(link.fromNode) || selection.contains(link.toNode);
                 });
@@ -1554,8 +1506,6 @@ namespace Atlas::Editor::UI {
 
     void MaterialGraphPanel::AddNode(Graph& graph, const NodeDefinition& definition) {
 
-        PushUndo(graph);
-
         auto& node = graph.AddNode(definition.type, addPosition);
         auto nodeId = node.id;
 
@@ -1652,8 +1602,6 @@ namespace Atlas::Editor::UI {
         if (selection.empty())
             return;
 
-        PushUndo(graph);
-
         for (auto id : selection) {
             auto node = graph.GetNode(id);
             if (!node)
@@ -1697,8 +1645,6 @@ namespace Atlas::Editor::UI {
             boundsMax = glm::max(boundsMax, node->position + GetNodeSize(*node));
         }
 
-        PushUndo(graph);
-
         const float padding = 24.0f;
         auto& frame = graph.AddNode("Frame", boundsMin - vec2(padding, padding + frameHeaderHeight));
         frame.name = "Frame";
@@ -1712,8 +1658,6 @@ namespace Atlas::Editor::UI {
     }
 
     void MaterialGraphPanel::InsertReroute(Graph& graph, Link link, vec2 position) {
-
-        PushUndo(graph);
 
         auto nodeId = graph.AddNode("Reroute", position).id;
 
@@ -1780,8 +1724,6 @@ namespace Atlas::Editor::UI {
         if (clipboard.empty())
             return;
 
-        PushUndo(graph);
-
         auto j = json::parse(clipboard);
 
         std::vector<Node> nodes = j["nodes"];
@@ -1815,38 +1757,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void MaterialGraphPanel::PushUndo(const Graph& graph) {
-
-        const size_t maxStates = 128;
-
-        undoStack.push_back(Serialize(graph));
-        if (undoStack.size() > maxStates)
-            undoStack.erase(undoStack.begin());
-        redoStack.clear();
-
-    }
-
-    void MaterialGraphPanel::RestoreState(Graph& graph, const std::string& state) {
-
-        auto j = json::parse(state);
-        from_json(j, graph);
-
-        std::erase_if(selection, [&](uint32_t id) { return graph.GetNode(id) == nullptr; });
-        compileRequested = true;
-
-    }
-
-    std::string MaterialGraphPanel::Serialize(const Graph& graph) const {
-
-        json j;
-        to_json(j, graph);
-        return j.dump();
-
-    }
-
     void MaterialGraphPanel::Arrange(Graph& graph) {
-
-        PushUndo(graph);
 
         auto isFrame = [](const Node& node) {
             auto definition = NodeLibrary::Find(node.type);

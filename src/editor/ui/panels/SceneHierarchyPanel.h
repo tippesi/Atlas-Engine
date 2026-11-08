@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "ScenePropertiesPanel.h"
+#include "../../SceneHistory.h"
 #include "scene/Scene.h"
 
 namespace Atlas::Editor::UI {
@@ -76,6 +77,9 @@ namespace Atlas::Editor::UI {
 
         // Set when the hierarchy changed the scene, e.g. by deleting or renaming entities
         bool sceneChanged = false;
+
+        // Records the changes of the hierarchy, set by the scene window
+        SceneHistory* history = nullptr;
 
         // Set when the user wants to focus the camera on the selection (double click, context menu)
         bool focusRequested = false;
@@ -159,6 +163,8 @@ namespace Atlas::Editor::UI {
             std::unordered_set<ECS::Entity>& matchSet, std::string& nodeName, bool parentMatches);
 
         void ToggleHierarchyVisibility(Scene::Entity entity, bool visible);
+
+        void CollectMeshEntities(Scene::Entity entity, std::vector<Scene::Entity>& entities);
 
         JobGroup searchJob{ "Scene hierarchy search", JobPriority::Low };
 
