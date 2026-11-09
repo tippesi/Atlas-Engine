@@ -122,7 +122,8 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-                auto materialIdx = uint32_t(materialMap[material.Get().get()]);
+                auto materialIt = materialMap.find(material.Get().get());
+                auto materialIdx = materialIt != materialMap.end() ? uint32_t(materialIt->second) : 0u;
                 auto textureIndices = materialIdx < sceneState->materialTextureIndices.size() ?
                     sceneState->materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
 

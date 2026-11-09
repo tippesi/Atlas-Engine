@@ -532,7 +532,10 @@ namespace Atlas {
 
             // Wait, reset and start with new semaphores
             auto nextFrame = GetFrameData(frameIndex + 1);
-            nextFrame->WaitAndReset(device);
+            {
+                CPUProfiler::Scope waitScope("Wait for frame");
+                nextFrame->WaitAndReset(device);
+            }
 
             {
                 // Lock the queue in shared mode such that flush can happen simultaneously, but waiting for idle is not possible
@@ -578,12 +581,16 @@ namespace Atlas {
                 }
             }
 
+            CPUProfiler::Scope cleanupScope("Delete resources");
+
             // Delete data that is marked for deletion for this frame
             memoryManager->DeleteData();
             frameIndex++;
 
             // Do before update anything, don't want to do unnecessary work
             DestroyUnusedGraphicObjects();
+
+            cleanupScope.Next("Acquire image");
 
             // Update frame index of all objects in need
             memoryManager->UpdateFrameIndex(frameIndex);
