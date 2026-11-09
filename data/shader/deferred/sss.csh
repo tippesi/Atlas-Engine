@@ -50,6 +50,12 @@ void main() {
         return;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
+    // Sky pixels don't read the shadows
+    if (depth == 1.0) {
+        imageStore(image, pixel, vec4(1.0));
+        return;
+    }
+
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);

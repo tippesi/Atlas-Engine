@@ -198,7 +198,7 @@ void main() {
 
         // This is not well optimized and could use some work
         vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
-        vec2 windDir = normalize((inverse(mMatrix) * vec4(globalData.windDir.x, 0.0, globalData.windDir.y, 0.0)).xz);
+        vec2 windDir = normalize((inverse(mat3(mMatrix)) * vec3(globalData.windDir.x, 0.0, globalData.windDir.y)).xz);
         position = WindAnimation(windNoiseMap, position, windDir, PushConstants.windBendScale,
             PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
         lastPosition = WindAnimation(windNoiseMap, lastPosition, windDir, PushConstants.windBendScale,

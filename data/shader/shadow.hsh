@@ -282,7 +282,16 @@ float cascadeLookup(inout Shadow shadow,  texture2DArray cascadeMaps, sampler sh
     visibility += offsetLookup(cascadeMaps, shadowSampler, shadowCoords.xy, 0.0, 0.0, float(cascadeIndex), resInv, shadowCoords.z, bias);
 #endif
 #ifdef SHADOW_FILTER_VOGEL
+    // Four taps spread over the disk decide whether the pixel is fully lit or fully shadowed
+    for (int i = 0; i < 16; i += 4) {
+        visibility += offsetLookup(cascadeMaps, shadowSampler, uv, float(cascadeIndex), shadow.edgeSoftness, texelSize, resInv, position, i, shadowCoords.z, bias);
+    }
+    if (visibility == 0.0 || visibility == 4.0)
+        return clamp(visibility * 0.25 + fadeout, 0.0, 1.0);
+
     for (int i = 0; i < 16; i++) {
+        if (i % 4 == 0)
+            continue;
         visibility += offsetLookup(cascadeMaps, shadowSampler, uv, float(cascadeIndex), shadow.edgeSoftness, texelSize, resInv, position, i, shadowCoords.z, bias);
     }
 #endif
