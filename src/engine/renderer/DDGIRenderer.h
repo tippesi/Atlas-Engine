@@ -24,6 +24,8 @@ namespace Atlas {
                 std::unordered_map<void*, uint16_t>& materialMap);
 
         private:
+            static mat3 GetRayRotation(uint32_t index);
+
             struct alignas(16) RayGenUniforms {
                 mat4 rotationMatrix;
             };
@@ -58,6 +60,8 @@ namespace Atlas {
             PipelineConfig rayShadowPipelineConfig;
 
             PipelineConfig probeStatePipelineConfig;
+
+            uint32_t rayRotationIndex = 0;
             PipelineConfig probeIrradianceUpdatePipelineConfig;
             PipelineConfig probeRadianceUpdatePipelineConfig;
             PipelineConfig probeMomentsUpdatePipelineConfig;

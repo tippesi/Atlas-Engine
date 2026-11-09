@@ -92,22 +92,8 @@ namespace Atlas {
             auto rayGenPipeline = PipelineManager::GetPipeline(rayGenPipelineConfig);
             helper.DispatchRayGen(scene, commandList, rayGenPipeline, probeCount, false,
                 [&]() {
-                    using namespace Common;
-
-                    auto theta = acosf(2.0f * float(rand()) / float(RAND_MAX) - 1.0f);
-                    auto phi = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
-
-                    auto dir = glm::vec3(
-                        2.0f * Random::SampleUniformFloat() - 1.0f,
-                        2.0f * Random::SampleUniformFloat() - 1.0f,
-                        2.0f * Random::SampleUniformFloat() - 1.0f
-                    );
-
-                    auto epsilon = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
-                    auto rot = mat3(glm::rotate(epsilon, dir));
-
                     auto uniforms = RayGenUniforms {
-                        .rotationMatrix = mat4(rot)
+                        .rotationMatrix = mat4(GetRayRotation(rayRotationIndex++))
                     };
                     rayGenUniformBuffer.SetData(&uniforms, 0);
 
@@ -325,6 +311,24 @@ namespace Atlas {
 
             auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z * volume->cascadeCount;
             commandList->DrawIndexed(sphereArray.GetIndexComponent().elementCount, uint32_t(instanceCount));
+
+        }
+
+        mat3 DDGIRenderer::GetRayRotation(uint32_t index) {
+
+            // Consecutive rotations from a low discrepancy sequence (R3, generalized golden ratio) spread the
+            // rays evenly over the probe texels, mapped to uniformly distributed rotations (Shoemake)
+            const double g = 1.2207440845005;
+            auto sample = glm::fract(glm::dvec3(0.5) + double(index) * glm::dvec3(1.0 / g, 1.0 / (g * g), 1.0 / (g * g * g)));
+
+            auto u = vec3(sample);
+            auto r0 = sqrtf(1.0f - u.x);
+            auto r1 = sqrtf(u.x);
+            auto theta0 = glm::two_pi<float>() * u.y;
+            auto theta1 = glm::two_pi<float>() * u.z;
+            auto rotation = glm::quat(r1 * cosf(theta1), r0 * sinf(theta0), r0 * cosf(theta0), r1 * sinf(theta1));
+
+            return glm::mat3_cast(rotation);
 
         }
 
