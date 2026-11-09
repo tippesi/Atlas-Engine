@@ -20,6 +20,18 @@ namespace Atlas {
         vec4 d2;
     };
 
+    // One skinned BLAS in a skinning pass, the buffers are accessed through their device addresses
+    struct GPUSkinJob {
+        VkDeviceAddress skinVertices = 0;
+        VkDeviceAddress triangleVertices = 0;
+        VkDeviceAddress target = 0;
+        VkDeviceAddress bvhTriangles = 0;
+        uint32_t firstGroup = 0;
+        uint32_t elementCount = 0;
+        uint32_t jointOffset = 0;
+        uint32_t padding0 = 0;
+    };
+
     struct GPUSkinVertex {
         // The packed normal is stored in w
         vec4 position;

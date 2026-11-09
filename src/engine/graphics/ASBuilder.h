@@ -45,7 +45,9 @@ namespace Atlas {
             void BuildTLAS(Ref<TLAS>& tlas, VkDeviceAddress instanceAddress, size_t instanceCount, CommandList* commandList);
 
             void BuildBLASBatch(const std::span<uint32_t>& batchIndices, std::span<Ref<BLAS>>& blases, 
-                Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool, CommandList* commandList);
+                Ref<QueryPool>& queryPool, CommandList* commandList);
+
+            void RecordBLASBuilds(std::span<const Ref<BLAS>> blases, bool update, CommandList* commandList);
 
             void CompactBLASBatch(const std::span<uint32_t>& batchIndices,
                 std::span<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool, CommandList* commandList);

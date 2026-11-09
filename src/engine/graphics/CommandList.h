@@ -191,6 +191,9 @@ namespace Atlas {
 
             void BuildBLAS(const Ref<BLAS>& blas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
 
+            void BuildBLASes(std::span<const VkAccelerationStructureBuildGeometryInfoKHR> buildInfos,
+                std::span<const VkAccelerationStructureBuildRangeInfoKHR* const> rangeInfos);
+
             void BuildTLAS(const Ref<TLAS>& tlas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
 
             VkCommandPool commandPool;

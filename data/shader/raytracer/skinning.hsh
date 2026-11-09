@@ -1,3 +1,9 @@
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+
+// Has to match the group size of the skinning passes in RayTracingWorld
+layout (local_size_x = 64) in;
+
 struct SkinVertex {
     // Position and the packed normal in w
     vec4 position;
@@ -5,17 +11,54 @@ struct SkinVertex {
     uvec4 skin;
 };
 
-layout(std430, set = 3, binding = 0) readonly buffer SkinVertices {
-    SkinVertex skinVertices[];
+// One skinned BLAS, the buffers are device addresses
+struct SkinJob {
+    uvec2 skinVertices;
+    uvec2 triangleVertices;
+    uvec2 target;
+    uvec2 bvhTriangles;
+    uint firstGroup;
+    uint elementCount;
+    uint jointOffset;
+    uint padding0;
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer SkinVertexBuffer {
+    SkinVertex vertices[];
+};
+
+layout(std430, set = 3, binding = 0) readonly buffer SkinJobs {
+    SkinJob skinJobs[];
 };
 
 layout(std430, set = 3, binding = 1) readonly buffer JointMatrices {
     mat3x4 jointMatrices[];
 };
 
-mat3x4 GetSkinMatrix(uint vertexIdx, uint jointOffset) {
+layout(std430, set = 3, binding = 2) readonly buffer GroupJobs {
+    uint groupJobs[];
+};
 
-    uvec4 skin = skinVertices[vertexIdx].skin;
+layout(push_constant) uniform constants {
+    uint groupOffset;
+    uint groupCount;
+} PushConstants;
+
+// The job of this work group and the element of this invocation, false if there is no element left
+bool GetSkinJob(out SkinJob job, out uint idx) {
+
+    uint group = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+    if (group >= PushConstants.groupCount)
+        return false;
+
+    job = skinJobs[groupJobs[PushConstants.groupOffset + group]];
+    idx = (group - job.firstGroup) * gl_WorkGroupSize.x + gl_LocalInvocationIndex;
+    return idx < job.elementCount;
+
+}
+
+mat3x4 GetSkinMatrix(uvec4 skin, uint jointOffset) {
+
     uvec4 joints = uvec4(skin.x & 0xFFFF, skin.x >> 16, skin.y & 0xFFFF, skin.y >> 16);
     vec4 weights = unpackUnorm4x8(skin.z);
     weights /= dot(weights, vec4(1.0));

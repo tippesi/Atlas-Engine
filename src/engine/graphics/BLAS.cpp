@@ -41,6 +41,10 @@ namespace Atlas {
 
         void BLAS::Allocate() {
 
+            // Rebuilds, e.g. of animated meshes every frame, reuse the acceleration structure. Compacted ones are too small
+            if (accelerationStructure != VK_NULL_HANDLE && buffer && buffer->size >= sizesInfo.accelerationStructureSize)
+                return;
+
             BufferDesc desc = {
                 .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
                               | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,

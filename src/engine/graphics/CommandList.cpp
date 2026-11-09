@@ -960,6 +960,17 @@ namespace Atlas {
 
         }
 
+        void CommandList::BuildBLASes(std::span<const VkAccelerationStructureBuildGeometryInfoKHR> buildInfos,
+            std::span<const VkAccelerationStructureBuildRangeInfoKHR* const> rangeInfos) {
+
+            AE_ASSERT(buildInfos.size() == rangeInfos.size() && "Every build needs its ranges");
+            if (buildInfos.size() != rangeInfos.size())
+                return;
+
+            vkCmdBuildAccelerationStructuresKHR(commandBuffer, uint32_t(buildInfos.size()), buildInfos.data(), rangeInfos.data());
+
+        }
+
         void CommandList::BuildTLAS(const Ref<TLAS> &tlas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo) {
 
             vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildInfo, &tlas->rangeInfo);

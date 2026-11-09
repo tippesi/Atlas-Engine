@@ -34,6 +34,8 @@ namespace Atlas {
             tlasNodeBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHNode));
             lastMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4x3));
             jointMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat3x4));
+            skinJobBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUSkinJob));
+            skinGroupJobBuffer = Buffer::Buffer(bufferUsage, sizeof(uint32_t));
 
             std::vector<std::string> skinTrianglesMacros;
             if (hardwareRayTracing)
@@ -131,11 +133,15 @@ namespace Atlas {
                 commandList->BeginCommands();
                 SkinBlases(commandList);
                 if (hardwareRayTracing) {
-                    Graphics::ASBuilder asBuilder;
+                    GPUProfiler::BeginThread("Dynamic BLASes", commandList);
+                    GPUProfiler::BeginQuery("Build BLASes");
                     if (!buildBlases.empty())
-                        asBuilder.BuildBLAS(buildBlases, commandList);
+                        blasBuilder.BuildBLAS(buildBlases, commandList);
+                    GPUProfiler::EndAndBeginQuery("Refit BLASes");
                     if (!refitBlases.empty())
-                        asBuilder.UpdateBLAS(refitBlases, commandList);
+                        blasBuilder.UpdateBLAS(refitBlases, commandList);
+                    GPUProfiler::EndQuery();
+                    GPUProfiler::EndThread();
                 }
                 commandList->EndCommands();
                 device->SubmitCommandList(commandList);
@@ -809,7 +815,8 @@ namespace Atlas {
                 }
 
                 // The BLAS is used once the bindless buffers are updated in the next frame
-                if (!renderState->blasToBindlessIdx.contains(skinnedBlas.blas))
+                auto bindlessIdx = renderState->blasToBindlessIdx.find(skinnedBlas.blas);
+                if (bindlessIdx == renderState->blasToBindlessIdx.end())
                     continue;
 
                 auto [blasInfoIt, inserted] = blasInfos.try_emplace(skinnedBlas.blas);
@@ -817,7 +824,7 @@ namespace Atlas {
                 if (inserted)
                     blasInfo.mesh = mesh;
                 blasInfo.update = blasInfoUpdate;
-                blasInfo.offset = int32_t(renderState->blasToBindlessIdx[skinnedBlas.blas]);
+                blasInfo.offset = int32_t(bindlessIdx->second);
                 blasInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
 
                 if (hardwareRayTracing) {
@@ -860,54 +867,75 @@ namespace Atlas {
             commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT,
                 VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            auto pipeline = PipelineManager::GetPipeline(skinTrianglesPipelineConfig);
-            commandList->BindPipeline(pipeline);
+            // Every work group of a pass looks up its BLAS in the group table, so each pass is a single dispatch
+            const uint32_t skinGroupSize = 64;
+            skinJobs.clear();
+            skinGroupJobs.clear();
 
-            jointMatricesBuffer.Bind(commandList, 3, 1);
-
-            for (auto& [entity, skinnedBlas] : skinnedBlases) {
-                if (!skinnedBlas.skin)
-                    continue;
-
-                auto& blas = skinnedBlas.blas;
-                auto triangleCount = uint32_t(blas->triangleIndices.size());
-
-                skinVertexBuffers[skinnedBlas.mesh.GetID()].Bind(commandList, 3, 0);
-                skinnedBlas.triangleVertexBuffer.Bind(commandList, 3, 2);
-                blas->triangleBuffer.Bind(commandList, 3, 3);
-                if (!hardwareRayTracing)
-                    blas->bvhTriangleBuffer.Bind(commandList, 3, 4);
-
-                auto constants = SkinPushConstants {
-                    .elementCount = triangleCount,
-                    .jointOffset = skinnedBlas.jointOffset
-                };
-                commandList->PushConstants("constants", &constants);
-
-                commandList->Dispatch((triangleCount + 63) / 64, 1, 1);
-            }
-
-            if (hardwareRayTracing) {
-                pipeline = PipelineManager::GetPipeline(skinVerticesPipelineConfig);
-                commandList->BindPipeline(pipeline);
-
+            auto addJobs = [&](bool vertices) {
+                auto groupOffset = uint32_t(skinGroupJobs.size());
                 for (auto& [entity, skinnedBlas] : skinnedBlases) {
                     if (!skinnedBlas.skin)
                         continue;
 
-                    auto vertexCount = uint32_t(skinnedBlas.vertexBuffer.elementCount);
-
-                    skinVertexBuffers[skinnedBlas.mesh.GetID()].Bind(commandList, 3, 0);
-                    commandList->BindBuffer(skinnedBlas.vertexBuffer.buffer, 3, 2);
-
-                    auto constants = SkinPushConstants {
-                        .elementCount = vertexCount,
+                    auto& blas = skinnedBlas.blas;
+                    auto job = GPUSkinJob {
+                        .skinVertices = skinVertexBuffers[skinnedBlas.mesh.GetID()].Get()->GetDeviceAddress(),
+                        .firstGroup = uint32_t(skinGroupJobs.size()) - groupOffset,
                         .jointOffset = skinnedBlas.jointOffset
                     };
-                    commandList->PushConstants("constants", &constants);
+                    if (vertices) {
+                        job.target = skinnedBlas.vertexBuffer.buffer->GetDeviceAddress();
+                        job.elementCount = uint32_t(skinnedBlas.vertexBuffer.elementCount);
+                    }
+                    else {
+                        job.triangleVertices = skinnedBlas.triangleVertexBuffer.Get()->GetDeviceAddress();
+                        job.target = blas->triangleBuffer.Get()->GetDeviceAddress();
+                        if (!hardwareRayTracing)
+                            job.bvhTriangles = blas->bvhTriangleBuffer.Get()->GetDeviceAddress();
+                        job.elementCount = uint32_t(blas->triangleIndices.size());
+                    }
 
-                    commandList->Dispatch((vertexCount + 63) / 64, 1, 1);
+                    auto groupCount = (job.elementCount + skinGroupSize - 1) / skinGroupSize;
+                    skinGroupJobs.insert(skinGroupJobs.end(), groupCount, uint32_t(skinJobs.size()));
+                    skinJobs.push_back(job);
                 }
+                return SkinPushConstants {
+                    .groupOffset = groupOffset,
+                    .groupCount = uint32_t(skinGroupJobs.size()) - groupOffset
+                };
+            };
+
+            auto triangleConstants = addJobs(false);
+            auto vertexConstants = hardwareRayTracing ? addJobs(true) : SkinPushConstants {};
+
+            if (skinJobBuffer.GetElementCount() < skinJobs.size())
+                skinJobBuffer.SetSize(skinJobs.size());
+            skinJobBuffer.SetData(skinJobs.data(), 0, skinJobs.size());
+            if (skinGroupJobBuffer.GetElementCount() < skinGroupJobs.size())
+                skinGroupJobBuffer.SetSize(skinGroupJobs.size());
+            skinGroupJobBuffer.SetData(skinGroupJobs.data(), 0, skinGroupJobs.size());
+
+            skinJobBuffer.Bind(commandList, 3, 0);
+            jointMatricesBuffer.Bind(commandList, 3, 1);
+            skinGroupJobBuffer.Bind(commandList, 3, 2);
+
+            // The group count can exceed the limit of one dimension
+            auto dispatchGroups = [&](uint32_t groupCount) {
+                const uint32_t maxGroupsX = 32768;
+                commandList->Dispatch(std::min(groupCount, maxGroupsX), (groupCount + maxGroupsX - 1) / maxGroupsX, 1);
+            };
+
+            auto pipeline = PipelineManager::GetPipeline(skinTrianglesPipelineConfig);
+            commandList->BindPipeline(pipeline);
+            commandList->PushConstants("constants", &triangleConstants);
+            dispatchGroups(triangleConstants.groupCount);
+
+            if (hardwareRayTracing) {
+                pipeline = PipelineManager::GetPipeline(skinVerticesPipelineConfig);
+                commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &vertexConstants);
+                dispatchGroups(vertexConstants.groupCount);
 
                 commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
@@ -974,8 +1002,8 @@ namespace Atlas {
                     skinVertices[i].weights = glm::packUnorm4x8(data.weights[i]);
                 }
 
-                skinVertexBuffers[mesh.GetID()] = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
-                    sizeof(GPUSkinVertex), skinVertices.size(), skinVertices.data());
+                skinVertexBuffers[mesh.GetID()] = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
+                    Buffer::BufferUsageBits::DeviceAddressBit, sizeof(GPUSkinVertex), skinVertices.size(), skinVertices.data());
             }
 
             SkinnedBlas skinnedBlas = {
@@ -1040,8 +1068,8 @@ namespace Atlas {
                 triangleVertices[i] = ivec4(data.indices[idx], data.indices[idx + 1], data.indices[idx + 2], 0);
             }
 
-            skinnedBlas.triangleVertexBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
-                sizeof(ivec4), triangleVertices.size(), triangleVertices.data());
+            skinnedBlas.triangleVertexBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
+                Buffer::BufferUsageBits::DeviceAddressBit, sizeof(ivec4), triangleVertices.size(), triangleVertices.data());
 
             return skinnedBlas;
 

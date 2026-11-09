@@ -83,7 +83,7 @@ namespace Atlas {
 
             // Hardware ray tracing refits the BLASes of animated meshes instead of building them every frame.
             // Software ray tracing always refits them.
-            bool refitSkinnedBlases = false;
+            bool refitSkinnedBlases = true;
 
             // Animated meshes further away from the camera are traced in their rest pose, skinning and building
             // a BLAS for every animated entity of a large scene each frame is too expensive
@@ -126,8 +126,8 @@ namespace Atlas {
             };
 
             struct alignas(16) SkinPushConstants {
-                uint32_t elementCount;
-                uint32_t jointOffset;
+                uint32_t groupOffset;
+                uint32_t groupCount;
             };
 
             struct alignas(16) RefitPushConstants {
@@ -181,6 +181,7 @@ namespace Atlas {
             Scene::Scene* scene;
 
             Graphics::ASBuilder tlasBuilder;
+            Graphics::ASBuilder blasBuilder;
             Ref<Graphics::TLAS> tlas;
 
             std::vector<Ref<Graphics::BLAS>> buildBlases;
@@ -203,6 +204,11 @@ namespace Atlas {
 
             std::vector<mat3x4> jointMatrices;
             Buffer::Buffer jointMatricesBuffer;
+
+            std::vector<GPUSkinJob> skinJobs;
+            std::vector<uint32_t> skinGroupJobs;
+            Buffer::Buffer skinJobBuffer;
+            Buffer::Buffer skinGroupJobBuffer;
 
             PipelineConfig skinTrianglesPipelineConfig;
             PipelineConfig skinVerticesPipelineConfig;
