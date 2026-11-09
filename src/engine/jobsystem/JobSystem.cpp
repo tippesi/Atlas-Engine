@@ -70,10 +70,12 @@ namespace Atlas {
 
     void JobSystem::ExecuteMultiple(JobGroup& group, int32_t count, std::function<void(JobData&)> func, void* userData) {
 
+        // Every job gets a copy of the function, sharing it keeps large captures from being allocated per job
+        auto sharedFunc = std::make_shared<std::function<void(JobData&)>>(std::move(func));
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
-            .function = std::move(func),
+            .function = [sharedFunc](JobData& data) { (*sharedFunc)(data); },
             .userData = userData,
             .name = group.name
         };

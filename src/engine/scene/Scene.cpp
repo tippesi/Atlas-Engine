@@ -245,7 +245,10 @@ namespace Atlas {
             // Animations are updated before the transforms, such that entities attached to joints follow them
             JobGroup animationJobGroup{ "Animation update", JobPriority::High };
             auto& animationComponentPool = entityManager.GetPool<AnimationComponent>();
-            JobSystem::ParallelFor(animationJobGroup, int32_t(animationComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+            // Few jobs for few animations, they would otherwise occupy every worker
+            auto animationCount = int32_t(animationComponentPool.GetCount());
+            auto animationJobCount = std::clamp(animationCount / 32, 1, 2 * JobSystem::GetWorkerCount(JobPriority::High));
+            JobSystem::ParallelFor(animationJobGroup, animationCount, animationJobCount, [&](JobData&, int32_t idx) {
                 auto entity = animationComponentPool[idx];
                 auto& animationComponent = animationComponentPool.GetByIndex(idx);
                 auto meshComponent = meshComponentPool.TryGet(entity);
@@ -394,7 +397,8 @@ namespace Atlas {
                 std::mutex uninsertedMutex;
                 std::vector<ECS::Entity> uninsertedEntities;
                 JobGroup syncJobGroup{ "Sync bodies", JobPriority::High };
-                JobSystem::ParallelFor(syncJobGroup, int32_t(rigidBodyComponentPool.GetCount()), 1024, [&](JobData&, int32_t idx) {
+                JobSystem::ParallelFor(syncJobGroup, int32_t(rigidBodyComponentPool.GetCount()),
+                    2 * JobSystem::GetWorkerCount(JobPriority::High), [&](JobData&, int32_t idx) {
                     auto entity = rigidBodyComponentPool[idx];
                     auto transformComponent = transformComponentPool.TryGet(entity);
                     if (!transformComponent)
