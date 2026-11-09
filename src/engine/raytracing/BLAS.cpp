@@ -42,7 +42,7 @@ namespace Atlas::RayTracing {
                 triangleOffsets.push_back(triangleOffset);
             }
 
-            triangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(uint32_t));
+            triangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
             triangleOffsetBuffer.SetSize(triangleOffsets.size(), triangleOffsets.data());
 
             needsBvhRefresh = true;
@@ -186,11 +186,13 @@ namespace Atlas::RayTracing {
 
         }
 
-        triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUTriangle));
+        triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit,
+            sizeof(GPUTriangle));
         triangleBuffer.SetSize(gpuTriangles.size(), gpuTriangles.data());
 
         if (!hardwareRayTracing) {
-            bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUBVHTriangle));
+            bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit,
+                sizeof(GPUBVHTriangle));
             bvhTriangleBuffer.SetSize(gpuBvhTriangles.size(), gpuBvhTriangles.data());
 
             gpuBvhTriangles.clear();
@@ -218,7 +220,7 @@ namespace Atlas::RayTracing {
                     nodeParents[gpuBvhNodes[i].rightPtr] = int32_t(i) * 2 + 1;
             }
 
-            blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUBVHNode));
+            blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
             blasNodeBuffer.SetSize(gpuBvhNodes.size(), gpuBvhNodes.data());            
         }
 

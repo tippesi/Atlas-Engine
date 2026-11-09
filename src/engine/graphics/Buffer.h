@@ -85,6 +85,8 @@ namespace Atlas {
 
             bool isMapped = false;
             void* mappedData = nullptr;
+            // Host buffers stay mapped for their whole lifetime
+            void* persistentMappedData = nullptr;
 
         public:
             static size_t GetAlignedSize(size_t size);
