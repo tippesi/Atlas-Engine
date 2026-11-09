@@ -40,9 +40,6 @@ namespace Atlas::Editor::UI {
 
         // Clock time when the window was last focused, e.g. animations opened from the content browser play in the latest
         float lastFocusTime = 0.0f;
-        bool requestFocus = false;
-        // Only the active window renders its viewport
-        bool isActiveWindow = false;
 
         float cameraMovementSpeed = 1.0f;
 
@@ -107,6 +104,7 @@ namespace Atlas::Editor::UI {
         void UpdateHistory();
 
         bool focusRequested = false;
+        bool wasInFocus = false;
 
         json lastState;
 

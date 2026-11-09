@@ -15,14 +15,6 @@ namespace Atlas {
                 Buffer::BufferUsageBits::UniformBufferBit;
             terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * Terrain::TerrainStorage::maxMaterialCount, 1);
 
-            Common::Image<float> noiseImage(512, 512, 1);
-            std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
-            Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
-
-            noiseTexture = Texture::Texture2D(512, 512,
-                VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear);
-            auto data = noiseImage.ConvertData<float16>();
-            noiseTexture.SetData(data);
         }
 
         void TerrainRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
@@ -30,6 +22,10 @@ namespace Atlas {
 
             if (!scene->renderState.terrain.IsLoaded())
                 return;
+
+            // Generating the noise takes a while, renderers without a terrain don't need it
+            if (!noiseTexture.IsValid())
+                GenerateNoiseTexture();
 
             CPUProfiler::Scope profilerScope("Terrain");
             GPUProfiler::BeginQuery("Terrain");
@@ -187,6 +183,19 @@ namespace Atlas {
             }
 
             GPUProfiler::EndQuery();
+
+        }
+
+        void TerrainRenderer::GenerateNoiseTexture() {
+
+            Common::Image<float> noiseImage(512, 512, 1);
+            std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
+            Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
+
+            noiseTexture = Texture::Texture2D(512, 512,
+                VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+            auto data = noiseImage.ConvertData<float16>();
+            noiseTexture.SetData(data);
 
         }
 

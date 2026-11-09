@@ -4,6 +4,7 @@
 #include "tools/PrimitiveBatchWrapper.h"
 #include "scene/Scene.h"
 #include "renderer/target/RenderTarget.h"
+#include "renderer/MainRenderer.h"
 #include "Viewport.h"
 #include "Icons.h"
 
@@ -36,9 +37,9 @@ namespace Atlas::Editor::UI {
 
         void DrawOverlay(std::function<void()> func);
 
-        void Render(Ref<Scene::Scene>& scene, bool isActiveWindow);
+        void Render(Ref<Scene::Scene>& scene);
 
-        void RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size, bool isActive);
+        void RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size);
 
         // Ground grid on the y = 0 plane around the camera
         void RenderGrid(const Scene::Components::CameraComponent& camera);
@@ -62,8 +63,9 @@ namespace Atlas::Editor::UI {
         Ref<Viewport> viewport;
         Texture::Texture2D viewportTexture;
 
-        // Viewports rendered in the same frame as the active scene need their own target, otherwise the shared one is used
+        // All visible viewports are rendered in the same frame, so uniform buffers, upscalers and history can't be shared
         Ref<Renderer::RenderTarget> renderTarget;
+        Ref<Renderer::MainRenderer> mainRenderer;
 
         // Off for content the path tracer can't show, e.g. material graphs
         bool allowPathTracing = true;

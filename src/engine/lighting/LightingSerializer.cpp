@@ -42,8 +42,12 @@ namespace Atlas::Lighting {
     }
 
     void from_json(const json& j, Atmosphere& p) {
-        p = Atmosphere(j["height"].get<float>(),
-            j["probeResolution"].get<int32_t>());
+        // Only a new probe resolution needs a new atmosphere, everything else is changed in place
+        auto probeResolution = j["probeResolution"].get<int32_t>();
+        if (!p.probe || p.probe->GetCubemap().width != probeResolution)
+            p = Atmosphere(j["height"].get<float>(), probeResolution);
+
+        j.at("height").get_to(p.height);
 
         try_get_json(j, "rayleighScatteringCoeff", p.rayleighScatteringCoeff);
         try_get_json(j, "groundAlbedo", p.groundAlbedo);
@@ -391,14 +395,24 @@ namespace Atlas::Lighting {
     }
 
     void from_json(const json& j, VolumetricClouds& p) {
-        p = VolumetricClouds(j.value("coverageResolution", 512), j.value("shapeResolution", 128),
-            j.value("detailResolution", 64), j.value("shadowResolution", 1024));
+        auto coverageResolution = j.value("coverageResolution", 512);
+        auto shapeResolution = j.value("shapeResolution", 128);
+        auto detailResolution = j.value("detailResolution", 64);
+        auto shadowResolution = j.value("shadowResolution", 1024);
+
+        // Only new resolutions need new textures, everything else is changed in place
+        if (!p.shapeTexture.IsValid() || p.coverageTexture.width != coverageResolution || p.shapeTexture.width != shapeResolution ||
+            p.detailTexture.width != detailResolution || p.shadowTexture.width != shadowResolution)
+            p = VolumetricClouds(coverageResolution, shapeResolution, detailResolution, shadowResolution);
+
+        auto variationSeed = p.variationSeed;
 
         try_get_json(j, "coverage", p.coverage);
         try_get_json(j, "cloudType", p.cloudType);
         try_get_json(j, "densityMultiplier", p.densityMultiplier);
         try_get_json(j, "distanceLimit", p.distanceLimit);
         try_get_json(j, "variationSeed", p.variationSeed);
+        p.needsNoiseUpdate |= p.variationSeed != variationSeed;
         try_get_json(j, "enable", p.enable);
         try_get_json(j, "castShadow", p.castShadow);
 
@@ -463,7 +477,8 @@ namespace Atlas::Lighting {
                 p.atmosphere = nullptr;
             }
             else {
-                p.atmosphere = CreateRef<Atmosphere>();
+                if (!p.atmosphere)
+                    p.atmosphere = CreateRef<Atmosphere>();
                 *p.atmosphere = j["atmosphere"];
             }
         }
@@ -472,7 +487,8 @@ namespace Atlas::Lighting {
                 p.clouds = nullptr;
             }
             else {
-                p.clouds = CreateRef<VolumetricClouds>();
+                if (!p.clouds)
+                    p.clouds = CreateRef<VolumetricClouds>();
                 *p.clouds = j["clouds"];
             }
         }

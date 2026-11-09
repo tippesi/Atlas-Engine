@@ -80,11 +80,11 @@ namespace Atlas::Editor {
         Serialization::DeserializeContentBrowserWindow(contentBrowserWindow);
 
         Serialization::DeserializeLogWindow(logWindow);
+        restoringScenes = false;
 
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
         Singletons::blockingOperation = CreateRef<BlockingOperation>();
-        Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
@@ -180,20 +180,23 @@ namespace Atlas::Editor {
 
                 // After the scene is loaded we can retrieve the window configuration and deserialize it
                 sceneWindows.emplace_back(Serialization::DeserializeSceneWindow(waitToLoadScenes.back()));
-                // Scenes opened for the first time join the others, known ones stay where they were left
-                // and after a layout reset nobody has a place anymore
+                // Scenes opened by the user and the ones opened for the first time join the others, restored
+                // ones stay where they were left and after a layout reset nobody has a place anymore
                 auto settings = ImGui::FindWindowSettingsByID(ImHashStr(sceneWindows.back()->GetNameID()));
                 sceneWindows.back()->requestDocking = !settings || dockLoadingScenes;
+                if (std::erase(userOpenedScenes, waitToLoadScenes.back()))
+                    OpenAsTab(*sceneWindows.back());
                 waitToLoadScenes.pop_back();
                 i--;
             }
         }
 
         // Failed scenes are forgotten, such that they can be opened again once the problem is fixed
-        std::erase_if(waitToLoadScenes, [](const auto& handle) {
+        std::erase_if(waitToLoadScenes, [&](const auto& handle) {
             if (!handle.GetResource()->errorOnLoad)
                 return false;
             std::erase(Singletons::config->openedScenes, handle);
+            std::erase(userOpenedScenes, handle);
             return true;
             });
 
@@ -284,7 +287,7 @@ namespace Atlas::Editor {
 
         // Update all scenes after input was applied
         for (auto& sceneWindow : sceneWindows) {
-            // Only one viewport renders per frame, the last focused scene or mesh editor
+            // Only the last focused scene uses the camera input and the gizmo
             if (sceneWindow == activeSceneWindow && !activeAssetEditorWindow)
                 sceneWindow->isActiveWindow = true;
             else
@@ -492,7 +495,6 @@ namespace Atlas::Editor {
 
             sectionScope.Next("Asset editor windows");
             for (auto& assetEditorWindow : assetEditorWindows) {
-                assetEditorWindow->isActiveWindow = assetEditorWindow == activeAssetEditorWindow;
                 DockNextToScenes(*assetEditorWindow);
                 assetEditorWindow->Render();
             }
@@ -569,7 +571,7 @@ namespace Atlas::Editor {
 
         auto renderArea = ImGui::GetContentRegionAvail();
         activeSceneWindow->viewportPanel.RenderScene(activeSceneWindow->scene.Get(),
-            ivec2(0), ivec2(int32_t(renderArea.x), int32_t(renderArea.y)), true);
+            ivec2(0), ivec2(int32_t(renderArea.x), int32_t(renderArea.y)));
         auto set = Singletons::imguiWrapper->GetTextureId(&activeSceneWindow->viewportPanel.viewportTexture);
         ImGui::Image(set, renderArea);
 
@@ -589,7 +591,7 @@ namespace Atlas::Editor {
                 }
             }
 
-            auto target = Singletons::renderTarget;
+            auto target = activeSceneWindow->viewportPanel.renderTarget;
 
             // Put the overlay on a translucent panel, such that it stays readable on bright scenes
             ImGui::SetCursorPos(ImVec2(12.0f, 12.0f));
@@ -715,8 +717,8 @@ namespace Atlas::Editor {
         }
 
         auto sceneWindow = GetActiveSceneWindow();
-        if (sceneWindow && !sceneWindow->isPlaying && sceneWindow->history.Undo())
-            sceneWindow->ApplyHistoryChange();
+        if (sceneWindow && !sceneWindow->isPlaying)
+            sceneWindow->Undo();
 
     }
 
@@ -728,8 +730,8 @@ namespace Atlas::Editor {
         }
 
         auto sceneWindow = GetActiveSceneWindow();
-        if (sceneWindow && !sceneWindow->isPlaying && sceneWindow->history.Redo())
-            sceneWindow->ApplyHistoryChange();
+        if (sceneWindow && !sceneWindow->isPlaying)
+            sceneWindow->Redo();
 
     }
 
@@ -1482,7 +1484,7 @@ namespace Atlas::Editor {
             auto scene = DataCreator::CreateScene(Common::Path::GetFileName(path), vec3(-2048.0f), vec3(2048.0f), 8);
             auto sceneWindow = CreateRef<UI::SceneWindow>(ResourceHandle<Scene::Scene>(scene), true);
             sceneWindow->OpenPrefab(path);
-            sceneWindow->requestDocking = true;
+            OpenAsTab(*sceneWindow);
             sceneWindows.push_back(sceneWindow);
             return;
         }
@@ -1501,8 +1503,9 @@ namespace Atlas::Editor {
             assetEditorWindows.push_back(CreateRef<UI::MaterialEditorWindow>(FileImporter::ImportFile<MaterialGraph::Graph>(path), true));
         else
             assetEditorWindows.push_back(CreateRef<UI::MeshEditorWindow>(FileImporter::ImportFile<Mesh::Mesh>(path), true));
+        // Docks next to the window which is still the active one
+        OpenAsTab(*assetEditorWindows.back());
         activeAssetEditorWindow = assetEditorWindows.back();
-        activeAssetEditorWindow->requestDocking = true;
 
     }
 
@@ -1511,6 +1514,13 @@ namespace Atlas::Editor {
         if (!window.requestDocking)
             return;
         window.requestDocking = false;
+
+        if (window.dockNodeID && ImGui::DockBuilderGetNode(window.dockNodeID)) {
+            ImGui::SetNextWindowDockID(window.dockNodeID, ImGuiCond_Always);
+            window.dockNodeID = 0;
+            return;
+        }
+        window.dockNodeID = 0;
 
         for (const auto& sceneWindow : sceneWindows) {
             auto imguiWindow = ImGui::FindWindowByName(sceneWindow->GetNameID());
@@ -1527,11 +1537,32 @@ namespace Atlas::Editor {
 
     }
 
+    ImGuiID App::GetActiveDockNodeID() const {
+
+        const UI::Window* window = activeAssetEditorWindow.get();
+        if (!window && !sceneWindows.empty())
+            window = sceneWindows[std::min(activeSceneIdx, sceneWindows.size() - 1)].get();
+
+        auto imguiWindow = window ? ImGui::FindWindowByName(window->GetNameID()) : nullptr;
+        return imguiWindow ? imguiWindow->DockId : 0;
+
+    }
+
+    void App::OpenAsTab(UI::Window& window) const {
+
+        window.requestDocking = true;
+        window.dockNodeID = GetActiveDockNodeID();
+        window.requestFocus = true;
+
+    }
+
     void App::SubscribeToResourceEvents() {
 
         ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
                 waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
+                if (!restoringScenes)
+                    userOpenedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
                 Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
                 Singletons::config->AddRecentScene(scene->path);
             });

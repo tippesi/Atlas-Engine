@@ -11,18 +11,7 @@
 
 namespace Atlas::Scene {
 
-    void EntityToJson(json& j, const Entity& p, Scene* scene,
-        std::set<ECS::Entity>& insertedEntities) {
-
-        if (!p.IsValid())
-            return;
-
-        AE_ASSERT(!insertedEntities.contains(p) && "Entity should only be present once in the hierarchy");
-
-        if (!insertedEntities.contains(p))
-            insertedEntities.insert(p);
-
-        j["id"] = size_t(p);
+    void ComponentsToJson(json& j, const Entity& p, Scene* scene) {
 
         if (p.HasComponent<NameComponent>()) {
             j["name"] = p.GetComponent<NameComponent>();
@@ -73,6 +62,24 @@ namespace Atlas::Scene {
         if (p.HasComponent<AnimationComponent>()) {
             j["animation"] = p.GetComponent<AnimationComponent>();
         }
+
+    }
+
+    void EntityToJson(json& j, const Entity& p, Scene* scene,
+        std::set<ECS::Entity>& insertedEntities) {
+
+        if (!p.IsValid())
+            return;
+
+        AE_ASSERT(!insertedEntities.contains(p) && "Entity should only be present once in the hierarchy");
+
+        if (!insertedEntities.contains(p))
+            insertedEntities.insert(p);
+
+        j["id"] = size_t(p);
+
+        ComponentsToJson(j, p, scene);
+
         if (p.HasComponent<HierarchyComponent>()) {
             // Need to check how to get this to work
             auto& hierarchyComponent = p.GetComponent<HierarchyComponent>();
@@ -292,8 +299,9 @@ namespace Atlas::Scene {
             if (!j.contains(key))
                 return;
 
+            // Read into the existing settings, such that e.g. the clouds keep their textures
             if (!mergePatch) {
-                settings = j[key];
+                j[key].get_to(settings);
                 return;
             }
 

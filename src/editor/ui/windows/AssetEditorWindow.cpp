@@ -13,8 +13,6 @@ namespace Atlas::Editor::UI {
 
     AssetEditorWindow::AssetEditorWindow(const std::string& name, bool show) : Window(name, show) {
 
-        viewportPanel.renderTarget = CreateRef<Renderer::RenderTarget>(64, 64);
-
         // Editors are opened and closed often, they always start with the default layout
         resetDockingLayout = true;
 
@@ -23,11 +21,6 @@ namespace Atlas::Editor::UI {
     }
 
     void AssetEditorWindow::Render() {
-
-        if (requestFocus) {
-            ImGui::SetNextWindowFocus();
-            requestFocus = false;
-        }
 
         ImGui::SetNextWindowSize(ImVec2(1280, 720), ImGuiCond_FirstUseEver);
         if (!Begin())
@@ -104,7 +97,10 @@ namespace Atlas::Editor::UI {
             Save();
         if (inFocus && history.HandleShortcuts())
             lastState = SaveState();
-        UpdateHistory();
+        // Only the window the user works in has edits, the last click might have moved the focus already
+        if (inFocus || wasInFocus || lastState.is_null())
+            UpdateHistory();
+        wasInFocus = inFocus;
         auto viewportShortcuts = inFocus && !controlDown && !typing && AllowsViewportShortcuts();
         if (viewportShortcuts && ImGui::IsKeyPressed(ImGuiKey_F, false))
             FocusAsset();
@@ -136,7 +132,7 @@ namespace Atlas::Editor::UI {
             RenderOverlays();
         }
 
-        viewportPanel.Render(scene, isActiveWindow);
+        viewportPanel.Render(scene);
         AcceptViewportDrop();
 
         End();

@@ -69,8 +69,11 @@ namespace Atlas::Editor::UI {
         // Draws the navigation mesh and the test path, right clicks set the points of the path
         void ApplyNavigationTools();
 
-        // Selects what the last undo or redo changed
-        void ApplyHistoryChange();
+        // Applied right before the next scene update, the panels would otherwise read
+        // the restored transforms with outdated global matrices
+        void Undo();
+
+        void Redo();
 
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
@@ -114,10 +117,18 @@ namespace Atlas::Editor::UI {
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);
 
+        void ApplyRequestedHistorySteps();
+
+        // Selects what the last undo or redo changed
+        void ApplyHistoryChange();
+
         // Physics bodies, contacts and constraints around the main camera
         void RenderPhysics();
 
         // Time when the camera speed was last changed with the mouse wheel, to show a short hint
+        int32_t requestedHistorySteps = 0;
+        bool wasInFocus = false;
+
         float cameraSpeedChangeTime = -1000.0f;
 
         void PerformEntitySelection();

@@ -41,11 +41,11 @@ namespace Atlas::Editor {
                 if (!entity.IsValid())
                     continue;
 
+                // Even without a change the state is updated, such that rounding errors don't add up
                 auto current = SaveComponents(entity);
-                if (!IsSameEntity(state, current)) {
+                if (!IsSameEntity(state, current))
                     changes.push_back({ ecsEntity, state, current });
-                    state = current;
-                }
+                state = current;
             }
             std::erase_if(entityStates, [&](const auto& state) { return !selectedEntities.contains(state.first); });
         }
@@ -104,6 +104,39 @@ namespace Atlas::Editor {
 
     }
 
+    void SceneHistory::BeginMove(const Ref<Scene::Scene>& scene, const std::vector<Scene::Entity>& entities) {
+
+        this->scene = scene;
+
+        std::vector<ECS::Entity> ecsEntities(entities.begin(), entities.end());
+        placementsBefore = SavePlacements(ecsEntities);
+
+    }
+
+    void SceneHistory::EndMove(const std::string& name) {
+
+        auto before = std::move(placementsBefore);
+        std::vector<ECS::Entity> entities;
+        for (const auto& placement : before)
+            entities.push_back(placement.entity);
+        auto after = SavePlacements(entities);
+
+        auto moved = false;
+        for (size_t i = 0; i < before.size(); i++)
+            moved |= before[i].parent != after[i].parent || before[i].index != after[i].index;
+        if (!moved)
+            return;
+
+        history.Push({
+            .name = name,
+            .undo = [this, before]() { RestorePlacements(before); },
+            .redo = [this, after]() { RestorePlacements(after); }
+        });
+
+        ResetStates();
+
+    }
+
     void SceneHistory::BeginEdit(const Ref<Scene::Scene>& scene, const std::vector<Scene::Entity>& entities) {
 
         this->scene = scene;
@@ -136,10 +169,9 @@ namespace Atlas::Editor {
 
     }
 
-    bool SceneHistory::Undo() {
+    bool SceneHistory::Undo(const Ref<Scene::Scene>& scene) {
 
-        if (!scene)
-            return false;
+        this->scene = scene;
 
         changedEntities.clear();
         auto undone = history.Undo();
@@ -148,28 +180,14 @@ namespace Atlas::Editor {
 
     }
 
-    bool SceneHistory::Redo() {
+    bool SceneHistory::Redo(const Ref<Scene::Scene>& scene) {
 
-        if (!scene)
-            return false;
+        this->scene = scene;
 
         changedEntities.clear();
         auto redone = history.Redo();
         ResetStates();
         return redone;
-
-    }
-
-    bool SceneHistory::HandleShortcuts() {
-
-        if (!scene)
-            return false;
-
-        changedEntities.clear();
-        auto handled = history.HandleShortcuts();
-        if (handled)
-            ResetStates();
-        return handled;
 
     }
 
@@ -264,16 +282,56 @@ namespace Atlas::Editor {
             auto entity = RestoreEntity(hierarchy.entity);
             changedEntities.push_back(entity);
 
-            Scene::Entity parent(Resolve(hierarchy.parent), &scene->entityManager);
-            if (!parent.IsValid())
+            PlaceEntity(entity, hierarchy.parent, hierarchy.index);
+        }
+
+    }
+
+    std::vector<SceneHistory::Placement> SceneHistory::SavePlacements(const std::vector<ECS::Entity>& entities) {
+
+        std::vector<Placement> placements;
+        for (auto ecsEntity : entities) {
+            Scene::Entity entity(ecsEntity, &scene->entityManager);
+            auto parent = scene->GetParentEntity(entity);
+            size_t index = 0;
+            if (parent.IsValid()) {
+                const auto& children = parent.GetComponent<HierarchyComponent>().GetChildren();
+                index = size_t(std::find(children.begin(), children.end(), entity) - children.begin());
+            }
+            placements.push_back({ ecsEntity, parent, index });
+        }
+        return placements;
+
+    }
+
+    void SceneHistory::RestorePlacements(std::vector<Placement> placements) {
+
+        // Siblings are inserted from the front, such that each one ends up at its index again
+        std::sort(placements.begin(), placements.end(),
+            [](const Placement& a, const Placement& b) { return a.index < b.index; });
+
+        for (const auto& placement : placements) {
+            Scene::Entity entity(Resolve(placement.entity), &scene->entityManager);
+            if (!entity.IsValid())
                 continue;
 
-            entity.SetParent(parent);
-            auto& children = parent.GetComponent<HierarchyComponent>().GetChildren();
-            auto iter = std::find(children.begin(), children.end(), entity);
-            children.erase(iter);
-            children.insert(children.begin() + std::min(hierarchy.index, children.size()), entity);
+            PlaceEntity(entity, placement.parent, placement.index);
+            changedEntities.push_back(entity);
         }
+
+    }
+
+    void SceneHistory::PlaceEntity(Scene::Entity entity, ECS::Entity parent, size_t index) {
+
+        Scene::Entity parentEntity(Resolve(parent), &scene->entityManager);
+        if (!parentEntity.IsValid())
+            return;
+
+        entity.SetParent(parentEntity);
+        auto& children = parentEntity.GetComponent<HierarchyComponent>().GetChildren();
+        auto iter = std::find(children.begin(), children.end(), entity);
+        children.erase(iter);
+        children.insert(children.begin() + std::min(index, children.size()), entity);
 
     }
 
@@ -312,40 +370,7 @@ namespace Atlas::Editor {
     json SceneHistory::SaveComponents(Scene::Entity entity) {
 
         json j;
-
-        if (auto comp = entity.TryGetComponent<NameComponent>())
-            j["name"] = *comp;
-        if (auto comp = entity.TryGetComponent<TransformComponent>()) {
-            auto transform = *comp;
-            transform.ReconstructLocalMatrix(scene->GetParentEntity(entity));
-            j["transform"] = transform;
-        }
-        if (auto comp = entity.TryGetComponent<MeshComponent>())
-            j["mesh"] = *comp;
-        if (auto comp = entity.TryGetComponent<LightComponent>())
-            j["light"] = *comp;
-        if (auto comp = entity.TryGetComponent<CameraComponent>())
-            j["camera"] = *comp;
-        if (auto comp = entity.TryGetComponent<AudioComponent>())
-            j["audio"] = *comp;
-        if (auto comp = entity.TryGetComponent<AudioVolumeComponent>())
-            j["audioVolume"] = *comp;
-        if (auto comp = entity.TryGetComponent<FogVolumeComponent>())
-            j["fogVolume"] = *comp;
-        if (auto comp = entity.TryGetComponent<RigidBodyComponent>())
-            j["rigidBody"] = *comp;
-        if (auto comp = entity.TryGetComponent<PlayerComponent>())
-            j["player"] = *comp;
-        if (auto comp = entity.TryGetComponent<ConstraintComponent>())
-            j["constraint"] = *comp;
-        if (auto comp = entity.TryGetComponent<TextComponent>())
-            j["text"] = *comp;
-        if (auto comp = entity.TryGetComponent<LuaScriptComponent>())
-            j["script"] = *comp;
-        if (auto comp = entity.TryGetComponent<SplineComponent>())
-            j["spline"] = *comp;
-        if (auto comp = entity.TryGetComponent<AnimationComponent>())
-            j["animation"] = *comp;
+        Scene::ComponentsToJson(j, entity, scene.get());
         if (auto comp = entity.TryGetComponent<HierarchyComponent>())
             j["root"] = comp->root;
 
@@ -438,6 +463,19 @@ namespace Atlas::Editor {
     }
 
     bool SceneHistory::IsSameComponent(const std::string& key, const json& a, const json& b) {
+
+        // The transform panel rebuilds the local matrix from the global one, which changes it by rounding errors
+        if (key == "transform") {
+            TransformComponent transformA = a, transformB = b;
+            if (transformA.isStatic != transformB.isStatic || transformA.parentJoint != transformB.parentJoint)
+                return false;
+            for (int32_t i = 0; i < 4; i++) {
+                auto tolerance = 1e-5f * glm::max(vec4(1.0f), glm::abs(transformA.matrix[i]));
+                if (glm::any(glm::greaterThan(glm::abs(transformA.matrix[i] - transformB.matrix[i]), tolerance)))
+                    return false;
+            }
+            return true;
+        }
 
         if (key != "animation" && key != "audio" && key != "rigidBody" && key != "light" && key != "camera")
             return a == b;

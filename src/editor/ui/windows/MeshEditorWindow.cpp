@@ -97,11 +97,18 @@ namespace Atlas::Editor::UI {
             const auto& materialJson = materials[i];
             auto& material = mesh->data.materials[i];
 
-            // Another material was selected for the slot
-            if (materialJson.contains("path") && (!material.IsValid() || material.IsGenerated() ||
-                material.GetResource()->path != materialJson["path"].get<std::string>())) {
-                material = ResourceManager<Material>::GetOrLoadResourceWithLoader(materialJson["path"],
-                    ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+            // Another material was selected for the slot. Embedded materials only exist in the mesh,
+            // a new one gets their values, such that a material file used by the slot isn't overwritten
+            auto isFileMaterial = materialJson.contains("path");
+            auto slotChanged = isFileMaterial ? !material.IsValid() || material.IsGenerated() ||
+                material.GetResource()->path != materialJson["path"].get<std::string>() :
+                material.IsValid() && !material.IsGenerated();
+            if (slotChanged) {
+                if (isFileMaterial)
+                    material = ResourceManager<Material>::GetOrLoadResourceWithLoader(materialJson["path"],
+                        ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+                else
+                    material = ResourceHandle<Material>(CreateRef<Material>());
                 for (auto& subData : mesh->data.subData)
                     if (subData.materialIdx == int32_t(i))
                         subData.material = material;

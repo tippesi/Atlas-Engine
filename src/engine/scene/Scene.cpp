@@ -35,6 +35,8 @@ namespace Atlas {
                 auto& hierarchyComponent = parentEntity.GetComponent<HierarchyComponent>();
                 hierarchyComponent.RemoveChild(entity);
             }
+            // The deleted parent doesn't remove its children one by one, but the ids can be used again
+            childToParentMap.erase(entity);
 
             if (removeRecursively) {
                 auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();

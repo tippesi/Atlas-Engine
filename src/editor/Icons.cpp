@@ -33,6 +33,7 @@ namespace Atlas::Editor {
                 { IconType::Log, Texture::Texture2D("editor/icons/log.png") },
                 { IconType::Error, Texture::Texture2D("editor/icons/error.png") },
                 { IconType::Warning, Texture::Texture2D("editor/icons/warning.png") },
+                { IconType::Play, Texture::Texture2D("editor/icons/play.png") },
             };
         }
 

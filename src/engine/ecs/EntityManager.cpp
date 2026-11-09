@@ -39,10 +39,13 @@ namespace Atlas {
             if (pos >= entities.size() || entities[pos] != EntityConfig::InvalidEntity)
                 return EntityConfig::InvalidEntity;
 
-            auto iter = std::find_if(destroyed.begin(), destroyed.end(),
+            // Restored entities were usually destroyed last
+            auto iter = std::find_if(destroyed.rbegin(), destroyed.rend(),
                 [&](Entity destroyedEntity) { return EntityToPosition(destroyedEntity) == pos; });
-            if (iter != destroyed.end())
-                destroyed.erase(iter);
+            if (iter != destroyed.rend()) {
+                *iter = destroyed.back();
+                destroyed.pop_back();
+            }
 
             entities[pos] = entity;
 

@@ -198,6 +198,8 @@ namespace Atlas {
 
             bool isComplete = false;
             const bool frameIndependent = false;
+            // The frame the list was taken for, frame lists need to be submitted in the same frame
+            int32_t frameIndex = 0;
 
             QueueType queueType;
 

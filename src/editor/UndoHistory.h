@@ -39,6 +39,9 @@ namespace Atlas::Editor {
         // Handles the undo and redo shortcuts, returns true if a step was undone or redone
         bool HandleShortcuts();
 
+        // -1 when the undo shortcut was pressed, 1 for the redo shortcut and 0 otherwise
+        int32_t GetShortcutDirection() const;
+
         size_t maxSteps = 256;
 
     private:

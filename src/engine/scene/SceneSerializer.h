@@ -7,6 +7,9 @@
 
 namespace Atlas::Scene {
 
+    // Components of the entity without its id and children
+    void ComponentsToJson(json& j, const Entity& p, Scene* scene);
+
     void EntityToJson(json& j, const Entity& p, Scene* scene,
         std::set<ECS::Entity>& insertedEntities);
 

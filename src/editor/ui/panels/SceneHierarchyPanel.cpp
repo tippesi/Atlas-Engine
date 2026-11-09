@@ -592,13 +592,13 @@ namespace Atlas::Editor::UI {
             }
 
             if (history)
-                history->BeginChange(scene, movedEntities);
+                history->BeginMove(scene, movedEntities);
             for (auto dropEntity : movedEntities) {
                 dropEntity.SetParent(entity);
                 sceneChanged = true;
             }
             if (history)
-                history->EndChange("Move entities", movedEntities);
+                history->EndMove("Move entities");
 
         }
 

@@ -81,6 +81,8 @@ namespace Atlas {
             PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target,
                 Ref<Terrain::Terrain>& terrain, bool detailConfig,
                 bool materialMappingConfig);
+
+            void GenerateNoiseTexture();
         };
 
     }

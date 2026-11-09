@@ -86,8 +86,13 @@ namespace Atlas::Editor {
         // focused mesh editor
         void OpenInAssetEditor(const std::string& path);
 
-        // Asset editors and prefabs open as a tab next to the scenes
+        // Windows opened by the user join the selected window as a tab, others the scenes
         void DockNextToScenes(UI::Window& window);
+
+        // Dock node of the asset editor or scene window that was focused last
+        ImGuiID GetActiveDockNodeID() const;
+
+        void OpenAsTab(UI::Window& window) const;
 
         Ref<UI::SceneWindow> GetActiveSceneWindow() const;
 
@@ -111,6 +116,8 @@ namespace Atlas::Editor {
         bool showShortcutsWindow = false;
 
         std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
+        // Scenes opened by the user and not restored from the config
+        std::vector<ResourceHandle<Scene::Scene>> userOpenedScenes;
         std::vector<Ref<UI::SceneWindow>> sceneWindows;
         std::vector<Ref<UI::AssetEditorWindow>> assetEditorWindows;
         Ref<UI::AssetEditorWindow> activeAssetEditorWindow;
@@ -127,6 +134,7 @@ namespace Atlas::Editor {
 
         bool resetDockspaceLayout = false;
         bool dockLoadingScenes = false;
+        bool restoringScenes = true;
         bool playingMaximized = false;
 
     };

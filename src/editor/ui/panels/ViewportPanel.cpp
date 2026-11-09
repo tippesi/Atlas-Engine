@@ -10,6 +10,10 @@ namespace Atlas::Editor::UI {
 
         viewport = CreateRef<Viewport>();
         viewportTexture = Texture::Texture2D(1, 1, VK_FORMAT_R16G16B16A16_SFLOAT);
+        renderTarget = CreateRef<Renderer::RenderTarget>(64, 64);
+
+        mainRenderer = CreateRef<Renderer::MainRenderer>();
+        mainRenderer->Init(Graphics::GraphicsDevice::DefaultDevice);
 
         CreateRenderPass();
 
@@ -28,9 +32,10 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::Render(Ref<Scene::Scene> &scene, bool isActiveWindow) {
+    void ViewportPanel::Render(Ref<Scene::Scene> &scene) {
 
-        ImGui::Begin(GetNameID());
+        // Viewports in hidden tabs aren't rendered
+        bool isVisible = ImGui::Begin(GetNameID());
 
         bool isBlocked = Singletons::blockingOperation->block;
 
@@ -53,7 +58,10 @@ namespace Atlas::Editor::UI {
 
         auto pos = ivec2(int32_t(windowPos.x), int32_t(windowPos.y));
         auto size = ivec2(int32_t(region.x), int32_t(region.y));
-        RenderScene(scene, pos, size, isActiveWindow);
+        if (isVisible)
+            RenderScene(scene, pos, size);
+        else
+            primitiveBatchWrapper.Clear();
 
         if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             auto set = Singletons::imguiWrapper->GetTextureId(&viewportTexture);
@@ -82,7 +90,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size, bool isActive) { 
+    void ViewportPanel::RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size) {
 
         bool validSize = size.x > 0 && size.y > 0;
 
@@ -93,9 +101,11 @@ namespace Atlas::Editor::UI {
             CreateRenderPass();
         }
 
-        if (scene != nullptr && validSize && isActive && !Singletons::blockingOperation->block) {
+        if (scene != nullptr && validSize && !Singletons::blockingOperation->block) {
             auto& config = Singletons::config;
-            auto& renderTarget = this->renderTarget ? this->renderTarget : Singletons::renderTarget;
+
+            // Advances the frame count of the renderer, e.g. for the jitter
+            mainRenderer->Update();
 
             if (renderTarget->GetWidth() != viewportTexture.width ||
                 renderTarget->GetHeight() != viewportTexture.height) {
@@ -110,10 +120,10 @@ namespace Atlas::Editor::UI {
             // Scenes without ray tracing data (yet) are rasterized
             if (config->pathTrace && allowPathTracing && scene->IsRtDataValid()) {
                 // Overlays like the grid, bounding volumes and brushes are visible when path tracing as well
-                Singletons::mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture, primitiveBatches);
+                mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture, primitiveBatches);
             }
             else {
-                Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
+                mainRenderer->RenderScene(viewport, renderTarget, scene,
                     primitiveBatches, &viewportTexture);
 
                 if (visualization != Lit) {
@@ -124,9 +134,10 @@ namespace Atlas::Editor::UI {
                     RenderVisualization(exposure);
                 }
             }
-
-            primitiveBatchWrapper.Clear();
         }
+
+        // Lines of frames that weren't rendered are dropped, otherwise they would pile up
+        primitiveBatchWrapper.Clear();
 
     }
 
@@ -262,9 +273,6 @@ namespace Atlas::Editor::UI {
     void ViewportPanel::RenderVisualization(float exposure) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
-
-        auto& renderTarget = this->renderTarget ? this->renderTarget : Singletons::renderTarget;
-        auto& mainRenderer = Singletons::mainRenderer;
 
         auto rtData = renderTarget->GetData(Renderer::RenderResolution::FULL_RES);
 

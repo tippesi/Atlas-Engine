@@ -22,16 +22,19 @@ namespace Atlas::Editor {
 
         void EndChange(const std::string& name, const std::vector<Scene::Entity>& roots);
 
+        // Moves only save the parents and the order of the entities, not their hierarchies
+        void BeginMove(const Ref<Scene::Scene>& scene, const std::vector<Scene::Entity>& entities);
+
+        void EndMove(const std::string& name);
+
         // Component edits of entities which aren't selected, e.g. renaming in the hierarchy
         void BeginEdit(const Ref<Scene::Scene>& scene, const std::vector<Scene::Entity>& entities);
 
         void EndEdit(const std::string& name);
 
-        bool Undo();
+        bool Undo(const Ref<Scene::Scene>& scene);
 
-        bool Redo();
-
-        bool HandleShortcuts();
+        bool Redo(const Ref<Scene::Scene>& scene);
 
         void Clear();
 
@@ -45,6 +48,12 @@ namespace Atlas::Editor {
             ECS::Entity parent;
             size_t index;
             json entity;
+        };
+
+        struct Placement {
+            ECS::Entity entity;
+            ECS::Entity parent;
+            size_t index;
         };
 
         struct EntityChange {
@@ -62,6 +71,12 @@ namespace Atlas::Editor {
         void RestoreHierarchies(std::vector<Hierarchy> hierarchies);
 
         Scene::Entity RestoreEntity(const json& j);
+
+        std::vector<Placement> SavePlacements(const std::vector<ECS::Entity>& entities);
+
+        void RestorePlacements(std::vector<Placement> placements);
+
+        void PlaceEntity(Scene::Entity entity, ECS::Entity parent, size_t index);
 
         json SaveComponents(Scene::Entity entity);
 
@@ -93,6 +108,8 @@ namespace Atlas::Editor {
 
         std::vector<Hierarchy> hierarchiesBefore;
         bool changeStarted = false;
+
+        std::vector<Placement> placementsBefore;
 
         std::vector<EntityChange> editedEntities;
 

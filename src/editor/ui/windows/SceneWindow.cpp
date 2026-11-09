@@ -94,8 +94,8 @@ namespace Atlas::Editor::UI {
             SaveScene();
         }
 
-        if (inFocus && !isPlaying && scene.IsLoaded() && history.HandleShortcuts())
-            ApplyHistoryChange();
+        if (inFocus && !isPlaying && scene.IsLoaded())
+            requestedHistorySteps += history.history.GetShortcutDirection();
         
         if (controlDown && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
@@ -194,7 +194,7 @@ namespace Atlas::Editor::UI {
         CPUProfiler::Scope sectionScope("Properties panel");
         // Depending on the selection in the scene hierarchy panel, render the properties in a different window
         if (scene.IsLoaded()) {
-            const auto& target = Singletons::renderTarget;
+            const auto& target = viewportPanel.renderTarget;
 
             EntityProperties entityProperties = {
                 .entity = sceneHierarchyPanel.selectedEntity,
@@ -249,8 +249,10 @@ namespace Atlas::Editor::UI {
             hasUnsavedChanges = true;
         sceneHierarchyPanel.sceneChanged = false;
 
-        if (!isPlaying && scene.IsLoaded())
+        // Only the window the user works in has edits, the last click might have moved the focus already
+        if (!isPlaying && scene.IsLoaded() && (inFocus || wasInFocus))
             history.Update(scene.Get(), sceneHierarchyPanel.selectedEntities);
+        wasInFocus = inFocus;
         sectionScope.Next("Overlays");
 
         if (sceneHierarchyPanel.focusRequested) {
@@ -281,6 +283,7 @@ namespace Atlas::Editor::UI {
             // Path tracing needs history while ray tracing
             scene->rayTracingWorld->includeObjectHistory = Singletons::config->pathTrace;
 
+            ApplyRequestedHistorySteps();
             scene->Update(Clock::GetDelta(), cameraEntity);
 
             if (focusAfterUpdate) {
@@ -292,7 +295,7 @@ namespace Atlas::Editor::UI {
         sectionScope.Next("Viewport panel");
         viewportPanel.frameColor = !isPlaying ? ImVec4(0.0f, 0.0f, 0.0f, 0.0f) :
             scene->paused ? Theme::Warning() : Theme::Success();
-        viewportPanel.Render(refScene, isActiveWindow);
+        viewportPanel.Render(refScene);
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
         if (!path.empty()) {
@@ -500,9 +503,9 @@ namespace Atlas::Editor::UI {
                     [](PostProcessing::Upscaler upscaler) { return Singletons::mainRenderer->IsUpscalerSupported(upscaler); });
 
                 ImGui::SeparatorText("Path tracer samples");
-                // ImGui::Checkbox("Realtime", &Singletons::mainRenderer->pathTracingRenderer.realTime);
-                ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
-                ImGui::DragFloat("Max clipping", &Singletons::mainRenderer->pathTracingRenderer.historyClipMax, 0.001f, 0.0f, 1.0f);
+                // ImGui::Checkbox("Realtime", &viewportPanel.mainRenderer->pathTracingRenderer.realTime);
+                ImGui::DragInt("Sample count", &viewportPanel.mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
+                ImGui::DragFloat("Max clipping", &viewportPanel.mainRenderer->pathTracingRenderer.historyClipMax, 0.001f, 0.0f, 1.0f);
 
                 ImGui::SeparatorText("Playing");
                 ImGui::Checkbox("Play maximized", &playMaximized);
@@ -511,8 +514,8 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
-                Singletons::renderTarget->SetScalingFactor(resolutionScale);
+            if (viewportPanel.renderTarget->GetScalingFactor() != resolutionScale)
+                viewportPanel.renderTarget->SetScalingFactor(resolutionScale);
 
             viewportPanel.RenderVisualizationPopup();
 
@@ -1051,6 +1054,31 @@ namespace Atlas::Editor::UI {
         sceneHierarchyPanel.SelectEntity(entity);
 
         return entity;
+
+    }
+
+    void SceneWindow::Undo() {
+
+        requestedHistorySteps--;
+
+    }
+
+    void SceneWindow::Redo() {
+
+        requestedHistorySteps++;
+
+    }
+
+    void SceneWindow::ApplyRequestedHistorySteps() {
+
+        bool changed = false;
+        for (; requestedHistorySteps < 0; requestedHistorySteps++)
+            changed |= history.Undo(scene.Get());
+        for (; requestedHistorySteps > 0; requestedHistorySteps--)
+            changed |= history.Redo(scene.Get());
+
+        if (changed)
+            ApplyHistoryChange();
 
     }
 

@@ -3,7 +3,6 @@
 namespace Atlas::Editor {
 
     Ref<ImguiExtension::ImguiWrapper> Singletons::imguiWrapper;
-    Ref<Renderer::RenderTarget> Singletons::renderTarget;
     Ref<Renderer::MainRenderer> Singletons::mainRenderer;
     Ref<Icons> Singletons::icons;
     Ref<Config> Singletons::config;
@@ -12,7 +11,6 @@ namespace Atlas::Editor {
     void Singletons::Destruct() {
 
         imguiWrapper.reset();
-        renderTarget.reset();
         mainRenderer.reset();
         icons.reset();
         config.reset();

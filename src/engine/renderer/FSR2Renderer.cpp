@@ -907,9 +907,8 @@ namespace Atlas::Renderer {
 
 	void FSR2Renderer::DestroyContext() {
 
-		device->WaitForIdle();
-
 		if (initParams.callbacks.scratchBuffer != nullptr) {
+			device->WaitForIdle();
 			ffxFsr2ContextDestroy(&context);
 			FSR2Context* fsr2Context = reinterpret_cast<FSR2Context*>(initParams.callbacks.scratchBuffer);
 			delete fsr2Context;

@@ -423,12 +423,14 @@ namespace Atlas {
                 return commandList;
             }
             else {
-                auto currentFrameData = GetFrameData(frameIndex);
+                auto currentFrameIndex = frameIndex;
+                auto currentFrameData = GetFrameData(currentFrameIndex);
 
                 auto commandList = GetOrCreateCommandList(queueType, currentFrameData->commandListsMutex,
                     currentFrameData->commandLists, false);
 
                 commandList->isSubmitted = false;
+                commandList->frameIndex = currentFrameIndex;
                 commandList->dependencies.clear();
 
                 return commandList;
@@ -453,7 +455,7 @@ namespace Atlas {
             // Make sure only one command list at a time can be added
             std::lock_guard<std::mutex> lock(frame->submissionMutex);
 
-            AE_ASSERT(frame == GetFrameData(frameIndex) && "Command list was submitted after its frame was completed."
+            AE_ASSERT(cmd->frameIndex == frameIndex && "Command list was submitted after its frame was completed."
                 && "Wait for the recording job before the frame is submitted");
 
             CommandListSubmission submission = {
