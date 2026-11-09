@@ -386,7 +386,7 @@ namespace Atlas::Editor::UI {
 
         if (!std::filesystem::exists(currentDirectory)) {
             auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
-            Notifications::Push({ .message = message, .color = vec3(1.0f, 1.0f, 0.0f) });
+            Notifications::Push({ .message = message, .type = NotificationType::Warning });
             currentDirectory = Loader::AssetLoader::GetDataDirectory();
         }
 
@@ -937,7 +937,7 @@ namespace Atlas::Editor::UI {
         auto fileStream = Loader::AssetLoader::WriteFile(assetRelative, std::ios::out | std::ios::binary);
         if (!fileStream.is_open()) {
             Notifications::Push({"Couldn't write file " + 
-                Loader::AssetLoader::GetRelativePath(assetRelative), vec3(1.0f, 0.0f, 0.0f)});
+                Loader::AssetLoader::GetRelativePath(assetRelative), NotificationType::Error});
             return;
         }
         fileStream.close();

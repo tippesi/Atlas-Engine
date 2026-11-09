@@ -15,9 +15,17 @@ namespace Atlas::Editor::UI {
         ImGui::PushID(GetNameID());
 
         // Make sure the local matrix is updated from the global one
-        // This needs to happen when external system like physics just updated the globalMatrix
+        // This needs to happen when external system like physics just updated the globalMatrix.
+        // Otherwise the local matrix stays, rebuilding it each frame would add up rounding errors
         auto parentEntity = scene->GetParentEntity(entity);
-        transform.ReconstructLocalMatrix(parentEntity);
+        auto localMatrix = transform.GetReconstructedLocalMatrix(parentEntity);
+        for (int32_t i = 0; i < 4; i++) {
+            auto tolerance = 1e-5f * glm::max(vec4(1.0f), glm::abs(transform.matrix[i]));
+            if (glm::any(glm::greaterThan(glm::abs(localMatrix[i] - transform.matrix[i]), tolerance))) {
+                transform.Set(localMatrix);
+                break;
+            }
+        }
 
         // The matrix decomposition/composition code is a bit unstable and
         // we work with fixed information that is recomposed when changed,

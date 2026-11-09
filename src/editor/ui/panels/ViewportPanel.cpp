@@ -9,6 +9,7 @@ namespace Atlas::Editor::UI {
     ViewportPanel::ViewportPanel() : Panel("Viewport") {
 
         viewport = CreateRef<Viewport>();
+        renderViewport = CreateRef<Viewport>();
         viewportTexture = Texture::Texture2D(1, 1, VK_FORMAT_R16G16B16A16_SFLOAT);
         renderTarget = CreateRef<Renderer::RenderTarget>(64, 64);
 
@@ -94,10 +95,13 @@ namespace Atlas::Editor::UI {
 
         bool validSize = size.x > 0 && size.y > 0;
 
-        if ((viewportTexture.width != size.x ||
-            viewportTexture.height != size.y) && validSize) {
+        // The scene is rendered in window units as before, the interface scale doesn't lower its resolution
+        auto renderSize = ivec2(vec2(size) * Singletons::imguiWrapper->GetScale());
+        if ((viewportTexture.width != renderSize.x ||
+            viewportTexture.height != renderSize.y) && validSize) {
             viewport->Set(pos.x, pos.y, size.x, size.y);
-            viewportTexture.Resize(size.x, size.y);
+            renderViewport->Set(0, 0, renderSize.x, renderSize.y);
+            viewportTexture.Resize(renderSize.x, renderSize.y);
             CreateRenderPass();
         }
 
@@ -120,10 +124,10 @@ namespace Atlas::Editor::UI {
             // Scenes without ray tracing data (yet) are rasterized
             if (config->pathTrace && allowPathTracing && scene->IsRtDataValid()) {
                 // Overlays like the grid, bounding volumes and brushes are visible when path tracing as well
-                mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture, primitiveBatches);
+                mainRenderer->PathTraceScene(renderViewport, renderTarget, scene, &viewportTexture, primitiveBatches);
             }
             else {
-                mainRenderer->RenderScene(viewport, renderTarget, scene,
+                mainRenderer->RenderScene(renderViewport, renderTarget, scene,
                     primitiveBatches, &viewportTexture);
 
                 if (visualization != Lit) {
@@ -281,60 +285,60 @@ namespace Atlas::Editor::UI {
         commandList->BeginRenderPass(renderPass, frameBuffer, true);
 
         if (visualization == GBufferBaseColor) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->baseColorTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->baseColorTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f, false, true);
         }
         if (visualization == GBufferRoughnessMetalnessAo) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->roughnessMetallicAoTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->roughnessMetallicAoTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f, false, true);
         }
         if (visualization == GBufferEmissive) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->emissiveTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->emissiveTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f, false, true);
         }
         if (visualization == GBufferNormals) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->normalTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->normalTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f, false, true);
         }
         if (visualization == GBufferGeometryNormals) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->geometryNormalTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->geometryNormalTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f, false, true);
         }
         if (visualization == GBufferMaterialIdx) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->materialIdxTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f / 10000.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->materialIdxTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f / 10000.0f, false, true);
         }
         if (visualization == GBufferStencil) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->stencilTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f / 255.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->stencilTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f / 255.0f, false, true);
         }
         if (visualization == GBufferDepth) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->depthTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->depthTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f, false, true);
         }
         if (visualization == GBufferVelocity) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->velocityTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 100.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, rtData->velocityTexture.get(),
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 100.0f, false, true);
         }
         else if (visualization == Reflections) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, &renderTarget->reflectionTexture,
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, exposure, false, true);
         }
         else if (visualization == Volumetrics) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, &renderTarget->volumetricTexture,
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, exposure, false, true);
         }
         else if (visualization == Clouds) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricCloudsTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, &renderTarget->volumetricCloudsTexture,
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, exposure, false, true);
         }
         else if (visualization == SSS) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->sssTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, &renderTarget->sssTexture,
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, 1.0f, false, true);
         }
         else if (visualization == SSGI) {
-            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->giTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, renderViewport, &renderTarget->giTexture,
+                0.0f, 0.0f, float(renderViewport->width), float(renderViewport->height), 0.0, exposure, false, true);
         }
 
         commandList->EndRenderPass();

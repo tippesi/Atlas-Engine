@@ -66,7 +66,9 @@ namespace Atlas::ImguiExtension {
         auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
         textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
-        RecreateImGuiResources();
+        // The resources might have been created already, e.g. for the fonts of the application
+        if (!initialized)
+            RecreateImGuiResources();
 
     }
 
@@ -102,8 +104,8 @@ namespace Atlas::ImguiExtension {
 
         io.DeltaTime = deltaTime;
 
-        auto w = (float) window->GetWidth();
-        auto h = (float) window->GetHeight();
+        auto w = (float) window->GetWidth() / scale;
+        auto h = (float) window->GetHeight() / scale;
         auto size = glm::vec2(window->GetDrawableSize());
         io.DisplaySize = ImVec2(w, h);
         if (w > 0.0f && h > 0.0f)
@@ -209,12 +211,14 @@ namespace Atlas::ImguiExtension {
 
     void ImguiWrapper::RecreateImGuiResources() {
 
-        if (initialized) {
-            ImGui_ImplVulkan_Shutdown();
-        }
-
         auto instance = Atlas::Graphics::Instance::DefaultInstance;
         auto device = instance->GetGraphicsDevice();
+
+        // Frames in flight still use the old font texture
+        if (initialized) {
+            device->WaitForIdle();
+            ImGui_ImplVulkan_Shutdown();
+        }
 
         auto desc = Atlas::Graphics::DescriptorPoolDesc{
             .freeDescriptorSets = true
@@ -248,6 +252,18 @@ namespace Atlas::ImguiExtension {
         imageViewToDescriptorSetMap.clear();
 
         initialized = true;
+
+    }
+
+    void ImguiWrapper::SetScale(float scale) {
+
+        this->scale = scale;
+
+    }
+
+    float ImguiWrapper::GetScale() const {
+
+        return scale;
 
     }
 
@@ -298,7 +314,7 @@ namespace Atlas::ImguiExtension {
 
         ImGuiIO &io = ImGui::GetIO();
 
-        io.MousePos = ImVec2(event.x, event.y);
+        io.MousePos = ImVec2(event.x / scale, event.y / scale);
 
     }
 

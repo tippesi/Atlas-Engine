@@ -60,7 +60,9 @@ namespace Atlas::Editor::UI {
         static constexpr float toolbarButtonSpacing = 2.0f;
         static constexpr float toolbarFramePadding = 5.0f;
 
+        // In ImGui units for the interface, the scene is rendered with the render viewport
         Ref<Viewport> viewport;
+        Ref<Viewport> renderViewport;
         Texture::Texture2D viewportTexture;
 
         // All visible viewports are rendered in the same frame, so uniform buffers, upscalers and history can't be shared

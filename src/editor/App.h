@@ -47,6 +47,15 @@ namespace Atlas::Editor {
 
         void ApplyTheme();
 
+        // Follows the scale of the display unless the user chose one, the font is rasterized for it
+        void UpdateUiScale();
+
+        float GetStatusChipWidth(const char* text, float trailingWidth = 0.0f);
+
+        float GetNotificationBadgeWidth(int32_t unreadCount);
+
+        void RenderNotificationButton();
+
         void RenderStatusBar();
 
         // Undo and redo act on the asset editor or scene in front
@@ -128,6 +137,10 @@ namespace Atlas::Editor {
 
         float drawerSpringTime = 0.0f;
         float backgroundJobTime = 0.0f;
+
+        float systemUiScale = 0.0f;
+        float fontRasterSize = 0.0f;
+        bool notificationsOpen = false;
 
         std::vector<std::string> emptyStateScenes;
         bool emptyStateVisible = false;

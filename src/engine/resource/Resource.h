@@ -57,18 +57,18 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const ResourceLoadException exception) {
+            catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch (const std::exception exception) {
+            catch (const std::exception& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
             }
             catch(...) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = "Unknown issue occurred";
             }
 
         }
@@ -80,18 +80,18 @@ namespace Atlas {
                 data = loaderFunction(path, std::forward<Args>(args)...);
                 isLoaded = true;
             }
-            catch (const ResourceLoadException exception) {
+            catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch(const std::exception exception) {
+            catch(const std::exception& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = exception.what();
             }
             catch (...) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = "Unknown issue occurred";
             }
 
         }
@@ -153,7 +153,8 @@ namespace Atlas {
         bool permanent = false;
 
         bool errorOnLoad = false;
-        std::exception exceptionOnLoad;
+        // Exceptions are copied as std::exception, which loses their message
+        std::string errorMessageOnLoad;
 
         std::filesystem::file_time_type loadModifiedTime;        
 

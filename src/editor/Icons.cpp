@@ -34,6 +34,7 @@ namespace Atlas::Editor {
                 { IconType::Error, Texture::Texture2D("editor/icons/error.png") },
                 { IconType::Warning, Texture::Texture2D("editor/icons/warning.png") },
                 { IconType::Play, Texture::Texture2D("editor/icons/play.png") },
+                { IconType::Notifications, Texture::Texture2D("editor/icons/notifications.png") },
             };
         }
 
@@ -113,6 +114,7 @@ namespace Atlas::Editor {
                 { IconType::Log, Texture::Texture2D("editor/icons/log.png") },
                 { IconType::Error, Texture::Texture2D("editor/icons/error.png") },
                 { IconType::Warning, Texture::Texture2D("editor/icons/warning.png") },
+                { IconType::Notifications, Texture::Texture2D("editor/icons/notifications.png") },
             };
         }
         else {
@@ -166,6 +168,7 @@ namespace Atlas::Editor {
                 { IconType::Log, Texture::Texture2D("editor/icons/log_light.png") },
                 { IconType::Error, Texture::Texture2D("editor/icons/error_light.png") },
                 { IconType::Warning, Texture::Texture2D("editor/icons/warning_light.png") },
+                { IconType::Notifications, Texture::Texture2D("editor/icons/notifications_light.png") },
             };
         }
 

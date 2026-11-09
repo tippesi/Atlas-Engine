@@ -3,6 +3,7 @@
 #include <cctype>
 
 #include "common/Path.h"
+#include "Notifications.h"
 
 namespace Atlas::Editor {
 
@@ -20,6 +21,8 @@ namespace Atlas::Editor {
 
         if (!Content::contentTypeMapping.contains(fileType)) {
             Log::Warning("Incompatible file type " + fileType);
+            Notifications::Push({ .message = "Can't import " + Common::Path::GetFileName(filename) + ", ." + fileType +
+                " files aren't supported", .type = NotificationType::Warning });
             return;
         }
 

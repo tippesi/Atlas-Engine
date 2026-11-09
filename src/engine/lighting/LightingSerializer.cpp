@@ -57,6 +57,9 @@ namespace Atlas::Lighting {
         try_get_json(j, "sunDiskSize", p.sunDiskSize);
         try_get_json(j, "directLight", p.directLight);
         try_get_json(j, "indirectLight", p.indirectLight);
+
+        // The lookup tables of the atmosphere depend on these values
+        p.needsUpdate = true;
     }
 
     void to_json(json& j, const Fog& p) {
@@ -412,7 +415,6 @@ namespace Atlas::Lighting {
         try_get_json(j, "densityMultiplier", p.densityMultiplier);
         try_get_json(j, "distanceLimit", p.distanceLimit);
         try_get_json(j, "variationSeed", p.variationSeed);
-        p.needsNoiseUpdate |= p.variationSeed != variationSeed;
         try_get_json(j, "enable", p.enable);
         try_get_json(j, "castShadow", p.castShadow);
 
@@ -424,6 +426,7 @@ namespace Atlas::Lighting {
             try_get_json(j, "layerThickness", p.layerThickness);
             try_get_json(j, "quality", p.quality);
             try_get_json(j, "scattering", p.scattering);
+            p.needsNoiseUpdate |= p.variationSeed != variationSeed;
             return;
         }
 
@@ -446,6 +449,7 @@ namespace Atlas::Lighting {
         p.baseAltitude = minHeight;
         p.layerThickness = glm::max(maxHeight - minHeight, 1.0f);
         p.quality = sampleCount <= 48 ? 0 : sampleCount <= 96 ? 1 : sampleCount <= 160 ? 2 : 3;
+        p.needsNoiseUpdate |= p.variationSeed != variationSeed;
     }
 
     void to_json(json& j, const Sky& p) {

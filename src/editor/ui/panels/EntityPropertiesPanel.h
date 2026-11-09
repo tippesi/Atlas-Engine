@@ -160,7 +160,7 @@ namespace Atlas::Editor::UI {
                 CopyPasteHelper::Paste(copy);
 
                 if (copy.scene != scene.get()) {
-                    Notifications::Push({ "Cannot copy component from one scene to another", vec3(1.0f, 0.0f, 0.0f) });
+                    Notifications::Push({ "Cannot copy component from one scene to another", NotificationType::Error });
                     return true;
                 }
 

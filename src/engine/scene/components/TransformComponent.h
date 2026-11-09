@@ -41,6 +41,9 @@ namespace Atlas {
 
                 void ReconstructLocalMatrix(const Entity& parentEntity);
 
+                // The local matrix ReconstructLocalMatrix would set, without changing the component
+                mat4 GetReconstructedLocalMatrix(const Entity& parentEntity) const;
+
                 bool IsStatic() const;
 
                 void Translate(glm::vec3 translation);

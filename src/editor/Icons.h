@@ -55,7 +55,8 @@ namespace Atlas::Editor {
         ViewGrid,
         Log,
         Error,
-        Warning
+        Warning,
+        Notifications
     };
 
     class Icons {

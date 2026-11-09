@@ -1,6 +1,7 @@
 #include "Serialization.h"
 #include "Singletons.h"
 #include "FileImporter.h"
+#include "Notifications.h"
 
 #include "common/SerializationHelper.h"
 #include "tools/ToolSerializer.h"
@@ -29,6 +30,7 @@ namespace Atlas::Editor {
             { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
             { "vsync", config->vsync },
+            { "uiScale", config->uiScale },
             { "scenes", scenePaths },
             { "recentScenes", config->recentScenes }
         };
@@ -56,6 +58,8 @@ namespace Atlas::Editor {
             j.at("pathTrace").get_to(config->pathTrace);
         if (j.contains("vsync"))
             j.at("vsync").get_to(config->vsync);
+        if (j.contains("uiScale"))
+            j.at("uiScale").get_to(config->uiScale);
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
         if (j.contains("recentScenes"))
@@ -234,6 +238,7 @@ namespace Atlas::Editor {
 
         if (!fileStream.is_open()) {
             Log::Error("Couldn't write config file");
+            Notifications::Push({ .message = "Couldn't write the editor settings to " + filename, .type = NotificationType::Error });
             return;
         }
 

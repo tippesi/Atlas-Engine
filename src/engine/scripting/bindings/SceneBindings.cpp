@@ -737,6 +737,7 @@ namespace Atlas::Scripting::Bindings {
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
             "SetGlobal", &TransformComponent::SetGlobal,
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
+            "GetReconstructedLocalMatrix", &TransformComponent::GetReconstructedLocalMatrix,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix,
             "isStatic", &TransformComponent::isStatic,

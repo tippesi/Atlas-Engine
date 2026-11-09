@@ -63,17 +63,9 @@ namespace Atlas::Editor {
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
 
-        // Add font with enlarged size and scale it down again
-        // This means we can use scaled text up to 2x the size
-        io.Fonts->AddFontFromFileTTF(
-            Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
-            32.0f
-        )->Scale = 0.5f;
-
         SubscribeToResourceEvents();
 
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
-        Singletons::imguiWrapper->Load(&window);
         Singletons::config = CreateRef<Config>();
 
         Serialization::DeserializeConfig();
@@ -81,6 +73,10 @@ namespace Atlas::Editor {
 
         Serialization::DeserializeLogWindow(logWindow);
         restoringScenes = false;
+
+        // The font depends on the scale from the config, its resources are created only once
+        UpdateUiScale();
+        Singletons::imguiWrapper->Load(&window);
 
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
@@ -131,6 +127,7 @@ namespace Atlas::Editor {
         if (!playingMaximized)
             ContentDiscovery::Update();
         sectionScope.Next("ImGui update");
+        UpdateUiScale();
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
         Singletons::blockingOperation->Update();
@@ -184,8 +181,11 @@ namespace Atlas::Editor {
                 // ones stay where they were left and after a layout reset nobody has a place anymore
                 auto settings = ImGui::FindWindowSettingsByID(ImHashStr(sceneWindows.back()->GetNameID()));
                 sceneWindows.back()->requestDocking = !settings || dockLoadingScenes;
-                if (std::erase(userOpenedScenes, waitToLoadScenes.back()))
+                // Large scenes take a while, it's worth to say when they are there
+                if (std::erase(userOpenedScenes, waitToLoadScenes.back())) {
                     OpenAsTab(*sceneWindows.back());
+                    Notifications::Push({ .message = "Opened scene " + waitToLoadScenes.back()->name });
+                }
                 waitToLoadScenes.pop_back();
                 i--;
             }
@@ -197,6 +197,8 @@ namespace Atlas::Editor {
                 return false;
             std::erase(Singletons::config->openedScenes, handle);
             std::erase(userOpenedScenes, handle);
+            Notifications::Push({ .message = "Couldn't load scene " + handle.GetResource()->GetFileName() + ": " +
+                handle.GetResource()->errorMessageOnLoad, .type = NotificationType::Error });
             return true;
             });
 
@@ -455,6 +457,18 @@ namespace Atlas::Editor {
                     if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
                         ApplyTheme();
                     }
+                    if (ImGui::BeginMenu("Interface scale")) {
+                        auto percent = [](float scale) { return std::to_string(int32_t(std::round(scale * 100.0f))) + "%"; };
+                        auto systemLabel = "System (" + percent(window.GetContentScale()) + ")";
+                        if (ImGui::MenuItem(systemLabel.c_str(), nullptr, config->uiScale <= 0.0f))
+                            config->uiScale = 0.0f;
+                        ImGui::Separator();
+                        for (auto scale : { 0.75f, 0.9f, 1.0f, 1.1f, 1.25f, 1.5f, 1.75f, 2.0f }) {
+                            if (ImGui::MenuItem(percent(scale).c_str(), nullptr, config->uiScale == scale))
+                                config->uiScale = scale;
+                        }
+                        ImGui::EndMenu();
+                    }
                     ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
                     ImGui::EndMenu();
                 }
@@ -706,6 +720,38 @@ namespace Atlas::Editor {
 
         auto base = Theme::Base();
         window.SetTitleBarColor(vec3(base.x, base.y, base.z), Singletons::config->darkMode);
+
+    }
+
+    void App::UpdateUiScale() {
+
+        auto systemScale = window.GetContentScale();
+        auto scale = glm::clamp(Singletons::config->uiScale > 0.0f ? Singletons::config->uiScale : systemScale, 0.5f, 3.0f);
+
+        // The window was moved to a display with another scale
+        if (Singletons::config->uiScale <= 0.0f && systemUiScale > 0.0f && systemScale != systemUiScale)
+            Notifications::Push({ .message = "Scaled the interface to " + std::to_string(int32_t(std::round(scale * 100.0f))) +
+                "% for this display" });
+        systemUiScale = systemScale;
+
+        Singletons::imguiWrapper->SetScale(scale);
+
+        // Minimized windows can have no size at all, the font is kept for when they come back
+        auto drawableSize = window.GetDrawableSize();
+        if (drawableSize.x <= 0 || window.GetWidth() <= 0)
+            return;
+
+        // Text is rasterized for the pixels it covers, but at least at twice its size such that larger text stays sharp
+        auto pixelDensity = float(drawableSize.x) / float(window.GetWidth());
+        auto rasterSize = std::round(16.0f * std::max(2.0f, pixelDensity * scale));
+        if (rasterSize == fontRasterSize)
+            return;
+        fontRasterSize = rasterSize;
+
+        auto& io = ImGui::GetIO();
+        io.Fonts->Clear();
+        io.Fonts->AddFontFromFileTTF(Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(), rasterSize)->Scale = 16.0f / rasterSize;
+        Singletons::imguiWrapper->RecreateImGuiResources();
 
     }
 
@@ -1010,7 +1056,7 @@ namespace Atlas::Editor {
             if (!exists)
                 ImGui::SetItemTooltip("File doesn't exist anymore");
             else if (loadFailed)
-                ImGui::SetItemTooltip("Loading failed: %s", openedIter->GetResource()->exceptionOnLoad.what());
+                ImGui::SetItemTooltip("Loading failed: %s", openedIter->GetResource()->errorMessageOnLoad.c_str());
             else
                 ImGui::SetItemTooltip("%s", path.c_str());
         }
@@ -1117,12 +1163,13 @@ namespace Atlas::Editor {
                     text(jobText, ImGuiCol_TextDisabled);
                 }
 
-                // Gizmo mode and performance on the right side
+                // Gizmo mode, performance and the notifications on the right side
                 auto frameTime = Clock::GetAverage() * 1000.0f;
                 char rightText[128];
                 std::snprintf(rightText, sizeof(rightText), "%s%s%.1f ms \xC2\xB7 %.0f fps", guizmoText.c_str(),
                     guizmoText.empty() ? "" : "     ", frameTime, frameTime > 0.0f ? 1000.0f / frameTime : 0.0f);
-                auto rightWidth = ImGui::CalcTextSize(rightText).x + ImGui::GetStyle().ItemSpacing.x;
+                auto notificationWidth = GetStatusChipWidth("", GetNotificationBadgeWidth(Notifications::GetUnreadCount()));
+                auto rightWidth = ImGui::CalcTextSize(rightText).x + ImGui::GetStyle().ItemSpacing.x + notificationWidth;
                 auto rightPos = ImGui::GetWindowContentRegionMax().x - rightWidth;
 
                 // The problem nobody has seen yet takes the room in between and opens the log
@@ -1146,6 +1193,9 @@ namespace Atlas::Editor {
                     text(rightText, ImGuiCol_TextDisabled);
                 }
 
+                ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - notificationWidth);
+                RenderNotificationButton();
+
                 ImGui::EndMenuBar();
             }
         }
@@ -1159,12 +1209,13 @@ namespace Atlas::Editor {
         ImVec4 background, ImVec4 backgroundHovered, float maxWidth, float trailingWidth) {
 
         const float padding = 8.0f;
-        const float iconGap = 5.0f;
+        // Chips without text only show their icon
+        const float iconGap = text[0] ? 5.0f : 0.0f;
 
         auto fontSize = ImGui::GetFontSize();
         auto iconSize = fontSize;
         auto textSize = ImGui::CalcTextSize(text);
-        auto width = std::min(padding + iconSize + iconGap + textSize.x + trailingWidth + padding, maxWidth);
+        auto width = std::min(GetStatusChipWidth(text, trailingWidth), maxWidth);
         auto height = ImGui::GetFrameHeight();
 
         // Pressing on click, since a drawer that is open closes itself when the mouse goes down outside of it
@@ -1190,6 +1241,68 @@ namespace Atlas::Editor {
         ImGui::PopStyleColor();
 
         return pressed;
+
+    }
+
+    float App::GetStatusChipWidth(const char* text, float trailingWidth) {
+
+        // Padding, icon, the gap to the text and the text, chips without text only show their icon
+        auto iconGap = text[0] ? 5.0f : 0.0f;
+        return 8.0f + ImGui::GetFontSize() + iconGap + ImGui::CalcTextSize(text).x + trailingWidth + 8.0f;
+
+    }
+
+    float App::GetNotificationBadgeWidth(int32_t unreadCount) {
+
+        // Gap to the icon and the padded count
+        return unreadCount > 0 ? 6.0f + ImGui::CalcTextSize(std::to_string(unreadCount).c_str()).x + 10.0f : 0.0f;
+
+    }
+
+    void App::RenderNotificationButton() {
+
+        auto unreadCount = Notifications::GetUnreadCount();
+        auto hasError = unreadCount > 0 && Notifications::HasUnreadError();
+        auto countText = std::to_string(unreadCount);
+        auto badgeWidth = GetNotificationBadgeWidth(unreadCount);
+
+        auto active = notificationsOpen || unreadCount > 0;
+        auto color = active ? ImGui::GetStyleColorVec4(ImGuiCol_Text) : Theme::TextMuted();
+        auto background = notificationsOpen ? Theme::Accent(0.35f) : Theme::TextMuted(0.12f);
+        auto backgroundHovered = notificationsOpen ? Theme::Accent(0.45f) : Theme::TextMuted(0.22f);
+
+        // The popup closes itself when the mouse goes down outside of it, a click on the button shouldn't open it again
+        auto wasOpen = notificationsOpen;
+        if (RenderStatusChip("##Notifications", IconType::Notifications, "", color, background, backgroundHovered,
+            FLT_MAX, badgeWidth) && !wasOpen)
+            ImGui::OpenPopup("##Notification center");
+        if (unreadCount > 0)
+            ImGui::SetItemTooltip("%d new %s", unreadCount, unreadCount == 1 ? "notification" : "notifications");
+        else
+            ImGui::SetItemTooltip("Notifications");
+
+        auto itemMin = ImGui::GetItemRectMin();
+        auto itemMax = ImGui::GetItemRectMax();
+        if (unreadCount > 0) {
+            auto badgeColor = hasError ? Theme::Error() : Theme::Accent();
+            auto min = ImVec2(itemMax.x - 8.0f - badgeWidth + 6.0f, itemMin.y + 5.0f);
+            auto max = ImVec2(itemMax.x - 8.0f, itemMax.y - 5.0f);
+            auto drawList = ImGui::GetWindowDrawList();
+            drawList->AddRectFilled(min, max, ImGui::GetColorU32(badgeColor), (max.y - min.y) * 0.5f);
+            drawList->AddText(ImVec2(min.x + 5.0f, GetCapCenteredTextY((min.y + max.y) * 0.5f)),
+                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), countText.c_str());
+        }
+
+        ImGui::SetNextWindowPos(ImVec2(itemMax.x, itemMin.y - 6.0f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+        notificationsOpen = ImGui::BeginPopup("##Notification center");
+        if (notificationsOpen) {
+            // Everything that is visible while it is open counts as read
+            Notifications::MarkAsRead();
+            Notifications::DisplayHistory();
+            if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+                ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
 
     }
 
@@ -1471,7 +1584,7 @@ namespace Atlas::Editor {
             }
             auto animation = FileImporter::ImportFile<Animation::Animation>(path);
             if (!assetEditorWindow || !assetEditorWindow->Play(animation))
-                Notifications::Push({ .message = "Open a skinned mesh to play the animation on", .color = vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ .message = "Open a skinned mesh to play the animation on", .type = NotificationType::Error });
             return;
         }
 

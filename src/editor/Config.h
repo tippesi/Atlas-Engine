@@ -10,6 +10,8 @@ namespace Atlas::Editor {
 		bool darkMode = true;
 		bool pathTrace = false;
 		bool vsync = true;
+		// Zero follows the scale of the display set in the system settings
+		float uiScale = 0.0f;
 
 		std::vector<ResourceHandle<Scene::Scene>> openedScenes;
 

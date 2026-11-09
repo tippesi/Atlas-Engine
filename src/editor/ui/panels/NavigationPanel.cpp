@@ -1,8 +1,21 @@
 #include "NavigationPanel.h"
 #include "../../Theme.h"
 #include "../Widgets.h"
+#include "../../Notifications.h"
 
 namespace Atlas::Editor::UI {
+
+    void NavigationPanel::Update(const Ref<Navigation::Navigation>& navigation) {
+
+        // Building all tiles takes a while, the panel might not be looked at until it's done
+        if (!rebuilding || !navigation || !navigation->mesh || navigation->mesh->GetPendingTileCount() > 0)
+            return;
+
+        Notifications::Push({ .message = "Rebuilt the navigation mesh with " +
+            std::to_string(navigation->mesh->GetTileCount()) + " tiles" });
+        rebuilding = false;
+
+    }
 
     void NavigationPanel::Render(Ref<Navigation::Navigation>& navigation) {
 
@@ -27,8 +40,10 @@ namespace Atlas::Editor::UI {
             if (navigation->mesh) {
                 ImGui::TextColored(Theme::TextMuted(), "%d tiles built, %d pending", navigation->mesh->GetTileCount(),
                     navigation->mesh->GetPendingTileCount());
-                if (ImGui::Button("Rebuild", ImVec2(-FLT_MIN, 0.0f)))
+                if (ImGui::Button("Rebuild", ImVec2(-FLT_MIN, 0.0f))) {
                     navigation->mesh->Invalidate();
+                    rebuilding = true;
+                }
                 ImGui::SetItemTooltip("Builds all tiles again. Tiles also rebuild by themselves where static bodies or terrain heights change");
             }
         }

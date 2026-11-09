@@ -36,6 +36,9 @@ namespace Atlas::Editor {
         // Edits are compared once the user stops interacting, such that e.g. a drag is a single step
         bool IsInteractionFinished();
 
+        // Whether an interaction was going on the last time it was checked
+        bool IsInteracting() const;
+
         // Handles the undo and redo shortcuts, returns true if a step was undone or redone
         bool HandleShortcuts();
 

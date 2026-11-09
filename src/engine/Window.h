@@ -117,6 +117,12 @@ namespace Atlas {
         ivec2 GetDrawableSize();
 
         /**
+         * Returns the content scale of the display the window is on.
+         * @return The scale the user chose in the system settings, e.g. 1.5 for 150%.
+         */
+        float GetContentScale();
+
+        /**
          * Returns whether the window is currently in focus
          * @return True if focused, false otherwise
          */

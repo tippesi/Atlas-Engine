@@ -54,12 +54,13 @@ namespace Atlas::Editor::UI {
         };
 
         auto materials = json::array();
+        // Material files have their own history, only embedded materials are edited here
         for (const auto& material : mesh->data.materials) {
             json materialJson;
-            if (material.IsLoaded())
-                materialJson["material"] = *material.Get();
             if (material.IsValid() && !material.IsGenerated())
                 materialJson["path"] = material.GetResource()->path;
+            else if (material.IsLoaded())
+                materialJson["material"] = *material.Get();
             materials.push_back(materialJson);
         }
         j["materials"] = materials;
@@ -287,7 +288,7 @@ namespace Atlas::Editor::UI {
 
         auto animation = ResourcePayloadHelper::AcceptDropResource<Animation::Animation>();
         if (animation.IsValid() && !Play(animation))
-            Notifications::Push({ .message = "The mesh has no skeleton to play the animation on", .color = vec3(1.0f, 0.0f, 0.0f) });
+            Notifications::Push({ .message = "The mesh has no skeleton to play the animation on", .type = NotificationType::Error });
 
     }
 

@@ -125,10 +125,9 @@ namespace Atlas::Editor::UI {
         // Physics bodies, contacts and constraints around the main camera
         void RenderPhysics();
 
-        // Time when the camera speed was last changed with the mouse wheel, to show a short hint
         int32_t requestedHistorySteps = 0;
-        bool wasInFocus = false;
 
+        // Time when the camera speed was last changed with the mouse wheel, to show a short hint
         float cameraSpeedChangeTime = -1000.0f;
 
         void PerformEntitySelection();

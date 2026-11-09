@@ -104,7 +104,6 @@ namespace Atlas::Editor::UI {
         void UpdateHistory();
 
         bool focusRequested = false;
-        bool wasInFocus = false;
 
         json lastState;
 

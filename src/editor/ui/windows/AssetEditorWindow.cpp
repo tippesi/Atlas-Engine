@@ -97,10 +97,9 @@ namespace Atlas::Editor::UI {
             Save();
         if (inFocus && history.HandleShortcuts())
             lastState = SaveState();
-        // Only the window the user works in has edits, the last click might have moved the focus already
-        if (inFocus || wasInFocus || lastState.is_null())
+        // Only the window the user works in has edits, an interaction which moved the focus away still has to finish
+        if (inFocus || history.IsInteracting() || lastState.is_null())
             UpdateHistory();
-        wasInFocus = inFocus;
         auto viewportShortcuts = inFocus && !controlDown && !typing && AllowsViewportShortcuts();
         if (viewportShortcuts && ImGui::IsKeyPressed(ImGuiKey_F, false))
             FocusAsset();

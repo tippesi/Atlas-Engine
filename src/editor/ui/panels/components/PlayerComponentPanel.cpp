@@ -49,7 +49,7 @@ namespace Atlas::Editor::UI {
 
 		if (ImGui::Button("Generate shape", { -FLT_MIN, 0 })) {
 			if (!shape->TryCreate()) {
-				Notifications::Push({ .message = "Error creating player shape", .color = vec3(1.0f, 0.0f, 0.0f) });
+				Notifications::Push({ .message = "Error creating player shape", .type = NotificationType::Error });
 			}
 			else {
 				playerComponent.SetShape(shape);

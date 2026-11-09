@@ -2,6 +2,7 @@
 
 #include "../../../Singletons.h"
 #include "../../../tools/ResourcePayloadHelper.h"
+#include "../../../Notifications.h"
 
 #include <imgui.h>
 #include <tools/ImpostorTool.h>
@@ -98,7 +99,8 @@ namespace Atlas::Editor::UI {
                         newImpostor->interpolation = impostor->interpolation;
                         newImpostor->pixelDepthOffset = impostor->pixelDepthOffset;
                         newImpostor->compressTextures = impostor->compressTextures;
-                        impostor.GetResource()->Swap(newImpostor);                        
+                        impostor.GetResource()->Swap(newImpostor);
+                        Notifications::Push({ .message = "Generated the impostor of " + mesh.GetResource()->GetFileName() });
                     }
                 }
             }

@@ -200,6 +200,15 @@ namespace Atlas {
 
     }
 
+    float Window::GetContentScale() {
+
+        auto display = SDL_GetDisplayForWindow(sdlWindow);
+        auto scale = display ? SDL_GetDisplayContentScale(display) : 0.0f;
+
+        return scale > 0.0f ? scale : 1.0f;
+
+    }
+
     bool Window::IsFocused() const {
 
         auto flags = GetFlags();

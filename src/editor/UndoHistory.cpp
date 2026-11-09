@@ -88,6 +88,12 @@ namespace Atlas::Editor {
 
     }
 
+    bool UndoHistory::IsInteracting() const {
+
+        return wasInteracting;
+
+    }
+
     bool UndoHistory::HandleShortcuts() {
 
         auto direction = GetShortcutDirection();

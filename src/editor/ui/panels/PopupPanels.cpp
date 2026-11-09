@@ -68,6 +68,7 @@ namespace Atlas::Editor::UI {
 
                 if (alreadyExisted) {
                     Log::Warning("Scene couldn't be created due to scene with same name existing already");
+                    Notifications::Push({ .message = "A scene named " + name + " exists already", .type = NotificationType::Warning });
                 }
             }
 
@@ -141,11 +142,12 @@ namespace Atlas::Editor::UI {
 
                         if (alreadyExisted) {
                             Log::Warning("Scene couldn't be created due to scene with same name existing already");
-                            Notifications::Push({ .message = "Error importing scene " + scene->name });
+                            Notifications::Push({ .message = "Couldn't import scene " + scene->name + ", a scene with this name exists already",
+                                .type = NotificationType::Error });
                             return;
                         }
 
-                        Notifications::Push({ .message = "Opened scene " + scene->name + ", its meshes and textures import in the background" });
+                        Notifications::Push({ .message = "The meshes and textures of " + scene->name + " import in the background" });
                     });
             }
 

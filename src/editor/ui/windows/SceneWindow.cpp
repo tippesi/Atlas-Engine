@@ -249,10 +249,11 @@ namespace Atlas::Editor::UI {
             hasUnsavedChanges = true;
         sceneHierarchyPanel.sceneChanged = false;
 
-        // Only the window the user works in has edits, the last click might have moved the focus already
-        if (!isPlaying && scene.IsLoaded() && (inFocus || wasInFocus))
+        // Only the window the user works in has edits, an interaction which moved the focus away still has to finish
+        if (!isPlaying && scene.IsLoaded() && (inFocus || history.history.IsInteracting()))
             history.Update(scene.Get(), sceneHierarchyPanel.selectedEntities);
-        wasInFocus = inFocus;
+        if (scene.IsLoaded())
+            scenePropertiesPanel.navigationPanel.Update(scene->navigation);
         sectionScope.Next("Overlays");
 
         if (sceneHierarchyPanel.focusRequested) {
@@ -500,7 +501,7 @@ namespace Atlas::Editor::UI {
                 ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
                 // The upscaler is a setting of the scene, the same as in its post processing properties
                 ImguiExtension::PostProcessingPanel::RenderUpscalerSelection(scene->postProcessing.upscaler,
-                    [](PostProcessing::Upscaler upscaler) { return Singletons::mainRenderer->IsUpscalerSupported(upscaler); });
+                    [&](PostProcessing::Upscaler upscaler) { return viewportPanel.mainRenderer->IsUpscalerSupported(upscaler); });
 
                 ImGui::SeparatorText("Path tracer samples");
                 // ImGui::Checkbox("Realtime", &viewportPanel.mainRenderer->pathTracingRenderer.realTime);
@@ -814,6 +815,9 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::StartPlaying() {
 
+        // Steps which weren't applied yet would change the scene while playing
+        requestedHistorySteps = 0;
+
         JobSystem::WaitAll();
 
         Singletons::blockingOperation->Block("Preparing to play. Please wait...", [&]() {
@@ -828,7 +832,7 @@ namespace Atlas::Editor::UI {
             }
 
             if (!hasMainPlayingCamera) {
-                Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .color = vec3(1.0f, 1.0f, 0.0f) });
+                Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .type = NotificationType::Warning });
                 return;
             }
 
@@ -903,7 +907,7 @@ namespace Atlas::Editor::UI {
         if (IsPrefab()) {
             Scene::Entity root(prefabRoot, &scene->entityManager);
             if (!root.IsValid()) {
-                Notifications::Push({ .message = "The root entity of the prefab was deleted", .color = vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ .message = "The root entity of the prefab was deleted", .type = NotificationType::Error });
                 return;
             }
             auto hierarchy = root.TryGetComponent<HierarchyComponent>();

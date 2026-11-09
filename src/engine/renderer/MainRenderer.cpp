@@ -59,8 +59,6 @@ namespace Atlas {
 			postProcessRenderer.Init(device);
 			pathTracingRenderer.Init(device);
 			fsr2Renderer.Init(device);
-			fsr4Renderer = UpscalerAddons::Create(PostProcessing::Upscaler::FSR4, device);
-			dlssRenderer = UpscalerAddons::Create(PostProcessing::Upscaler::DLSS, device);
 			textRenderer.Init(device);
 			textureRenderer.Init(device);
 
@@ -945,8 +943,15 @@ namespace Atlas {
 			switch (upscaler) {
 			case PostProcessing::Upscaler::TAA: return &taaRenderer;
 			case PostProcessing::Upscaler::FSR2: return &fsr2Renderer;
-			case PostProcessing::Upscaler::FSR4: return fsr4Renderer.get();
-			case PostProcessing::Upscaler::DLSS: return dlssRenderer.get();
+			// The vendor upscalers are only created once they are used or asked for, every viewport has its own renderer
+			case PostProcessing::Upscaler::FSR4:
+				if (!fsr4Renderer)
+					fsr4Renderer = UpscalerAddons::Create(upscaler, device);
+				return fsr4Renderer.get();
+			case PostProcessing::Upscaler::DLSS:
+				if (!dlssRenderer)
+					dlssRenderer = UpscalerAddons::Create(upscaler, device);
+				return dlssRenderer.get();
 			default: return nullptr;
 			}
 

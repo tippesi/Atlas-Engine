@@ -464,13 +464,13 @@ namespace Atlas::Editor {
 
     bool SceneHistory::IsSameComponent(const std::string& key, const json& a, const json& b) {
 
-        // The transform panel rebuilds the local matrix from the global one, which changes it by rounding errors
+        // The local matrix is rebuilt from the global one, which changes it by rounding errors
         if (key == "transform") {
             TransformComponent transformA = a, transformB = b;
             if (transformA.isStatic != transformB.isStatic || transformA.parentJoint != transformB.parentJoint)
                 return false;
             for (int32_t i = 0; i < 4; i++) {
-                auto tolerance = 1e-5f * glm::max(vec4(1.0f), glm::abs(transformA.matrix[i]));
+                auto tolerance = 1e-6f * glm::max(vec4(1.0f), glm::abs(transformA.matrix[i]));
                 if (glm::any(glm::greaterThan(glm::abs(transformA.matrix[i] - transformB.matrix[i]), tolerance)))
                     return false;
             }

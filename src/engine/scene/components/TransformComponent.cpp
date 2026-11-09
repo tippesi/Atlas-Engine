@@ -59,6 +59,12 @@ namespace Atlas {
 
 			void TransformComponent::ReconstructLocalMatrix(const Entity& parentEntity) {
 
+                Set(GetReconstructedLocalMatrix(parentEntity));
+
+			}
+
+			mat4 TransformComponent::GetReconstructedLocalMatrix(const Entity& parentEntity) const {
+
                 // Uses the parent transform if possible, it already contains changes made through SetGlobal
                 mat4 parentGlobalMatrix = mat4(1.0f);
                 if (parentEntity.IsValid())
@@ -69,7 +75,7 @@ namespace Atlas {
                     parentGlobalMatrix = parentGlobalMatrix * animationComponent->GetJointMatrix(parentJoint);
 
                 auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
-                Set(inverseParentMatrix * globalMatrix);
+                return inverseParentMatrix * globalMatrix;
 
 			}
 

@@ -188,13 +188,16 @@ namespace Atlas {
 
         void TerrainRenderer::GenerateNoiseTexture() {
 
-            Common::Image<float> noiseImage(512, 512, 1);
-            std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
-            Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
+            // The noise is the same for all renderers, e.g. each editor viewport has one
+            static auto data = []() {
+                Common::Image<float> noiseImage(512, 512, 1);
+                std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
+                Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
+                return noiseImage.ConvertData<float16>();
+            }();
 
             noiseTexture = Texture::Texture2D(512, 512,
                 VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear);
-            auto data = noiseImage.ConvertData<float16>();
             noiseTexture.SetData(data);
 
         }

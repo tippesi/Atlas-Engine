@@ -12,9 +12,13 @@ namespace Atlas::Editor::UI {
     public:
         NavigationPanel() : Panel("Navigation") {}
 
+        // Tells when a rebuild finished, also while the panel isn't shown
+        void Update(const Ref<Navigation::Navigation>& navigation);
+
         void Render(Ref<Navigation::Navigation>& navigation);
 
         bool showMesh = false;
+        bool rebuilding = false;
 
         // The drawn edges, collected again when the mesh changes
         std::vector<vec3> meshEdges;
