@@ -19,7 +19,8 @@ namespace Atlas {
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
+            // Returns false when the probe is still up to date and wasn't rendered
+            bool Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
                 Graphics::CommandList* commandList);
 
             static std::string vertexPath;
@@ -41,6 +42,21 @@ namespace Atlas {
                 float planetRadius = 0.0f;
                 float atmosphereRadius = 0.0f;
                 float sunAngularRadius = 0.0f;
+
+                bool operator==(const AtmosphereParameters&) const = default;
+            };
+
+            struct ProbeState {
+                Ref<Graphics::Image> image;
+                mat4 projectionMatrix = mat4(1.0f);
+                vec3 position = vec3(0.0f);
+                vec3 planetCenter = vec3(0.0f);
+                vec3 sunDirection = vec3(0.0f);
+                vec3 sunRadiance = vec3(0.0f);
+                float indirectLight = 0.0f;
+                AtmosphereParameters atmosphere;
+
+                bool operator==(const ProbeState&) const = default;
             };
 
             struct alignas(16) RenderUniforms {
@@ -94,6 +110,8 @@ namespace Atlas {
             Buffer::UniformBuffer multipleScatteringUniformBuffer;
             Buffer::UniformBuffer skyViewUniformBuffer;
             Buffer::UniformBuffer probeMatricesBuffer;
+
+            ProbeState lastProbeState;
 
         };
 

@@ -107,16 +107,17 @@ namespace Atlas {
 
         }
 
-        void AtmosphereRenderer::Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
+        bool AtmosphereRenderer::Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
             Graphics::CommandList* commandList) {
 
             auto atmosphere = scene->renderState.sky.atmosphere;
 
             auto& mainLight = scene->renderState.mainLight;
             if (!mainLight || !atmosphere) {
+                lastProbeState.image = nullptr;
                 commandList->ImageMemoryBarrier(probe->generatedCubemap.image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                return;
+                return true;
             }
 
             const auto& light = *mainLight;
@@ -124,10 +125,27 @@ namespace Atlas {
             vec3 sunRadiance = GetSunRadiance(light);
             auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->renderState.sky);
 
+            bool needsLutUpdate = scene->renderState.atmosphereNeedsUpdate || HasMissingLuts(*atmosphere, false);
+
+            // The probe only depends on these, so it stays valid while they don't change
+            ProbeState probeState {
+                .image = probe->generatedCubemap.image,
+                .projectionMatrix = probe->projectionMatrix,
+                .position = probe->GetPosition(),
+                .planetCenter = scene->renderState.sky.planetCenter,
+                .sunDirection = sunDirection,
+                .sunRadiance = sunRadiance,
+                .indirectLight = atmosphere->indirectLight,
+                .atmosphere = atmosphereParameters
+            };
+            if (!needsLutUpdate && probeState == lastProbeState)
+                return false;
+            lastProbeState = probeState;
+
             CPUProfiler::Scope profilerScope("Atmosphere environment probe");
             GPUProfiler::Scope gpuScope("Atmosphere environment probe");
 
-            if (scene->renderState.atmosphereNeedsUpdate || HasMissingLuts(*atmosphere, false)) {
+            if (needsLutUpdate) {
                 UpdateTransmittanceLut(atmosphereParameters, atmosphere.get(), commandList);
                 UpdateMultipleScatteringLut(atmosphereParameters, atmosphere.get(), commandList);
             }
@@ -176,6 +194,8 @@ namespace Atlas {
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             commandList->GenerateMipMaps(probe->generatedCubemap.image);
+
+            return true;
 
         }
 

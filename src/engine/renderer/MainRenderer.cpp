@@ -107,14 +107,21 @@ namespace Atlas {
 			}
 
 			if (scene->renderState.sky.probe) {
-				if (scene->renderState.sky.probe->update) {
-					FilterProbe(scene->renderState.sky.probe, commandList);
-					//scene->sky.probe->update = false;
+				auto& probe = scene->renderState.sky.probe;
+				// A static cubemap only needs to be filtered once
+				if (probe->update && (probe->GetCubemap().image != filteredSkyProbeSource ||
+					probe->filteredDiffuse.image != filteredSkyProbeTarget)) {
+					FilterProbe(probe, commandList);
+					filteredSkyProbeSource = probe->GetCubemap().image;
+					filteredSkyProbeTarget = probe->filteredDiffuse.image;
 				}
 			}
 			else if (scene->renderState.sky.atmosphere) {
-				atmosphereRenderer.Render(scene->renderState.sky.atmosphere->probe, scene, commandList);
-				FilterProbe(scene->renderState.sky.atmosphere->probe, commandList);
+				auto& probe = scene->renderState.sky.atmosphere->probe;
+				if (atmosphereRenderer.Render(probe, scene, commandList) || atmosphereProbeNeedsFilter) {
+					FilterProbe(probe, commandList);
+					atmosphereProbeNeedsFilter = false;
+				}
 			}
 
 			// Shaders read whether the volume is enabled from the uniforms
@@ -492,7 +499,8 @@ namespace Atlas {
 
 			// No probe filtering required
 			if (scene->renderState.sky.atmosphere) {
-				atmosphereRenderer.Render(scene->renderState.sky.atmosphere->probe, scene, commandList);
+				if (atmosphereRenderer.Render(scene->renderState.sky.atmosphere->probe, scene, commandList))
+					atmosphereProbeNeedsFilter = true;
 			}
 
 			pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);

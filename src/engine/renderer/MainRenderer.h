@@ -135,6 +135,10 @@ namespace Atlas {
 
             uint32_t frameCount = 0;
 
+            Ref<Graphics::Image> filteredSkyProbeSource;
+            Ref<Graphics::Image> filteredSkyProbeTarget;
+            bool atmosphereProbeNeedsFilter = false;
+
             std::vector<Graphics::ImageBarrier> shadowImageBarriers;
 
         };
