@@ -453,6 +453,9 @@ namespace Atlas {
             // Make sure only one command list at a time can be added
             std::lock_guard<std::mutex> lock(frame->submissionMutex);
 
+            AE_ASSERT(frame == GetFrameData(frameIndex) && "Command list was submitted after its frame was completed."
+                && "Wait for the recording job before the frame is submitted");
+
             CommandListSubmission submission = {
                 .cmd = cmd,
                 .waitStage = waitStage
