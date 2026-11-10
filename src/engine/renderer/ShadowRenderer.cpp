@@ -310,7 +310,7 @@ namespace Atlas {
 
             bool hasTexCoords = mesh->data.texCoords.ContainsData();
             bool hasOpacityMap = material->HasOpacityMap() && hasTexCoords && (!graph || !graph->hasSurface);
-            bool hasGraphOpacity = graph && graph->hasOpacity;
+            bool hasGraphOpacity = graph && graph->CutsOutFragments();
 
             // Without an opacity map only depth is written, which doesn't need a fragment shader
             auto shaderConfig = ShaderConfig {

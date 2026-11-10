@@ -966,7 +966,7 @@ namespace Atlas::Capture {
                 add(names[i], compiled->mainVertexFile, VK_SHADER_STAGE_VERTEX_BIT, macros);
                 add(names[i], compiled->mainFragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT, macros);
                 add(names[i], compiled->shadowVertexFile, VK_SHADER_STAGE_VERTEX_BIT, macros);
-                add(names[i], compiled->hasOpacity ? compiled->shadowFragmentFile : std::string(), VK_SHADER_STAGE_FRAGMENT_BIT, macros);
+                add(names[i], compiled->CutsOutFragments() ? compiled->shadowFragmentFile : std::string(), VK_SHADER_STAGE_FRAGMENT_BIT, macros);
 
                 // Without a surface of the graph the regular maps of a material are used
                 if (!compiled->hasSurface) {

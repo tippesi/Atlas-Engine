@@ -88,6 +88,11 @@ namespace Atlas::MaterialGraph {
         static std::string GetVertexFunctions(State& state, const Node* output, const std::vector<uint32_t>& usedVaryings,
             bool hasOffset, bool withNormal);
 
+        // Inputs which only depend on parameters and constants are the same for a whole draw
+        static bool IsUniform(State& state, const Node& node, const InputDefinition& input, std::vector<uint32_t>& visiting);
+
+        static std::string GetVertexOpacityFunction(State& state, const Node& output);
+
         static std::string GetVaryingDeclarations(State& state, const std::vector<uint32_t>& usedVaryings, const char* qualifier);
 
         // A readable name, e.g. fractalNoiseResult or glowParameter. The suffix keeps names from hiding GLSL functions

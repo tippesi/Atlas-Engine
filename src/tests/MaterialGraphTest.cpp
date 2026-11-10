@@ -171,14 +171,37 @@ TEST(MaterialGraphCompiler, VertexAndFragment) {
 TEST(MaterialGraphCompiler, OpacityNeedsShadowFragments) {
 
     TestGraph test;
-    test.LinkSurface(test.Add("Float"), NodeLibrary::opacityPin);
+    test.LinkSurface(test.Add("Fractal noise"), NodeLibrary::opacityPin, "Result");
     auto compiled = test.Compile();
 
     ASSERT_TRUE(compiled->valid);
     EXPECT_TRUE(compiled->hasOpacity);
+    EXPECT_FALSE(compiled->hasUniformOpacity);
     EXPECT_TRUE(compiled->UsesShadowPipeline());
     EXPECT_TRUE(Contains(compiled->shadowFragmentCode, "EvaluateMaterialSurface"));
     EXPECT_TRUE(Contains(compiled->mainFragmentCode, "MATERIAL_GRAPH_OPACITY"));
+
+}
+
+TEST(MaterialGraphCompiler, OpacityOfParametersIsEvaluatedPerVertex) {
+
+    TestGraph test;
+    auto alpha = test.Add("Float parameter", "Alpha");
+    auto inverted = test.Add("One minus");
+    test.Link(alpha, "Value", inverted, "Value");
+    test.LinkSurface(inverted, NodeLibrary::opacityPin, "Result");
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid);
+    EXPECT_TRUE(compiled->hasUniformOpacity);
+    EXPECT_FALSE(compiled->CutsOutFragments());
+
+    // Fragments without a discard keep early depth tests, the vertices cut out the whole draw
+    EXPECT_FALSE(Contains(compiled->mainFragmentCode, "MATERIAL_GRAPH_OPACITY"));
+    EXPECT_FALSE(Contains(compiled->mainFragmentCode, "alphaParameter"));
+    EXPECT_TRUE(Contains(compiled->mainVertexCode, "EvaluateMaterialOpacity"));
+    EXPECT_TRUE(Contains(compiled->shadowVertexCode, "EvaluateMaterialOpacity"));
+    EXPECT_FALSE(Contains(compiled->shadowFragmentCode, "#define MATERIAL_GRAPH_SURFACE"));
 
 }
 

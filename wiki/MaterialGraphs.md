@@ -29,6 +29,10 @@ changing them doesn't compile anything, so materials with the same graph share t
 into a node are baked into the shaders. Prefer parameters for what should differ per material. There is no limit on the number of
 textures, they are bindless.
 
+**Opacity:** an `Opacity` that varies over the surface cuts out fragments, which turns off early depth tests and costs time even
+where nothing is cut out. An `Opacity` that only depends on parameters and constants, e.g. a fade or visibility switch per
+material, is evaluated per vertex instead and hides the whole draw, the fragments stay as fast as opaque ones.
+
 ## Limits
 
 - Opaque and cutout surfaces only, no transparency. The lighting model is the regular one, graphs write into the G-buffer.

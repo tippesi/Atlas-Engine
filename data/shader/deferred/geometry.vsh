@@ -172,6 +172,15 @@ void main() {
 
     MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, normal, graphTangent, graphTexCoord, graphColor,
         mMatrix, globalData.time, PushConstants.materialGraphOffset);
+
+#ifdef MATERIAL_GRAPH_VERTEX_OPACITY
+    // The opacity is the same for the whole draw, moving all vertices outside the view keeps fragments free of discards
+    if (EvaluateMaterialOpacity(graphInput) < 0.2) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        return;
+    }
+#endif
+
     WriteMaterialVaryings(graphInput);
 
 #ifdef MATERIAL_GRAPH_SURFACE

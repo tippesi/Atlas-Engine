@@ -41,20 +41,30 @@ namespace Atlas::MaterialGraph {
         compiled->hasOpacity = isLinked(surfaceOutput, NodeLibrary::opacityPin);
         compiled->writesNormal = isLinked(surfaceOutput, NodeLibrary::normalPin);
 
+        if (compiled->hasOpacity) {
+            std::vector<uint32_t> visiting;
+            auto opacityInput = NodeLibrary::Find(NodeLibrary::surfaceOutputType)->FindInput(NodeLibrary::opacityPin);
+            compiled->hasUniformOpacity = IsUniform(state, *surfaceOutput, *opacityInput, visiting);
+        }
+
         auto hasVertexNormal = isLinked(vertexOutput, NodeLibrary::vertexNormalPin);
 
-        std::string mainSurface, shadowSurface;
+        std::string mainSurface, shadowSurface, vertexOpacity;
         std::vector<uint32_t> mainVaryings, shadowVaryings;
         if (compiled->hasSurface) {
             std::vector<std::string> pins;
-            for (const auto& input : surfaceInputs)
-                pins.push_back(input.name);
+            for (const auto& input : surfaceInputs) {
+                if (input.name != NodeLibrary::opacityPin || compiled->CutsOutFragments())
+                    pins.push_back(input.name);
+            }
             mainSurface = GetSurfaceFunction(state, *surfaceOutput, pins, mainVaryings);
         }
-        if (compiled->hasOpacity)
+        if (compiled->CutsOutFragments())
             shadowSurface = GetSurfaceFunction(state, *surfaceOutput, { NodeLibrary::opacityPin }, shadowVaryings);
+        if (compiled->hasUniformOpacity)
+            vertexOpacity = GetVertexOpacityFunction(state, *surfaceOutput);
 
-        auto usesVertexStage = compiled->hasVertexOffset || hasVertexNormal || !mainVaryings.empty();
+        auto usesVertexStage = compiled->hasVertexOffset || hasVertexNormal || !mainVaryings.empty() || compiled->hasUniformOpacity;
         auto usesShadow = compiled->hasVertexOffset || compiled->hasOpacity;
 
         // A normal without any movement still has to be written
@@ -85,25 +95,27 @@ namespace Atlas::MaterialGraph {
             define("MATERIAL_GRAPH_VERTEX_OFFSET", compiled->hasVertexOffset) +
             define("MATERIAL_GRAPH_SURFACE", compiled->hasSurface) +
             define("MATERIAL_GRAPH_WRITES_NORMAL", compiled->writesNormal) +
-            define("MATERIAL_GRAPH_USES_TANGENTS", usesTangents) + common +
-            GetVaryingDeclarations(state, mainVaryings, "out") + mainVertexFunctions +
+            define("MATERIAL_GRAPH_USES_TANGENTS", usesTangents) +
+            define("MATERIAL_GRAPH_VERTEX_OPACITY", compiled->hasUniformOpacity) + common +
+            GetVaryingDeclarations(state, mainVaryings, "out") + mainVertexFunctions + vertexOpacity +
             "#include <../deferred/geometry.vsh>\n";
         compiled->mainFragmentCode = surfaceMacros +
             define("MATERIAL_GRAPH_SURFACE", compiled->hasSurface) +
             define("MATERIAL_GRAPH_WRITES_NORMAL", compiled->writesNormal) +
             define("MATERIAL_GRAPH_USES_TANGENTS", usesTangents) +
-            define("MATERIAL_GRAPH_OPACITY", compiled->hasOpacity) + common +
+            define("MATERIAL_GRAPH_OPACITY", compiled->CutsOutFragments()) + common +
             GetVaryingDeclarations(state, mainVaryings, "in") + mainSurface +
             "#include <../deferred/geometry.fsh>\n";
 
         if (usesShadow) {
             compiled->shadowVertexCode = vertexMacros +
                 define("MATERIAL_GRAPH_VERTEX_OFFSET", isLinked(vertexOutput, NodeLibrary::positionOffsetPin)) +
-                define("MATERIAL_GRAPH_SURFACE", compiled->hasOpacity) + common +
-                GetVaryingDeclarations(state, shadowVaryings, "out") + shadowVertexFunctions +
+                define("MATERIAL_GRAPH_SURFACE", compiled->CutsOutFragments()) +
+                define("MATERIAL_GRAPH_VERTEX_OPACITY", compiled->hasUniformOpacity) + common +
+                GetVaryingDeclarations(state, shadowVaryings, "out") + shadowVertexFunctions + vertexOpacity +
                 "#include <../shadowMapping.vsh>\n";
             compiled->shadowFragmentCode = surfaceMacros +
-                define("MATERIAL_GRAPH_SURFACE", compiled->hasOpacity) + common +
+                define("MATERIAL_GRAPH_SURFACE", compiled->CutsOutFragments()) + common +
                 GetVaryingDeclarations(state, shadowVaryings, "in") + shadowSurface +
                 "#include <../shadowMapping.fsh>\n";
         }
@@ -710,6 +722,57 @@ namespace Atlas::MaterialGraph {
             (varyings.code.empty() ? "" : "\n") + assignments + (assignments.empty() ? "" : "\n") + "}\n\n";
 
         return code;
+
+    }
+
+    bool Compiler::IsUniform(State& state, const Node& node, const InputDefinition& input, std::vector<uint32_t>& visiting) {
+
+        auto link = state.graph.GetInputLink(node.id, input.name);
+        if (!link)
+            return input.defaultExpression.find("$IN") == std::string::npos;
+
+        auto from = state.graph.GetNode(link->fromNode);
+        auto definition = NodeLibrary::Find(from->type);
+        if (std::find(visiting.begin(), visiting.end(), from->id) != visiting.end())
+            return false;
+
+        switch (definition->kind) {
+        case NodeKind::Constant:
+            return true;
+        case NodeKind::Parameter:
+            return definition->valueType != ValueType::Texture;
+        case NodeKind::StaticSwitch:
+        case NodeKind::Reroute:
+        case NodeKind::Expression: {
+            auto output = definition->FindOutput(link->fromPin);
+            if (!(definition->stages & VertexStage) || output->expression.find("$IN") != std::string::npos)
+                return false;
+
+            const auto staticInput = definition->kind == NodeKind::StaticSwitch ? GetStaticSwitchInput(*from, *definition) : nullptr;
+
+            visiting.push_back(from->id);
+            auto uniform = std::all_of(definition->inputs.begin(), definition->inputs.end(), [&](const InputDefinition& fromInput) {
+                return (staticInput && &fromInput != staticInput) || IsUniform(state, *from, fromInput, visiting);
+                });
+            visiting.pop_back();
+
+            return uniform;
+        }
+        default:
+            return false;
+        }
+
+    }
+
+    std::string Compiler::GetVertexOpacityFunction(State& state, const Node& output) {
+
+        Function function = { .stage = VertexStage, .inputName = "vertexIn" };
+
+        auto input = NodeLibrary::Find(output.type)->FindInput(NodeLibrary::opacityPin);
+        auto value = EmitInput(state, function, output, *input, ValueType::Float);
+
+        return "\nfloat EvaluateMaterialOpacity(MaterialVertexInput vertexIn) {\n\n" + function.code +
+            (function.code.empty() ? "" : "\n") + "    return " + value + ";\n\n}\n\n";
 
     }
 

@@ -112,6 +112,8 @@ namespace Atlas::MaterialGraph {
         // Otherwise the fragments are the ones of the regular material
         bool hasSurface = false;
         bool hasOpacity = false;
+        // The opacity only depends on parameters, it's evaluated per vertex and cuts out whole draws
+        bool hasUniformOpacity = false;
         bool writesNormal = false;
 
         // Shadow files are empty if the regular shadow pipeline can be used
@@ -134,6 +136,9 @@ namespace Atlas::MaterialGraph {
         Hash hash = 0;
 
         bool UsesShadowPipeline() const { return !shadowVertexFile.empty(); }
+
+        // A discard in the fragments disables early depth tests
+        bool CutsOutFragments() const { return hasOpacity && !hasUniformOpacity; }
     };
 
     // A fragment shader evaluating a part of a graph outside of the regular passes, see Evaluator
