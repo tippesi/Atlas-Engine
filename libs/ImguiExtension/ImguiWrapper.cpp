@@ -249,6 +249,9 @@ namespace Atlas::ImguiExtension {
         //clear font textures from cpu data
         ImGui_ImplVulkan_DestroyFontUploadObjects();
 
+        // The backend only keeps the handle, a queue left locked blocks the render thread forever
+        queue.Unlock();
+
         imageViewToDescriptorSetMap.clear();
 
         initialized = true;
