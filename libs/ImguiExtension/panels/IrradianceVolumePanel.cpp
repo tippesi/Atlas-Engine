@@ -47,19 +47,19 @@ namespace Atlas::ImguiExtension {
 
         const char* gridResItems [] = { "11x11x11", "15x15x15", "21x21x21", "31x31x31" };
         int currentItem = 0;
-        if (volume->probeCount == glm::ivec3(11)) currentItem = 0;
-        if (volume->probeCount == glm::ivec3(15)) currentItem = 1;
-        if (volume->probeCount == glm::ivec3(21)) currentItem = 2;
-        if (volume->probeCount == glm::ivec3(31)) currentItem = 3;
+        if (volume->probeCount == ivec3(11)) currentItem = 0;
+        if (volume->probeCount == ivec3(15)) currentItem = 1;
+        if (volume->probeCount == ivec3(21)) currentItem = 2;
+        if (volume->probeCount == ivec3(31)) currentItem = 3;
         auto prevItem = currentItem;
         ImGui::Combo("Resolution", &currentItem, gridResItems, IM_ARRAYSIZE(gridResItems));
 
         if (currentItem != prevItem || prevCascadeCount != volume->cascadeCount) {
             switch (currentItem) {
-                case 0: volume->SetProbeCount(glm::ivec3(11), volume->cascadeCount); break;
-                case 1: volume->SetProbeCount(glm::ivec3(15), volume->cascadeCount); break;
-                case 2: volume->SetProbeCount(glm::ivec3(21), volume->cascadeCount); break;
-                case 3: volume->SetProbeCount(glm::ivec3(31), volume->cascadeCount); break;
+                case 0: volume->SetProbeCount(ivec3(11), volume->cascadeCount); break;
+                case 1: volume->SetProbeCount(ivec3(15), volume->cascadeCount); break;
+                case 2: volume->SetProbeCount(ivec3(21), volume->cascadeCount); break;
+                case 3: volume->SetProbeCount(ivec3(31), volume->cascadeCount); break;
             }
         }
 
@@ -139,8 +139,8 @@ namespace Atlas::ImguiExtension {
 
     Volume::AABB IrradianceVolumePanel::CalculateSceneSize(Ref<Scene::Scene>& scene) const {
 
-        auto min = glm::vec3(std::numeric_limits<float>::max());
-        auto max = glm::vec3(-std::numeric_limits<float>::max());
+        auto min = vec3(std::numeric_limits<float>::max());
+        auto max = vec3(-std::numeric_limits<float>::max());
 
         Volume::AABB aabb(min, max);
         auto meshSubset = scene->GetSubset<MeshComponent>();

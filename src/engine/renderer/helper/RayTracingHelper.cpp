@@ -68,7 +68,7 @@ namespace Atlas {
 
             void RayTracingHelper::DispatchAndHit(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
-                glm::ivec3 dimensions, std::function<void(void)> prepare) {
+                ivec3 dimensions, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 
@@ -165,7 +165,7 @@ namespace Atlas {
 
             void RayTracingHelper::DispatchRayGen(Ref<Scene::Scene> scene, 
                 Graphics::CommandList* commandList, const Ref<Graphics::Pipeline>& rayGenPipeline, 
-                glm::ivec3 dimensions, bool binning, std::function<void(void)> prepare) {
+                ivec3 dimensions, bool binning, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 

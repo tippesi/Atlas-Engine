@@ -238,7 +238,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginDebugMarker(const std::string &name, glm::vec4 color) {
+        void CommandList::BeginDebugMarker(const std::string &name, vec4 color) {
 
             VkDebugMarkerMarkerInfoEXT markerInfo = {};
             markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;

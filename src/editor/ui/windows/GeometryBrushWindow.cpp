@@ -240,8 +240,8 @@ namespace Atlas::Editor::UI {
             if (brushAlignToSurface) {
                 vec3 N = rayCastResult.normal;
 
-                glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-                glm::quat rotation = glm::rotation(up, glm::normalize(N));
+                vec3 up = vec3(0.0f, 1.0f, 0.0f);
+                quat rotation = glm::rotation(up, glm::normalize(N));
                 rot = glm::toMat4(rotation);
             }
 

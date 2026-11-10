@@ -415,7 +415,7 @@ namespace Atlas::Scripting::Bindings {
             "AddAnimationComponent", &AddComponentRef<AnimationComponent, ResourceHandle<Animation::Animation>&>,
             "AddAudioComponent", &AddComponentRef<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
             "AddAudioVolumeComponent", &AddComponentRef<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
-            "AddCameraComponent", &AddComponentRef<CameraComponent, float, float, float, float, glm::vec3&, glm::vec2&>,
+            "AddCameraComponent", &AddComponentRef<CameraComponent, float, float, float, float, vec3&, vec2&>,
             "AddFogVolumeComponent", &AddComponentRef<FogVolumeComponent>,
             "AddHierarchyComponent", &AddComponentRef<HierarchyComponent>,
             "AddLightComponent", &AddComponentRef<LightComponent>,
@@ -427,7 +427,7 @@ namespace Atlas::Scripting::Bindings {
                 &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&>,
                 &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&, Scene::Entity>),
             "AddTextComponent", &AddComponentRef<TextComponent, ResourceHandle<Font>&, std::string>,
-            "AddTransformComponent", &AddComponentRef<TransformComponent, glm::mat4&, bool>,
+            "AddTransformComponent", &AddComponentRef<TransformComponent, mat4&, bool>,
             "AddLuaScriptComponent", &AddComponentRef<LuaScriptComponent, ResourceHandle<Script>&>,
             "AddSplineComponent", &AddComponentRef<SplineComponent>,
 
@@ -863,7 +863,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<SplineControlPoint>("SplineControlPoint",
             sol::call_constructor,
-            sol::constructors<SplineControlPoint(), SplineControlPoint(glm::mat4, float)>(),
+            sol::constructors<SplineControlPoint(), SplineControlPoint(mat4, float)>(),
             "transform", DependentMember<&SplineControlPoint::transform>(),
             "tangent", DependentMember<&SplineControlPoint::tangent>(),
             "time", &SplineControlPoint::time

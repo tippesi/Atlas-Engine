@@ -126,7 +126,7 @@ namespace Atlas {
 
         }
 
-        void AABB::Grow(glm::vec3 vector) {
+        void AABB::Grow(vec3 vector) {
 
             max = glm::max(vector, max);
             min = glm::min(vector, min);

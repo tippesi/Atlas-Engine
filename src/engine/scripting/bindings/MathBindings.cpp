@@ -121,11 +121,11 @@ namespace Atlas::Scripting::Bindings {
             [](T& out, const T& v0, const T& v1) { out = v0 * v1; }...,
             [](T& out, const T& v0, float value) { out = v0 * value; }...,
             [](T& out, float value, const T& v0) { out = v0 * value; }...,
-            [](glm::vec3& out, const glm::mat3& mat, const glm::vec3& vec) { out = mat * vec; },
-            [](glm::vec4& out, const glm::mat4& mat, const glm::vec4& vec) { out = mat * vec; },
-            [](glm::quat& out, const glm::quat& v0, const glm::quat& v1) { out = v0 * v1; },
-            [](glm::quat& out, const glm::quat& v0, float value) { out = v0 * value; },
-            [](glm::vec3& out, const glm::quat& quat, const glm::vec3& vec) { out = quat * vec; }
+            [](vec3& out, const mat3& mat, const vec3& vec) { out = mat * vec; },
+            [](vec4& out, const mat4& mat, const vec4& vec) { out = mat * vec; },
+            [](quat& out, const quat& v0, const quat& v1) { out = v0 * v1; },
+            [](quat& out, const quat& v0, float value) { out = v0 * value; },
+            [](vec3& out, const quat& quat, const vec3& vec) { out = quat * vec; }
         ));
 
         ns->set_function("DivTo", sol::overload(
@@ -136,173 +136,173 @@ namespace Atlas::Scripting::Bindings {
 
         ns->set_function("CopyTo", sol::overload(
             [](T& out, const T& value) { out = value; }...,
-            [](glm::quat& out, const glm::quat& value) { out = value; }
+            [](quat& out, const quat& value) { out = value; }
         ));
 
     }
 
     void GenerateMathBindings(sol::table* ns) {
 
-        GenerateGlmTypeBinding<glm::vec2, float>(ns, "Vec2",
-            sol::constructors<glm::vec2(float), glm::vec2(float, float)>(),
-            "x", &glm::vec2::x,
-            "y", &glm::vec2::y);
+        GenerateGlmTypeBinding<vec2, float>(ns, "Vec2",
+            sol::constructors<vec2(float), vec2(float, float)>(),
+            "x", &vec2::x,
+            "y", &vec2::y);
 
-        GenerateGlmTypeBinding<glm::vec3, float>(ns, "Vec3",
-            sol::constructors<glm::vec3(float), glm::vec3(float, float, float)>(),
-            "x", &glm::vec3::x,
-            "y", &glm::vec3::y,
-            "z", &glm::vec3::z);
+        GenerateGlmTypeBinding<vec3, float>(ns, "Vec3",
+            sol::constructors<vec3(float), vec3(float, float, float)>(),
+            "x", &vec3::x,
+            "y", &vec3::y,
+            "z", &vec3::z);
 
-        GenerateGlmTypeBinding<glm::vec4, float>(ns, "Vec4",
-            sol::constructors<glm::vec4(float), glm::vec4(float, float, float, float)>(),
-            "x", &glm::vec4::x,
-            "y", &glm::vec4::y,
-            "z", &glm::vec4::z,
-            "w", &glm::vec4::w);
+        GenerateGlmTypeBinding<vec4, float>(ns, "Vec4",
+            sol::constructors<vec4(float), vec4(float, float, float, float)>(),
+            "x", &vec4::x,
+            "y", &vec4::y,
+            "z", &vec4::z,
+            "w", &vec4::w);
 
-        AddComponentAccess<glm::vec2>(ns->lua_state());
-        AddComponentAccess<glm::vec3>(ns->lua_state());
-        AddComponentAccess<glm::vec4>(ns->lua_state());
+        AddComponentAccess<vec2>(ns->lua_state());
+        AddComponentAccess<vec3>(ns->lua_state());
+        AddComponentAccess<vec4>(ns->lua_state());
 
-        GenerateGlmTypeBinding<glm::mat3, float>(ns, "Mat3",
-            sol::constructors<glm::mat3(float)>());
+        GenerateGlmTypeBinding<mat3, float>(ns, "Mat3",
+            sol::constructors<mat3(float)>());
 
-        GenerateGlmTypeBinding<glm::mat4, float>(ns, "Mat4",
-            sol::constructors<glm::mat4(float), glm::mat4(const glm::mat4&)>());
+        GenerateGlmTypeBinding<mat4, float>(ns, "Mat4",
+            sol::constructors<mat4(float), mat4(const mat4&)>());
 
-        AddComponentAccess<glm::mat3, true>(ns->lua_state());
-        AddComponentAccess<glm::mat4, true>(ns->lua_state());
+        AddComponentAccess<mat3, true>(ns->lua_state());
+        AddComponentAccess<mat4, true>(ns->lua_state());
 
          auto quat_multiplication_overloads = sol::overload(
-            [](const glm::quat& v0, const glm::quat& v1) { return v0 * v1; },
-            [](const glm::quat& v0, float value) { return v0 * value; },
-            [](const float& value, const glm::quat& v0) { return v0 * value; }
+            [](const quat& v0, const quat& v1) { return v0 * v1; },
+            [](const quat& v0, float value) { return v0 * value; },
+            [](const float& value, const quat& v0) { return v0 * value; }
         );
 
-        ns->new_usertype<glm::quat>("Quat",
+        ns->new_usertype<quat>("Quat",
             sol::call_constructor,
-            sol::constructors<glm::quat(glm::vec3), glm::quat(float, float, float, float)>(),
+            sol::constructors<quat(vec3), quat(float, float, float, float)>(),
             sol::meta_function::multiplication, quat_multiplication_overloads,
-            "x", &glm::quat::x,
-            "y", &glm::quat::y,
-            "z", &glm::quat::z,
-            "w", &glm::quat::w
+            "x", &quat::x,
+            "y", &quat::y,
+            "z", &quat::z,
+            "w", &quat::w
             );
 
-        AddComponentAccess<glm::quat>(ns->lua_state());
+        AddComponentAccess<quat>(ns->lua_state());
 
         ns->set_function("Dot", sol::overload(
-            [](const glm::vec2& v0, const glm::vec2& v1) { return glm::dot(v0, v1); },
-            [](const glm::vec3& v0, const glm::vec3& v1) { return glm::dot(v0, v1); },
-            [](const glm::vec4& v0, const glm::vec4& v1) { return glm::dot(v0, v1); }
+            [](const vec2& v0, const vec2& v1) { return glm::dot(v0, v1); },
+            [](const vec3& v0, const vec3& v1) { return glm::dot(v0, v1); },
+            [](const vec4& v0, const vec4& v1) { return glm::dot(v0, v1); }
         ));
 
         ns->set_function("Translate", sol::overload(
-            [](const glm::vec3& vec) { return glm::translate(vec); },
-            [](const glm::mat4& mat, const glm::vec3& vec) { return glm::translate(mat, vec); }
+            [](const vec3& vec) { return glm::translate(vec); },
+            [](const mat4& mat, const vec3& vec) { return glm::translate(mat, vec); }
         ));
 
         ns->set_function("Scale", sol::overload(
-            [](const glm::vec3& vec) { return glm::scale(vec); },
-            [](const glm::mat4& mat, const glm::vec3& vec) { return glm::scale(mat, vec); }
+            [](const vec3& vec) { return glm::scale(vec); },
+            [](const mat4& mat, const vec3& vec) { return glm::scale(mat, vec); }
         ));
 
         ns->set_function("Rotate", sol::overload(
-            [](float angle, const glm::vec3& vec) { return glm::rotate(angle, vec); },
-            [](const glm::mat4& mat, float angle, const glm::vec3& vec) { return glm::rotate(mat, angle, vec); }
+            [](float angle, const vec3& vec) { return glm::rotate(angle, vec); },
+            [](const mat4& mat, float angle, const vec3& vec) { return glm::rotate(mat, angle, vec); }
         ));
 
         ns->set_function("Mix", sol::overload(
             [](const float float0, const float float1, const float factor) { return glm::mix(float0, float1, factor); },
-            [](const glm::vec2& vec0, const glm::vec2& vec1, const float factor) { return glm::mix(vec0, vec1, factor); },
-            [](const glm::vec3& vec0, const glm::vec3& vec1, const float factor) { return glm::mix(vec0, vec1, factor); },
-            [](const glm::quat& quat0, const glm::quat& quat1, const float factor) { return glm::mix(quat0, quat1, factor); }
+            [](const vec2& vec0, const vec2& vec1, const float factor) { return glm::mix(vec0, vec1, factor); },
+            [](const vec3& vec0, const vec3& vec1, const float factor) { return glm::mix(vec0, vec1, factor); },
+            [](const quat& quat0, const quat& quat1, const float factor) { return glm::mix(quat0, quat1, factor); }
         ));
 
         ns->set_function("Clamp", sol::overload(
             [](const float float0, const float float1, const float float2) { return glm::clamp(float0, float1, float2); },
             [](const int32_t int0, const int32_t int1, const int32_t int2) { return glm::clamp(int0, int1, int2); },
-            [](const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2) { return glm::clamp(vec0, vec1, vec2); },
-            [](const glm::vec3& vec0, const glm::vec3& vec1, const glm::vec3& vec2) { return glm::clamp(vec0, vec1, vec2); },
-            [](const glm::vec4& vec0, const glm::vec4& vec1, const glm::vec4& vec2) { return glm::clamp(vec0, vec1, vec2); }
+            [](const vec2& vec0, const vec2& vec1, const vec2& vec2) { return glm::clamp(vec0, vec1, vec2); },
+            [](const vec3& vec0, const vec3& vec1, const vec3& vec2) { return glm::clamp(vec0, vec1, vec2); },
+            [](const vec4& vec0, const vec4& vec1, const vec4& vec2) { return glm::clamp(vec0, vec1, vec2); }
         ));
 
         ns->set_function("Max", sol::overload(
             [](const float float0, const float float1) { return glm::max(float0, float1); },
-            [](const glm::vec2& vec0, const glm::vec2& vec1) { return glm::max(vec0, vec1); },
-            [](const glm::vec3& vec0, const glm::vec3& vec1) { return glm::max(vec0, vec1); },
-            [](const glm::vec4& vec0, const glm::vec4& vec1) { return glm::max(vec0, vec1); }
+            [](const vec2& vec0, const vec2& vec1) { return glm::max(vec0, vec1); },
+            [](const vec3& vec0, const vec3& vec1) { return glm::max(vec0, vec1); },
+            [](const vec4& vec0, const vec4& vec1) { return glm::max(vec0, vec1); }
         ));
 
         ns->set_function("Min", sol::overload(
             [](const float float0, const float float1) { return glm::min(float0, float1); },
-            [](const glm::vec2& vec0, const glm::vec2& vec1) { return glm::min(vec0, vec1); },
-            [](const glm::vec3& vec0, const glm::vec3& vec1) { return glm::min(vec0, vec1); },
-            [](const glm::vec4& vec0, const glm::vec4& vec1) { return glm::min(vec0, vec1); }
+            [](const vec2& vec0, const vec2& vec1) { return glm::min(vec0, vec1); },
+            [](const vec3& vec0, const vec3& vec1) { return glm::min(vec0, vec1); },
+            [](const vec4& vec0, const vec4& vec1) { return glm::min(vec0, vec1); }
         ));
 
-        ns->set_function("LookAt",  [](const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up) 
+        ns->set_function("LookAt",  [](const vec3& eye, const vec3& center, const vec3& up) 
             { return glm::lookAt(eye, center, up); }
             );
 
-        ns->set_function("EulerAngles", [](const glm::quat& quaternion) { return glm::eulerAngles(quaternion); });
+        ns->set_function("EulerAngles", [](const quat& quaternion) { return glm::eulerAngles(quaternion); });
 
-        ns->set_function("Euclidean", [](const glm::vec2& vec) { return glm::euclidean(vec); });
-        ns->set_function("Polar", [](const glm::vec3& vec) { return vec2(glm::polar(vec)); });
+        ns->set_function("Euclidean", [](const vec2& vec) { return glm::euclidean(vec); });
+        ns->set_function("Polar", [](const vec3& vec) { return vec2(glm::polar(vec)); });
 
         // Variants that write into an existing object instead of returning a new one
         // sol tries the overloads in order, the scripts use matrices and 3D vectors most
-        GenerateArithmeticToBindings<glm::mat4, glm::vec3, glm::vec2, glm::vec4, glm::mat3>(ns);
+        GenerateArithmeticToBindings<mat4, vec3, vec2, vec4, mat3>(ns);
 
         ns->set_function("TranslateTo", sol::overload(
-            [](glm::mat4& out, const glm::vec3& vec) { out = glm::translate(vec); },
-            [](glm::mat4& out, const glm::mat4& mat, const glm::vec3& vec) { out = glm::translate(mat, vec); }
+            [](mat4& out, const vec3& vec) { out = glm::translate(vec); },
+            [](mat4& out, const mat4& mat, const vec3& vec) { out = glm::translate(mat, vec); }
         ));
 
         ns->set_function("ScaleTo", sol::overload(
-            [](glm::mat4& out, const glm::vec3& vec) { out = glm::scale(vec); },
-            [](glm::mat4& out, const glm::mat4& mat, const glm::vec3& vec) { out = glm::scale(mat, vec); }
+            [](mat4& out, const vec3& vec) { out = glm::scale(vec); },
+            [](mat4& out, const mat4& mat, const vec3& vec) { out = glm::scale(mat, vec); }
         ));
 
         ns->set_function("RotateTo", sol::overload(
-            [](glm::mat4& out, float angle, const glm::vec3& vec) { out = glm::rotate(angle, vec); },
-            [](glm::mat4& out, const glm::mat4& mat, float angle, const glm::vec3& vec) { out = glm::rotate(mat, angle, vec); }
+            [](mat4& out, float angle, const vec3& vec) { out = glm::rotate(angle, vec); },
+            [](mat4& out, const mat4& mat, float angle, const vec3& vec) { out = glm::rotate(mat, angle, vec); }
         ));
 
         ns->set_function("MixTo", sol::overload(
-            [](glm::vec2& out, const glm::vec2& vec0, const glm::vec2& vec1, const float factor) { out = glm::mix(vec0, vec1, factor); },
-            [](glm::vec3& out, const glm::vec3& vec0, const glm::vec3& vec1, const float factor) { out = glm::mix(vec0, vec1, factor); },
-            [](glm::vec4& out, const glm::vec4& vec0, const glm::vec4& vec1, const float factor) { out = glm::mix(vec0, vec1, factor); },
-            [](glm::quat& out, const glm::quat& quat0, const glm::quat& quat1, const float factor) { out = glm::mix(quat0, quat1, factor); }
+            [](vec2& out, const vec2& vec0, const vec2& vec1, const float factor) { out = glm::mix(vec0, vec1, factor); },
+            [](vec3& out, const vec3& vec0, const vec3& vec1, const float factor) { out = glm::mix(vec0, vec1, factor); },
+            [](vec4& out, const vec4& vec0, const vec4& vec1, const float factor) { out = glm::mix(vec0, vec1, factor); },
+            [](quat& out, const quat& quat0, const quat& quat1, const float factor) { out = glm::mix(quat0, quat1, factor); }
         ));
 
         ns->set_function("ClampTo", sol::overload(
-            [](glm::vec2& out, const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2) { out = glm::clamp(vec0, vec1, vec2); },
-            [](glm::vec3& out, const glm::vec3& vec0, const glm::vec3& vec1, const glm::vec3& vec2) { out = glm::clamp(vec0, vec1, vec2); },
-            [](glm::vec4& out, const glm::vec4& vec0, const glm::vec4& vec1, const glm::vec4& vec2) { out = glm::clamp(vec0, vec1, vec2); }
+            [](vec2& out, const vec2& vec0, const vec2& vec1, const vec2& vec2) { out = glm::clamp(vec0, vec1, vec2); },
+            [](vec3& out, const vec3& vec0, const vec3& vec1, const vec3& vec2) { out = glm::clamp(vec0, vec1, vec2); },
+            [](vec4& out, const vec4& vec0, const vec4& vec1, const vec4& vec2) { out = glm::clamp(vec0, vec1, vec2); }
         ));
 
         ns->set_function("MaxTo", sol::overload(
-            [](glm::vec2& out, const glm::vec2& vec0, const glm::vec2& vec1) { out = glm::max(vec0, vec1); },
-            [](glm::vec3& out, const glm::vec3& vec0, const glm::vec3& vec1) { out = glm::max(vec0, vec1); },
-            [](glm::vec4& out, const glm::vec4& vec0, const glm::vec4& vec1) { out = glm::max(vec0, vec1); }
+            [](vec2& out, const vec2& vec0, const vec2& vec1) { out = glm::max(vec0, vec1); },
+            [](vec3& out, const vec3& vec0, const vec3& vec1) { out = glm::max(vec0, vec1); },
+            [](vec4& out, const vec4& vec0, const vec4& vec1) { out = glm::max(vec0, vec1); }
         ));
 
         ns->set_function("MinTo", sol::overload(
-            [](glm::vec2& out, const glm::vec2& vec0, const glm::vec2& vec1) { out = glm::min(vec0, vec1); },
-            [](glm::vec3& out, const glm::vec3& vec0, const glm::vec3& vec1) { out = glm::min(vec0, vec1); },
-            [](glm::vec4& out, const glm::vec4& vec0, const glm::vec4& vec1) { out = glm::min(vec0, vec1); }
+            [](vec2& out, const vec2& vec0, const vec2& vec1) { out = glm::min(vec0, vec1); },
+            [](vec3& out, const vec3& vec0, const vec3& vec1) { out = glm::min(vec0, vec1); },
+            [](vec4& out, const vec4& vec0, const vec4& vec1) { out = glm::min(vec0, vec1); }
         ));
 
-        ns->set_function("LookAtTo", [](glm::mat4& out, const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up) {
+        ns->set_function("LookAtTo", [](mat4& out, const vec3& eye, const vec3& center, const vec3& up) {
             out = glm::lookAt(eye, center, up);
             });
 
-        ns->set_function("EulerAnglesTo", [](glm::vec3& out, const glm::quat& quaternion) { out = glm::eulerAngles(quaternion); });
+        ns->set_function("EulerAnglesTo", [](vec3& out, const quat& quaternion) { out = glm::eulerAngles(quaternion); });
 
-        ns->set_function("EuclideanTo", [](glm::vec3& out, const glm::vec2& vec) { out = glm::euclidean(vec); });
-        ns->set_function("PolarTo", [](glm::vec2& out, const glm::vec3& vec) { out = vec2(glm::polar(vec)); });
+        ns->set_function("EuclideanTo", [](vec3& out, const vec2& vec) { out = glm::euclidean(vec); });
+        ns->set_function("PolarTo", [](vec2& out, const vec3& vec) { out = vec2(glm::polar(vec)); });
 
     }
 

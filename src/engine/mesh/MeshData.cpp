@@ -161,7 +161,7 @@ namespace Atlas {
             restNormals.resize(normals.GetElementCount());
 
             for (size_t i = 0; i < restVertices.size(); i++) {
-                auto vertexJoints = glm::ivec4(joints[i]);
+                auto vertexJoints = ivec4(joints[i]);
                 auto vertexWeights = weights[i] / glm::dot(weights[i], vec4(1.0f));
                 auto skinMatrix = glm::transpose(vertexWeights.x * restJointMatrices[vertexJoints.x] +
                     vertexWeights.y * restJointMatrices[vertexJoints.y] +

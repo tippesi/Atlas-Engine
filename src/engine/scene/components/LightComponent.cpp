@@ -261,18 +261,18 @@ namespace Atlas {
                     -maxLength - 1250.0f, // We need to render stuff behind the camera
                     maxLength + 10.0f); // We need to extend a bit to hide seams at cascade splits
 
-                glm::mat4 shadowMatrix = cascade.projectionMatrix * cascade.viewMatrix;
-                glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                mat4 shadowMatrix = cascade.projectionMatrix * cascade.viewMatrix;
+                vec4 shadowOrigin = vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 shadowOrigin = shadowMatrix * shadowOrigin;
                 shadowOrigin = shadowOrigin * (float)shadow->resolution / 2.0f;
 
-                glm::vec4 roundedOrigin = glm::round(shadowOrigin);
-                glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
+                vec4 roundedOrigin = glm::round(shadowOrigin);
+                vec4 roundOffset = roundedOrigin - shadowOrigin;
                 roundOffset = roundOffset * 2.0f / (float)shadow->resolution;
                 roundOffset.z = 0.0f;
                 roundOffset.w = 0.0f;
 
-                glm::mat4 shadowProj = cascade.projectionMatrix;
+                mat4 shadowProj = cascade.projectionMatrix;
                 shadowProj[3] += roundOffset;
                 cascade.projectionMatrix = clipMatrix * shadowProj;
                 cascade.frustumMatrix = clipMatrix * cascade.frustumMatrix;

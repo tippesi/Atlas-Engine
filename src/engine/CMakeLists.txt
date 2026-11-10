@@ -42,6 +42,9 @@ if(ATLAS_LUA_SAFETIES)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} SOL_ALL_SAFETIES_ON)
 endif()
 
+# Default constructed glm types are zero or identity like before glm 0.9.9
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} GLM_FORCE_CTOR_INIT)
+
 # Configure platform specific stuff ###############################################################
 if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)

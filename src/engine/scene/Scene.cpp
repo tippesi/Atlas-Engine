@@ -327,7 +327,7 @@ namespace Atlas {
                 if (hierarchyComponent.updated)
                     continue;
 
-                glm::mat4 parentMatrix(1.0f);
+                mat4 parentMatrix(1.0f);
                 auto& transformComponent = transformComponentPool.Get(entity);
                 auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
                 if (parentEntity.IsValid()) {
@@ -351,7 +351,7 @@ namespace Atlas {
                 if (transformComponent.updated)
                     return;
 
-                glm::mat4 parentMatrix(1.0f);
+                mat4 parentMatrix(1.0f);
                 auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
                 if (parentEntity.IsValid()) {
                     const auto& hierarchyComponent = hierarchyComponentPool.Get(parentEntity);

@@ -411,7 +411,7 @@ namespace Atlas {
 
             if (count == 0) {
                 hitPosition = ray.origin + ray.direction * half;
-                glm::vec3 forward;
+                vec3 forward;
                 hitPosition.y = GetHeight(hitPosition.x, hitPosition.z, hitNormal, forward);
                 return hitPosition.y != invalidHeight;
             }

@@ -123,8 +123,8 @@ namespace Atlas {
             ReserveInstances(characterCount);
             instanceBuffer.SetData(instances.data(), frameCharacterCount, characterCount);
 
-            auto right = glm::mat3_cast(rotation) * glm::vec3(1.0f, 0.0f, 0.0f);
-            auto down = glm::mat3_cast(rotation) * glm::vec3(0.0f, -1.0f, 0.0f);
+            auto right = glm::mat3_cast(rotation) * vec3(1.0f, 0.0f, 0.0f);
+            auto down = glm::mat3_cast(rotation) * vec3(0.0f, -1.0f, 0.0f);
 
             PushConstants3D constants {
                 .position = vec4(position, 1.0f),

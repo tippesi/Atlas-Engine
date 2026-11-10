@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "../System.h"
 
 #include <glm/gtc/constants.hpp>
 
@@ -47,9 +47,9 @@ namespace Helper {
 
         }
 
-        inline glm::vec3 Cartesian(glm::vec2 spherical) {
+        inline Atlas::vec3 Cartesian(Atlas::vec2 spherical) {
 
-            return glm::vec3(
+            return Atlas::vec3(
                 sinf(spherical.x) * cosf(spherical.y),
                 sinf(spherical.x) * sinf(spherical.y),
                 cosf(spherical.x)
@@ -57,17 +57,17 @@ namespace Helper {
 
         }
 
-        inline glm::vec2 Spherical(glm::vec3 cartesian) {
+        inline Atlas::vec2 Spherical(Atlas::vec3 cartesian) {
 
             auto theta = acosf(cartesian.z);
             auto phi = atan2f(cartesian.y, cartesian.x);
             phi = phi < 0.0f ? phi + glm::two_pi<float>() : phi;
 
-            return glm::vec2(theta, phi);
+            return Atlas::vec2(theta, phi);
 
         }
 
-        inline float DistanceToSegment(glm::vec2 point, glm::vec2 a, glm::vec2 b) {
+        inline float DistanceToSegment(Atlas::vec2 point, Atlas::vec2 a, Atlas::vec2 b) {
 
             auto ab = b - a;
             auto lengthSquared = glm::dot(ab, ab);
@@ -77,7 +77,7 @@ namespace Helper {
         }
 
         // Even-odd rule, the polygon is closed between its last and first point
-        inline bool IsInsidePolygon(glm::vec2 point, std::span<const glm::vec2> polygon) {
+        inline bool IsInsidePolygon(Atlas::vec2 point, std::span<const Atlas::vec2> polygon) {
 
             bool inside = false;
             for (size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {

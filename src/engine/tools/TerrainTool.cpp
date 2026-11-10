@@ -1161,7 +1161,7 @@ namespace Atlas::Tools {
                     heightD = heightD == FLT_MAX ? heightC : heightD;
                     heightU = heightU == FLT_MAX ? heightC : heightU;
 
-                    auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
+                    auto normal = glm::normalize(vec3(heightL - heightR, 1.0f,
                         heightD - heightU));
 
                     normal = (0.5f * normal + 0.5f) * 255.0f;

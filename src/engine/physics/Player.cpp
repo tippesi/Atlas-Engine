@@ -34,7 +34,7 @@ namespace Atlas::Physics {
 
 	}
 
-    Player::Player(const Atlas::Physics::PlayerCreationSettings &creationSettings, const glm::vec3 &initialPosition,
+    Player::Player(const Atlas::Physics::PlayerCreationSettings &creationSettings, const vec3 &initialPosition,
         const Ref<Atlas::Physics::PhysicsWorld> &physicsWorld) : creationSettings(CreateRef(creationSettings)) {
 
         Init(physicsWorld.get(), initialPosition, quat());

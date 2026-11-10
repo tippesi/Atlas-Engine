@@ -121,7 +121,7 @@ namespace Atlas {
             if (hideMouse) {
 
                 // The hidden cursor is in relative mode, every motion turns the camera
-                angularVelocity += glm::vec2(-event.dx, -event.dy) * sensibility * 0.001f;
+                angularVelocity += vec2(-event.dx, -event.dy) * sensibility * 0.001f;
 
             }
             else {
@@ -129,7 +129,7 @@ namespace Atlas {
                 if (!activationButtonDown)
                     return;
 
-                angularVelocity = glm::vec2(-event.dx, -event.dy) * sensibility * 0.001f;
+                angularVelocity = vec2(-event.dx, -event.dy) * sensibility * 0.001f;
 
             }
 

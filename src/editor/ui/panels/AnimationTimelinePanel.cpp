@@ -364,7 +364,7 @@ namespace Atlas::Editor::UI {
             auto& rotation = channel.rotations[selectedKey.key];
             auto euler = glm::degrees(glm::eulerAngles(rotation));
             if (Widgets::DragVec3("Rotation", euler, 0.1f, 0.0f, 0.0f, 0.0f, "%.1f")) {
-                rotation = glm::quat(glm::radians(euler));
+                rotation = quat(glm::radians(euler));
                 modified = true;
             }
             break;

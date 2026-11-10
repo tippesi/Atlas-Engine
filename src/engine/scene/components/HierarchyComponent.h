@@ -38,7 +38,7 @@ namespace Atlas {
                 bool root = false;
                 int32_t level = 0;
 
-                glm::mat4 globalMatrix {1.0f};            
+                mat4 globalMatrix {1.0f};            
 
             protected:
                 void Update(const TransformComponent& transform, bool parentChanged, ECS::Pool<TransformComponent>& transformComponentPool,

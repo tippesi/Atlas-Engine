@@ -69,7 +69,7 @@ namespace Atlas {
            for (uint8_t i = 0; i < 6; i++) {
                for (int32_t y = 0; y < resolution; y++) {
                    for (int32_t x = 0; x < resolution; x++) {
-                       auto coord = glm::vec2(((float)x + 0.5f) / (float)resolution,
+                       auto coord = vec2(((float)x + 0.5f) / (float)resolution,
                            ((float)y + 0.5f) / (float)resolution);
 
                        auto direction = glm::normalize(faceDirection(i, coord * 2.0f - 1.0f));

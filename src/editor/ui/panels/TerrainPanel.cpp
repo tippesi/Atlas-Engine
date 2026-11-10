@@ -250,7 +250,7 @@ namespace Atlas::Editor::UI {
         Atlas::Physics::HeightFieldShapeSettings terrainShapeSettings{
             .heightData = heightImage.GetData(),
             .translation = terrain->translation,
-            .scale = glm::vec3(terrain->resolution, terrain->heightScale, terrain->resolution)
+            .scale = vec3(terrain->resolution, terrain->heightScale, terrain->resolution)
         };
         auto terrainShape = Atlas::Physics::ShapesManager::CreateShape(terrainShapeSettings);
 
@@ -283,7 +283,7 @@ namespace Atlas::Editor::UI {
 
         auto bodySettings = Atlas::Physics::BodyCreationSettings{ .shape = terrainShape };
         terrainPhysicsEntity.AddComponent<RigidBodyComponent>(bodySettings);
-        terrainPhysicsEntity.AddComponent<TransformComponent>(glm::mat4(1.0f));
+        terrainPhysicsEntity.AddComponent<TransformComponent>(mat4(1.0f));
 
     }
 

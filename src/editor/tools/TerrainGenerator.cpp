@@ -434,7 +434,7 @@ namespace Atlas::Editor {
         float heightD = (float)heightImg.SampleBilinear(x, y - yTex).r * scale / 65535.0f;
         float heightU = (float)heightImg.SampleBilinear(x, y + yTex).r * scale / 65535.0f;
 
-        auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
+        auto normal = glm::normalize(vec3(heightL - heightR, 1.0f,
             heightD - heightU));
 
         height = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;

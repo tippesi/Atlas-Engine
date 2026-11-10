@@ -74,8 +74,8 @@ namespace Atlas {
 
             int32_t heightFieldSideLength = int32_t(sqrtf(float(heightData.size())));
 
-            aabb.min = glm::vec3(std::numeric_limits<float>::max());
-            aabb.max = glm::vec3(-std::numeric_limits<float>::max());
+            aabb.min = vec3(std::numeric_limits<float>::max());
+            aabb.max = vec3(-std::numeric_limits<float>::max());
 
             std::vector<vec3> vertices(heightData.size());
             for (int32_t i = 0; i < heightFieldSideLength; i++) {

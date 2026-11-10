@@ -35,8 +35,8 @@ namespace Atlas::Editor::UI {
             return;
 
         static std::string name;
-        static auto minSize = glm::vec3(-2048.0f);
-        static auto maxSize = glm::vec3(2048.0f);
+        static auto minSize = vec3(-2048.0f);
+        static auto maxSize = vec3(2048.0f);
         static int32_t octreeDepth = 8;
 
         bool popupNew = false;
@@ -89,8 +89,8 @@ namespace Atlas::Editor::UI {
             return;
 
         static std::string name;
-        static auto minSize = glm::vec3(-2048.0f);
-        static auto maxSize = glm::vec3(2048.0f);
+        static auto minSize = vec3(-2048.0f);
+        static auto maxSize = vec3(2048.0f);
         static int32_t octreeDepth = 8;
         static bool invertUVs = true;
         static bool addRigidBodies = true;
@@ -162,7 +162,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void PopupPanels::RenderOctreeSettings(glm::vec3& min, glm::vec3& max, int32_t& depth) {
+    void PopupPanels::RenderOctreeSettings(vec3& min, vec3& max, int32_t& depth) {
 
         ImGui::SeparatorText("Octree");
         ImGui::DragFloat3("Min size", &min[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);

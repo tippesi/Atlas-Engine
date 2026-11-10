@@ -326,7 +326,7 @@ namespace Atlas {
             auto r1 = sqrtf(u.x);
             auto theta0 = glm::two_pi<float>() * u.y;
             auto theta1 = glm::two_pi<float>() * u.z;
-            auto rotation = glm::quat(r1 * cosf(theta1), r0 * sinf(theta0), r0 * cosf(theta0), r1 * sinf(theta1));
+            auto rotation = quat(r1 * cosf(theta1), r0 * sinf(theta0), r0 * cosf(theta0), r1 * sinf(theta1));
 
             return glm::mat3_cast(rotation);
 

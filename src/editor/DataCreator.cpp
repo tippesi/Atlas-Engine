@@ -20,8 +20,8 @@ namespace Atlas::Editor {
         directionalLightEntity.AddComponent<NameComponent>("Directional light");
         auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
-        directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+        directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 1.0f);
+        directionalLight.color = vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
         directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
         directionalLight.isMain = true;
@@ -79,8 +79,8 @@ namespace Atlas::Editor {
         directionalLightEntity.AddComponent<NameComponent>("Directional light");
         auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
-        directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+        directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 1.0f);
+        directionalLight.color = vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
         directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
         directionalLight.isMain = true;

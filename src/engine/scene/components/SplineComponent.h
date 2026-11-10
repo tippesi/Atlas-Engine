@@ -10,12 +10,12 @@ namespace Atlas::Scene::Components {
     struct SplineControlPoint {
         SplineControlPoint() {}
 
-        SplineControlPoint(glm::mat4 matrix, float time = 0.0f) : transform(matrix), time(time) {
+        SplineControlPoint(mat4 matrix, float time = 0.0f) : transform(matrix), time(time) {
             transform = matrix;
             matrixDecomposition = Common::MatrixDecomposition(matrix);
         }
 
-        glm::mat4 transform{1.0f};
+        mat4 transform{1.0f};
         Common::MatrixDecomposition matrixDecomposition;
 
         vec3 tangent{1.0f};
@@ -54,7 +54,7 @@ namespace Atlas::Scene::Components {
 
         void Bake();
 
-        void AddControlPoint(glm::mat4 matrix, float time);
+        void AddControlPoint(mat4 matrix, float time);
 
         void ClearControlPoints();
 
@@ -62,7 +62,7 @@ namespace Atlas::Scene::Components {
 
         size_t GetControlPointCount() const;
 
-        SplinePoint GetInterpolated(float time, const glm::mat4& parentMatrix) const;
+        SplinePoint GetInterpolated(float time, const mat4& parentMatrix) const;
 
         SplinePoint GetInterpolatedFromIndex(int32_t idx, float t) const;
 
@@ -73,7 +73,7 @@ namespace Atlas::Scene::Components {
         std::vector<SplinePoint> bakedPoints;
 
     private:
-        void TransformSplinePoint(SplinePoint& point, const glm::mat4& transform) const;
+        void TransformSplinePoint(SplinePoint& point, const mat4& transform) const;
 
     };
 

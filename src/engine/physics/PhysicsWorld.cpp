@@ -256,7 +256,7 @@ namespace Atlas {
             if (shapeRef->GetSubType() == JPH::EShapeSubType::Scaled) {
                 auto shape = static_cast<const JPH::ScaledShape*>(shapeRef.GetPtr());
 
-                matrix = glm::scale(glm::mat4(matrix), JPHVecToVec(shape->GetScale()));
+                matrix = glm::scale(mat4(matrix), JPHVecToVec(shape->GetScale()));
             }
 
             return matrix;
@@ -890,7 +890,7 @@ namespace Atlas {
             std::unordered_map<uint64_t, Edge> edges;
             // On a millimeter grid, so the two triangles of an edge find each other
             auto key = [](vec3 v) {
-                auto q = glm::ivec3(glm::round(v * 1000.0f));
+                auto q = ivec3(glm::round(v * 1000.0f));
                 return (uint64_t(uint32_t(q.x)) * 73856093u) ^ (uint64_t(uint32_t(q.y)) * 19349663u) ^ (uint64_t(uint32_t(q.z)) * 83492791u);
             };
             auto addEdge = [&](vec3 v0, vec3 v1, vec3 normal) {

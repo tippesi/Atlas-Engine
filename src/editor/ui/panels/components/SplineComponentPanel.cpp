@@ -160,7 +160,7 @@ namespace Atlas::Editor::UI {
             composition.scale = scale;
 
             point.transform = composition.Compose();
-            point.tangent = glm::normalize(glm::vec3(point.transform * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)));
+            point.tangent = glm::normalize(vec3(point.transform * vec4(0.0f, 0.0f, 1.0f, 0.0f)));
         }
 
         ImGui::TreePop();

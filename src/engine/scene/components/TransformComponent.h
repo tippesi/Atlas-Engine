@@ -34,10 +34,10 @@ namespace Atlas {
                     Set(matrix);
                 }
 
-                void Set(const glm::mat4& matrix);
+                void Set(const mat4& matrix);
 
                 // Sets the world matrix immediately and derives the local matrix relative to the parent
-                void SetGlobal(const glm::mat4& matrix, const Entity& parentEntity);
+                void SetGlobal(const mat4& matrix, const Entity& parentEntity);
 
                 void ReconstructLocalMatrix(const Entity& parentEntity);
 
@@ -46,15 +46,15 @@ namespace Atlas {
 
                 bool IsStatic() const;
 
-                void Translate(glm::vec3 translation);
-                void Rotate(glm::vec3 rotation);
-                void Scale(glm::vec3 scale);
+                void Translate(vec3 translation);
+                void Rotate(vec3 rotation);
+                void Scale(vec3 scale);
 
                 Common::MatrixDecomposition Decompose() const;
                 Common::MatrixDecomposition DecomposeGlobal() const;
                 void Compose(Common::MatrixDecomposition composition);
 
-                glm::mat4 matrix = mat4{ 1.0f };
+                mat4 matrix = mat4{ 1.0f };
 
                 bool isStatic = true;
 
@@ -66,7 +66,7 @@ namespace Atlas {
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
 
             protected:
-                void Update(const glm::mat4& parentMatrix, bool parentChanged);
+                void Update(const mat4& parentMatrix, bool parentChanged);
 
                 Entity entity;
 

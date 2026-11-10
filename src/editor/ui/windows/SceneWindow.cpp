@@ -767,7 +767,7 @@ namespace Atlas::Editor::UI {
             const auto& splineComponent = entity.GetComponent<SplineComponent>();
             auto transformComponent = entity.TryGetComponent<TransformComponent>();
 
-            glm::mat4 globalMatrix = scene->GetGlobalMatrix(entity);
+            mat4 globalMatrix = scene->GetGlobalMatrix(entity);
 
             SplinePoint lastSplinePoint = splineComponent.GetInterpolatedFromIndex(0, 0.0f);
             lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));

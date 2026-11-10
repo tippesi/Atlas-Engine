@@ -60,14 +60,14 @@ namespace Atlas {
              * @param pdf The probability of that sample
              * @return The interpolated coordinate which lies between samples
              */
-            glm::vec2 Sample(float& pdf);
+            vec2 Sample(float& pdf);
 
             /**
              * Returns the probability for a certain sample coordinate
              * @param uv The sample coordinate
              * @return The probability for the sample
              */
-            float Pdf(glm::vec2 uv);
+            float Pdf(vec2 uv);
 
         private:
             Piecewise1D marginalDistribution;

@@ -106,7 +106,7 @@ namespace Atlas::ImguiExtension {
 
         auto w = (float) window->GetWidth() / scale;
         auto h = (float) window->GetHeight() / scale;
-        auto size = glm::vec2(window->GetDrawableSize());
+        auto size = vec2(window->GetDrawableSize());
         io.DisplaySize = ImVec2(w, h);
         if (w > 0.0f && h > 0.0f)
             io.DisplayFramebufferScale = ImVec2(size.x / w, size.y / h);

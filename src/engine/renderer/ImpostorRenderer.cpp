@@ -86,7 +86,7 @@ namespace Atlas {
         }
 
         void ImpostorRenderer::Generate(const std::vector<mat4> &viewMatrices,
-            glm::mat4 projectionMatrix, float distToCenter, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
+            mat4 projectionMatrix, float distToCenter, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
 
             struct alignas(16) PushConstants {
                 mat4 vMatrix = mat4(1.0f);

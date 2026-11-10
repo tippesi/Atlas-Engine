@@ -19,7 +19,7 @@ namespace Atlas {
 
             }
 
-			void TransformComponent::Set(const glm::mat4& matrix) {
+			void TransformComponent::Set(const mat4& matrix) {
 
 				this->matrix = matrix;
 				if (!changed)
@@ -29,7 +29,7 @@ namespace Atlas {
 
 			}
 			
-			void TransformComponent::Translate(glm::vec3 translation) {
+			void TransformComponent::Translate(vec3 translation) {
 
 				this->matrix = glm::translate(matrix, translation);
 				if (!changed)
@@ -44,7 +44,7 @@ namespace Atlas {
 
 			}
 
-			void TransformComponent::SetGlobal(const glm::mat4& matrix, const Entity& parentEntity) {
+			void TransformComponent::SetGlobal(const mat4& matrix, const Entity& parentEntity) {
 
                 // Motion vectors need the matrix from before the first change in this frame
                 if (!lastGlobalMatrixSet) {
@@ -79,7 +79,7 @@ namespace Atlas {
 
 			}
 
-			void TransformComponent::Update(const glm::mat4& parentMatrix, bool parentChanged) {
+			void TransformComponent::Update(const mat4& parentMatrix, bool parentChanged) {
 
                 wasStatic = isStatic;
 

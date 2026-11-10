@@ -66,7 +66,7 @@ namespace Atlas::Editor::UI {
         auto meshComponent = entity.TryGetComponent<MeshComponent>();
         auto transformComponent = entity.TryGetComponent<TransformComponent>();
 
-        glm::vec3* scale = nullptr;
+        vec3* scale = nullptr;
         float* density = nullptr;
 
         if (shape->type == ShapeType::Mesh) {

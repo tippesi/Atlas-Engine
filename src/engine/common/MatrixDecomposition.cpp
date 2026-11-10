@@ -40,7 +40,7 @@ namespace Atlas {
             // Handle negative scales properly
             auto minIdx = 0;
             if (det < 0.0f) {
-                auto sumVec = glm::vec3(1.0f) * glm::mat3(local);
+                auto sumVec = vec3(1.0f) * mat3(local);
 
                 minIdx = sumVec[minIdx] < sumVec[1] ? minIdx : 1;
                 minIdx = sumVec[minIdx] < sumVec[2] ? minIdx : 2;
@@ -53,7 +53,7 @@ namespace Atlas {
             if (det < 0.0f)
                 scale[minIdx] *= -1.0f;
 
-            quaternion = glm::normalize(glm::conjugate(quaternion));
+            quaternion = glm::normalize(quaternion);
             rotation = EulerAnglesFromRotation(glm::mat3_cast(quaternion));
 
         }
@@ -68,22 +68,22 @@ namespace Atlas {
             matrix[3][3] = perspective.w;
 
             matrix *= glm::translate(translation);
-            matrix *= glm::mat4_cast(glm::quat(rotation));
+            matrix *= glm::mat4_cast(quat(rotation));
 
             if (skew.x) {
-                glm::mat4 skewX { 1.f };
+                mat4 skewX { 1.f };
                 skewX[2][1] = skew.x;
                 matrix *= skewX;
             }
 
             if (skew.y) {
-                glm::mat4 skewY { 1.f };
+                mat4 skewY { 1.f };
                 skewY[2][0] = skew.y;
                 matrix *= skewY;
             }
 
             if (skew.z) {
-                glm::mat4 skewZ { 1.f };
+                mat4 skewZ { 1.f };
                 skewZ[1][0] = skew.z;
                 matrix *= skewZ;
             }

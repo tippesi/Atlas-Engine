@@ -19,7 +19,7 @@ namespace Atlas {
                 CameraComponent() = default;
                 CameraComponent(const CameraComponent& that) = default;
 
-                CameraComponent(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, glm::vec3 location = vec3(0.0f),
+                CameraComponent(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, vec3 location = vec3(0.0f),
                     vec2 rotation = vec2(0.0f));
 
                 void Jitter(vec2 jitter);

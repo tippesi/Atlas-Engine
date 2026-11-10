@@ -3,14 +3,14 @@
 
 namespace Atlas::Physics {
 
-    void Body::SetMatrix(glm::mat4 matrix) {
+    void Body::SetMatrix(mat4 matrix) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->SetBodyMatrix(bodyId, matrix);
 
     }
 
-    void Body::MoveKinematic(glm::mat4 matrix, float deltaTime) {
+    void Body::MoveKinematic(mat4 matrix, float deltaTime) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->MoveKinematicBody(bodyId, matrix, deltaTime);
@@ -38,7 +38,7 @@ namespace Atlas::Physics {
 
     }
 
-    void Body::SetLinearVelocity(glm::vec3 velocity) {
+    void Body::SetLinearVelocity(vec3 velocity) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->SetLinearVelocity(bodyId, velocity);
@@ -59,7 +59,7 @@ namespace Atlas::Physics {
 
     }
 
-    void Body::SetAngularVelocity(glm::vec3 velocity) {
+    void Body::SetAngularVelocity(vec3 velocity) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->SetAngularVelocity(bodyId, velocity);

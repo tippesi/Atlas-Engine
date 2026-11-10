@@ -121,8 +121,8 @@ namespace Atlas::Editor {
                     N = glm::euclidean(vec2(spherical.x, spherical.y));
                 }
 
-                glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-                glm::quat rotation = glm::rotation(up, glm::normalize(N));
+                vec3 up = vec3(0.0f, 1.0f, 0.0f);
+                quat rotation = glm::rotation(up, glm::normalize(N));
                 rot = glm::toMat4(rotation) * glm::rotate(instance.rotation, up);
             }
 
@@ -198,7 +198,7 @@ namespace Atlas::Editor {
             instance.scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
 
             if (type.excludeBasedOnCorners && mesh.IsLoaded()) {
-                glm::mat4 transform {1.0f};
+                mat4 transform {1.0f};
                 transform = translate(transform, instance.position);
                 transform *= glm::rotate(instance.rotation, vec3(0.0f, 1.0f, 0.0f));
                 transform = glm::scale(transform, instance.scale);
