@@ -42,12 +42,16 @@ namespace Atlas::Loader {
         // All layers need the same size
         static Ref<KtxImage> ConvertImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers);
 
-        // The ktx2 file of the layers without loading it, empty if the encoding failed
-        static std::vector<char> EncodeImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers);
+        // The ktx2 file of the layers without loading it, empty if the encoding failed. With the cache (.cache/ktx2/ in
+        // the data directory) identical images are encoded once, e.g. a texture imported by models in several directories
+        static std::vector<char> EncodeImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers, bool useCache = false);
 
         static void SaveImage(const Ref<KtxImage>& image, const std::string& filename);
 
         static bool IsKtxFile(const std::string& filename);
+
+    private:
+        static std::vector<char> Encode(const std::vector<Ref<Common::Image<uint8_t>>>& layers);
 
     };
 

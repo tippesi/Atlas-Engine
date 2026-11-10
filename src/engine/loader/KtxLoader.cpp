@@ -1,6 +1,7 @@
 #include "KtxLoader.h"
 #include "AssetLoader.h"
 
+#include "../common/Hash.h"
 #include "../common/Path.h"
 #include "../graphics/Format.h"
 #include "../graphics/GraphicsDevice.h"
@@ -14,6 +15,8 @@
 #include <algorithm>
 #include <mutex>
 #include <atomic>
+#include <random>
+#include <filesystem>
 
 namespace Atlas::Loader {
 
@@ -295,7 +298,66 @@ namespace Atlas::Loader {
 
     }
 
-    std::vector<char> KtxLoader::EncodeImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers) {
+    std::vector<char> KtxLoader::EncodeImage(const std::vector<Ref<Common::Image<uint8_t>>>& layers, bool useCache) {
+
+        if (!useCache)
+            return Encode(layers);
+
+        // The key has to change with every change of Encode, e.g. its settings or the mipmaps
+        Hash hash = 0;
+        HashCombine(hash, std::string_view("uastc default, zstd 10"));
+        for (const auto& layer : layers) {
+            const auto& data = layer->GetData();
+            HashCombine(hash, layer->width);
+            HashCombine(hash, layer->height);
+            HashCombine(hash, layer->channels);
+            HashCombine(hash, std::string_view(reinterpret_cast<const char*>(data.data()), data.size()));
+        }
+
+        // A cached file that doesn't load or doesn't fit the layers, e.g. a damaged one, is encoded again
+        auto fits = [&](const std::vector<char>& content) {
+            ktxTexture2* texture = nullptr;
+            if (ktxTexture2_CreateFromMemory(reinterpret_cast<const ktx_uint8_t*>(content.data()), content.size(),
+                KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) != KTX_SUCCESS)
+                return false;
+            auto fitting = texture->baseWidth == uint32_t(layers.front()->width) &&
+                texture->baseHeight == uint32_t(layers.front()->height) && texture->numLayers == uint32_t(layers.size());
+            ktxTexture_Destroy(ktxTexture(texture));
+            return fitting;
+        };
+
+        const auto cachePath = ".cache/ktx2/" + std::to_string(hash) + ".ktx2";
+        if (AssetLoader::FileExists(cachePath)) {
+            auto stream = AssetLoader::ReadFile(cachePath, std::ios::in | std::ios::binary);
+            if (stream.is_open()) {
+                auto content = AssetLoader::GetFileContent(stream);
+                if (!content.empty() && fits(content))
+                    return content;
+            }
+        }
+
+        auto fileData = Encode(layers);
+        if (fileData.empty())
+            return fileData;
+
+        // Written aside and renamed, an import encoding the same image at the same time never reads a partial file
+        auto tempPath = cachePath + "." + std::to_string(std::random_device()());
+        auto stream = AssetLoader::WriteFile(tempPath, std::ios::out | std::ios::binary);
+        if (stream.is_open()) {
+            stream.write(fileData.data(), std::streamsize(fileData.size()));
+            stream.close();
+            std::error_code error;
+            if (!stream.fail())
+                std::filesystem::rename(AssetLoader::GetFullPath(tempPath), AssetLoader::GetFullPath(cachePath), error);
+            if (stream.fail() || error)
+                AssetLoader::RemoveFile(tempPath);
+        }
+
+        return fileData;
+
+    }
+
+    std::vector<char> KtxLoader::Encode(const std::vector<Ref<Common::Image<uint8_t>>>& layers) {
 
         AE_ASSERT(!layers.empty() && "No layers to convert");
 

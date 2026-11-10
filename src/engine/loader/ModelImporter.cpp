@@ -1055,7 +1055,7 @@ namespace Atlas {
                 Ref<Texture::Texture2D> created;
                 if (textureFormat == ImportTextureFormat::KTX2) {
                     auto ktxImage = CreateRef<KtxImage>();
-                    ktxImage->fileData = KtxLoader::EncodeImage({ texture.image });
+                    ktxImage->fileData = KtxLoader::EncodeImage({ texture.image }, true);
                     if (!ktxImage->fileData.empty()) {
                         if (saveToDisk)
                             KtxLoader::SaveImage(ktxImage, texture.image->fileName);
