@@ -31,6 +31,17 @@ env:
   RUN_TESTS: true
 
 jobs:
+  feature-index:
+    runs-on: ubuntu-24.04
+    name: Check feature index
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check that wiki/Features.md lists all features
+        run: python3 wiki/check_features.py
+
   windows-build:
     runs-on: windows-2022
     name: Build on Windows
