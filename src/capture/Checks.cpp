@@ -198,10 +198,10 @@ namespace Atlas::Capture {
         for (auto entity : transformSubset) {
             const auto& transform = transformSubset.Get(entity);
 
+            const float* values = glm::value_ptr(transform.globalMatrix);
             bool valid = true;
-            for (int32_t column = 0; column < 4; column++)
-                for (int32_t row = 0; row < 4; row++)
-                    valid &= std::isfinite(transform.globalMatrix[column][row]);
+            for (int32_t i = 0; i < 16; i++)
+                valid &= std::isfinite(values[i]);
 
             if (!valid)
                 AddFailure({ "invalidTransforms", GetEntityLabel({ entity, &scene.entityManager }), time,
