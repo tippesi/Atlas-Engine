@@ -37,13 +37,20 @@ int main(int argc, char* argv[]) {
     // To test with swiftshader locally, put in the path of the *_icd.json (note: on Windows use backslashes)
     // SetEnvironmentVariable("VK_ICD_FILENAMES", "..\\vk_swiftshader_icd.json");
 
-    // Validation has to be known before the graphics instance is created
     auto engineConfig = Atlas::EngineInstance::engineConfig;
+    if (engineConfig.commandLineTool) {
+        if (auto exitCode = engineConfig.commandLineTool(std::vector<std::string>(argv, argv + argc)))
+            return *exitCode;
+    }
+
+    // Validation has to be known before the graphics instance is created, shaders can come from another directory
     for (int32_t i = 1; i < argc; i++) {
         if (std::string(argv[i]) == "--validation") {
             engineConfig.deviceDesc.enableValidationLayers = true;
             engineConfig.deviceDesc.enableExtendedValidation = true;
         }
+        if (std::string(argv[i]) == "--shader-dir" && i + 1 < argc)
+            engineConfig.shaderDirectory = argv[i + 1];
     }
 
     Atlas::Engine::Init(engineConfig);

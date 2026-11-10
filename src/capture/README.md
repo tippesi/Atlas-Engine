@@ -1,851 +1,336 @@
 # AtlasEngineCapture
 
-Command line tool to look at, measure, play, check and edit scenes without the editor. It is
-meant for automated verification, e.g. by coding agents: every run produces images, JSON
-reports and an exit code.
+Renders, plays, measures, checks and edits scenes from JSON jobs with the real GPU (the editor's `MainRenderer`), and
+runs the same jobs inside a game with its interface. Every run writes images, `report.json`, `log.txt` and an exit code:
+`0` passed, `1` a check or expectation failed, `2` error, `3` crash, `4` the client stopped waiting.
 
-The tool only uses the public engine API and lives in its own CMake subproject. Build it with
-`-DATLAS_CAPTURE=ON`:
+Build: `-DATLAS_CAPTURE=ON` (executable, `ATLAS_CAPTURE_OUTPUT_NAME` names it) or `-DATLAS_CAPTURE_LIBRARY=ON` (only the
+library, for game hosts). A running capture tool is renamed aside when it is linked again, a build never fails on it.
 
-```powershell
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DATLAS_CAPTURE=ON
-cmake --build build --target AtlasEngineCapture
-```
+## Rules for runs
 
-It renders with the real GPU, exactly like the editor viewport (same `MainRenderer::RenderScene`
-path). SwiftShader/headless builds don't produce correct images.
+- Use the client (`run`, `eval`): the server keeps the scene loaded, the world loads once instead of 25 s per run.
+- `check` a job before the first run, it finds wrong entity names, Lua that doesn't compile and the preflight errors in
+  milliseconds. Every run checks its job before loading anyway.
+- Run only what answers the question: one targeted job, the shortest `duration`, `end` once the result is known. A job
+  prints how long its previous run took; anything above a few minutes needs a reason, a suite of jobs needs the user.
+- Look at `sheet.jpg` (all captures of a job, at most 1536 px wide) instead of single images; let `diff` or `compare`
+  decide whether something changed before looking at all.
+- Measure with queries and `eval` instead of probe scripts that log values. Never guess coordinates or heights.
+- `status` before starting anything on the GPU, `--wait-gpu` to queue behind other engine applications.
+- Games: each build passes a short job with `"playerDisplay": true` first, the start a player gets (see Jobs in a game).
 
-By default a window shows the rendered frames with a status line and the latest output below them
-and plays in real time; it closes when the job is done. `--hidden` (`"showWindow": false`) renders
-into a hidden window and plays as fast as possible, which suits automated runs; `--fast` (`"realTime": false`)
-plays as fast as possible in the shown window. Keyboard input into
-a shown window reaches the scene like the job's key events, so don't type into it while it runs. The tool is muted, `--sound`
-plays the sound of the scene.
-`report.json` lists the GPU memory at the end of a job (`gpuMemory`: textures, other images, buffers, the
-largest of each and the device heaps).
-
-## Quick start
+## Commands
 
 ```powershell
-# One picture with the scene camera (or an overview if the scene has none)
-bin/RelWithDebInfo/AtlasEngineCapture.exe --scene scenes/sponza.aescene
-
-# Several views of an entity plus pass images
-bin/RelWithDebInfo/AtlasEngineCapture.exe --scene scenes/sponza.aescene --focus Player --views front,right,low,top --passes albedo,normal
-
-# Scene summary (entities, transforms, bounds, settings) as JSON
-bin/RelWithDebInfo/AtlasEngineCapture.exe --scene scenes/Kingdom.aescene --inspect
-
-# A job file describes everything else
-bin/RelWithDebInfo/AtlasEngineCapture.exe src/capture/examples/kingdom_gate_guards.json
-
-# Compare images of different runs, e.g. before and after a shader change (no scene is loaded)
-bin/RelWithDebInfo/AtlasEngineCapture.exe --compose out.png --title "Clouds" before=a/sky.png after=b/sky.png
+AtlasEngineCapture <job.json> [options]          # direct run in this process
+AtlasEngineCapture --scene <scene> [options]     # quick shot or inspection without a job file
+AtlasEngineCapture run <job.json | '{inline}'> [job options]   # on the server of this executable, prints the summary
+AtlasEngineCapture eval "<lua>" [--play 3] [--scene <scene>]  # the value of Lua in the loaded scene after playing
+AtlasEngineCapture wait <command> | status | cancel | stop     # --server <dir> --detach --timeout <s> --wait-gpu
+AtlasEngineCapture check <job.json> ...          # mistakes in jobs without loading anything
+AtlasEngineCapture inspect <scene|prefab|mesh|model> [--filter <pattern>] [--assembly <pattern>] [--limit n] [--out f]
+AtlasEngineCapture diff <a> <b> [--threshold 8] [--out sheet.jpg]   # images or directories, numbers per image
+AtlasEngineCapture compose <out.jpg> [--width 1536] [--columns n] [--title t] <image | label=image | dir | pattern> ...
+AtlasEngineCapture bench <bench.json>            # A/B timings of builds or shader directories
+AtlasEngineCapture kill <pid | captures>         # ends a process with the processes it started
+AtlasEngineCapture --serve <dir> | --pipeline <pipeline.json> [--from <step>] [--force]
 ```
 
-Run `--help` for all command line options. Results are written to `bin/capture/<job name>/`
-(or `--out`): images, `report.json`, `log.txt` and the other files listed below.
+The commands without a scene start in milliseconds, they don't create a window or a GPU device. Job options (also after
+the job file, they override it): `--out`, `--name`, `--resolution WxH`, `--render-scale`, `--settle <frames>`,
+`--timeout <s>`, `--hidden` (no window, as fast as possible; runs stay visible by default), `--fast` (shown, as fast as
+possible), `--no-shots`, `--overlay`, `--play <s>`, `--set path=value` (settings), `--profile <frames>`, `--pause`
+(pause at the start of playing), `--hitches [ms]`, `--inspect [file]`, `--sound`, and before the engine starts:
+`--validation`, `--streaming`, `--shader-dir <dir>` (relative to `data/`), `--wait-gpu`, `--verbose` (the whole engine log,
+otherwise only its errors). Shot options:
+`--focus <pattern>`, `--views front,low`, `--camera x,y,z`, `--look-at x,y,z`, `--yaw`, `--pitch`, `--fov`,
+`--distance`, `--overview`, `--passes albedo,normal`, `--shot <name>`. Outputs: `bin/capture/<job name>/` or `--out`.
 
-Exit codes: `0` passed, `1` a check or expectation failed, `2` fatal error (invalid job, scene
-didn't load, output directory in use, window closed early, ...), `3` crash. The last line is always
-`Status: <status> (<reason>)` and `report.json` has the same `status` and `reason`. Crashes print a
-stack trace and write a report with the status `crashed`.
+### Client and server
 
-## How a run works
+`run`, `eval`, `wait`, `status`, `cancel` and `stop` talk to `bin/capture-server/<executable>/` (`--server <dir>`). The
+client starts a server when none runs and replaces one of another build or with other `--streaming`/`--validation`
+options once it is idle. Commands queue in file name order, several clients share a server. The server keeps the last
+scene loaded; a job for another scene, or after a job that played or edited, loads it again and keeps the meshes,
+materials and textures meanwhile. While waiting for commands it presents with vsync, jobs run without. The client waits up to `--timeout` (540 s), then prints the command to `wait` for and
+exits with 4; `--detach` returns right away. `cancel` stops the running job, `stop` the server.
 
-1. The scene is loaded; the tool waits until all meshes are loaded (or failed to load, which is
-   reported as a warning), the terrain is loaded and the ray tracing data is built.
-2. `settings` are applied, then `inspect`, `queries` and `edit` run.
-3. Each shot renders `settleFrames` frames before it is captured, such that temporal effects
-   (TAA, DDGI, clouds) converge.
-4. With `play`, the simulation runs with a fixed time step (`fixedDt`) for `duration` seconds while
-   the timeline is processed.
-5. Checks run once for static jobs and every `checks.interval` seconds while playing.
+The summary: status, duration (load, played), errors and failed checks grouped with counts, failed expectations with
+their values, conditions that never happened, `results`, warnings and the outputs. Everything else is in `report.json`
+and `log.txt` of the output directory.
 
-The scene file is never modified unless `edit` is used.
+Server protocol, for other clients: JSON files in the directory, `{ "command": "run", "job": "<file>" | {inline},
+"args": [...] }`, `loadScene` (`scene`, `timeout`, `camera`), `reloadScene`, `unloadScene`, `stop`; results in
+`<command>.result.json` (`status`, `exitCode`, `reason`, `report`, `outputDirectory`), processed commands in `done/`.
+`server.json` names the process, its build and its state (idle, loading, running), a file named `cancel` stops the job.
 
-## Server mode
+### Engine applications on the machine
 
-Loading a large scene takes most of the time of a short job. `--serve <directory>` keeps the tool
-running and processes the commands written to the directory as JSON files, in the order of their file
-names. A processed command is moved to `<directory>/done/` and its result is written to
-`<directory>/<command>.result.json` (`status`, `seconds`, the loaded `scene`, for jobs also `exitCode`,
-`outputDirectory` and `report`). Options given after `--serve` (e.g. `--hidden`) apply to every job.
+The capture tool and games linking `AtlasEngineCaptureLibrary` register themselves in `LoadContent` (`InstanceRegistry`,
+one file per process in `%LOCALAPPDATA%/AtlasEngine/instances`) with what they do and whether they are busy. The
+editor and the demo don't, the engine doesn't know the registry. `status` lists them, runs print the busy ones,
+`--wait-gpu` waits until none is busy besides the own server.
 
-```jsonc
-{ "command": "loadScene", "scene": "scenes/Kingdom.aescene", "timeout": 300, "camera": { ... } }
-{ "command": "run", "job": "src/capture/examples/kingdom_night.json", "args": ["--hidden"] }
-{ "command": "run", "job": { "shots": [{ "name": "overview", "camera": "overview" }] } }   // inline, uses the loaded scene
-{ "command": "reloadScene" }   // back to the state of the file
-{ "command": "unloadScene" }
-{ "command": "stop" }
-```
-
-A job whose `scene` is the loaded scene runs on it without loading; a job for another scene fails
-until the loaded scene is unloaded. Without a loaded scene a job loads its scene and unloads it
-afterwards, like a normal run. Each job starts with the scene settings of the file, out of play mode,
-but otherwise jobs work on the scene in memory: edits, scripts attached by a job and the state left by
-playing remain until `reloadScene`. Jobs that change the resolution wait for the GPU first.
-
-```powershell
-bin/RelWithDebInfo/AtlasEngineCapture.exe --serve bin/capture-server
-# e.g. from a script or another shell
-'{ "command": "loadScene", "scene": "scenes/sponza.aescene" }' | Out-File -Encoding ascii bin/capture-server/01_load.json
-```
-
-## Pipelines
-
-A pipeline builds a scene with a sequence of edit jobs, each working on the result of the one before.
-`--pipeline <file>` runs them in one process and keeps the state after each step as a snapshot: the
-scenes the steps saved, the materials they changed and the `files` listed by the pipeline (e.g. files
-written by edit operations). Each step has a key from its job file, its `inputs` and the keys of the
-steps before it. A run starts at the first step whose key changed, restores the snapshot of the step
-before it and runs the remaining steps, so changing a late step doesn't run the early ones again.
+## Jobs
 
 ```jsonc
 {
-    "name": "sponza_pipeline",
-    "steps": [
-        "sponza_pipeline_1.json",
-        { "name": "move", "job": "sponza_pipeline_2.json", "inputs": ["../scripts/used_by_step_2.lua"] }
-    ],
-    "files": ["prefabs/x.aeprefab"],               // further files that belong to the state, relative to data/
-    "snapshots": "../../../bin/capture/sponza_pipeline/snapshots"   // default: bin/capture/<name>/snapshots
-}
-```
-
-A step with `"independent": true` doesn't use the state of the steps before it (e.g. it only imports assets or
-generates impostors): its key covers only its job and inputs, and it is skipped while they are unchanged, even when
-steps before it ran. Its files still go into the keys of the steps after it.
-
-Job files and inputs are relative to the pipeline file. `--from <step>` runs again from a step, `--force` runs all
-steps; options like `--hidden` apply to every step. `--no-shots` leaves out the review images of the steps, a build
-that doesn't need them is faster. If all steps are up to date, the files of the last
-snapshot are restored in case they were changed since. A step that reads the scene the previous step
-saved continues with it in memory, the previous step then skips loading its saved scene again to verify
-it. A failed step stops the pipeline; its snapshot and those of the
-following steps are removed. Snapshots store each file content once, steps that don't change a file
-share it. Steps don't back up the scenes they overwrite, the snapshots keep the previous states.
-`pipeline.json` next to the snapshots lists the result of each step. See
-`examples/sponza_pipeline.json` and `examples/kingdom_expanded_pipeline.json`.
-
-## Job file
-
-All keys are optional except `scene`. Unknown keys are rejected to catch typos.
-
-```jsonc
-{
-    "scene": "scenes/Kingdom.aescene",   // relative to data/ or the launch directory
-    "name": "kingdom",                     // default: job file name
-    "out": "capture-out/kingdom",          // default: bin/capture/<name>
-    "resolution": [1280, 720],             // output resolution of the captures
-    "renderScale": 0.75,                   // render target scale, default: engine default (0.75)
-    "settleFrames": 60,
-    "loadTimeout": 300,                    // seconds
-    "fixedDt": 0.016667,
-    "showWindow": true,                    // false or --hidden: no window, no real time playback
-    "pathTrace": false,                    // render with the path tracer, it accumulates over the settle frames
-    "realTime": true,                      // false or --fast: the shown window plays as fast as possible
-
-    "settings": { "fog": { "density": 0.02 } },     // merged into the scene settings (see below)
-    "variants": [ { "name": "noFog", "settings": { "fog": { "enable": false } } } ],
-
+    "scene": "scenes/Kingdom.aescene",   // relative to data/ or the job; the only required key
+    "name": "kingdom", "out": "...",     // defaults: file name, bin/capture/<name>
+    "resolution": [1280, 720], "renderScale": 0.75, "settleFrames": 60, "loadTimeout": 300, "fixedDt": 0.016667,
+    "showWindow": true, "realTime": true, "pathTrace": false,
+    "settings": { "fog": { "density": 0.02 } }, "variants": [ { "name": "noFog", "settings": { "fog": { "enable": false } } } ],
     "inspect": { "file": "scene.json", "filter": ["*Gate*"], "detail": ["Player"] },
-    "queries": [ ... ],
-    "edit": { ... },
-    "shots": [ ... ],
-
-    "play": true,
-    "duration": 5.0,
-    "observer": { ... camera ... },
-    "scripts": [ "test.lua", { "script": "scripts/x.lua", "entity": "Player" } ],
-    "timeline": [ ... ],
-    "strips": [ ... ],
-    "track": { "entities": ["Kingdom Guard*"], "interval": 0.25 },
-    "checks": { ... },
-    "profile": { "frames": 64 },
-    "hitches": { "minimumMs": 40 }
+    "queries": [], "edit": {}, "shots": [],
+    "play": true, "duration": 5.0, "observer": { /* camera */ }, "scripts": ["test.lua", { "script": "x.lua", "entity": "Player" }],
+    "timeline": [], "strips": [], "track": { "entities": ["Guard*"], "interval": 0.25 },
+    "checks": {}, "compare": { "reference": "reference/", "maxPercent": 0.5, "threshold": 8, "update": false },
+    "profile": { "frames": 64 }, "hitches": { "minimumMs": 40, "relativeThreshold": 2 }
 }
 ```
 
-Entities are addressed by name patterns with `*` and `?` wildcards or by id (`"#123"`). When a
-pattern matches a parent and its children, only the topmost matched entities are used.
+Unknown keys are errors. Entities are name patterns with `*` and `?` (or `#id`); a match of a parent and its children
+uses the topmost. A run: check, load (all meshes, terrain and ray tracing data), `settings`, `inspect`, `queries`, `edit`,
+`shots` (each after `settleFrames`), `play` with the timeline in steps of `fixedDt`, checks (once, or every
+`checks.interval` while playing). The scene file only changes with `edit`.
 
-### Settings and variants
+`capture.project.json` in the job's directory or above: `{ "defaults": { /* job keys, the job replaces them */ },
+"preflight": ["python", "tools/lua_check.py"] }`. The preflight runs in its directory before a job that plays, with the
+direct run and the client, and fails it with its output.
 
-`settings` patches the scene's feature settings with JSON merge semantics. The keys and fields
-are the ones of the scene serializer: `sky` (including `clouds` and `atmosphere`),
-`postProcessing`, `wind`, `occlusionCulling`, `fog`, `irradianceVolume`, `reflection`, `rtgi`, `ssgi`, `sss` and `ocean`. The
-current values are in the `settings` section of an `--inspect` output. On the command line use
-`--set fog.density=0.02`. Patching `ocean` adds an ocean to a scene without one, e.g.
-`{ "ocean": { "translation": { "x": 0, "y": 0, "z": 0 }, "N": 512 } }`. Changing `N`, `size` or `LoDCount`
-recreates the simulation. Two additional keys:
+`settings` patches the feature settings of the scene with merge semantics (`sky` with `clouds` and `atmosphere`,
+`postProcessing`, `wind`, `occlusionCulling`, `fog`, `irradianceVolume`, `reflection`, `rtgi`, `ssgi`, `sss`, `ocean`,
+an `--inspect` lists them), plus `sun` (`elevation`, `azimuth` 0 = +Z side, or `direction`; `color`, `intensity`,
+`shadow: { "cascades": 3, "longRange": true }`) and `materials` (`{ "<path pattern>": { /* .aematerial keys */ } }`,
+the running scene only). Patching `ocean` adds one. `postProcessing.upscaler`: 0 none, 1 TAA, 2 FSR2, 3 FSR4, 4 DLSS
+(falls back to FSR2). `variants` render all shots again (`settings`, `renderScale`) with a `<shot>_variants.png` sheet.
 
-- `sun`: the main directional light, `{ "elevation": 12, "azimuth": 10 }` in degrees (azimuth 0 places
-  the sun on the +Z side) or `"direction"`, plus `"color"` and `"intensity"`. Clouds, fog and
-  materials have to be judged with front, side and back light. `"shadow": { "cascades": 3, "longRange": true,
-  "longRangeDistance": 2048 }` recreates its cascaded shadow; the long range view (terrain only) is a layer after
-  the near cascades.
-- `materials`: patches loaded materials whose path matches a pattern, with the keys of the
-  `.aematerial` files, e.g. `{ "*M_PolygonFantasyKingdom_01_A*": { "metalness": 0.0, "roughnessMapPath": null } }`.
-  It only changes the running scene, use the `material` edit operation to change the files.
+**Cameras**: `"scene"`, `"overview"`, `{ "position", "lookAt" | "yaw"/"pitch", "groundRelative" }`, focus
+`{ "entity", "view", "azimuth", "elevation", "distance", "padding": 1.25, "local", "avoidOcclusion": true }`, follow
+`{ "entity", "offset": [0, 2, -6], "local" }`; all `fov`, `near`, `far`. Views: `front` (+Z side), `right`, `back`,
+`left`, `top`, `iso`, `low`, `lowSide` (ground level, best to see floating).
 
-Each entry of `variants` renders all shots again with additional settings. Besides one folder
-per variant, a `<shot>_variants.png` sheet compares the variants side by side.
+**Shots**: `{ "name", "camera", "views": [...], "passes": [...], "settleFrames", "crop": [x, y, w, h] | { "entity", "padding": 0.15 } }`.
+Views write `<name>_<view>.png` and `<name>_views.png`, passes `<name>_<pass>.png` and `<name>_passes.png`: `albedo`,
+`normal`, `geometryNormal`, `roughness`, `emissive`, `depth`, `velocity`, `stencil`, `materialIdx`, `reflection`,
+`volumetric`, `clouds`, `sss`, `gi`. A crop writes `<name>_crop.png` at full resolution. `sheet.jpg` has every capture.
 
-### Render scale and upscaling
+`compare` compares every image with the one of the same path in `reference`: more than `maxPercent` pixels differing by
+more than `threshold` fail the job, `update` writes this run as the reference. `report.json` has `comparisons`.
 
-The scene renders into a render target scaled by `renderScale` (`--render-scale`), which is
-upscaled to the job resolution like in the editor with `postProcessing.upscaler`: 0 none, 1 TAA,
-2 FSR2 (the default), 3 FSR4 and 4 DLSS. FSR4 and DLSS fall back to FSR2 when the engine was built
-without them or the GPU doesn't support them. A variant can override the scale, e.g. to compare
-upscalers and quality modes:
+### Playing
 
-```jsonc
-"variants": [
-    { "name": "native", "renderScale": 1.0, "settings": { "postProcessing": { "upscaler": 0 } } },
-    { "name": "fsr2Quality", "renderScale": 0.67, "settings": { "postProcessing": { "upscaler": 2 } } },
-    { "name": "fsr2Performance", "renderScale": 0.5, "settings": { "postProcessing": { "upscaler": 2 } } }
-]
-```
-
-The log and `report.json` contain the render scale. Pass images (`passes`) show the render
-target textures at their scaled resolution, stretched to the output resolution.
-
-### Cameras
+The `observer` (default: the scene camera) is the main camera while playing; a focus observer is framed once unless
+`dynamic`. Keys move players like the editor's play mode (`W A S D`, `Left Shift`, `Space`), the mouse isn't used for
+looking, `look` turns them.
 
 ```jsonc
-"scene"                                                         // the scene's main camera
-"overview"                                                      // frames the whole scene
-{ "position": [x, y, z], "lookAt": [x, y, z] }                  // or "yaw"/"pitch" in degrees
-{ "entity": "Gate*", "view": "front", "padding": 1.25 }         // focus, framed by the entity bounds
-{ "entity": "Player", "offset": [0, 2, -6], "local": true }     // follow (while playing)
-```
-
-Common keys: `fov` (60), `near` (0.1), `far` (2000). Manual cameras with `"groundRelative": true`
-take the heights of `position` and `lookAt` above the first surface below them, seen from above the
-scene, which suits terrains and open scenes (indoors that is the roof). Focus cameras also accept `azimuth`/`elevation`
-in degrees, `distance`, `local` (rotate the view with the entity) and `avoidOcclusion` (default
-true): if geometry hides the entity, nearby angles are tried and the one from which most points of
-the entity bounds are visible is used. Moving closer is the last resort and only happens while
-the camera stays outside of the entity bounds.
-
-Views: `front` (camera on the +Z side), `right` (+X), `back`, `left`, `top`, `iso`, and `low`/`lowSide`,
-which are almost at ground level. `low` views are the easiest way to see whether something floats.
-
-### Shots
-
-```json
-{ "name": "gate", "camera": { "entity": "Gate*" }, "views": ["front", "right", "low"], "passes": ["normal", "depth"] }
-```
-
-A shot with several views writes `<name>_<view>.png` and a `<name>_views.png` sheet. `passes`
-writes additional debug images and a `<name>_passes.png` sheet: `albedo`, `normal`,
-`geometryNormal`, `roughness` (roughness/metalness/AO), `emissive`, `depth`, `velocity`, `stencil`,
-`materialIdx`, `reflection`, `volumetric`, `clouds`, `sss` and `gi`.
-
-### Playing: observer, timeline, strips and scripts
-
-While playing, the `observer` camera (default: the scene camera) is used for live captures.
-During the scene update it is the main camera, so culling, shadows and terrain LODs fit the
-captured view. Scripts that access their camera through `GetThisEntity():GetCameraComponent()`
-are not affected. A focus or overview observer is framed once when playing starts (a moving
-target would make the camera jump), `"dynamic": true` reframes it every frame.
-
-Like the editor in play mode (both use `Input::PlayerInput`), keyboard input moves players (`W`,
-`A`, `S`, `D`, `Left Shift` for running, `Space` for jumping) relative to the direction of their
-camera. The mouse isn't used, use `look` events to turn them.
-
-Timeline events, each with a time `t` in seconds:
-
-```jsonc
-{ "t": 0.0, "teleport": { "entity": "Player", "position": [x, y, z], "yaw": -90 } }   // yaw/pitch optional, entities without camera only turn
-{ "t": 0.0, "look": { "entity": "Player", "yaw": -90, "pitch": 0 } }   // camera direction, yaw 0 looks along +Z
-{ "t": 0.5, "key": "E" }                                        // press: down, released 2 frames later
-{ "t": 0.5, "key": { "key": "W", "action": "down" } }          // down / up / press (+ "duration")
-{ "t": 0.5, "controller": { "axis": "lefty", "value": -1.0 } }  // stick or trigger, held until changed
-{ "t": 0.5, "controller": { "button": "a", "action": "press" } } // down / up / press (+ "duration")
-{ "t": 1.0, "capture": { "name": "now" } }                     // live capture with the observer
-{ "t": 1.0, "capture": { "name": "side", "camera": { ... }, "passes": [...] } }   // still
+{ "t": 0.0, "teleport": { "entity": "Player", "position": [x, y, z], "yaw": -90 } }
+{ "t": 0.0, "look": { "entity": "Player", "yaw": -90, "pitch": 0 } }          // yaw 0 looks along +Z
+{ "t": 0.5, "key": "E" }                                                    // or { "key": "W", "action": "down|up|press", "duration": 1 }
+{ "t": 0.5, "controller": { "button": "a" } }                               // or { "axis": "lefty", "value": -1 }, held until changed
+{ "t": 0.5, "mouse": { "click": [640, 360], "button": "left" } }            // window pixels; "move": [x, y], "down"/"up": "left", "wheel": 1
+{ "t": 1.0, "lua": "OdysseyGame.context.daycycle.SetHour(21.5)" }            // or { "file": "probe.lua" }
+{ "t": 2.0, "lua": "OdysseyGame.context.quests.stage", "result": "stage" }    // the value goes into results
+{ "t": 1.0, "capture": { "name": "now" } }                                 // live; with "camera" or "still": a still
 { "t": 2.0, "expect": { "entity": "Crate", "property": "bottom.y", "op": "<", "value": 0.1 } }
+{ "t": 2.0, "expect": { "lua": "#OdysseyGame.context.ships.list", "op": ">=", "value": 3 } }
 { "t": 2.0, "log": "message" }
-{ "t": 2.5, "animation": { "entity": "Fox", "animation": "Walk", "model": "skinning/Fox/Fox.gltf", "blendTime": 0.4 } }   // or an .aeanimation file
-{ "t": 3.0, "pause": true }          // pauses scripts, physics and players, the job time continues
-{ "t": 4.0, "pause": false }         // resumes
-{ "t": 5.0, "resetScripts": true }   // discards non-permanent script environments like leaving play mode does
-{ "when": { "log": "*done*" }, "end": true }   // finishes the job early, duration is then only the limit
+{ "t": 2.5, "animation": { "entity": "Fox", "animation": "Walk", "model": "skinning/Fox/Fox.gltf", "blendTime": 0.4 } }
+{ "t": 3.0, "pause": true }                                               // scripts, physics and players stand still
+{ "t": 5.0, "resetScripts": true }                                         // discards non-permanent script environments
+{ "when": { "log": "*done*" }, "end": true }                               // ends the job, duration is only the limit
 ```
 
-Key names are SDL key names (`E`, `Space`, `Left Shift`, `Up`, ...). Controller events attach a virtual game controller, which
-the engine sees like a connected one. Buttons and axes have SDL game controller names (`a`, `x`,
-`leftshoulder`, `dpup`, `start`, `leftx`, `lefty`, `rightx`, `righty`, `lefttrigger`), sticks go from
--1 to 1 with positive values to the right and down, triggers from 0 to 1.
+Conditions (`when`, `t` is the earliest check, `delay`, `optional`): `{ "log": "text" }` (contains, or a pattern),
+`{ "lua": "expression" }` (true when not nil or false) or a property like an expectation. A condition that never
+happens fails the job unless `optional`. Expectation properties: `exists`, `count`, `position.x/y/z`, `bottom.y`,
+`top.y`, `yaw`, `distanceTo` (`point`), `gapToGround`; operators `< <= > >= == !=` (`tolerance`); every matching entity
+has to pass. Lua expectations compare the value with `op`/`value`, without them it has to be true.
 
-Instead of a time, an event can wait for a condition. Use it when the timing depends on the
-simulation, e.g. to jump at an edge or to react to a script:
+**Lua** (`lua` events, conditions, expectations) runs in one environment over the globals of the scene's script state,
+so it sees what the game scripts put there (e.g. `OdysseyGame`) and keeps its variables between events. It has `scene`
+(also `GetThisScene()`) and `Capture`: `Result(key, value)` (into `results`), `Time()`, `Fail(message)`. Lua errors end
+the job. Key names are SDL names (`E`, `Space`, `Left Shift`), controller events attach a virtual game controller
+(`a`, `x`, `leftshoulder`, `dpup`, `start`, `leftx`, `lefty`, `rightx`, `righty`, `lefttrigger`; sticks -1 to 1, right
+and down positive).
 
-```jsonc
-// Same properties and operators as expectations, all matching entities have to fulfill it
-{ "when": { "entity": "Player", "property": "position.z", "op": ">", "value": 29.5 }, "key": "Up" }
-// A log message of the engine or a script, without * or ? it matches messages containing the text
-{ "when": { "log": "Closing castle gate" }, "delay": 0.5, "capture": { "name": "closing" } }
-// t is the earliest time the condition is checked, optional events may never happen
-{ "t": 2.0, "when": { "log": "Gate*opened" }, "optional": true, "expect": { ... } }
-```
-
-Each conditional event happens once, in the frame its condition is met (plus `delay`). One that
-never happens fails the job, unless it is `optional`. `report.json` lists when each condition was met
-(`conditionalEvents`). See `examples/kingdom_conditions.json`.
-
-`end` finishes the job in its frame, e.g. once a script logs that its scenario is over: the remaining
-timed events and strip frames are skipped, conditional events that haven't happened yet fail as usual.
-
-Expectation properties: `exists`, `count` (number of matching entities, e.g. to find duplicates
-after a script reset), `position.x/y/z`, `bottom.y`, `top.y` (of the bounds), `yaw`, `distanceTo`
-(with `point`) and `gapToGround` (entities without a mesh are skipped). Operators: `<`, `<=`, `>`, `>=`, `==`, `!=` (with
-`tolerance`). All matching entities have to fulfill an expectation.
-
-Live captures show the frame that simulates the step from their time on, so motion vectors and
-temporal effects are those of the running scene. Captures with their own camera are stills: the
-scene is paused for `settleFrames` frames, then the observer continues. Stills have no motion.
-
-`pause` checks that a paused scene stays still (combine it with expectations or a strip) and
-that scripts continue with their state when it resumes. Scripts with `permanentExecution` keep
-running while the scene is paused or outside play mode.
-
-`strips` capture a sequence and compose a labeled sheet (`<name>.png`), which shows a whole
-movement in a single image:
-
-```json
-{ "name": "gate_opening", "from": 0.0, "to": 3.0, "every": 0.5, "columns": 4 }
-```
-
-Without `camera` the observer is used (live), with a camera every frame is a still.
-
-`scripts` attaches Lua scripts for the duration of the run, either to new entities or to
-existing ones (`entity`). Script paths are relative to the job file or to `data/`. This is a
-convenient way to test script code or Lua bindings, see `examples/raycast_test.lua`.
-
-`track` records the positions of entities and writes `trace.json` with a summary per entity
-(start, end, distance travelled, minimum/maximum height).
-
-`resetScripts` checks that non-permanent scripts recover after leaving play mode discards their
-environments, e.g. when the simulation is stopped without restoring the scene. Unlike `pause`,
-it discards script state; permanent scripts keep running. State that has to survive belongs to
-the scene, e.g. marker entities.
-
-### Overlays
-
-```jsonc
-"overlay": {
-    "bounds": ["*Portcullis*"],       // bounds of entities (yellow)
-    "players": true,                  // figures for player entities, including those without meshes (cyan)
-    "trails": true,                   // paths of tracked entities (magenta)
-    "queries": true,                  // query results: raycasts, ground hits, paths, picks (green/red)
-    "physics": true,                  // physics shapes, contacts and constraints within 50 m of the camera, off by default
-    "markers": [{ "position": [x, y, z], "color": [1, 0, 0], "size": 0.5 }],
-    "axes": [[x, y, z]],              // X red, Y green, Z blue
-    "depthTest": false                // drawn on top of everything by default
-}
-```
-
-The lines are drawn with the engine primitive batches into every capture (`--overlay` enables
-the defaults). Physics draws static bodies gray, dynamic bodies green (dark when sleeping), kinematic
-bodies orange, triggers cyan, fluid triggers blue, contacts red and constraints magenta. They show what can't be seen otherwise: invisible players, the path a character
-walked, where a ray hit or which part of a route is blocked.
+Live captures show the running frame; captures with their own camera are stills on a paused scene. `strips`
+(`name`, `from`, `to`, `every`, `columns`, optional `camera`) write `<name>.png` sheets of a movement. `scripts` are
+attached for the run (relative to the job or `data/`). `track` writes `trace.json`.
 
 ### Checks
 
 ```jsonc
 "checks": {
-    "grounded": { "entities": ["Kingdom Guard*"], "maxGap": 0.15, "maxSink": 0.3 },
+    "grounded": { "entities": ["Guard*"], "meshes": ["*/SM_Env_Tree_*.aemesh"], "maxGap": 0.15, "maxSink": 0.3,
+                  "surfaces": ["*Ground*"], "ignore": ["*Bush*"], "footprint": 3, "baseHeight": 0.3 },
     "penetration": { "entities": ["*Portcullis*"], "against": ["*"], "margin": 0.05, "minTriangles": 1 },
-    "logErrors": true,                    // or { "ignore": ["*music.wav*"] }
-    "invalidTransforms": true,
-    "interval": 0.1
+    "logErrors": true,            // or { "ignore": ["*music.wav*"] }
+    "failFast": true, "invalidTransforms": true, "interval": 0.1
 }
 ```
 
-- `grounded`: casts a ray down from just above the entity (ignoring the entity and its children)
-  and compares the bottom of its bounds with the hit. Fails if the gap exceeds `maxGap` or the
-  entity sinks deeper than `maxSink`. Entities whose hierarchy has no loaded meshes are skipped. With `"surfaces":
-  ["*Ground*", "*Path*"]` the surface below also has to match, e.g. guards walking over hay bales
-  are grounded, but not on a valid surface.
-  `"meshes": ["*/SM_Env_Tree_*.aemesh"]` checks every instance of the matching meshes instead of (or besides) the
-  named `entities`.
-  `ignore` takes hierarchies the ray passes through, e.g. undergrowth growing around trees.
-- `penetration`: counts the triangles of other meshes (matching `against`, by name or a parent's
-  name) intersecting the entity bounds shrunk by `margin`. Intended intersections at the start (a gate
-  in its frame) are the baseline; only additional intruding triangles fail.
-- `logErrors`: engine errors fail the job, `ignore` takes patterns of known errors.
-- `invalidTransforms`: NaN or infinite transforms.
+`grounded` compares the bottom of the bounds with the ground below their center (skipping the own hierarchy and
+`ignore`), `surfaces` restricts what it may stand on. `footprint` adds a grid of n x n points: where the underside of
+the mesh is within `baseHeight` of its bottom, the gap to the ground must not exceed `maxGap` either, e.g. the downhill
+edge of a field. `penetration` counts additional intruding triangles of other meshes. `logErrors` fails on engine and
+script errors; with `failFast` the job ends at the first one (it would fail anyway) instead of running to its end.
 
 ### Queries
 
-Spatial queries run once after loading and are written to `queries.json`. `raycast` and `pick`
-hit what is visible (meshes with triangle precision, terrain), `raycast` physics bodies only with
-`"bodies": true`. `ground`, `entity`, `clearance`, `path` and the `grounded` check also query the
-physics world: bodies are hit with their collision shapes, meshes without a mesh shape body (e.g.
-grass) and the terrain directly. Players are never hit.
+Run after loading (`queries.json`) or after an edit (`edit.queries`, `edit_queries.json`). `raycast` and `pick` hit what
+is visible, the others what characters collide with (bodies by their shapes, meshes without body, terrain).
 
 ```jsonc
-{ "type": "ground", "x": -108.0, "z": -21.0, "from": 20.0 }     // height below a point
-{ "type": "raycast", "origin": [...], "direction": [...], "ignore": ["Player"], "maxDistance": 100 }
-{ "type": "entity", "entity": "Gate*" }        // position, yaw, bounds, ground below, gap to ground
-{ "type": "around", "position": [...], "radius": 5 }            // meshes nearby, sorted by distance
-{ "type": "materialGraphShaders", "directory": "x/graphs", "library": true, "spirvDirectory": "out" }   // compiles shaders of graphs
-{ "type": "clearance", "entity": "*Portcullis*", "direction": [0, 1, 0], "distance": 10 }
-{ "type": "path", "points": [[x, y, z], ...], "maxStep": 0.3, "radius": 0.4, "spacing": 0.5 }
-{ "type": "pick", "camera": { ... }, "pixels": [[x, y], ...] }   // what is visible at pixels of a shot
-{ "type": "terrain" }   // extents, resolution, material slots and usage, height range, connected holes with rim heights
-{ "type": "terrainSample", "points": [[x, z], ...] }   // or "min", "max", "step": height, slope, material, hole
-{ "type": "terrainMap", "file": "map.png", "min": [x, z], "max": [x, z], "size": 2048, "grid": 100, "contour": 5,
-  "smallMeshes": false, "meshes": true, "highlight": ["Dungeon"],
-  "markers": [{ "position": [x, z], "radius": 10, "label": "hole", "color": [1, 0, 1] }],
-  "paths": [{ "points": [[x, z], ...], "color": [1, 0.9, 0.1] }] }
+{ "type": "ground", "x": -108, "z": -21, "from": 20 }
+{ "type": "raycast", "origin": [...], "direction": [...], "ignore": ["Player"], "maxDistance": 100, "bodies": false }
+{ "type": "entity", "entity": "Gate*" }                     // position, yaw, bounds, ground below, gap
+{ "type": "around", "position": [...], "radius": 5 }
+{ "type": "clearance", "entity": "*Portcullis*", "direction": [0, 1, 0], "distance": 10, "samples": 5 }
+{ "type": "path", "points": [[x, y, z], ...], "maxStep": 0.3, "radius": 0.4, "spacing": 0.5, "snap": false }
+{ "type": "pick", "camera": { ... }, "pixels": [[x, y], ...] }
 { "type": "route", "from": [x, z], "to": [x, z], "via": [], "cell": 2, "margin": 60, "maxSlope": 30, "maxStep": 0.6,
-  "clearance": 1, "avoidMaterials": ["*Water*"], "avoid": [], "walkOn": ["*Ground*", "*Bridge*"],
-  "ignore": ["Grass*"], "map": "route.png" }
-{ "type": "route", "from": [x, z], "to": [x, y, z], "navigation": true, "margin": 60, "timeout": 120 }   // on the navigation mesh
-{ "type": "buried", "entity": "Dungeon", "margin": 1.0 }   // meshes reaching above the terrain or lying below a hole
+  "clearance": 1, "avoidMaterials": [], "avoid": [], "walkOn": ["*Bridge*"], "ignore": [], "map": "route.png" }
+{ "type": "route", "from": [x, z], "to": [x, y, z], "navigation": true }        // on the navigation mesh like the game
+{ "type": "surfaceGrid", "min": [x, z], "max": [x, z], "step": 1, "maxHits": 8, "tolerance": 0.25, "ignore": [] }
+{ "type": "corridor", "points": [[x, y, z], ...], "width": 3, "height": 3, "ignore": ["Grass*"] }
+{ "type": "collisionCoverage", "center": [x, z], "radius": 50, "minSize": 0.5, "meshes": [], "ignore": ["*Grass*"] }
+{ "type": "terrain" }  { "type": "terrainSample", "points": [[x, z]] }  { "type": "buried", "entity": "Dungeon", "margin": 1 }
+{ "type": "terrainMap", "file": "map.png", "min": [x, z], "max": [x, z], "size": 2048, "grid": 100, "contour": 5,
+  "highlight": [], "markers": [{ "position": [x, z], "radius": 10, "label": "hole" }], "paths": [] }
+{ "type": "materialGraphShaders", "directory": "x/graphs", "library": true, "spirvDirectory": "out" }
 ```
 
-`clearance` casts a grid of rays from the face of the entity bounds into the direction and
-returns the sampled free distance and the first blocker. Obstacles between the rays can be
-missed; this is not a shape sweep. Use it before moving something.
-
-`path` samples the ground along a polyline and reports height changes larger than `maxStep`
-and ray hits at knee and chest height at the center and offsets of `radius`. It is a route
-diagnostic, not a character-controller simulation.
-Validate routes for characters with it before putting them into a script.
-
-`pick` answers "what is that in the image": for pixels of a camera (the same camera spec as in a
-shot, with the job resolution) it returns the entity and the material of the hit triangle.
-
-`path` points can be `[x, z]` with `"snap": true`, they then start at the terrain height.
-
-The terrain queries load all terrain cells and keep them loaded for the rest of the run. Positions
-are `[x, z]` (or `[x, y, z]`), material slots are the indices of the terrain materials, which
-`terrain` lists. `terrainSample` is the quickest way to find flat ground, slopes and the shape of a
-site before placing anything. `terrainMap` draws a top down map into the output directory: terrain
-materials with hill shading and contour lines, holes in magenta, mesh footprints (buildings red, trees
-green, rocks grey), highlighted hierarchies in cyan, a labeled grid, markers and paths.
-
-With `"navigation": true`, `route` finds the path on a navigation mesh like the game: Recast/Detour with
-the settings of the scene's `navigation` (or the defaults), built leg by leg around the stops within
-`margin`. Stops without a height are placed on the terrain, without a terrain all stops need a height. It returns the path corners and the length
-or fails when there is no connection on the mesh; `map` and the grid options don't apply.
-
-`route` searches a walkable route with A* over a grid around the stops. A cell is blocked by holes,
-slopes above `maxSlope`, avoided materials or entities, objects lying on the ground (unless their
-name or a parent name matches `walkOn`) and obstacles at knee and chest height. `clearance` keeps the
-route that many cells away from blocked cells. The result is a polyline with heights, simplified by
-line of sight. `map` writes the grid: free cells green, cells near obstacles dark green, blocked cells
-by reason (black: no ground, orange: slope, blue: avoided, grey: object on the ground, red: obstacle)
-and the route in yellow. Without a route the error names the entities that block the most cells, a
-stop inside a closed area (e.g. fenced in) is a common reason. Overlays draw routes in yellow. Routes
-need a terrain.
-
-`materialGraphShaders` compiles the shaders of all graphs in a `directory` with the engine's compiler, for all the meshes they
-can be used with: with and without texture coordinates, tangents and vertex colors, skinned or instanced, and with the regular
-maps of a material if the graph doesn't replace the surface. `library` adds a graph per node of the library for each stage and
-input type. `spirvDirectory` keeps the results, e.g. to run `spirv-val` on them, `"allMeshes": false` only compiles one
-combination per graph.
-
-`buried` lists the meshes of a hierarchy that reach above the terrain or lie below a hole, e.g. to
-check that a level placed below the terrain only shows at its entrance.
-
-### Profile
-
-`"profile": true` (or `{ "frames": 64 }`, default 32, at most 64) averages the GPU and the CPU profiler timings
-over the last frames of the run, prints the GPU passes that take at least 0.05 ms and writes all of them to
-`profile.json`. `cpu` in the file sums up the main thread of the same frames: the whole frame (average and
-maximum, from the engine clock) and, from the CPU profiler, waiting for the previous frame (`Wait for previous
-frame`), the scene update (`Scene update`: scripts, physics, animation) and recording the render (`Capture
-render`). `cpuThreads` has the CPU profiler scopes of every thread with their calls and milliseconds per frame,
-the main and the render thread are printed. Play the scene for long enough that the last frames are
-representative. Work that only runs on changes (e.g. the atmosphere tables) can be forced every frame with a
-script to measure it.
-
-### Hitches
-
-`"hitches": true` (or `{ "minimumMs": 40, "relativeThreshold": 2 }`, `--hitches [ms]` on the command line)
-records the frames that take longer than the minimum and longer than the average of the frames before times the
-relative threshold, from the start of the shots or of playing on. `hitches.json` lists them with their time,
-frame time, average and the CPU profiler scopes of every thread that took at least 5 % of the frame. The scopes
-of the main and the render thread are printed.
-
-### Validation
-
-`--validation` enables the Vulkan validation layers with GPU assisted, synchronization and best
-practices validation (requires the Vulkan SDK). The run is much slower. The messages are grouped by
-their id in `validation.json`, errors first, and the number of distinct errors, warnings and
-performance warnings is added to `report.json`. Validation errors are also engine log errors and
-fail the `logErrors` check. The layer stops reporting a message id after 10 occurrences, so `count`
-is at most 10. The option only exists on the command line, since the validation layers have to be
-enabled before the job is read.
-
-### Streaming
-
-Texture and mesh streaming (`streaming/StreamingManager`) are disabled in the capture tool, so edits, bakes and
-pictures always see full resolution textures and all meshes. `--streaming` keeps the defaults of the engine, e.g.
-to measure the streaming with a `profile` or the memory of a scene.
+- `surfaceGrid`: vertical rays on a grid (`min`/`max`, `center`/`radius` or the bounds of `entity`) with every surface
+  they pass; groups them into levels (height, up or down facing, coverage, the surfaces) and counts points where the
+  terrain lies above a floor (it stands in a room). The grid goes to `surface_grid.json`. Floors, ceilings, decks.
+- `corridor`: meshes reaching into a corridor along a path (`along`, `lateral` distance, bounds), e.g. a road.
+- `collisionCoverage`: visible meshes larger than `minSize` without a body on them or a parent, grouped by mesh.
+- `clearance` samples rays from a face of the bounds; `path` checks steps and obstacles at knee and chest height;
+  `pick` names the entity and material at pixels; `route` is A* over a grid around the stops (holes, slopes, avoided
+  materials, objects; `map` shows why cells are blocked) or Detour with `navigation`; `terrainSample` gives height,
+  slope, material and holes; `terrainMap` draws a top down map; `buried` lists meshes above the terrain or below holes;
+  terrain queries keep all cells loaded.
 
 ### Editing
 
-```jsonc
-"edit": {
-    "output": "scenes/Kingdom.edit.aescene",   // default: <scene>.edit.aescene next to the input
-    "overwrite": false,
-    "textureFormat": "original",               // "ktx2": textures of imported models are stored compressed
-    "operations": [
-        { "op": "snapToGround", "entity": "Barrel_12", "offset": 0.0 },
-        { "op": "translate", "entity": "#4711", "delta": [0, -6, 0] },           // "space": "world" | "local"
-        { "op": "setTransform", "entity": "Gate", "position": [x, y, z], "rotation": [0, 90, 0], "scale": [1, 1, 1] },
-        { "op": "rotate", "entity": "Statue", "yaw": 45 },
-        { "op": "rename", "entity": "Entity 7", "name": "Crate" },
-        { "op": "setVisible", "entity": "Debug*", "visible": false, "all": true },
-        { "op": "duplicate", "entity": "Lantern", "name": "Lantern 2", "position": [x, y, z] },
-        { "op": "delete", "entity": "Old*", "all": true },
-        { "op": "material", "material": "kingdom/materials/X.aematerial", "set": { "metalness": 0.0, "roughnessMapPath": null } },
-        { "op": "add", "name": "Ramp", "mesh": "skate/models/kicker.gltf", "body": true, "position": [x, y, z], "rotation": [0, 180, 0] },
-        { "op": "add", "name": "Ramp Light", "position": [x, y, z],
-          "light": { "type": "spot", "color": [1, 0.2, 0.6], "intensity": 180, "radius": 18, "direction": [0, -1, 0], "innerAngle": 20, "outerAngle": 35 } },
-        { "op": "add", "name": "Mist", "position": [x, y, z], "scale": [20, 2, 20],   // the scale is the half size of the volume
-          "fogVolume": { "shape": 0, "density": 0.05, "scatteringColor": { "x": 1, "y": 1, "z": 1 }, "heightFalloff": 2, "noiseAmount": 0.5, "noiseScale": 8 } },
-        { "op": "add", "name": "Game", "script": "skate/skate.lua" },
-        { "op": "add", "name": "Blades", "parent": "Windmill", "mesh": "...", "localPosition": [0, 0.5, 0.55], "visible": false },
-        { "op": "add", "name": "Fox", "mesh": "skinning/Fox.glb", "animation": "Run", "animationSpeed": 1.0, "animationTime": 0.0 },
-        { "op": "scatter", "group": "Forest", ... },                                     // see below
-        { "op": "clearArea", "entities": ["Grass*"], "area": { "center": [x, z], "radius": 20 } },
-        { "op": "terrainCopy", "path": "terrains/x/x.aeterrain", "overwrite": false },
-        { "op": "terrainCreate", "path": "terrains/x/x.aeterrain", "heightMap": "x/height.png", "splatMap": "x/splat.png",
-          "materials": ["synty/Terrain/Grass.aematerial", "synty/Terrain/Sand.aematerial"], "LoDCount": 6, "patchSize": 16,
-          "resolution": 1.0, "height": 300, "translation": [x, y, z] },                 // see below
-        { "op": "terrain", "brushes": [ ... ] },                                         // see below
-        { "op": "makePrefab", "scene": "scenes/Demo.aescene", "output": "prefabs/Dungeon.aeprefab", "name": "Dungeon",
-          "exclude": ["Atmospheric Fog"], "scripts": false },
-        { "op": "prefab", "prefab": "prefabs/Dungeon.aeprefab", "name": "Dungeon", "parent": "Level", "position": [x, y, z], "rotation": [0, 55, 0] },
-        { "op": "meshCopy", "mesh": "a.aemesh", "output": "b.aemesh", "invertNormals": true, "set": { "cullBackFaces": false }, "assign": ["Grass*"] },
-        { "op": "meshSettings", "meshes": "dungeon/meshes/*.aemesh", "set": { "cullBackFaces": false } },
-        { "op": "meshBodies", "meshes": ["*/SM_Env_Tree_*.aemesh"], "replace": true },
-        { "op": "replaceMesh", "meshes": ["ancient/meshes/SM_Env_Tree_01_*.aemesh"], "with": ["biomes/SM_Env_Tree_Forest_03.gltf"], "matchHeight": true, "seed": 0 },
-        { "op": "replaceWithPrefab", "meshes": "ancient/meshes/SM_Prop_Brazier_01_*.aemesh", "exclude": ["*Insert*"],
-          "removeNear": ["ancient/meshes/*Insert*.aemesh"], "prefab": "prefabs/Fire_Bowl_01.aeprefab", "name": "Fire Bowl" },
-        { "op": "materialCopy", "material": "a.aematerial", "output": "b.aematerial", "set": { "emissiveIntensity": 0 }, "remove": ["emissiveMapPath"] },
-        { "op": "compressTextures", "directories": ["ancient", "odyssey/models"] },
-        { "op": "meshMaterials", "meshes": ["b.aemesh"], "replace": { "a.aematerial": "b.aematerial" } }
-    ]
-}
-```
-
-`add` creates a new entity below the root (or `parent`) with any combination of a mesh, a light and a
-script. Model files other than `.aemesh` (glTF, FBX, ...) are imported first, next to the source into
-`meshes/` and `materials/`, because scenes only reference `.aemesh` files. `"body": true` adds a static
-mesh shape, such that the piece collides and is found by physics queries. Lights are `point` or `spot`
-lights at the entity origin (`radius`, `intensity`, `color`, `volumetric` (off by default), `shadow`,
-`shadowResolution` (1024);
-spots also `direction` in entity space and the cone half angles in degrees). Spot lights with `shadow` currently
-stay dark when created this way.
-`animation` adds an animation component to a skinned mesh: either an `.aeanimation` file or the name
-of an animation in the model file, whose animations are then imported into `animations/` next to it
-(`animationSpeed`, `animationTime` in seconds).
-
-`meshBodies` gives every instance of the matching meshes a static mesh shape in its world scale, also the
-instances of prefabs and scatter groups; instances with a body keep it unless `"replace": true`. With
-`"remove": true` the instances lose their bodies instead, e.g. grass and bushes the player walks through.
-`"motion": "dynamic"` makes them simulated bodies instead: `"shape"` `"box"` (the mesh bounds) or `"convex"` (its
-hull) or `"boxes"` (`boxes` `[[minX, minY, minZ, maxX, maxY, maxZ], ...]` in mesh space, e.g. a hull up to its deck),
-`density` (kg/m³, 500), `friction`, `restitution` and `"asleep"` (default true: they rest until something
-touches them). With the scene setting `"ocean": { "physics": true }` the instances in the ocean float on the waves with
-`buoyancy` (1 neutral, higher floats), `fluidLinearDrag` and `fluidAngularDrag`. They count as supported, those more
-than 2 m below the surface and all others get no buoyancy. `"inOcean": true` selects only these instances, e.g. the boats on
-the water and not those pulled up on a beach. `"supported": true` turns only instances resting on a body or the terrain into simulated bodies, e.g.
-not the pots on a table without collision. The instances stop being static. Instead of `meshes`, `"entity"` (with `"all": true`) selects named
-instances.
-
-`constraint` hangs the simulated instances of `meshes` (or `entity`) on the world or connects them to the body of
-`connect`: `type` `point`, `hinge`, `cone`, `distance`, `slider` or `fixed` at an `anchor` (`"top"`, `"bottom"` or
-`[x, y, z]` in mesh space), with `axis`, `limits` `[min, max]`, `halfConeAngle` (degrees) and `breakForce` (N, 0 never
-breaks). The other end is the anchor where the instance stands, or `worldPoint` `[x, y, z]`, e.g. a `distance`
-constraint with `limits` `[0, length]` as a rope to a bollard. `worldOffset` `[x, y, z]` moves the other end from where the
-anchor is now, e.g. `[0, -4, 0]` for a boat anchored to the sea floor. Instances that already have a constraint keep it.
-
-`trigger` adds a zone that reports bodies and the player entering and leaving it as contact events: `"shape"`
-`"sphere"` (`radius`), `"box"` (`halfSize`) or `"cylinder"` (`radius`, `height`), placed like `add`.
-
-`replaceWithPrefab` turns every instance of the matching meshes (also inside prefabs and scatter groups, not those
-matching `exclude`) into an instance of the prefab with the same transform and parent, named `<name> <n>`; meshes matching
-`removeNear` within 1.5 m of a replaced one are deleted, e.g. the separate inserts of a bowl the prefab brings itself.
-The bottom of the prefab's meshes is placed where the bottom of the replaced mesh was, so pivots may differ.
-
-`replaceMesh` gives every instance of the matching meshes one of the meshes in `with`, chosen per instance (`seed` changes
-the mix). `"matchHeight": true` (default) scales the new mesh to the height of the old one. The bottom of the new mesh
-stays where the old one's was: packs place pivots differently (centered or at the base). Bodies of the old mesh are
-removed, `meshBodies` adds new ones. `"within"` and `"beyond"` (`{ "center": [x, z], "radius": r }`) limit it to instances inside or outside a
-circle, e.g. only straight palms in a town.
-
-`add`, `prefab` and `scatter` put new entities below the root of the scene (or `parent`); scenes
-without a root get top level entities. `localPosition` places an added entity or prefab (with
-`rotation` and `scale`) in the space of its parent (with `"parentJoint": <index>` in the space of a joint of an
-animated parent, which the entity then follows), `"visible": false` adds a hidden mesh, e.g. one a
-script shows.
-
-`edit.dryRun` applies the operations and runs the checks and shots on the edited scene without
-saving it or edited materials. Operations that write their own files (`terrainCopy`, `meshCopy`,
-`meshSettings`, `materialCopy`, `meshMaterials`, `makePrefab`) still do. `edit.queries` run on the
-edited scene once its transforms and bounds are updated and are written to `edit_queries.json`,
-e.g. to verify placements.
-
-Asset operations, for meshes and materials that need different settings in a scene:
-
-- `meshCopy` copies a mesh file (model files like OBJ or glTF are imported first), optionally inverts
-  its normals, changes the mesh settings `set`
-  (`invertUVs`, `cullBackFaces`, `vegetation`, `castShadow`, `rayTrace`, `minScreenSize`, `animationLodDistance`,
-  `animationMaxInterval`, `movable`, `animations`) and assigns the copy to the meshes of the
-  selected hierarchies that use the original. The original file stays untouched.
-- `meshSettings` changes these settings in all mesh files matching the pattern, after keeping a
-  `<file>.backup` once (`"movable": true` for meshes whose instances the physics moves, they get motion vectors). It changes shared assets: every scene using the meshes is affected. `"impostor":
-  { "views": 12, "resolution": 256, "distance": 150, "shadowDistance": 80 }` also renders an impostor for the
-  distance (`<mesh>.aeimpostor`), like the editor's Generate button; `"interpolation"` blends the neighbouring views
-  and `"pixelDepthOffset"` writes the depth of the impostor pixels (both as in the editor). `"textureFormat": "ktx2"`
-  stores the color views of the impostor as KTX2 arrays (UASTC, transcoded to BC7 when loaded, about a quarter of
-  the GPU memory), the depth stays uncompressed. Settings left out keep those of the impostor that is regenerated. A
-  mesh copied with `meshCopy` gets its own impostor next to the copy.
-  `"animations"` (a pattern or a list of patterns, e.g. `"models/skinned/animations/Horse_*.aeanimation"`) sets
-  the clips a skinned mesh references, they load with the mesh. Imported skinned models reference their
-  clips already.
-- `materialCopy` copies a material file and changes (`set`, colors as `[r, g, b]`) or removes (`remove`)
-  its properties. `compressTextures` converts the textures of all material and material graph files below the
-  `directories` into KTX2 files next to the sources (UASTC, transcoded to BC7 when loaded) and points the files to
-  them, keeping a `<file>.backup` once. It changes shared assets, the sources stay. A dry run only reports
-  the pending conversions.
-  `edit.textureFormat: "ktx2"` stores the textures of models the edit imports compressed right away. `bakeMaterial` writes the surface of a material graph into the properties of the material for ray tracing (`material`, `mesh`, `mode`: `textures` or `average`, `resolution`, `time`). `meshMaterials` replaces materials in mesh files (`replace`: old path to new path,
-  `all`: one path for all of them), e.g. in copies made by `meshCopy`.
-- `makePrefab` turns the root of a scene file (MessagePack or JSON) into a prefab. Model scenes
-  (glTF, FBX, ...) are imported first like in the editor (`invertUVs`, `maxTextureResolution` 4096), their
-  meshes and materials are saved next to the source. Players, cameras,
-  directional lights and excluded names are left out, scripts with `"scripts": false`. Meshes matching
-  `withoutBodies` (e.g. `["*Grass*"]`) lose their physics bodies, the player walks through them. With
-  `"area": { "center": [x, y, z], "radius": r }` only the mesh and light entities inside the sphere are
-  kept (those whose mesh matches `includeMeshes` and not `excludeMeshes`), flattened and relative to the
-  center, e.g. to reuse a vignette or a building of another scene. Meshes of other scenes are often
-  split into parts whose offsets are lost when placed one by one, a prefab keeps them. `"entity": "Name"`
-  makes the prefab of that entity and its children only (the first match of the name pattern), e.g. one of
-  several places built in a workshop scene. It keeps its hierarchy relative to `"origin": [x, y, z]`; with an `area`
-  it is flattened relative to its center.
-
-`terrainCreate` generates a new terrain and makes it the terrain of the scene, with a static height field
-body like the editor creates it (an existing terrain body is replaced). `heightMap` is a square 16 bit
-grayscale PNG (0 is the bottom, 65535 the top, the full range spans `height` meters), `splatMap` an optional
-8 bit grayscale PNG with the index of the terrain material per texel (default: the first material). Both
-are resized to the vertex grid of the terrain, which has `2^(LoDCount - 1) * 8 * patchSize` vertices per
-side at `resolution` meters spacing (the defaults give 4096 vertices, 4096 m). `translation` places the
-corner of the terrain, by default it is centered on the origin at height 0. The terrain is written to
-`path` and saved again with the scene; an existing file needs `"overwrite": true`. `displacementDistance`
-(meters) and `tessellation` (`factor`, `slope`, `shift`, `maxLevel`, see `Terrain::SetTessellationFunction`)
-control where the displacement maps of the materials (`displacementMapPath`, `displacementScale`) shape the ground. Scenes keep a fixed
-bounding box (`aabb`), so the scene has to be large enough for the terrain.
-
-`shoreLine` bakes the map of the ocean shore waves (shore distance and direction, `Terrain::shoreLine`) into
-`<terrain>_shoreline.png` next to the terrain file, which references and loads it from then on. `oceanHeight`
-(world space) defaults to the height of the scene ocean, `resolution` to 2048 texels for the whole terrain. Bake it again
-after changing the coast.
-
-`terrain` changes the terrain with brushes, radii in meters (at most about one terrain cell). Terrain
-files can be shared by several scenes, so it only works on a copy made by `terrainCopy` or with
-`"overwriteTerrain": true`. The physics height field is rebuilt after the brushes, the lower levels
-of detail are baked and the terrain is saved together with the scene.
+`edit`: `operations`, `output` (default `<scene>.edit.aescene`), `overwrite`, `saveUnchanged`, `dryRun`, `queries`,
+`textureFormat` (`ktx2` for imported models). The edit writes `edit_diff.json`, runs the checks and only saves when they
+pass, then loads the saved scene again to verify it. An overwritten scene is backed up (`.backup-<time>`). `edit` and
+`play` don't combine, verify an edit with a second job. Selections need one topmost match unless `"all": true`;
+`position` is world space, `localPosition`/`rotation`/`scale` parent space.
 
 ```jsonc
-{ "type": "flatten", "position": [x, z], "radius": 12, "height": 11.8, "strength": 1, "falloff": 10 }
-{ "type": "raise", "position": [x, z], "radius": 20, "amount": 6 }   // gaussian mound, negative amounts dig
-{ "type": "smooth", "position": [x, z], "radius": 20, "strength": 0.5, "iterations": 2 }   // or "points"
-{ "type": "hole", "position": [x, z], "radius": 3 }
-{ "type": "fill", "position": [x, z], "radius": 3 }   // or "points": closes holes with the height of their edge
-{ "type": "material", "position": [x, z], "radius": 10, "slot": 5 }
-{ "type": "path", "points": [[x, z], ...], "width": 4, "slot": 5, "smooth": 0.25 }
+{ "op": "snapToGround", "entity": "Barrel", "offset": 0 }   { "op": "translate", "entity": "#4711", "delta": [0, -6, 0], "space": "world" }
+{ "op": "setTransform", "entity": "Gate", "position": [x, y, z], "rotation": [0, 90, 0], "scale": [1, 1, 1] }
+{ "op": "rotate", "entity": "Statue", "yaw": 45 }   { "op": "rename", "entity": "Entity 7", "name": "Crate" }
+{ "op": "setVisible", "entity": "Debug*", "visible": false, "all": true }   { "op": "delete", "entity": "Old*", "all": true }
+{ "op": "duplicate", "entity": "Lantern", "name": "Lantern 2", "position": [x, y, z] }
+{ "op": "add", "name": "Ramp", "mesh": "m.gltf", "body": true, "position": [...], "parent": "Level", "localPosition": [...],
+  "visible": true, "light": { "type": "point|spot", "color", "intensity", "radius", "direction", "innerAngle", "outerAngle", "shadow" },
+  "fogVolume": { ... }, "script": "x.lua", "animation": "Run", "animationSpeed": 1, "parentJoint": 3 }
+{ "op": "prefab", "prefab": "prefabs/X.aeprefab", "name": "X", "parent": "Level", "position": [...], "rotation": [...] }
+{ "op": "makePrefab", "scene": "scenes/Demo.aescene", "output": "prefabs/X.aeprefab", "entity": "Name", "origin": [...],
+  "area": { "center": [x, y, z], "radius": r }, "exclude": [], "scripts": false, "withoutBodies": ["*Grass*"] }
+{ "op": "replaceMesh", "meshes": ["*Tree_01*.aemesh"], "with": ["Tree_03.gltf"], "matchHeight": true, "seed": 0, "within": {...} }
+{ "op": "replaceWithPrefab", "meshes": "*Brazier*.aemesh", "exclude": [], "removeNear": [], "prefab": "...", "name": "Fire Bowl" }
+{ "op": "scatter", ... }   { "op": "clearArea", "entities": ["Grass*"], "area": { "center": [x, z], "radius": 20 } }
+{ "op": "meshBodies", "meshes": [...], "replace": true, "remove": false, "motion": "dynamic", "shape": "box|convex|boxes",
+  "density": 500, "buoyancy": 1, "inOcean": false, "supported": false }
+{ "op": "constraint", "meshes": [...], "type": "point|hinge|cone|distance|slider|fixed", "anchor": "top", "connect": "...",
+  "axis": [...], "limits": [0, 4], "worldPoint": [...], "worldOffset": [...], "breakForce": 0 }
+{ "op": "trigger", "name": "Zone", "shape": "sphere|box|cylinder", "radius": 3, "halfSize": [...], "position": [...] }
+{ "op": "material", "material": "x.aematerial", "set": { "metalness": 0, "roughnessMapPath": null } }
+{ "op": "materialCopy", "material": "a", "output": "b", "set": {}, "remove": [] }   { "op": "meshMaterials", "meshes": [...], "replace": { "a": "b" } }
+{ "op": "meshCopy", "mesh": "a.aemesh", "output": "b.aemesh", "invertNormals": true, "set": {}, "assign": ["Grass*"] }
+{ "op": "meshSettings", "meshes": "x/*.aemesh", "set": { "cullBackFaces": false, "movable": true, "animations": "..." },
+  "impostor": { "views": 12, "resolution": 256, "distance": 150, "textureFormat": "ktx2" } }
+{ "op": "compressTextures", "directories": ["ancient"] }   { "op": "bakeMaterial", "material": "...", "mode": "textures|average" }
+{ "op": "terrainCopy", "path": "terrains/x/x.aeterrain" }   { "op": "shoreLine", "oceanHeight": 0, "resolution": 2048 }
+{ "op": "terrainCreate", "path": "...", "heightMap": "h.png", "splatMap": "s.png", "materials": [...], "LoDCount": 6,
+  "patchSize": 16, "resolution": 1, "height": 300, "translation": [...] }
+{ "op": "terrain", "brushes": [ { "type": "flatten|raise|smooth|hole|fill|material|path", "position": [x, z], "radius": 12, ... } ] }
+{ "op": "detachTerrain" }   // dry runs only, to look at what lies below
 ```
 
-The `falloff` of `flatten` blends towards the height with a smooth curve over that many meters outside
-of the radius, use several meters for natural transitions.
+- `add` imports model files next to them (`meshes/`, `materials/`); `body` adds a static mesh shape. Spot lights with
+  `shadow` stay dark this way.
+- `meshBodies`/`constraint`/`trigger`: bodies follow their world scale, `remove` drops them (grass the player walks
+  through), dynamic bodies float with `"ocean": { "physics": true }`.
+- `replaceMesh`/`replaceWithPrefab` keep the bottom of the replaced mesh (pivots differ between packs); bodies of
+  replaced meshes are removed.
+- `meshSettings`, `compressTextures`, `materialCopy`, `meshCopy`, `meshMaterials`, `makePrefab`, `terrainCopy` write
+  their files even in a dry run; shared assets keep a `.backup` once.
+- `terrain` brushes only work on a copy (`terrainCopy`) or with `"overwriteTerrain": true`; they don't move what stands
+  on the ground: `clearArea`, brush, `scatter` again. `flatten` blends over `falloff` meters.
+- `scatter`: instances inside `area` (`center`/`radius`/`innerRadius`, `min`/`max`, `polygon`, `path`/`width`) outside
+  `exclude`, for a `seed`: `count`, `attempts`, terrain `materials`, `slope`, `height`, `noise` (`scale`, `threshold`,
+  `softness`), `spacing`/`spacingWith`, `clearance`, `ignore`, `maxBlockerSize`, `onMeshes`, `castFrom`, `append`,
+  `required`, `items` (`mesh`, `weight`, `scale`, `scaleY`, `flatness`, `yaw`, `tilt`, `pitch`, `align`, `sink`,
+  `pivotOnGround`, `radius`, `body`: `mesh|capsule`, `name`, `light`). The lowest point of the bounds goes on the ground.
 
-Brushes don't move what stands on the terrain: clear and place things after changing the ground,
-e.g. `clearArea` the grass of a site, then the brushes, then `scatter` it again.
+## Pipelines
 
-`scatter` places mesh instances inside `area` (`center`/`radius`/`innerRadius`, `min`/`max`, `polygon`
-or `path`/`width`, all in x/z) and outside of the `exclude` areas into a new group, deterministically for a `seed`:
+`--pipeline <file>` runs edit jobs in one process, each on the result of the step before, and keeps a snapshot after
+each step (saved scenes, changed materials and the pipeline's `files`). A run starts at the first step whose key (job,
+`inputs`, the keys before) changed, from the snapshot before it. `"independent": true` steps (imports, impostors) are
+skipped while their job and inputs are unchanged. `--from <step>`, `--force`, `--no-shots` (faster builds).
 
 ```jsonc
-{ "op": "scatter", "group": "Pines", "parent": "Nature", "append": false, "seed": 11, "required": false,
-  "count": 2400, "attempts": 96000, "area": { "polygon": [[x, z], ...] }, "exclude": [ ... ],
-  "materials": [0, 5], "slope": [0, 32], "height": [-20, 100], "castFrom": 5.0,
-  "noise": { "scale": 110, "threshold": -0.35, "softness": 0.35 },
-  "spacing": 0, "spacingWith": ["Grass * SM_*Large*"], "clearance": 0.5, "ignore": ["Grass*"], "maxBlockerSize": 120, "onMeshes": false,
-  "items": [{ "mesh": "...", "weight": 3, "scale": [0.85, 1.3], "scaleY": 1, "flatness": 0, "yaw": [0, 360], "tilt": 3, "pitch": 0, "align": 0,
-              "sink": 0.15, "pivotOnGround": false, "radius": 2.0, "body": "capsule", "bodyRadius": 0.35, "bodyHeight": 5,
-              "name": "Lantern", "light": { "offset": [0, 1.5, 0], "color": [1, 0.6, 0.3], "intensity": 2, "radius": 9 } }] }
+{ "name": "world", "steps": ["step_1.json", { "name": "move", "job": "step_2.json", "inputs": ["x.lua"], "independent": false }],
+  "files": ["prefabs/x.aeprefab"], "snapshots": "bin/capture/world/snapshots" }
 ```
 
-- On a terrain the candidates are filtered by terrain `materials`, `slope` and `height`, and the ground
-  has to be the terrain itself unless `onMeshes` is set (ignored hierarchies don't count). Scenes
-  without a terrain use the first surface below `castFrom` (default: above the scene), e.g. a floor
-  below a roof.
-- The simplex `noise` mask keeps instances where the noise is above `threshold` (with a linear ramp of
-  `softness`), which creates clusters and clearings.
-- Instances keep `spacing` (or the sum of their footprint `radius`) to each other and to the existing
-  entities matching `spacingWith` (e.g. those of earlier scatters), and `clearance` to existing meshes, except `ignore`d hierarchies, the mesh they stand on and meshes larger than
-  `maxBlockerSize`. -1 disables the clearance test.
-- The lowest point of the mesh bounds (after `pitch`, a fixed rotation around x, e.g. for fallen
-  objects) is put on the ground, `pivotOnGround` puts the pivot there instead. `align` tilts instances
-  towards the ground normal, `tilt` randomly, `sink` moves them into the ground relative to their scale
-  (negative values lift them). `scaleY` multiplies the height of an item, e.g. for wide flat patches of grass.
-- `flatness` rejects positions where the terrain below the footprint (up to 1.4 times its `radius`) is more
-  than this many meters away from the plane of the instance, e.g. wide patches on a convex hill.
-- Bodies are `"mesh"` (static mesh shape) or `"capsule"` (a feet aligned trunk, the crown stays passable).
-- `name` replaces the instance names (`<group> <mesh> <index>`), `light` adds a child with a light like the
-  one of `add`, at `offset` in the space of the instance.
-- `append` adds to an existing group. `required` fails the job when nothing could be placed. The
-  result lists placed instances per mesh and rejections per reason; scatters with a million attempts
-  or more print their progress.
+## Jobs in a game
 
-`material` patches the loaded material (`null` removes a map, paths are relative to `data/`). Once
-the checks passed, the material file is written by the engine, which keeps references inside a
-package relative, and the original is kept as `<file>.backup`. Edits which only change materials
-don't rewrite the scene. `"saveUnchanged": true` saves it anyway, e.g. to store the job `settings` or data that was
-migrated while loading.
+A game host linking `AtlasEngineCaptureLibrary` runs a job with `--capture <job.json>` (`HostedJob.h`): the game loads
+and renders its own scene with its interface, the job plays its timeline once the game runs, with the job's fixed time
+step, keys, controller, mouse, Lua in the game's script state, expectations, conditions, checks, `track`, queries and
+`settings`. Captures are pictures of the window with the interface, as live captures and strips; `sheet.jpg` and the
+summary as usual. Shots, edits, variants, observers and capture cameras need the capture tool. The window has to stay
+visible; hosts keep it windowed and present without vsync during a job, with vsync a display that is turned off holds
+every frame back (the Sandbox ran at 4 fps). Odyssey: `OdysseyOfAtlas.exe --capture capture/x.json [--dev-scripts]`.
 
-Operations selecting existing entities need exactly one topmost match unless `"all": true` is set. `position` is in
-world space and `localPosition`/`rotation`/`scale` in the parent space; the parent transform is
-taken into account.
+That window is never what a player gets. Each build of a game first has to pass a job with `"playerDisplay": true`: the
+host starts with the player's display settings (fullscreen, vsync), like a normal start. Until then the other jobs refuse
+to run (`.cache/capture-player-display-<executable>.txt` next to the executable records the build). Keep that job short,
+e.g. the start of the game up to the first seconds of playing.
 
-After applying the operations the tool writes `edit_diff.json` (changed, added and removed
-entities based on selected inspection fields), runs the checks and only saves if they pass.
-The diff does not compare all component data or scene settings. The scene is saved through
-`Atlas::Serializer` without touching dependencies, then loaded again to verify it. The input
-scene is never overwritten without `overwrite`, and an overwritten file is backed up first
-(`<file>.backup-<timestamp>`). `edit` can't be combined with `play`, because scripts create
-runtime entities that would end up in the saved scene: verify an edit with a second job on the
-saved scene.
+## Measuring
+
+- `profile` averages the GPU passes and the CPU profiler over the last frames (`profile.json`, at most 64 frames in a
+  job, `--profile` for more), `hitches` records slow frames with their CPU profile (`hitches.json`), `--validation`
+  writes the Vulkan validation messages by id (`validation.json`), `report.json` lists the GPU memory (`gpuMemory`).
+- `bench <bench.json>` follows the performance rules of `AGENTS.md`: builds (`"builds": { "base": "x_base.exe", "change":
+  "x.exe" }`) or shader directories (`"shaders": { "base": "<dir>", "change": "shader" }`, the differing files are touched
+  before each run so the SPIR-V cache doesn't serve the other one) run interleaved in alternating order at 1920x1080,
+  `frames` (240) rendered and the last 64 profiled, auto exposure off and the scene paused; `rounds` (2) and up to `maxRounds` (5) while the frame
+  total is within twice its standard error and above 1 %. It prints every pass (or `passes`) as mean (min - max) per
+  build with the verdict faster, slower or inconclusive, and the pixel difference of the builds next to that of two
+  runs of one build. Results in `bin/capture/bench/<name>/bench.json`.
 
 ## Output files
 
-Every run gets an id (`runId` in the output and the report). Before a run, the files listed in the
-previous `report.json` of the output directory are removed and `report.json` is replaced by one with
-the status `running`, so results of an earlier run never look like results of this run, even if it
-crashes or is killed. Other files are kept. JSON files are written to a temporary file and renamed.
-
-`capture.lock` marks an output directory as used while a run writes into it. A second run with the same
-directory stops with an error that names the running process; use `--out` for parallel runs. A lock of
-a process that doesn't exist anymore is taken over.
-
-While a capture runs, its executable can't be replaced by a build (`LNK1168`, "Device or resource
-busy"). Wait for it to finish, or close it if it is stopped in the debugger, then build again.
-
-| File | Content |
-| --- | --- |
-| `*.png` | Captures, sheets (`*_views.png`, `*_passes.png`, `*_variants.png`, strips) |
-| `report.json` | Status, errors, warnings, check failures, expectations, timings, list of outputs |
-| `log.txt` | Tool and engine log |
-| `scene.json` | Inspection |
-| `queries.json` | Query results |
-| `trace.json` | Tracked entities |
-| `edit_diff.json` | Changes of an edit |
-| `profile.json` | GPU timings per pass and CPU profiler scopes in milliseconds |
-| `hitches.json` | Frames over the hitch threshold with their CPU profile |
-| `validation.json` | Validation messages with `--validation` |
-
-## Workflow for scene changes
-
-1. Inspect and measure first (`--inspect`, `ground`, `entity`, `clearance` queries). Never guess
-   coordinates or heights.
-2. Change the scene (`edit`) or the script, using measured values. Scripts can query the scene at
-   runtime with `scene:CastRay` (see `data/scripts/README.md`).
-3. Verify with a job: focus views including `low` views, a strip of every movement, `grounded`
-   (with `surfaces`) and `penetration` checks, `path` queries for routes, a walkthrough with player
-   input for passability and `resetScripts` for script state.
-4. Look at the sheets, not only at the exit code. Overlays make invisible things visible.
-5. For rendering changes, render a fixed job before and after the change and `--compose` the
-   images, with several sun positions (`settings.sun`).
+`report.json` (status, reason, errors, warnings, checks, expectations, results, comparisons, conditional events,
+timings, outputs, GPU memory), `log.txt`, `sheet.jpg`, captures and sheets (`*_views.png`, `*_passes.png`,
+`*_variants.png`, strips, `*_crop.png`), `scene.json`, `queries.json`, `edit_queries.json`, `edit_diff.json`,
+`trace.json`, `profile.json`, `hitches.json`, `validation.json`. A run removes the outputs of the previous run listed in
+its `report.json` and marks the directory with `capture.lock` (a second run on it fails with the owner). Every run has a
+`runId`.
 
 ## Source layout
 
-- `App`: the run modes (single job, `--serve`, `--pipeline`) and the phases of a job: loading, preparing,
-  editing, shots, playing and finishing. It dispatches the timeline events and requests the captures.
-- `Job`: parses job files and the command line into typed specs, including the timeline events.
-- `Timeline`: the events of a playing job in time order, the conditional events and the simulated
-  keyboard and controller input.
-- `Report`: `report.json`, `log.txt`, the printed output, the profile, the validation messages, the lock of
-  the output directory and the crash report.
-- `Server` and `Pipeline`: the command queue of the server mode and the steps and snapshots of a pipeline.
-- `SceneEditor`, `SceneTools`, `TerrainTools`, `Scatter`: the edit operations, queries and terrain brushes.
-  Each operation, query and brush is a function registered in a table by its name.
-- `CaptureRenderer`, `Overlay`, `Image`, `Checks`: rendering and reading back passes, debug lines, sheets,
-  checks and expectations.
+- `App`: the executable: direct runs, `--serve`, `--pipeline` and the phases of a job (load, prepare, edit, shots, play,
+  finish) with its renderer (`CaptureRenderer`, `Overlay`).
+- `Player`, `Timeline`, `LuaJob`: the timeline of a playing job, its input, conditions and Lua, shared with `HostedJob`.
+- `Job`, `Check`: job files, the command line and the project file; checks before loading.
+- `Report`, `Summary`, `Checks`: the outputs, the printed summary, checks and expectations.
+- `Tools`, `Client`, `Server`, `Process`, `InstanceRegistry`: commands without the GPU, the client and server, processes,
+  the running engine applications.
+- `SceneEditor`, `SceneTools`, `TerrainTools`, `Scatter`: edit operations, queries and brushes, each a function in a
+  table by its name. `SceneFile`, `Inspect`: reading scene, prefab and mesh files without loading them.
+- `Pipeline`, `Bench`, `Image`: pipelines, benchmarks, images, sheets and differences.
 
-## Examples
-
-- `examples/sponza_static.json`: inspection, queries, views, passes, grounding check. It reports
-  the physics spheres that are placed in the air.
-- `examples/sponza_play.json`: playing with a strip, a still and tracking. It reports a sphere
-  that sinks into the floor.
-- `examples/sponza_lua_raycast.json` + `raycast_test.lua`: verifies the Lua raycast bindings.
-- `examples/sponza_lua_components.json` + `component_ref_test.lua`: verifies that components kept by
-  scripts stay valid while their pool grows and shrinks.
-- `examples/kingdom_gate_guards.json`: closes the Kingdom portcullises with `E` and checks the
-  gate movement, the guards (grounded on valid surfaces) and the lanterns.
-- `examples/kingdom_walkthrough.json`: the player walks along the road through both gates.
-- `examples/kingdom_script_reset.json`: closes the gate, resets the script state and checks that
-  the scene stays passable.
-- `examples/kingdom_night.json`: switches to night with `N` and checks the lanterns.
-- `examples/kingdom_conditions.json`: the walkthrough with conditional events: the player turns and
-  operates the gate when reaching positions, a capture follows a log message of the script.
-- `examples/kingdom_pause.json`: pauses while the portcullis falls, checks that the gate and the
-  player stay still and that the gate closes after resuming.
-- `examples/sponza_pipeline.json`: a pipeline of two small edit steps.
-- `examples/kingdom_expanded_pipeline.json`: builds `scenes/KingdomExpanded.aescene` from
-  `scenes/Kingdom.aescene` in seven steps (base with the dungeon, nature, adventure, landmarks, grass,
-  mysteries, mine). The step jobs are generated by the scripts in `examples/kingdom_expanded/`
-  (`build_nature.py` and `build_adventure.py` take the approach route `route.json`, the trails come
-  from `trails*.json`, shared helpers are in `edit_ops.py`). Regenerate a step instead of editing
-  its JSON. The `plan_*.json` jobs survey the original scene, the `play_*.json` jobs play the
-  interactions of `kingdom/scripts/kingdomAdventure.lua`, `profile_*.json` measure the meadow and the
-  town. The grass step takes about ten minutes.
-
-## Engine features
-
-How the engine features work, what to keep in mind when changing them and how to check them with this tool.
-
-- Volumetric clouds (`lighting/VolumetricClouds`) only store authoring parameters (coverage, cloud type, size, vertical development, detail, density, layer, seed, quality, scattering). `VolumetricCloudRenderer::GetUniformStructure` derives the model parameters, fixed model constants live in `data/shader/clouds/clouds.hsh`. Clouds move with the scene wind. Set `needsNoiseUpdate` after changing `variationSeed`. Older scene formats are migrated in `LightingSerializer`.
-- Streaming (`streaming/`) only manages GPU residency: streamed resources stay loaded in the resource manager with their data in RAM (mesh data, the ktx2 files of textures, the impostor files), RAM unloading would go through the resource manager. `StreamingManager::Update()` runs at the start of `Scene::Update` (after the render join) once per frame and swaps finished uploads into the same objects, so materials, bindless slots, impostors and mesh slots keep their references. Limits are in `StreamingManager::settings` (Lua `Atlas.StreamingManager.settings`, editor "Engine settings" window: searchable entries in `ui/windows/SettingsWindow`, new engine settings are added there). The editor disables mesh and impostor streaming, the capture tool all of it (`--streaming`). Requests come from the GPU culling: `cull.csh` (set 3 binding 12) writes two closest distances per mesh slot (geometry instances to their bounds, all instances to their positions or centers, the closer one), read back `FRAME_DATA_COUNT` frames later (`GPUScene::TakeMeshDistances`). `SceneRenderState::RequestStreamedResources` turns a quarter of the slots per frame into batched requests (one lock per type), clutter meshes are requested in full detail, the focal length comes from `GPUScene::GetFocalLength`, the path tracer culls with `CullForStreaming`; other systems (e.g. future world cells prefetching) call the `Request` functions directly.
-  - All types share `Residency` (one per type, textures and impostors on `MipResidencyEntry`): a `ResidencyEntry` has levels (how far it is reduced, the last level of meshes and impostors holds nothing), `Prepare` turns the requests into `desiredLevel`/`priority`, the planner applies the reduction delay and the budget (all entries lowered by the same number of levels down to their `budgetLevel`, the highest priority gets one level back), uploads run as `Load` in jobs and are swapped in with `Apply`, `ReleaseTo` drops GPU data without a load. Level sizes come from `Graphics::Image::GetMemorySize` (`vkGetDeviceImageMemoryRequirements`), texel estimates miss the per-layer alignment that dominates small impostor views. The planner only lowers the bias again below 90% of the budget and lets entries keep their levels before others get one; at the budget every level change still costs about two uploads, so uploads have to stay cheap.
-  - Textures (`TextureStreaming`): material maps load through `TextureStreaming::LoadTexture` (MeshSerializer); KTX2 files with mips start at the minimum resolution and `KtxLoader` trims the skipped levels before inflating/transcoding. Resolutions follow from `MeshSubData::uvScale` (computed in `Mesh::UpdateData`), `Material::tiling` and the focal length; terrain materials from the camera height above the terrain and `1 / tiling`. Code that renders or reads material textures offline (impostor baking) calls `LoadFullResolution` first.
-  - Impostors (`ImpostorStreaming`): loaded through `ImpostorStreaming::LoadImpostor` (MeshSerializer), the view resolution follows from `2 * radius * focal length / max(distance, impostor distance)`; `ImpostorLoader::LoadImpostorTextures` loads only the textures with a maximum resolution for level changes (KTX2 arrays are trimmed, raw arrays point sampled since averages would mix empty texels in). Impostors of meshes without an instance within their culling distances aren't requested and leave the GPU (`Impostor::IsResident()`, checked by the GPU scene, render lists and the renderer). Reduced impostors aren't saved (`MeshLoader`).
-  - Meshes (`MeshStreaming`): the geometry (GPU buffers, BLAS) is unloaded beyond the impostor distances (or the culling distances without an impostor, the ray tracing distance while ray tracing). `Mesh::IsGeometryResident()` has to be checked by everything that binds mesh buffers outside the GPU scene draws (CPU render lists, vegetation); slots without geometry draw all instances as impostors (`MESH_GEOMETRY`). Unloads wait for `RayTracingManager::meshBuildMutex` and, while the mesh is still needed, for its impostor to be resident (impostors update before meshes). Offline code calls `MeshStreaming::LoadGeometry` first. Skinned meshes aren't streamed. `rayTracingDistance` (settings, 500 m) caps how far ray traced meshes keep their geometry.
-  - Screen size culling: `Mesh::minScreenSize` (default 8 px, persisted) culls instances with a smaller bounding sphere in `cull.csh`, in both variants, so they also leave the TLAS (`WriteRayTracingInstances` takes the focal length); they report to the streaming from half that size on, so meshes without bigger instances lose their geometry and impostors.
-- Loading: scenes are displayed as soon as their entities exist, missing or slow meshes and textures don't block anything, and whoever needs everything calls `Scene::WaitForResourceLoad`. Meshes load before textures through job ordering (`ResourceManager<T>::HoldAsyncLoads`/`ReleaseAsyncLoads`), not through priorities. A scene is deserialized once its structure exists, meshes load in jobs and the maps of their materials in their own jobs (`MeshSerializer`, also ocean and bloom textures). `Material::HasXMap()` means the material has the map, which can still be loading or have failed: pipeline macros and once-built state (BLAS opacity) use it, the bindless path falls back to default textures, and code binding or indexing a map directly (vegetation, impostor baking, ray tracing materials) checks `map.IsLoaded()`. `Scene::IsFullyLoaded`/`WaitForResourceLoad` include the maps (empty map handles count as done), baking calls `TextureStreaming::LoadFullResolution`, which waits for them.
-- Material graphs (`materialgraph/`, `.aematgraph` files): a graph describes vertices and surfaces with nodes, `materialgraph/Compiler` generates shaders from it. `Material::graph` references one, `graphValues`/`graphTextures` hold the parameter values of a material, which change without any compilation (constants and inline values are baked and do compile). New nodes only need an entry in `NodeLibrary` (GLSL helpers go into `data/shader/materialGraph/common.hsh`, prefixed `MG`). The generated files are virtual (`ShaderLoader::AddVirtualFile`, named by the hash of their code because the SPIR-V cache only knows names and macros) and include the regular `deferred/geometry.*` and `shadowMapping.*` shaders, which call the graph behind `#ifdef MATERIAL_GRAPH`, so regular materials keep their exact SPIR-V (`src/capture/examples/material_graph_demo/check_regular_shaders.py <revision>` compares them). Each stage of each pass only contains the nodes it needs. Graphs without a surface keep the regular maps of the material for the fragments; graphs without moved vertices or a cutout use the regular shadow pipeline. Parameters live in `SceneRenderState::materialGraphBuffer` (set 3, binding 9), textures are bindless indices in there, so there is no limit on their number. A surface graph gets a second neutral entry in the material buffer for the G-buffer (`materialGraphMap`), the properties of the material stay for the ray tracing buffer (`RayTracingWorld`), which doesn't run graphs: reflections, GI, ray traced shadows and the path tracer see undisplaced meshes with these values. Pipelines are created in the background (`MaterialGraph::PipelineCache`), meanwhile and after a failed compilation the regular pipeline draws; the capture tool and the editor while editing (`Graph::blockingPipelines`) create them in place. `Graph::maxDisplacement` grows the culling bounds (`Mesh::GetRenderBounds`), the bounds of the mesh data stay untouched. Not covered by graphs: impostor baking, vegetation/clutter and terrain. `materialGraphShaders` capture query compiles all graphs for all kinds of meshes. Unit tests in `src/tests/MaterialGraphTest.cpp` (`--gtest_filter=MaterialGraph*`, they need no GPU). The demo scene is generated by `src/capture/examples/material_graph_demo/build.py`. Generated code stays human readable: variables are named after their node and pin or parameter (`fractalNoiseResult`, `glowParameter`), single terms get no parentheses; the numbering follows the emit order, so positions and ids of nodes still do not change the code. `Compiler::CompileBake`/`CompilePreview` generate a fragment shader outside of the regular passes (`materialGraph/evaluate.*`, rendered with `MaterialGraph::Evaluator`, which brings its own global data and bindless list), all pins of a graph share one parameter layout there and vertex nodes are calculated per fragment. `MaterialGraph::Baker` renders a mesh laid out by its texture coordinates and writes `baked/<material>_<property>.png` next to the material, or one average per property; properties that do not vary only get a value. `Material::graphBake` holds the settings, the state of the last bake and the properties it replaced (`unbaked`, which `Baker::Clear` brings back), the capture `bakeMaterial` edit operation runs it. Vertex buffers can only be bound after a pipeline in a command list, otherwise `BindVertexBuffers` silently does nothing. `ResourceHandle` overloads `operator&`, use `std::addressof` for a pointer to a handle. `Static switch` only compiles its selected input and applies to all materials of a graph. Editor: previews live in `ui/panels/MaterialGraphPreviews` (one atlas, compiled in the background, only nodes in view), frames are `NodeKind::Frame` with `Node::size`, reroutes `NodeKind::Reroute` (double click on a link), parameters have `range`, `group` and `order`.
-- Pipeline configs: `variantHash` doesn't include the shader, renderers rebind a pipeline only when this hash changes and sort draws by it. Configs of several shaders in one loop need a distinguishing macro (as graphs have), but changing the hash for regular materials changes their draw order and with it the overdraw (a shader hash in it cost sponza 0.07 ms in the opaque pass).
-- Asset references: `loader/AssetReferences` converts resource paths when assets are saved and loaded. A directory containing `package.aepackage` is a package; references inside a package are stored relative (`./`, `../`), all others keep the form relative to `data/`. When a serializer gets a new resource path field, add its JSON pointer to the tables in `AssetReferences.cpp`.
-- Fog: froxels are the only path and fog always starts at the near plane. Don't move the start of the grid to win slices, redistribute them with `froxelDistributionExponent` and `froxelFarDistance`. `lighting/Fog` holds the global settings, `FogVolumeComponent` local volumes (unit box or ellipsoid of the entity transform). The extraction uploads the closest `MAX_FOG_VOLUMES` visible volumes, `froxelCulling.csh` writes one bitmask per cluster, and `froxelInject.csh` stores `rgb = scattering`, `a = extinction` scaled by `FROXEL_DATA_SCALE`. Volumes smaller than the froxels (slices grow with distance) don't resolve, so keep them soft and a few meters or larger. Lower quality means a larger `froxelTileSize` and fewer `froxelSliceCount`.
-- Ocean: `scene->ocean` is saved with the scene (`ocean` key, `ocean/OceanSerializer`); an ocean is constructed from its LoD count, size, translation (the water level is its y) and simulation resolution, the other members are patched afterwards.
-- Time: renderers and shaders animate with the scene time (`Scene::GetTime()`/`GetDeltaTime()`, `globalData.time`), which stands still while `Scene::paused` is set. `Clock` is the real application time, use it only for UI and profiling.
-- Animation level of detail: skinned meshes beyond `Mesh::animationLodDistance` update their pose every few frames (up to `animationMaxInterval`, out of view twice as rarely), skipped frames add up their delta time. `AnimationComponent::IsPoseUpdated()` tells whether the pose changed; joint attachments, the octree bounds and the ray tracing skinning only do work when it did.
-- Occlusion culling (`Scene::occlusionCulling`, on by default, saved with the scene): two phases in the main pass without a render target of its own. `GPUScene::Cull` draws the instances visible in the last frame (`GPUInstance::visibleLastFrame`) and lists all instances in the frustum, `MainRenderer` builds `hiZTexture` from that depth and `GPUScene::CullOcclusion` tests the list (`culling/cull.csh` with `OCCLUSION`), writes the rest into a view of its own and updates the visibility. These draws go into `gBufferLoadRenderPass`, which is compatible with the G-buffer pipelines. Only draws of the first phase may be left out on the CPU (`MeshSlot::drawEarly`, read back from the counters): their instances then end up in the second phase, which always records all draws. Host culled skinned meshes, the vegetation and the terrain are drawn in the first phase, shadow views aren't occlusion culled.
-- Physics layers are persisted; append new layers at the end of `Physics::Layers`. Kinematic bodies follow their transform through `MoveKinematic`.
-- Navigation (`navigation/NavigationMesh`, Recast/Detour): tiles are built around a center from static, non-sensor Jolt bodies only, a terrain through its height field body (without one there is no navigation on it). The overlapping static shapes are collected on the main thread, their triangles are read and Recast runs in jobs (a tile can hold hundreds of thousands of triangles), Detour queries are main-thread only. Tiles rebuild themselves where static bodies change (`PhysicsWorld::staticChanges`, a `Volume::BoundsChangeLog` several meshes can read, recorded on create, destroy, move and shape change). Terrain height edits have to rebuild the height field body: the editor does it when a brush stroke ends, the capture tool after its terrain brushes. `scene->navigation` (`navigation/Navigation`, saved with the scene) builds a mesh around the main camera in `Scene::Update` and recreates it when its settings change. The editor shows it under the scene settings (debug lines, path test with right clicks), the capture `route` query uses it with `"navigation": true`.
-- Lua bindings: every glm operation that returns a new object has a `*To` variant writing into an existing one (`Glm.TranslateTo(out, m, v)`, `Glm.AddTo(out, a, b)`, `Glm.MulTo`, `CopyTo`, ...), so scripts don't create garbage every frame. Register math types before bindings that use them as members. Bind class-type members of value types with `DependentMember` (`scripting/bindings/MemberBindings.h`) so references into temporaries stay valid. Scene feature state is exposed through properties (`scene.wind`, `scene.sky`, `scene.fog`). Vectors and quaternions read `x/y/z/w`, matrices their elements (`m[13]`, `m[14]`, `m[15]` is the translation, column by column) through raw metamethods (`AddComponentAccess` in `MathBindings.cpp`), use them instead of `MatrixDecomposition`. Component references resolve through the Lua API directly (`IndexComponentRef`); every bound call still costs ~0.2 µs, scripts cache components and per-frame answers. `scene:CastRay(ray, components, ignored, skip)` skips entities before their triangles are tested, `scene:QueryAABB(aabb, components, nameParts)` filters by name in C++. Measure scripts with the game's `--lua-profile` and `--lua-hotspots`.
-- Job system: workers and the main thread stay in the normal scheduling range (no `TIME_CRITICAL`/`SCHED_RR`), otherwise audio and system threads get starved. `PriorityPool::pendingJobs` tracks queued and executing jobs. A `Wait` helps by draining the whole pool of the group, so everything on the path to a frame is `JobPriority::High`, long background work stays off High, and KTX conversion runs on Medium.
-- Editor UI: since the UI rework, colors come from `Theme` (no new hardcoded `ImVec4` colors), reuse `ui/Widgets` (`DragVec3`, `Callout`, `IconButton`, ...), and register new editor actions and shortcuts in `App::RegisterCommands` so they appear in the command palette. Controls of one kind look and behave the same everywhere (the open button of meshes and materials, reset buttons, trash cans in section headers). Integer settings use drag ints, drags apply changes directly, and elements must keep enough contrast. New engine settings go into `ui/windows/SettingsWindow`.
-- Editor icons in `data/editor/icons/` are official Material Symbols only, never drawn by hand and without a new dependency: a `.svg`, a white `.png` and a black `_light.png`, all 256 x 256. Sources are at `https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/<name>/default/24px.svg`.
-- `data/.config` and `imgui.ini` are the user's editor settings, back them up before a test changes them and restore them afterwards.
-- Rays: `Scene::CastRay` hits rigid bodies through the physics world, only meshes without a matching body test every triangle (no CPU BVH). Rely on the physics world and use filters in frequent queries.
-- Pausing: use `Scene::paused` to stop a running scene. `physicsWorld->pauseSimulation` is the edit mode, which discards the Lua state of every script.
-- Impostor depth: the bake stores `offset + 1`, empty texels are 0. Decode it with `ImpostorDepthOffset(depth, alpha)` in `impostor/depthOffset.hsh`, and don't change the bake without migrating baked impostors.
-- Image probes: the first image row is the zenith, the Atlas directions +X/+Z/-X/-Z are at u .5/.75/0/.25.
-- Upscalers: `PostProcessing::upscaler` selects them, `MainRenderer::IsUpscalerSupported` falls back to FSR2. A new vendor upscaler gets its own folder and cmake file under `libs/upscalers` and one entry in `renderer/UpscalerAddons`. Set defines per source file, target wide ones leak into the shared PCH.
-- `RayTracingWorld::Update` prepares the TLAS and its instances, they are built while rendering (`GPUScene::WriteRayTracingInstances`). The update of a frame that isn't rendered is dropped and the last built TLAS stays in use. Render a scene only after it was updated in the same frame.
-- Instances with a mirrored transform (negative determinant) are sorted to the end of a mesh's instance range in `RenderList` and drawn with a reversed winding pipeline in the opaque and shadow renderers.
-- Mesh instances live in a GPU buffer of `GPUScene`, refreshed only for dirty entities. Everything that changes a transform, mesh, `visible` or `dontCull` has to mark the entity dirty (`SetVisible`, `SetDontCull`, ...), otherwise the instance goes stale. A scene can be updated and rendered several times per frame, so data uploaded while recording comes from `Graphics::UploadBufferPool`. Code binding GPU scene buffers waits for `SceneRenderState::gpuSceneUpdateJob`.
-- The shader loader deduplicates includes. DDGI-dependent helpers live in `ddgi/` (e.g. `ddgi/transmission.hsh`) so generic headers like `brdf/transmission.hsh` stay usable without DDGI resources.
-- Ray traced surfaces are set up through `raytracer/surface.hsh`; `GetSurfaceParameters` already calls `UpdateSurface`, don't call it again or override F0/F90 afterwards.
+Engine notes that used to be here are in `wiki/EngineNotes.md`.

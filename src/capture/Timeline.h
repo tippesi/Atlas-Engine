@@ -35,8 +35,9 @@ namespace Atlas::Capture {
         // Whether a time is reached, tolerates the rounding of the fixed time steps
         bool IsDue(float time) const;
 
-        // Releases the keys and buttons whose press is over and queues the events whose condition is met
-        void Update(Scene::Scene& scene, const std::function<void(const std::string&)>& print);
+        // Releases the keys and buttons whose press is over and queues the events whose condition is met. Log
+        // conditions are matched by MatchLog, isMet evaluates the others
+        void Update(const std::function<bool(const json& condition)>& isMet, const std::function<void(const std::string&)>& print);
 
         // Log conditions: a text without wildcards matches when the message contains it
         void MatchLog(const std::string& message);
@@ -68,6 +69,8 @@ namespace Atlas::Capture {
         size_t GetTriggerCount() const;
 
         float time = 0.0f;
+        // Window that receives the mouse events
+        uint32_t windowId = 0;
 
     private:
         void SetInput(const InputEvent& input, bool down);
@@ -84,6 +87,7 @@ namespace Atlas::Capture {
         // Pressed keys and buttons with the time they are released
         std::vector<std::pair<float, InputEvent>> pendingReleases;
         SDL_Joystick* controller = nullptr;
+        vec2 mousePosition = vec2(0.0f);
 
     };
 

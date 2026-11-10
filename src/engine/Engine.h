@@ -13,6 +13,9 @@
 #include "common/RandomHelper.h"
 #include "jobsystem/JobSystem.h"
 
+#include <functional>
+#include <optional>
+
 namespace Atlas {
 
     struct EngineConfig {
@@ -33,9 +36,15 @@ namespace Atlas {
         Graphics::DeviceDesc deviceDesc;
 
         /*
-         * 
+         *
          */
         JobSystemConfig jobSystemConfig;
+
+        /**
+         * Runs before the engine is initialized with the command line arguments, e.g. for command line modes that
+         * need neither a window nor the GPU. Returning an exit code ends the application right away
+         */
+        std::function<std::optional<int32_t>(const std::vector<std::string>& args)> commandLineTool;
     };
 
     class Engine {

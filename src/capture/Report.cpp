@@ -1,4 +1,5 @@
 #include "Report.h"
+#include "Process.h"
 
 #include "graphics/GraphicsDevice.h"
 #include "graphics/Instance.h"
@@ -30,32 +31,6 @@ namespace Atlas::Capture {
 
     // The report the crash handlers write into
     static Report* crashReport = nullptr;
-
-    static uint32_t CurrentProcessId() {
-
-#ifdef AE_OS_WINDOWS
-        return uint32_t(::GetCurrentProcessId());
-#else
-        return uint32_t(getpid());
-#endif
-
-    }
-
-    static bool IsProcessRunning(uint32_t processId) {
-
-#ifdef AE_OS_WINDOWS
-        auto process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
-        if (!process)
-            return false;
-        DWORD code = 0;
-        bool running = GetExitCodeProcess(process, &code) && code == STILL_ACTIVE;
-        CloseHandle(process);
-        return running;
-#else
-        return kill(pid_t(processId), 0) == 0;
-#endif
-
-    }
 
     // Remove only outputs listed in the previous report
     static void RemovePreviousOutputs(const fs::path& directory) {
@@ -231,6 +206,7 @@ namespace Atlas::Capture {
         errors.clear();
         warnings.clear();
         expectations = json::array();
+        results = json::object();
         outputs = json::array();
         logErrorCount = 0;
         exitCode = 0;
@@ -278,6 +254,13 @@ namespace Atlas::Capture {
         }
         if (!locked)
             return "Couldn't create the lock file " + path.string();
+
+        // The duration of the previous run tells how long this one takes
+        {
+            std::ifstream stream(outputDirectory / "report.json");
+            auto previous = json::parse(stream, nullptr, false);
+            previousSeconds = previous.is_object() && previous.contains("totalSeconds") ? previous["totalSeconds"].get<float>() : 0.0f;
+        }
 
         // Clear stale outputs before recording the running state
         RemovePreviousOutputs(outputDirectory);

@@ -1,5 +1,4 @@
 #include "Timeline.h"
-#include "Checks.h"
 
 #include "events/EventManager.h"
 
@@ -24,7 +23,7 @@ namespace Atlas::Capture {
 
         auto usesController = [](const EventSpec& event) {
             auto input = std::get_if<InputEvent>(&event.action);
-            return input && input->device != InputEvent::Device::Key;
+            return input && (input->device == InputEvent::Device::Button || input->device == InputEvent::Device::Axis);
         };
         if (std::any_of(jobEvents.begin(), jobEvents.end(), usesController))
             AttachController();
@@ -69,7 +68,7 @@ namespace Atlas::Capture {
 
     }
 
-    void Timeline::Update(Scene::Scene& scene, const std::function<void(const std::string&)>& print) {
+    void Timeline::Update(const std::function<bool(const json& condition)>& isMet, const std::function<void(const std::string&)>& print) {
 
         for (auto it = pendingReleases.begin(); it != pendingReleases.end();) {
             if (IsDue(it->first)) {
@@ -85,10 +84,7 @@ namespace Atlas::Capture {
         for (auto& trigger : triggers) {
             const auto& when = *trigger.event.when;
             if (!trigger.metTime && IsDue(trigger.event.time)) {
-                bool passed = trigger.logMatched;
-                if (!when.contains("log"))
-                    EvaluateExpectation(scene, when, passed);
-                if (passed) {
+                if (when.contains("log") ? trigger.logMatched : isMet(when)) {
                     trigger.metTime = time;
                     print(FormatTime(time) + " condition met: " + when.dump());
                 }
@@ -156,7 +152,8 @@ namespace Atlas::Capture {
 
     void Timeline::Fire(const InputEvent& input) {
 
-        if (input.device == InputEvent::Device::Axis) {
+        if (input.device == InputEvent::Device::Axis || (input.device == InputEvent::Device::Mouse &&
+            (input.action == "move" || input.action == "wheel"))) {
             SetInput(input, true);
             return;
         }
@@ -222,6 +219,48 @@ namespace Atlas::Capture {
             event.scancode = SDL_GetScancodeFromKey(keyCode, nullptr);
 
             Events::EventManager::KeyboardEventDelegate.Fire(Events::KeyboardEvent(event));
+            return;
+        }
+
+        if (input.device == InputEvent::Device::Mouse) {
+            // Pushed into the SDL queue, the engine dispatches them to the window and the interface like real input
+            SDL_Event event = {};
+            if (input.position && down) {
+                auto delta = *input.position - mousePosition;
+                mousePosition = *input.position;
+                event.type = SDL_EVENT_MOUSE_MOTION;
+                event.motion.windowID = windowId;
+                event.motion.x = mousePosition.x;
+                event.motion.y = mousePosition.y;
+                event.motion.xrel = delta.x;
+                event.motion.yrel = delta.y;
+                SDL_PushEvent(&event);
+            }
+            if (input.action == "move")
+                return;
+
+            event = {};
+            if (input.action == "wheel") {
+                event.type = SDL_EVENT_MOUSE_WHEEL;
+                event.wheel.windowID = windowId;
+                event.wheel.y = input.value;
+                event.wheel.integer_y = int32_t(input.value);
+                event.wheel.direction = SDL_MOUSEWHEEL_NORMAL;
+                event.wheel.mouse_x = mousePosition.x;
+                event.wheel.mouse_y = mousePosition.y;
+                SDL_PushEvent(&event);
+                return;
+            }
+
+            auto button = input.name == "right" ? SDL_BUTTON_RIGHT : input.name == "middle" ? SDL_BUTTON_MIDDLE : SDL_BUTTON_LEFT;
+            event.type = down ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+            event.button.windowID = windowId;
+            event.button.button = Uint8(button);
+            event.button.down = down;
+            event.button.clicks = 1;
+            event.button.x = mousePosition.x;
+            event.button.y = mousePosition.y;
+            SDL_PushEvent(&event);
             return;
         }
 

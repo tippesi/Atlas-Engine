@@ -51,6 +51,8 @@ namespace Atlas::Capture {
         std::vector<std::string> views;
         std::vector<std::string> passes;
         int32_t settleFrames = -1;
+        // A part of the image written as <shot>_crop.png: [x, y, width, height] or { "entity": pattern, "padding": 0.15 }
+        json crop;
 
     };
 
@@ -79,25 +81,30 @@ namespace Atlas::Capture {
         bool still = false;
         std::optional<int32_t> settleFrames;
         std::vector<std::string> passes;
+        // See ShotSpec::crop
+        json crop;
 
     };
 
     // Simulated input with SDL names: keys and controller buttons go down, up or are pressed for a duration,
-    // controller axes keep their value until it changes
+    // controller axes keep their value until it changes. The mouse moves to window pixels, its buttons
+    // (left, right, middle) go down, up or click, the wheel turns by the value
     struct InputEvent {
 
         enum class Device {
             Key,
             Button,
-            Axis
+            Axis,
+            Mouse
         };
 
         Device device = Device::Key;
         std::string name;
-        // down, up or press
+        // down, up or press, for the mouse also move and wheel
         std::string action = "press";
         float duration = 0.0f;
         float value = 0.0f;
+        std::optional<vec2> position;
 
     };
 
@@ -140,6 +147,16 @@ namespace Atlas::Capture {
 
     };
 
+    // A Lua chunk, see LuaJob. With a result key its value is stored in the results of report.json
+    struct LuaEvent {
+
+        std::string code;
+        // The file of the code, empty for inline code
+        std::string file;
+        std::string result;
+
+    };
+
     struct PauseEvent {
 
         bool pause = true;
@@ -152,7 +169,7 @@ namespace Atlas::Capture {
     struct EndEvent {};
 
     using EventAction = std::variant<CaptureEvent, InputEvent, LookEvent, TeleportEvent, AnimationEvent, LogEvent, ExpectEvent,
-        PauseEvent, ResetScriptsEvent, EndEvent>;
+        PauseEvent, ResetScriptsEvent, EndEvent, LuaEvent>;
 
     struct EventSpec {
 
@@ -204,6 +221,11 @@ namespace Atlas::Capture {
         std::vector<std::string> surfaces;
         // Hierarchies the ground ray passes, e.g. undergrowth around trees
         std::vector<std::string> ignore;
+        // Points per side of a grid over the bounds that measure the gap below the underside, e.g. 3 for wide flat meshes
+        // like fields and grass patches whose edges float over a slope. 0 measures below the center only
+        int32_t footprint = 0;
+        // Points of the grid count where the underside is at most this high above the bottom of the bounds
+        float baseHeight = 0.3f;
 
     };
 
@@ -226,6 +248,8 @@ namespace Atlas::Capture {
         // Engine errors matching these patterns don't fail the job, e.g. known missing assets
         std::vector<std::string> logIgnore;
         bool invalidTransforms = true;
+        // The job ends at the first error of the engine or a script, failed like the error would fail it at the end
+        bool failFast = true;
         float interval = 0.1f;
 
     };
@@ -258,6 +282,17 @@ namespace Atlas::Capture {
         std::vector<std::string> filter;
         // Entities for which the full serialized component data is written
         std::vector<std::string> detail;
+
+    };
+
+    // Compares the images of a job with those of a reference directory, more differing pixels than maxPercent fail the job.
+    // update writes the images of this run as the new reference
+    struct CompareSpec {
+
+        fs::path reference;
+        int32_t threshold = 8;
+        float maxPercent = 0.5f;
+        bool update = false;
 
     };
 
@@ -299,6 +334,8 @@ namespace Atlas::Capture {
         // Shows the frames and the output while running, playback then runs in real time unless realTime is off
         bool showWindow = true;
         bool realTime = true;
+        // Jobs in a game: the host keeps the display settings of the player instead of a window without vsync
+        bool playerDisplay = false;
         // Renders with the path tracer, which accumulates over the settle frames
         bool pathTrace = false;
 
@@ -320,6 +357,7 @@ namespace Atlas::Capture {
 
         std::optional<TrackSpec> track;
         std::optional<OverlaySpec> overlay;
+        std::optional<CompareSpec> compare;
         ChecksSpec checks;
 
         // Number of last frames the GPU timings are averaged over, 0 disables the profile
@@ -330,6 +368,10 @@ namespace Atlas::Capture {
         bool validation = false;
         // Only set by --sound, the capture tool is muted otherwise
         bool sound = false;
+
+        // Command of the project (capture.project.json) that checks the scripts before a job plays, e.g. a static checker
+        std::vector<std::string> preflight;
+        fs::path preflightDirectory;
 
     };
 

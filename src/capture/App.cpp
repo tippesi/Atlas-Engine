@@ -1,6 +1,10 @@
 #include "App.h"
 #include "TerrainTools.h"
 #include "SceneEditor.h"
+#include "Check.h"
+#include "Summary.h"
+#include "Tools.h"
+#include "InstanceRegistry.h"
 
 #include "Serializer.h"
 #include "loader/ImageLoader.h"
@@ -22,7 +26,8 @@
 
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../data",
-    .shaderDirectory = "shader"
+    .shaderDirectory = "shader",
+    .commandLineTool = [](const std::vector<std::string>& args) { return Atlas::Capture::RunCommandLineTool(args, "../../data"); }
 };
 
 namespace Atlas::Capture {
@@ -62,52 +67,11 @@ namespace Atlas::Capture {
     // Keep scripts active with a minimal time step while waiting for real-time playback
     static constexpr float freezeDeltaTime = 1e-5f;
 
-    // Returns the exit code if the command line composes images instead of running a job
-    static std::optional<int32_t> RunCompose(const std::vector<std::string>& args) {
-
-        if (args.size() < 3 || args[1] != "--compose")
-            return std::nullopt;
-
-        auto output = ResolveUserPath(args[2]);
-        std::string title;
-        int32_t columns = 0;
-        std::vector<Ref<Image>> images;
-        std::vector<std::string> labels;
-
-        for (size_t i = 3; i < args.size(); i++) {
-            if (args[i] == "--title" && i + 1 < args.size()) {
-                title = args[++i];
-                continue;
-            }
-            if (args[i] == "--columns" && i + 1 < args.size()) {
-                columns = std::stoi(args[++i]);
-                continue;
-            }
-
-            auto separator = args[i].find('=');
-            auto label = separator == std::string::npos ? fs::path(args[i]).stem().string() : args[i].substr(0, separator);
-            auto path = ResolveUserPath(separator == std::string::npos ? args[i] : args[i].substr(separator + 1));
-
-            auto image = Loader::ImageLoader::LoadImage<uint8_t>(path.string(), false, 4);
-            if (!image || !image->HasData()) {
-                std::printf("Couldn't load %s\n", path.string().c_str());
-                return 2;
-            }
-            images.push_back(image);
-            labels.push_back(label);
-        }
-
-        auto sheet = ComposeSheet(images, labels, columns, title);
-        auto written = WritePng(sheet, output);
-        std::printf("[capture] Composed %zu images into %s\n", images.size(), output.string().c_str());
-        return written ? 0 : 2;
-
-    }
-
     void App::LoadContent() {
 
         startTime = std::chrono::steady_clock::now();
         report.InstallCrashHandlers();
+        InstanceRegistry::Register(args);
 
         // Pictures never show the fallback of a material graph
         MaterialGraph::PipelineCache::asynchronous = false;
@@ -117,12 +81,6 @@ namespace Atlas::Capture {
             Streaming::StreamingManager::settings.textures.enable = false;
             Streaming::StreamingManager::settings.impostors.enable = false;
             Streaming::StreamingManager::settings.meshes.enable = false;
-        }
-
-        if (auto composeExitCode = RunCompose(args)) {
-            phase = Phase::Done;
-            Exit(*composeExitCode);
-            return;
         }
 
         // A server or a pipeline runs several jobs, the other options of the command line apply to each of them
@@ -147,7 +105,11 @@ namespace Atlas::Capture {
         try {
             if (!serve.empty()) {
                 mode = Mode::Server;
-                server.emplace(ResolveUserPath(serve));
+                std::vector<std::string> serverOptions;
+                for (const auto& option : { "--streaming", "--validation" })
+                    if (std::find(args.begin(), args.end(), option) != args.end())
+                        serverOptions.push_back(option);
+                server.emplace(ResolveUserPath(serve), serverOptions);
 
                 // Scenes can be loaded before the first job, which sets up the renderer for its resolution
                 captureRenderer.Init(mainRenderer, job.resolution);
@@ -164,7 +126,7 @@ namespace Atlas::Capture {
                 }
 
                 report.Print("Serving commands from " + server->directory.string());
-                phase = Phase::Idle;
+                SetIdle();
                 return;
             }
             if (!pipelineFile.empty()) {
@@ -209,6 +171,8 @@ namespace Atlas::Capture {
         pendingReadbacks.clear();
         sheets.clear();
         sheetOrder.clear();
+        jobSheetImages.clear();
+        jobSheetLabels.clear();
         shotState = {};
         stillState = {};
         baseSettings = json();
@@ -217,7 +181,7 @@ namespace Atlas::Capture {
         variantCaptures.clear();
         stripCameras.clear();
 
-        timeline.Reset(job.timeline);
+        player.Reset(job);
         nextCheckTime = 0.0f;
         nextTrackTime = 0.0f;
 
@@ -231,6 +195,7 @@ namespace Atlas::Capture {
         readyFrame = -1;
         rtWaitFrames = 0;
         loadSeconds = 0.0f;
+        phaseBeforeFinish = Phase::Prepare;
 
     }
 
@@ -278,13 +243,30 @@ namespace Atlas::Capture {
         else
             Audio::AudioManager::Mute();
 
-        report.Print("Job '" + job.name + "' with scene " + job.scene + " (run " + report.runId + ")");
+        report.Print("Job '" + job.name + "' with scene " + job.scene + " (run " + report.runId + ")" +
+            (report.previousSeconds > 0.0f ? ", the previous run took " + FormatFloat(report.previousSeconds, 0) + " s" : ""));
+        auto now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        InstanceRegistry::SetActivity("job " + job.name, true,
+            report.previousSeconds > 0.0f ? std::optional<int64_t>(now + int64_t(report.previousSeconds)) : std::nullopt);
+        if (server)
+            server->WriteStatus("running", job.scene, job.name);
 
         if (job.validation && !report.EnableValidation()) {
             Fail("Validation layers aren't available, they are part of the Vulkan SDK");
             return;
         }
         report.Print("Output directory: " + job.outputDirectory.string());
+
+        // A direct run was checked before the engine started, servers and pipelines check their jobs here without the preflight
+        if (mode != Mode::Job) {
+            for (const auto& issue : CheckJob(job, false)) {
+                if (issue.starts_with("ERROR")) {
+                    Fail(issue.substr(7));
+                    return;
+                }
+                report.Print(issue);
+            }
+        }
 
         if (!rendererInitialized) {
             captureRenderer.Init(mainRenderer, job.resolution);
@@ -319,7 +301,7 @@ namespace Atlas::Capture {
         // Capture errors that happen while loading
         report.SkipLog();
 
-        if (scene && scenePath == job.scene) {
+        if (scene && scenePath == job.scene && !sceneDirty) {
             // The scene starts each job with the settings it was loaded with, out of play mode
             ApplySettings(*scene, sceneSettings);
             scene->physicsWorld->pauseSimulation = true;
@@ -329,7 +311,15 @@ namespace Atlas::Capture {
             phase = Phase::Prepare;
             return;
         }
-        if (scene) {
+        if (scene && mode == Mode::Server) {
+            // A played or edited scene is loaded again, its meshes with their materials and textures stay loaded
+            if (scenePath == job.scene) {
+                retainedMeshes = scene->GetMeshes();
+                report.Print("Loading the scene again, the last job played or edited it");
+            }
+            UnloadScene();
+        }
+        else if (scene) {
             Fail("The job uses " + job.scene + ", but " + scenePath + " is loaded, unload it first");
             return;
         }
@@ -377,6 +367,7 @@ namespace Atlas::Capture {
         sceneSettings = json();
         captureCameraEntity = Scene::Entity();
         keepScene = false;
+        sceneDirty = false;
 
     }
 
@@ -391,6 +382,7 @@ namespace Atlas::Capture {
         graphicsDevice->WaitForIdle();
         report.DestroyValidation();
         scene.reset();
+        InstanceRegistry::Unregister();
 
     }
 
@@ -405,6 +397,12 @@ namespace Atlas::Capture {
             graphicsDevice->WaitForPreviousFrameSubmission();
         }
 
+        if (vsync != (phase == Phase::Idle)) {
+            vsync = phase == Phase::Idle;
+            graphicsDevice->CreateSwapChain(vsync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
+                graphicsDevice->swapChain->colorSpace);
+        }
+
         try {
             CPUProfiler::Scope sectionScope("Readback");
             ProcessReadback();
@@ -412,6 +410,9 @@ namespace Atlas::Capture {
             CollectLog();
 
             frameCount++;
+
+            if (server && phase != Phase::Idle && phase != Phase::Done && phase != Phase::Finish && server->IsCancelled())
+                Fail("Cancelled by the client");
 
             switch (phase) {
             case Phase::Idle:
@@ -434,7 +435,7 @@ namespace Atlas::Capture {
                     retainedMeshes.clear();
                     if (loadingForCommand) {
                         loadingForCommand = false;
-                        phase = Phase::Idle;
+                        SetIdle();
                         CompleteCommand({ { "status", "ok" }, { "loadSeconds", loadSeconds },
                             { "entities", scene->GetEntityCount() - 1 }, { "warnings", report.warnings } });
                     }
@@ -555,7 +556,7 @@ namespace Atlas::Capture {
             line += "shots";
             break;
         case Phase::Play:
-            line += "playing  " + FormatFloat(timeline.time, 2) + " / " + FormatFloat(job.duration, 2) + " s";
+            line += "playing  " + FormatFloat(player.timeline.time, 2) + " / " + FormatFloat(job.duration, 2) + " s";
             if (scene && scene->paused)
                 line += "  (paused)";
             break;
@@ -581,22 +582,32 @@ namespace Atlas::Capture {
             loadingForCommand = false;
             retainedMeshes.clear();
             UnloadScene();
-            phase = Phase::Idle;
+            SetIdle();
             CompleteCommand({ { "status", "error" }, { "reason", message } });
             return;
         }
 
-        if (phase != Phase::Done)
+        if (phase != Phase::Done && phase != Phase::Finish) {
+            phaseBeforeFinish = phase;
             phase = Phase::Finish;
+        }
 
     }
 
     void App::CollectLog() {
 
         for (const auto& entry : report.CollectLog()) {
-            timeline.MatchLog(entry.message);
-            if (entry.type == Log::TYPE_ERROR && checkRunner && job.checks.logErrors && !MatchAnyPattern(job.checks.logIgnore, entry.message))
-                checkRunner->AddFailure({ "log", entry.message.substr(0, 160), timeline.time, entry.message });
+            player.timeline.MatchLog(entry.message);
+            if (entry.type != Log::TYPE_ERROR || !checkRunner || !job.checks.logErrors || MatchAnyPattern(job.checks.logIgnore, entry.message))
+                continue;
+
+            checkRunner->AddFailure({ "log", entry.message.substr(0, 160), player.timeline.time, entry.message });
+            // Nothing after the first error is worth the wait, e.g. a script that would have logged the condition of an event
+            if (job.checks.failFast && phase != Phase::Finish && phase != Phase::Done && phase != Phase::Idle) {
+                report.Print("Stopping at the first error, checks.failFast = false runs to the end");
+                phaseBeforeFinish = phase;
+                phase = Phase::Finish;
+            }
         }
 
     }
@@ -881,6 +892,7 @@ namespace Atlas::Capture {
             request.path = job.outputDirectory / (prefix + baseName + ".png");
             request.passes = shot.passes;
             request.label = view.empty() ? shot.name : view;
+            request.crop = GetCropRectangle(shot.crop);
 
             if (views.size() > 1) {
                 request.group = prefix + SanitizeFileName(shot.name) + "_views";
@@ -962,9 +974,6 @@ namespace Atlas::Capture {
             }
         }
 
-        if (auto dropped = timeline.Start(std::move(events), job.duration))
-            report.Warn(std::to_string(dropped) + " timeline events after the duration of " + FormatFloat(job.duration, 2) + "s are ignored");
-
         activeCamera = job.observer.value_or(CameraSpec {});
 
         // Focus cameras are framed once, re-framing a moving object every frame makes the camera jump
@@ -982,38 +991,14 @@ namespace Atlas::Capture {
             activeCamera = fixed;
         }
 
-        for (const auto& spec : job.scripts) {
-            auto script = ResourceManager<Scripting::Script>::GetOrLoadResource(spec.path);
-            if (!script.IsLoaded())
-                throw std::runtime_error("Couldn't load script " + spec.path);
-
-            std::vector<Scene::Entity> entities;
-            if (spec.entity.empty()) {
-                auto entity = scene->CreateEntity();
-                entity.AddComponent<NameComponent>("Capture script " + fs::path(spec.path).stem().string());
-                entity.AddComponent<TransformComponent>(mat4(1.0f), false);
-                entities.push_back(entity);
-            }
-            else {
-                entities = FindTopmostEntities(*scene, spec.entity);
-                if (entities.empty())
-                    throw std::runtime_error("Script " + spec.path + ": no entity matches '" + spec.entity + "'");
-            }
-
-            for (auto entity : entities) {
-                if (entity.HasComponent<LuaScriptComponent>())
-                    throw std::runtime_error(GetEntityLabel(entity) + " already has a script, attach to a new entity instead");
-                entity.AddComponent<LuaScriptComponent>(script);
-                report.Print("Attached script " + spec.path + " to " + GetEntityLabel(entity));
-            }
-        }
+        player.Start(job, *scene, std::move(events), report, nullptr, SDL_GetWindowID(window.GetSDLWindow()));
 
         // Enable play mode; scene.paused controls pauses and resetScripts temporarily leaves play mode
         scene->physicsWorld->pauseSimulation = false;
         phase = Phase::Play;
 
-        report.Print("Playing for " + FormatFloat(job.duration, 2) + "s with " + std::to_string(timeline.GetTimedEventCount()) +
-            " timeline events and " + std::to_string(timeline.GetTriggerCount()) + " conditional events");
+        report.Print("Playing for " + FormatFloat(job.duration, 2) + "s with " + std::to_string(player.timeline.GetTimedEventCount()) +
+            " timeline events and " + std::to_string(player.timeline.GetTriggerCount()) + " conditional events");
 
     }
 
@@ -1024,6 +1009,8 @@ namespace Atlas::Capture {
             return;
         }
 
+        auto& timeline = player.timeline;
+
         // A shown window plays in real time, the simulation still advances in fixed steps
         auto realPlayTime = std::chrono::duration<float>(std::chrono::steady_clock::now() - playStartTime).count();
         if (job.showWindow && job.realTime && timeline.time > realPlayTime) {
@@ -1031,74 +1018,16 @@ namespace Atlas::Capture {
             return;
         }
 
-        timeline.Update(*scene, [&](const std::string& message) { report.Print(message); });
-
         bool liveCapture = false;
-        while (auto due = timeline.GetDueEvent()) {
-            const auto& event = *due;
-
-            if (auto capture = std::get_if<CaptureEvent>(&event.action)) {
-                CameraSpec camera = activeCamera.value_or(CameraSpec {});
-                bool ownCamera = false;
-                if (capture->camera) {
-                    camera = *capture->camera;
-                    ownCamera = true;
-                }
-                else if (capture->stripCamera) {
-                    camera = stripCameras[capture->group];
-                    ownCamera = true;
-                }
-
-                CaptureRequest request;
-                auto defaultFile = SanitizeFileName(capture->name) + "_" + FormatFloat(timeline.time, 2) + "s.png";
-                request.path = job.outputDirectory / capture->file.value_or(defaultFile);
-                request.group = capture->group;
-                request.label = capture->label.value_or(FormatTime(event.time));
-                request.time = event.time;
-                request.passes = capture->passes;
-
-                // A different camera than the observer needs frozen frames to let temporal effects settle
-                if (ownCamera || capture->still) {
-                    // Pending live captures are taken first, the still starts in the next frame
-                    if (liveCapture)
-                        break;
-
-                    stillState = StillState {
-                        .active = true,
-                        .camera = camera,
-                        .request = request,
-                        .settleFrames = capture->settleFrames.value_or(job.settleFrames)
-                    };
-                    // The paused scene doesn't advance the exposure adaptation, it starts over for the new view
-                    captureRenderer.InvalidateHistory();
-                    timeline.PopEvent();
-                    UpdateStill();
-                    return;
-                }
-
-                RequestCapture(request);
-                liveCapture = true;
-            }
-            else {
-                std::visit([&](const auto& action) {
-                    if constexpr (!std::is_same_v<std::decay_t<decltype(action)>, CaptureEvent>)
-                        RunEvent(action);
-                }, event.action);
-            }
-
-            timeline.PopEvent();
+        if (!player.Update([&](const EventSpec& event) { return RunEvent(event, liveCapture); })) {
+            UpdateStill();
+            return;
         }
 
         // A live capture shows the regular step of this frame, which also gives correct motion vectors
         // The job only finishes once it was rendered
         if (!liveCapture && timeline.IsFinished(job.duration)) {
-            for (const auto& event : timeline.GetMissedEvents()) {
-                auto message = "Conditional event never happened: " + event.data.dump();
-                if (event.optional)
-                    report.Warn(message);
-                else
-                    checkRunner->AddFailure({ "timeline", event.type, timeline.time, message });
-            }
+            player.ReportMissedEvents(*checkRunner);
             checkRunner->Run(*scene, timeline.time);
             if (tracker)
                 tracker->Record(*scene, timeline.time);
@@ -1120,6 +1049,62 @@ namespace Atlas::Capture {
             tracker->Record(*scene, timeline.time);
             nextTrackTime += tracker->spec.interval;
         }
+
+    }
+
+    Player::EventResult App::RunEvent(const EventSpec& event, bool& liveCapture) {
+
+        auto& timeline = player.timeline;
+        if (std::holds_alternative<ResetScriptsEvent>(event.action)) {
+            // Leaving play mode discards non-permanent script environments; scene.paused keeps their state
+            scene->physicsWorld->pauseSimulation = true;
+            UpdateSceneWithCaptureCamera(*activeCamera, freezeDeltaTime);
+            scene->physicsWorld->pauseSimulation = false;
+            report.Print(FormatTime(timeline.time) + " reset the state of all scripts");
+            return Player::EventResult::Done;
+        }
+
+        const auto& capture = std::get<CaptureEvent>(event.action);
+        CameraSpec camera = activeCamera.value_or(CameraSpec {});
+        bool ownCamera = false;
+        if (capture.camera) {
+            camera = *capture.camera;
+            ownCamera = true;
+        }
+        else if (capture.stripCamera) {
+            camera = stripCameras[capture.group];
+            ownCamera = true;
+        }
+
+        CaptureRequest request;
+        auto defaultFile = SanitizeFileName(capture.name) + "_" + FormatFloat(timeline.time, 2) + "s.png";
+        request.path = job.outputDirectory / capture.file.value_or(defaultFile);
+        request.group = capture.group;
+        request.label = capture.label.value_or(FormatTime(event.time));
+        request.time = event.time;
+        request.passes = capture.passes;
+        request.crop = GetCropRectangle(capture.crop);
+
+        // A different camera than the observer needs frozen frames to let temporal effects settle
+        if (ownCamera || capture.still) {
+            // Pending live captures are taken first, the still starts in the next frame
+            if (liveCapture)
+                return Player::EventResult::Defer;
+
+            stillState = StillState {
+                .active = true,
+                .camera = camera,
+                .request = request,
+                .settleFrames = capture.settleFrames.value_or(job.settleFrames)
+            };
+            // The paused scene doesn't advance the exposure adaptation, it starts over for the new view
+            captureRenderer.InvalidateHistory();
+            return Player::EventResult::Suspend;
+        }
+
+        RequestCapture(request);
+        liveCapture = true;
+        return Player::EventResult::Done;
 
     }
 
@@ -1158,6 +1143,17 @@ namespace Atlas::Capture {
             if (WritePng(image, sheet.path))
                 report.AddOutput(fs::relative(sheet.path, job.outputDirectory).generic_string());
         }
+
+        // All captures of the job in one picture that is cheap to look at
+        if (!jobSheetImages.empty()) {
+            auto columns = int32_t(std::ceil(std::sqrt(float(jobSheetImages.size()))));
+            auto cellWidth = std::max((1536 - 4 * (columns + 1)) / columns, 64);
+            auto sheet = ComposeSheet(jobSheetImages, jobSheetLabels, columns, job.name, cellWidth);
+            if (WriteImage(sheet, job.outputDirectory / "sheet.jpg"))
+                report.AddOutput("sheet.jpg");
+        }
+        if (job.compare)
+            CompareImages();
 
         if (tracker)
             report.WriteJson("trace.json", tracker->GetTrace());
@@ -1210,26 +1206,18 @@ namespace Atlas::Capture {
             result["checks"] = checkRunner->GetReport();
         if (!report.expectations.empty())
             result["expectations"] = report.expectations;
+        if (!report.results.empty())
+            result["results"] = report.results;
         if (job.play)
-            result["playedSeconds"] = timeline.time;
-        if (auto triggers = timeline.GetTriggerReport(); !triggers.is_null())
+            result["playedSeconds"] = player.timeline.time;
+        if (auto triggers = player.timeline.GetTriggerReport(); !triggers.is_null())
             result["conditionalEvents"] = triggers;
         report.Write(result);
 
         report.Print("---------------------------------------------");
         report.Print("Status: " + status + (reason.empty() ? "" : " (" + reason + ")"));
-        if (checkRunner) {
-            for (const auto& line : checkRunner->GetSummary())
-                report.Print("FAILED " + line);
-        }
-        for (const auto& expectation : report.expectations)
-            if (!expectation["passed"].get<bool>())
-                report.Print("FAILED expectation " + expectation.dump());
-        for (const auto& error : report.errors)
-            report.Print("ERROR " + error);
-        report.Print("Outputs in " + job.outputDirectory.string() + ":");
-        for (const auto& output : report.GetOutputs())
-            report.Print("  " + output.get<std::string>());
+        for (const auto& line : FormatSummary(report.data, job.outputDirectory))
+            report.Print(line);
 
         FinishJob();
 
@@ -1246,10 +1234,12 @@ namespace Atlas::Capture {
         }
 
         if (mode == Mode::Server) {
-            // A scene loaded for this job only is unloaded again
-            if (!keepScene)
+            // The scene stays loaded for the next job, which loads it again if this one played or edited it. A scene that
+            // didn't finish loading is unloaded
+            if (scene && phaseBeforeFinish == Phase::Loading)
                 UnloadScene();
-            phase = Phase::Idle;
+            sceneDirty = scene && (job.play || job.edit);
+            SetIdle();
             CompleteCommand({ { "status", report.data.value("status", "error") }, { "exitCode", report.exitCode },
                 { "reason", report.data.value("reason", "") }, { "outputDirectory", job.outputDirectory.string() },
                 { "report", (job.outputDirectory / "report.json").string() } });
@@ -1407,6 +1397,8 @@ namespace Atlas::Capture {
         keepScene = true;
         loadingForCommand = true;
         report.Print("Loading " + path);
+        server->WriteStatus("loading", path);
+        InstanceRegistry::SetActivity("loading " + path, true);
         LoadScene(path);
 
     }
@@ -1443,9 +1435,18 @@ namespace Atlas::Capture {
     void App::StopCommand(const json&) {
 
         CompleteCommand({ { "status", "ok" } });
+        server->Close();
         UnloadScene();
         phase = Phase::Done;
         Exit(0);
+
+    }
+
+    void App::SetIdle() {
+
+        phase = Phase::Idle;
+        server->WriteStatus("idle", scene ? scenePath : "");
+        InstanceRegistry::SetActivity("server idle" + (scene ? ", " + scenePath + " loaded" : std::string()), false);
 
     }
 
@@ -1684,6 +1685,19 @@ namespace Atlas::Capture {
 
             if (!request.group.empty())
                 AddToSheet(request.group, image, request.label);
+            jobSheetImages.push_back(Downscale(image, 640));
+            jobSheetLabels.push_back(fs::path(relative).replace_extension().generic_string());
+
+            if (request.crop) {
+                auto crop = CropImage(image, *request.crop);
+                auto cropPath = request.path.parent_path() / (request.path.stem().string() + "_crop.png");
+                if (WritePng(crop, cropPath)) {
+                    auto cropRelative = fs::relative(cropPath, job.outputDirectory).generic_string();
+                    report.AddOutput(cropRelative);
+                    jobSheetImages.push_back(Downscale(crop, 640));
+                    jobSheetLabels.push_back(fs::path(cropRelative).replace_extension().generic_string());
+                }
+            }
 
             if (auto it = variantCaptures.find(request.path.string()); it != variantCaptures.end())
                 AddToSheet(it->second.first, image, it->second.second);
@@ -1710,149 +1724,88 @@ namespace Atlas::Capture {
 
     }
 
+    std::optional<ivec4> App::GetCropRectangle(const json& crop) {
+
+        if (crop.is_null())
+            return std::nullopt;
+        if (crop.is_array() && crop.size() == 4)
+            return ivec4(crop[0].get<int32_t>(), crop[1].get<int32_t>(), crop[2].get<int32_t>(), crop[3].get<int32_t>());
+        if (!crop.is_object() || !crop.contains("entity"))
+            throw std::runtime_error("A crop is [x, y, width, height] or { \"entity\": pattern, \"padding\": 0.15 }: " + crop.dump());
+
+        auto pattern = crop["entity"].get<std::string>();
+        auto entities = FindTopmostEntities(*scene, pattern);
+        if (entities.empty()) {
+            report.Warn("Crop: no entity matches '" + pattern + "', the image isn't cropped");
+            return std::nullopt;
+        }
+
+        // The camera that rendered the frame, the capture camera unless the scene camera is shown
+        auto cameraEntity = UsesCaptureCamera(activeCamera.value_or(CameraSpec {})) ? captureCameraEntity : Scene::Entity();
+        const auto& camera = cameraEntity.IsValid() ? cameraEntity.GetComponent<CameraComponent>() : scene->GetMainCamera();
+        vec2 min(std::numeric_limits<float>::max()), max(-std::numeric_limits<float>::max());
+        for (auto corner : GetBounds(entities).GetCorners()) {
+            auto pixel = vec2(captureRenderer.GetViewport()->Project(corner, camera));
+            min = glm::min(min, pixel);
+            max = glm::max(max, pixel);
+        }
+
+        auto padding = (max - min) * crop.value("padding", 0.15f);
+        min -= padding;
+        max += padding;
+        auto size = glm::max(max - min, vec2(32.0f));
+        return ivec4(int32_t(min.x), int32_t(min.y), int32_t(size.x), int32_t(size.y));
+
+    }
+
+    void App::CompareImages() {
+
+        const auto& spec = *job.compare;
+        json comparisons = json::array();
+        std::error_code error;
+        for (const auto& output : report.GetOutputs()) {
+            auto relative = output.get<std::string>();
+            auto extension = fs::path(relative).extension().string();
+            if ((extension != ".png" && extension != ".jpg") || relative == "sheet.jpg")
+                continue;
+
+            auto reference = spec.reference / relative;
+            if (spec.update) {
+                fs::create_directories(reference.parent_path(), error);
+                fs::copy_file(job.outputDirectory / relative, reference, fs::copy_options::overwrite_existing, error);
+                continue;
+            }
+
+            auto current = LoadImageFile(job.outputDirectory / relative);
+            auto expected = LoadImageFile(reference);
+            if (!expected) {
+                comparisons.push_back({ { "image", relative }, { "status", "no reference" } });
+                checkRunner->AddFailure({ "compare", relative, 0.0f, "no reference image " + reference.string() });
+                continue;
+            }
+
+            auto difference = Capture::CompareImages(*current, *expected, spec.threshold);
+            auto differs = difference.sizeMismatch || difference.percent > spec.maxPercent;
+            comparisons.push_back({ { "image", relative }, { "status", differs ? "differs" : "same" }, { "percent", Round(difference.percent, 3) },
+                { "mean", Round(difference.mean, 3) }, { "max", difference.max } });
+            if (differs)
+                checkRunner->AddFailure({ "compare", relative, 0.0f, difference.sizeMismatch ? "the size differs from the reference" :
+                    FormatFloat(difference.percent, 2) + "% of the pixels differ from the reference (mean " + FormatFloat(difference.mean, 2) + ")" });
+        }
+
+        if (spec.update)
+            report.Print("Wrote the images as the reference to " + spec.reference.string());
+        else
+            report.data["comparisons"] = comparisons;
+
+    }
+
     void App::AddToSheet(const std::string& group, const Ref<Image>& image, const std::string& label) {
 
         auto& sheet = sheets[group];
         // Only the downscaled version is needed for the sheet
         sheet.images.push_back(Downscale(image, 640));
         sheet.labels.push_back(label);
-
-    }
-
-    void App::RunEvent(const InputEvent& input) {
-
-        timeline.Fire(input);
-        if (input.device == InputEvent::Device::Axis)
-            report.Print(FormatTime(timeline.time) + " controller " + input.name + " " + FormatFloat(input.value, 2));
-        else
-            report.Print(FormatTime(timeline.time) + (input.device == InputEvent::Device::Key ? " key " : " controller ") + input.name + " " + input.action);
-
-    }
-
-    void App::RunEvent(const LookEvent& look) {
-
-        auto entities = FindTopmostEntities(*scene, look.entity);
-        if (entities.empty())
-            report.Warn(FormatTime(timeline.time) + " look: no entity matches '" + look.entity + "'");
-        for (auto entity : entities)
-            SetLookDirection(entity, look.yaw, look.pitch);
-
-    }
-
-    void App::RunEvent(const TeleportEvent& teleport) {
-
-        auto entities = FindTopmostEntities(*scene, teleport.entity);
-        if (entities.empty())
-            report.Warn(FormatTime(timeline.time) + " teleport: no entity matches '" + teleport.entity + "'");
-
-        for (auto entity : entities) {
-            if (auto player = entity.TryGetComponent<PlayerComponent>(); player && player->IsValid())
-                player->SetPosition(teleport.position);
-            SetWorldPosition(entity, teleport.position);
-            if (teleport.yaw || teleport.pitch)
-                SetLookDirection(entity, teleport.yaw, teleport.pitch);
-            report.Print(FormatTime(timeline.time) + " teleported " + GetEntityLabel(entity) + " to " + FormatVec3(teleport.position));
-        }
-
-    }
-
-    void App::RunEvent(const AnimationEvent& spec) {
-
-        auto entities = FindTopmostEntities(*scene, spec.entity);
-        if (entities.empty())
-            report.Warn(FormatTime(timeline.time) + " animation: no entity matches '" + spec.entity + "'");
-
-        ResourceHandle<Animation::Animation> animation;
-        try {
-            animation = LoadAnimationForScene(spec.animation, spec.model);
-        }
-        catch (const std::exception& e) {
-            report.Warn(FormatTime(timeline.time) + " animation: " + e.what());
-            return;
-        }
-
-        for (auto entity : entities) {
-            auto animationComponent = entity.TryGetComponent<AnimationComponent>();
-            if (!animationComponent) {
-                report.Warn(FormatTime(timeline.time) + " animation: " + GetEntityLabel(entity) + " has no animation component");
-                continue;
-            }
-            animationComponent->Play(animation, spec.blendTime);
-            report.Print(FormatTime(timeline.time) + " playing " + animation.GetResource()->path + " on " + GetEntityLabel(entity));
-        }
-
-    }
-
-    void App::RunEvent(const LogEvent& log) {
-
-        report.Print(FormatTime(timeline.time) + " " + log.text);
-
-    }
-
-    void App::RunEvent(const ExpectEvent& expect) {
-
-        bool passed = false;
-        auto result = EvaluateExpectation(*scene, expect.expectation, passed);
-        result["t"] = timeline.time;
-        result["passed"] = passed;
-        report.expectations.push_back(result);
-
-        report.Print(FormatTime(timeline.time) + " expectation " + (passed ? "passed: " : "FAILED: ") + result.dump());
-
-    }
-
-    void App::RunEvent(const PauseEvent& pause) {
-
-        // The job time continues, e.g. to check that nothing moves and scripts keep their state
-        scene->paused = pause.pause;
-        report.Print(FormatTime(timeline.time) + (scene->paused ? " paused the scene" : " resumed the scene"));
-
-    }
-
-    void App::RunEvent(const ResetScriptsEvent&) {
-
-        // Leaving play mode discards non-permanent script environments; scene.paused keeps their state
-        scene->physicsWorld->pauseSimulation = true;
-        UpdateSceneWithCaptureCamera(*activeCamera, freezeDeltaTime);
-        scene->physicsWorld->pauseSimulation = false;
-        report.Print(FormatTime(timeline.time) + " reset the state of all scripts");
-
-    }
-
-    void App::RunEvent(const EndEvent&) {
-
-        // The remaining timed events are skipped, conditional events that didn't happen yet still fail
-        report.Print(FormatTime(timeline.time) + " ended the job");
-        timeline.End();
-
-    }
-
-    void App::SetLookDirection(Scene::Entity entity, std::optional<float> yaw, std::optional<float> pitch) {
-
-        auto camera = entity.TryGetComponent<CameraComponent>();
-        if (!camera) {
-            // Entities without a camera (e.g. driven by a script) are turned around the world Y axis instead
-            auto transform = entity.TryGetComponent<TransformComponent>();
-            if (!transform || !yaw) {
-                report.Warn(GetEntityLabel(entity) + " has no camera, only the yaw of its transform can be set");
-                return;
-            }
-
-            auto global = glm::translate(vec3(transform->globalMatrix[3])) * glm::rotate(glm::radians(*yaw), vec3(0.0f, 1.0f, 0.0f));
-            transform->SetGlobal(global, scene->GetParentEntity(entity));
-            report.Print(FormatTime(timeline.time) + " " + GetEntityLabel(entity) + " turned to yaw " + FormatFloat(*yaw, 1));
-            return;
-        }
-
-        // Yaw 0 looks towards +Z, 90 towards +X
-        if (yaw)
-            camera->rotation.x = glm::radians(*yaw);
-        if (pitch)
-            camera->rotation.y = glm::radians(*pitch);
-
-        report.Print(FormatTime(timeline.time) + " " + GetEntityLabel(entity) + " looks at yaw " +
-            FormatFloat(glm::degrees(camera->rotation.x), 1) + ", pitch " +
-            FormatFloat(glm::degrees(camera->rotation.y), 1));
 
     }
 

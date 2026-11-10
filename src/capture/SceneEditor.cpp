@@ -1369,7 +1369,7 @@ namespace Atlas::Capture {
                 return;
             }
             auto image = Loader::ImageLoader::LoadImage<uint8_t>(source);
-            auto fileData = Loader::KtxLoader::EncodeImage({ image });
+            auto fileData = Loader::KtxLoader::EncodeImage({ image }, true);
             if (fileData.empty()) {
                 failed[idx] = "couldn't encode " + source;
                 return;

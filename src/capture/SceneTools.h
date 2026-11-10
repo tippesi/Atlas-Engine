@@ -105,6 +105,19 @@ namespace Atlas::Capture {
     EntityGround GroundBelowEntity(Scene::Scene& scene, Scene::Entity entity, float searchAbove = 0.5f,
         const EntitySet& ignored = {});
 
+    struct FootprintGap {
+
+        int32_t samples = 0;
+        float maxGap = 0.0f;
+        vec3 worst = vec3(0.0f);
+
+    };
+
+    // The largest gap between the underside of an entity and the ground on a grid of points over its bounds. Only points
+    // where the underside is within baseHeight of the bottom count, e.g. not those below the canopy of a tree
+    FootprintGap MeasureFootprint(Scene::Scene& scene, Scene::Entity entity, const Volume::AABB& bounds, int32_t grid, float baseHeight,
+        const EntitySet& ignored = {});
+
     json InspectScene(Scene::Scene& scene, const std::vector<std::string>& filter,
         const std::vector<std::string>& detail, const EntitySet& excluded = {});
 

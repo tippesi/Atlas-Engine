@@ -9,7 +9,7 @@
 #include "Report.h"
 #include "SceneEditor.h"
 #include "Server.h"
-#include "Timeline.h"
+#include "Player.h"
 
 #include "EngineInstance.h"
 #include "input/PlayerInput.h"
@@ -53,6 +53,7 @@ namespace Atlas::Capture {
             fs::path path;
             std::vector<std::string> passes;
             float time = 0.0f;
+            std::optional<ivec4> crop;
 
         };
 
@@ -127,6 +128,9 @@ namespace Atlas::Capture {
         // Server mode: writes <command>.result.json, the result of the current command
         void CompleteCommand(const json& result);
 
+        // Server mode: waits for the next command
+        void SetIdle();
+
         // Called once the report of a job is written: exits, continues the pipeline or waits for the next command
         void FinishJob();
 
@@ -174,28 +178,16 @@ namespace Atlas::Capture {
 
         void AddToSheet(const std::string& group, const Ref<Image>& image, const std::string& label);
 
-        // Timeline events, captures are handled by UpdatePlay
-        void RunEvent(const InputEvent& input);
+        // The pixels of a crop of the next capture, from a rectangle or the bounds of entities seen by the current camera
+        std::optional<ivec4> GetCropRectangle(const json& crop);
 
-        void RunEvent(const LookEvent& look);
+        // Compares the images of the job with the reference directory of the job
+        void CompareImages();
 
-        void RunEvent(const TeleportEvent& teleport);
-
-        void RunEvent(const AnimationEvent& animation);
-
-        void RunEvent(const LogEvent& log);
-
-        void RunEvent(const ExpectEvent& expect);
-
-        void RunEvent(const PauseEvent& pause);
-
-        void RunEvent(const ResetScriptsEvent&);
-
-        void RunEvent(const EndEvent&);
+        // The timeline events the player leaves to the app: captures and resetScripts
+        Player::EventResult RunEvent(const EventSpec& event, bool& liveCapture);
 
         void BuildOverlay();
-
-        void SetLookDirection(Scene::Entity entity, std::optional<float> yaw, std::optional<float> pitch);
 
         // Presents the frame, in a shown window with a status line and the latest output below it
         void PresentWindow();
@@ -211,7 +203,11 @@ namespace Atlas::Capture {
 
         Job job;
         Phase phase = Phase::Loading;
+        // The phase a failure ended, e.g. to unload a scene that didn't finish loading
+        Phase phaseBeforeFinish = Phase::Loading;
         bool fatal = false;
+        // Jobs present without vsync, an idle server with vsync
+        bool vsync = false;
 
         Ref<Scene::Scene> scene;
         // Asset path of the loaded scene and its settings right after loading, restored for each job
@@ -219,6 +215,8 @@ namespace Atlas::Capture {
         json sceneSettings;
         // A scene loaded by a command or kept between pipeline steps stays loaded after the job
         bool keepScene = false;
+        // Server mode: the last job played or edited the scene, the next one loads it again
+        bool sceneDirty = false;
         // Set while a loadScene command waits for the scene to finish loading
         bool loadingForCommand = false;
         // The meshes of a reloaded scene, with their materials and textures, stay loaded until it is ready again
@@ -243,6 +241,9 @@ namespace Atlas::Capture {
         std::vector<CaptureRequest> pendingReadbacks;
         std::map<std::string, SheetGroup> sheets;
         std::vector<std::string> sheetOrder;
+        // Every capture of the job for sheet.jpg
+        std::vector<Ref<Image>> jobSheetImages;
+        std::vector<std::string> jobSheetLabels;
 
         ShotState shotState;
         StillState stillState;
@@ -256,7 +257,7 @@ namespace Atlas::Capture {
         std::map<std::string, std::pair<std::string, std::string>> variantCaptures;
         std::map<std::string, CameraSpec> stripCameras;
 
-        Timeline timeline;
+        Player player;
         float nextCheckTime = 0.0f;
         float nextTrackTime = 0.0f;
 

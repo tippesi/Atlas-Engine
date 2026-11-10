@@ -185,6 +185,9 @@ namespace Atlas {
              */
             const std::vector<ContactEvent>& GetContactEvents() const { return contactEvents; }
 
+            // The state the scripts of the scene run in, e.g. for tools that evaluate Lua next to them
+            sol::state& GetLuaState() { return luaScriptManager.state(); }
+
             void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();

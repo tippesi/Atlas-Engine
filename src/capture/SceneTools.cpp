@@ -431,6 +431,46 @@ namespace Atlas::Capture {
 
     }
 
+    FootprintGap MeasureFootprint(Scene::Scene& scene, Scene::Entity entity, const Volume::AABB& bounds, int32_t grid, float baseHeight,
+        const EntitySet& alsoIgnored) {
+
+        EntitySet hierarchy;
+        CollectHierarchy(entity, hierarchy);
+        auto ignored = alsoIgnored;
+        ignored.insert(hierarchy.begin(), hierarchy.end());
+        auto outsideHierarchy = [&](const Scene::Entity& hit) { return !hierarchy.contains(hit); };
+
+        FootprintGap result;
+        result.maxGap = -std::numeric_limits<float>::infinity();
+        auto inset = bounds.GetSize() * 0.05f;
+        auto min = bounds.min + inset, max = bounds.max - inset;
+        grid = std::max(grid, 2);
+        for (int32_t a = 0; a < grid; a++) {
+            for (int32_t b = 0; b < grid; b++) {
+                auto x = glm::mix(min.x, max.x, float(a) / float(grid - 1)), z = glm::mix(min.z, max.z, float(b) / float(grid - 1));
+
+                // The underside of the entity from below, then the ground with the entity left out
+                auto underside = Raycast(scene, vec3(x, bounds.min.y - 1.0f, z), vec3(0.0f, 1.0f, 0.0f), bounds.GetSize().y + 2.0f,
+                    outsideHierarchy, VisualComponents);
+                if (!underside.valid || underside.position.y > bounds.min.y + baseHeight)
+                    continue;
+
+                auto ground = GroundBelow(scene, vec3(x, bounds.max.y + 0.5f, z), ignored);
+                if (!ground.valid)
+                    continue;
+
+                result.samples++;
+                auto gap = underside.position.y - ground.position.y;
+                if (gap > result.maxGap) {
+                    result.maxGap = gap;
+                    result.worst = vec3(x, underside.position.y, z);
+                }
+            }
+        }
+        return result;
+
+    }
+
     json InspectScene(Scene::Scene& scene, const std::vector<std::string>& filter,
         const std::vector<std::string>& detail, const EntitySet& excluded) {
 
@@ -1293,6 +1333,254 @@ namespace Atlas::Capture {
 
     }
 
+    // An area from min/max [x, z], a center and radius or the bounds of entities
+    static Volume::AABB GetArea(Scene::Scene& scene, const json& query) {
+
+        if (query.contains("entity")) {
+            auto entities = FindTopmostEntities(scene, query["entity"].get<std::string>());
+            if (entities.empty())
+                throw std::runtime_error("No entity matches " + query["entity"].get<std::string>());
+            return GetBounds(entities);
+        }
+
+        auto sceneBounds = GetSceneBounds(scene);
+        if (query.contains("center")) {
+            auto center = ToVec2(query["center"]);
+            auto radius = query.at("radius").get<float>();
+            return Volume::AABB(vec3(center.x - radius, sceneBounds.min.y, center.y - radius), vec3(center.x + radius, sceneBounds.max.y, center.y + radius));
+        }
+        if (query.contains("min") && query.contains("max")) {
+            auto min = ToVec2(query["min"]), max = ToVec2(query["max"]);
+            return Volume::AABB(vec3(min.x, sceneBounds.min.y, min.y), vec3(max.x, sceneBounds.max.y, max.y));
+        }
+        return sceneBounds;
+
+    }
+
+    // Vertical rays on a grid with every surface they pass: floors, ceilings, decks and the terrain. The full grid goes to a
+    // file, the result groups the surfaces into levels and counts points where the terrain lies above a floor
+    static json QuerySurfaceGrid(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+        auto area = GetArea(scene, query);
+        auto step = std::max(query.value("step", 1.0f), 0.05f);
+        auto maxHits = std::max(query.value("maxHits", 8), 1);
+        auto tolerance = query.value("tolerance", 0.25f);
+        auto top = query.value("from", area.max.y + 5.0f);
+        auto ignored = GetIgnoredEntities(scene, query);
+
+        struct Hit {
+
+            float y;
+            bool up;
+            std::string kind;
+            std::string name;
+
+        };
+
+        json points = json::array();
+        std::vector<Hit> allHits;
+        json terrainAbove = json::array();
+        int32_t pointCount = 0, terrainAboveCount = 0;
+        for (auto x = area.min.x; x <= area.max.x + 1e-3f; x += step) {
+            for (auto z = area.min.z; z <= area.max.z + 1e-3f; z += step) {
+                pointCount++;
+                std::vector<Hit> hits;
+                auto origin = vec3(x, top, z);
+                auto remaining = top - area.min.y + 5.0f;
+                while (int32_t(hits.size()) < maxHits && remaining > 0.0f) {
+                    auto hit = Raycast(scene, origin, vec3(0.0f, -1.0f, 0.0f), remaining, ignored, CollisionComponents);
+                    if (!hit.valid)
+                        break;
+                    hits.push_back({ hit.position.y, hit.normal.y >= 0.0f, hit.kind, hit.entity.IsValid() ? GetEntityName(hit.entity) : hit.kind });
+                    // The terrain is the last surface a ray can pass
+                    if (hit.kind == "terrain")
+                        break;
+                    origin = hit.position - vec3(0.0f, 0.01f, 0.0f);
+                    remaining -= hit.distance + 0.01f;
+                }
+
+                json pointHits = json::array();
+                for (const auto& hit : hits)
+                    pointHits.push_back({ Round(hit.y, 2), hit.up ? "up" : "down", hit.name });
+                points.push_back({ { "x", Round(x, 2) }, { "z", Round(z, 2) }, { "hits", pointHits } });
+                allHits.insert(allHits.end(), hits.begin(), hits.end());
+
+                // The terrain above a floor of a mesh: it stands in a room
+                auto terrain = std::find_if(hits.begin(), hits.end(), [](const Hit& hit) { return hit.kind == "terrain"; });
+                if (terrain == hits.end())
+                    continue;
+                auto floorBelow = std::any_of(hits.begin(), hits.end(), [&](const Hit& hit) {
+                    return hit.kind != "terrain" && hit.up && hit.y < terrain->y - tolerance; });
+                if (floorBelow) {
+                    terrainAboveCount++;
+                    if (terrainAbove.size() < 10)
+                        terrainAbove.push_back(FromVec3(vec3(x, terrain->y, z)));
+                }
+            }
+        }
+
+        // Levels: surfaces facing the same way within the tolerance, the largest first
+        std::sort(allHits.begin(), allHits.end(), [](const Hit& a, const Hit& b) { return a.up != b.up ? a.up : a.y < b.y; });
+        json levels = json::array();
+        for (size_t i = 0; i < allHits.size();) {
+            size_t end = i;
+            std::map<std::string, int32_t> names;
+            double sum = 0.0;
+            while (end < allHits.size() && allHits[end].up == allHits[i].up && allHits[end].y - allHits[i].y <= tolerance) {
+                names[allHits[end].name]++;
+                sum += allHits[end].y;
+                end++;
+            }
+            std::vector<std::pair<int32_t, std::string>> sortedNames;
+            for (const auto& [name, count] : names)
+                sortedNames.emplace_back(count, name);
+            std::sort(sortedNames.rbegin(), sortedNames.rend());
+            json top3 = json::array();
+            for (size_t n = 0; n < std::min(sortedNames.size(), size_t(3)); n++)
+                top3.push_back(sortedNames[n].second);
+            levels.push_back({ { "y", Round(sum / double(end - i), 2) }, { "facing", allHits[i].up ? "up" : "down" },
+                { "points", end - i }, { "coverage", Round(100.0 * double(end - i) / double(pointCount), 1) }, { "surfaces", top3 } });
+            i = end;
+        }
+        std::sort(levels.begin(), levels.end(), [](const json& a, const json& b) { return a["points"].get<size_t>() > b["points"].get<size_t>(); });
+        if (levels.size() > 12)
+            levels.erase(levels.begin() + 12, levels.end());
+
+        json result = { { "points", pointCount }, { "step", step }, { "levels", levels },
+            { "terrainAboveFloors", { { "points", terrainAboveCount }, { "examples", terrainAbove } } } };
+        auto file = query.value("file", std::string("surface_grid.json"));
+        if (!context.outputDirectory.empty()) {
+            WriteFileAtomic(context.outputDirectory / file, points.dump());
+            result["file"] = file;
+        }
+        return result;
+
+    }
+
+    // Entities that reach into a corridor along a path of points: width across it, height above it
+    static json QueryCorridor(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+        std::vector<vec3> points;
+        for (const auto& point : query.at("points"))
+            points.push_back(ToVec3(point));
+        if (points.size() < 2)
+            throw std::runtime_error("A corridor needs at least two points");
+
+        auto halfWidth = query.value("width", 3.0f) * 0.5f;
+        auto height = query.value("height", 3.0f);
+        auto ignored = GetIgnoredEntities(scene, query);
+        auto ignorePatterns = query.value("ignore", std::vector<std::string>());
+
+        std::map<uint64_t, json> found;
+        float along = 0.0f;
+        for (size_t i = 0; i + 1 < points.size(); i++) {
+            auto a = points[i], b = points[i + 1];
+            auto segment = vec2(b.x - a.x, b.z - a.z);
+            auto length = glm::length(segment);
+            auto direction = length > 0.0f ? segment / length : vec2(1.0f, 0.0f);
+
+            Volume::AABB box(glm::min(a, b) - vec3(halfWidth, 0.2f, halfWidth), glm::max(a, b) + vec3(halfWidth, height, halfWidth));
+            for (auto entity : scene.QueryAABB(box, Scene::MeshComponentBit)) {
+                if (ignored.contains(entity) || found.contains(uint64_t(ECS::Entity(entity))))
+                    continue;
+                auto mesh = entity.TryGetComponent<MeshComponent>();
+                if (!mesh || !mesh->visible || !mesh->mesh.IsLoaded())
+                    continue;
+                if (!ignorePatterns.empty() && (MatchAnyPattern(ignorePatterns, GetEntityName(entity)) ||
+                    MatchAnyPattern(ignorePatterns, mesh->mesh.GetResource()->path)))
+                    continue;
+
+                // The closest point of the bounds to the path, across it in the plane and along its height
+                auto bounds = GetEntityBounds(entity);
+                auto center = vec2(bounds.GetCenter().x, bounds.GetCenter().z);
+                auto t = glm::clamp(glm::dot(center - vec2(a.x, a.z), direction), 0.0f, length);
+                auto onPath = vec2(a.x, a.z) + direction * t;
+                auto closest = glm::clamp(onPath, vec2(bounds.min.x, bounds.min.z), vec2(bounds.max.x, bounds.max.z));
+                auto lateral = glm::distance(closest, onPath);
+                auto pathY = glm::mix(a.y, b.y, length > 0.0f ? t / length : 0.0f);
+                if (lateral > halfWidth || bounds.max.y < pathY - 0.2f || bounds.min.y > pathY + height)
+                    continue;
+
+                found[uint64_t(ECS::Entity(entity))] = { { "entity", GetEntityLabel(entity) }, { "mesh", mesh->mesh.GetResource()->path },
+                    { "along", Round(along + t, 2) }, { "lateral", Round(lateral, 2) }, { "bounds", BoundsToJson(bounds) } };
+            }
+            along += length;
+        }
+
+        std::vector<json> entities;
+        for (const auto& [id, entry] : found)
+            entities.push_back(entry);
+        std::sort(entities.begin(), entities.end(), [](const json& x, const json& y) { return x["along"].get<float>() < y["along"].get<float>(); });
+        return { { "count", entities.size() }, { "length", Round(along, 2) }, { "entities", entities } };
+
+    }
+
+    // Visible meshes without a rigid body on them or an ancestor, by mesh, e.g. walls the player walks through
+    static json QueryCollisionCoverage(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+        auto area = GetArea(scene, query);
+        auto minSize = query.value("minSize", 0.5f);
+        auto meshPatterns = query.value("meshes", std::vector<std::string>());
+        auto ignorePatterns = query.value("ignore", std::vector<std::string>());
+
+        auto hasBody = [&](Scene::Entity entity) {
+
+            for (auto current = entity; current.IsValid(); current = scene.GetParentEntity(current))
+                if (current.HasComponent<RigidBodyComponent>())
+                    return true;
+            return false;
+
+        };
+
+        struct Missing {
+
+            int32_t count = 0;
+            json examples = json::array();
+
+        };
+        std::map<std::string, Missing> missing;
+        int32_t covered = 0, uncovered = 0;
+        auto meshSubset = scene.GetSubset<MeshComponent>();
+        for (auto ecsEntity : meshSubset) {
+            const auto& mesh = meshSubset.Get(ecsEntity);
+            if (!mesh.visible || !mesh.mesh.IsLoaded())
+                continue;
+            const auto& path = mesh.mesh.GetResource()->path;
+            Scene::Entity entity = { ecsEntity, &scene.entityManager };
+            if ((!meshPatterns.empty() && !MatchAnyPattern(meshPatterns, path)) ||
+                (!ignorePatterns.empty() && (MatchAnyPattern(ignorePatterns, path) || MatchAnyPattern(ignorePatterns, GetEntityName(entity)))))
+                continue;
+
+            auto bounds = GetEntityBounds(entity);
+            auto size = bounds.GetSize();
+            if (std::max({ size.x, size.y, size.z }) < minSize || !area.Intersects(bounds))
+                continue;
+
+            if (hasBody(entity)) {
+                covered++;
+                continue;
+            }
+            uncovered++;
+            auto& entry = missing[path];
+            entry.count++;
+            if (entry.examples.size() < 3)
+                entry.examples.push_back({ { "entity", GetEntityLabel(entity) }, { "position", FromVec3(bounds.GetCenter()) } });
+        }
+
+        std::vector<std::pair<int32_t, std::string>> sorted;
+        for (const auto& [path, entry] : missing)
+            sorted.emplace_back(entry.count, path);
+        std::sort(sorted.rbegin(), sorted.rend());
+        json meshes = json::array();
+        for (const auto& [count, path] : sorted)
+            meshes.push_back({ { "mesh", path }, { "count", count }, { "examples", missing[path].examples } });
+        return { { "withBody", covered }, { "withoutBody", uncovered }, { "meshes", meshes } };
+
+    }
+
     static const std::map<std::string, json(*)(const QueryContext&, const json&)> queryTypes = {
         { "raycast", QueryRaycast },
         { "ground", QueryGround },
@@ -1306,7 +1594,10 @@ namespace Atlas::Capture {
         { "terrainSample", QueryTerrainSample },
         { "terrainMap", QueryTerrainMap },
         { "route", QueryRoute },
-        { "buried", QueryBuried }
+        { "buried", QueryBuried },
+        { "surfaceGrid", QuerySurfaceGrid },
+        { "corridor", QueryCorridor },
+        { "collisionCoverage", QueryCollisionCoverage }
     };
 
     json RunQueries(Scene::Scene& scene, const json& queries, const PickRayFunction& pickRay, const fs::path& outputDirectory) {

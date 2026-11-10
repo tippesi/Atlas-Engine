@@ -4,6 +4,7 @@
 
 #include <stb_truetype.h>
 
+#include <algorithm>
 #include <fstream>
 #include <mutex>
 
@@ -53,6 +54,89 @@ namespace Atlas::Capture {
         Loader::ImageLoader::SaveImage(mutableImage, path.string());
 
         return fs::exists(path);
+
+    }
+
+    bool WriteImage(const Ref<Image>& image, const fs::path& path) {
+
+        auto extension = path.extension().string();
+        if (extension != ".jpg" && extension != ".jpeg")
+            return WritePng(image, path);
+
+        image->fileFormat = Common::ImageFormat::JPG;
+        auto mutableImage = image;
+        Loader::ImageLoader::SaveImage(mutableImage, path.string());
+
+        return fs::exists(path);
+
+    }
+
+    Ref<Image> LoadImageFile(const fs::path& path) {
+
+        std::error_code error;
+        if (!fs::exists(path, error))
+            return nullptr;
+        auto image = Loader::ImageLoader::LoadImage<uint8_t>(path.string(), false, 4);
+        return image && image->HasData() ? image : nullptr;
+
+    }
+
+    Ref<Image> CropImage(const Ref<Image>& image, ivec4 rectangle) {
+
+        auto x0 = std::clamp(rectangle.x, 0, image->width - 1), y0 = std::clamp(rectangle.y, 0, image->height - 1);
+        auto x1 = std::clamp(rectangle.x + rectangle.z, x0 + 1, image->width), y1 = std::clamp(rectangle.y + rectangle.w, y0 + 1, image->height);
+
+        auto crop = CreateRef<Image>(x1 - x0, y1 - y0, 4);
+        const auto& source = image->GetData();
+        auto& target = crop->GetData();
+        for (int32_t y = y0; y < y1; y++)
+            std::copy_n(source.begin() + (size_t(y) * size_t(image->width) + size_t(x0)) * 4, size_t(x1 - x0) * 4,
+                target.begin() + size_t(y - y0) * size_t(x1 - x0) * 4);
+        return crop;
+
+    }
+
+    ImageDifference CompareImages(const Image& a, const Image& b, int32_t threshold, Ref<Image>* heatMap) {
+
+        ImageDifference difference;
+        if (a.width != b.width || a.height != b.height) {
+            difference.sizeMismatch = true;
+            return difference;
+        }
+
+        const auto& dataA = a.GetData();
+        const auto& dataB = b.GetData();
+        if (heatMap)
+            *heatMap = CreateRef<Image>(a.width, a.height, 4);
+
+        double sum = 0.0;
+        size_t differing = 0;
+        auto pixels = size_t(a.width) * size_t(a.height);
+        for (size_t i = 0; i < pixels; i++) {
+            int32_t pixelMax = 0;
+            for (size_t c = 0; c < 3; c++) {
+                auto delta = std::abs(int32_t(dataA[i * 4 + c]) - int32_t(dataB[i * 4 + c]));
+                sum += double(delta);
+                pixelMax = std::max(pixelMax, delta);
+            }
+            difference.max = std::max(difference.max, float(pixelMax));
+            if (pixelMax > threshold)
+                differing++;
+
+            if (heatMap) {
+                auto gray = uint8_t((int32_t(dataA[i * 4]) + int32_t(dataA[i * 4 + 1]) + int32_t(dataA[i * 4 + 2])) / 6);
+                auto& heat = (*heatMap)->GetData();
+                auto red = pixelMax > threshold ? uint8_t(std::min(128 + pixelMax * 2, 255)) : gray;
+                heat[i * 4] = red;
+                heat[i * 4 + 1] = pixelMax > threshold ? uint8_t(0) : gray;
+                heat[i * 4 + 2] = pixelMax > threshold ? uint8_t(0) : gray;
+                heat[i * 4 + 3] = 255;
+            }
+        }
+
+        difference.mean = float(sum / double(pixels * 3));
+        difference.percent = 100.0f * float(differing) / float(pixels);
+        return difference;
 
     }
 

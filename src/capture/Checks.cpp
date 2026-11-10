@@ -123,12 +123,24 @@ namespace Atlas::Capture {
 
             auto heights = " (bottom y " + FormatFloat(bounds.min.y) + ", ground y " + FormatFloat(ground.position.y) + ")";
             auto gap = bounds.min.y - ground.position.y;
-            if (gap > spec.grounded->maxGap)
+            if (gap > spec.grounded->maxGap) {
                 AddFailure({ "grounded", GetEntityLabel(entity), time,
                     "floats " + FormatFloat(gap) + " m above " + GetHitLabel(ground) + heights });
-            else if (gap < -spec.grounded->maxSink)
+                continue;
+            }
+            if (gap < -spec.grounded->maxSink) {
                 AddFailure({ "grounded", GetEntityLabel(entity), time,
                     "sinks " + FormatFloat(-gap) + " m into " + GetHitLabel(ground) + heights });
+                continue;
+            }
+
+            // The edges of wide meshes on a slope can hang in the air while the center sits on the ground
+            if (spec.grounded->footprint > 1) {
+                auto footprint = MeasureFootprint(scene, entity, bounds, spec.grounded->footprint, spec.grounded->baseHeight, *groundedIgnored);
+                if (footprint.samples > 0 && footprint.maxGap > spec.grounded->maxGap)
+                    AddFailure({ "grounded", GetEntityLabel(entity), time, "its underside floats " + FormatFloat(footprint.maxGap) + " m at " +
+                        FormatVec3(footprint.worst, 2) + " (worst of " + std::to_string(footprint.samples) + " footprint points)" });
+            }
         }
 
     }

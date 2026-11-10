@@ -82,10 +82,14 @@ namespace Atlas::Capture {
         std::vector<std::string> errors;
         std::vector<std::string> warnings;
         json expectations = json::array();
+        // Values of Capture.Result(key, value)
+        json results = json::object();
         int32_t logErrorCount = 0;
 
         int32_t exitCode = 0;
         std::string runId;
+        // Duration of the previous run in the output directory, 0 if unknown
+        float previousSeconds = 0.0f;
 
         // Lines of the output panel of a shown window
         std::deque<CaptureRenderer::TextLine> outputLines;
