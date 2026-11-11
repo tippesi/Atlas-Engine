@@ -2,6 +2,7 @@
 
 #include "../../Theme.h"
 #include "../../Notifications.h"
+#include "../../Singletons.h"
 #include "../Widgets.h"
 
 #include "materialgraph/MaterialGraphSerializer.h"
@@ -36,7 +37,13 @@ namespace Atlas::Editor::UI {
 
         canvasOrigin = ImGui::GetCursorScreenPos();
         canvasSize = ImGui::GetContentRegionAvail();
-        canvasSize.x -= inspectorSize > 0.0f ? inspectorSize + ImGui::GetStyle().ItemSpacing.x : 0.0f;
+        // A narrow strip between canvas and inspector holds the arrow that shows and hides the inspector
+        const float toggleGap = 2.0f;
+        const float togglePadding = 3.0f;
+        auto toggleIconSize = std::floor(ImGui::GetTextLineHeight());
+        auto toggleWidth = toggleIconSize + 2.0f * togglePadding;
+        canvasSize.x -= inspectorSize > 0.0f ? inspectorSize + toggleGap : 0.0f;
+        canvasSize.x -= toggleWidth + toggleGap;
         if (canvasSize.x < 32.0f || canvasSize.y < 32.0f) {
             ImGui::PopID();
             return false;
@@ -88,8 +95,29 @@ namespace Atlas::Editor::UI {
 
         ImGui::EndChild();
 
+        ImGui::SameLine(0.0f, toggleGap);
+        ImGui::BeginChild("Inspector toggle", ImVec2(toggleWidth, canvasSize.y), ImGuiChildFlags_None,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground);
+        {
+            auto buttonHeight = toggleIconSize + 2.0f * togglePadding;
+            ImGui::SetCursorPos(ImVec2(0.0f, std::max(0.0f, (canvasSize.y - buttonHeight) * 0.5f)));
+
+            // The arrow points where the inspector goes
+            auto& arrow = Singletons::icons->Get(showInspector ? IconType::ArrowRight : IconType::ArrowLeft);
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(togglePadding, togglePadding));
+            if (ImGui::ImageButton("Toggle inspector", Singletons::imguiWrapper->GetTextureId(&arrow),
+                ImVec2(toggleIconSize, toggleIconSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f)))
+                showInspector = !showInspector;
+            ImGui::PopStyleVar(2);
+            ImGui::PopStyleColor();
+            ImGui::SetItemTooltip(showInspector ? "Hide the inspector" : "Show the inspector");
+        }
+        ImGui::EndChild();
+
         if (inspectorSize > 0.0f) {
-            ImGui::SameLine();
+            ImGui::SameLine(0.0f, toggleGap);
             ImGui::BeginChild("Inspector", ImVec2(inspectorSize, canvasSize.y), ImGuiChildFlags_Borders);
             DrawInspector(graph);
             ImGui::EndChild();
@@ -118,73 +146,250 @@ namespace Atlas::Editor::UI {
 
     }
 
+    namespace {
+
+        // Properties of the inspector: labels and values split the width like the parameters of the material editor
+        bool BeginProperties(const char* id) {
+
+            if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings))
+                return false;
+            ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch, 0.35f);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.65f);
+            return true;
+
+        }
+
+        // Starts a row, the next item is the value and fills its column
+        void PropertyLabel(const char* label, const char* tooltip = nullptr) {
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextColored(Theme::TextMuted(), "%s", label);
+            if (tooltip)
+                ImGui::SetItemTooltip("%s", tooltip);
+            ImGui::TableSetColumnIndex(1);
+            ImGui::SetNextItemWidth(-FLT_MIN);
+
+        }
+
+        // A rounded label in the color of what it stands for. Pills follow each other and wrap at the end of the line
+        void Pill(const char* text, ImVec4 color, const char* tooltip, bool& first) {
+
+            const ImVec2 padding(8.0f, 3.0f);
+            auto textSize = ImGui::CalcTextSize(text);
+            auto size = ImVec2(textSize.x + 2.0f * padding.x, textSize.y + 2.0f * padding.y);
+
+            if (!first) {
+                ImGui::SameLine(0.0f, 6.0f);
+                if (ImGui::GetCursorPosX() + size.x > ImGui::GetContentRegionMax().x)
+                    ImGui::NewLine();
+            }
+            first = false;
+
+            auto position = ImGui::GetCursorScreenPos();
+            ImGui::PushID(text);
+            ImGui::InvisibleButton("##Pill", size);
+            ImGui::PopID();
+            ImGui::SetItemTooltip("%s", tooltip);
+
+            auto drawList = ImGui::GetWindowDrawList();
+            auto max = ImVec2(position.x + size.x, position.y + size.y);
+            auto rounding = size.y * 0.5f;
+            auto fill = color;
+            fill.w *= ImGui::IsItemHovered() ? 0.3f : 0.18f;
+            auto border = color;
+            border.w *= 0.6f;
+            drawList->AddRectFilled(position, max, ImGui::GetColorU32(fill), rounding);
+            drawList->AddRect(position, max, ImGui::GetColorU32(border), rounding);
+            drawList->AddText(ImVec2(position.x + padding.x, position.y + padding.y), ImGui::GetColorU32(color), text);
+
+        }
+
+        // Transparent icon button with the frame padding of the row, so it is as high as the text next to it
+        bool InspectorIconButton(const char* id, IconType iconType, const char* tooltip) {
+
+            auto& icon = Singletons::icons->Get(iconType);
+            auto size = ImGui::GetTextLineHeight();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.25f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+            auto pressed = ImGui::ImageButton(id, Singletons::imguiWrapper->GetTextureId(&icon), ImVec2(size, size),
+                ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f));
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor(3);
+            ImGui::SetItemTooltip("%s", tooltip);
+            return pressed;
+
+        }
+
+        // The default of a parameter or the value of a constant in short, for the list of parameters
+        std::string FormatValue(const Node& node, const NodeDefinition& definition) {
+
+            char buffer[96];
+            switch (definition.valueType) {
+            case ValueType::Float: snprintf(buffer, sizeof(buffer), "%.3g", node.value.x); break;
+            case ValueType::Vec2: snprintf(buffer, sizeof(buffer), "%.3g, %.3g", node.value.x, node.value.y); break;
+            case ValueType::Vec3: snprintf(buffer, sizeof(buffer), "%.3g, %.3g, %.3g", node.value.x, node.value.y, node.value.z); break;
+            case ValueType::Vec4: snprintf(buffer, sizeof(buffer), "%.2g, %.2g, %.2g, %.2g", node.value.x, node.value.y,
+                node.value.z, node.value.w); break;
+            case ValueType::Texture:
+                return node.texture.IsValid() ? node.texture.GetResource()->GetFileName() : "No texture";
+            default: buffer[0] = 0; break;
+            }
+            return buffer;
+
+        }
+
+    }
+
     void MaterialGraphPanel::DrawInspector(Graph& graph) {
-
-        ImGui::PushItemWidth(-140.0f);
-
-        ImGui::DragFloat("Largest displacement", &graph.maxDisplacement, 0.01f, 0.0f, 1000.0f);
-        ImGui::SetItemTooltip("How far vertices can move in the space of the mesh. Culling adds this to the bounds, "
-            "otherwise moved vertices disappear at the edges of the screen");
-        if (ImGui::IsItemDeactivatedAfterEdit())
-            compileRequested = true;
 
         Node* selected = nullptr;
         if (selection.size() == 1)
             selected = graph.GetNode(*selection.begin());
 
         if (!selected) {
-            ImGui::TextDisabled(selection.empty() ? "Select a node to see its properties" : "%d nodes selected", int32_t(selection.size()));
-            ImGui::PopItemWidth();
+            DrawGraphOverview(graph);
             return;
         }
 
         auto definition = NodeLibrary::Find(selected->type);
-        if (!definition) {
-            ImGui::PopItemWidth();
+        if (!definition)
             return;
+
+        // Header in the color of the node on the canvas: back to the overview, the name and the type of the node
+        auto isNamed = (definition->kind == NodeKind::Parameter || definition->kind == NodeKind::Frame) && !selected->name.empty();
+        auto title = isNamed ? selected->name : selected->type;
+        auto subtitle = isNamed ? selected->type : definition->category;
+        {
+            auto drawList = ImGui::GetWindowDrawList();
+            const float inset = 4.0f;
+            auto start = ImGui::GetCursorScreenPos();
+            auto width = ImGui::GetContentRegionAvail().x;
+            auto height = ImGui::GetFrameHeight() + 2.0f * inset;
+            drawList->AddRectFilled(start, ImVec2(start.x + width, start.y + height),
+                ImGui::GetColorU32(Theme::GraphNodeHeader(definition->category.c_str())), 6.0f);
+
+            ImGui::SetCursorScreenPos(ImVec2(start.x + inset, start.y + inset));
+            if (InspectorIconButton("Back to overview", IconType::ArrowLeft, "Back to the overview of the graph")) {
+                selection.clear();
+                return;
+            }
+            ImGui::SameLine();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(title.c_str());
+            auto subtitleWidth = ImGui::CalcTextSize(subtitle.c_str()).x;
+            auto subtitleX = start.x + width - inset - ImGui::GetStyle().FramePadding.x - subtitleWidth;
+            if (subtitleX > ImGui::GetItemRectMax().x + 8.0f) {
+                ImGui::SameLine();
+                ImGui::SetCursorScreenPos(ImVec2(subtitleX, ImGui::GetCursorScreenPos().y));
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.65f), "%s", subtitle.c_str());
+            }
+            ImGui::SetCursorScreenPos(ImVec2(start.x, start.y + height + ImGui::GetStyle().ItemSpacing.y));
         }
 
-        ImGui::SeparatorText(selected->type.c_str());
         ImGui::PushTextWrapPos();
         ImGui::TextColored(Theme::TextMuted(), "%s", definition->tooltip.c_str());
         ImGui::PopTextWrapPos();
+        ImGui::Spacing();
 
-        auto compiled = definition->kind != NodeKind::Frame && definition->kind != NodeKind::Comment ? graph.GetCompiled() : nullptr;
+        if (definition->kind == NodeKind::Comment) {
+            ImGui::InputTextMultiline("##Text", &selected->name, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8.0f));
+            if (ImGui::IsItemDeactivatedAfterEdit())
+                modified = true;
+            return;
+        }
+
+        if (!BeginProperties("Node properties"))
+            return;
+
+        if (definition->kind == NodeKind::Frame) {
+            PropertyLabel("Title");
+            ImGui::InputText("##Title", &selected->name);
+            if (ImGui::IsItemDeactivatedAfterEdit())
+                modified = true;
+        }
+
+        auto compiled = definition->kind != NodeKind::Frame ? graph.GetCompiled() : nullptr;
         if (compiled) {
             auto iter = compiled->nodeStages.find(selected->id);
             auto stages = iter != compiled->nodeStages.end() ? iter->second : 0u;
-            ImGui::TextColored(Theme::TextMuted(), "Used by: %s", stages == AllStages ? "vertex and fragment stage" :
-                stages == VertexStage ? "vertex stage" : stages == SurfaceStage ? "fragment stage" : "nothing");
+            PropertyLabel("Stages", "The shaders this node ends up in");
+            if (!stages) {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextColored(Theme::TextMuted(), "Not used");
+                ImGui::SetItemTooltip("The node doesn't lead to an output, it costs nothing");
+            }
+            auto first = true;
+            if (stages & VertexStage)
+                Pill("Vertex", Theme::Success(), "Evaluated for every vertex", first);
+            if (stages & SurfaceStage)
+                Pill("Fragment", Theme::Accent(), "Evaluated for every fragment", first);
         }
 
         if (definition->kind == NodeKind::Parameter) {
-            ImGui::InputText("Name", &selected->name);
+            PropertyLabel("Name", "Materials show the parameter with this name");
+            ImGui::InputText("##Name", &selected->name);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
         }
 
-        if (definition->kind == NodeKind::Parameter) {
-            ImGui::InputTextWithHint("Group", "No group", &selected->group);
-            ImGui::SetItemTooltip("Materials show parameters of the same group below a heading");
-            if (ImGui::IsItemDeactivatedAfterEdit())
+        // Defaults of parameters aren't part of the code and apply while dragging, constants compile once the value is final
+        auto hasValue = (definition->kind == NodeKind::Parameter || definition->kind == NodeKind::Constant) &&
+            definition->valueType != ValueType::Texture;
+        if (hasValue) {
+            auto isParameter = definition->kind == NodeKind::Parameter;
+            PropertyLabel(isParameter ? "Default" : "Value", isParameter ? "Materials use this value until they set their own" :
+                "Baked into the shaders, changing it compiles them again");
+            int32_t components = definition->valueType == ValueType::Vec2 ? 2 : definition->valueType == ValueType::Vec3 ? 3 :
+                definition->valueType == ValueType::Vec4 ? 4 : 1;
+            auto changed = false;
+            if (definition->isColor)
+                changed = ImGui::ColorEdit3("##Value", &selected->value.x, ImGuiColorEditFlags_Float);
+            else if (selected->range.x < selected->range.y)
+                changed = ImGui::DragScalarN("##Value", ImGuiDataType_Float, &selected->value.x, components, 0.01f,
+                    &selected->range.x, &selected->range.y, "%.3g", ImGuiSliderFlags_AlwaysClamp);
+            else
+                changed = ImGui::DragScalarN("##Value", ImGuiDataType_Float, &selected->value.x, components, 0.01f,
+                    nullptr, nullptr, "%.3g");
+            if (isParameter ? changed : ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
+            else
+                colorEdited |= definition->isColor && changed;
+        }
 
-            ImGui::InputInt("Order", &selected->order);
-            ImGui::SetItemTooltip("Materials show smaller numbers first");
-            if (ImGui::IsItemDeactivatedAfterEdit() || ImGui::IsItemEdited())
+        if (definition->kind == NodeKind::StaticSwitch) {
+            auto isOn = selected->value.x > 0.0f;
+            PropertyLabel("Selected", "Only the selected input is compiled. Changing it applies to all materials with the graph");
+            if (ImGui::Checkbox("On##Switch", &isOn)) {
+                selected->value.x = isOn ? 1.0f : 0.0f;
                 compileRequested = true;
-
-            if (definition->valueType != ValueType::Texture && !definition->isColor) {
-                ImGui::DragFloatRange2("Range", &selected->range.x, &selected->range.y, 0.01f, 0.0f, 0.0f, "Min %.3g", "Max %.3g");
-                ImGui::SetItemTooltip("Materials get a slider within these limits. Without a range the values are free");
-                if (ImGui::IsItemDeactivatedAfterEdit())
-                    compileRequested = true;
             }
         }
 
+        if (definition->kind == NodeKind::Parameter) {
+            if (definition->valueType != ValueType::Texture && !definition->isColor) {
+                PropertyLabel("Range", "Materials get a slider within these limits. Without a range the values are free");
+                ImGui::DragFloatRange2("##Range", &selected->range.x, &selected->range.y, 0.01f, 0.0f, 0.0f, "Min %.3g", "Max %.3g");
+                if (ImGui::IsItemDeactivatedAfterEdit())
+                    compileRequested = true;
+            }
+
+            PropertyLabel("Group", "Materials show parameters of the same group below a heading");
+            ImGui::InputTextWithHint("##Group", "No group", &selected->group);
+            if (ImGui::IsItemDeactivatedAfterEdit())
+                compileRequested = true;
+
+            PropertyLabel("Order", "Materials show smaller numbers first");
+            ImGui::DragInt("##Order", &selected->order, 0.1f);
+            if (ImGui::IsItemDeactivatedAfterEdit())
+                compileRequested = true;
+        }
+
         if (definition->kind == NodeKind::Parameter && definition->valueType == ValueType::Texture) {
-            ImGui::TextUnformatted("Default texture");
-            ImGui::SetItemTooltip("Materials use this texture until they select their own");
+            PropertyLabel("Default", "Materials use this texture until they select their own");
             auto textureChanged = false;
             auto texture = textureSelectionPanel.Render(selected->texture, textureChanged);
             textureSelectionPanel.Reset();
@@ -195,47 +400,217 @@ namespace Atlas::Editor::UI {
 
             const char* fallbacks[] = { "White", "Black", "Flat normal" };
             auto fallback = int32_t(selected->value.y);
-            if (ImGui::Combo("Without a texture", &fallback, fallbacks, IM_ARRAYSIZE(fallbacks))) {
+            PropertyLabel("Fallback", "What the shaders read while neither the material nor the default has a texture");
+            if (ImGui::Combo("##Fallback", &fallback, fallbacks, IM_ARRAYSIZE(fallbacks))) {
                 selected->value.y = float(fallback);
                 compileRequested = true;
             }
 
-            ImGui::DragFloat("Coordinate scale", &selected->value.x, 0.1f, 0.01f, 1000.0f);
-            ImGui::SetItemTooltip("How much the graph scales the texture coordinates. The texture streaming "
+            PropertyLabel("Coordinate scale", "How much the graph scales the texture coordinates. The texture streaming "
                 "loads more detail for textures which repeat more often");
+            ImGui::DragFloat("##Coordinate scale", &selected->value.x, 0.1f, 0.01f, 1000.0f);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
         }
 
         if (definition->kind == NodeKind::VertexOutput) {
             auto derive = selected->value.x > 0.0f;
-            if (ImGui::Checkbox("Derive normals from displacement", &derive)) {
+            PropertyLabel("Derive normals", "Evaluates the displacement next to each vertex to find the normal of the moved "
+                "surface. This works for displacement from positions, not from texture coordinates");
+            if (ImGui::Checkbox("##Derive normals", &derive)) {
                 selected->value.x = derive ? 1.0f : 0.0f;
                 compileRequested = true;
             }
-            ImGui::SetItemTooltip("Evaluates the displacement next to each vertex to find the normal of the moved surface. "
-                "This works for displacement from positions, not from texture coordinates");
 
+            PropertyLabel("Sampling distance", "How far next to each vertex the displacement is evaluated for the normals");
             ImGui::BeginDisabled(!derive);
-            ImGui::DragFloat("Sampling distance", &selected->value.y, 0.001f, 0.001f, 10.0f);
+            ImGui::DragFloat("##Sampling distance", &selected->value.y, 0.001f, 0.001f, 10.0f);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
             ImGui::EndDisabled();
         }
 
-        if (definition->kind == NodeKind::Comment) {
-            ImGui::InputTextMultiline("Text", &selected->name);
-            if (ImGui::IsItemDeactivatedAfterEdit())
-                modified = true;
+        ImGui::EndTable();
+
+    }
+
+    void MaterialGraphPanel::DrawGraphOverview(Graph& graph) {
+
+        auto compiled = graph.GetCompiled();
+
+        if (selection.size() > 1) {
+            ImGui::TextColored(Theme::TextMuted(), "%d nodes selected", int32_t(selection.size()));
+            ImGui::Spacing();
         }
 
-        if (definition->kind == NodeKind::Frame) {
-            ImGui::InputText("Title", &selected->name);
-            if (ImGui::IsItemDeactivatedAfterEdit())
-                modified = true;
+        // A click selects the node and moves it into the middle of the canvas, the zoom stays
+        auto showNode = [&](uint32_t nodeId) {
+            auto node = graph.GetNode(nodeId);
+            if (!node)
+                return;
+            selection.clear();
+            selection.insert(nodeId);
+            auto center = node->position + GetNodeSize(*node) * 0.5f;
+            pan = vec2(canvasSize.x, canvasSize.y) * 0.5f / zoom - center;
+            };
+
+        // What the compiled graph does, the toolbar only names the kind of graph
+        if (Widgets::SectionHeader("Output", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::PushTextWrapPos();
+            if (!compiled)
+                ImGui::TextColored(Theme::TextMuted(), "Not compiled yet");
+            else if (!compiled->valid)
+                ImGui::TextColored(Theme::Error(), "The graph has errors, materials use their regular properties");
+            else if (!compiled->hasVertexOffset && !compiled->hasSurface)
+                ImGui::TextColored(Theme::TextMuted(), "No output is connected, materials use their regular properties");
+            ImGui::PopTextWrapPos();
+
+            // Only what the graph does, aspects it doesn't change aren't shown
+            if (compiled && compiled->valid && (compiled->hasVertexOffset || compiled->hasSurface)) {
+                auto first = true;
+                if (compiled->hasVertexOffset)
+                    Pill("Moves vertices", Theme::Success(), "The vertex output moves the vertices of the mesh. "
+                        "Set the largest displacement, culling needs it", first);
+                if (compiled->hasSurface)
+                    Pill("Surface", Theme::Accent(), "The surface output describes the surface. Ray tracing uses the regular "
+                        "properties or a bake of the graph", first);
+                if (compiled->hasUniformOpacity)
+                    Pill("Cutout per draw", Theme::Accent(), "Opacity only depends on parameters and constants: it is evaluated "
+                        "per vertex and hides the whole draw, fragments stay as fast as opaque ones", first);
+                else if (compiled->hasOpacity)
+                    Pill("Cutout per fragment", Theme::Warning(), "Opacity varies over the surface: fragments are cut out, which "
+                        "turns off early depth tests and costs time even where nothing is cut out", first);
+                if (compiled->UsesShadowPipeline())
+                    Pill("Own shadows", Theme::Accent(), "Moved vertices or cut out fragments need their own shadow shaders, "
+                        "otherwise shadows use the regular pipeline", first);
+            }
+
+            // Only graphs moving vertices need it, a value from before stays editable to remove it
+            auto showDisplacement = (compiled && compiled->hasVertexOffset) || graph.maxDisplacement > 0.0f;
+            if (showDisplacement && BeginProperties("Output")) {
+                PropertyLabel("Displacement", "Largest distance a vertex moves in the space of the mesh. Culling adds this to "
+                    "the bounds, otherwise moved vertices disappear at the edges of the screen");
+                ImGui::DragFloat("##Largest displacement", &graph.maxDisplacement, 0.01f, 0.0f, 1000.0f, "%.3f");
+                if (ImGui::IsItemDeactivatedAfterEdit())
+                    compileRequested = true;
+                ImGui::EndTable();
+            }
+            ImGui::Spacing();
         }
 
-        ImGui::PopItemWidth();
+        if (compiled && !compiled->errors.empty()) {
+            auto errorsTitle = "Errors (" + std::to_string(compiled->errors.size()) + ")###Errors";
+            if (Widgets::SectionHeader(errorsTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::PushTextWrapPos();
+                for (const auto& error : compiled->errors) {
+                    ImGui::TextColored(Theme::Error(), "%s", error.message.c_str());
+                    // Errors of the whole graph have no node to show
+                    if (error.nodeId == 0 || !graph.GetNode(error.nodeId))
+                        continue;
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+                        ImGui::SetTooltip("Show the node");
+                    }
+                    if (ImGui::IsItemClicked())
+                        showNode(error.nodeId);
+                }
+                ImGui::PopTextWrapPos();
+                ImGui::Spacing();
+            }
+        }
+
+        // Parameters in the order materials show them: ungrouped first like in the material, then by group and order
+        std::vector<const Node*> parameters;
+        for (const auto& node : graph.nodes) {
+            auto definition = NodeLibrary::Find(node.type);
+            if (definition && definition->kind == NodeKind::Parameter)
+                parameters.push_back(&node);
+        }
+        std::stable_sort(parameters.begin(), parameters.end(), [](const Node* a, const Node* b) {
+            if (a->group != b->group)
+                return a->group < b->group;
+            return a->order < b->order;
+            });
+
+        auto parametersTitle = "Parameters (" + std::to_string(parameters.size()) + ")###Parameters";
+        if (Widgets::SectionHeader(parametersTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (parameters.empty()) {
+                ImGui::PushTextWrapPos();
+                ImGui::TextColored(Theme::TextMuted(), "No parameters, materials can't change anything without compiling");
+                ImGui::PopTextWrapPos();
+            }
+
+            auto drawList = ImGui::GetWindowDrawList();
+            auto rowHeight = ImGui::GetFrameHeight();
+            for (size_t start = 0; start < parameters.size();) {
+                const auto& group = parameters[start]->group;
+                auto end = start;
+                while (end < parameters.size() && parameters[end]->group == group)
+                    end++;
+
+                auto isOpen = true;
+                if (!group.empty()) {
+                    auto label = group + " (" + std::to_string(end - start) + ")###Group" + group;
+                    isOpen = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                        ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen);
+                }
+
+                // Rows of a group start below its title, tighter than the default spacing
+                auto indent = group.empty() ? 0.0f : ImGui::GetTreeNodeToLabelSpacing() - 12.0f;
+                if (isOpen && indent > 0.0f)
+                    ImGui::Indent(indent);
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 1.0f));
+                for (auto i = start; isOpen && i < end; i++) {
+                    auto parameter = parameters[i];
+                    auto definition = NodeLibrary::Find(parameter->type);
+                    auto isUsed = !compiled || compiled->nodeStages.contains(parameter->id);
+                    auto alpha = isUsed ? 1.0f : 0.45f;
+
+                    ImGui::PushID(int32_t(parameter->id));
+                    auto position = ImGui::GetCursorScreenPos();
+                    auto width = ImGui::GetContentRegionAvail().x;
+                    if (ImGui::Selectable("##Parameter", false, ImGuiSelectableFlags_SpanAvailWidth, ImVec2(0.0f, rowHeight)))
+                        showNode(parameter->id);
+                    ImGui::SetItemTooltip(isUsed ? "Show the node" : "Not connected to an output, materials don't show it");
+                    ImGui::PopID();
+
+                    // Type as a dot in the color of its pins, the name and the default on the right
+                    auto centerY = position.y + rowHeight * 0.5f;
+                    auto textY = centerY - ImGui::GetTextLineHeight() * 0.5f;
+                    auto typeColor = GetValueColor(definition->valueType);
+                    typeColor.w *= alpha;
+                    drawList->AddCircleFilled(ImVec2(position.x + 10.0f, centerY), 4.0f, ImGui::GetColorU32(typeColor));
+                    auto name = parameter->name.empty() ? std::string("Unnamed") : parameter->name;
+                    auto textColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+                    textColor.w *= alpha;
+                    drawList->AddText(ImVec2(position.x + 22.0f, textY), ImGui::GetColorU32(textColor), name.c_str());
+
+                    auto right = position.x + width - 6.0f;
+                    if (definition->isColor) {
+                        auto swatch = rowHeight - 10.0f;
+                        auto color = ImVec4(parameter->value.x, parameter->value.y, parameter->value.z, alpha);
+                        auto min = ImVec2(right - swatch * 1.6f, centerY - swatch * 0.5f);
+                        auto max = ImVec2(right, centerY + swatch * 0.5f);
+                        drawList->AddRectFilled(min, max, ImGui::GetColorU32(color), 3.0f);
+                        drawList->AddRect(min, max, ImGui::GetColorU32(Theme::TextMuted(0.4f * alpha)), 3.0f);
+                    }
+                    else {
+                        auto value = FormatValue(*parameter, *definition);
+                        auto valueWidth = ImGui::CalcTextSize(value.c_str()).x;
+                        drawList->AddText(ImVec2(right - valueWidth, textY), ImGui::GetColorU32(Theme::TextMuted(alpha)), value.c_str());
+                    }
+                }
+
+                ImGui::PopStyleVar();
+                if (isOpen && indent > 0.0f)
+                    ImGui::Unindent(indent);
+
+                start = end;
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::TextColored(Theme::TextMuted(0.7f), "Select a node to see its properties");
 
     }
 
@@ -832,16 +1207,18 @@ namespace Atlas::Editor::UI {
             previewMode = PreviewMode(previewModeIdx);
         ImGui::SetItemTooltip("Which nodes show a picture of their value. Pictures make nodes larger, Arrange takes that into account");
         ImGui::SameLine();
-        if (ImGui::Button(showInspector ? "Hide inspector" : "Show inspector"))
-            showInspector = !showInspector;
-        ImGui::SameLine();
-        if (ImGui::Button(maximized ? "Restore" : "Maximize")) {
+        // As high as the text buttons next to it: the icon is one line high with the same frame padding
+        auto& maximizeIcon = Singletons::icons->Get(maximized ? IconType::ScaleInverse : IconType::Scale);
+        auto lineHeight = ImGui::GetTextLineHeight();
+        if (ImGui::ImageButton("Maximize", Singletons::imguiWrapper->GetTextureId(&maximizeIcon), ImVec2(lineHeight, lineHeight),
+            ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
             maximized = !maximized;
             frameRequested = true;
             // The canvas gets its new size in the next frames
             stableCanvasFrames = -2;
         }
-        ImGui::SetItemTooltip("Shows the graph over the whole editor (F11)");
+        ImGui::SetItemTooltip(maximized ? "Shows the graph in the material editor again (F11)" :
+            "Shows the graph over the whole editor (F11)");
         ImGui::SameLine();
         if (modified) {
             ImGui::TextColored(Theme::Warning(), "Unsaved");
@@ -868,19 +1245,15 @@ namespace Atlas::Editor::UI {
             return;
         }
 
-        auto chip = [](const char* text, bool enabled, ImVec4 color) {
-            ImGui::TextColored(enabled ? color : Theme::TextMuted(0.5f), "%s", text);
-            ImGui::SameLine();
-            };
-
-        chip("Vertex", compiled->hasVertexOffset, Theme::Success());
-        chip("Fragment", compiled->hasSurface, Theme::Warning());
-        chip("Cutout", compiled->hasOpacity, Theme::Accent());
-        chip("Own shadows", compiled->UsesShadowPipeline(), Theme::Accent());
-
+        // The kind of graph only, the output section of the inspector explains what it does
+        auto kind = compiled->hasVertexOffset && compiled->hasSurface ? "Vertex and surface graph" :
+            compiled->hasVertexOffset ? "Vertex graph" : "Surface graph";
         auto textureCount = std::count_if(compiled->parameters.begin(), compiled->parameters.end(),
             [](const Parameter& parameter) { return parameter.type == ValueType::Texture; });
-        ImGui::TextColored(Theme::TextMuted(), "%d parameters, %d textures", int32_t(compiled->parameters.size()), int32_t(textureCount));
+        ImGui::TextUnformatted(kind);
+        ImGui::SetItemTooltip("The inspector shows what the graph does without a selected node");
+        ImGui::SameLine();
+        ImGui::TextColored(Theme::TextMuted(), "· %d parameters, %d textures", int32_t(compiled->parameters.size()), int32_t(textureCount));
 
     }
 

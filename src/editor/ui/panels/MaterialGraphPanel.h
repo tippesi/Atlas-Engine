@@ -143,6 +143,9 @@ namespace Atlas::Editor::UI {
         // The properties of the selected node and the settings of the graph
         void DrawInspector(MaterialGraph::Graph& graph);
 
+        // Without a single selected node: settings of the graph, errors and parameters, which select their node
+        void DrawGraphOverview(MaterialGraph::Graph& graph);
+
         bool HasPreview(const MaterialGraph::NodeDefinition& definition) const;
 
         void HandleInteractions(MaterialGraph::Graph& graph);
