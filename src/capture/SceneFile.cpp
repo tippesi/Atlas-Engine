@@ -208,7 +208,8 @@ namespace Atlas::Capture {
 
         std::error_code error;
         auto size = fs::file_size(path, error);
-        auto time = fs::last_write_time(path, error).time_since_epoch().count();
+        // The count is a 128 bit integer on macOS, which std::to_string doesn't take
+        auto time = static_cast<int64_t>(fs::last_write_time(path, error).time_since_epoch().count());
         auto key = std::hash<std::string>()(fs::absolute(path).generic_string() + "|" + std::to_string(size) + "|" + std::to_string(time));
         auto cache = GetExecutablePath().parent_path() / ".cache" / "capture-names" / (path.stem().string() + "-" + std::to_string(key) + ".txt");
 
