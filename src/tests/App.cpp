@@ -12,6 +12,12 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 using namespace Atlas::Scene::Components;
 using namespace Atlas::Scene::Prefabs;
 
+using Atlas::vec2;
+using Atlas::vec3;
+using Atlas::vec4;
+using Atlas::ivec3;
+using Atlas::mat4;
+
 void App::LoadContent(AppConfiguration config) {
 
     this->config = config;
