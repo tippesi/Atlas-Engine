@@ -202,6 +202,10 @@ namespace Atlas::Scene {
                 continue;
             if (!entity.IsValid())
                 continue;
+            // Children are written by their parent. Reused entity slots can come before the slot of their parent,
+            // they would otherwise be written twice and loaded as two entities
+            if (scene->GetParentEntity(entity).IsValid())
+                continue;
 
             entities.emplace_back();
             EntityToJson(entities.back(), entity, scene, insertedEntities);
