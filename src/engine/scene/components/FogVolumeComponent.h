@@ -26,6 +26,11 @@ namespace Atlas {
                 // Extinction per world unit
                 float density = 0.05f;
                 vec3 scatteringColor = vec3(1.0f);
+                // Scales the light the volume scatters towards the camera without changing its extinction
+                float scatteringFactor = 1.0f;
+                // Phase function from -1 to 1 with the sign of the scene fog: negative values scatter towards the light
+                // (bright halos around the sun and light shafts), positive ones back to it. 0 scatters evenly
+                float scatteringAnisotropy = -0.6f;
                 vec3 emissiveColor = vec3(0.0f);
                 // Factor of the sky light, enclosed spaces need a lower one
                 float ambientFactor = 0.4f;

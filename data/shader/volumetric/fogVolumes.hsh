@@ -21,6 +21,11 @@ struct FogVolume {
     float ambientFactor;
     int shape;
     float selfShadowing;
+
+    float scatteringAnisotropy;
+    float padding0;
+    float padding1;
+    float padding2;
 };
 
 layout(std430, set = 3, binding = 11) buffer FogVolumes {
