@@ -572,6 +572,8 @@ namespace Atlas::Scripting::Bindings {
             "shape", &FogVolumeComponent::shape,
             "density", &FogVolumeComponent::density,
             "scatteringColor", &FogVolumeComponent::scatteringColor,
+            "scatteringFactor", &FogVolumeComponent::scatteringFactor,
+            "scatteringAnisotropy", &FogVolumeComponent::scatteringAnisotropy,
             "emissiveColor", &FogVolumeComponent::emissiveColor,
             "ambientFactor", &FogVolumeComponent::ambientFactor,
             "selfShadowing", &FogVolumeComponent::selfShadowing,

@@ -42,25 +42,32 @@ namespace Atlas::Editor::UI {
 
     void GeometryBrushWindow::RenderBrushSettings(const Ref<SceneWindow>& activeSceneWindow) { 
         
-        if (!activeSceneWindow) {
+        if (!activeSceneWindow)
             Widgets::Callout("Open a scene to use the geometry brush.", Theme::Warning());
+
+        if (Widgets::BeginProperties("Brush")) {
+            if (activeSceneWindow) {
+                Widgets::PropertyLabel("Target scene");
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(SceneWindow::GetSceneLabel(activeSceneWindow->scene).c_str());
+            }
+
+            Widgets::PropertyLabel("Enable");
+            ImGui::Checkbox("##Enable", &brushEnabled);
+
+            const char* brushTypes[] = { "Create", "Delete" };
+            int32_t brushSelection = static_cast<int32_t>(brushType);
+            Widgets::PropertyLabel("Type");
+            Widgets::SegmentedControl("##Type", brushSelection, brushTypes, IM_ARRAYSIZE(brushTypes));
+            brushType = static_cast<BrushType>(brushSelection);
+
+            Widgets::PropertyLabel("Radius");
+            ImGui::DragFloat("##Brush radius", &brushRadius, 0.5f, 0.5f, 1000.0f);
+            Widgets::PropertyLabel("Only query terrain");
+            ImGui::Checkbox("##Only query terrain", &brushOnlyQueryTerrain);
+
+            Widgets::EndProperties();
         }
-        else {
-            auto scene = activeSceneWindow->scene;
-            ImGui::TextDisabled("Target scene");
-            ImGui::SameLine();
-            ImGui::TextUnformatted(scene->name.c_str());
-        }
-
-        ImGui::Checkbox("Enable", &brushEnabled);
-
-        const char* brushTypes[] = { "Create", "Delete" };
-        int32_t brushSelection = static_cast<int32_t>(brushType);
-        Widgets::SegmentedControl("Type", brushSelection, brushTypes, IM_ARRAYSIZE(brushTypes));
-        brushType = static_cast<BrushType>(brushSelection);
-
-        ImGui::DragFloat("Brush radius", &brushRadius, 0.5f, 0.5f, 1000.0f);
-        ImGui::Checkbox("Only query terrain", &brushOnlyQueryTerrain);
 
         // The delete brush has no further settings
         if (brushType == BrushType::Create)
@@ -113,10 +120,15 @@ namespace Atlas::Editor::UI {
 
         ImGui::SeparatorText("Placement");
 
-        ImGui::DragFloat("Brush ray length", &brushRayLength, 0.5f, 0.5f, 1000.0f);
-        ImGui::DragInt("Brush drop rate (per second)", &brushDropRate, 1.0f, 1, 100000);
-
-        ImGui::Checkbox("Align to surface", &brushAlignToSurface);
+        if (Widgets::BeginProperties("Placement")) {
+            Widgets::PropertyLabel("Ray length");
+            ImGui::DragFloat("##Brush ray length", &brushRayLength, 0.5f, 0.5f, 1000.0f);
+            Widgets::PropertyLabel("Drop rate", "Entities placed per second while the brush is held");
+            ImGui::DragInt("##Brush drop rate", &brushDropRate, 1.0f, 1, 100000, "%d / s");
+            Widgets::PropertyLabel("Align to surface");
+            ImGui::Checkbox("##Align to surface", &brushAlignToSurface);
+            Widgets::EndProperties();
+        }
 
     }
 

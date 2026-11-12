@@ -156,14 +156,12 @@ namespace Atlas::Scripting::Bindings {
             "viewMatrix", &Lighting::ShadowView::viewMatrix,
             "projectionMatrix", &Lighting::ShadowView::projectionMatrix,
             "frustumMatrix", &Lighting::ShadowView::frustumMatrix,
-            "terrainFrustumMatrix", &Lighting::ShadowView::terrainFrustumMatrix,
-            "orthoSize", &Lighting::ShadowView::orthoSize
+            "terrainFrustumMatrix", &Lighting::ShadowView::terrainFrustumMatrix
         );
 
         ns->new_usertype<Lighting::Shadow>("Shadow",
             "SetResolution", &Lighting::Shadow::SetResolution,
             "Update", &Lighting::Shadow::Update,
-            "center", &Lighting::Shadow::center,
             "distance", &Lighting::Shadow::distance,
             "longRangeDistance", &Lighting::Shadow::longRangeDistance,
             "bias", &Lighting::Shadow::bias,
@@ -173,8 +171,7 @@ namespace Atlas::Scripting::Bindings {
             "resolution", &Lighting::Shadow::resolution,
             "views", &Lighting::Shadow::views,
             "viewCount", &Lighting::Shadow::viewCount,
-            "isCascaded", &Lighting::Shadow::isCascaded,
-            "followMainCamera", &Lighting::Shadow::followMainCamera,
+            "isCascaded", sol::readonly(&Lighting::Shadow::isCascaded),
             "useCubemap", &Lighting::Shadow::useCubemap,
             "allowTerrain", &Lighting::Shadow::allowTerrain,
             "longRange", &Lighting::Shadow::longRange,

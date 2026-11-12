@@ -12,6 +12,12 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 using namespace Atlas::Scene::Components;
 using namespace Atlas::Scene::Prefabs;
 
+using Atlas::vec2;
+using Atlas::vec3;
+using Atlas::vec4;
+using Atlas::ivec3;
+using Atlas::mat4;
+
 void App::LoadContent(AppConfiguration config) {
 
     this->config = config;
@@ -64,8 +70,7 @@ void App::LoadContent(AppConfiguration config) {
 
         directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 0.33f);
         directionalLight.color = vec3(255, 236, 209) / 255.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f,
-            vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f, 4, 0.9f);
         directionalLight.isMain = true;
     }
 

@@ -3,50 +3,75 @@
 
 #include <imgui.h>
 
-#include <imgui.h>
-
 namespace Atlas::Editor::UI {
 
     bool LightComponentPanel::Render(Ref<Scene::Scene>& scene,
         Scene::Entity entity, LightComponent &lightComponent) {
 
-        const char* typeItems[] = { "Directional", "Point", "Spot"};
-        int typeItem = static_cast<int>(lightComponent.type);
-        ImGui::Combo("Light type", &typeItem, typeItems, IM_ARRAYSIZE(typeItems));
-        lightComponent.type = static_cast<LightType>(typeItem);
+        if (Widgets::BeginProperties("LightComponent")) {
+            const char* typeItems[] = { "Directional", "Point", "Spot"};
+            int typeItem = static_cast<int>(lightComponent.type);
+            Widgets::PropertyLabel("Light type");
+            ImGui::Combo("##Light type", &typeItem, typeItems, IM_ARRAYSIZE(typeItems));
+            lightComponent.type = static_cast<LightType>(typeItem);
 
-        bool isStatic = lightComponent.mobility == LightMobility::StationaryLight;
-        ImGui::Checkbox("Static", &isStatic);
-        lightComponent.mobility = isStatic ? LightMobility::StationaryLight : LightMobility::MovableLight;
-
-        ImGui::SeparatorText("Type properties");
-
-        if (lightComponent.type == LightType::DirectionalLight) {
-            ImGui::Checkbox("Main", &lightComponent.isMain);
-            auto& directional = lightComponent.properties.directional;
-            Widgets::DragVec3("Direction", directional.direction, 0.005f, 0.0f, -1.0f, 1.0f);
-        }
-        else if (lightComponent.type == LightType::PointLight) {
-            auto& point = lightComponent.properties.point;
-            Widgets::DragVec3("Position", point.position, 0.1f, 0.0f, -10000.0f, 10000.0f);
-            ImGui::DragFloat("Radius", &point.radius, 0.01f, 0.01f, 10000.0f);
-        }
-        else if (lightComponent.type == LightType::SpotLight) {
-            auto& spot = lightComponent.properties.spot;
-            Widgets::DragVec3("Position", spot.position, 0.1f, 0.0f, -10000.0f, 10000.0f);
-            Widgets::DragVec3("Direction", spot.direction, 0.01f, 0.0f, -1.0f, 1.0f);
-            ImGui::DragFloat("Radius", &spot.radius, 0.01f, 0.01f, 10000.0f);
-            ImGui::DragFloat("Inner cone angle", &spot.innerConeAngle, 0.01f, 0.01f, 2.0f);
-            ImGui::DragFloat("Outer cone angle", &spot.outerConeAngle, 0.01f, 0.01f, 2.0f);
+            bool isStatic = lightComponent.mobility == LightMobility::StationaryLight;
+            Widgets::PropertyLabel("Static");
+            ImGui::Checkbox("##Static", &isStatic);
+            lightComponent.mobility = isStatic ? LightMobility::StationaryLight : LightMobility::MovableLight;
+            Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("General properties");
+        // The properties of the selected type of light
+        const char* typeSection = lightComponent.type == LightType::DirectionalLight ? "Directional" :
+            lightComponent.type == LightType::PointLight ? "Point" : "Spot";
+        ImGui::SeparatorText(typeSection);
+
+        if (Widgets::BeginProperties("LightType")) {
+            if (lightComponent.type == LightType::DirectionalLight) {
+                Widgets::PropertyLabel("Main");
+                ImGui::Checkbox("##Main", &lightComponent.isMain);
+                auto& directional = lightComponent.properties.directional;
+                Widgets::PropertyLabel("Direction");
+                Widgets::DragVec3("##Direction", directional.direction, 0.005f, 0.0f, -1.0f, 1.0f);
+            }
+            else if (lightComponent.type == LightType::PointLight) {
+                auto& point = lightComponent.properties.point;
+                Widgets::PropertyLabel("Position");
+                Widgets::DragVec3("##Position", point.position, 0.1f, 0.0f, -10000.0f, 10000.0f);
+                Widgets::PropertyLabel("Radius");
+                ImGui::DragFloat("##Radius", &point.radius, 0.01f, 0.01f, 10000.0f);
+            }
+            else if (lightComponent.type == LightType::SpotLight) {
+                auto& spot = lightComponent.properties.spot;
+                Widgets::PropertyLabel("Position");
+                Widgets::DragVec3("##Position", spot.position, 0.1f, 0.0f, -10000.0f, 10000.0f);
+                Widgets::PropertyLabel("Direction");
+                Widgets::DragVec3("##Direction", spot.direction, 0.01f, 0.0f, -1.0f, 1.0f);
+                Widgets::PropertyLabel("Radius");
+                ImGui::DragFloat("##Radius", &spot.radius, 0.01f, 0.01f, 10000.0f);
+                Widgets::PropertyLabel("Inner cone angle");
+                ImGui::DragFloat("##Inner cone angle", &spot.innerConeAngle, 0.01f, 0.01f, 2.0f);
+                Widgets::PropertyLabel("Outer cone angle");
+                ImGui::DragFloat("##Outer cone angle", &spot.outerConeAngle, 0.01f, 0.01f, 2.0f);
+            }
+            Widgets::EndProperties();
+        }
+
+        ImGui::SeparatorText("General");
 
         bool castShadow = lightComponent.shadow != nullptr;
-        ImGui::Checkbox("Shadow", &castShadow);
-        ImGui::ColorEdit3("Color", &lightComponent.color[0]);
-        ImGui::DragFloat("Intensity", &lightComponent.intensity, 0.1f, 0.0f, 1000.0f);
-        ImGui::DragFloat("Volumetric intensity", &lightComponent.volumetricIntensity, 0.1f, 0.0f, 10.0f);
+        if (Widgets::BeginProperties("LightGeneral")) {
+            Widgets::PropertyLabel("Shadow");
+            ImGui::Checkbox("##Shadow", &castShadow);
+            Widgets::PropertyLabel("Color");
+            ImGui::ColorEdit3("##Color", &lightComponent.color[0]);
+            Widgets::PropertyLabel("Intensity");
+            ImGui::DragFloat("##Intensity", &lightComponent.intensity, 0.1f, 0.0f, 1000.0f);
+            Widgets::PropertyLabel("Volumetric intensity");
+            ImGui::DragFloat("##Volumetric intensity", &lightComponent.volumetricIntensity, 0.1f, 0.0f, 10.0f);
+            Widgets::EndProperties();
+        }
 
         if (!lightComponent.shadow && castShadow) {
             if (lightComponent.type == LightType::DirectionalLight) {
@@ -77,7 +102,18 @@ namespace Atlas::Editor::UI {
             if (shadow->resolution == 4096) shadowResItem = 3;
             if (shadow->resolution == 8192) shadowResItem = 4;
             auto prevItem = shadowResItem;
-            ImGui::Combo("Resolution", &shadowResItem, shadowResItems, IM_ARRAYSIZE(shadowResItems));
+
+            if (Widgets::BeginProperties("LightShadow")) {
+                Widgets::PropertyLabel("Resolution");
+                ImGui::Combo("##Resolution", &shadowResItem, shadowResItems, IM_ARRAYSIZE(shadowResItems));
+                Widgets::PropertyLabel("Bias");
+                ImGui::DragFloat("##Bias", &shadow->bias, 0.05f, 0.0f, 10.0f);
+                Widgets::PropertyLabel("Distance");
+                ImGui::DragFloat("##Distance", &shadow->distance, 1.0f, 0.0f, 10000.0f);
+                Widgets::PropertyLabel("Edge softness");
+                ImGui::DragFloat("##Edge softness", &shadow->edgeSoftness, 0.005f, 0.0f, 1.0f);
+                Widgets::EndProperties();
+            }
 
             if (shadowResItem != prevItem) {
                 switch (shadowResItem) {
@@ -89,55 +125,41 @@ namespace Atlas::Editor::UI {
                 }
             }
 
-            ImGui::DragFloat("Bias", &shadow->bias, 0.05f, 0.0f, 10.0f);
-            ImGui::DragFloat("Distance", &shadow->distance, 1.0f, 0.0f, 10000.0f);
-            ImGui::DragFloat("Edge softness", &shadow->edgeSoftness, 0.005f, 0.0f, 1.0f);
-
-            ImGui::Separator();
-
             if (lightComponent.type == LightType::DirectionalLight) {
-                ImGui::Checkbox("Is cascaded", &shadow->isCascaded);
+                ImGui::SeparatorText("Cascades");
 
-                if (!shadow->isCascaded) {
-                    ImGui::Checkbox("Follow main camera", &shadow->followMainCamera);
-
-                    if (!shadow->followMainCamera) {
-                        Widgets::DragVec3("Center point", shadow->center, 0.5f, 0.0f, -10000.0f, 10000.0f);
-                    }
-
-                    auto orthoSize = shadow->views.front().orthoSize;
-                    if (orthoSize.x == 0.0f && orthoSize.y == 0.0f)
-                        orthoSize = vec4(-100.0f, 100.0f, -100.0f, 100.0f);
-
-                    ImGui::Text("Width");
-                    ImGui::DragFloat("Min##Width", &orthoSize.x, 1.0f, -10000.0f, 10000.0f);
-                    ImGui::DragFloat("Max##Width", &orthoSize.y, 1.0f, -10000.0f, 10000.0f);
-
-                    ImGui::Text("Height");
-                    ImGui::DragFloat("Min##Height", &orthoSize.z, 1.0f, -10000.0f, 10000.0f);
-                    ImGui::DragFloat("Max##Height", &orthoSize.w, 1.0f, -10000.0f, 10000.0f);
-
-                    auto matrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -120.0f, 120.0f);
-                    lightComponent.AddDirectionalShadow(shadow->distance, shadow->bias, shadow->resolution,
-                        shadow->edgeSoftness, shadow->center, orthoSize);
+                // The split correction and the long range distance are read every frame, a different number of cascades
+                // needs new maps. Long range takes one of the views
+                auto cascadeCount = shadow->viewCount - (shadow->longRange ? 1 : 0);
+                auto longRange = shadow->longRange;
+                if (Widgets::BeginProperties("LightShadowCascaded")) {
+                    Widgets::PropertyLabel("Count", "Cascades split the shadow distance, more of them give sharper "
+                        "shadows close to the camera");
+                    ImGui::SliderInt("##Cascade count", &cascadeCount, 1, MAX_SHADOW_VIEW_COUNT - (longRange ? 1 : 0));
+                    Widgets::PropertyLabel("Split correction", "0 splits the distance evenly, 1 gives the close cascades less of it");
+                    ImGui::DragFloat("##Split correction", &shadow->splitCorrection, 0.01f, 0.0f, 1.0f);
+                    Widgets::PropertyLabel("Long range", "One more cascade with a coarse shadow far beyond the distance");
+                    ImGui::Checkbox("##Long range", &longRange);
+                    ImGui::BeginDisabled(!longRange);
+                    Widgets::PropertyLabel("Long range distance");
+                    if (ImGui::DragFloat("##Long range distance", &shadow->longRangeDistance, 10.0f, 10.0f, 10000.0f) &&
+                        shadow->longRange)
+                        shadow->views.back().farDistance = shadow->longRangeDistance;
+                    ImGui::EndDisabled();
+                    Widgets::EndProperties();
                 }
-                else {
-                    ImGui::SliderInt("Cascade count", &shadow->viewCount, 1, 5);
-                    ImGui::DragFloat("Split correction", &shadow->splitCorrection, 0.01f, 0.0f, 1.0f);
-                    ImGui::Checkbox("Long range", &shadow->longRange);
-                    ImGui::DragFloat("Long range distance", &shadow->longRangeDistance, 10.0f, 10.0f, 10000.0f);
 
-                    lightComponent.AddDirectionalShadow(shadow->distance, shadow->bias, shadow->resolution, shadow->edgeSoftness,
-                        shadow->viewCount, shadow->splitCorrection, shadow->longRange, shadow->longRangeDistance);
+                cascadeCount = std::min(cascadeCount, MAX_SHADOW_VIEW_COUNT - (longRange ? 1 : 0));
+                if (cascadeCount != shadow->viewCount - (shadow->longRange ? 1 : 0) || longRange != shadow->longRange) {
+                    auto previous = shadow;
+                    lightComponent.AddDirectionalShadow(previous->distance, previous->bias, previous->resolution, previous->edgeSoftness,
+                        cascadeCount + (longRange ? 1 : 0), previous->splitCorrection, longRange, previous->longRangeDistance);
+                    shadow->longRangeDistance = previous->longRangeDistance;
+                    shadow->allowTerrain = previous->allowTerrain;
+                    shadow->allowDynamicEntities = previous->allowDynamicEntities;
+                    shadow->cascadeBlendDistance = previous->cascadeBlendDistance;
                 }
             }
-            else if (lightComponent.type == LightType::PointLight) {
-
-
-            }
-
-            
-
         }
 
         return false;

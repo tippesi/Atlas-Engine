@@ -190,6 +190,8 @@ namespace Atlas::Scene::Components {
             {"shape", static_cast<int32_t>(p.shape)},
             {"density", p.density},
             {"scatteringColor", p.scatteringColor},
+            {"scatteringFactor", p.scatteringFactor},
+            {"scatteringAnisotropy", p.scatteringAnisotropy},
             {"emissiveColor", p.emissiveColor},
             {"ambientFactor", p.ambientFactor},
             {"selfShadowing", p.selfShadowing},
@@ -213,6 +215,8 @@ namespace Atlas::Scene::Components {
         try_get_json(j, "enable", p.enable);
         try_get_json(j, "density", p.density);
         try_get_json(j, "scatteringColor", p.scatteringColor);
+        try_get_json(j, "scatteringFactor", p.scatteringFactor);
+        try_get_json(j, "scatteringAnisotropy", p.scatteringAnisotropy);
         try_get_json(j, "emissiveColor", p.emissiveColor);
         try_get_json(j, "ambientFactor", p.ambientFactor);
         try_get_json(j, "selfShadowing", p.selfShadowing);
@@ -336,6 +340,12 @@ namespace Atlas::Scene::Components {
         if (j.contains("shadow")) {
             p.shadow = CreateRef<Lighting::Shadow>();
             j.at("shadow").get_to(*p.shadow);
+
+            // Directional lights only have cascaded shadows, an orthographic one from an older scene becomes cascades
+            if (!p.HasFittingShadow()) {
+                p.FitShadowToType();
+                Log::Message("Converted a shadow which didn't fit its light, e.g. the orthographic shadow of a directional light");
+            }
         }
     }
 

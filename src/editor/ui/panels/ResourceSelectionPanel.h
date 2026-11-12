@@ -105,26 +105,33 @@ namespace Atlas::Editor::UI {
                 resourceChanged = true;
             }
 
+            // Buttons next to the resource have the frame padding of the resource button, so they are as high as the row
+            auto rowIconButton = [&](const char* id, IconType iconType, const char* tooltip) {
+                auto& icon = Singletons::icons->Get(iconType);
+                auto set = Singletons::imguiWrapper->GetTextureId(&icon);
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+                auto pressed = ImGui::ImageButton(id, set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f));
+                ImGui::PopStyleVar();
+                ImGui::PopStyleColor();
+
+                ImGui::SetItemTooltip("%s", tooltip);
+                return pressed;
+                };
+
             if (canOpen) {
                 ImGui::SameLine();
-                if (Widgets::IconButton("Open in material editor", Singletons::icons->Get(IconType::OpenInNew), lineHeight, "Open in material editor"))
+                if (rowIconButton("Resource open button", IconType::OpenInNew, "Open in material editor"))
                     ContentBrowserWindow::contentToEditPath = resourceHandle.GetResource()->path;
             }
 
             if (resourceHandle.IsValid()) {
                 ImGui::SameLine();
-
-                auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
-                auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
-
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-                if (ImGui::ImageButton("Resource delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+                if (rowIconButton("Resource delete button", IconType::Trash, "Remove")) {
                     resourceHandle = ResourceHandle<T>();
                     resourceChanged = true;
                 }
-                ImGui::PopStyleVar();
-                ImGui::PopStyleColor();
             }
 
             /*

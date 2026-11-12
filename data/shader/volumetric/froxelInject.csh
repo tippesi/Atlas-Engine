@@ -20,11 +20,13 @@ layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 const float punctualLightDistance = 100.0;
 
 // Integrates the inverse square falloff along the part of the view ray inside the froxel, such that the energy doesn't
-// depend on the jitter. The shadow is sampled where the falloff has most of its energy
+// depend on the jitter. The shadow is sampled where the falloff has most of its energy. The fog volumes have their own
+// phase function, their light is returned in volumeScattering where hasVolumes is set
 vec3 ComputePunctualLightScattering(uint lightType, vec3 rayDirection, float rayStart, float rayEnd, float sampleOffset,
-    float angularRadius) {
+    float angularRadius, bool hasVolumes, float volumeAnisotropy, out vec3 volumeScattering) {
 
     vec3 lightScattering = vec3(0.0);
+    volumeScattering = vec3(0.0);
 
     for (int j = 0; j < sharedLightIndicesCount; j++) {
         VolumetricLight light = sharedLights[j];
@@ -65,17 +67,22 @@ vec3 ComputePunctualLightScattering(uint lightType, vec3 rayDirection, float ray
         }
 
         float NdotL = dot(-pointToLight / max(sqrt(sqrDistance), 0.001), rayDirection);
-        float phaseFunction = ComputeScattering(uniforms.fog.scatteringAnisotropy, NdotL);
         float shadowValue = GetShadowFactorPunctualLight(j, lightType, shadowPosition);
 
-        lightScattering += phaseFunction * shadowValue * light.color.rgb * attenuation * light.intensity * falloff;
+        vec3 incomingLight = shadowValue * light.color.rgb * attenuation * light.intensity * falloff;
+        lightScattering += ComputeScattering(uniforms.fog.scatteringAnisotropy, NdotL) * incomingLight;
+        if (hasVolumes)
+            volumeScattering += ComputeScattering(volumeAnisotropy, NdotL) * incomingLight;
     }
 
     return lightScattering;
 
 }
 
-vec3 ComputePunctualLightSample(uint lightType, ivec3 froxel, vec3 offset, vec2 volumetricResolution) {
+vec3 ComputePunctualLightSample(uint lightType, ivec3 froxel, vec3 offset, vec2 volumetricResolution,
+    bool hasVolumes, float volumeAnisotropy, out vec3 volumeScattering) {
+
+    volumeScattering = vec3(0.0);
 
     vec3 columnStart = normalize(GetFroxelPosition(froxel, vec3(0.0, 0.5, 1.0), volumetricResolution));
     vec3 columnEnd = normalize(GetFroxelPosition(froxel, vec3(1.0, 0.5, 1.0), volumetricResolution));
@@ -88,7 +95,8 @@ vec3 ComputePunctualLightSample(uint lightType, ivec3 froxel, vec3 offset, vec2 
     float rayLength = length(segmentEnd);
     float rayEnd = min(rayLength, punctualLightDistance);
 
-    return rayStart < rayEnd ? ComputePunctualLightScattering(lightType, segmentEnd / rayLength, rayStart, rayEnd, offset.z, angularRadius) : vec3(0.0);
+    return rayStart < rayEnd ? ComputePunctualLightScattering(lightType, segmentEnd / rayLength, rayStart, rayEnd, offset.z,
+        angularRadius, hasVolumes, volumeAnisotropy, volumeScattering) : vec3(0.0);
 
 }
 
@@ -234,6 +242,11 @@ void main() {
     vec3 volumeEmissive = vec3(0.0);
     float volumeExtinction = 0.0;
 
+    // Overlapping volumes share one phase function, their anisotropies are blended by the light they scatter. A single
+    // volume keeps its own exactly
+    float volumeAnisotropyWeighted = 0.0;
+    float volumeAnisotropyWeight = 0.0;
+
 #ifdef FOG_VOLUMES
     vec3 worldToLight = -normalize(mat3(globalData.ivMatrix) * volumetricLights[0].direction.xyz);
     uint fogVolumeMask = fogVolumeMasks[GetFogVolumeClusterIndex()];
@@ -249,6 +262,10 @@ void main() {
             GetFogVolumeTransmittanceToLight(volume, worldPosition, worldToLight) : 1.0;
 
         vec3 volumeScattering = volumeDensity * volume.scatteringAndDensity.rgb;
+        float scatteringWeight = dot(volumeScattering, vec3(0.2126, 0.7152, 0.0722));
+        volumeAnisotropyWeighted += scatteringWeight * volume.scatteringAnisotropy;
+        volumeAnisotropyWeight += scatteringWeight;
+
         volumeDirectional += transmittance * volumeScattering;
         volumeLocal += volumeScattering;
         volumeAmbient += volume.ambientFactor * volumeScattering;
@@ -257,10 +274,15 @@ void main() {
     }
 #endif
 
+    // Without a volume at the froxel the second phase function is skipped
+    bool hasVolumes = volumeAnisotropyWeight > 0.0;
+    float volumeAnisotropy = hasVolumes ? volumeAnisotropyWeighted / volumeAnisotropyWeight : 0.0;
+
     // The lighting is multiplied by the density, shadows are expensive and don't matter without fog
     bool hasFog = validFroxel && ((density > 0.0 && heightDensity > 0.001) || volumeExtinction > 0.0);
 
     vec3 directionalScattering = vec3(0.0);
+    vec3 volumeDirectionalScattering = vec3(0.0);
     for (int j = 0; hasFog && j < uniforms.directionalLightCount; j++) {
         VolumetricLight light = volumetricLights[j];
 
@@ -274,28 +296,37 @@ void main() {
         float extinctionToLight = ComputeVolumetricFog(uniforms.fog, worldPosition, lightPosition);
         float NdotL = dot(rayDirection, normalize(light.direction.xyz));
 
-        float phaseFunction = ComputeScattering(uniforms.fog.scatteringAnisotropy, NdotL);
-
-        directionalScattering += shadowValue * phaseFunction * light.color.rgb * light.intensity * extinctionToLight;
+        vec3 incomingLight = shadowValue * light.color.rgb * light.intensity * extinctionToLight;
+        directionalScattering += ComputeScattering(uniforms.fog.scatteringAnisotropy, NdotL) * incomingLight;
+        if (hasVolumes)
+            volumeDirectionalScattering += ComputeScattering(volumeAnisotropy, NdotL) * incomingLight;
     }
 
     vec3 center = GetFroxelPosition(froxel, vec3(0.5), volumetricResolution);
 
     vec3 localScattering = vec3(0.0);
+    vec3 volumeLocalScattering = vec3(0.0);
 #ifdef LOCAL_LIGHTS
+    vec3 volumeLightScattering;
     LoadLightTypeData(POINT_LIGHT);
-    if (hasFog && sharedLightIndicesCount > 0)
-        localScattering += ComputePunctualLightSample(POINT_LIGHT, froxel, pushConstants.jitter.xyz, volumetricResolution);
+    if (hasFog && sharedLightIndicesCount > 0) {
+        localScattering += ComputePunctualLightSample(POINT_LIGHT, froxel, pushConstants.jitter.xyz, volumetricResolution,
+            hasVolumes, volumeAnisotropy, volumeLightScattering);
+        volumeLocalScattering += volumeLightScattering;
+    }
     LoadLightTypeData(SPOT_LIGHT);
-    if (hasFog && sharedLightIndicesCount > 0)
-        localScattering += ComputePunctualLightSample(SPOT_LIGHT, froxel, pushConstants.jitter.xyz, volumetricResolution);
+    if (hasFog && sharedLightIndicesCount > 0) {
+        localScattering += ComputePunctualLightSample(SPOT_LIGHT, froxel, pushConstants.jitter.xyz, volumetricResolution,
+            hasVolumes, volumeAnisotropy, volumeLightScattering);
+        volumeLocalScattering += volumeLightScattering;
+    }
 #endif
 
     vec3 skyAmbient = hasFog ? GetSkyAmbient() : vec3(0.0);
 
     vec3 scattering = uniforms.fog.scatteringFactor * uniforms.fog.extinctionCoefficients.rgb * density *
         (directionalScattering + localScattering + uniforms.fog.ambientFactor * skyAmbient);
-    scattering += volumeDirectional * directionalScattering + volumeLocal * localScattering +
+    scattering += volumeDirectional * volumeDirectionalScattering + volumeLocal * volumeLocalScattering +
         volumeAmbient * skyAmbient + volumeEmissive;
     float extinction = uniforms.fog.extinctionFactor * density + volumeExtinction;
 

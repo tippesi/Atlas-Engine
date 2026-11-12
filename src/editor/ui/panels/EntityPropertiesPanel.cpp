@@ -134,11 +134,10 @@ namespace Atlas::Editor::UI {
         {
             ImGui::Spacing();
 
-            auto spacing = ImGui::GetStyle().ItemSpacing.x;
-            auto buttonWidth = (ImGui::GetContentRegionAvail().x - spacing) * 0.5f;
-
+            // Components are removed with the trash can or the context menu of their header. The name has neither, every
+            // entity keeps it
             Theme::PushPrimaryButton();
-            if (ImGui::Button("Add component", { buttonWidth, 0 }))
+            if (ImGui::Button("Add component", { -FLT_MIN, 0 }))
                 ImGui::OpenPopup("AddComponent");
             Theme::PopPrimaryButton();
 
@@ -214,46 +213,6 @@ namespace Atlas::Editor::UI {
                 if (entity.HasComponent<RigidBodyComponent>() &&
                     !entity.HasComponent<ConstraintComponent>() && matches("Constraint") && ImGui::MenuItem("Constraint"))
                     entity.AddComponent<ConstraintComponent>();
-
-                ImGui::EndPopup();
-            }
-
-            // Remove components
-            ImGui::SameLine(0.0f, spacing);
-            if (ImGui::Button("Remove component", { -FLT_MIN, 0 }))
-                ImGui::OpenPopup("RemoveComponent");
-
-            if (ImGui::BeginPopup("RemoveComponent")) {
-                if (entity.HasComponent<NameComponent>()  && !rootNode && ImGui::MenuItem("Name"))
-                    entity.RemoveComponent<NameComponent>();
-                if (entity.HasComponent<TransformComponent>() && ImGui::MenuItem("Transform"))
-                    entity.RemoveComponent<TransformComponent>();
-                if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Mesh"))
-                    entity.RemoveComponent<MeshComponent>();
-                if (entity.HasComponent<AnimationComponent>() && ImGui::MenuItem("Animation"))
-                    entity.RemoveComponent<AnimationComponent>();
-                if (entity.HasComponent<LightComponent>() && ImGui::MenuItem("Light"))
-                    entity.RemoveComponent<LightComponent>();
-                if (entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Audio"))
-                    entity.RemoveComponent<AudioComponent>();
-                if (entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Audio volume"))
-                    entity.RemoveComponent<AudioVolumeComponent>();
-                if (entity.HasComponent<FogVolumeComponent>() && ImGui::MenuItem("Fog volume"))
-                    entity.RemoveComponent<FogVolumeComponent>();
-                if (entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Camera"))
-                    entity.RemoveComponent<CameraComponent>();
-                if (entity.HasComponent<TextComponent>() && ImGui::MenuItem("Text"))
-                    entity.RemoveComponent<TextComponent>();
-                if (entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Lua script"))
-                    entity.RemoveComponent<LuaScriptComponent>();
-                if (entity.HasComponent<SplineComponent>() && ImGui::MenuItem("Spline"))
-                    entity.RemoveComponent<SplineComponent>();
-                if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Player"))
-                    entity.RemoveComponent<PlayerComponent>();
-                if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Rigid body"))
-                    entity.RemoveComponent<RigidBodyComponent>();
-                if (entity.HasComponent<ConstraintComponent>() && ImGui::MenuItem("Constraint"))
-                    entity.RemoveComponent<ConstraintComponent>();
 
                 ImGui::EndPopup();
             }

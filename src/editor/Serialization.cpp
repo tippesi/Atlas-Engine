@@ -9,6 +9,8 @@
 #include "physics/PhysicsSerializer.h"
 
 #include "Log.h"
+
+#include <algorithm>
 #include "loader/AssetLoader.h"
 
 namespace Atlas::Editor {
@@ -71,6 +73,16 @@ namespace Atlas::Editor {
 
     }
 
+    std::string Serialization::GetSceneWindowConfigFilename(const ResourceHandle<Scene::Scene>& scene) {
+
+        // The path without its extension, e.g. scenes_sponzaWindowConfig.json for scenes/sponza.aescene
+        auto key = UI::SceneWindow::GetScenePath(scene);
+        key = key.substr(0, key.rfind('.'));
+        std::replace_if(key.begin(), key.end(), [](char c) { return c == '/' || c == '\\' || c == ':'; }, '_');
+        return configPath + key + "WindowConfig.json";
+
+    }
+
     void Serialization::SerializeSceneWindow(const Ref<UI::SceneWindow>& sceneWindow) {
 
         if (!sceneWindow->scene.IsLoaded())
@@ -101,9 +113,7 @@ namespace Atlas::Editor {
             { "camera", camera }
         };
 
-        auto filename = configPath + sceneWindow->scene->name + "WindowConfig.json";
-
-        TryWriteToFile(filename, to_string(j));
+        TryWriteToFile(GetSceneWindowConfigFilename(sceneWindow->scene), to_string(j));
 
     }
 
@@ -112,11 +122,12 @@ namespace Atlas::Editor {
         if (!handle.IsLoaded())
             return nullptr;
 
-        auto filename = configPath + handle->name + "WindowConfig.json";
-
         auto sceneWindow = CreateRef<UI::SceneWindow>(handle, true);
 
-        auto serialized = TryReadFromFile(filename);
+        // Configs written before they were named by the file are named by the scene, saving moves them over
+        auto serialized = TryReadFromFile(GetSceneWindowConfigFilename(handle));
+        if (serialized.empty())
+            serialized = TryReadFromFile(configPath + handle->name + "WindowConfig.json");
 
         if (serialized.empty())
             return sceneWindow;

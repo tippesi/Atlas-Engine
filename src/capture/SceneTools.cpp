@@ -669,7 +669,7 @@ namespace Atlas::Capture {
             const auto& light = scene.GetMainLight();
             j["sun"] = { { "direction", FromVec3(light.properties.directional.direction) },
                 { "color", FromVec3(light.color) }, { "intensity", light.intensity } };
-            if (light.shadow && light.shadow->isCascaded)
+            if (light.shadow)
                 j["sun"]["shadow"] = { { "cascades", light.shadow->viewCount - (light.shadow->longRange ? 1 : 0) },
                     { "longRange", light.shadow->longRange }, { "longRangeDistance", light.shadow->longRangeDistance } };
         }
@@ -701,8 +701,8 @@ namespace Atlas::Capture {
                 if (patch.contains("intensity"))
                     light.intensity = patch["intensity"].get<float>();
                 if (patch.contains("shadow")) {
-                    if (!light.shadow || !light.shadow->isCascaded)
-                        throw std::runtime_error("The main light has no cascaded shadow for the sun shadow settings");
+                    if (!light.shadow)
+                        throw std::runtime_error("The main light has no shadow for the sun shadow settings");
 
                     // The shadow is created anew for its cascades, the long range view is one more after the near ones
                     auto previous = light.shadow;
@@ -715,7 +715,6 @@ namespace Atlas::Capture {
                     light.shadow->allowTerrain = previous->allowTerrain;
                     light.shadow->allowDynamicEntities = previous->allowDynamicEntities;
                     light.shadow->cascadeBlendDistance = previous->cascadeBlendDistance;
-                    light.shadow->followMainCamera = previous->followMainCamera;
                 }
             }
             else {

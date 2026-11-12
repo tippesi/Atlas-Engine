@@ -1087,7 +1087,9 @@ namespace Atlas::Scene {
                     .worldToUnit0 = worldToUnit[0],
                     .worldToUnit1 = worldToUnit[1],
                     .worldToUnit2 = worldToUnit[2],
-                    .scatteringAndDensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.scatteringColor), volume.density * fade),
+                    // The scattering factor only scales the light, the density stays the extinction
+                    .scatteringAndDensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.scatteringColor) * volume.scatteringFactor,
+                        volume.density * fade),
                     .emissiveAndEdgeFade = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.emissiveColor), volume.edgeFade),
                     .noiseOffsetAndFrequency = vec4(windOffset * volume.windInfluence, 1.0f / volume.noiseScale),
                     .noiseAmount = volume.noiseAmount,
@@ -1097,7 +1099,8 @@ namespace Atlas::Scene {
                     .heightFalloff = volume.heightFalloff,
                     .ambientFactor = volume.ambientFactor,
                     .shape = static_cast<int32_t>(volume.shape),
-                    .selfShadowing = volume.selfShadowing
+                    .selfShadowing = volume.selfShadowing,
+                    .scatteringAnisotropy = glm::clamp(volume.scatteringAnisotropy, -0.99f, 0.99f)
                     });
             }
 

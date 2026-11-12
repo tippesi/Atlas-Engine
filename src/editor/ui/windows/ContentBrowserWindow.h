@@ -102,6 +102,13 @@ namespace Atlas::Editor::UI {
 
         void ApplyEdit(ContentType type);
 
+        void RenderDeleteConfirmation();
+
+        // Files and folders the user chose to delete, removed once confirmed
+        std::vector<std::string> pendingDeletePaths;
+        bool pendingDeleteHasDirectory = false;
+        bool openDeleteConfirmation = false;
+
         std::string nextDirectory;
         std::string assetSearch;
         std::string hightlightPath;

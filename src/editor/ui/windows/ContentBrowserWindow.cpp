@@ -143,25 +143,27 @@ namespace Atlas::Editor::UI {
                     auto& config = Singletons::config;
                     auto& scenes = config->openedScenes;
 
-                    // There must be a scene, otherwise we want to get a fatal error
+                    // The same scene, not one with the same name. Prefab windows have scenes of their own which aren't opened
                     auto iter = std::find_if(scenes.begin(), scenes.end(),
-                        [&](const ResourceHandle<Scene::Scene>& item) -> bool {
-                            if (!item.IsLoaded())
-                                return false;
-                            return item->name == scene->name;
-                        });
-                    auto sceneHandle = *iter;
+                        [&](const ResourceHandle<Scene::Scene>& item) { return item.IsLoaded() && item.Get().get() == scene; });
+                    if (iter == scenes.end()) {
+                        Notifications::Push({ .message = "Only entities of opened scenes can be saved as prefabs",
+                            .type = NotificationType::Warning });
+                    }
+                    else {
+                        auto sceneHandle = *iter;
 
-                    auto nameComponent = entity.TryGetComponent<NameComponent>();
-                    auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
+                        auto nameComponent = entity.TryGetComponent<NameComponent>();
+                        auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
-                    auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
-                    auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory) + "/";
-                    if (assetPath.starts_with('/'))
-                        assetPath.erase(assetPath.begin());
+                        auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
+                        auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory) + "/";
+                        if (assetPath.starts_with('/'))
+                            assetPath.erase(assetPath.begin());
 
-                    auto entityPath = assetPath + entityName + ".aeprefab";
-                    Serializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
+                        auto entityPath = assetPath + entityName + ".aeprefab";
+                        Serializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
+                    }
                 }
             }
 
@@ -182,7 +184,61 @@ namespace Atlas::Editor::UI {
 
         ImGui::EndChild();
 
+        RenderDeleteConfirmation();
+
         End();
+
+    }
+
+    void ContentBrowserWindow::RenderDeleteConfirmation() {
+
+        const char* popupName = "Delete content?";
+        if (openDeleteConfirmation) {
+            ImGui::OpenPopup(popupName);
+            openDeleteConfirmation = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+            return;
+
+        if (pendingDeletePaths.size() == 1)
+            ImGui::Text("Delete %s?", std::filesystem::path(pendingDeletePaths.front()).filename().string().c_str());
+        else
+            ImGui::Text("Delete %d items?", int32_t(pendingDeletePaths.size()));
+
+        // A few names, such that a wrong selection is noticed
+        const size_t shownNames = 6;
+        if (pendingDeletePaths.size() > 1) {
+            for (size_t i = 0; i < std::min(shownNames, pendingDeletePaths.size()); i++)
+                ImGui::TextColored(Theme::TextMuted(), "%s", std::filesystem::path(pendingDeletePaths[i]).filename().string().c_str());
+            if (pendingDeletePaths.size() > shownNames)
+                ImGui::TextColored(Theme::TextMuted(), "and %d more", int32_t(pendingDeletePaths.size() - shownNames));
+        }
+
+        ImGui::Spacing();
+        ImGui::TextColored(Theme::Warning(), pendingDeleteHasDirectory ? "Folders are deleted with everything in them. This can't be undone" :
+            "This can't be undone");
+        ImGui::Spacing();
+
+        auto buttonWidth = ImGui::CalcTextSize("Cancel").x * 2.5f;
+        auto confirm = Widgets::DangerButton("Delete", ImVec2(buttonWidth, 0.0f));
+        ImGui::SameLine();
+        // Cancel is the safe choice for keyboard navigation
+        auto cancel = ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f));
+        ImGui::SetItemDefaultFocus();
+        cancel |= ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        if (confirm) {
+            FileSystemHelper::Delete(pendingDeletePaths);
+            selectionStorage.Clear();
+        }
+        if (confirm || cancel) {
+            pendingDeletePaths.clear();
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
 
     }
 
@@ -202,21 +258,19 @@ namespace Atlas::Editor::UI {
         auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
         auto lineHeight = ImGui::GetTextLineHeight();
-        auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->Get(IconType::ArrowLeft));
 
         auto normalizedDataDirectory = Common::Path::Normalize(dataDirectory);
         bool atRoot = Common::Path::Normalize(currentDirectory) == normalizedDataDirectory;
 
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-
         ImGui::BeginDisabled(atRoot);
-        if (ImGui::ImageButton("Back button", set, ImVec2(lineHeight, lineHeight), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        if (Widgets::ToolbarIconButton("Back button", Singletons::icons->Get(IconType::ArrowLeft), "Go to parent folder")) {
             auto parentPath = std::filesystem::path(currentDirectory).parent_path();
             currentDirectory = Common::Path::Normalize(parentPath.string());
         }
         ImGui::EndDisabled();
-        ImGui::SetItemTooltip("Go to parent folder");
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         // Breadcrumbs: every part of the path can be clicked to jump there
         auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory);
@@ -282,36 +336,17 @@ namespace Atlas::Editor::UI {
 
         region = ImGui::GetContentRegionAvail();
         auto& viewIcon = Singletons::icons->Get(listView ? IconType::ViewGrid : IconType::ViewList);
-        set = Singletons::imguiWrapper->GetTextureId(&viewIcon);
 
         ImGui::SetCursorPos(ImVec2(region.x - 3.0f * (buttonSize.x + 2.0f * padding), 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-        if (ImGui::ImageButton("View button", set, buttonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        if (Widgets::ToolbarIconButton("View button", viewIcon, listView ? "Show as tiles" : "Show as list"))
             listView = !listView;
-        }
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
-        ImGui::SetItemTooltip(listView ? "Show as tiles" : "Show as list");
-
-        auto& filterIcon = Singletons::icons->Get(IconType::Filter);
-        set = Singletons::imguiWrapper->GetTextureId(&filterIcon);
-
-        auto uvMin = ImVec2(0.1f, 0.1f);
-        auto uvMax = ImVec2(0.9f, 0.9f);
-
-        ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-        if (ImGui::ImageButton("Filter button", set, buttonSize, uvMin, uvMax)) {
-            ImGui::OpenPopup("Content browser filter settings");
-        }
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
 
         // Mark the button while a filter hides content
         bool filterActive = (contentFilter & ContentFilterBits::AllBit) != ContentFilterBits::AllBit;
-        ImGui::SetItemTooltip(filterActive ? "Filter content (active)" : "Filter content");
+        ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
+        if (Widgets::ToolbarIconButton("Filter button", Singletons::icons->Get(IconType::Filter),
+            filterActive ? "Filter content (active)" : "Filter content"))
+            ImGui::OpenPopup("Content browser filter settings");
         if (filterActive)
             Widgets::ActiveIndicator();
 
@@ -341,17 +376,9 @@ namespace Atlas::Editor::UI {
         }
 
         region = ImGui::GetContentRegionAvail();
-        auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
-        set = Singletons::imguiWrapper->GetTextureId(&settingsIcon);
-
         ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-        if (ImGui::ImageButton("Settings button", set, buttonSize, uvMin, uvMax)) {
+        if (Widgets::ToolbarIconButton("Settings button", Singletons::icons->Get(IconType::Settings), "Content browser settings"))
             ImGui::OpenPopup("Content browser settings");
-        }
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
 
         if (ImGui::BeginPopup("Content browser settings")) {
 
@@ -632,9 +659,12 @@ namespace Atlas::Editor::UI {
                 CopyPasteHelper::Copy(copy);
             }
 
-            if (ImGui::MenuItem("Delete")) {
-                auto paths = GetSelectedPaths();
-                FileSystemHelper::Delete(paths);
+            // Deleting can't be undone, the window asks before anything is removed
+            if (ImGui::MenuItem("Delete...")) {
+                pendingDeletePaths = GetSelectedPaths();
+                pendingDeleteHasDirectory = std::any_of(pendingDeletePaths.begin(), pendingDeletePaths.end(),
+                    [](const std::string& path) { return std::filesystem::is_directory(path); });
+                openDeleteConfirmation = true;
             }
 
             ImGui::EndPopup();
@@ -730,15 +760,26 @@ namespace Atlas::Editor::UI {
         const char* text = filename.c_str();
         const char* textEnd = text + filename.size();
 
-        // The first line ends at a separator in its second half if there is one, the second one gets an ellipsis
+        // Lines only break at separators in the second half of the first line, or before the extension. Without
+        // one the name stays on one line and ends with an ellipsis, breaking inside a word makes names hard to read
         auto firstLineEnd = font->CalcWordWrapPositionA(ImGui::GetFontSize() / font->FontSize, text, textEnd, maxWidth);
         if (firstLineEnd == text)
             firstLineEnd = textEnd;
-        for (auto separator = firstLineEnd - 1; firstLineEnd < textEnd && separator > text + (firstLineEnd - text) / 2; separator--) {
-            if (*separator == '_' || *separator == '-' || *separator == '.' || *separator == ' ') {
-                firstLineEnd = separator + 1;
-                break;
+        if (firstLineEnd < textEnd) {
+            auto breakAt = textEnd;
+            for (auto separator = firstLineEnd - 1; separator > text + (firstLineEnd - text) / 2; separator--) {
+                if (*separator == '_' || *separator == '-' || *separator == ' ') {
+                    breakAt = separator + 1;
+                    break;
+                }
             }
+            // The extension alone on the second line, e.g. a long name followed by .png
+            auto extension = std::find(std::make_reverse_iterator(textEnd), std::make_reverse_iterator(text), '.');
+            auto extensionStart = extension.base() - 1;
+            if (breakAt == textEnd && extension != std::make_reverse_iterator(text) && extensionStart <= firstLineEnd &&
+                extensionStart > text + (firstLineEnd - text) / 2)
+                breakAt = extensionStart;
+            firstLineEnd = breakAt;
         }
 
         auto renderCentered = [&](const char* lineStart, const char* lineEnd) {
@@ -748,7 +789,9 @@ namespace Atlas::Editor::UI {
             };
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-        renderCentered(text, firstLineEnd);
+        auto firstLineShortened = renderCentered(text, firstLineEnd);
+        if (firstLineShortened)
+            ImGui::SetItemTooltip("%s", text);
         if (firstLineEnd < textEnd && renderCentered(firstLineEnd, textEnd))
             ImGui::SetItemTooltip("%s", text);
         else if (firstLineEnd == textEnd)

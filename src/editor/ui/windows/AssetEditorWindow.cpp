@@ -1,4 +1,5 @@
 #include "AssetEditorWindow.h"
+#include "../Widgets.h"
 
 #include "../../DataCreator.h"
 #include "../../Singletons.h"
@@ -28,7 +29,8 @@ namespace Atlas::Editor::UI {
 
         // The layout depends on the asset, e.g. skinned meshes have more panels
         if (!IsReady()) {
-            ImGui::TextDisabled("Loading...");
+            auto loadingText = "Loading " + Common::Path::GetFileName(GetAssetPath()) + "...";
+            Widgets::LoadingState(loadingText.c_str());
             End();
             return;
         }
@@ -209,9 +211,7 @@ namespace Atlas::Editor::UI {
         auto headingMin = ImGui::GetCursorScreenPos();
         ImGui::PushClipRect(headingMin, ImVec2(headingMin.x + ImGui::GetContentRegionAvail().x - saveWidth - style.ItemSpacing.x,
             headingMin.y + 2.0f * ImGui::GetTextLineHeight()), true);
-        ImGui::SetWindowFontScale(1.5f);
-        ImGui::TextUnformatted(Common::Path::GetFileName(path).c_str());
-        ImGui::SetWindowFontScale(1.0f);
+        Widgets::Heading(Common::Path::GetFileName(path).c_str());
         ImGui::PopClipRect();
         ImGui::TextColored(Theme::TextMuted(), "%s", path.c_str());
         auto headingEnd = ImGui::GetCursorPos();

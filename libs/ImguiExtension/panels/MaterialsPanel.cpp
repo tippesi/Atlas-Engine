@@ -12,7 +12,8 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::InputTextWithHint("Search", "Type to search material", &materialSearch);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##Search", "Search materials...", &materialSearch);
 
         auto matches = materials | std::views::filter(
             [&](const ResourceHandle<Material>& material) {
@@ -68,7 +69,8 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::InputTextWithHint("Search", "Type to search material", &materialSearch);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##Search", "Search materials...", &materialSearch);
 
         auto matches = materials | std::views::filter(
             [&](const Ref<Material>& material) {

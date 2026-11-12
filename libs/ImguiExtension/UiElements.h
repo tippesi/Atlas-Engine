@@ -18,6 +18,15 @@ namespace Atlas::ImguiExtension {
 
         static void Tooltip(const char* text, float size = 35.0f);
 
+        // Properties with a muted label on the left and the value filling the rest of the row. Call PropertyLabel
+        // before each value, then EndProperties. Same layout as the property tables of the editor
+        static bool BeginProperties(const char* id);
+
+        // Starts a row, the next item is the value and fills its column
+        static void PropertyLabel(const char* label, const char* tooltip = nullptr);
+
+        static void EndProperties();
+
     };
 
 }

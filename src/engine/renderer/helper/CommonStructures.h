@@ -94,6 +94,11 @@ namespace Atlas {
             float ambientFactor;
             int32_t shape;
             float selfShadowing;
+
+            float scatteringAnisotropy;
+            float padding0;
+            float padding1;
+            float padding2;
         };
 
         struct alignas(16) CloudShadow {

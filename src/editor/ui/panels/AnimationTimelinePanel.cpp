@@ -27,7 +27,7 @@ namespace Atlas::Editor::UI {
 
         auto track = GetTrack(animationComponent, shownLayer);
         if (!track.animation->IsLoaded()) {
-            ImGui::TextDisabled("Play an animation to see its keys");
+            Widgets::EmptyState("Play an animation to see its keys");
             saveRequested = deleteKeyRequested = false;
             return;
         }
@@ -350,31 +350,39 @@ namespace Atlas::Editor::UI {
         const char* typeNames[] = { "Position", "Rotation", "Scale" };
         ImGui::SeparatorText((channel.jointName + " " + typeNames[int32_t(selectedKey.type)]).c_str());
 
-        auto time = times[selectedKey.key];
-        if (ImGui::DragFloat("Time", &time, 0.005f, 0.0f, animation.duration, "%.3f s")) {
-            selectedKey.key = MoveKey(channel, selectedKey.type, selectedKey.key, time);
-            modified = true;
-        }
-
-        switch (selectedKey.type) {
-        case KeyType::Position:
-            modified |= Widgets::DragVec3("Position", channel.positions[selectedKey.key], 0.001f);
-            break;
-        case KeyType::Rotation: {
-            auto& rotation = channel.rotations[selectedKey.key];
-            auto euler = glm::degrees(glm::eulerAngles(rotation));
-            if (Widgets::DragVec3("Rotation", euler, 0.1f, 0.0f, 0.0f, 0.0f, "%.1f")) {
-                rotation = quat(glm::radians(euler));
+        if (Widgets::BeginProperties("Key")) {
+            auto time = times[selectedKey.key];
+            Widgets::PropertyLabel("Time");
+            if (ImGui::DragFloat("##Time", &time, 0.005f, 0.0f, animation.duration, "%.3f s")) {
+                selectedKey.key = MoveKey(channel, selectedKey.type, selectedKey.key, time);
                 modified = true;
             }
-            break;
-        }
-        case KeyType::Scale:
-            modified |= Widgets::DragVec3("Scale", channel.scales[selectedKey.key], 0.001f, 1.0f);
-            break;
+
+            switch (selectedKey.type) {
+            case KeyType::Position:
+                Widgets::PropertyLabel("Position");
+                modified |= Widgets::DragVec3("##Position", channel.positions[selectedKey.key], 0.001f);
+                break;
+            case KeyType::Rotation: {
+                auto& rotation = channel.rotations[selectedKey.key];
+                auto euler = glm::degrees(glm::eulerAngles(rotation));
+                Widgets::PropertyLabel("Rotation");
+                if (Widgets::DragVec3("##Rotation", euler, 0.1f, 0.0f, 0.0f, 0.0f, "%.1f")) {
+                    rotation = quat(glm::radians(euler));
+                    modified = true;
+                }
+                break;
+            }
+            case KeyType::Scale:
+                Widgets::PropertyLabel("Scale");
+                modified |= Widgets::DragVec3("##Scale", channel.scales[selectedKey.key], 0.001f, 1.0f);
+                break;
+            }
+
+            Widgets::EndProperties();
         }
 
-        if (ImGui::Button("Delete key", ImVec2(-FLT_MIN, 0.0f))) {
+        if (Widgets::DangerButton("Remove key")) {
             RemoveKey(channel, selectedKey.type, selectedKey.key);
             selectedKey = KeyRef();
             modified = true;

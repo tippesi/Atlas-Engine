@@ -7,6 +7,7 @@
 #include "EntityPropertiesPanel.h"
 #include "SceneStatisticsPanel.h"
 #include "ResourceSelectionPanel.h"
+#include "../Widgets.h"
 #include "TerrainPanel.h"
 #include "NavigationPanel.h"
 #include "ImguiExtension/Panels.h"
@@ -56,7 +57,7 @@ namespace Atlas::Editor::UI {
                 irradianceVolumePanel.Render(t, scene);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::RTGI>>) {
-                RenderHeading("Raytraced global illumination");
+                RenderHeading("Ray traced global illumination");
                 rtgiPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::SSGI>>) {
@@ -79,7 +80,7 @@ namespace Atlas::Editor::UI {
                             return textureSelectionPanel.Render(handle);
                         });
                     ImGui::Separator();
-                    if (ImGui::Button("Remove ocean", ImVec2(-FLT_MIN, 0.0f)))
+                    if (Widgets::DangerButton("Remove ocean"))
                         t = nullptr;
                 }
                 else if (ImGui::Button("Create ocean", ImVec2(-FLT_MIN, 0.0f))) {
@@ -112,9 +113,13 @@ namespace Atlas::Editor::UI {
                     });
             }
             else if constexpr (std::is_same_v<T, Ref<Scene::Scene>>) {
-                RenderHeading("Rendering");
-                ImGui::Checkbox("Occlusion culling", &t->occlusionCulling);
-                RenderHeading("Scene statistics");
+                // One heading for the scene, the statistics bring their own sections
+                RenderHeading("Scene");
+                if (Widgets::BeginProperties("Scene rendering")) {
+                    Widgets::PropertyLabel("Occlusion culling", "Skips meshes hidden behind others");
+                    ImGui::Checkbox("##Occlusion culling", &t->occlusionCulling);
+                    Widgets::EndProperties();
+                }
                 sceneStatisticsPanel.Render(t);
             }
 
@@ -150,12 +155,7 @@ namespace Atlas::Editor::UI {
     private:
         void RenderHeading(const std::string& heading) {
 
-            ImGui::SetWindowFontScale(1.5f);
-
-            ImGui::Text("%s", heading.c_str());
-
-            ImGui::SetWindowFontScale(1.0f);
-
+            Widgets::Heading(heading.c_str());
             ImGui::Separator();
 
         }
