@@ -1,11 +1,13 @@
 #include "SceneEditor.h"
 #include "Checks.h"
+#include "MaterialGraphTools.h"
 #include "Scatter.h"
 #include "TerrainTools.h"
 
 #include "common/MatrixDecomposition.h"
 #include "common/Path.h"
 #include "loader/AssetReferences.h"
+#include "loader/MaterialGraphLoader.h"
 #include "loader/MaterialLoader.h"
 #include "loader/MeshLoader.h"
 #include "loader/AnimationLoader.h"
@@ -21,6 +23,7 @@
 #include "scene/components/ComponentSerializer.h"
 #include "scene/components/LuaScriptComponent.h"
 #include "scripting/Script.h"
+#include "streaming/TextureStreaming.h"
 #include "materialgraph/Baker.h"
 #include "tools/ImpostorTool.h"
 #include "Serializer.h"
@@ -1415,6 +1418,127 @@ namespace Atlas::Capture {
 
     }
 
+    static json EditMaterialGraphFile(EditContext& context, const json& operation) {
+
+        // The file is written once the checks passed, graphs the engine already loaded follow the edit right away
+        auto& edits = context.state.graphEdits;
+        auto result = EditMaterialGraph(operation, edits);
+        auto path = result["graph"].get<std::string>();
+        auto graph = ResourceManager<MaterialGraph::Graph>::GetResource(path);
+        if (graph.IsLoaded()) {
+            *graph.Get() = *CreateGraph(edits.documents.at(path));
+
+            std::set<const Material*> materials;
+            for (const auto& material : ResourceManager<Material>::GetResources())
+                if (material.IsLoaded() && material->graph.GetResource() == graph.GetResource())
+                    materials.insert(material.Get().get());
+            UpdatePipelinesOfMaterials(materials);
+        }
+
+        return json::array({ result });
+
+    }
+
+    // Graphs changed by the job come from their documents, the files still have the old state
+    static ResourceHandle<MaterialGraph::Graph> GetGraphOfEdit(EditContext& context, const std::string& path) {
+
+        auto graph = ResourceManager<MaterialGraph::Graph>::GetResource(path);
+        const auto& edits = context.state.graphEdits;
+        if (edits.changed.contains(path))
+            return graph.IsLoaded() ? graph : ResourceManager<MaterialGraph::Graph>::AddResource(path, ResourceOrigin::User,
+                CreateGraph(edits.documents.at(path)));
+
+        // A graph created by a dry run stays loaded without a file
+        if (!fs::exists(GetAssetDirectory() / path))
+            throw std::runtime_error("no graph " + path);
+        if (graph.IsLoaded())
+            return graph;
+
+        graph = ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoader(path, ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph);
+        if (!graph.IsLoaded())
+            throw std::runtime_error("couldn't load the graph " + path);
+        return graph;
+
+    }
+
+    static json EditAssignMaterialGraph(EditContext& context, const json& operation) {
+
+        CheckAssignMaterialGraph(operation);
+
+        ResourceHandle<MaterialGraph::Graph> assignedGraph;
+        if (operation.contains("graph") && !operation["graph"].is_null())
+            assignedGraph = GetGraphOfEdit(context, ToAssetPath(operation["graph"].get<std::string>()));
+
+        json affected = json::array();
+        std::set<const Material*> graphChanged;
+        for (const auto& path : FindMaterialFiles(operation.at("materials"))) {
+            auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(path, ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+            if (!material.IsLoaded())
+                throw std::runtime_error("couldn't load " + path);
+
+            auto graph = operation.contains("graph") ? assignedGraph : material->graph;
+            auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
+            if (compiled) {
+                auto graphPath = graph.GetResource()->path;
+                if (!compiled->errors.empty())
+                    throw std::runtime_error("the graph " + graphPath + " doesn't compile");
+                CheckGraphValues(operation, *compiled, graphPath);
+            }
+            else if (operation.contains("values") || operation.contains("textures")) {
+                throw std::runtime_error(path + " has no graph, set \"graph\"");
+            }
+
+            // Validated, from here on the material changes. The file is written by SaveMaterials once the checks passed
+            context.state.changedMaterials.insert(path);
+            if (graph.GetResource() != material->graph.GetResource()) {
+                material->graph = graph;
+                graphChanged.insert(material.Get().get());
+            }
+
+            // Values of parameters the graph doesn't have, or values of textures and the other way round, don't apply
+            auto reset = operation.value("reset", json());
+            std::erase_if(material->graphValues, [&](const auto& entry) {
+                auto parameter = compiled ? FindParameter(*compiled, entry.first) : nullptr;
+                return reset == true || !parameter || parameter->type == MaterialGraph::ValueType::Texture; });
+            std::erase_if(material->graphTextures, [&](const auto& entry) {
+                auto parameter = compiled ? FindParameter(*compiled, entry.first) : nullptr;
+                return reset == true || !parameter || parameter->type != MaterialGraph::ValueType::Texture; });
+            material->graphParameterVersion++;
+            if (reset.is_array()) {
+                for (const auto& name : reset)
+                    material->ResetGraphParameter(name.get<std::string>());
+            }
+
+            for (const auto& [name, value] : operation.value("values", json::object()).items()) {
+                auto parameter = FindParameter(*compiled, name);
+                material->SetGraphParameter(name, ToParameterValue(*parameter, value, material->GetGraphValue(*parameter)));
+            }
+            for (const auto& [name, value] : operation.value("textures", json::object()).items()) {
+                if (value.is_null()) {
+                    material->graphTextures.erase(name);
+                    material->graphParameterVersion++;
+                    continue;
+                }
+                material->SetGraphTexture(name, ResourceManager<Texture::Texture2D>::GetOrLoadResourceWithLoaderAsync(
+                    ToAssetPath(value.get<std::string>()), Streaming::TextureStreaming::LoadTexture, false, Texture::Wrapping::Repeat,
+                    Texture::Filtering::Anisotropic));
+            }
+
+            json values = json::object();
+            for (const auto& [name, value] : material->graphValues)
+                values[name] = ToParameterJson(*FindParameter(*compiled, name), value);
+            json textures = json::object();
+            for (const auto& [name, texture] : material->graphTextures)
+                textures[name] = texture.IsValid() ? texture.GetResource()->path : std::string();
+            affected.push_back({ { "material", path }, { "graph", graph.IsLoaded() ? graph.GetResource()->path : std::string() },
+                { "values", values }, { "textures", textures } });
+        }
+        UpdatePipelinesOfMaterials(graphChanged);
+
+        return affected;
+
+    }
+
     static json EditMeshMaterials(EditContext& context, const json& operation) {
 
         json affected = json::array();
@@ -1683,6 +1807,8 @@ namespace Atlas::Capture {
         { "materialCopy", EditMaterialCopy },
         { "compressTextures", EditCompressTextures },
         { "bakeMaterial", EditBakeMaterial },
+        { "materialGraph", EditMaterialGraphFile },
+        { "assignMaterialGraph", EditAssignMaterialGraph },
         { "meshMaterials", EditMeshMaterials },
         { "meshCopy", EditMeshCopy },
         { "makePrefab", EditMakePrefab },
@@ -1762,6 +1888,39 @@ namespace Atlas::Capture {
         }
 
         return saved;
+
+    }
+
+    void RevertUnsavedEdits(EditState& state) {
+
+        std::set<const Material*> changed;
+
+        // Loaded graphs follow their files again, graphs created by the edit have none
+        for (const auto& path : state.graphEdits.changed) {
+            auto graph = ResourceManager<MaterialGraph::Graph>::GetResource(path);
+            if (!graph.IsLoaded() || !fs::exists(GetAssetDirectory() / path))
+                continue;
+
+            *graph.Get() = *Loader::MaterialGraphLoader::LoadGraph(path);
+            for (const auto& material : ResourceManager<Material>::GetResources())
+                if (material.IsLoaded() && material->graph.GetResource() == graph.GetResource())
+                    changed.insert(material.Get().get());
+        }
+
+        for (const auto& path : state.changedMaterials) {
+            auto material = ResourceManager<Material>::GetResource(path);
+            if (!material.IsLoaded())
+                continue;
+
+            // Materials can't be copied, the state of the file goes through the serializer
+            json j = *Loader::MaterialLoader::LoadMaterial(path, false);
+            from_json(j, *material.Get());
+            changed.insert(material.Get().get());
+        }
+
+        UpdatePipelinesOfMaterials(changed);
+        state.graphEdits.changed.clear();
+        state.changedMaterials.clear();
 
     }
 

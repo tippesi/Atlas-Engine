@@ -1,4 +1,5 @@
 #include "Inspect.h"
+#include "MaterialGraphTools.h"
 #include "SceneFile.h"
 
 #include <assimp/Importer.hpp>
@@ -66,6 +67,8 @@ namespace Atlas::Capture {
         std::string assembly;
         size_t limit = 40;
         fs::path output;
+        // Material graphs: the generated shader code
+        bool code = false;
 
     };
 
@@ -296,14 +299,16 @@ namespace Atlas::Capture {
     int32_t Inspect(const std::vector<std::string>& args) {
 
         if (args.size() < 3)
-            throw std::runtime_error("inspect expects a scene, prefab, mesh or model file");
+            throw std::runtime_error("inspect expects a scene, prefab, mesh, model or material graph file, or nodes");
 
         InspectOptions options;
         auto file = ResolveUserPath(args[2]);
         std::error_code error;
         options.file = fs::exists(file, error) ? file : GetAssetDirectory() / args[2];
         for (size_t i = 3; i < args.size(); i++) {
-            if (args[i] == "--filter" && i + 1 < args.size())
+            if (args[i] == "--code")
+                options.code = true;
+            else if (args[i] == "--filter" && i + 1 < args.size())
                 options.filters.push_back(args[++i]);
             else if (args[i] == "--assembly" && i + 1 < args.size())
                 options.assembly = args[++i];
@@ -312,14 +317,18 @@ namespace Atlas::Capture {
             else if (args[i] == "--out" && i + 1 < args.size())
                 options.output = ResolveUserPath(args[++i]);
             else
-                throw std::runtime_error("Unknown inspect option '" + args[i] + "' (--filter, --assembly, --limit, --out)");
+                throw std::runtime_error("Unknown inspect option '" + args[i] + "' (--filter, --assembly, --limit, --out, --code)");
         }
+        if (args[2] == "nodes")
+            return InspectMaterialGraphNodes(options.filters);
         if (!fs::exists(options.file, error))
             throw std::runtime_error("No file " + args[2] + " in the launch or the data directory");
 
         auto extension = options.file.extension().string();
         if (extension == ".aemesh")
             return InspectMesh(options);
+        if (extension == ".aematgraph")
+            return InspectMaterialGraph(options.file, options.filters, options.code, options.output);
         if (extension == ".aescene" || extension == ".aeprefab" || extension == ".json")
             return InspectScene(options);
         return InspectModel(options);

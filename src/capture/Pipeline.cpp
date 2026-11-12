@@ -184,6 +184,8 @@ namespace Atlas::Capture {
                 add(edit["terrain"].get<std::string>());
             for (const auto& material : edit.value("materials", json::array()))
                 add(material["material"].get<std::string>());
+            for (const auto& graph : edit.value("graphs", json::array()))
+                add(graph["graph"].get<std::string>());
         }
 
         json manifest = { { "step", steps[index].name }, { "job", steps[index].jobFile.string() }, { "key", steps[index].key },

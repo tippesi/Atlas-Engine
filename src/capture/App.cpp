@@ -177,6 +177,7 @@ namespace Atlas::Capture {
         stillState = {};
         baseSettings = json();
         editFrames = 0;
+        RevertUnsavedEdits(editState);
         editState = EditState();
         variantCaptures.clear();
         stripCameras.clear();
@@ -785,9 +786,14 @@ namespace Atlas::Capture {
             return;
         }
 
+        if (!editState.graphEdits.changed.empty()) {
+            edit["graphs"] = SaveMaterialGraphs(editState.graphEdits);
+            report.Print("Saved " + std::to_string(edit["graphs"].size()) + " edited material graphs");
+        }
         if (!editState.changedMaterials.empty()) {
             edit["materials"] = SaveMaterials(editState.changedMaterials);
             report.Print("Saved " + std::to_string(editState.changedMaterials.size()) + " edited materials");
+            editState.changedMaterials.clear();
         }
 
         if (!sceneChanged) {

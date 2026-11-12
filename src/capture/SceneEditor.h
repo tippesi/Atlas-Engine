@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Job.h"
+#include "MaterialGraphTools.h"
 #include "SceneTools.h"
 
 #include "loader/ModelImporter.h"
@@ -16,6 +17,8 @@ namespace Atlas::Capture {
 
         // Patched materials are only changed in memory, they are saved once the checks passed
         std::set<std::string> changedMaterials;
+        // Material graphs of the operations, saved together with the materials
+        MaterialGraphEdits graphEdits;
         // Terrain of the scene as it was loaded, it is only edited after a terrainCopy (or with "overwriteTerrain")
         std::string loadedTerrain;
         bool terrainChanged = false;
@@ -37,6 +40,10 @@ namespace Atlas::Capture {
 
     // Writes the materials to their files, a .backup of the original file is kept
     json SaveMaterials(const std::set<std::string>& paths);
+
+    // Loaded materials and graphs an edit changed without saving them (dry runs, failed checks) go back to their files,
+    // the server keeps them loaded for the next jobs
+    void RevertUnsavedEdits(EditState& state);
 
     // Moves an entity to a world position, keeping its rotation (the parent transform is taken into account)
     void SetWorldPosition(Scene::Entity entity, vec3 position);

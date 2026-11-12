@@ -175,7 +175,9 @@ tool isn't listed here, or a listed file doesn't exist.
   `MaterialEditorWindow`, ImGui `MaterialPanel`, `MaterialsPanel`. Capture `material`, `materialCopy`, `meshMaterials`.
 - **Material graphs** (node materials, shader graph, procedural textures, vertex animation, displacement):
   `materialgraph/` (`.aematgraph`, `Compiler`, `NodeLibrary`, `Baker`), editor `MaterialGraphPanel`, see
-  `wiki/MaterialGraphs.md`. Capture `bakeMaterial`, query `materialGraphShaders`.
+  `wiki/MaterialGraphs.md`. Capture `materialGraph` (create and change graphs: nodes, links, parameters),
+  `assignMaterialGraph` (graph and parameter values of materials), `bakeMaterial`, query `materialGraphShaders`,
+  `inspect` of graphs and `inspect nodes` (node library with pins).
 - **Impostors** (billboards, far LOD): `mesh/Impostor`, baked by `tools/ImpostorTool`, loaded by
   `loader/ImpostorLoader`, streamed by `streaming/`.
 
@@ -276,7 +278,7 @@ Renders, plays, measures, checks and edits scenes from JSON jobs, details in `ca
   `--streaming`, `--shader-dir`, `--wait-gpu`.
 - **Without loading** (offline, no GPU, scene file, mesh file, model file, glTF, FBX, pivot, part offsets): `check`
   (job mistakes, entity names with the closest ones, Lua, preflight of `capture.project.json`), `inspect` (scene,
-  prefab, mesh and model files, `--assembly`), `diff` (images as numbers), `compose` (contact sheets), `kill`.
+  prefab, mesh, model and material graph files, `--assembly`), `diff` (images as numbers), `compose` (contact sheets), `kill`.
 - **Games** (test the game with its interface, HUD, menus, mouse): `HostedJob` runs a job in a game host
   (`--capture <job.json>`), captures of the window. Each build passes a job with `playerDisplay` (fullscreen, vsync
   of the player) before jobs in a window run.

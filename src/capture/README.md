@@ -30,6 +30,7 @@ AtlasEngineCapture eval "<lua>" [--play 3] [--scene <scene>]  # the value of Lua
 AtlasEngineCapture wait <command> | status | cancel | stop     # --server <dir> --detach --timeout <s> --wait-gpu
 AtlasEngineCapture check <job.json> ...          # mistakes in jobs without loading anything
 AtlasEngineCapture inspect <scene|prefab|mesh|model> [--filter <pattern>] [--assembly <pattern>] [--limit n] [--out f]
+AtlasEngineCapture inspect <graph.aematgraph> [--filter <pattern>] [--code] [--out f] | inspect nodes [--filter <pattern>]
 AtlasEngineCapture diff <a> <b> [--threshold 8] [--out sheet.jpg]   # images or directories, numbers per image
 AtlasEngineCapture compose <out.jpg> [--width 1536] [--columns n] [--title t] <image | label=image | dir | pattern> ...
 AtlasEngineCapture bench <bench.json>            # A/B timings of builds or shader directories
@@ -218,9 +219,10 @@ is visible, the others what characters collide with (bodies by their shapes, mes
 
 `edit`: `operations`, `output` (default `<scene>.edit.aescene`), `overwrite`, `saveUnchanged`, `dryRun`, `queries`,
 `textureFormat` (`ktx2` for imported models). The edit writes `edit_diff.json`, runs the checks and only saves when they
-pass, then loads the saved scene again to verify it. An overwritten scene is backed up (`.backup-<time>`). `edit` and
-`play` don't combine, verify an edit with a second job. Selections need one topmost match unless `"all": true`;
-`position` is world space, `localPosition`/`rotation`/`scale` parent space.
+pass, then loads the saved scene again to verify it. Materials and graphs an edit changed without saving them (dry
+runs, failed checks) go back to their files before the server runs the next job. An overwritten scene is backed up
+(`.backup-<time>`). `edit` and `play` don't combine, verify an edit with a second job. Selections need one topmost
+match unless `"all": true`; `position` is world space, `localPosition`/`rotation`/`scale` parent space.
 
 ```jsonc
 { "op": "snapToGround", "entity": "Barrel", "offset": 0 }   { "op": "translate", "entity": "#4711", "delta": [0, -6, 0], "space": "world" }
@@ -248,6 +250,13 @@ pass, then loads the saved scene again to verify it. An overwritten scene is bac
 { "op": "meshSettings", "meshes": "x/*.aemesh", "set": { "cullBackFaces": false, "movable": true, "animations": "..." },
   "impostor": { "views": 12, "resolution": 256, "distance": 150, "textureFormat": "ktx2" } }
 { "op": "compressTextures", "directories": ["ancient"] }   { "op": "bakeMaterial", "material": "...", "mode": "textures|average" }
+{ "op": "materialGraph", "graph": "x/graphs/fire.aematgraph", "create": true, "from": "y.aematgraph", "name": "Fire", "maxDisplacement": 0.3,
+  "nodes": [ { "key": "noise", "type": "Fractal noise", "inputs": { "Position": "Object position", "Scale": 5.5 } },
+             { "key": "glow", "type": "Float parameter", "name": "Glow", "value": 8, "range": [0, 30], "group": "Light" },
+             { "node": "Surface output", "inputs": { "Emissive": "glow", "Roughness": 0.8, "Opacity": null } },
+             { "node": "#12", "remove": true } ] }
+{ "op": "assignMaterialGraph", "materials": "x/materials/M_Fire_*.aematerial", "graph": "x/graphs/fire.aematgraph",
+  "values": { "Glow": 8, "Tint": [1, 0.4, 0.4] }, "textures": { "Albedo": "x/t.png" }, "reset": ["Bend"] }
 { "op": "terrainCopy", "path": "terrains/x/x.aeterrain" }   { "op": "shoreLine", "oceanHeight": 0, "resolution": 2048 }
 { "op": "terrainCreate", "path": "...", "heightMap": "h.png", "splatMap": "s.png", "materials": [...], "LoDCount": 6,
   "patchSize": 16, "resolution": 1, "height": 300, "translation": [...] }
@@ -255,6 +264,19 @@ pass, then loads the saved scene again to verify it. An overwritten scene is bac
 { "op": "detachTerrain" }   // dry runs only, to look at what lies below
 ```
 
+- `materialGraph` creates a graph file (`create`, `from` copies one) or changes one. `nodes` entries add a node (`type`,
+  `key` to refer to it) or change one (`node`: `#id`, a key, a parameter name or a node type which occurs once;
+  `remove`). Fields: `name`, `value`, `range`, `group`, `order`, `size`, `texture` (texture parameters), `position`
+  (default: the column of its way to the outputs, the editor's Arrange tidies up) and `inputs`: a link (`"key"`, or
+  `"key.Pin"` for nodes with several outputs), a number or array as the value of the input, `null` disconnects. The
+  graph has to compile. Loaded materials show the change right away, the file is saved with the materials (`.backup`
+  once). `inspect nodes` lists the node types with their pins, `inspect <graph>` the nodes with their
+  links and stages.
+- `assignMaterialGraph` sets the graph of materials (`null` removes it, without `graph` they keep theirs) and their
+  parameter `values` and `textures`; values of parameters the graph doesn't have are dropped, `reset` (`true` or names)
+  goes back to the defaults. Numbers set all components, arrays the first ones; colors are sRGB. Saved like `material`.
+- `check` applies `materialGraph` and `assignMaterialGraph` without loading anything: unknown types, pins, parameters
+  and compile errors with the node.
 - `add` imports model files next to them (`meshes/`, `materials/`); `body` adds a static mesh shape. Spot lights with
   `shadow` stay dark this way.
 - `meshBodies`/`constraint`/`trigger`: bodies follow their world scale, `remove` drops them (grass the player walks

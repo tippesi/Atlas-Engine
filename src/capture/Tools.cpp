@@ -239,7 +239,7 @@ namespace Atlas::Capture {
   kill <pid | captures>                       End a process and the processes it started
   compose <out> [--title t] [--columns n] [--width px] <image | label=image | directory | pattern> ...
   diff <a> <b> [--threshold 0-255] [--out sheet.jpg]   Compare two images or directories of images
-  inspect <scene | prefab | mesh | model> [--filter pattern] [--assembly pattern] [--limit n]
+  inspect <scene | prefab | mesh | model | graph | nodes> [--filter pattern] [--assembly pattern] [--limit n] [--code]
   bench <bench.json>                          Compare builds or shader directories in interleaved rounds
 )";
 

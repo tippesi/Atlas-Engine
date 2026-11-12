@@ -1,5 +1,6 @@
 #include "Check.h"
 #include "LuaJob.h"
+#include "MaterialGraphTools.h"
 #include "Process.h"
 #include "SceneFile.h"
 
@@ -138,6 +139,8 @@ namespace Atlas::Capture {
 
         std::vector<std::string> issues;
         CheckLua(job, issues);
+        if (job.edit)
+            CheckMaterialGraphOperations(job.edit->operations, issues);
 
         auto references = CollectReferences(job);
         auto scenePath = fs::path(job.scene).is_absolute() ? fs::path(job.scene) : GetAssetDirectory() / job.scene;

@@ -58,6 +58,11 @@ material->graph = ResourceHandle<MaterialGraph::Graph>(graph);
 New nodes are entries in `materialgraph/NodeLibrary.cpp` with a GLSL expression, helpers go into
 `data/shader/materialGraph/common.hsh`.
 
+Capture jobs build and change graphs with the edit operation `materialGraph` and put them on materials with
+`assignMaterialGraph`, `check` finds wrong node types, pins and compile errors without loading anything
+(`src/capture/README.md`). `AtlasEngineCapture inspect nodes` lists the node library with its pins, `inspect <graph>`
+the nodes of a graph with their links and stages.
+
 ## Sharing a graph
 
 A graph is its own resource, any number of materials can reference it. Pipelines are shared, values and textures of parameters
