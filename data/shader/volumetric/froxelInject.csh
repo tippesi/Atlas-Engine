@@ -1,11 +1,13 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
-#include <volumetricLights.hsh>
 #include <froxel.hsh>
+
+// volumetricLights.hsh reads gl_WorkGroupSize, which has to be declared before
+layout (local_size_x = FROXEL_CLUSTER_SIZE, local_size_y = FROXEL_CLUSTER_SIZE, local_size_z = FROXEL_CLUSTER_SIZE) in;
+
+#include <volumetricLights.hsh>
 #include <fogVolumes.hsh>
 #include <../common/random.hsh>
-
-layout (local_size_x = FROXEL_CLUSTER_SIZE, local_size_y = FROXEL_CLUSTER_SIZE, local_size_z = FROXEL_CLUSTER_SIZE) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image3D froxelImage;
 layout(set = 3, binding = 1) uniform sampler3D historyFroxelTexture;

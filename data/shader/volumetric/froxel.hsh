@@ -1,3 +1,6 @@
+#include <../globals.hsh>
+#include <../common/convert.hsh>
+
 #define FROXEL_CLUSTER_SIZE 4
 // Thin fog is far below the normal range of the half floats of the froxels
 #define FROXEL_DATA_SCALE 256.0
