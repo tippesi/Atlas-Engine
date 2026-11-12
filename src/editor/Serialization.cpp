@@ -177,6 +177,7 @@ namespace Atlas::Editor {
             { "iconSize", contentBrowserWindow.iconSize },
             { "folderPanelWidth", contentBrowserWindow.folderPanelWidth },
             { "listView", contentBrowserWindow.listView },
+            { "showPreviews", contentBrowserWindow.showPreviews },
             { "pinned", contentBrowserWindow.pinned },
             { "drawerHeight", contentBrowserWindow.height },
         };
@@ -209,6 +210,8 @@ namespace Atlas::Editor {
             j.at("folderPanelWidth").get_to(contentBrowserWindow.folderPanelWidth);
         if (j.contains("listView"))
             j.at("listView").get_to(contentBrowserWindow.listView);
+        if (j.contains("showPreviews"))
+            j.at("showPreviews").get_to(contentBrowserWindow.showPreviews);
         if (j.contains("pinned"))
             j.at("pinned").get_to(contentBrowserWindow.pinned);
         if (j.contains("drawerHeight"))

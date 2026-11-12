@@ -36,6 +36,9 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::Update() {
 
+        // Also while the browser is closed, the previews release what they don't need anymore
+        previews.ReleaseUnused();
+
         // A search runs on the medium pool next to long jobs (e.g. navigation tiles), the window doesn't wait for it.
         // The next search starts once the last one has finished
         if (!show || isEditing || !searchAndFilterJob.HasFinished())
@@ -186,6 +189,9 @@ namespace Atlas::Editor::UI {
 
         RenderDeleteConfirmation();
 
+        // Generates the previews which were requested by the visible content
+        previews.Update();
+
         End();
 
     }
@@ -327,9 +333,11 @@ namespace Atlas::Editor::UI {
 
         auto region = ImGui::GetContentRegionAvail();
         auto buttonSize = ImVec2(lineHeight, lineHeight);
+        // A docked browser also has the button which turns it back into a drawer
+        auto buttonCount = pinned ? 4.0f : 3.0f;
 
         // Wrap input text field into child, such that we can adjust the total size to not overlap anything
-        ImGui::BeginChild("Search field", ImVec2(std::max(region.x - 3.0f * (buttonSize.x + 2.0f * padding), 100.0f), lineHeight + 2.0f * padding));
+        ImGui::BeginChild("Search field", ImVec2(std::max(region.x - buttonCount * (buttonSize.x + 2.0f * padding), 100.0f), lineHeight + 2.0f * padding));
         ImGui::SetNextItemWidth(-FLT_MIN);
         ImGui::InputTextWithHint("##Search", "Search files...", &assetSearch);
         ImGui::EndChild();
@@ -337,13 +345,13 @@ namespace Atlas::Editor::UI {
         region = ImGui::GetContentRegionAvail();
         auto& viewIcon = Singletons::icons->Get(listView ? IconType::ViewGrid : IconType::ViewList);
 
-        ImGui::SetCursorPos(ImVec2(region.x - 3.0f * (buttonSize.x + 2.0f * padding), 0.0f));
+        ImGui::SetCursorPos(ImVec2(region.x - buttonCount * (buttonSize.x + 2.0f * padding), 0.0f));
         if (Widgets::ToolbarIconButton("View button", viewIcon, listView ? "Show as tiles" : "Show as list"))
             listView = !listView;
 
         // Mark the button while a filter hides content
         bool filterActive = (contentFilter & ContentFilterBits::AllBit) != ContentFilterBits::AllBit;
-        ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
+        ImGui::SetCursorPos(ImVec2(region.x - (buttonCount - 1.0f) * (buttonSize.x + 2.0f * padding), 0.0f));
         if (Widgets::ToolbarIconButton("Filter button", Singletons::icons->Get(IconType::Filter),
             filterActive ? "Filter content (active)" : "Filter content"))
             ImGui::OpenPopup("Content browser filter settings");
@@ -376,7 +384,7 @@ namespace Atlas::Editor::UI {
         }
 
         region = ImGui::GetContentRegionAvail();
-        ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
+        ImGui::SetCursorPos(ImVec2(region.x - (buttonCount - 2.0f) * (buttonSize.x + 2.0f * padding), 0.0f));
         if (Widgets::ToolbarIconButton("Settings button", Singletons::icons->Get(IconType::Settings), "Content browser settings"))
             ImGui::OpenPopup("Content browser settings");
 
@@ -388,10 +396,17 @@ namespace Atlas::Editor::UI {
             ImGui::Checkbox("Filter recursively", &filterRecursively);
 
             ImGui::SeparatorText("Display");
+            ImGui::Checkbox("Show previews", &showPreviews);
+            ImGui::SetItemTooltip("Shows textures, meshes, materials, prefabs, fonts and audio instead of the icons of their type");
             ImGui::SliderFloat("Icon size", &iconSize, minIconSize, maxIconSize, "%.0f px");
             ImGui::TextDisabled("Ctrl + mouse wheel over the content also changes the size");
 
             ImGui::EndPopup();
+        }
+
+        if (pinned) {
+            ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
+            RenderPinButton();
         }
 
     }
@@ -405,11 +420,18 @@ namespace Atlas::Editor::UI {
             iconSize = std::clamp(iconSize + ImGui::GetIO().MouseWheel * 8.0f, minIconSize, maxIconSize);
         }
 
-        auto itemSize = iconSize + 2.0f * padding;
-        auto columnCount = listView ? 1 : int32_t(totalWidth / itemSize);
-        columnCount = columnCount <= 0 ? 1 : columnCount;
+        auto columnCount = 1;
+        float columnSize = totalWidth;
+        gridStart = padding;
 
-        float columnSize = totalWidth / float(columnCount);
+        // Tiles fill the width with small gaps, the icon size is their smallest size
+        if (!listView) {
+            auto available = totalWidth - 2.0f * tileGap;
+            columnCount = std::max(1, int32_t((available + tileGap) / (iconSize + tileGap)));
+            tileSize = std::floor((available - tileGap * float(columnCount - 1)) / float(columnCount));
+            columnSize = tileSize + tileGap;
+            gridStart = tileGap;
+        }
 
         if (!std::filesystem::exists(currentDirectory)) {
             auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
@@ -432,7 +454,7 @@ namespace Atlas::Editor::UI {
             ImGuiMultiSelectFlags_ClearOnClickVoid, selectionStorage.Size, entryCount);
         selectionStorage.ApplyRequests(multiSelectionIO);
 
-        ImGui::SetCursorPosX(padding);
+        ImGui::SetCursorPosX(gridStart);
 
         int32_t entryIdx = 0;
         float columnHeight = 0.0f;
@@ -441,12 +463,12 @@ namespace Atlas::Editor::UI {
             if (directory->assetPath.at(0) == '.')
                 continue;
 
-            RenderContentEntry(directory->path, directory->assetPath, ContentType::None, 0,
+            RenderContentEntry(directory->path, directory->assetPath, ContentType::None, 0, 0,
                 entryIdx++, columnCount, columnSize, columnHeight);
         }
 
         for (const auto& file : files) {
-            RenderContentEntry(file.path, file.assetPath, file.type, file.size,
+            RenderContentEntry(file.path, file.assetPath, file.type, file.size, file.lastWriteTime,
                 entryIdx++, columnCount, columnSize, columnHeight);
         }
 
@@ -556,15 +578,15 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath,
-        ContentType contentType, uintmax_t fileSize, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight) {
+    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType,
+        uintmax_t fileSize, int64_t lastWriteTime, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight) {
 
         bool isDirectory = contentType == ContentType::None;
 
         auto filename = Common::Path::GetFileName(assetPath);
 
         auto lineHeight = ImGui::GetTextLineHeight();
-        ImVec2 buttonSize = listView ? ImVec2(columnSize - 2.0f * padding, lineHeight + 4.0f) : ImVec2(iconSize, iconSize);
+        ImVec2 buttonSize = listView ? ImVec2(columnSize - 2.0f * padding, lineHeight + 4.0f) : ImVec2(tileSize, GetTileHeight());
         auto cursorPos = ImGui::GetCursorPos();
 
         ImGui::BeginGroup();
@@ -592,7 +614,23 @@ namespace Atlas::Editor::UI {
         // Add selectable to allow for multi-select
         bool selected = selectionStorage.Contains((ImGuiID)entryIdx);
         ImGui::SetNextItemSelectionUserData(entryIdx);
+        // Tiles draw their own background, hover and selection, the rectangle of the keyboard focus would be around
+        // the larger area of the selectable
+        if (!listView) {
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_NavCursor, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        }
         ImGui::Selectable("##Selectable", &selected, ImGuiSelectableFlags_None, buttonSize);
+        if (!listView)
+            ImGui::PopStyleColor(4);
+
+        auto tileMin = ImGui::GetItemRectMin();
+        auto tileHovered = ImGui::IsItemHovered();
+        // Only after resting on an entry for a moment, moving over the content doesn't open tooltips
+        auto showTooltip = ImGui::IsItemHovered(ImGuiHoveredFlags_Stationary | ImGuiHoveredFlags_DelayNormal |
+            ImGuiHoveredFlags_NoSharedDelay) && !ImGui::IsDragDropActive() && !isEditing;
 
         // Files are dragged right away instead of starting a box selection
         if (!isDirectory && ImGui::IsItemClicked())
@@ -673,13 +711,33 @@ namespace Atlas::Editor::UI {
         // Just draw the icon if it is actually visible
         bool isVisible = ImGui::IsItemVisible();
         if (isVisible) {
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(cursorPos.x);
-            if (listView)
+            ContentPreviews::Preview preview;
+            auto hasPreview = !isDirectory && showPreviews &&
+                previews.Get(assetRelativePath, contentType, fileSize, lastWriteTime, preview);
+
+            if (listView) {
+                ImGui::SameLine();
+                ImGui::SetCursorPosX(cursorPos.x);
                 ImGui::SetCursorPosY(cursorPos.y + 3.0f);
-            auto imageSize = listView ? ImVec2(lineHeight, lineHeight) : buttonSize;
-            ImGui::ImageWithBg(set, imageSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
-                ImVec4(0.0f, 0.0f, 0.0f, 0.0f), Theme::ContentIcon(contentType));
+                auto imageSize = ImVec2(lineHeight, lineHeight);
+                if (hasPreview) {
+                    RenderPreview(preview, contentType, imageSize, set);
+                }
+                else {
+                    ImGui::ImageWithBg(set, imageSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+                        ImVec4(0.0f, 0.0f, 0.0f, 0.0f), Theme::ContentIcon(contentType));
+                }
+            }
+            else {
+                auto editingThis = isEditing && editingPath == path;
+                auto shortened = RenderTile(tileMin, editingThis ? std::string() : filename, contentType,
+                    selected, tileHovered, set, hasPreview ? &preview : nullptr);
+                if (isDirectory && shortened && showTooltip)
+                    ImGui::SetTooltip("%s", filename.c_str());
+            }
+
+            if (!isDirectory && showTooltip)
+                RenderContentTooltip(filename, contentType, fileSize, hasPreview ? &preview : nullptr, set);
         }
 
         ImGui::PopStyleVar();
@@ -691,7 +749,10 @@ namespace Atlas::Editor::UI {
 
             if (listView)
                 ImGui::SameLine();
-            ImGui::SetNextItemWidth(listView ? columnSize * 0.5f : buttonSize.x);
+            else
+                ImGui::SetCursorScreenPos(ImVec2(tileMin.x + tileLabelPadding * 0.5f,
+                    tileMin.y + tileSize));
+            ImGui::SetNextItemWidth(listView ? columnSize * 0.5f : buttonSize.x - tileLabelPadding);
             if (editingChanged) {
                 ImGui::SetKeyboardFocusHere();
             }
@@ -720,26 +781,25 @@ namespace Atlas::Editor::UI {
 
             ImGui::PopStyleColor();
             ImGui::PopStyleColor();
+
+            // The field is inside the tile, the next row starts below the tile
+            if (!listView) {
+                ImGui::SetCursorScreenPos(ImVec2(tileMin.x, tileMin.y + buttonSize.y));
+                ImGui::Dummy(ImVec2(0.0f, 0.0f));
+            }
         }
-        else if (isVisible) {
-            if (listView)
-                RenderListColumns(filename, contentType, fileSize, buttonSize.x);
-            else
-                RenderTileLabel(filename, columnSize);
-        }
-        else if (!listView) {
-            // Keep the layout stable for invisible entries
-            ImGui::Dummy(ImVec2(0.0f, 2.0f * lineHeight));
+        else if (isVisible && listView) {
+            RenderListColumns(filename, contentType, fileSize, buttonSize.x);
         }
 
         ImGui::PopID();
 
         ImGui::EndGroup();
 
-        // Advance to next column
-        columnHeight = std::max(ImGui::GetCursorPosY() - cursorPos.y, columnHeight);
+        // Advance to next column, rows of tiles have the same gap as the columns
+        columnHeight = std::max(listView ? ImGui::GetCursorPosY() - cursorPos.y : buttonSize.y + tileGap, columnHeight);
 
-        ImGui::SetCursorPosX(((entryIdx + 1) % columnCount) * columnSize + padding);
+        ImGui::SetCursorPosX(((entryIdx + 1) % columnCount) * columnSize + gridStart);
         if ((entryIdx + 1) % columnCount == 0) {
             cursorPos.y = cursorPos.y + columnHeight;
             ImGui::SetCursorPosY(cursorPos.y);
@@ -751,52 +811,226 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ContentBrowserWindow::RenderTileLabel(const std::string& filename, float columnSize) {
+    void ContentBrowserWindow::RenderPreview(const ContentPreviews::Preview& preview, ContentType contentType, ImVec2 size,
+        ImTextureID iconTexture) {
 
-        auto maxWidth = std::min(columnSize - padding, iconSize + 2.0f * padding);
-        auto startX = ImGui::GetCursorPosX();
-        auto font = ImGui::GetFont();
+        auto min = ImGui::GetCursorScreenPos();
+        ImGui::Dummy(size);
 
-        const char* text = filename.c_str();
-        const char* textEnd = text + filename.size();
+        DrawPreview(ImGui::GetWindowDrawList(), preview, contentType, min, ImVec2(min.x + size.x, min.y + size.y),
+            iconTexture, true);
 
-        // Lines only break at separators in the second half of the first line, or before the extension. Without
-        // one the name stays on one line and ends with an ellipsis, breaking inside a word makes names hard to read
-        auto firstLineEnd = font->CalcWordWrapPositionA(ImGui::GetFontSize() / font->FontSize, text, textEnd, maxWidth);
-        if (firstLineEnd == text)
-            firstLineEnd = textEnd;
+    }
+
+    void ContentBrowserWindow::DrawPreview(ImDrawList* drawList, const ContentPreviews::Preview& preview, ContentType contentType,
+        ImVec2 min, ImVec2 max, ImTextureID iconTexture, bool framed) {
+
+        auto size = ImVec2(max.x - min.x, max.y - min.y);
+
+        // The icon is replaced smoothly once the preview is generated
+        if (preview.alpha < 1.0f) {
+            auto inset = tileIconInset * std::min(size.x, size.y);
+            drawList->AddImage(iconTexture, ImVec2(min.x + inset, min.y + inset), ImVec2(max.x - inset, max.y - inset),
+                ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(Theme::ContentIcon(contentType, tileIconAlpha * (1.0f - preview.alpha))));
+        }
+
+        // Fonts and audio are only a shape, they get some room around them
+        if (preview.tintable) {
+            auto inset = 0.12f * std::min(size.x, size.y);
+            min = ImVec2(min.x + inset, min.y + inset);
+            max = ImVec2(max.x - inset, max.y - inset);
+            size = ImVec2(max.x - min.x, max.y - min.y);
+        }
+
+        // Fitted into the area with the aspect ratio of the content
+        auto scale = std::min(size.x / std::max(preview.size.x, 1.0f), size.y / std::max(preview.size.y, 1.0f));
+        auto fitted = ImVec2(std::floor(preview.size.x * scale), std::floor(preview.size.y * scale));
+        auto previewMin = ImVec2(std::floor(min.x + 0.5f * (size.x - fitted.x)), std::floor(min.y + 0.5f * (size.y - fitted.y)));
+        auto previewMax = ImVec2(previewMin.x + fitted.x, previewMin.y + fitted.y);
+
+        if (preview.tintable) {
+            drawList->AddImage(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
+                ImGui::GetColorU32(Theme::ContentIcon(contentType, 0.85f * preview.alpha)));
+        }
+        else if (preview.transparent) {
+            drawList->AddImage(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
+                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, preview.alpha)));
+        }
+        else {
+            auto rounding = framed ? std::clamp(std::min(fitted.x, fitted.y) * 0.06f, 1.0f, Theme::overlayRounding) : tileRounding - 2.0f;
+            drawList->AddImageRounded(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
+                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, preview.alpha)), rounding);
+            // Dark images stand out from the background
+            if (framed)
+                drawList->AddRect(previewMin, previewMax, ImGui::GetColorU32(ImGuiCol_Border, 0.6f * preview.alpha), rounding);
+        }
+
+    }
+
+    float ContentBrowserWindow::GetTileHeight() const {
+
+        // Two lines for the name, the color of the type is shown by the line below the thumbnail
+        return tileSize + 1.5f * tileLabelPadding + 2.0f * ImGui::GetTextLineHeight();
+
+    }
+
+    bool ContentBrowserWindow::RenderTile(ImVec2 min, const std::string& filename, ContentType contentType, bool selected,
+        bool hovered, ImTextureID iconTexture, const ContentPreviews::Preview* preview) {
+
+        auto drawList = ImGui::GetWindowDrawList();
+        auto isDirectory = contentType == ContentType::None;
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        auto max = ImVec2(min.x + tileSize, min.y + GetTileHeight());
+        auto thumbnailMax = ImVec2(min.x + tileSize, min.y + tileSize);
+        auto labelWidth = tileSize - 2.0f * tileLabelPadding;
+
+        if (isDirectory) {
+            // Folders have no card, only a background while they are hovered or selected
+            if (selected || hovered)
+                drawList->AddRectFilled(min, max, ImGui::GetColorU32(selected ? Theme::Accent(0.2f) : Theme::AssetCardHovered(0.7f)),
+                    tileRounding);
+            if (selected)
+                drawList->AddRect(min, max, ImGui::GetColorU32(Theme::Accent(0.8f)), tileRounding, 0, 1.5f);
+
+            auto inset = 0.1f * tileSize;
+            drawList->AddImage(iconTexture, ImVec2(min.x + inset, min.y + inset), ImVec2(thumbnailMax.x - inset, thumbnailMax.y - inset),
+                ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(Theme::ContentIcon(contentType)));
+
+            return RenderTileName(drawList, filename, ImVec2(min.x + tileLabelPadding, thumbnailMax.y + tileLabelPadding * 0.5f),
+                labelWidth, true);
+        }
+
+        // A soft card which lifts with a shadow when hovered, the thumbnail inside is darker such that previews
+        // without background stand out
+        if (hovered && !selected)
+            drawList->AddRectFilled(ImVec2(min.x, min.y + 3.0f), ImVec2(max.x, max.y + 3.0f), ImGui::GetColorU32(Theme::Shadow(0.8f)), tileRounding);
+        auto cardColor = selected ? Theme::Accent(0.16f) : (hovered ? Theme::AssetCardHovered() : Theme::AssetCard(0.6f));
+        drawList->AddRectFilled(min, max, ImGui::GetColorU32(cardColor), tileRounding);
+
+        auto thumbnailMin = ImVec2(min.x + tileThumbnailInset, min.y + tileThumbnailInset);
+        thumbnailMax = ImVec2(thumbnailMax.x - tileThumbnailInset, thumbnailMax.y - tileThumbnailInset);
+        auto thumbnailSize = thumbnailMax.x - thumbnailMin.x;
+        auto thumbnailRounding = tileRounding - 2.0f;
+        drawList->AddRectFilled(thumbnailMin, thumbnailMax, ImGui::GetColorU32(Theme::AssetThumbnail()), thumbnailRounding);
+
+        if (preview) {
+            // Images fill the thumbnail, rendered content and shapes have their own margin
+            DrawPreview(drawList, *preview, contentType, thumbnailMin, thumbnailMax, iconTexture, false);
+        }
+        else {
+            auto inset = tileIconInset * thumbnailSize;
+            drawList->AddImage(iconTexture, ImVec2(thumbnailMin.x + inset, thumbnailMin.y + inset),
+                ImVec2(thumbnailMax.x - inset, thumbnailMax.y - inset), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+                ImGui::GetColorU32(Theme::ContentIcon(contentType, tileIconAlpha)));
+        }
+
+        // A thin line in the color of the type along the bottom of the thumbnail
+        drawList->AddRectFilled(ImVec2(thumbnailMin.x, thumbnailMax.y - tileTypeLineHeight), thumbnailMax,
+            ImGui::GetColorU32(Theme::ContentTypeColor(contentType)), thumbnailRounding, ImDrawFlags_RoundCornersBottom);
+
+        if (selected)
+            drawList->AddRect(min, max, ImGui::GetColorU32(Theme::Accent()), tileRounding, 0, 1.5f);
+
+        // The color says what the file is, the name doesn't need the extension
+        auto extensionStart = filename.find_last_of('.');
+        auto name = extensionStart != std::string::npos && extensionStart > 0 ? filename.substr(0, extensionStart) : filename;
+        auto labelMin = ImVec2(min.x + tileLabelPadding, thumbnailMax.y + tileThumbnailInset + 0.5f * tileLabelPadding);
+        auto shortened = RenderTileName(drawList, name, labelMin, labelWidth, false);
+
+        return shortened;
+
+    }
+
+    bool ContentBrowserWindow::RenderTileName(ImDrawList* drawList, const std::string& name, ImVec2 position, float width, bool centered) {
+
+        if (name.empty())
+            return false;
+
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        const char* text = name.c_str();
+        const char* textEnd = text + name.size();
+
+        // As much as fits on the first line, the rest goes to the second one. Lines rather break after a separator
+        // in the second half of the first line, e.g. M_Decal_ | 01. Names of several parts may break inside a part,
+        // a single word ends with an ellipsis instead of being torn apart
+        auto isSeparator = [](char character) { return character == '_' || character == '-' || character == ' ' || character == '.'; };
+
+        auto firstLineEnd = text;
+        while (firstLineEnd < textEnd) {
+            unsigned int character;
+            auto next = firstLineEnd + ImTextCharFromUtf8(&character, firstLineEnd, textEnd);
+            if (ImGui::CalcTextSize(text, next).x > width)
+                break;
+            firstLineEnd = next;
+        }
+        if (firstLineEnd == text && text < textEnd) {
+            unsigned int character;
+            firstLineEnd += ImTextCharFromUtf8(&character, text, textEnd);
+        }
         if (firstLineEnd < textEnd) {
-            auto breakAt = textEnd;
+            auto breakAt = static_cast<const char*>(nullptr);
             for (auto separator = firstLineEnd - 1; separator > text + (firstLineEnd - text) / 2; separator--) {
-                if (*separator == '_' || *separator == '-' || *separator == ' ') {
-                    breakAt = separator + 1;
+                if (isSeparator(*separator)) {
+                    // A dot starts the second line, the others end the first one
+                    breakAt = *separator == '.' ? separator : separator + 1;
                     break;
                 }
             }
-            // The extension alone on the second line, e.g. a long name followed by .png
-            auto extension = std::find(std::make_reverse_iterator(textEnd), std::make_reverse_iterator(text), '.');
-            auto extensionStart = extension.base() - 1;
-            if (breakAt == textEnd && extension != std::make_reverse_iterator(text) && extensionStart <= firstLineEnd &&
-                extensionStart > text + (firstLineEnd - text) / 2)
-                breakAt = extensionStart;
+            if (!breakAt)
+                breakAt = std::any_of(text, textEnd, isSeparator) ? firstLineEnd : textEnd;
             firstLineEnd = breakAt;
         }
 
-        auto renderCentered = [&](const char* lineStart, const char* lineEnd) {
-            auto width = std::min(ImGui::CalcTextSize(lineStart, lineEnd).x, maxWidth);
-            ImGui::SetCursorPosX(std::max(0.0f, startX + (iconSize - width) * 0.5f));
-            return Widgets::TextEllipsis(lineStart, lineEnd, maxWidth);
+        auto shortened = false;
+        auto renderLine = [&](const char* lineStart, const char* lineEnd, float y) {
+            auto textSize = ImGui::CalcTextSize(lineStart, lineEnd);
+            auto lineWidth = std::min(textSize.x, width);
+            auto x = centered ? position.x + 0.5f * (width - lineWidth) : position.x;
+            auto lineMax = ImVec2(x + width, y + lineHeight);
+            ImGui::RenderTextEllipsis(drawList, ImVec2(x, y), lineMax, std::min(lineMax.x, position.x + width),
+                position.x + width, lineStart, lineEnd, &textSize);
+            shortened |= textSize.x > width;
             };
 
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-        auto firstLineShortened = renderCentered(text, firstLineEnd);
-        if (firstLineShortened)
-            ImGui::SetItemTooltip("%s", text);
-        if (firstLineEnd < textEnd && renderCentered(firstLineEnd, textEnd))
-            ImGui::SetItemTooltip("%s", text);
-        else if (firstLineEnd == textEnd)
-            ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeight()));
-        ImGui::PopStyleVar();
+        renderLine(text, firstLineEnd, position.y);
+        if (firstLineEnd < textEnd)
+            renderLine(firstLineEnd, textEnd, position.y + lineHeight);
+
+        return shortened;
+
+    }
+
+    void ContentBrowserWindow::RenderContentTooltip(const std::string& filename, ContentType contentType, uintmax_t fileSize,
+        const ContentPreviews::Preview* preview, ImTextureID iconTexture) {
+
+        if (!ImGui::BeginTooltip())
+            return;
+
+        // A larger preview on the background of the thumbnails
+        if (preview) {
+            auto size = float(ContentPreviews::slotSize);
+            auto min = ImGui::GetCursorScreenPos();
+            auto max = ImVec2(min.x + size, min.y + size);
+            ImGui::Dummy(ImVec2(size, size));
+
+            auto drawList = ImGui::GetWindowDrawList();
+            drawList->AddRectFilled(min, max, ImGui::GetColorU32(Theme::AssetThumbnail()), tileRounding);
+            auto fullPreview = *preview;
+            fullPreview.alpha = 1.0f;
+            DrawPreview(drawList, fullPreview, contentType, min, max, iconTexture, false);
+        }
+
+        ImGui::TextUnformatted(filename.c_str());
+        ImGui::TextColored(Theme::ContentTypeColor(contentType), "%s", GetTypeName(contentType));
+        ImGui::SameLine();
+        if (fileSize >= 1024 * 1024)
+            ImGui::TextDisabled("%.1f MB", float(fileSize) / (1024.0f * 1024.0f));
+        else
+            ImGui::TextDisabled("%.1f KB", float(fileSize) / 1024.0f);
+
+        ImGui::EndTooltip();
 
     }
 
@@ -812,8 +1046,11 @@ namespace Atlas::Editor::UI {
         auto sizeX = startX + rowWidth * 0.85f;
 
         ImGui::SetCursorPos(ImVec2(nameX, rowY));
-        if (Widgets::TextEllipsis(filename.c_str(), filename.c_str() + filename.size(), typeX - nameX - padding))
-            ImGui::SetItemTooltip("%s", filename.c_str());
+        // Files have a tooltip with their preview and name, shortened folder names get one of their own
+        auto shortened = Widgets::TextEllipsis(filename.c_str(), filename.c_str() + filename.size(), typeX - nameX - padding);
+        if (shortened && contentType == ContentType::None && ImGui::IsItemHovered(ImGuiHoveredFlags_Stationary |
+            ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+            ImGui::SetTooltip("%s", filename.c_str());
 
         ImGui::SetCursorPos(ImVec2(typeX, rowY));
         ImGui::TextDisabled("%s", contentType == ContentType::None ? "Folder" : GetTypeName(contentType));

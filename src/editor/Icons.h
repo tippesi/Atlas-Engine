@@ -57,7 +57,9 @@ namespace Atlas::Editor {
         Error,
         Warning,
         Notifications,
-        ScaleInverse
+        ScaleInverse,
+        Pin,
+        PinFilled
     };
 
     class Icons {

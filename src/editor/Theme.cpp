@@ -316,6 +316,53 @@ namespace Atlas::Editor {
 
     }
 
+    ImVec4 Theme::ContentTypeColor(Editor::ContentType type, float alpha) {
+
+        // Distinct hues per type, slightly darker in light mode such that the strips keep their contrast
+        ImVec4 color;
+        switch (type) {
+        case Editor::ContentType::Texture: color = Rgb(214, 86, 78); break;
+        case Editor::ContentType::EnvironmentTexture: color = Rgb(230, 146, 64); break;
+        case Editor::ContentType::Material: color = Rgb(102, 187, 92); break;
+        case Editor::ContentType::MaterialGraph: color = Rgb(56, 178, 150); break;
+        case Editor::ContentType::Mesh: color = Rgb(64, 172, 226); break;
+        case Editor::ContentType::MeshSource: color = Rgb(112, 146, 186); break;
+        case Editor::ContentType::Prefab: color = Rgb(92, 120, 240); break;
+        case Editor::ContentType::Scene: color = Rgb(238, 186, 64); break;
+        case Editor::ContentType::Audio: color = Rgb(170, 110, 226); break;
+        case Editor::ContentType::Font: color = Rgb(180, 180, 188); break;
+        case Editor::ContentType::Script: color = Rgb(218, 206, 84); break;
+        case Editor::ContentType::Terrain: color = Rgb(140, 160, 80); break;
+        case Editor::ContentType::Animation: color = Rgb(226, 104, 164); break;
+        default: color = GetPalette(dark).textMuted; break;
+        }
+
+        if (!dark)
+            color = ImVec4(color.x * 0.85f, color.y * 0.85f, color.z * 0.85f, color.w);
+
+        return WithAlpha(color, alpha);
+
+    }
+
+    ImVec4 Theme::AssetCard(float alpha) {
+
+        return WithAlpha(GetPalette(dark).elevated, alpha);
+
+    }
+
+    ImVec4 Theme::AssetCardHovered(float alpha) {
+
+        return WithAlpha(GetPalette(dark).control, alpha);
+
+    }
+
+    ImVec4 Theme::AssetThumbnail(float alpha) {
+
+        // Darker than the card in dark mode, the previews of meshes and materials stand out on it
+        return dark ? Rgb(16, 17, 19, alpha) : WithAlpha(GetPalette(dark).base, alpha);
+
+    }
+
     ImVec4 Theme::Shadow(float alpha) {
 
         return ImVec4(0.0f, 0.0f, 0.0f, (dark ? 0.3f : 0.15f) * alpha);

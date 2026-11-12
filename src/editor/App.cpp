@@ -447,12 +447,6 @@ namespace Atlas::Editor {
                     ImGui::MenuItem("Engine settings", nullptr, &settingsWindow.show);
                     ImGui::MenuItem("Geometry brush", nullptr, &geometryBrushWindow.show);
 
-                    ImGui::SeparatorText("Drawers");
-                    if (ImGui::MenuItem("Dock content browser in layout", nullptr, contentBrowserWindow.pinned))
-                        contentBrowserWindow.SetPinned(!contentBrowserWindow.pinned);
-                    if (ImGui::MenuItem("Dock log in layout", nullptr, logWindow.pinned))
-                        logWindow.SetPinned(!logWindow.pinned);
-
                     ImGui::SeparatorText("Appearance");
                     if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
                         ApplyTheme();
@@ -1388,13 +1382,7 @@ namespace Atlas::Editor {
         if (hoveredBadge)
             ImGui::SetItemTooltip("%d new %s", hoveredBadge->count, hoveredBadge->name);
         else
-            ImGui::SetItemTooltip("Toggle %s (%s), right-click for options", label, shortcut);
-
-        if (ImGui::BeginPopupContextItem()) {
-            if (ImGui::MenuItem("Dock in layout", nullptr, drawer.pinned))
-                drawer.SetPinned(!drawer.pinned);
-            ImGui::EndPopup();
-        }
+            ImGui::SetItemTooltip("Toggle %s (%s)", label, shortcut);
 
         return hovered;
 

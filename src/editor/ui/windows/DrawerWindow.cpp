@@ -13,6 +13,11 @@ namespace Atlas::Editor::UI {
 
     bool DrawerWindow::Begin(ImGuiWindowFlags flags) {
 
+        if (pinToggleRequested) {
+            SetPinned(!pinned);
+            pinToggleRequested = false;
+        }
+
         if (show && !wasShown)
             ImGui::SetNextWindowFocus();
         wasShown = show;
@@ -70,6 +75,26 @@ namespace Atlas::Editor::UI {
 
     }
 
+    bool DrawerWindow::RenderPinButton() {
+
+        auto& icon = Singletons::icons->Get(pinned ? IconType::PinFilled : IconType::Pin);
+        auto tooltip = pinned ? "Undock, the window opens as a drawer from the status bar" :
+            "Dock in layout, the window stays open";
+
+        if (!Widgets::ToolbarIconButton("Pin button", icon, tooltip))
+            return false;
+
+        pinToggleRequested = true;
+        return true;
+
+    }
+
+    float DrawerWindow::GetPinButtonWidth() const {
+
+        return ImGui::GetTextLineHeight() + 2.0f * ImGui::GetStyle().FramePadding.x;
+
+    }
+
     void DrawerWindow::TakeOver(DrawerWindow& drawer) {
 
         openAmount = std::max(openAmount, drawer.openAmount);
@@ -118,19 +143,11 @@ namespace Atlas::Editor::UI {
         ImGui::TextUnformatted(name.c_str());
 
         auto& style = ImGui::GetStyle();
-        const char* pinLabel = "Dock in layout";
         auto iconSize = ImGui::GetTextLineHeight();
-        auto pinWidth = ImGui::CalcTextSize(pinLabel).x + 2.0f * style.FramePadding.x;
         auto closeWidth = iconSize + 2.0f;
 
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - pinWidth - closeWidth - style.ItemSpacing.x);
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-        if (ImGui::Button(pinLabel))
-            SetPinned(true);
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
-        ImGui::SetItemTooltip("Keeps the window open as part of the layout");
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - GetPinButtonWidth() - closeWidth - style.ItemSpacing.x);
+        RenderPinButton();
 
         ImGui::SameLine();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + style.FramePadding.y - 1.0f);

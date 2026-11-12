@@ -41,6 +41,14 @@ namespace Atlas::Editor {
         // Tint of the content icons, only folders are colored
         static ImVec4 ContentIcon(ContentType type, float alpha = 1.0f);
 
+        // Color of each type of content, e.g. the strip below the thumbnails of the content browser
+        static ImVec4 ContentTypeColor(ContentType type, float alpha = 1.0f);
+
+        // Cards of the content browser and the area of their thumbnails
+        static ImVec4 AssetCard(float alpha = 1.0f);
+        static ImVec4 AssetCardHovered(float alpha = 1.0f);
+        static ImVec4 AssetThumbnail(float alpha = 1.0f);
+
         // Shadow of windows which float above the layout, e.g. drawers
         static ImVec4 Shadow(float alpha = 1.0f);
 

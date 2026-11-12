@@ -1,5 +1,6 @@
 #include "MaterialEditorWindow.h"
 
+#include "../../DataCreator.h"
 #include "../../Notifications.h"
 #include "../../Singletons.h"
 #include "../../Theme.h"
@@ -25,77 +26,6 @@ namespace Atlas::Editor::UI {
 
     static const char* previewMeshNames[] = { "Detailed sphere", "Sphere", "Capsule", "Wall" };
     static const char* previewMeshPaths[] = { "", "meshes/chromesphere.aemesh", "meshes/capsule.aemesh", "meshes/metallicwall.aemesh" };
-
-    // A sphere with smooth normals and enough vertices to show the displacement of a graph
-    static Ref<Mesh::Mesh> CreateDetailedSphere(const ResourceHandle<Material>& material) {
-
-        const int32_t rings = 128;
-        const int32_t segments = 192;
-        const float radius = 1.0f;
-
-        Mesh::MeshData data;
-        data.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
-        data.vertices.SetType(Mesh::ComponentFormat::Float);
-        data.normals.SetType(Mesh::ComponentFormat::PackedNormal);
-        data.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
-        data.tangents.SetType(Mesh::ComponentFormat::PackedNormal);
-
-        auto vertexCount = (rings + 1) * (segments + 1);
-        auto indexCount = rings * segments * 6;
-        data.SetVertexCount(vertexCount);
-        data.SetIndexCount(indexCount);
-        data.vertices.SetElementCount(vertexCount);
-        data.normals.SetElementCount(vertexCount);
-        data.texCoords.SetElementCount(vertexCount);
-        data.tangents.SetElementCount(vertexCount);
-        data.indices.SetElementCount(indexCount);
-
-        for (int32_t ring = 0; ring <= rings; ring++) {
-            for (int32_t segment = 0; segment <= segments; segment++) {
-                auto idx = ring * (segments + 1) + segment;
-                auto v = float(ring) / float(rings);
-                auto u = float(segment) / float(segments);
-                auto theta = v * glm::pi<float>();
-                auto phi = u * 2.0f * glm::pi<float>();
-                auto normal = vec3(glm::sin(theta) * glm::cos(phi), glm::cos(theta), glm::sin(theta) * glm::sin(phi));
-
-                data.vertices[idx] = normal * radius;
-                data.normals[idx] = vec4(normal, 0.0f);
-                data.texCoords[idx] = vec2(u * 2.0f, v);
-                data.tangents[idx] = vec4(-glm::sin(phi), 0.0f, glm::cos(phi), 1.0f);
-            }
-        }
-
-        int32_t index = 0;
-        for (int32_t ring = 0; ring < rings; ring++) {
-            for (int32_t segment = 0; segment < segments; segment++) {
-                auto a = uint32_t(ring * (segments + 1) + segment);
-                auto b = uint32_t((ring + 1) * (segments + 1) + segment);
-                for (auto vertex : { a, a + 1, b, a + 1, b + 1, b })
-                    data.indices[index++] = vertex;
-            }
-        }
-
-        data.aabb = Volume::AABB(vec3(-radius), vec3(radius));
-        data.materials = { material };
-        data.subData = { Mesh::MeshSubData {
-            .name = "Sphere",
-            .indicesOffset = 0,
-            .indicesCount = uint32_t(indexCount),
-            .material = material,
-            .materialIdx = 0,
-            .aabb = data.aabb,
-            .uvScale = radius * glm::pi<float>()
-            } };
-
-        auto mesh = CreateRef<Mesh::Mesh>(data);
-        // Only for looking at the material, the ray tracing data would take a moment to build
-        mesh->rayTrace = false;
-        mesh->name = "Detailed sphere";
-
-        return mesh;
-
-    }
 
     MaterialEditorWindow::MaterialEditorWindow(ResourceHandle<Material> material, bool show) :
         AssetEditorWindow(material.IsValid() ? material.GetResource()->GetFileName() : "No material", show), material(material) {
@@ -140,7 +70,7 @@ namespace Atlas::Editor::UI {
 
     void MaterialEditorWindow::LoadPreviewMesh() {
 
-        previewMesh = ResourceHandle<Mesh::Mesh>(previewMeshIdx == 0 ? CreateDetailedSphere(material) :
+        previewMesh = ResourceHandle<Mesh::Mesh>(previewMeshIdx == 0 ? DataCreator::CreateSphere(material, 128, 192) :
             Loader::MeshLoader::LoadMesh(previewMeshPaths[previewMeshIdx], true));
 
         previewMesh->data.materials = { material };

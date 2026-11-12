@@ -40,8 +40,9 @@ namespace Atlas::Editor::UI {
             auto clearWidth = ImGui::CalcTextSize("Clear").x + 2.0f * style.FramePadding.x;
             auto autoScrollWidth = ImGui::GetFrameHeight() + style.ItemInnerSpacing.x + ImGui::CalcTextSize("Auto-scroll").x;
             auto selectedWidth = selection.Size > 0 ? ImGui::CalcTextSize("00000 selected").x + style.ItemSpacing.x : 0.0f;
+            auto pinWidth = pinned ? GetPinButtonWidth() + style.ItemSpacing.x : 0.0f;
             auto searchWidth = ImGui::GetContentRegionAvail().x - copyWidth - clearWidth - autoScrollWidth -
-                selectedWidth - 3.0f * style.ItemSpacing.x;
+                selectedWidth - pinWidth - 3.0f * style.ItemSpacing.x;
 
             ImGui::SetNextItemWidth(std::max(searchWidth, 50.0f));
             ImGui::InputTextWithHint("##Log search", "Search log...", &logSearch);
@@ -62,6 +63,12 @@ namespace Atlas::Editor::UI {
             if (selection.Size > 0) {
                 ImGui::SameLine();
                 ImGui::TextDisabled("%d selected", selection.Size);
+            }
+
+            // A docked log can be turned back into a drawer
+            if (pinned) {
+                ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - GetPinButtonWidth());
+                RenderPinButton();
             }
         }
 

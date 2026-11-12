@@ -112,10 +112,16 @@ namespace Atlas {
 
                 if (config.variantHash != prevHash) {
                     currentPipeline = PipelineManager::GetPipeline(config);
-                    commandList->BindPipeline(currentPipeline);
-                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
+                    if (currentPipeline->isComplete) {
+                        commandList->BindPipeline(currentPipeline);
+                        constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
+                    }
                     prevHash = config.variantHash;
                 }
+
+                // Variants whose shader the driver couldn't compile aren't drawn instead of binding an invalid pipeline
+                if (!currentPipeline->isComplete)
+                    continue;
 
                 if (meshID != prevMesh) {
                     mesh->vertexArray.Bind(commandList);
