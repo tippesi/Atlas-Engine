@@ -507,6 +507,12 @@ namespace Atlas::Editor::UI {
                 // ImGui::Checkbox("Realtime", &viewportPanel.mainRenderer->pathTracingRenderer.realTime);
                 ImGui::DragInt("Sample count", &viewportPanel.mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
                 ImGui::DragFloat("Max clipping", &viewportPanel.mainRenderer->pathTracingRenderer.historyClipMax, 0.001f, 0.0f, 1.0f);
+                ImGui::BeginDisabled(!Graphics::GraphicsDevice::DefaultDevice->support.shaderExecutionReordering);
+                ImGui::Checkbox("Shader execution reordering##PathTracer", &viewportPanel.mainRenderer->pathTracingRenderer.shaderExecutionReordering);
+                ImGui::Checkbox("Material graphs##PathTracer", &viewportPanel.mainRenderer->pathTracingRenderer.materialGraphs);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                    ImGui::SetTooltip("Without them the hits of graph materials use their baked values");
+                ImGui::EndDisabled();
 
                 ImGui::SeparatorText("Playing");
                 ImGui::Checkbox("Play maximized", &playMaximized);

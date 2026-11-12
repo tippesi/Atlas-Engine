@@ -2,6 +2,7 @@
 #include "StringHelper.h"
 
 #include <scene/Scene.h>
+#include <graphics/GraphicsDevice.h>
 
 namespace Atlas::ImguiExtension {
 
@@ -40,6 +41,15 @@ namespace Atlas::ImguiExtension {
         }
 
         ImGui::Checkbox("Opacity check", &volume->opacityCheck);
+
+        auto reorderSupported = Graphics::GraphicsDevice::DefaultDevice->support.shaderExecutionReordering;
+        ImGui::BeginDisabled(!reorderSupported);
+        ImGui::Checkbox("Shader execution reordering", &volume->shaderExecutionReordering);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("Sorts the rays by the mesh they hit before shading. Helps with many different meshes, "
+                "costs with few. Needs hit objects, which the device %s.", reorderSupported ? "supports" : "doesn't support");
+        }
+        ImGui::EndDisabled();
 
         ImGui::SeparatorText("Probe grid");
         auto prevCascadeCount = volume->cascadeCount;
