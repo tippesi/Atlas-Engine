@@ -148,31 +148,6 @@ namespace Atlas::Editor::UI {
 
     namespace {
 
-        // Properties of the inspector: labels and values split the width like the parameters of the material editor
-        bool BeginProperties(const char* id) {
-
-            if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings))
-                return false;
-            ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch, 0.35f);
-            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.65f);
-            return true;
-
-        }
-
-        // Starts a row, the next item is the value and fills its column
-        void PropertyLabel(const char* label, const char* tooltip = nullptr) {
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextColored(Theme::TextMuted(), "%s", label);
-            if (tooltip)
-                ImGui::SetItemTooltip("%s", tooltip);
-            ImGui::TableSetColumnIndex(1);
-            ImGui::SetNextItemWidth(-FLT_MIN);
-
-        }
-
         // A rounded label in the color of what it stands for. Pills follow each other and wrap at the end of the line
         void Pill(const char* text, ImVec4 color, const char* tooltip, bool& first) {
 
@@ -296,17 +271,18 @@ namespace Atlas::Editor::UI {
         ImGui::Spacing();
 
         if (definition->kind == NodeKind::Comment) {
-            ImGui::InputTextMultiline("##Text", &selected->name, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8.0f));
-            if (ImGui::IsItemDeactivatedAfterEdit())
+            auto edited = false;
+            Widgets::TextArea("Comment text", selected->name, 14.0f, 0, &edited);
+            if (edited)
                 modified = true;
             return;
         }
 
-        if (!BeginProperties("Node properties"))
+        if (!Widgets::BeginProperties("Node properties"))
             return;
 
         if (definition->kind == NodeKind::Frame) {
-            PropertyLabel("Title");
+            Widgets::PropertyLabel("Title");
             ImGui::InputText("##Title", &selected->name);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 modified = true;
@@ -316,7 +292,7 @@ namespace Atlas::Editor::UI {
         if (compiled) {
             auto iter = compiled->nodeStages.find(selected->id);
             auto stages = iter != compiled->nodeStages.end() ? iter->second : 0u;
-            PropertyLabel("Stages", "The shaders this node ends up in");
+            Widgets::PropertyLabel("Stages", "The shaders this node ends up in");
             if (!stages) {
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextColored(Theme::TextMuted(), "Not used");
@@ -330,7 +306,7 @@ namespace Atlas::Editor::UI {
         }
 
         if (definition->kind == NodeKind::Parameter) {
-            PropertyLabel("Name", "Materials show the parameter with this name");
+            Widgets::PropertyLabel("Name", "Materials show the parameter with this name");
             ImGui::InputText("##Name", &selected->name);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
@@ -341,7 +317,7 @@ namespace Atlas::Editor::UI {
             definition->valueType != ValueType::Texture;
         if (hasValue) {
             auto isParameter = definition->kind == NodeKind::Parameter;
-            PropertyLabel(isParameter ? "Default" : "Value", isParameter ? "Materials use this value until they set their own" :
+            Widgets::PropertyLabel(isParameter ? "Default" : "Value", isParameter ? "Materials use this value until they set their own" :
                 "Baked into the shaders, changing it compiles them again");
             int32_t components = definition->valueType == ValueType::Vec2 ? 2 : definition->valueType == ValueType::Vec3 ? 3 :
                 definition->valueType == ValueType::Vec4 ? 4 : 1;
@@ -362,7 +338,7 @@ namespace Atlas::Editor::UI {
 
         if (definition->kind == NodeKind::StaticSwitch) {
             auto isOn = selected->value.x > 0.0f;
-            PropertyLabel("Selected", "Only the selected input is compiled. Changing it applies to all materials with the graph");
+            Widgets::PropertyLabel("Selected", "Only the selected input is compiled. Changing it applies to all materials with the graph");
             if (ImGui::Checkbox("On##Switch", &isOn)) {
                 selected->value.x = isOn ? 1.0f : 0.0f;
                 compileRequested = true;
@@ -371,25 +347,25 @@ namespace Atlas::Editor::UI {
 
         if (definition->kind == NodeKind::Parameter) {
             if (definition->valueType != ValueType::Texture && !definition->isColor) {
-                PropertyLabel("Range", "Materials get a slider within these limits. Without a range the values are free");
+                Widgets::PropertyLabel("Range", "Materials get a slider within these limits. Without a range the values are free");
                 ImGui::DragFloatRange2("##Range", &selected->range.x, &selected->range.y, 0.01f, 0.0f, 0.0f, "Min %.3g", "Max %.3g");
                 if (ImGui::IsItemDeactivatedAfterEdit())
                     compileRequested = true;
             }
 
-            PropertyLabel("Group", "Materials show parameters of the same group below a heading");
+            Widgets::PropertyLabel("Group", "Materials show parameters of the same group below a heading");
             ImGui::InputTextWithHint("##Group", "No group", &selected->group);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
 
-            PropertyLabel("Order", "Materials show smaller numbers first");
+            Widgets::PropertyLabel("Order", "Materials show smaller numbers first");
             ImGui::DragInt("##Order", &selected->order, 0.1f);
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
         }
 
         if (definition->kind == NodeKind::Parameter && definition->valueType == ValueType::Texture) {
-            PropertyLabel("Default", "Materials use this texture until they select their own");
+            Widgets::PropertyLabel("Default", "Materials use this texture until they select their own");
             auto textureChanged = false;
             auto texture = textureSelectionPanel.Render(selected->texture, textureChanged);
             textureSelectionPanel.Reset();
@@ -400,13 +376,13 @@ namespace Atlas::Editor::UI {
 
             const char* fallbacks[] = { "White", "Black", "Flat normal" };
             auto fallback = int32_t(selected->value.y);
-            PropertyLabel("Fallback", "What the shaders read while neither the material nor the default has a texture");
+            Widgets::PropertyLabel("Fallback", "What the shaders read while neither the material nor the default has a texture");
             if (ImGui::Combo("##Fallback", &fallback, fallbacks, IM_ARRAYSIZE(fallbacks))) {
                 selected->value.y = float(fallback);
                 compileRequested = true;
             }
 
-            PropertyLabel("Coordinate scale", "How much the graph scales the texture coordinates. The texture streaming "
+            Widgets::PropertyLabel("Coordinate scale", "How much the graph scales the texture coordinates. The texture streaming "
                 "loads more detail for textures which repeat more often");
             ImGui::DragFloat("##Coordinate scale", &selected->value.x, 0.1f, 0.01f, 1000.0f);
             if (ImGui::IsItemDeactivatedAfterEdit())
@@ -415,14 +391,14 @@ namespace Atlas::Editor::UI {
 
         if (definition->kind == NodeKind::VertexOutput) {
             auto derive = selected->value.x > 0.0f;
-            PropertyLabel("Derive normals", "Evaluates the displacement next to each vertex to find the normal of the moved "
+            Widgets::PropertyLabel("Derive normals", "Evaluates the displacement next to each vertex to find the normal of the moved "
                 "surface. This works for displacement from positions, not from texture coordinates");
             if (ImGui::Checkbox("##Derive normals", &derive)) {
                 selected->value.x = derive ? 1.0f : 0.0f;
                 compileRequested = true;
             }
 
-            PropertyLabel("Sampling distance", "How far next to each vertex the displacement is evaluated for the normals");
+            Widgets::PropertyLabel("Sampling distance", "How far next to each vertex the displacement is evaluated for the normals");
             ImGui::BeginDisabled(!derive);
             ImGui::DragFloat("##Sampling distance", &selected->value.y, 0.001f, 0.001f, 10.0f);
             if (ImGui::IsItemDeactivatedAfterEdit())
@@ -430,7 +406,7 @@ namespace Atlas::Editor::UI {
             ImGui::EndDisabled();
         }
 
-        ImGui::EndTable();
+        Widgets::EndProperties();
 
     }
 
@@ -487,13 +463,13 @@ namespace Atlas::Editor::UI {
 
             // Only graphs moving vertices need it, a value from before stays editable to remove it
             auto showDisplacement = (compiled && compiled->hasVertexOffset) || graph.maxDisplacement > 0.0f;
-            if (showDisplacement && BeginProperties("Output")) {
-                PropertyLabel("Displacement", "Largest distance a vertex moves in the space of the mesh. Culling adds this to "
+            if (showDisplacement && Widgets::BeginProperties("Output")) {
+                Widgets::PropertyLabel("Displacement", "Largest distance a vertex moves in the space of the mesh. Culling adds this to "
                     "the bounds, otherwise moved vertices disappear at the edges of the screen");
                 ImGui::DragFloat("##Largest displacement", &graph.maxDisplacement, 0.01f, 0.0f, 1000.0f, "%.3f");
                 if (ImGui::IsItemDeactivatedAfterEdit())
                     compileRequested = true;
-                ImGui::EndTable();
+                Widgets::EndProperties();
             }
             ImGui::Spacing();
         }

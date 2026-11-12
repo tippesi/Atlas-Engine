@@ -46,6 +46,12 @@ namespace Atlas::Editor::UI {
 
         bool IsPrefab() const { return !prefabPath.empty(); }
 
+        // The file of the scene, which it is saved to
+        static std::string GetScenePath(const ResourceHandle<Scene::Scene>& scene);
+
+        // Name of the file without its extension, the tab shows it
+        static std::string GetSceneLabel(const ResourceHandle<Scene::Scene>& scene);
+
         // Moves the editor camera such that the selected entities are in view
         void FocusSelection();
 

@@ -713,36 +713,41 @@ namespace Atlas::Editor::UI {
             "of the graph into the properties below, which they use.");
         ImGui::PopTextWrapPos();
 
-        const char* modes[] = { "Textures: one moment on one mesh", "Average: one value per property" };
-        auto mode = int32_t(settings.mode);
-        if (ImGui::Combo("Mode", &mode, modes, IM_ARRAYSIZE(modes)))
-            settings.mode = BakeMode(mode);
-        ImGui::SetItemTooltip("Textures keep the details, but are frozen at one point in time and only fit meshes with the same positions and "
-            "texture coordinates. Averages lose all details and work for every mesh");
+        if (Widgets::BeginProperties("Bake settings")) {
+            const char* modes[] = { "Textures: one moment on one mesh", "Average: one value per property" };
+            auto mode = int32_t(settings.mode);
+            Widgets::PropertyLabel("Mode", "Textures keep the details, but are frozen at one point in time and only fit meshes "
+                "with the same positions and texture coordinates. Averages lose all details and work for every mesh");
+            if (ImGui::Combo("##Mode", &mode, modes, IM_ARRAYSIZE(modes)))
+                settings.mode = BakeMode(mode);
 
-        if (settings.mode == BakeMode::Textures) {
-            const int32_t resolutions[] = { 256, 512, 1024, 2048, 4096 };
-            if (ImGui::BeginCombo("Resolution", std::to_string(settings.resolution).c_str())) {
-                for (auto resolution : resolutions) {
-                    if (ImGui::Selectable(std::to_string(resolution).c_str(), resolution == settings.resolution))
-                        settings.resolution = resolution;
+            if (settings.mode == BakeMode::Textures) {
+                const int32_t resolutions[] = { 256, 512, 1024, 2048, 4096 };
+                Widgets::PropertyLabel("Resolution");
+                if (ImGui::BeginCombo("##Resolution", std::to_string(settings.resolution).c_str())) {
+                    for (auto resolution : resolutions) {
+                        if (ImGui::Selectable(std::to_string(resolution).c_str(), resolution == settings.resolution))
+                            settings.resolution = resolution;
+                    }
+                    ImGui::EndCombo();
                 }
-                ImGui::EndCombo();
             }
-        }
 
-        ImGui::DragFloat("Time", &settings.time, 0.05f, 0.0f, 3600.0f, "%.2f s");
-        ImGui::SetItemTooltip("The moment which gets baked, for graphs which change over time");
+            Widgets::PropertyLabel("Time", "The moment which gets baked, for graphs which change over time");
+            ImGui::DragFloat("##Time", &settings.time, 0.05f, 0.0f, 3600.0f, "%.2f s");
 
-        ImGui::TextUnformatted("Mesh");
-        bool meshChanged = false;
-        auto selected = meshSelectionPanel.Render(bakeMesh, meshChanged);
-        meshSelectionPanel.Reset();
-        if (meshChanged) {
-            bakeMesh = selected;
-            settings.meshPath = bakeMesh.IsValid() ? bakeMesh.GetResource()->path : "";
+            Widgets::PropertyLabel("Mesh", "Positions and texture coordinates come from this mesh. Without one the sphere of "
+                "this window is used");
+            bool meshChanged = false;
+            auto selected = meshSelectionPanel.Render(bakeMesh, meshChanged);
+            meshSelectionPanel.Reset();
+            if (meshChanged) {
+                bakeMesh = selected;
+                settings.meshPath = bakeMesh.IsValid() ? bakeMesh.GetResource()->path : "";
+            }
+
+            Widgets::EndProperties();
         }
-        ImGui::SetItemTooltip("Positions and texture coordinates come from this mesh. Without one the sphere of this window is used");
 
         Theme::PushPrimaryButton();
         auto bake = ImGui::Button("Bake");
@@ -750,7 +755,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::SameLine();
         ImGui::BeginDisabled(settings.bakedState == 0);
-        if (ImGui::Button("Remove bake")) {
+        if (Widgets::DangerButton("Remove bake", ImVec2(0.0f, 0.0f))) {
             Baker::Clear(*material.Get());
             UpdateMeshesOfGraph();
             previewMesh->UpdatePipelines();

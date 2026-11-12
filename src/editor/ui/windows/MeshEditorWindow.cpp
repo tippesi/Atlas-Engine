@@ -313,7 +313,7 @@ namespace Atlas::Editor::UI {
             entity.AddComponent<RigidBodyComponent>(*comp.creationSettings);
         }
 
-        if (ImGui::Button("Remove body", ImVec2(-FLT_MIN, 0.0f)))
+        if (Widgets::DangerButton("Remove body"))
             entity.RemoveComponent<RigidBodyComponent>();
 
     }

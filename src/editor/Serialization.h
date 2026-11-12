@@ -28,6 +28,9 @@ namespace Atlas::Editor {
         static void DeserializeLogWindow(UI::LogWindow& logWindow);
 
     private:
+        // Scenes are identified by their file, the internal names of two scenes can be the same
+        static std::string GetSceneWindowConfigFilename(const ResourceHandle<Scene::Scene>& scene);
+
         static void TryWriteToFile(const std::string& filename, const std::string& content);
 
         static std::string TryReadFromFile(const std::string& filename);

@@ -3,6 +3,8 @@
 #include "../Widgets.h"
 #include "../../Notifications.h"
 
+#include <cstdio>
+
 namespace Atlas::Editor::UI {
 
     void NavigationPanel::Update(const Ref<Navigation::Navigation>& navigation) {
@@ -30,12 +32,18 @@ namespace Atlas::Editor::UI {
         }
 
         if (Widgets::SectionHeader("General", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Enable", &navigation->enable);
-            ImGui::SetItemTooltip("Builds the navigation mesh around the camera while the scene updates");
-            auto maxRadius = navigation->mesh ? navigation->mesh->GetMaxRadius() : 500.0f;
-            ImGui::DragFloat("Radius", &navigation->radius, 1.0f, 16.0f, maxRadius, "%.0f m", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SetItemTooltip("Tiles are built within this distance around the camera, tiles further away are removed.\n"
-                "The mesh holds 1024 tiles, which limits the radius to %.0f m with the current tile size", maxRadius);
+            if (Widgets::BeginProperties("General")) {
+                Widgets::PropertyLabel("Enable", "Builds the navigation mesh around the camera while the scene updates");
+                ImGui::Checkbox("##Enable", &navigation->enable);
+                auto maxRadius = navigation->mesh ? navigation->mesh->GetMaxRadius() : 500.0f;
+                char radiusTooltip[256];
+                std::snprintf(radiusTooltip, sizeof(radiusTooltip), "Tiles are built within this distance around the camera, "
+                    "tiles further away are removed.\nThe mesh holds 1024 tiles, which limits the radius to %.0f m with the "
+                    "current tile size", maxRadius);
+                Widgets::PropertyLabel("Radius", radiusTooltip);
+                ImGui::DragFloat("##Radius", &navigation->radius, 1.0f, 16.0f, maxRadius, "%.0f m", ImGuiSliderFlags_AlwaysClamp);
+                Widgets::EndProperties();
+            }
 
             if (navigation->mesh) {
                 ImGui::TextColored(Theme::TextMuted(), "%d tiles built, %d pending", navigation->mesh->GetTileCount(),
@@ -49,50 +57,59 @@ namespace Atlas::Editor::UI {
         }
 
         auto& settings = navigation->settings;
-        if (Widgets::SectionHeader("Agent")) {
-            ImGui::SliderFloat("Radius##Agent", &settings.agentRadius, 0.05f, 3.0f, "%.2f m");
-            ImGui::SetItemTooltip("How far the mesh stays away from walls and edges, about the radius of a character");
-            ImGui::SliderFloat("Height", &settings.agentHeight, 0.2f, 5.0f, "%.2f m");
-            ImGui::SetItemTooltip("The free space a character needs above the floor, lower passages aren't walkable");
-            ImGui::SliderFloat("Max climb", &settings.agentMaxClimb, 0.0f, 2.0f, "%.2f m");
-            ImGui::SetItemTooltip("Steps up to this height are walked over, higher ledges separate the areas");
-            ImGui::SliderFloat("Max slope", &settings.agentMaxSlope, 0.0f, 85.0f, "%.0f deg");
-            ImGui::SetItemTooltip("Steeper ground isn't walkable");
+        if (Widgets::SectionHeader("Agent") && Widgets::BeginProperties("Agent")) {
+            Widgets::PropertyLabel("Radius", "How far the mesh stays away from walls and edges, about the radius of a character");
+            ImGui::SliderFloat("##Agent radius", &settings.agentRadius, 0.05f, 3.0f, "%.2f m");
+            Widgets::PropertyLabel("Height", "The free space a character needs above the floor, lower passages aren't walkable");
+            ImGui::SliderFloat("##Height", &settings.agentHeight, 0.2f, 5.0f, "%.2f m");
+            Widgets::PropertyLabel("Max climb", "Steps up to this height are walked over, higher ledges separate the areas");
+            ImGui::SliderFloat("##Max climb", &settings.agentMaxClimb, 0.0f, 2.0f, "%.2f m");
+            Widgets::PropertyLabel("Max slope", "Steeper ground isn't walkable");
+            ImGui::SliderFloat("##Max slope", &settings.agentMaxSlope, 0.0f, 85.0f, "%.0f deg");
+            Widgets::EndProperties();
         }
 
         if (Widgets::SectionHeader("Voxelization")) {
-            ImGui::SliderFloat("Cell size", &settings.cellSize, 0.05f, 1.0f, "%.2f m");
-            ImGui::SetItemTooltip("Horizontal resolution of the voxels the mesh is built from. Smaller cells follow walls and\n"
-                "gaps more exactly, but take longer to build and produce more polygons");
-            ImGui::SliderFloat("Cell height", &settings.cellHeight, 0.05f, 1.0f, "%.2f m");
-            ImGui::SetItemTooltip("Vertical resolution of the voxels, steps and the agent height are rounded to it");
-            ImGui::SliderFloat("Tile size", &settings.tileSize, 8.0f, 128.0f, "%.0f m");
-            ImGui::SetItemTooltip("Side length of the tiles which are built and replaced on their own. Larger tiles allow a larger\n"
-                "radius, but take longer to rebuild and can exceed the 4096 polygons of a tile in dense areas\n"
-                "(the tile then stays empty and the log names it). It doesn't change the precision");
+            if (Widgets::BeginProperties("Voxelization")) {
+                Widgets::PropertyLabel("Cell size", "Horizontal resolution of the voxels the mesh is built from. Smaller cells follow walls and\n"
+                    "gaps more exactly, but take longer to build and produce more polygons");
+                ImGui::SliderFloat("##Cell size", &settings.cellSize, 0.05f, 1.0f, "%.2f m");
+                Widgets::PropertyLabel("Cell height", "Vertical resolution of the voxels, steps and the agent height are rounded to it");
+                ImGui::SliderFloat("##Cell height", &settings.cellHeight, 0.05f, 1.0f, "%.2f m");
+                Widgets::PropertyLabel("Tile size", "Side length of the tiles which are built and replaced on their own. Larger tiles allow a larger\n"
+                    "radius, but take longer to rebuild and can exceed the 4096 polygons of a tile in dense areas\n"
+                    "(the tile then stays empty and the log names it). It doesn't change the precision");
+                ImGui::SliderFloat("##Tile size", &settings.tileSize, 8.0f, 128.0f, "%.0f m");
+                Widgets::EndProperties();
+            }
             ImGui::TextColored(Theme::TextMuted(), "Changing the agent or voxelization settings rebuilds the mesh");
         }
 
-        if (Widgets::SectionHeader("Building")) {
-            ImGui::SliderInt("Tiles per frame", &navigation->maxTileStartsPerUpdate, 1, 16, "%d", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SetItemTooltip("Tiles whose geometry (static bodies and terrain) is collected on the main thread each frame.\n"
+        if (Widgets::SectionHeader("Building") && Widgets::BeginProperties("Building")) {
+            Widgets::PropertyLabel("Tiles per frame", "Tiles whose geometry (static bodies and terrain) is collected on the main thread each frame.\n"
                 "Fewer keep the frame time steady, more fill a new area faster");
-            ImGui::SliderInt("Concurrent builds", &navigation->maxConcurrentBuilds, 1, 32, "%d", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SetItemTooltip("Tiles built in jobs at the same time. Each build takes one worker of the pool below");
+            ImGui::SliderInt("##Tiles per frame", &navigation->maxTileStartsPerUpdate, 1, 16, "%d", ImGuiSliderFlags_AlwaysClamp);
+            Widgets::PropertyLabel("Concurrent builds", "Tiles built in jobs at the same time. Each build takes one worker of the pool below");
+            ImGui::SliderInt("##Concurrent builds", &navigation->maxConcurrentBuilds, 1, 32, "%d", ImGuiSliderFlags_AlwaysClamp);
 
             const char* priorities[] = { "High", "Medium", "Low" };
             auto priority = int32_t(navigation->buildPriority);
-            if (ImGui::Combo("Job priority", &priority, priorities, IM_ARRAYSIZE(priorities)))
-                navigation->buildPriority = JobPriority(priority);
-            ImGui::SetItemTooltip("The worker pool of the job system the tiles are built in. High shares the workers of the\n"
+            Widgets::PropertyLabel("Job priority", "The worker pool of the job system the tiles are built in. High shares the workers of the\n"
                 "frame (scene update, rendering), medium and low have their own workers with a lower thread priority");
+            if (ImGui::Combo("##Job priority", &priority, priorities, IM_ARRAYSIZE(priorities)))
+                navigation->buildPriority = JobPriority(priority);
+            Widgets::EndProperties();
         }
 
         if (Widgets::SectionHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Show mesh", &showMesh);
-            ImGui::SetItemTooltip("Draws the edges of the polygons of all built tiles");
-            auto pathTestChanged = ImGui::Checkbox("Path test", &pathTest);
-            ImGui::SetItemTooltip("Finds a path between two points in the viewport, like the characters of a game would");
+            auto pathTestChanged = false;
+            if (Widgets::BeginProperties("Debug")) {
+                Widgets::PropertyLabel("Show mesh", "Draws the edges of the polygons of all built tiles");
+                ImGui::Checkbox("##Show mesh", &showMesh);
+                Widgets::PropertyLabel("Path test", "Finds a path between two points in the viewport, like the characters of a game would");
+                pathTestChanged = ImGui::Checkbox("##Path test", &pathTest);
+                Widgets::EndProperties();
+            }
             if (pathTestChanged && !pathTest) {
                 pathStart.reset();
                 pathGoal.reset();
@@ -116,7 +133,7 @@ namespace Atlas::Editor::UI {
         }
 
         ImGui::Separator();
-        if (ImGui::Button("Remove navigation", ImVec2(-FLT_MIN, 0.0f)))
+        if (Widgets::DangerButton("Remove navigation"))
             navigation = nullptr;
         ImGui::SetItemTooltip("Removes the navigation from the scene, scripts which use it don't find paths anymore");
 

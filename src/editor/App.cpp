@@ -662,9 +662,11 @@ namespace Atlas::Editor {
         ImGui::Begin("##Empty state", nullptr, flags);
 
         if (!waitToLoadScenes.empty()) {
-            ImGui::SetWindowFontScale(1.5f);
-            ImGui::TextUnformatted("Loading scene...");
-            ImGui::SetWindowFontScale(1.0f);
+            // The spinner is centered above the heading, the window sizes itself to the heading
+            auto textWidth = ImGui::CalcTextSize("Loading scene...").x * UI::Widgets::headingScale;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (textWidth - ImGui::GetTextLineHeight() * 2.0f) * 0.5f));
+            UI::Widgets::Spinner(2.0f);
+            UI::Widgets::Heading("Loading scene...");
             ImGui::End();
             return;
         }
@@ -1121,7 +1123,9 @@ namespace Atlas::Editor {
                         gap(8.0f);
                     }
 
-                    text(sceneWindow->scene->name.c_str(), ImGuiCol_Text);
+                    auto sceneLabel = sceneWindow->IsPrefab() ? Common::Path::GetFileName(sceneWindow->prefabPath) :
+                        UI::SceneWindow::GetSceneLabel(sceneWindow->scene);
+                    text(sceneLabel.c_str(), ImGuiCol_Text);
 
                     const auto& selection = sceneWindow->sceneHierarchyPanel.selectedEntities;
                     auto selectedEntity = sceneWindow->sceneHierarchyPanel.selectedEntity;
@@ -1599,6 +1603,17 @@ namespace Atlas::Editor {
             sceneWindow->OpenPrefab(path);
             OpenAsTab(*sceneWindow);
             sceneWindows.push_back(sceneWindow);
+            return;
+        }
+
+        // Scenes open as a scene tab, like a double click in the content browser
+        if (type == ContentType::Scene) {
+            FileImporter::ImportFile<Scene::Scene>(path);
+            return;
+        }
+
+        if (type != ContentType::Material && type != ContentType::MaterialGraph && type != ContentType::Mesh) {
+            Notifications::Push({ .message = "There is no editor for " + Common::Path::GetFileName(path), .type = NotificationType::Warning });
             return;
         }
 

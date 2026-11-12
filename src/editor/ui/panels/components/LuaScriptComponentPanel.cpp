@@ -35,41 +35,50 @@ namespace Atlas::Editor::UI
         if (!luaScriptComponent.script.IsLoaded())
             return false;
 
-        ImGui::Checkbox("Permanent execution", &luaScriptComponent.permanentExecution);
+        if (Widgets::BeginProperties("LuaScriptComponent")) {
+            Widgets::PropertyLabel("Permanent execution");
+            ImGui::Checkbox("##Permanent execution", &luaScriptComponent.permanentExecution);
+            Widgets::EndProperties();
+        }
         // The code is read-only here and can be long, so it is collapsed by default
         if (ImGui::TreeNodeEx("Source code", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-            ImGui::InputTextMultiline("##Code", &luaScriptComponent.script->code,
-                ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 12.0f), ImGuiInputTextFlags_ReadOnly);
+            Widgets::TextArea("Source code", luaScriptComponent.script->code, 18.0f, ImGuiInputTextFlags_ReadOnly);
             ImGui::TreePop();
         }
 
         ImGui::SeparatorText("Properties");
         if (luaScriptComponent.properties.empty())
-            ImGui::TextDisabled("This script doesn't define any properties");
-        for (auto& [name, property] : luaScriptComponent.properties) {
-            switch (property.type) {
-            case LuaScriptComponent::PropertyType::Boolean:
-                ImGui::Checkbox(name.c_str(), &property.booleanValue);
-                break;
-            case LuaScriptComponent::PropertyType::Integer:
-                ImGui::InputInt(name.c_str(), &property.integerValue);
-                break;
-            case LuaScriptComponent::PropertyType::Double:
-                ImGui::InputDouble(name.c_str(), &property.doubleValue);
-                break;
-            case LuaScriptComponent::PropertyType::String:
-                ImGui::InputText(name.c_str(), &property.stringValue);
-                break;
-            case LuaScriptComponent::PropertyType::Vec2:
-                ImGui::DragFloat2(name.c_str(), glm::value_ptr(property.vec2Value));
-                break;
-            case LuaScriptComponent::PropertyType::Vec3:
-                Widgets::DragVec3(name.c_str(), property.vec3Value, 1.0f, 0.0f);
-                break;
-            case LuaScriptComponent::PropertyType::Undefined:
-            default:
-                break;
+            Widgets::EmptyState("No properties defined");
+        else if (Widgets::BeginProperties("LuaScriptProperties")) {
+            for (auto& [name, property] : luaScriptComponent.properties) {
+                ImGui::PushID(name.c_str());
+                Widgets::PropertyLabel(name.c_str());
+                switch (property.type) {
+                case LuaScriptComponent::PropertyType::Boolean:
+                    ImGui::Checkbox("##Value", &property.booleanValue);
+                    break;
+                case LuaScriptComponent::PropertyType::Integer:
+                    ImGui::InputInt("##Value", &property.integerValue);
+                    break;
+                case LuaScriptComponent::PropertyType::Double:
+                    ImGui::InputDouble("##Value", &property.doubleValue);
+                    break;
+                case LuaScriptComponent::PropertyType::String:
+                    ImGui::InputText("##Value", &property.stringValue);
+                    break;
+                case LuaScriptComponent::PropertyType::Vec2:
+                    ImGui::DragFloat2("##Value", glm::value_ptr(property.vec2Value));
+                    break;
+                case LuaScriptComponent::PropertyType::Vec3:
+                    Widgets::DragVec3("##Value", property.vec3Value, 1.0f, 0.0f);
+                    break;
+                case LuaScriptComponent::PropertyType::Undefined:
+                default:
+                    break;
+                }
+                ImGui::PopID();
             }
+            Widgets::EndProperties();
         }
 
         return false;

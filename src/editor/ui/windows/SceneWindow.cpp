@@ -19,15 +19,36 @@
 namespace Atlas::Editor::UI {
 
     SceneWindow::SceneWindow(ResourceHandle<Scene::Scene> scene, bool show) :
-        Window(scene.IsLoaded() ? scene->name : "No scene", show), scene(scene) {
+        Window(scene.IsLoaded() ? GetSceneLabel(scene) : "No scene", show), scene(scene) {
     
         RegisterViewportAndGizmoOverlay();
 
-        // Overwrite the window name, there should only be one scene with the same name. The
-        // id stays the same while the label gets room for the unsaved marker
-        nameID = scene->name + "###" + scene->name;
+        // Overwrite the window name, the file identifies the scene: two files can contain scenes with the same name.
+        // The id stays the same while the label gets room for the unsaved marker
+        nameID = GetSceneLabel(scene) + "###" + GetScenePath(scene);
 
         sceneHierarchyPanel.history = &history;
+
+    }
+
+    std::string SceneWindow::GetScenePath(const ResourceHandle<Scene::Scene>& scene) {
+
+        if (!scene.IsLoaded())
+            return "";
+        // Scenes created in the editor without a file are saved by their name
+        if (scene.IsGenerated())
+            return "scenes/" + scene->name + ".aescene";
+        return scene.GetResource()->path;
+
+    }
+
+    std::string SceneWindow::GetSceneLabel(const ResourceHandle<Scene::Scene>& scene) {
+
+        if (!scene.IsLoaded())
+            return "No scene";
+        if (scene.IsGenerated())
+            return scene->name;
+        return Common::Path::GetFileNameWithoutExtension(scene.GetResource()->path);
 
     }
 
@@ -124,7 +145,7 @@ namespace Atlas::Editor::UI {
     void SceneWindow::Render() {
 
         if (scene.IsLoaded())
-            nameID = scene->name + (hasUnsavedChanges ? "   ###" : "###") + scene->name;
+            nameID = GetSceneLabel(scene) + (hasUnsavedChanges ? "   ###" : "###") + GetScenePath(scene);
 
         if (!Begin())
             return;
@@ -138,7 +159,7 @@ namespace Atlas::Editor::UI {
             auto drawList = docked ? window->DockNode->HostWindow->DrawList : window->DrawList;
             // Undocked windows have the collapse button in front of the name
             auto textOffset = docked ? style.FramePadding.x : style.FramePadding.x + ImGui::GetFontSize() + style.ItemInnerSpacing.x;
-            auto markerPos = ImVec2(titleRect.Min.x + textOffset + ImGui::CalcTextSize(scene->name.c_str()).x + 0.5f * style.ItemInnerSpacing.x,
+            auto markerPos = ImVec2(titleRect.Min.x + textOffset + ImGui::CalcTextSize(GetSceneLabel(scene).c_str()).x + 0.5f * style.ItemInnerSpacing.x,
                 titleRect.Min.y + style.FramePadding.y);
 
             drawList->PushClipRect(titleRect.Min, titleRect.Max, false);
@@ -501,7 +522,7 @@ namespace Atlas::Editor::UI {
                 ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
                 // The upscaler is a setting of the scene, the same as in its post processing properties
                 ImguiExtension::PostProcessingPanel::RenderUpscalerSelection(scene->postProcessing.upscaler,
-                    [&](PostProcessing::Upscaler upscaler) { return viewportPanel.mainRenderer->IsUpscalerSupported(upscaler); });
+                    [&](PostProcessing::Upscaler upscaler) { return viewportPanel.mainRenderer->IsUpscalerSupported(upscaler); }, false);
 
                 ImGui::SeparatorText("Path tracer samples");
                 // ImGui::Checkbox("Realtime", &viewportPanel.mainRenderer->pathTracingRenderer.realTime);
@@ -927,7 +948,8 @@ namespace Atlas::Editor::UI {
 
                 scene->DestroyEntity(cameraEntity);
 
-                Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene", true, true);
+                // Back into the file the scene came from, its name can differ from the file name
+                Serializer::SerializeScene(scene.Get(), GetScenePath(scene), true, true);
 
                 // Here we can finally reset the in-editing status, as it was now saved and we could reload from disk
                 if (scene->terrain.IsLoaded())
@@ -937,7 +959,7 @@ namespace Atlas::Editor::UI {
 
                 cameraState.clear();
 
-                Notifications::Push({ .message = "Saved scene " + scene->name });
+                Notifications::Push({ .message = "Saved scene " + GetSceneLabel(scene) });
                 hasUnsavedChanges = false;
             });       
 

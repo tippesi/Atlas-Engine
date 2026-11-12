@@ -667,28 +667,11 @@ namespace Atlas::Editor::UI {
 
         ImGui::SameLine();
 
-        auto region = ImGui::GetContentRegionAvail();
-        auto lineHeight = ImGui::GetTextLineHeight();
-        auto buttonSize = ImVec2(lineHeight, lineHeight);
-
-        auto& filterIcon = Singletons::icons->Get(IconType::Filter);
-        auto set = Singletons::imguiWrapper->GetTextureId(&filterIcon);
-
-        auto uvMin = ImVec2(0.1f, 0.1f);
-        auto uvMax = ImVec2(0.9f, 0.9f);
-
-        //ImGui::SetCursorPosX(ImVec2(region.x - (buttonSize.x + 2.0f * padding), ImGui::GetCursorPosY()));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-        if (ImGui::ImageButton("Filter button", set, buttonSize, uvMin, uvMax)) {
-            ImGui::OpenPopup("Hierarchy filter settings");
-        }
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
-
         // Mark the button while a filter hides entities
         bool filterActive = (hierarchyFilter & HierarchyFilterBits::AllBit) != HierarchyFilterBits::AllBit;
-        ImGui::SetItemTooltip(filterActive ? "Filter entities (active)" : "Filter entities");
+        if (Widgets::ToolbarIconButton("Filter button", Singletons::icons->Get(IconType::Filter),
+            filterActive ? "Filter entities (active)" : "Filter entities"))
+            ImGui::OpenPopup("Hierarchy filter settings");
         if (filterActive)
             Widgets::ActiveIndicator();
 

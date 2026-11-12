@@ -13,23 +13,26 @@ namespace Atlas::Editor::UI {
 
         ImGui::PushID(GetNameID());
 
-        const char* typeItems[] = { "Linear", "Catmull Rom", "Hermite" };
-        auto type = static_cast<int32_t>(splineComponent.type);
-        auto prevItem = type;
-        ImGui::Combo("Type", &type, typeItems, IM_ARRAYSIZE(typeItems));
-        splineComponent.type = static_cast<SplineType>(type);
+        if (Widgets::BeginProperties("SplineComponent")) {
+            const char* typeItems[] = { "Linear", "Catmull Rom", "Hermite" };
+            auto type = static_cast<int32_t>(splineComponent.type);
+            Widgets::PropertyLabel("Type");
+            ImGui::Combo("##Type", &type, typeItems, IM_ARRAYSIZE(typeItems));
+            splineComponent.type = static_cast<SplineType>(type);
 
-        const char* bakeItems[] = { "No bake", "Equal time bake", "Distance time bake" };
-        auto bakeMode = static_cast<int32_t>(splineComponent.bakeMode);
-        prevItem = bakeMode;
-        ImGui::Combo("Bake mode", &bakeMode, bakeItems, IM_ARRAYSIZE(bakeItems));
-        splineComponent.bakeMode = static_cast<SplineBakeMode>(bakeMode);
+            const char* bakeItems[] = { "No bake", "Equal time bake", "Distance time bake" };
+            auto bakeMode = static_cast<int32_t>(splineComponent.bakeMode);
+            Widgets::PropertyLabel("Bake mode");
+            ImGui::Combo("##Bake mode", &bakeMode, bakeItems, IM_ARRAYSIZE(bakeItems));
+            splineComponent.bakeMode = static_cast<SplineBakeMode>(bakeMode);
+            Widgets::EndProperties();
+        }
 
         auto& controlPoints = splineComponent.controlPoints;
 
         ImGui::SeparatorText("Control points");
         if (controlPoints.empty())
-            ImGui::TextDisabled("No control points yet");
+            Widgets::EmptyState("No control points yet");
 
         size_t counter = 0;
         size_t modifyIdx = 0;
@@ -113,7 +116,7 @@ namespace Atlas::Editor::UI {
         ImGui::EndDisabled();
         ImGui::SameLine();
 
-        if (Widgets::IconButton("Delete button", Singletons::icons->Get(IconType::Trash), iconSize, "Delete point"))
+        if (Widgets::IconButton("Remove button", Singletons::icons->Get(IconType::Trash), iconSize, "Remove point"))
             action = ControlPointAction::Delete;
 
         ImGui::PopStyleVar();
@@ -140,16 +143,23 @@ namespace Atlas::Editor::UI {
 
         vec3 localPosition = position, localRotation = rotation, localScale = scale;
 
-        Widgets::DragVec3("Position", position, 0.01f);
+        if (Widgets::BeginProperties("ControlPoint")) {
+            Widgets::PropertyLabel("Position");
+            Widgets::DragVec3("##Position", position, 0.01f);
 
-        // Rotation is stored in radians, but degrees are easier to work with
-        auto rotationDegrees = glm::degrees(rotation);
-        if (Widgets::DragVec3("Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
-            rotation = glm::radians(rotationDegrees);
+            // Rotation is stored in radians, but degrees are easier to work with
+            auto rotationDegrees = glm::degrees(rotation);
+            Widgets::PropertyLabel("Rotation");
+            if (Widgets::DragVec3("##Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
+                rotation = glm::radians(rotationDegrees);
 
-        Widgets::DragVec3("Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
+            Widgets::PropertyLabel("Scale");
+            Widgets::DragVec3("##Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
 
-        ImGui::DragFloat("Time", &point.time, 0.001f, 0.0f, 1.0f);
+            Widgets::PropertyLabel("Time");
+            ImGui::DragFloat("##Time", &point.time, 0.001f, 0.0f, 1.0f);
+            Widgets::EndProperties();
+        }
 
         // Only recompose when a local change happened
         if (localPosition != position || localScale != scale ||

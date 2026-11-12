@@ -25,6 +25,10 @@ namespace Atlas::Editor {
         static void PushPrimaryButton();
         static void PopPrimaryButton();
 
+        // Style for buttons that remove or delete something, pop with PopDangerButton()
+        static void PushDangerButton();
+        static void PopDangerButton();
+
         // Darkest neutral (lightest in light mode), used behind and between panels
         static ImVec4 Base(float alpha = 1.0f);
 

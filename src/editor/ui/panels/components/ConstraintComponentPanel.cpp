@@ -78,40 +78,59 @@ namespace Atlas::Editor::UI {
 
         bool changed = false;
 
+        if (!Widgets::BeginProperties("Constraint"))
+            return false;
+
         const char* typeItems[] = { "Fixed", "Point", "Hinge", "Slider", "Distance", "Cone" };
         int currentItem = static_cast<int>(settings.type);
-        changed |= ImGui::Combo("Type", &currentItem, typeItems, IM_ARRAYSIZE(typeItems));
+        Widgets::PropertyLabel("Type");
+        changed |= ImGui::Combo("##Type", &currentItem, typeItems, IM_ARRAYSIZE(typeItems));
         settings.type = static_cast<ConstraintType>(currentItem);
 
         auto type = settings.type;
 
         // Fixed and slider constraints keep the bodies where they are when the constraint is created
-        if (type != ConstraintType::Fixed && type != ConstraintType::Slider)
-            changed |= Widgets::DragVec3("Point", settings.point, 0.01f, 0.0f, -10000.0f, 10000.0f);
-        if (type == ConstraintType::Distance)
-            changed |= Widgets::DragVec3("Other point", settings.otherPoint, 0.01f, 0.0f, -10000.0f, 10000.0f);
-        if (type == ConstraintType::Hinge || type == ConstraintType::Slider || type == ConstraintType::Cone)
-            changed |= Widgets::DragVec3("Axis", settings.axis, 0.01f, 0.0f, -1.0f, 1.0f);
+        if (type != ConstraintType::Fixed && type != ConstraintType::Slider) {
+            Widgets::PropertyLabel("Point");
+            changed |= Widgets::DragVec3("##Point", settings.point, 0.01f, 0.0f, -10000.0f, 10000.0f);
+        }
+        if (type == ConstraintType::Distance) {
+            Widgets::PropertyLabel("Other point");
+            changed |= Widgets::DragVec3("##Other point", settings.otherPoint, 0.01f, 0.0f, -10000.0f, 10000.0f);
+        }
+        if (type == ConstraintType::Hinge || type == ConstraintType::Slider || type == ConstraintType::Cone) {
+            Widgets::PropertyLabel("Axis");
+            changed |= Widgets::DragVec3("##Axis", settings.axis, 0.01f, 0.0f, -1.0f, 1.0f);
+        }
 
         if (type == ConstraintType::Hinge || type == ConstraintType::Slider || type == ConstraintType::Distance) {
-            changed |= ImGui::Checkbox("Enable limits", &settings.enableLimits);
+            Widgets::PropertyLabel("Enable limits");
+            changed |= ImGui::Checkbox("##Enable limits", &settings.enableLimits);
             if (settings.enableLimits) {
                 if (type == ConstraintType::Hinge) {
-                    changed |= ImGui::SliderAngle("Limits min", &settings.limitsMin, -180.0f, 0.0f);
-                    changed |= ImGui::SliderAngle("Limits max", &settings.limitsMax, 0.0f, 180.0f);
+                    Widgets::PropertyLabel("Limits min");
+                    changed |= ImGui::SliderAngle("##Limits min", &settings.limitsMin, -180.0f, 0.0f);
+                    Widgets::PropertyLabel("Limits max");
+                    changed |= ImGui::SliderAngle("##Limits max", &settings.limitsMax, 0.0f, 180.0f);
                 }
                 else {
-                    changed |= ImGui::DragFloat("Limits min", &settings.limitsMin, 0.01f, -10000.0f, 10000.0f);
-                    changed |= ImGui::DragFloat("Limits max", &settings.limitsMax, 0.01f, -10000.0f, 10000.0f);
+                    Widgets::PropertyLabel("Limits min");
+                    changed |= ImGui::DragFloat("##Limits min", &settings.limitsMin, 0.01f, -10000.0f, 10000.0f);
+                    Widgets::PropertyLabel("Limits max");
+                    changed |= ImGui::DragFloat("##Limits max", &settings.limitsMax, 0.01f, -10000.0f, 10000.0f);
                 }
             }
         }
 
-        if (type == ConstraintType::Cone)
-            changed |= ImGui::SliderAngle("Half cone angle", &settings.halfConeAngle, 0.0f, 180.0f);
+        if (type == ConstraintType::Cone) {
+            Widgets::PropertyLabel("Half cone angle");
+            changed |= ImGui::SliderAngle("##Half cone angle", &settings.halfConeAngle, 0.0f, 180.0f);
+        }
 
-        changed |= ImGui::DragFloat("Break force", &settings.breakForce, 10.0f, 0.0f, 1000000.0f);
-        ImGui::SetItemTooltip("Zero never breaks");
+        Widgets::PropertyLabel("Break force", "Zero never breaks");
+        changed |= ImGui::DragFloat("##Break force", &settings.breakForce, 10.0f, 0.0f, 1000000.0f);
+
+        Widgets::EndProperties();
 
         return changed;
 

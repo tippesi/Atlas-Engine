@@ -8,6 +8,7 @@
 #include "Singletons.h"
 #include "Notifications.h"
 #include "Theme.h"
+#include "../Widgets.h"
 #include "loader/AssetLoader.h"
 #include "scene/SpacePartitioning.h"
 
@@ -52,9 +53,13 @@ namespace Atlas::Editor::UI {
 
             ImGui::SeparatorText("Scene");
 
-            if (popupNew)
-                ImGui::SetKeyboardFocusHere();
-            ImGui::InputTextWithHint("Name", "Type scene name here", &name);
+            if (Widgets::BeginProperties("Scene")) {
+                Widgets::PropertyLabel("Name");
+                if (popupNew)
+                    ImGui::SetKeyboardFocusHere();
+                ImGui::InputTextWithHint("##Name", "Type scene name here", &name);
+                Widgets::EndProperties();
+            }
 
             RenderOctreeSettings(minSize, maxSize, octreeDepth);
 
@@ -114,17 +119,28 @@ namespace Atlas::Editor::UI {
             ImGui::TextDisabled("Source: %s", filename.c_str());
 
             ImGui::SeparatorText("Scene");
-            if (popupNew)
-                ImGui::SetKeyboardFocusHere();
-            ImGui::InputTextWithHint("Name", "Type scene name here", &name);
+            if (Widgets::BeginProperties("Scene")) {
+                Widgets::PropertyLabel("Name");
+                if (popupNew)
+                    ImGui::SetKeyboardFocusHere();
+                ImGui::InputTextWithHint("##Name", "Type scene name here", &name);
+                Widgets::EndProperties();
+            }
 
             RenderOctreeSettings(minSize, maxSize, octreeDepth);
 
             ImGui::SeparatorText("Import");
-            ImGui::Checkbox("Invert UVs", &invertUVs);
-            ImGui::Checkbox("Attach mesh rigid body components", &addRigidBodies);
-            ImGui::Checkbox("Make meshes static", &makeMeshesStatic);
-            ImGui::Checkbox("Convert textures to KTX2", &convertTexturesToKtx);
+            if (Widgets::BeginProperties("Import")) {
+                Widgets::PropertyLabel("Invert UVs");
+                ImGui::Checkbox("##Invert UVs", &invertUVs);
+                Widgets::PropertyLabel("Attach mesh rigid body components");
+                ImGui::Checkbox("##Attach mesh rigid body components", &addRigidBodies);
+                Widgets::PropertyLabel("Make meshes static");
+                ImGui::Checkbox("##Make meshes static", &makeMeshesStatic);
+                Widgets::PropertyLabel("Convert textures to KTX2");
+                ImGui::Checkbox("##Convert textures to KTX2", &convertTexturesToKtx);
+                Widgets::EndProperties();
+            }
 
             auto confirm = RenderDialogFooter("Import", ValidateSceneName(name));
 
@@ -165,11 +181,17 @@ namespace Atlas::Editor::UI {
     void PopupPanels::RenderOctreeSettings(vec3& min, vec3& max, int32_t& depth) {
 
         ImGui::SeparatorText("Octree");
-        ImGui::DragFloat3("Min size", &min[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::DragFloat3("Max size", &max[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-        max = glm::max(max, min + 1.0f);
+        if (Widgets::BeginProperties("Octree")) {
+            Widgets::PropertyLabel("Min size");
+            ImGui::DragFloat3("##Min size", &min[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            Widgets::PropertyLabel("Max size");
+            ImGui::DragFloat3("##Max size", &max[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            max = glm::max(max, min + 1.0f);
 
-        ImGui::SliderInt("Depth", &depth, 1, 12);
+            Widgets::PropertyLabel("Depth");
+            ImGui::SliderInt("##Depth", &depth, 1, 12);
+            Widgets::EndProperties();
+        }
 
         auto cellSize = Scene::SpacePartitioning::GetCellSize(min, max, depth);
         ImGui::TextDisabled("Cells of %.1f x %.1f x %.1f m", cellSize.x, cellSize.y, cellSize.z);
@@ -273,11 +295,17 @@ namespace Atlas::Editor::UI {
 
             ImGui::SetKeyboardFocusHere();
 
-            // Center the text in the popup
+            // The spinning ring and the text next to it, centered together in the popup
+            const float spinnerScale = 1.5f;
             auto& blockText = Singletons::blockingOperation->blockText;
             auto textSize = ImGui::CalcTextSize(blockText.c_str());
+            auto spinnerSize = ImGui::GetTextLineHeight() * spinnerScale;
+            auto spacing = ImGui::GetStyle().ItemSpacing.x * 2.0f;
             auto windowSize = ImGui::GetWindowSize();
-            ImGui::SetCursorPos(ImVec2((windowSize.x - textSize.x) * 0.5f, (windowSize.y - textSize.y) * 0.5f));
+            auto startX = (windowSize.x - (spinnerSize + spacing + textSize.x)) * 0.5f;
+            ImGui::SetCursorPos(ImVec2(startX, (windowSize.y - spinnerSize) * 0.5f));
+            Widgets::Spinner(spinnerScale);
+            ImGui::SetCursorPos(ImVec2(startX + spinnerSize + spacing, (windowSize.y - textSize.y) * 0.5f));
             ImGui::TextUnformatted(blockText.c_str());
 
             if (!Singletons::blockingOperation->block)

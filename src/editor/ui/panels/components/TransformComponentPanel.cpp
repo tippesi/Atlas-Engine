@@ -41,39 +41,46 @@ namespace Atlas::Editor::UI {
 
         vec3 localPosition = position, localRotation = rotation, localScale = scale;
 
-        Widgets::DragVec3("Position", position, 0.01f);
+        if (Widgets::BeginProperties("TransformComponent")) {
+            Widgets::PropertyLabel("Position");
+            Widgets::DragVec3("##Position", position, 0.01f);
 
-        // Rotation is stored in radians, but degrees are easier to work with
-        auto rotationDegrees = glm::degrees(rotation);
-        if (Widgets::DragVec3("Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
-            rotation = glm::radians(rotationDegrees);
+            // Rotation is stored in radians, but degrees are easier to work with
+            auto rotationDegrees = glm::degrees(rotation);
+            Widgets::PropertyLabel("Rotation");
+            if (Widgets::DragVec3("##Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
+                rotation = glm::radians(rotationDegrees);
 
-        Widgets::DragVec3("Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
+            Widgets::PropertyLabel("Scale");
+            Widgets::DragVec3("##Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
 
-        // Entities below an animated mesh can follow one of its joints, they keep their position when it changes
-        auto parentAnimationComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<AnimationComponent>() : nullptr;
-        auto parentMeshComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<MeshComponent>() : nullptr;
-        if (parentAnimationComponent && parentMeshComponent && parentMeshComponent->mesh.IsLoaded() &&
-            parentMeshComponent->mesh->data.IsSkinned()) {
-            const auto& joints = parentMeshComponent->mesh->data.skeleton.joints;
-            auto jointName = transform.parentJoint >= 0 && transform.parentJoint < int32_t(joints.size()) ?
-                joints[transform.parentJoint].name : std::string("None");
+            // Entities below an animated mesh can follow one of its joints, they keep their position when it changes
+            auto parentAnimationComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<AnimationComponent>() : nullptr;
+            auto parentMeshComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<MeshComponent>() : nullptr;
+            if (parentAnimationComponent && parentMeshComponent && parentMeshComponent->mesh.IsLoaded() &&
+                parentMeshComponent->mesh->data.IsSkinned()) {
+                const auto& joints = parentMeshComponent->mesh->data.skeleton.joints;
+                auto jointName = transform.parentJoint >= 0 && transform.parentJoint < int32_t(joints.size()) ?
+                    joints[transform.parentJoint].name : std::string("None");
 
-            if (ImGui::BeginCombo("Parent joint", jointName.c_str())) {
-                if (ImGui::Selectable("None", transform.parentJoint < 0)) {
-                    transform.parentJoint = -1;
-                    transform.ReconstructLocalMatrix(parentEntity);
-                }
-                for (int32_t i = 0; i < int32_t(joints.size()); i++) {
-                    ImGui::PushID(i);
-                    if (ImGui::Selectable(joints[i].name.c_str(), transform.parentJoint == i)) {
-                        transform.parentJoint = i;
+                Widgets::PropertyLabel("Parent joint");
+                if (ImGui::BeginCombo("##Parent joint", jointName.c_str())) {
+                    if (ImGui::Selectable("None", transform.parentJoint < 0)) {
+                        transform.parentJoint = -1;
                         transform.ReconstructLocalMatrix(parentEntity);
                     }
-                    ImGui::PopID();
+                    for (int32_t i = 0; i < int32_t(joints.size()); i++) {
+                        ImGui::PushID(i);
+                        if (ImGui::Selectable(joints[i].name.c_str(), transform.parentJoint == i)) {
+                            transform.parentJoint = i;
+                            transform.ReconstructLocalMatrix(parentEntity);
+                        }
+                        ImGui::PopID();
+                    }
+                    ImGui::EndCombo();
                 }
-                ImGui::EndCombo();
             }
+            Widgets::EndProperties();
         }
 
         // Only recompose when a local change happened

@@ -259,6 +259,23 @@ namespace Atlas::Editor {
 
     }
 
+    void Theme::PushDangerButton() {
+
+        // Tinted instead of filled, a destructive action shouldn't look like the main action of a group
+        ImGui::PushStyleColor(ImGuiCol_Button, Error(0.14f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Error(0.28f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, Error(0.4f));
+        ImGui::PushStyleColor(ImGuiCol_Border, Error(0.45f));
+        ImGui::PushStyleColor(ImGuiCol_Text, Error());
+
+    }
+
+    void Theme::PopDangerButton() {
+
+        ImGui::PopStyleColor(5);
+
+    }
+
     ImVec4 Theme::Base(float alpha) {
 
         return WithAlpha(GetPalette(dark).base, alpha);

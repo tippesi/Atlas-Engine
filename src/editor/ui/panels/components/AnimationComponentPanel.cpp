@@ -21,14 +21,21 @@ namespace Atlas::Editor::UI {
 
         ImGui::SeparatorText("Playback");
 
-        ImGui::Checkbox("Playing", &animationComponent.playing);
-        ImGui::Checkbox("Loop", &animationComponent.loop);
-        ImGui::DragFloat("Speed", &animationComponent.speed, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat("Blend time", &blendTime, 0.01f, 0.0f, 5.0f);
-        ImGui::SetItemTooltip("Time to blend over when a new animation is selected");
+        if (Widgets::BeginProperties("Playback")) {
+            Widgets::PropertyLabel("Playing");
+            ImGui::Checkbox("##Playing", &animationComponent.playing);
+            Widgets::PropertyLabel("Loop");
+            ImGui::Checkbox("##Loop", &animationComponent.loop);
+            Widgets::PropertyLabel("Speed");
+            ImGui::DragFloat("##Speed", &animationComponent.speed, 0.01f, -10.0f, 10.0f);
+            Widgets::PropertyLabel("Blend time", "Time to blend over when a new animation is selected");
+            ImGui::DragFloat("##Blend time", &blendTime, 0.01f, 0.0f, 5.0f);
 
-        auto duration = animationComponent.animation.IsLoaded() ? animationComponent.animation->duration : 0.0f;
-        ImGui::SliderFloat("Time", &animationComponent.time, 0.0f, duration);
+            auto duration = animationComponent.animation.IsLoaded() ? animationComponent.animation->duration : 0.0f;
+            Widgets::PropertyLabel("Time");
+            ImGui::SliderFloat("##Time", &animationComponent.time, 0.0f, duration);
+            Widgets::EndProperties();
+        }
 
         ImGui::SeparatorText("Layers");
 
@@ -89,20 +96,26 @@ namespace Atlas::Editor::UI {
         if (resourceChanged)
             layer.Play(animation, blendTime);
 
+        if (!Widgets::BeginProperties("Layer"))
+            return resourceChanged;
+
         const char* modes[] = { "Override", "Additive" };
         auto mode = static_cast<int32_t>(layer.mode);
-        if (Widgets::SegmentedControl("Mode", mode, modes, IM_ARRAYSIZE(modes)))
+        Widgets::PropertyLabel("Mode");
+        if (Widgets::SegmentedControl("##Mode", mode, modes, IM_ARRAYSIZE(modes)))
             layer.mode = static_cast<AnimationBlendMode>(mode);
 
         auto weight = layer.GetTargetWeight();
-        if (ImGui::SliderFloat("Weight", &weight, 0.0f, 1.0f))
+        Widgets::PropertyLabel("Weight");
+        if (ImGui::SliderFloat("##Weight", &weight, 0.0f, 1.0f))
             layer.FadeTo(weight);
 
         // The mask starts at a joint of the skeleton, the whole skeleton without one
         auto maskRoot = layer.GetMaskRoot();
         auto blendJoints = layer.GetMaskBlendJoints();
         auto maskChanged = false;
-        if (ImGui::BeginCombo("Mask root", maskRoot.empty() ? "Whole skeleton" : maskRoot.c_str())) {
+        Widgets::PropertyLabel("Mask root");
+        if (ImGui::BeginCombo("##Mask root", maskRoot.empty() ? "Whole skeleton" : maskRoot.c_str())) {
             if (ImGui::Selectable("Whole skeleton", maskRoot.empty())) {
                 maskRoot.clear();
                 maskChanged = true;
@@ -120,18 +133,24 @@ namespace Atlas::Editor::UI {
             ImGui::EndCombo();
         }
         if (!maskRoot.empty()) {
-            maskChanged |= ImGui::DragInt("Blend joints", &blendJoints, 0.1f, 0, 16);
-            ImGui::SetItemTooltip("Joints from the mask root down over which the layer fades in, e.g. along the spine");
+            Widgets::PropertyLabel("Blend joints", "Joints from the mask root down over which the layer fades in, e.g. along the spine");
+            maskChanged |= ImGui::DragInt("##Blend joints", &blendJoints, 0.1f, 0, 16);
         }
         if (maskChanged)
             layer.SetMask(maskRoot, blendJoints);
 
-        ImGui::Checkbox("Playing", &layer.playing);
-        ImGui::Checkbox("Loop", &layer.loop);
-        ImGui::DragFloat("Speed", &layer.speed, 0.01f, -10.0f, 10.0f);
+        Widgets::PropertyLabel("Playing");
+        ImGui::Checkbox("##Playing", &layer.playing);
+        Widgets::PropertyLabel("Loop");
+        ImGui::Checkbox("##Loop", &layer.loop);
+        Widgets::PropertyLabel("Speed");
+        ImGui::DragFloat("##Speed", &layer.speed, 0.01f, -10.0f, 10.0f);
 
         auto duration = layer.animation.IsLoaded() ? layer.animation->duration : 0.0f;
-        ImGui::SliderFloat("Time", &layer.time, 0.0f, duration);
+        Widgets::PropertyLabel("Time");
+        ImGui::SliderFloat("##Time", &layer.time, 0.0f, duration);
+
+        Widgets::EndProperties();
 
         return resourceChanged;
 
@@ -142,10 +161,17 @@ namespace Atlas::Editor::UI {
         std::string joints[] = { chain.GetUpperJoint(), chain.GetMiddleJoint(), chain.GetEndJoint() };
         const char* labels[] = { "Upper joint", "Middle joint", "End joint" };
 
+        if (!Widgets::BeginProperties("Chain"))
+            return;
+
         auto jointsChanged = false;
         for (int32_t i = 0; i < 3; i++) {
-            if (!ImGui::BeginCombo(labels[i], joints[i].empty() ? "None" : joints[i].c_str()))
+            Widgets::PropertyLabel(labels[i]);
+            ImGui::PushID(i);
+            if (!ImGui::BeginCombo("##Joint", joints[i].empty() ? "None" : joints[i].c_str())) {
+                ImGui::PopID();
                 continue;
+            }
             for (size_t j = 0; skeleton && j < skeleton->joints.size(); j++) {
                 const auto& name = skeleton->joints[j].name;
                 // Skeletons can have several joints with the same name
@@ -157,22 +183,31 @@ namespace Atlas::Editor::UI {
                 ImGui::PopID();
             }
             ImGui::EndCombo();
+            ImGui::PopID();
         }
         if (jointsChanged)
             chain.SetJoints(joints[0], joints[1], joints[2]);
 
+        Widgets::EndProperties();
+
         if (!chain.IsValid() && !joints[0].empty())
             ImGui::TextDisabled("Joints not found in the skeleton");
 
-        ImGui::SliderFloat("Weight", &chain.weight, 0.0f, 1.0f);
-        ImGui::Checkbox("Relative target", &chain.relativeTarget);
-        ImGui::SetItemTooltip("The target is a world offset from where the animation puts the end joint");
-        Widgets::DragVec3("Target", chain.target, 0.01f);
-        ImGui::SetItemTooltip(chain.relativeTarget ? "World offset from the animated end joint" : "World position the end joint reaches for");
-        Widgets::DragVec3("Pole", chain.pole, 0.01f, 0.0f, -1.0f, 1.0f);
-        ImGui::SetItemTooltip("Direction in mesh space the middle joint bends to when the chain is straight");
-        Widgets::DragVec3("Normal", chain.normal, 0.01f, 0.0f, -1.0f, 1.0f);
-        ImGui::SliderFloat("Normal weight", &chain.normalWeight, 0.0f, 1.0f);
+        if (Widgets::BeginProperties("Chain target")) {
+            Widgets::PropertyLabel("Weight");
+            ImGui::SliderFloat("##Weight", &chain.weight, 0.0f, 1.0f);
+            Widgets::PropertyLabel("Relative target", "The target is a world offset from where the animation puts the end joint");
+            ImGui::Checkbox("##Relative target", &chain.relativeTarget);
+            Widgets::PropertyLabel("Target", chain.relativeTarget ? "World offset from the animated end joint" : "World position the end joint reaches for");
+            Widgets::DragVec3("##Target", chain.target, 0.01f);
+            Widgets::PropertyLabel("Pole", "Direction in mesh space the middle joint bends to when the chain is straight");
+            Widgets::DragVec3("##Pole", chain.pole, 0.01f, 0.0f, -1.0f, 1.0f);
+            Widgets::PropertyLabel("Normal");
+            Widgets::DragVec3("##Normal", chain.normal, 0.01f, 0.0f, -1.0f, 1.0f);
+            Widgets::PropertyLabel("Normal weight");
+            ImGui::SliderFloat("##Normal weight", &chain.normalWeight, 0.0f, 1.0f);
+            Widgets::EndProperties();
+        }
 
         if (ImGui::Button("Target from animation"))
             chain.target = chain.relativeTarget ? vec3(0.0f) : chain.GetAnimatedEndPosition();

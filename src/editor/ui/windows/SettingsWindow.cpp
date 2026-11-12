@@ -45,10 +45,20 @@ namespace Atlas::Editor::UI {
             if (!Widgets::SectionHeader(category, ImGuiTreeNodeFlags_DefaultOpen))
                 continue;
 
+            // The name of a setting is its label, the widgets of the settings don't show their own
             ImGui::PushID(category);
-            for (const auto& setting : settings) {
-                if (setting.category == category && Matches(setting))
+            if (Widgets::BeginProperties("Settings")) {
+                for (const auto& setting : settings) {
+                    if (setting.category != category || !Matches(setting))
+                        continue;
+                    Widgets::PropertyLabel(setting.name);
+                    ImGui::PushID(setting.name);
+                    ImGui::PushTextWrapPos(0.0f);
                     setting.render();
+                    ImGui::PopTextWrapPos();
+                    ImGui::PopID();
+                }
+                Widgets::EndProperties();
             }
             ImGui::PopID();
         }
@@ -65,26 +75,26 @@ namespace Atlas::Editor::UI {
         auto addLevelSettings = [&](const char* category, const char* noun, Streaming::StreamingSettings::Levels& levels,
             Streaming::ResidencyStats Streaming::StreamingManager::Stats::* levelStats) {
             settings.push_back({ category, "Enable", "", [&levels]() {
-                ImGui::Checkbox("Enable", &levels.enable);
+                ImGui::Checkbox("##Enable", &levels.enable);
                 ImGui::SetItemTooltip("Disabled, all of them get their full resolution");
                 } });
-            settings.push_back({ category, "Budget", "memory vram limit megabytes", [&levels]() {
-                ImGui::DragInt("Budget (MB)", &levels.budget, 16.0f, 16, 65536);
+            settings.push_back({ category, "Budget (MB)", "memory vram limit megabytes", [&levels]() {
+                ImGui::DragInt("##Budget (MB)", &levels.budget, 16.0f, 16, 65536);
                 ImGui::SetItemTooltip("Above it all resolutions are lowered evenly");
                 } });
             settings.push_back({ category, "Minimum resolution", "mip level quality", [&levels]() {
-                ImGui::DragInt("Minimum resolution", &levels.minResolution, 1.0f, 1, 4096);
+                ImGui::DragInt("##Minimum resolution", &levels.minResolution, 1.0f, 1, 4096);
                 ImGui::SetItemTooltip("They don't go below this resolution and load with it first");
                 } });
             settings.push_back({ category, "Resolution scale", "quality mip bias", [&levels]() {
-                ImGui::SliderFloat("Resolution scale", &levels.resolutionScale, 0.125f, 2.0f);
+                ImGui::SliderFloat("##Resolution scale", &levels.resolutionScale, 0.125f, 2.0f);
                 ImGui::SetItemTooltip("Scales all requests, e.g. 0.5 for half the resolution");
                 } });
-            settings.push_back({ category, "Reduction delay", "frames hysteresis", [&levels]() {
-                ImGui::DragInt("Reduction delay (frames)", &levels.reductionDelay, 1.0f, 0, 10000);
+            settings.push_back({ category, "Reduction delay (frames)", "frames hysteresis", [&levels]() {
+                ImGui::DragInt("##Reduction delay (frames)", &levels.reductionDelay, 1.0f, 0, 10000);
                 } });
             settings.push_back({ category, "Max pending loads", "jobs parallel", [&levels]() {
-                ImGui::DragInt("Max pending loads", &levels.maxPendingLoads, 0.1f, 1, 64);
+                ImGui::DragInt("##Max pending loads", &levels.maxPendingLoads, 0.1f, 1, 64);
                 } });
             settings.push_back({ category, "Statistics", "memory vram resident requested", [this, noun, levelStats, megabytes, &levels]() {
                 const auto& stats = streamingStats.*levelStats;
@@ -112,26 +122,26 @@ namespace Atlas::Editor::UI {
         const char* meshCategory = "Mesh streaming";
 
         settings.push_back({ meshCategory, "Enable", "", [&meshes]() {
-            ImGui::Checkbox("Enable", &meshes.enable);
+            ImGui::Checkbox("##Enable", &meshes.enable);
             ImGui::SetItemTooltip("Disabled, all streamed meshes get their geometry back");
             } });
-        settings.push_back({ meshCategory, "Budget", "memory vram limit megabytes geometry", [&meshes]() {
-            ImGui::DragInt("Budget (MB)", &meshes.budget, 16.0f, 64, 65536);
+        settings.push_back({ meshCategory, "Budget (MB)", "memory vram limit megabytes geometry", [&meshes]() {
+            ImGui::DragInt("##Budget (MB)", &meshes.budget, 16.0f, 64, 65536);
             ImGui::SetItemTooltip("Above it meshes far from their impostor distance are shown as impostors only");
             } });
         settings.push_back({ meshCategory, "Distance margin", "prefetch load", [&meshes]() {
-            ImGui::DragFloat("Distance margin", &meshes.distanceMargin, 1.0f, 0.0f, 1000.0f);
+            ImGui::DragFloat("##Distance margin", &meshes.distanceMargin, 1.0f, 0.0f, 1000.0f);
             ImGui::SetItemTooltip("Meshes are loaded once their closest instance is this close to where they are needed");
             } });
         settings.push_back({ meshCategory, "Ray tracing distance", "rt blas geometry", [&meshes]() {
-            ImGui::DragFloat("Ray tracing distance", &meshes.rayTracingDistance, 10.0f, 0.0f, 10000.0f);
+            ImGui::DragFloat("##Ray tracing distance", &meshes.rayTracingDistance, 10.0f, 0.0f, 10000.0f);
             ImGui::SetItemTooltip("While ray tracing, meshes keep their geometry up to this distance at most");
             } });
-        settings.push_back({ meshCategory, "Unload delay", "frames hysteresis", [&meshes]() {
-            ImGui::DragInt("Unload delay (frames)", &meshes.reductionDelay, 1.0f, 0, 10000);
+        settings.push_back({ meshCategory, "Unload delay (frames)", "frames hysteresis", [&meshes]() {
+            ImGui::DragInt("##Unload delay (frames)", &meshes.reductionDelay, 1.0f, 0, 10000);
             } });
         settings.push_back({ meshCategory, "Max pending loads", "jobs parallel", [&meshes]() {
-            ImGui::DragInt("Max pending loads", &meshes.maxPendingLoads, 0.1f, 1, 64);
+            ImGui::DragInt("##Max pending loads", &meshes.maxPendingLoads, 0.1f, 1, 64);
             } });
         settings.push_back({ meshCategory, "Statistics", "memory vram resident requested impostors", [this, megabytes]() {
             const auto& stats = streamingStats.meshes;
