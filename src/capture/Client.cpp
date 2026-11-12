@@ -25,13 +25,6 @@ namespace Atlas::Capture {
 
     };
 
-    static void Print(const std::string& line) {
-
-        std::printf("%s\n", line.c_str());
-        std::fflush(stdout);
-
-    }
-
     static void Sleep(int32_t milliseconds) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));

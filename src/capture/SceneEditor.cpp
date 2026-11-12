@@ -74,16 +74,6 @@ namespace Atlas::Capture {
 
     }
 
-    // A pattern or a list of patterns of asset paths
-    static std::vector<std::string> ToAssetPatterns(const json& j) {
-
-        std::vector<std::string> patterns;
-        for (const auto& pattern : j.is_array() ? j : json::array({ j }))
-            patterns.push_back(ToAssetPath(pattern.get<std::string>()));
-        return patterns;
-
-    }
-
     // The parent given by an operation or the root
     static Scene::Entity GetParent(Scene::Scene& scene, const json& operation) {
 
@@ -267,25 +257,6 @@ namespace Atlas::Capture {
 
     }
 
-    // The animation files matching a pattern or a list of patterns, e.g. "models/skinned/animations/Horse_*.aeanimation"
-    static std::vector<std::string> FindAnimationFiles(const json& j) {
-
-        std::vector<std::string> paths;
-        for (const auto& pattern : ToAssetPatterns(j)) {
-            auto directory = fs::path(pattern).parent_path();
-            if (!fs::is_directory(GetAssetDirectory() / directory))
-                throw std::runtime_error("animations: no directory " + directory.generic_string());
-            for (const auto& file : fs::directory_iterator(GetAssetDirectory() / directory)) {
-                auto path = (directory / file.path().filename()).generic_string();
-                if (file.is_regular_file() && file.path().extension() == ".aeanimation" && Helper::String::MatchWildcard(pattern, path))
-                    paths.push_back(path);
-            }
-        }
-        std::sort(paths.begin(), paths.end());
-        return paths;
-
-    }
-
     static std::vector<std::string> GetAnimationFiles(const Mesh::Mesh& mesh) {
 
         std::vector<std::string> paths;
@@ -308,7 +279,7 @@ namespace Atlas::Capture {
         mesh.animationMaxInterval = settings.value("animationMaxInterval", mesh.animationMaxInterval);
         if (settings.contains("animations")) {
             mesh.data.animations.clear();
-            for (const auto& path : FindAnimationFiles(settings["animations"])) {
+            for (const auto& path : FindAssetFiles(settings["animations"], ".aeanimation")) {
                 mesh.data.animations.push_back(ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoader(
                     path, ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true));
             }
@@ -1023,7 +994,7 @@ namespace Atlas::Capture {
                 settings.value("minScreenSize", mesh->minScreenSize) == mesh->minScreenSize &&
                 settings.value("animationLodDistance", mesh->animationLodDistance) == mesh->animationLodDistance &&
                 settings.value("animationMaxInterval", mesh->animationMaxInterval) == mesh->animationMaxInterval &&
-                (!settings.contains("animations") || FindAnimationFiles(settings["animations"]) == GetAnimationFiles(*mesh.Get())) &&
+                (!settings.contains("animations") || FindAssetFiles(settings["animations"], ".aeanimation") == GetAnimationFiles(*mesh.Get())) &&
                 settings.value("movable", mesh->mobility == Mesh::MeshMobility::Movable) == (mesh->mobility == Mesh::MeshMobility::Movable);
             auto bake = settings.contains("impostor") && (!unchanged || !IsImpostorCurrent(mesh, file.path(), settings["impostor"]));
             if (unchanged && !bake)
@@ -1749,7 +1720,17 @@ namespace Atlas::Capture {
                 JobSystem::Wait(context.impostorWrites);
 
             auto start = std::chrono::steady_clock::now();
-            auto affected = handler->second(context, operation);
+            json affected;
+            try {
+                affected = handler->second(context, operation);
+            }
+            catch (const std::exception& e) {
+                // Most operations name themselves in their errors already
+                std::string message = e.what();
+                if (message.starts_with(type + ": "))
+                    message = message.substr(type.size() + 2);
+                throw std::runtime_error("Edit operation " + std::to_string(log.size() + 1) + " (" + type + "): " + message);
+            }
             log.push_back({ { "operation", CapList(operation) }, { "affected", CapList(affected) }, { "seconds", SecondsSince(start) } });
         }
         JobSystem::Wait(context.impostorWrites);

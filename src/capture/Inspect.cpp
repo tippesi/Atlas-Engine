@@ -12,12 +12,6 @@
 
 namespace Atlas::Capture {
 
-    static void Print(const std::string& line) {
-
-        std::printf("%s\n", line.c_str());
-
-    }
-
     static std::string FormatSize(const Volume::AABB& bounds) {
 
         auto size = bounds.max - bounds.min;

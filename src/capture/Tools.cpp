@@ -17,13 +17,6 @@
 
 namespace Atlas::Capture {
 
-    static void Print(const std::string& line) {
-
-        std::printf("%s\n", line.c_str());
-        std::fflush(stdout);
-
-    }
-
     static bool IsImage(const fs::path& path) {
 
         auto extension = path.extension().string();

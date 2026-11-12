@@ -8,19 +8,6 @@
 
 namespace Atlas::Capture {
 
-    static void CheckKeys(const json& j, const std::set<std::string>& allowed, const std::string& context) {
-
-        if (!j.is_object())
-            throw std::runtime_error(context + " must be a JSON object");
-
-        // Typos in job files would otherwise be silently ignored
-        for (auto& [key, value] : j.items()) {
-            if (!allowed.contains(key))
-                throw std::runtime_error("Unknown key '" + key + "' in " + context);
-        }
-
-    }
-
     static std::vector<std::string> ToStringList(const json& j) {
 
         std::vector<std::string> list;

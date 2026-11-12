@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -59,5 +60,18 @@ namespace Atlas::Capture {
 
     // Writes next to the target, then renames, a failed rename leaves the target unchanged
     bool WriteFileAtomic(const fs::path& path, const std::string& content);
+
+    // A line on the console, flushed so clients and logs see it right away
+    void Print(const std::string& line);
+
+    // Typos in job files would otherwise be silently ignored
+    void CheckKeys(const json& j, const std::set<std::string>& allowed, const std::string& context);
+
+    // A pattern or a list of patterns of asset paths
+    std::vector<std::string> ToAssetPatterns(const json& j);
+
+    // Files with the extension matching the patterns, e.g. "models/animations/Horse_*.aeanimation", sorted and unique.
+    // Wildcards are only allowed in the file names
+    std::vector<std::string> FindAssetFiles(const json& patterns, const std::string& extension);
 
 }

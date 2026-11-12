@@ -150,6 +150,9 @@ namespace Atlas::Capture {
     // Merge patch with the fields of the .aematerial files, null removes a map
     void PatchMaterial(Material& material, const json& patch);
 
+    // The meshes cache shader variants per sub data, meshes with changed maps or graphs need new ones
+    void UpdatePipelinesOfMaterials(const std::set<const Material*>& changed);
+
     // Patches all loaded materials whose path matches a pattern, e.g. { "kingdom/*_01_A*": { "metalness": 0.2 } }
     // The fields are the ones of the .aematerial files. Returns the number of patched materials
     int32_t ApplyMaterialPatches(const json& patches);

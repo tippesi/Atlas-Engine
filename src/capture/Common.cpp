@@ -2,6 +2,8 @@
 
 #include "loader/AssetLoader.h"
 
+#include <algorithm>
+#include <cstdio>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -157,6 +159,57 @@ namespace Atlas::Capture {
         std::error_code error;
         fs::rename(temporary, path, error);
         return !error;
+
+    }
+
+    void Print(const std::string& line) {
+
+        std::printf("%s\n", line.c_str());
+        std::fflush(stdout);
+
+    }
+
+    void CheckKeys(const json& j, const std::set<std::string>& allowed, const std::string& context) {
+
+        if (!j.is_object())
+            throw std::runtime_error(context + " must be a JSON object");
+
+        for (auto& [key, value] : j.items()) {
+            if (allowed.contains(key))
+                continue;
+            std::string names;
+            for (const auto& name : allowed)
+                names += (names.empty() ? "" : ", ") + name;
+            throw std::runtime_error("Unknown key '" + key + "' in " + context + " (" + names + ")");
+        }
+
+    }
+
+    std::vector<std::string> ToAssetPatterns(const json& j) {
+
+        std::vector<std::string> patterns;
+        for (const auto& pattern : j.is_array() ? j : json::array({ j }))
+            patterns.push_back(ToAssetPath(pattern.get<std::string>()));
+        return patterns;
+
+    }
+
+    std::vector<std::string> FindAssetFiles(const json& patterns, const std::string& extension) {
+
+        std::vector<std::string> paths;
+        for (const auto& pattern : ToAssetPatterns(patterns)) {
+            auto directory = fs::path(pattern).parent_path();
+            if (!fs::is_directory(GetAssetDirectory() / directory))
+                throw std::runtime_error("No directory " + directory.generic_string() + " for " + pattern);
+            for (const auto& file : fs::directory_iterator(GetAssetDirectory() / directory)) {
+                auto path = (directory / file.path().filename()).generic_string();
+                if (file.is_regular_file() && file.path().extension() == extension && Helper::String::MatchWildcard(pattern, path))
+                    paths.push_back(path);
+            }
+        }
+        std::sort(paths.begin(), paths.end());
+        paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
+        return paths;
 
     }
 

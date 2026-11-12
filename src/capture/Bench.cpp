@@ -13,13 +13,6 @@
 
 namespace Atlas::Capture {
 
-    static void Print(const std::string& line) {
-
-        std::printf("%s\n", line.c_str());
-        std::fflush(stdout);
-
-    }
-
     struct Variant {
 
         std::string name;

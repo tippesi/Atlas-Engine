@@ -746,13 +746,22 @@ namespace Atlas::Capture {
         j.merge_patch(patch);
         from_json(j, material);
 
-        // Added or removed maps change the shader variants, which the meshes cache per sub data
+        // Added or removed maps change the shader variants
+        UpdatePipelinesOfMaterials({ &material });
+
+    }
+
+    void UpdatePipelinesOfMaterials(const std::set<const Material*>& changed) {
+
+        if (changed.empty())
+            return;
+
         for (auto& mesh : ResourceManager<Mesh::Mesh>::GetResources()) {
             if (!mesh.IsLoaded())
                 continue;
 
             const auto& materials = mesh->data.materials;
-            if (std::any_of(materials.begin(), materials.end(), [&](const auto& handle) { return handle.Get().get() == &material; }))
+            if (std::any_of(materials.begin(), materials.end(), [&](const auto& handle) { return changed.contains(handle.Get().get()); }))
                 mesh->UpdatePipelines();
         }
 
