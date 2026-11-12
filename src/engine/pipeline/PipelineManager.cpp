@@ -194,6 +194,12 @@ namespace Atlas {
                     };
                     pipeline = graphicsDevice->CreatePipeline(pipelineDesc);
                 }
+                else if (config.isRayTracing) {
+                    auto pipelineDesc = Graphics::RayTracingPipelineDesc{
+                        .shader = shaderVariant
+                    };
+                    pipeline = graphicsDevice->CreatePipeline(pipelineDesc);
+                }
                 else {
                     config.graphicsPipelineDesc.shader = shaderVariant;
                     pipeline = graphicsDevice->CreatePipeline(config.graphicsPipelineDesc);

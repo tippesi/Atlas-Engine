@@ -8,7 +8,12 @@
 #endif
 
 // Parameter values and bindless texture indices of all graph materials, indexed by the offset of the material
+// Ray tracing passes use binding 9 of set 3 for other resources
+#ifdef MATERIAL_GRAPH_STAGE_HIT
+layout(std430, set = 3, binding = 24) readonly buffer MaterialGraphParameters {
+#else
 layout(std430, set = 3, binding = 9) readonly buffer MaterialGraphParameters {
+#endif
     uint materialGraphParameters[];
 };
 
@@ -162,10 +167,17 @@ vec4 MGReadVec4(uint offset) {
 
 }
 
+#ifdef MATERIAL_GRAPH_STAGE_HIT
+// Hits have no derivatives, the level comes from the ray tracing pass
+float mgHitTextureLevel = 0.0;
+#endif
+
 // The vertex stage has no derivatives, it always samples the most detailed level
 vec4 MGSampleTexture(uint textureIdx, vec2 texCoord) {
 
-#ifdef MATERIAL_GRAPH_STAGE_SURFACE
+#if defined(MATERIAL_GRAPH_STAGE_HIT)
+    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, mgHitTextureLevel);
+#elif defined(MATERIAL_GRAPH_STAGE_SURFACE)
     return texture(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, globalData.mipLodBias);
 #else
     return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, 0.0);
@@ -466,7 +478,7 @@ vec3 MGNormalize(vec3 value) {
 
 }
 
-#ifdef MATERIAL_GRAPH_STAGE_SURFACE
+#if defined(MATERIAL_GRAPH_STAGE_SURFACE) && !defined(MATERIAL_GRAPH_STAGE_HIT)
 // Tangent space normal of a height, which works for procedural values without a tangent frame of the mesh
 vec3 MGNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
 
@@ -561,6 +573,36 @@ mat3 MGCotangentFrame(vec3 normal, vec3 viewPosition, vec2 texCoord) {
 
     float invScale = inversesqrt(scale);
     return mat3(tangent * invScale, bitangent * invScale, normal);
+
+}
+#elif defined(MATERIAL_GRAPH_STAGE_HIT)
+// Without derivatives heights keep the surface flat
+vec3 MGNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
+
+    return vec3(0.0, 0.0, 1.0);
+
+}
+
+vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
+
+    vec2 tile = floor(coord);
+    vec2 weights = smoothstep(vec2(0.5 - 0.5 * blend), vec2(0.5 + 0.5 * blend), fract(coord));
+
+    vec4 values[4];
+    for (int y = 0; y < 2; y++) {
+        for (int x = 0; x < 2; x++) {
+            vec2 offset = MGHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
+            values[y * 2 + x] = MGSampleTexture(textureIdx, coord + offset);
+        }
+    }
+
+    return mix(mix(values[0], values[1], weights.x), mix(values[2], values[3], weights.x), weights.y);
+
+}
+
+vec2 MGParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, float steps) {
+
+    return coord;
 
 }
 #endif

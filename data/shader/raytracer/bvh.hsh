@@ -3,6 +3,7 @@
 #ifdef AE_HARDWARE_RAYTRACING
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
+#extension GL_EXT_ray_tracing_position_fetch : enable
 
 layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
 #endif
@@ -12,6 +13,17 @@ layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
 #include <structures.hsh>
 #include <surface.hsh>
 #include <buffers.hsh>
+
+#ifdef AE_HARDWARE_RAYTRACING
+// Object space normal of a triangle, the hit code transforms it with the instance
+vec3 GetTriangleNormal(vec3 v0, vec3 v1, vec3 v2) {
+
+    vec3 normal = cross(v0 - v1, v0 - v2);
+    float len = length(normal);
+    return len > 0.0 ? normal / len : vec3(0.0, 1.0, 0.0);
+
+}
+#endif
 
 #define STACK_SIZE 32
 #define TLAS_INVALID (STACK_SIZE + 2)
@@ -496,6 +508,71 @@ float HitAnyTransparency(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
 #else
 
+#ifdef RAY_TRACING_PIPELINE
+// The hit object only identifies the hit, the ray generation stage shades it after the threads are reordered
+layout(location = 0) rayPayloadEXT uvec2 unusedPayload;
+layout(location = 0) hitObjectAttributeEXT vec2 hitObjectBarycentrics;
+
+void TraceClosest(inout Ray ray, uint rayFlags, uint cullMask, float tMin, float tMax) {
+
+    ray.hitDistance = tMax;
+
+    // One hit record per geometry, the records of meshes with material graphs select their hit groups
+    // (RayTracingWorld::hitRecords), reordering groups the threads by hit group first
+    hitObjectTraceRayEXT(closestHitObject, topLevelAS, rayFlags, cullMask, 0, 1, 0,
+        ray.origin, tMin, ray.direction, tMax, 0);
+
+#ifdef SHADER_EXECUTION_REORDER
+    // Hits on the same mesh share materials and textures, misses all sample the sky
+    uint coherenceHint = hitObjectIsHitEXT(closestHitObject) ? uint(hitObjectGetInstanceCustomIndexEXT(closestHitObject)) + 1u : 0u;
+    reorderThreadEXT(closestHitObject, coherenceHint, 16);
+#endif
+
+    if (hitObjectIsHitEXT(closestHitObject)) {
+        hitObjectGetAttributesEXT(closestHitObject, 0);
+        ray.hitBarycentrics = hitObjectBarycentrics;
+#ifdef AE_POSITION_FETCH
+        vec3 positions[3];
+        hitObjectGetIntersectionTriangleVertexPositionsEXT(closestHitObject, positions);
+        ray.hitGeometryNormal = GetTriangleNormal(positions[0], positions[1], positions[2]);
+#endif
+
+        ray.hitDistance = hitObjectGetRayTMaxEXT(closestHitObject);
+        ray.hitInstanceID = hitObjectGetInstanceIdEXT(closestHitObject);
+
+        int geometryOffset = hitObjectGetGeometryIndexEXT(closestHitObject);
+        int meshIdx = hitObjectGetInstanceCustomIndexEXT(closestHitObject);
+
+        int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[nonuniformEXT(geometryOffset)]);
+        ray.hitID = hitObjectGetPrimitiveIndexEXT(closestHitObject) + triangleOffset;
+    }
+
+}
+
+void HitClosest(inout Ray ray, uint cullMask, float tMin, float tMax) {
+
+    TraceClosest(ray, gl_RayFlagsOpaqueEXT, cullMask, tMin, tMax);
+
+}
+
+// Transparent geometry is resolved by the any hit stage
+void HitClosestTransparency(inout Ray ray, uint cullMask, float tMin, float tMax) {
+
+    TraceClosest(ray, gl_RayFlagsNoneEXT, cullMask, tMin, tMax);
+
+}
+#else
+void SetCommittedHitGeometry(inout Ray ray, rayQueryEXT rayQuery) {
+
+    ray.hitBarycentrics = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
+#ifdef AE_POSITION_FETCH
+    vec3 positions[3];
+    rayQueryGetIntersectionTriangleVertexPositionsEXT(rayQuery, true, positions);
+    ray.hitGeometryNormal = GetTriangleNormal(positions[0], positions[1], positions[2]);
+#endif
+
+}
+
 void HitClosest(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
     ray.hitDistance = tMax;
@@ -522,8 +599,12 @@ void HitClosest(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
         int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[nonuniformEXT(geometryOffset)]);
         ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
+
+        SetCommittedHitGeometry(ray, rayQuery);
     }
 }
+
+#endif
 
 bool HitAny(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
@@ -549,6 +630,7 @@ bool HitAny(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
 }
 
+#ifndef RAY_TRACING_PIPELINE
 void HitClosestTransparency(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
     ray.hitDistance = tMax;
@@ -592,9 +674,13 @@ void HitClosestTransparency(inout Ray ray, uint cullMask, float tMin, float tMax
 
         int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[nonuniformEXT(geometryOffset)]);
         ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
+
+        SetCommittedHitGeometry(ray, rayQuery);
     }
 
 }
+
+#endif
 
 float HitAnyTransparency(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
@@ -640,3 +726,26 @@ float HitAnyTransparency(inout Ray ray, uint cullMask, float tMin, float tMax) {
 
 }
 #endif
+
+// Non-opaque geometry is alpha tested with OPACITY_CHECK
+void HitClosestOpacityCheck(inout Ray ray, uint cullMask, float tMin, float tMax) {
+
+#ifdef OPACITY_CHECK
+    HitClosestTransparency(ray, cullMask, tMin, tMax);
+#else
+    HitClosest(ray, cullMask, tMin, tMax);
+#endif
+
+}
+
+// Rays of the ray buffer are traced in a separate pass by compute pipelines, ray tracing pipelines trace them here
+void TraceBufferedRay(inout Ray ray) {
+
+#ifdef RAY_TRACING_PIPELINE
+    ray.hitID = -1;
+    ray.hitDistance = 0.0;
+    if (ray.ID >= 0)
+        HitClosestOpacityCheck(ray, INSTANCE_MASK_ALL, 0.0, INF);
+#endif
+
+}

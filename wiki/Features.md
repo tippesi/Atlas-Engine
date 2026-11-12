@@ -150,6 +150,20 @@ tool isn't listed here, or a listed file doesn't exist.
 
 - **Acceleration structures** (TLAS, BLAS, hardware ray tracing): `raytracing/RayTracingWorld`, `RayTracingManager`,
   `BLAS`/`TLAS` in `graphics/`; animated meshes get skinned BLASes.
+- **Deformed ray tracing geometry** (skinning, wind, material graph vertex offsets in ray tracing, position fetch):
+  `RayTracingWorld` deforms nearby instances with `raytracer/deform.csh` (`skinnedBlasDistance`, `deformedBlasDistance`),
+  hits read positions from the BLAS and normals of deformed instances in `raytracer/surface.hsh` (`GetTriangle`).
+- **Ray tracing pipelines** (raygen, hit objects, shader execution reordering, SER): `RayTracingPipelineDesc`,
+  `CommandList::TraceRays`/`TraceRaysIndirect`, `RayTracingHelper::GetRayTracingPipelineConfig`; RTGI, DDGI,
+  reflections and the path tracer use them on devices with hit objects (`VK_EXT_ray_tracing_invocation_reorder`, `raytracer/bvh.hsh`), the
+  others trace with ray queries; `shaderExecutionReordering` per effect.
+- **Material graphs in ray tracing** (graph surfaces in reflections, RTGI, DDGI and the path tracer, hit groups, closest
+  hit shaders): the graph compiler writes a `_hit.rchit` per graph (`CompiledGraph::hitFile`), instances select the hit
+  groups per geometry (`RayTracingWorld::GetShaderBindingTable`) and `GetSurfaceParameters` executes them, graph opacity
+  cuts out hits in a `_opacity.rahit` any hit stage (`raytracer/graphOpacity.rahit`, with `opacityCheck`), graphs use their
+  baked values until their pipeline is compiled in the background (`RayTracingHelper::GetRayTracingPipeline`,
+  `RayTracingWorld::GetMaterialGraphPipelineConfig`); compute paths use the bake. The path tracer can turn graphs off for
+  debugging (`PathTracingRenderer::materialGraphs`).
 
 ## Meshes, materials and impostors
 

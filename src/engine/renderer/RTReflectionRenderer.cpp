@@ -24,6 +24,7 @@ namespace Atlas {
 
             ssrPipelineConfig = PipelineConfig("reflection/ssr.csh");
             rtrPipelineConfig = PipelineConfig("reflection/rtreflection.csh");
+            rtrRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("reflection/rtreflection.rgen");
             rtrShadowPipelineConfig = PipelineConfig("raytracer/traceShadow.csh");
             rtrResolvePipelineConfig = PipelineConfig("reflection/rtreflectionResolve.csh");
             upsamplePipelineConfig = PipelineConfig("reflection/upsample.csh");
@@ -191,20 +192,27 @@ namespace Atlas {
                 
                 auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
-                rtrPipelineConfig.ManageMacro("SSR", reflection->ssr);
-                rtrPipelineConfig.ManageMacro("IRRADIANCE_VOLUME", reflection->ddgi && ddgiEnabled);
-                rtrPipelineConfig.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility); 
-                rtrPipelineConfig.ManageMacro("RADIANCE_VOLUME", radianceVolume);
-                rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);             
-                rtrPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
-                rtrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
-                rtrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
+                // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+                auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+                auto& config = useRayTracingPipeline ? rtrRayTracingPipelineConfig : rtrPipelineConfig;
+
+                config.ManageMacro("SSR", reflection->ssr);
+                config.ManageMacro("IRRADIANCE_VOLUME", reflection->ddgi && ddgiEnabled);
+                config.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility);
+                config.ManageMacro("RADIANCE_VOLUME", radianceVolume);
+                config.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
+                config.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
+                config.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
+                config.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
+                config.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && reflection->shaderExecutionReordering);
 
                 // The hit shader has a low occupancy with software ray tracing
                 auto deferredShadowRays = !device->support.hardwareRayTracing;
-                rtrPipelineConfig.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
+                config.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
 
-                auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
+                auto pipeline = useRayTracingPipeline ?
+                    Helper::RayTracingHelper::GetRayTracingPipeline(config, scene) : PipelineManager::GetPipeline(config);
+                auto dimensions = useRayTracingPipeline ? ivec3(rayRes, 1) : ivec3(groupCount, 1);
 
                 auto sampleCount = size_t(rayRes.x) * size_t(rayRes.y) * size_t(reflection->sampleCount);
                 auto lightCount = sampleCount * size_t(reflection->lightSampleCount);
@@ -235,7 +243,7 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(reflectionTexture->image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                helper.DispatchAndHit(scene, commandList, pipeline, ivec3(groupCount, 1),
+                helper.DispatchAndHit(scene, commandList, pipeline, dimensions,
                     [=]() {
                         commandList->BindImage(reflectionTexture->image, 3, 0);
 

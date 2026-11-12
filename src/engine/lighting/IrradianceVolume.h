@@ -147,6 +147,10 @@ namespace Atlas {
             bool radiance = true;
             bool scroll = false;
 
+            // Devices with hit objects trace and shade the probe rays in one ray tracing pipeline, which can reorder
+            // the threads by the mesh they hit before shading
+            bool shaderExecutionReordering = true;
+
             InternalIrradianceVolume internal;
 
         private:

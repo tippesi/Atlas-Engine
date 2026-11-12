@@ -56,6 +56,9 @@ Ray UnpackRay(PackedRay compressed) {
     ray.hitDistance = compressed.hit.x;
     ray.hitInstanceID = floatBitsToInt(compressed.hit.z);
 
+    ray.hitBarycentrics = unpackUnorm2x16(floatBitsToUint(compressed.direction.w));
+    ray.hitGeometryNormal = unpackUnitVector(floatBitsToInt(compressed.hit.w)).xyz;
+
     return ray;
 }
 
@@ -69,6 +72,9 @@ PackedRay PackRay(Ray ray) {
     compressed.hit.x = ray.hitDistance;
     compressed.hit.y = intBitsToFloat(ray.hitID);
     compressed.hit.z = intBitsToFloat(ray.hitInstanceID);
+
+    compressed.direction.w = uintBitsToFloat(packUnorm2x16(ray.hitBarycentrics));
+    compressed.hit.w = intBitsToFloat(packUnitVector(ray.hitGeometryNormal));
 
     
     return compressed;

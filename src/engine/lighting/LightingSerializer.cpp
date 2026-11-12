@@ -126,6 +126,7 @@ namespace Atlas::Lighting {
             {"visibility", p.visibility},
             {"radiance", p.radiance},
             {"lowerResRadiance", p.lowerResRadiance},
+            {"shaderExecutionReordering", p.shaderExecutionReordering},
         };
     }
 
@@ -152,6 +153,7 @@ namespace Atlas::Lighting {
 
         try_get_json(j, "radiance", p.radiance);
         try_get_json(j, "visibility", p.visibility);
+        try_get_json(j, "shaderExecutionReordering", p.shaderExecutionReordering);
 
         p.SetRayCount(p.rayCount, p.rayCountInactive);
     }
@@ -176,6 +178,7 @@ namespace Atlas::Lighting {
             {"upsampleBeforeFiltering", p.upsampleBeforeFiltering},
             {"lightSampleCount", p.lightSampleCount},
             {"sampleCount", p.sampleCount},
+            {"shaderExecutionReordering", p.shaderExecutionReordering},
         };
     }
 
@@ -194,6 +197,7 @@ namespace Atlas::Lighting {
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "ssr", p.ssr);
         try_get_json(j, "upsampleBeforeFiltering", p.upsampleBeforeFiltering);
+        try_get_json(j, "shaderExecutionReordering", p.shaderExecutionReordering);
         try_get_json(j, "halfResolution", p.halfResolution);
         try_get_json(j, "roughnessCutoff", p.roughnessCutoff);
         try_get_json(j, "lightSampleCount", p.lightSampleCount);
@@ -216,6 +220,7 @@ namespace Atlas::Lighting {
             {"halfResolution", p.halfResolution},
             {"lightSampleCount", p.lightSampleCount},
             {"sampleCount", p.sampleCount},
+            {"shaderExecutionReordering", p.shaderExecutionReordering},
         };
     }
 
@@ -234,6 +239,7 @@ namespace Atlas::Lighting {
         try_get_json(j, "halfResolution", p.halfResolution);
         try_get_json(j, "lightSampleCount", p.lightSampleCount);
         try_get_json(j, "sampleCount", p.sampleCount);
+        try_get_json(j, "shaderExecutionReordering", p.shaderExecutionReordering);
     }
 
     void to_json(json& j, const ShadowView& p) {

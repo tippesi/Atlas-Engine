@@ -34,6 +34,10 @@ namespace Atlas {
             bool halfResolution = true;
             bool upsampleBeforeFiltering = false;
 
+            // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
+            // they hit before shading
+            bool shaderExecutionReordering = true;
+
         };
 
     }

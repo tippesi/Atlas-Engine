@@ -10,6 +10,13 @@ vec4 SmoothCurve( vec4 x ) {   return x * x *( 3.0 - 2.0 * x ); }
 vec4 TriangleWave( vec4 x ) {   return abs( fract( x + 0.5 ) * 2.0 - 1.0 ); } 
 vec4 SmoothTriangleWave( vec4 x ) {   return SmoothCurve( TriangleWave( x ) ); }
 
+// The scene wind in the object space of a vegetation instance
+vec2 GetWindDirection(mat4 modelMatrix) {
+
+    return normalize((inverse(mat3(modelMatrix)) * vec3(globalData.windDir.x, 0.0, globalData.windDir.y)).xz);
+
+}
+
 vec3 WindAnimation(sampler2D noiseTexture, vec3 position, vec2 windDir,
     float bendFactor, float wiggleFactor, float lod, float animTime, vec3 location) {
 

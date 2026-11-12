@@ -24,6 +24,14 @@ namespace Atlas {
 
     }
 
+    PipelineConfig::PipelineConfig(const ShaderConfig& shaderConfig, const std::vector<std::string>& macros) :
+        shaderConfig(shaderConfig), macros(macros), isCompute(false), isRayTracing(true) {
+
+        CalculateShaderHash();
+        CalculateVariantHash();
+
+    }
+
     PipelineConfig::PipelineConfig(const std::string& shaderFile) : isCompute(true) {
 
         shaderConfig = {{shaderFile, VK_SHADER_STAGE_COMPUTE_BIT}};
@@ -100,7 +108,8 @@ namespace Atlas {
     void PipelineConfig::CalculateShaderHash() {
 
         shaderHash = 0;
-        std::sort(shaderConfig.begin(), shaderConfig.end(),
+        // Stable, closest hit stage i forms hit group i + 1 with any hit stage i + 1 (RayTracingWorld::materialGraphHitGroups)
+        std::stable_sort(shaderConfig.begin(), shaderConfig.end(),
             [](const auto& stage0, const auto& stage1) {
                 return stage0.second < stage1.second;
             });
@@ -123,7 +132,7 @@ namespace Atlas {
             HashCombine(variantHash, macro);
         }
 
-        if (!isCompute) {
+        if (!isCompute && !isRayTracing) {
             // To get correct results we would need to hash all the state, but that doesn't
             // really work well in terms of performance.
             HashCombine(variantHash, graphicsPipelineDesc.colorBlendAttachment.blendEnable);

@@ -3,6 +3,7 @@
 // RayTracingWorld.h, TLASInstance VkAccelerationStructureInstanceKHR and BVHInstance GPUBVHInstance in RTStructures.h
 
 #define RT_MESH_USABLE 1u
+#define RT_MESH_FORCE_OPAQUE 2u
 
 struct RTMesh {
     uint blasOffset;
@@ -10,8 +11,14 @@ struct RTMesh {
     uint mask;
     uint flags;
     float cullingDistanceSqr;
-    uint padding0;
+    // Nearer instances are deformed and written on the host
+    float deformDistanceSqr;
     uvec2 blasAddress;
+    // First record of the mesh in the hit region of ray tracing pipelines
+    uint hitRecordOffset;
+    uint padding0;
+    uint padding1;
+    uint padding2;
 };
 
 struct TLASInstance {
@@ -27,6 +34,8 @@ struct BVHInstance {
     int materialOffset;
     int nextInstance;
     uint mask;
+    uvec2 deformedVertices;
+    uvec2 meshIndices;
 };
 
 layout(std430, set = 3, binding = 6) readonly buffer InstanceHistory {
@@ -53,13 +62,14 @@ layout(std430, set = 3, binding = 11) writeonly buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
 
-// VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR
+// VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR and VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR
 const uint cullDisableFlag = 1u;
+const uint forceOpaqueFlag = 4u;
 
 void WriteRayTracingInstance(Instance instance, float distanceSqr, uint maxInstanceCount, bool includeObjectHistory) {
 
     RTMesh mesh = rtMeshes[instance.meshIdx];
-    if ((mesh.flags & RT_MESH_USABLE) == 0u || distanceSqr > mesh.cullingDistanceSqr)
+    if ((mesh.flags & RT_MESH_USABLE) == 0u || distanceSqr > mesh.cullingDistanceSqr || distanceSqr < mesh.deformDistanceSqr)
         return;
 
     uint instanceIdx = atomicAdd(rtInstanceCounter, 1u);
@@ -73,7 +83,8 @@ void WriteRayTracingInstance(Instance instance, float distanceSqr, uint maxInsta
     tlasInstance.transform[1] = matrix[1];
     tlasInstance.transform[2] = matrix[2];
     tlasInstance.customIndexAndMask = (mesh.blasOffset & 0xFFFFFFu) | (mesh.mask << 24u);
-    tlasInstance.bindingOffsetAndFlags = cullDisableFlag << 24u;
+    uint flags = cullDisableFlag | ((mesh.flags & RT_MESH_FORCE_OPAQUE) != 0u ? forceOpaqueFlag : 0u);
+    tlasInstance.bindingOffsetAndFlags = (mesh.hitRecordOffset & 0xFFFFFFu) | (flags << 24u);
     tlasInstance.blasAddress = mesh.blasAddress;
     tlasInstances[instanceIdx] = tlasInstance;
 
@@ -90,6 +101,9 @@ void WriteRayTracingInstance(Instance instance, float distanceSqr, uint maxInsta
     bvhInstance.materialOffset = mesh.materialOffset;
     bvhInstance.nextInstance = 0;
     bvhInstance.mask = mesh.mask;
+    // Deformed instances are written on the host
+    bvhInstance.deformedVertices = uvec2(0u);
+    bvhInstance.meshIndices = uvec2(0u);
     bvhInstances[instanceIdx] = bvhInstance;
 
     if (includeObjectHistory) {

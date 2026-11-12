@@ -10,11 +10,10 @@ layout(buffer_reference, std430, buffer_reference_align = 16) buffer TriangleBuf
     PackedTriangle triangles[];
 };
 
-#ifndef HARDWARE_RAYTRACING
+// Skins the triangles of software ray tracing, hardware ray tracing deforms the vertices in deform.csh
 layout(buffer_reference, std430, buffer_reference_align = 16) buffer BVHTriangleBuffer {
     PackedBVHTriangle bvhTriangles[];
 };
-#endif
 
 void main() {
 
@@ -69,11 +68,9 @@ void main() {
 
     triangles.triangles[idx].d1.xy = vec2(intBitsToFloat(packUnitVector(tangent)), intBitsToFloat(packUnitVector(bitangent)));
 
-#ifndef HARDWARE_RAYTRACING
     BVHTriangleBuffer bvhTriangles = BVHTriangleBuffer(job.bvhTriangles);
     bvhTriangles.bvhTriangles[idx].v0.xyz = positions[0];
     bvhTriangles.bvhTriangles[idx].v1.xyz = positions[1];
     bvhTriangles.bvhTriangles[idx].v2.xyz = positions[2];
-#endif
 
 }

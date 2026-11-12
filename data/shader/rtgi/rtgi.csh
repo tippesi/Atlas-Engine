@@ -21,7 +21,9 @@
 #include <../ddgi/transmission.hsh>
 #include <../clouds/shadow.hsh>
 
+#ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 8, local_size_y = 4) in;
+#endif
 
 layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D rtrImage;
 
@@ -64,26 +66,18 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     ivec2 resolution;
 } uniforms;
 
-#ifdef DEFERRED_SHADOW_RAYS
-#include <../raytracer/deferredShadow.hsh>
-
-bool hasDeferredShadowRay = false;
-DeferredShadowRay deferredShadowRay;
-int deferredLightBase = 0;
-#endif
+#include <../raytracer/lighting.hsh>
 
 vec3 EvaluateHit(inout Ray ray, vec3 cubemapSamplingDirection, float rand);
-vec3 EvaluateDirectLight(inout Surface surface, inout float seed);
-float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
 
     ivec2 resolution = uniforms.resolution;
 
-    if (int(gl_GlobalInvocationID.x) < resolution.x &&
-        int(gl_GlobalInvocationID.y) < resolution.y) {
+    if (int(INVOCATION_ID.x) < resolution.x &&
+        int(INVOCATION_ID.y) < resolution.y) {
 
-        ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+        ivec2 pixel = ivec2(INVOCATION_ID.xy);
         
         vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
@@ -190,11 +184,7 @@ void main() {
 #endif
 
                     vec3 radiance = vec3(0.0);
-#ifdef OPACITY_CHECK
-                    HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, rayLength);
-#else
-                    HitClosest(ray, INSTANCE_MASK_ALL, 0.0, rayLength);
-#endif                    
+                    HitClosestOpacityCheck(ray, INSTANCE_MASK_ALL, 0.0, rayLength);
 
 #ifdef DDGI               
                     radiance = EvaluateHit(ray, sampleNormal, blueNoiseVec.z);
@@ -251,12 +241,8 @@ vec3 EvaluateHit(inout Ray ray, vec3 cubemapSamplingDirection, float rand) {
         return textureLod(specularProbe, ray.direction, 3.0).rgb;
     }
     
-    // Unpack the compressed triangle and extract surface parameters
-    Instance instance = GetInstance(ray);
-    Triangle tri = GetTriangle(ray, instance);
-
     bool backfaceHit;
-    Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
+    Surface surface = GetHitSurface(ray, false, backfaceHit, uniforms.textureLevel);
 
 #ifdef DDGI
     // Trick: Offset on secondary bounce towards camera, avoids light leaking (introducing innacuracies ofc)
@@ -278,92 +264,9 @@ vec3 EvaluateHit(inout Ray ray, vec3 cubemapSamplingDirection, float rand) {
     radiance += surface.material.emissiveColor;
 
     float curSeed = float(uniforms.frameSeed) / 255.0;
-    // Evaluate direct light
-    for (int i = 0; i < uniforms.lightSampleCount; i++) {
-#ifdef DEFERRED_SHADOW_RAYS
-        hasDeferredShadowRay = false;
-        vec3 direct = EvaluateDirectLight(surface, curSeed) / float(uniforms.lightSampleCount);
-        if (hasDeferredShadowRay) {
-            uint lightIdx = uint(deferredLightBase + i);
-            deferredLights[lightIdx] = vec4(direct, 1.0);
-            uint shadowRayIdx = atomicAdd(deferredShadowRayCount, 1u);
-            deferredShadowRays[shadowRayIdx].origin = deferredShadowRay.origin;
-            deferredShadowRays[shadowRayIdx].direction = vec4(deferredShadowRay.direction.xyz, uintBitsToFloat(lightIdx));
-        }
-        else {
-            radiance += direct;
-        }
-#else
-        radiance += (EvaluateDirectLight(surface, curSeed) / float(uniforms.lightSampleCount));
-#endif
-        curSeed += 1.0 / float(uniforms.lightSampleCount);
-    }
+    float raySeed = float(INVOCATION_ID.x * uniforms.resolution.y + INVOCATION_ID.y);
+    radiance += EvaluateDirectLights(surface, raySeed, curSeed, uniforms.lightSampleCount);
     
     return radiance;
-
-}
-
-vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
-
-    if (GetLightCount() == 0)
-        return vec3(0.0);
-
-    float raySeed = float(gl_GlobalInvocationID.x * uniforms.resolution.y + gl_GlobalInvocationID.y);
-
-    float lightPdf;
-    Light light = GetLight(surface, raySeed, seed, lightPdf);
-
-    float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
-
-    bool transmittedLight = IsTransmittedLight(surface);
-    Surface lightSurface = transmittedLight ? GetTransmissionSurface(surface) : surface;
-
-    float shadowFactor = 1.0;
-    if (light.castShadow)
-        shadowFactor *= CheckVisibility(lightSurface, lightDistance);
-
-    // Evaluate the BRDF
-    vec3 reflectance = transmittedLight ? GetTransmissionColor(surface.material) * EvaluateDiffuseBRDF(lightSurface) :
-        EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
-    reflectance *= surface.material.opacity;
-    vec3 radiance = light.radiance * solidAngle * shadowFactor;
-
-    // Check for visibilty. This is important to get an
-    // estimate of the solid angle of the light from point P
-    // on the surface.
-
-#ifdef CLOUD_SHADOWS
-    if (light.type == uint(DIRECTIONAL_LIGHT)) {
-        vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
-        float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
-
-        radiance *= cloudShadowFactor;
-    }
-#endif
-    
-    return reflectance * radiance * lightSurface.NdotL / lightPdf;
-
-}
-
-float CheckVisibility(Surface surface, float lightDistance) {
-
-    if (surface.NdotL > 0.0) {
-        Ray ray;
-        ray.direction = surface.L;
-        float side = dot(surface.L, surface.geometryNormal) < 0.0 ? -1.0 : 1.0;
-        ray.origin = surface.P + surface.geometryNormal * (side * EPSILON);
-#ifdef DEFERRED_SHADOW_RAYS
-        hasDeferredShadowRay = true;
-        deferredShadowRay.origin = vec4(ray.origin, lightDistance - 2.0 * EPSILON);
-        deferredShadowRay.direction = vec4(ray.direction, 0.0);
-        return 1.0;
-#else
-        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
-#endif
-    }
-    else {
-        return 0.0;
-    }
 
 }

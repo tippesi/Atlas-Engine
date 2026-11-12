@@ -66,6 +66,10 @@ namespace Atlas {
                 macros.push_back("AE_HARDWARE_RAYTRACING");
             }
 
+            if (device->support.positionFetch) {
+                macros.push_back("AE_POSITION_FETCH");
+            }
+
             if (device->support.shaderFloat16) {
                 macros.push_back("AE_HALF_FLOAT");
             }

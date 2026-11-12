@@ -466,6 +466,13 @@ namespace Atlas {
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
 			JobSystem::WaitSpin(renderState->materialUpdateJob);
 
+			// The deformation of the ray traced instances reads the global data
+			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
+			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
+			commandList->BindSampler(globalSampler, 1, 14);
+			commandList->BindSampler(globalNearestSampler, 1, 16);
+			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
+
 			// Writes the hardware ray tracing instances and builds the acceleration structure
 			if (scene->renderState.rayTracingWorld) {
 				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
@@ -476,11 +483,6 @@ namespace Atlas {
 					focalLength, commandList);
 			}
 
-			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
-			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
-			commandList->BindSampler(globalSampler, 1, 14);
-			commandList->BindSampler(globalNearestSampler, 1, 16);
-			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
 			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
 			if (renderState->textures.size())
 				commandList->BindSampledImages(renderState->textures, 0, 3);

@@ -66,6 +66,7 @@ namespace Atlas {
 
             PipelineConfig ssrPipelineConfig;
             PipelineConfig rtrPipelineConfig;
+            PipelineConfig rtrRayTracingPipelineConfig;
             PipelineConfig rtrShadowPipelineConfig;
             PipelineConfig rtrResolvePipelineConfig;
             PipelineConfig upsamplePipelineConfig;

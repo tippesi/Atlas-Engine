@@ -67,13 +67,15 @@ namespace Atlas {
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
                 VK_KHR_RAY_QUERY_EXTENSION_NAME,
+                VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
                 VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
                 VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
                 VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
                 VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
                 VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
-                VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
+                VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME,
+                VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
@@ -267,6 +269,17 @@ namespace Atlas {
         }
 
         Ref<Pipeline> GraphicsDevice::CreatePipeline(ComputePipelineDesc desc) {
+
+            auto pipeline = std::make_shared<Pipeline>(this, desc);
+
+            std::lock_guard<std::mutex> guard(pipelines.mutex);
+            pipelines.data.push_back(pipeline);
+
+            return pipeline;
+
+        }
+
+        Ref<Pipeline> GraphicsDevice::CreatePipeline(RayTracingPipelineDesc desc) {
 
             auto pipeline = std::make_shared<Pipeline>(this, desc);
 
@@ -1071,6 +1084,21 @@ namespace Atlas {
             if (supportedExtensions.contains(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME))
                 featureBuilder.Append(availableFloat8Features);
 
+            availableRayTracingPipelineFeatures = {};
+            availableRayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+            if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+                featureBuilder.Append(availableRayTracingPipelineFeatures);
+
+            availablePositionFetchFeatures = {};
+            availablePositionFetchFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
+            if (supportedExtensions.contains(VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME))
+                featureBuilder.Append(availablePositionFetchFeatures);
+
+            availableInvocationReorderFeatures = {};
+            availableInvocationReorderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME))
+                featureBuilder.Append(availableInvocationReorderFeatures);
+
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
 
@@ -1086,6 +1114,7 @@ namespace Atlas {
             driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+            invocationReorderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_EXT;
             subgroupSizeControlProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
 
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -1101,6 +1130,8 @@ namespace Atlas {
                 propertiesBuilder.Append(driverProperties);
             if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
                 propertiesBuilder.Append(rayTracingPipelineProperties);
+            if (supportedExtensions.contains(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME))
+                propertiesBuilder.Append(invocationReorderProperties);
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
                 propertiesBuilder.Append(accelerationStructureProperties);
             if (supportedExtensions.contains(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME))
@@ -1133,10 +1164,16 @@ namespace Atlas {
             VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
             rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
+            VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR positionFetchFeature = {
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR };
+
             VkPhysicalDeviceMemoryPriorityFeaturesEXT memoryPriorityFeature = {};
             memoryPriorityFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT;
 
             VkPhysicalDeviceRayTracingValidationFeaturesNV validationFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV };
+
+            VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT invocationReorderFeatures = {
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT };
 
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
@@ -1223,13 +1260,32 @@ namespace Atlas {
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
                 rayQueryFeature.rayQuery = VK_TRUE;
 
+                // DDGI launches its ray tracing pipeline with the ray count written on the GPU
+                rtPipelineFeature.rayTracingPipelineTraceRaysIndirect = availableRayTracingPipelineFeatures.rayTracingPipelineTraceRaysIndirect;
+
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
                 featureBuilder.Append(rayQueryFeature);
 
+                // Without position fetch hits take the triangle normal from the undeformed mesh
+                if (availablePositionFetchFeatures.rayTracingPositionFetch) {
+                    positionFetchFeature.rayTracingPositionFetch = VK_TRUE;
+                    featureBuilder.Append(positionFetchFeature);
+                    support.positionFetch = true;
+                }
+
                 if (supportedExtensions.contains(VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME) && instance->validationLayersEnabled) {
                     validationFeatures.rayTracingValidation = VK_TRUE;
                     featureBuilder.Append(validationFeatures);
+                }
+
+                // Without reordering the ray tracing pipeline is slower than ray queries
+                if (availableInvocationReorderFeatures.rayTracingInvocationReorder &&
+                    rtPipelineFeature.rayTracingPipelineTraceRaysIndirect && invocationReorderProperties.rayTracingInvocationReorderReorderingHint ==
+                    VK_RAY_TRACING_INVOCATION_REORDER_MODE_REORDER_EXT) {
+                    invocationReorderFeatures.rayTracingInvocationReorder = VK_TRUE;
+                    featureBuilder.Append(invocationReorderFeatures);
+                    support.shaderExecutionReordering = true;
                 }
 
                 support.hardwareRayTracing = true;

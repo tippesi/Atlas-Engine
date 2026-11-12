@@ -1,0 +1,21 @@
+// Alpha tests the candidate hits of non-opaque geometry like HitClosestTransparency in bvh.hsh
+#extension GL_EXT_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier : require
+
+#include <surface.hsh>
+
+hitAttributeEXT vec2 barycentrics;
+
+void main() {
+
+    int meshIdx = gl_InstanceCustomIndexEXT;
+    int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[nonuniformEXT(gl_GeometryIndexEXT)]);
+    int hitID = gl_PrimitiveID + triangleOffset;
+
+    int materialOffset = bvhInstances[nonuniformEXT(gl_InstanceID)].materialOffset;
+    Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[nonuniformEXT(hitID)]);
+
+    if (GetOpacity(tri, barycentrics, materialOffset, 0) <= 0.001)
+        ignoreIntersectionEXT;
+
+}

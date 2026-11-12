@@ -165,6 +165,12 @@ namespace Atlas {
 
             void DispatchIndirect(const Ref<Buffer>& buffer, uint32_t offset = 0);
 
+            // Launches the ray generation stage of the bound ray tracing pipeline once per element
+            void TraceRays(const ShaderBindingTable& shaderBindingTable, uint32_t width, uint32_t height, uint32_t depth = 1);
+
+            // The buffer holds a VkTraceRaysIndirectCommandKHR at the offset and needs a device address
+            void TraceRaysIndirect(const ShaderBindingTable& shaderBindingTable, const Ref<Buffer>& buffer, uint32_t offset = 0);
+
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer);
 
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
@@ -350,8 +356,8 @@ namespace Atlas {
                 uint32_t dynamicOffsets[BINDINGS_PER_DESCRIPTOR_SET] = {};
             };
 
-            // The sets bound in the command buffer for the graphics and the compute bind point
-            BoundDescriptorSet boundDescriptorSets[2][DESCRIPTOR_SET_COUNT];
+            // The sets bound in the command buffer for the graphics, the compute and the ray tracing bind point
+            BoundDescriptorSet boundDescriptorSets[3][DESCRIPTOR_SET_COUNT];
             // Whether a binding or the pipeline changed since the last draw or dispatch
             bool descriptorsChanged = true;
 

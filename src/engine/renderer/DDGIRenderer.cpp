@@ -22,6 +22,7 @@ namespace Atlas {
 
             rayGenPipelineConfig = PipelineConfig("ddgi/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("ddgi/rayHit.csh");
+            rayHitRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("ddgi/rayHit.rgen");
             rayShadowPipelineConfig = PipelineConfig("ddgi/rayShadow.csh");
 
             probeStatePipelineConfig = PipelineConfig("ddgi/probeState.csh");
@@ -43,11 +44,18 @@ namespace Atlas {
             auto clouds = scene->renderState.sky.clouds;
             auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
-            rayHitPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
-            rayHitPipelineConfig.ManageMacro("VISIBILITY_VOLUME", volume->visibility);
+            // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+            auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+            auto& rayHitConfig = useRayTracingPipeline ? rayHitRayTracingPipelineConfig : rayHitPipelineConfig;
+
+            rayHitConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
+            rayHitConfig.ManageMacro("VISIBILITY_VOLUME", volume->visibility);
+            // The compute path traces in a separate pass of the helper
+            rayHitConfig.ManageMacro("OPACITY_CHECK", useRayTracingPipeline && volume->opacityCheck);
+            rayHitConfig.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && volume->shaderExecutionReordering);
             // The hit shader has a low occupancy with software ray tracing
             bool deferredShadowRays = !device->support.hardwareRayTracing;
-            rayHitPipelineConfig.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
+            rayHitConfig.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
             
             auto& internalVolume = volume->internal;
             internalVolume.SwapTextures();
@@ -113,7 +121,8 @@ namespace Atlas {
             commandList->BindImage(lastRadianceArray.image, lastRadianceArray.sampler, 2, 25);
             commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 26);
 
-            auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
+            auto rayHitPipeline = useRayTracingPipeline ?
+                Helper::RayTracingHelper::GetRayTracingPipeline(rayHitConfig, scene) : PipelineManager::GetPipeline(rayHitConfig);
 
             if (deferredShadowRays) {
                 Graphics::BufferBarrier preBufferBarriers[] = {

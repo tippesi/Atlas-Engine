@@ -53,6 +53,10 @@ namespace Atlas {
 
         struct DeviceSupport {
             bool hardwareRayTracing = false;
+            // Hits read their triangle positions from the acceleration structure
+            bool positionFetch = false;
+            // Hit objects in ray tracing pipelines on devices which reorder them
+            bool shaderExecutionReordering = false;
             bool shaderPrintf = false;
             bool debugMarker = false;
             bool wideLines = false;
@@ -107,6 +111,8 @@ namespace Atlas {
             Ref<Pipeline> CreatePipeline(GraphicsPipelineDesc desc);
 
             Ref<Pipeline> CreatePipeline(ComputePipelineDesc desc);
+
+            Ref<Pipeline> CreatePipeline(RayTracingPipelineDesc desc);
 
             Ref<Buffer> CreateBuffer(BufferDesc desc);
 
@@ -177,6 +183,7 @@ namespace Atlas {
             VkPhysicalDeviceVulkan13Properties deviceProperties13 = {};
             VkPhysicalDeviceDriverProperties driverProperties = {};
             VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
+            VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT invocationReorderProperties = {};
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
             VkPhysicalDeviceSubgroupSizeControlProperties subgroupSizeControlProperties = {};
 
@@ -187,6 +194,9 @@ namespace Atlas {
             VkPhysicalDeviceRobustness2FeaturesEXT availableRobustness2Features = {};
             VkPhysicalDeviceCooperativeMatrixFeaturesKHR availableCooperativeMatrixFeatures = {};
             VkPhysicalDeviceShaderFloat8FeaturesEXT availableFloat8Features = {};
+            VkPhysicalDeviceRayTracingPipelineFeaturesKHR availableRayTracingPipelineFeatures = {};
+            VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR availablePositionFetchFeatures = {};
+            VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT availableInvocationReorderFeatures = {};
 
             DeviceDesc desc;
             DeviceSupport support;

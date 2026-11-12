@@ -37,6 +37,10 @@ namespace Atlas {
 
             void Allocate();
 
+            // Vertices written every frame, e.g. by a deformation pass, can move to another buffer between builds and
+            // refits, format and count stay the same
+            void SetVertexData(VkDeviceAddress vertexAddress, VkDeviceSize vertexStride);
+
             VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo;
             VkAccelerationStructureBuildSizesInfoKHR sizesInfo;
             VkAccelerationStructureBuildRangeInfoKHR* rangeInfo;

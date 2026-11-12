@@ -20,8 +20,9 @@ namespace Atlas::Scene {
 
         materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
             Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit, sizeof(Renderer::PackedMaterial));
+        // Ray tracing binds the graph parameters even if no graph has any
         materialGraphBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
-            Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit, sizeof(uint32_t));
+            Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit, sizeof(uint32_t), 1);
 
     }
 

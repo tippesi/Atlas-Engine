@@ -286,7 +286,7 @@ namespace Atlas {
 
             vkCmdBindPipeline(commandBuffer, pipeline->bindPoint, pipeline->pipeline);
 
-            if (!pipeline->isCompute) {
+            if (pipeline->bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
                 // Set default values for viewport/scissor, they are required
                 auto extent = GetRenderPassExtent();
                 SetViewport(0, 0, extent.width, extent.height);
@@ -839,6 +839,35 @@ namespace Atlas {
 
         }
 
+        void CommandList::TraceRays(const ShaderBindingTable& shaderBindingTable, uint32_t width, uint32_t height, uint32_t depth) {
+
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for ray tracing commands");
+            AE_ASSERT(pipelineInUse && pipelineInUse->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
+                "No ray tracing pipeline is bound");
+            if (!pipelineInUse || pipelineInUse->bindPoint != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) return;
+            AE_ASSERT(width && height && depth && "Launch sizes have to be larger equal to one");
+
+            BindDescriptorSets();
+
+            vkCmdTraceRaysKHR(commandBuffer, &shaderBindingTable.rayGenRegion, &shaderBindingTable.missRegion,
+                &shaderBindingTable.hitRegion, &shaderBindingTable.callableRegion, width, height, depth);
+
+        }
+
+        void CommandList::TraceRaysIndirect(const ShaderBindingTable& shaderBindingTable, const Ref<Buffer>& buffer, uint32_t offset) {
+
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for ray tracing commands");
+            AE_ASSERT(pipelineInUse && pipelineInUse->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
+                "No ray tracing pipeline is bound");
+            if (!pipelineInUse || pipelineInUse->bindPoint != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) return;
+
+            BindDescriptorSets();
+
+            vkCmdTraceRaysIndirectKHR(commandBuffer, &shaderBindingTable.rayGenRegion, &shaderBindingTable.missRegion,
+                &shaderBindingTable.hitRegion, &shaderBindingTable.callableRegion, buffer->GetDeviceAddress() + offset);
+
+        }
+
         void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer) {
 
             VkBufferCopy copy = {};
@@ -1339,7 +1368,9 @@ namespace Atlas {
                 if (descriptorBindingData.sets[i] != nullptr && shader->sets[i].bindingCount > 0) {
                     // Sets stay bound between draws, they only need to be bound again when they or their offsets
                     // change or a pipeline with another layout is in use
-                    auto& boundSets = boundDescriptorSets[pipelineInUse->isCompute ? 1 : 0];
+                    auto bindPointIdx = pipelineInUse->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR ? 2 :
+                        (pipelineInUse->isCompute ? 1 : 0);
+                    auto& boundSets = boundDescriptorSets[bindPointIdx];
                     auto& bound = boundSets[i];
                     auto set = descriptorBindingData.sets[i]->set;
                     if (bound.set == set && bound.layout == pipelineInUse->layout &&

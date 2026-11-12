@@ -4,6 +4,7 @@
 #include "../common/Packing.h"
 #include "../common/RandomHelper.h"
 #include "../pipeline/PipelineManager.h"
+#include "helper/RayTracingHelper.h"
 
 #include "../volume/BVH.h"
 
@@ -22,6 +23,7 @@ namespace Atlas {
 
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
+            rayHitRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("pathtracer/rayHit.rgen");
 
             rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
             rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms), bounces + 1);
@@ -61,8 +63,15 @@ namespace Atlas {
                 frameCount++;
             }
 
+            // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+            auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+            auto& rayHitConfig = useRayTracingPipeline ? rayHitRayTracingPipelineConfig : rayHitPipelineConfig;
+
             rayGenPipelineConfig.ManageMacro("REALTIME", realTime);
-            rayHitPipelineConfig.ManageMacro("REALTIME", realTime);
+            rayHitConfig.ManageMacro("REALTIME", realTime);
+            // The compute path traces in a separate pass of the helper
+            rayHitConfig.ManageMacro("OPACITY_CHECK", useRayTracingPipeline);
+            rayHitConfig.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && shaderExecutionReordering);
 
             helper.UpdateLights(scene, sampleEmissives);
 
@@ -198,7 +207,9 @@ namespace Atlas {
 
                 GPUProfiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
-                helper.DispatchHitClosest(scene, commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
+                auto rayHitPipeline = useRayTracingPipeline && materialGraphs ?
+                    Helper::RayTracingHelper::GetRayTracingPipeline(rayHitConfig, scene) : PipelineManager::GetPipeline(rayHitConfig);
+                helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, true,
                     [=]() {
                         commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);
@@ -260,11 +271,10 @@ namespace Atlas {
                     .samplesPerFrame = samplesPerFrame,
                     .maxRadiance = maxRadiance
                 };
-                commandList->PushConstants("constants", &constants);
-
                 auto pipelineConfig = PipelineConfig("pathtracer/temporal.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
 
                 groupCount = resolution / 16;
 

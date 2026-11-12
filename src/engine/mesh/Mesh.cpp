@@ -171,7 +171,8 @@ namespace Atlas {
                     geometryRegions.emplace_back(Graphics::ASGeometryRegion{
                         .indexCount = subData.indicesCount,
                         .indexOffset = subData.indicesOffset,
-                        .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f
+                        .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f &&
+                            !subData.material->HasGraph()
                         });
                 }
 

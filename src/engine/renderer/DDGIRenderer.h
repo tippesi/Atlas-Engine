@@ -57,6 +57,7 @@ namespace Atlas {
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
+            PipelineConfig rayHitRayTracingPipelineConfig;
             PipelineConfig rayShadowPipelineConfig;
 
             PipelineConfig probeStatePipelineConfig;

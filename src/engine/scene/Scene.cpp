@@ -768,8 +768,8 @@ namespace Atlas {
                 JobSystem::Wait(renderState.gpuSceneUpdateJob);
                 if (rayTracingWorld && rtDataNeeded) {
                     rayTracingWorld->scene = this;
-                    // Don't update triangle lights for now (second argument)
-                    rayTracingWorld->Update(rayTracingSubset, false);
+                    // Don't update triangle lights for now (last argument)
+                    rayTracingWorld->Update(rayTracingSubset, frameDirtyEntities, false);
                 }
                 // The bindless blas data isn't updated without any rt effects running
                 rtDataValid = rtDataNeeded && rayTracingWorld != nullptr && rayTracingWorld->IsValid();

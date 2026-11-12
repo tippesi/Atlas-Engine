@@ -24,7 +24,9 @@
 #include <transmission.hsh>
 #include <shadowRay.hsh>
 
+#ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 32) in;
+#endif
 
 #ifdef CLOUD_SHADOWS
 layout(set = 3, binding = 1) uniform sampler2D cloudMap;
@@ -63,6 +65,7 @@ void main() {
         
         vec3 radiance = vec3(0.0);
         if (ray.ID >= 0) {
+            TraceBufferedRay(ray);
             radiance = EvaluateHit(ray);
 
             // Probes store the lighting scaled, the lookup restores it
@@ -103,12 +106,8 @@ vec3 EvaluateHit(inout Ray ray) {
         return SampleEnvironmentMap(ray.direction, 4).rgb;
     }
     
-    // Unpack the compressed triangle and extract surface parameters
-    Instance instance = GetInstance(ray);
-    Triangle tri = GetTriangle(ray, instance);
-
     bool backfaceHit;
-    Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, 4);
+    Surface surface = GetHitSurface(ray, false, backfaceHit, 4);
 
     // Indicates backface hit
     if (backfaceHit) {
@@ -152,7 +151,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
         return vec3(0.0);
 
     float curSeed = Uniforms.seed;
-    float raySeed = float(gl_GlobalInvocationID.x);
+    float raySeed = float(INVOCATION_ID.x);
 
     float lightPdf;
     Light light = GetLight(surface, raySeed, curSeed, lightPdf);

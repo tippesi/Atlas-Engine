@@ -21,7 +21,9 @@
 #include <../ddgi/transmission.hsh>
 #include <../clouds/shadow.hsh>
 
+#ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 8, local_size_y = 4) in;
+#endif
 
 layout (set = 3, binding = 0, rgba16f) uniform image2D rtrImage;
 
@@ -78,26 +80,18 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     int padding1;
 } uniforms;
 
-#ifdef DEFERRED_SHADOW_RAYS
-#include <../raytracer/deferredShadow.hsh>
-
-bool hasDeferredShadowRay = false;
-DeferredShadowRay deferredShadowRay;
-int deferredLightBase = 0;
-#endif
+#include <../raytracer/lighting.hsh>
 
 vec3 EvaluateHit(inout Ray ray, float rand);
-vec3 EvaluateDirectLight(inout Surface surface, inout float seed);
-float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
 
     ivec2 resolution = uniforms.resolution;
 
-    if (int(gl_GlobalInvocationID.x) < resolution.x &&
-        int(gl_GlobalInvocationID.y) < resolution.y) {
+    if (int(INVOCATION_ID.x) < resolution.x &&
+        int(INVOCATION_ID.y) < resolution.y) {
 
-        ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+        ivec2 pixel = ivec2(INVOCATION_ID.xy);
 
 #ifdef SSR
         vec4 reflection = imageLoad(rtrImage, pixel);
@@ -159,6 +153,16 @@ void main() {
 
             const int sampleCount = uniforms.sampleCount;
 
+            // Values per pixel are computed once before the loop
+            float roughness = material.roughness;
+            float alpha = sqr(max(0.0, roughness));
+            float viewOffset = max(1.0, 2.0 * length(viewPos));
+#ifdef AUTO_EXPOSURE
+            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+#else
+            float radianceLimit = uniforms.radianceLimit;
+#endif
+
             for (int i = 0; i < sampleCount; i++) {
 #ifdef UPSCALE
                 int sampleIdx = int(uniforms.frameSeed / 4) * sampleCount + i;
@@ -178,15 +182,13 @@ void main() {
                     SampleBlueNoise(highResPixel, sampleIdx, 2, scramblingRankingTexture, sobolSequenceTexture)
                     );
 
-                float alpha = sqr(max(0.0, material.roughness));
-
                 Ray ray;
                 ray.ID = i;
                 blueNoiseVec.y *= (1.0 - uniforms.bias);
 
                 float pdf = 1.0;
                 BRDFSample brdfSample;
-                if (material.roughness >= 0.0) {
+                if (roughness >= 0.0) {
                     ImportanceSampleGGXVNDF(blueNoiseVec.xy, N, V, alpha,
                         ray.direction, pdf);
                 }
@@ -194,14 +196,11 @@ void main() {
                     ray.direction = R;
                 }
 
-                Surface surface = CreateSurface(V, N, ray.direction, material);
-
                 bool isRayValid = !isnan3(ray.direction) && !isinf3(ray.direction) &&
                     dot(N, ray.direction) >= 0.0;
 
                 if (isRayValid) {
                     // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
-                    float viewOffset = max(1.0, 2.0 * length(viewPos));
                     ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
 
                     ray.hitID = -1;
@@ -209,12 +208,8 @@ void main() {
 
                     vec3 radiance = vec3(0.0);
 
-                    if (material.roughness <= uniforms.roughnessCutoff) {
-#ifdef OPACITY_CHECK
-                        HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
-#else
-                        HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
-#endif
+                    if (roughness <= uniforms.roughnessCutoff) {
+                        HitClosestOpacityCheck(ray, INSTANCE_MASK_ALL, 0.0, INF);
                         // Misses have an infinite distance, which breaks the virtual reprojection of the temporal pass
                         hitDistance = ray.hitID != -1 ? ray.hitDistance : 0.0;
                         radiance = EvaluateHit(ray, blueNoiseVec.z);
@@ -230,12 +225,6 @@ void main() {
 #endif
                         hitDistance = 1.0;
                     }
-
-#ifdef AUTO_EXPOSURE
-                    float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
-#else
-                    float radianceLimit = uniforms.radianceLimit;
-#endif
 
 #ifdef DEFERRED_SHADOW_RAYS
                     deferredSamples[deferredSampleIdx].radiance = vec4(radiance, 1.0);
@@ -275,12 +264,8 @@ vec3 EvaluateHit(inout Ray ray, float rand) {
         return SampleEnvironmentMap(ray.direction).rgb;
     }
     
-    // Unpack the compressed triangle and extract surface parameters
-    Instance instance = GetInstance(ray);
-    Triangle tri = GetTriangle(ray, instance);
-
     bool backfaceHit;
-    Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
+    Surface surface = GetHitSurface(ray, false, backfaceHit, uniforms.textureLevel);
 
     // Evaluate indirect lighting
 #ifdef IRRADIANCE_VOLUME
@@ -302,90 +287,9 @@ vec3 EvaluateHit(inout Ray ray, float rand) {
     radiance += surface.material.emissiveColor;
 
     float curSeed = float(uniforms.frameSeed) / 255.0 + float(ray.ID) * float(uniforms.sampleCount);
-    // Evaluate direct light
-    for (int i = 0; i < uniforms.lightSampleCount; i++) {
-#ifdef DEFERRED_SHADOW_RAYS
-        hasDeferredShadowRay = false;
-        vec3 direct = EvaluateDirectLight(surface, curSeed) / float(uniforms.lightSampleCount);
-        if (hasDeferredShadowRay) {
-            uint lightIdx = uint(deferredLightBase + i);
-            deferredLights[lightIdx] = vec4(direct, 1.0);
-            uint shadowRayIdx = atomicAdd(deferredShadowRayCount, 1u);
-            deferredShadowRays[shadowRayIdx].origin = deferredShadowRay.origin;
-            deferredShadowRays[shadowRayIdx].direction = vec4(deferredShadowRay.direction.xyz, uintBitsToFloat(lightIdx));
-        }
-        else {
-            radiance += direct;
-        }
-#else
-        radiance += (EvaluateDirectLight(surface, curSeed) / float(uniforms.lightSampleCount));
-#endif
-        curSeed += 1.0 / float(uniforms.lightSampleCount);
-    }
+    float raySeed = float(INVOCATION_ID.x * uniforms.resolution.y + INVOCATION_ID.y);
+    radiance += EvaluateDirectLights(surface, raySeed, curSeed, uniforms.lightSampleCount);
 
     return radiance;
-
-}
-
-vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
-
-    if (GetLightCount() == 0)
-        return vec3(0.0);
-    
-    float raySeed = float(gl_GlobalInvocationID.x * uniforms.resolution.y + gl_GlobalInvocationID.y);
-
-    float lightPdf;
-    Light light = GetLight(surface, raySeed, seed, lightPdf);
-
-    float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
-
-    bool transmittedLight = IsTransmittedLight(surface);
-    Surface lightSurface = transmittedLight ? GetTransmissionSurface(surface) : surface;
-
-    // Evaluate the BRDF
-    vec3 reflectance = transmittedLight ? GetTransmissionColor(surface.material) * EvaluateDiffuseBRDF(lightSurface) :
-        EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
-    reflectance *= surface.material.opacity;
-    vec3 radiance = light.radiance * solidAngle;
-
-    // Check for visibilty. This is important to get an
-    // estimate of the solid angle of the light from point P
-    // on the surface.
-    if (light.castShadow)
-        radiance *= CheckVisibility(lightSurface, lightDistance);
-
-#ifdef CLOUD_SHADOWS
-    if (light.type == uint(DIRECTIONAL_LIGHT)) {
-        vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
-        float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
-
-        radiance *= cloudShadowFactor;
-    }
-#endif
-    
-    return reflectance * radiance * lightSurface.NdotL / lightPdf;
-
-}
-
-float CheckVisibility(Surface surface, float lightDistance) {
-
-    if (surface.NdotL > 0.0) {
-        Ray ray;
-        ray.direction = surface.L;
-        float side = dot(surface.L, surface.geometryNormal) < 0.0 ? -1.0 : 1.0;
-        ray.origin = surface.P + surface.geometryNormal * (side * EPSILON);
-#ifdef DEFERRED_SHADOW_RAYS
-        hasDeferredShadowRay = true;
-        deferredShadowRay.origin = vec4(ray.origin, lightDistance - 2.0 * EPSILON);
-        deferredShadowRay.direction = vec4(ray.direction, 0.0);
-        return 1.0;
-#else
-        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
-#endif
-    }
-    else {
-        return 0.0;
-    }
 
 }

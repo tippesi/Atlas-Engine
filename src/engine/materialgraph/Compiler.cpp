@@ -72,6 +72,31 @@ namespace Atlas::MaterialGraph {
 
         auto mainVertexFunctions = GetVertexFunctions(state, vertexOutput, mainVaryings, compiled->hasVertexOffset, true);
         auto shadowVertexFunctions = GetVertexFunctions(state, vertexOutput, shadowVaryings, isLinked(vertexOutput, NodeLibrary::positionOffsetPin), false);
+        // Hardware ray tracing deforms the vertices in a compute pass, which has no varyings
+        auto deformVertexFunctions = compiled->hasVertexOffset ? GetVertexFunctions(state, vertexOutput, {}, true, true) : std::string();
+
+        // Ray tracing pipelines call the surface per hit, which has no varyings either, the stages of the nodes stay the
+        // ones of the rasterizer
+        std::string hitSurface;
+        if (compiled->hasSurface) {
+            auto nodeStages = compiled->nodeStages;
+            std::vector<std::string> pins;
+            for (const auto& input : surfaceInputs) {
+                if (input.name != NodeLibrary::opacityPin)
+                    pins.push_back(input.name);
+            }
+            std::vector<uint32_t> hitVaryings;
+            hitSurface = GetSurfaceFunction(state, *surfaceOutput, pins, hitVaryings, AllStages);
+            compiled->nodeStages = nodeStages;
+        }
+
+        std::string hitOpacitySurface;
+        if (compiled->hasOpacity) {
+            auto nodeStages = compiled->nodeStages;
+            std::vector<uint32_t> hitVaryings;
+            hitOpacitySurface = GetSurfaceFunction(state, *surfaceOutput, { NodeLibrary::opacityPin }, hitVaryings, AllStages);
+            compiled->nodeStages = nodeStages;
+        }
 
         if (!compiled->errors.empty())
             return compiled;
@@ -120,11 +145,29 @@ namespace Atlas::MaterialGraph {
                 "#include <../shadowMapping.fsh>\n";
         }
 
+        if (compiled->hasVertexOffset) {
+            compiled->deformCode = vertexMacros + define("MATERIAL_GRAPH_VERTEX_OFFSET") + common +
+                deformVertexFunctions + "#include <../raytracer/deform.csh>\n";
+        }
+
+        if (compiled->hasSurface) {
+            compiled->hitCode = surfaceMacros + define("MATERIAL_GRAPH_STAGE_EVALUATE") + define("MATERIAL_GRAPH_STAGE_HIT") +
+                common + hitSurface + "#include <../raytracer/graphHit.rchit>\n";
+        }
+
+        if (compiled->hasOpacity) {
+            compiled->hitOpacityCode = surfaceMacros + define("MATERIAL_GRAPH_STAGE_EVALUATE") + define("MATERIAL_GRAPH_STAGE_HIT") +
+                common + hitOpacitySurface + "#include <../raytracer/graphOpacity.rahit>\n";
+        }
+
         Hash hash = 0;
         HashCombine(hash, compiled->mainVertexCode);
         HashCombine(hash, compiled->mainFragmentCode);
         HashCombine(hash, compiled->shadowVertexCode);
         HashCombine(hash, compiled->shadowFragmentCode);
+        HashCombine(hash, compiled->deformCode);
+        HashCombine(hash, compiled->hitCode);
+        HashCombine(hash, compiled->hitOpacityCode);
         compiled->hash = hash;
 
         // The name contains the content since the SPIR-V cache only knows names and macros
@@ -140,6 +183,9 @@ namespace Atlas::MaterialGraph {
         registerFile(compiled->mainFragmentFile, "_main.fsh", compiled->mainFragmentCode);
         registerFile(compiled->shadowVertexFile, "_shadow.vsh", compiled->shadowVertexCode);
         registerFile(compiled->shadowFragmentFile, "_shadow.fsh", compiled->shadowFragmentCode);
+        registerFile(compiled->deformFile, "_deform.csh", compiled->deformCode);
+        registerFile(compiled->hitFile, "_hit.rchit", compiled->hitCode);
+        registerFile(compiled->hitOpacityFile, "_opacity.rahit", compiled->hitOpacityCode);
 
         return compiled;
 

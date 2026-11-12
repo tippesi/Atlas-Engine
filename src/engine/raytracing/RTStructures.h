@@ -41,6 +41,42 @@ namespace Atlas {
         uint32_t padding = 0;
     };
 
+    // Undeformed vertex of a mesh for the deformation pass, has to match raytracer/deform.csh
+    struct GPUDeformVertex {
+        // The packed normal is stored in w
+        vec4 position;
+        // Packed with the handedness in w
+        uint32_t tangent = 0;
+        uint32_t texCoord = 0;
+        uint32_t color = 0;
+        uint32_t weights = 0;
+        uint32_t joints01 = 0;
+        uint32_t joints23 = 0;
+        uint32_t padding0 = 0;
+        uint32_t padding1 = 0;
+    };
+
+    // One deformed vertex range of an instance, the buffers are accessed through their device addresses
+    struct GPUDeformJob {
+        mat3x4 matrix;
+        VkDeviceAddress sourceVertices = 0;
+        VkDeviceAddress positions = 0;
+        VkDeviceAddress normals = 0;
+        uint32_t firstGroup = 0;
+        uint32_t vertexOffset = 0;
+        uint32_t vertexCount = 0;
+        uint32_t jointOffset = 0;
+        float windBendScale = 0.0f;
+        float windWiggleScale = 0.0f;
+        float windTextureLod = 0.0f;
+        uint32_t materialGraphOffset = 0;
+        uint32_t invertUVs = 0;
+        float uvTiling = 1.0f;
+        vec2 uvAnimation = vec2(0.0f);
+        uint32_t padding0 = 0;
+        uint32_t padding1 = 0;
+    };
+
     struct GPUBVHTriangle {
         vec4 v0;
         vec4 v1;
@@ -103,6 +139,12 @@ namespace Atlas {
         int32_t terrainNormalTexture = -1;
         // RGB packed as 10:10:10
         uint32_t transmissionColor = 0;
+
+        // Hit group of a material graph in ray tracing pipelines (see RayTracingWorld::hitRecords), 0 without one
+        uint32_t graphHitGroup = 0;
+        uint32_t graphParameterOffset = 0;
+        int32_t padding0 = 0;
+        int32_t padding1 = 0;
     };
 
     struct GPUAABB {
@@ -118,6 +160,11 @@ namespace Atlas {
 
         int32_t nextInstance;
         uint32_t mask;
+
+        // Normals and tangents of a deformed instance and the index buffer of its mesh, the lowest bit of the
+        // index address marks 16 bit indices
+        VkDeviceAddress deformedVertices = 0;
+        VkDeviceAddress meshIndices = 0;
     };
 
     struct GPUBVHNode {

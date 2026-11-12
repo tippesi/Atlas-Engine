@@ -27,6 +27,10 @@ struct Ray {
     int hitInstanceID;
 
     int currentInstanceID;
+
+    // Hardware ray tracing returns the hit point on the triangle and its object space normal
+    vec2 hitBarycentrics;
+    vec3 hitGeometryNormal;
 };
 
 struct RayPayload {
@@ -142,6 +146,12 @@ struct RaytraceMaterial {
 
     uint transmissionColor;
 
+    // Hit group of a material graph in ray tracing pipelines, 0 without one
+    uint graphHitGroup;
+    uint graphParameterOffset;
+    int padding0;
+    int padding1;
+
 };
 
 struct PackedLight {
@@ -186,6 +196,10 @@ struct Instance {
     
     int nextInstance;
     int mask;
+
+    // Device addresses of the normals of a deformed instance and the indices of its mesh, see GetTriangle
+    uvec2 deformedVertices;
+    uvec2 meshIndices;
 };
 
 struct PackedBVHNode {

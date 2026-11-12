@@ -45,6 +45,12 @@ namespace Atlas {
 
             bool sampleEmissives = false;
 
+            // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
+            // they hit before shading
+            bool shaderExecutionReordering = true;
+            // Hits of material graphs use their baked values instead of the graphs, e.g. for debugging
+            bool materialGraphs = true;
+
         private:
             struct alignas(16) RayGenUniforms {
                 vec4 origin;
@@ -78,6 +84,7 @@ namespace Atlas {
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
+            PipelineConfig rayHitRayTracingPipelineConfig;
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;

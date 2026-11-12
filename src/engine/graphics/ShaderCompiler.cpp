@@ -325,6 +325,16 @@ namespace Atlas {
                 return EShLangFragment;
             case VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT:
                 return EShLangCompute;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+                return EShLangRayGen;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_MISS_BIT_KHR:
+                return EShLangMiss;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+                return EShLangAnyHit;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+                return EShLangClosestHit;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+                return EShLangCallable;
             default:
                 return EShLangCompute;
             }
@@ -351,6 +361,9 @@ namespace Atlas {
             }
             else if (shaderStageFile.shaderStage == VK_SHADER_STAGE_COMPUTE_BIT) {
                 log.append("Compiling compute stage failed.");
+            }
+            else {
+                log.append("Compiling ray tracing stage failed.");
             }
 
             int32_t lineCount = 1;

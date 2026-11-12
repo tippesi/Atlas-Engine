@@ -23,6 +23,7 @@ namespace Atlas {
             sobolSequenceTexture.SetData(noiseImage->GetData());
 
             rtPipelineConfig = PipelineConfig("rtgi/rtgi.csh");
+            rtRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("rtgi/rtgi.rgen");
             rtShadowPipelineConfig = PipelineConfig("raytracer/traceShadow.csh");
             rtResolvePipelineConfig = PipelineConfig("rtgi/rtgiResolve.csh");
             temporalPipelineConfig = PipelineConfig("rtgi/temporal.csh");
@@ -118,17 +119,24 @@ namespace Atlas {
                 auto ddgiVisibility = ddgiEnabled && scene->renderState.irradianceVolume->visibility;
                 auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
-                rtPipelineConfig.ManageMacro("DDGI", rtgi->ddgi && ddgiEnabled);
-                rtPipelineConfig.ManageMacro("VISIBILITY_VOLUME", rtgi->ddgi && ddgiVisibility);
-                rtPipelineConfig.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
-                rtPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
-                rtPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
+                // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+                auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+                auto& config = useRayTracingPipeline ? rtRayTracingPipelineConfig : rtPipelineConfig;
+
+                config.ManageMacro("DDGI", rtgi->ddgi && ddgiEnabled);
+                config.ManageMacro("VISIBILITY_VOLUME", rtgi->ddgi && ddgiVisibility);
+                config.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
+                config.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
+                config.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
+                config.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && rtgi->shaderExecutionReordering);
 
                 // The hit shader has a low occupancy with software ray tracing
                 auto deferredShadowRays = !device->support.hardwareRayTracing;
-                rtPipelineConfig.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
+                config.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
 
-                auto pipeline = PipelineManager::GetPipeline(rtPipelineConfig);
+                auto pipeline = useRayTracingPipeline ?
+                    Helper::RayTracingHelper::GetRayTracingPipeline(config, scene) : PipelineManager::GetPipeline(config);
+                auto dimensions = useRayTracingPipeline ? ivec3(res, 1) : ivec3(groupCount, 1);
 
                 auto sampleCount = size_t(res.x) * size_t(res.y) * size_t(rtgi->sampleCount);
                 auto lightCount = sampleCount * size_t(rtgi->lightSampleCount);
@@ -159,7 +167,7 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->giTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-                helper.DispatchAndHit(scene, commandList, pipeline, ivec3(groupCount, 1),
+                helper.DispatchAndHit(scene, commandList, pipeline, dimensions,
                     [=]() {
                         commandList->BindImage(target->giTexture.image, 3, 0);
 

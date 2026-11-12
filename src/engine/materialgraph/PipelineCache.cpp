@@ -1,6 +1,8 @@
 #include "PipelineCache.h"
 
 #include "../pipeline/PipelineManager.h"
+#include "../loader/ShaderLoader.h"
+#include "../graphics/ShaderCompiler.h"
 #include "../jobsystem/JobSystem.h"
 #include "../profiler/CPUProfiler.h"
 
@@ -51,6 +53,37 @@ namespace Atlas::MaterialGraph {
 
             Create(jobConfig, key);
             });
+
+        return State::Pending;
+
+    }
+
+    PipelineCache::State PipelineCache::RequestStage(const std::string& file, VkShaderStageFlagBits stage) {
+
+        Hash key = 0;
+        HashCombine(key, file);
+        HashCombine(key, stage);
+
+        {
+            std::scoped_lock lock(mutex);
+            auto [iter, inserted] = pipelines.try_emplace(key, State::Pending);
+            if (!inserted)
+                return iter->second;
+        }
+
+        auto compile = [file, stage, key]() {
+            bool success = false;
+            Graphics::ShaderCompiler::Compile(Loader::ShaderLoader::LoadFile(file, stage), {}, true, success);
+
+            std::scoped_lock lock(mutex);
+            pipelines[key] = success ? State::Ready : State::Failed;
+            return pipelines[key];
+        };
+
+        if (!asynchronous)
+            return compile();
+
+        JobSystem::Execute(jobGroup, [compile](JobData&) { compile(); });
 
         return State::Pending;
 

@@ -121,11 +121,20 @@ namespace Atlas::MaterialGraph {
         std::string mainFragmentFile;
         std::string shadowVertexFile;
         std::string shadowFragmentFile;
+        // Deforms the vertices for hardware ray tracing, empty without a vertex offset
+        std::string deformFile;
+        // Evaluates the surface of hits in ray tracing pipelines, empty without a surface
+        std::string hitFile;
+        // Alpha tests the candidate hits in ray tracing pipelines, empty without an opacity
+        std::string hitOpacityFile;
 
         std::string mainVertexCode;
         std::string mainFragmentCode;
         std::string shadowVertexCode;
         std::string shadowFragmentCode;
+        std::string deformCode;
+        std::string hitCode;
+        std::string hitOpacityCode;
 
         std::vector<Parameter> parameters;
         uint32_t parameterWords = 0;

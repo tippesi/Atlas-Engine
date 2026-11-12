@@ -25,6 +25,9 @@ namespace Atlas::MaterialGraph {
         // Blocking requests try failed pipelines again, a change of a shader could have fixed them
         static State Request(const PipelineConfig& config, bool blocking);
 
+        // The state of a single shader stage, compiled in the background without macros
+        static State RequestStage(const std::string& file, VkShaderStageFlagBits stage);
+
         static void Shutdown();
 
         // Tools rendering single frames disable this, pictures should never show the fallback

@@ -55,6 +55,7 @@ namespace Atlas {
             Texture::Texture2D sobolSequenceTexture;
 
             PipelineConfig rtPipelineConfig;
+            PipelineConfig rtRayTracingPipelineConfig;
             PipelineConfig rtShadowPipelineConfig;
             PipelineConfig rtResolvePipelineConfig;
             PipelineConfig temporalPipelineConfig;
