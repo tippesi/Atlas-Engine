@@ -4,6 +4,7 @@
 #include "Singletons.h"
 #include "Icons.h"
 #include "ContentDiscovery.h"
+#include "ContentPreviews.h"
 #include "resource/ResourceManager.h"
 #include "common/Path.h"
 #include "ImguiExtension/ImguiWrapper.h"
@@ -57,6 +58,8 @@ namespace Atlas::Editor::UI {
 
         float folderPanelWidth = 220.0f;
         bool listView = false;
+        // Pictures of textures, meshes, materials etc. instead of the icons of their type
+        bool showPreviews = true;
         
         static inline std::string contentToShowPath = "";
         // Mesh, material, prefab or animation the user wants to open in its editor
@@ -80,10 +83,27 @@ namespace Atlas::Editor::UI {
 
         void RenderDirectoryEntry(const Ref<ContentDirectory>& directory);
 
-        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, 
-            ContentType contentType, uintmax_t fileSize, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight);
+        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType,
+            uintmax_t fileSize, int64_t lastWriteTime, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight);
 
-        void RenderTileLabel(const std::string& filename, float columnSize);
+        // The preview fitted into the area of the icon, the icon fades out while the preview fades in
+        void RenderPreview(const ContentPreviews::Preview& preview, ContentType contentType, ImVec2 size, ImTextureID iconTexture);
+
+        void DrawPreview(ImDrawList* drawList, const ContentPreviews::Preview& preview, ContentType contentType,
+            ImVec2 min, ImVec2 max, ImTextureID iconTexture, bool framed);
+
+        // Files are cards with their preview, a line in the color of their type and their name. Folders only
+        // have their icon and name. True if the name was shortened
+        bool RenderTile(ImVec2 min, const std::string& filename, ContentType contentType, bool selected, bool hovered,
+            ImTextureID iconTexture, const ContentPreviews::Preview* preview);
+
+        // Up to two lines, true if the name was shortened
+        bool RenderTileName(ImDrawList* drawList, const std::string& name, ImVec2 position, float width, bool centered);
+
+        float GetTileHeight() const;
+
+        void RenderContentTooltip(const std::string& filename, ContentType contentType, uintmax_t fileSize,
+            const ContentPreviews::Preview* preview, ImTextureID iconTexture);
 
         void RenderListColumns(const std::string& filename, ContentType contentType, uintmax_t fileSize, float rowWidth);
 
@@ -131,7 +151,21 @@ namespace Atlas::Editor::UI {
         std::string editingString;
         std::filesystem::path editingPath;
 
+        ContentPreviews previews;
+
         const float padding = 8.0f;
+        // Size of the tiles in this frame, they fill the width of the window
+        float tileSize = 64.0f;
+        float gridStart = 8.0f;
+
+        const float tileGap = 6.0f;
+        const float tileRounding = 6.0f;
+        const float tileThumbnailInset = 3.0f;
+        const float tileTypeLineHeight = 2.0f;
+        // Icons of content without a preview (yet) in the thumbnails
+        const float tileIconInset = 0.17f;
+        const float tileIconAlpha = 0.85f;
+        const float tileLabelPadding = 6.0f;
 
     };
 

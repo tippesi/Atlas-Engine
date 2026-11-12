@@ -14,6 +14,11 @@ namespace Atlas::Editor::UI {
 
         void SetPinned(bool pinned);
 
+        // Toggles between the drawer and the window docked in the layout, a docked window shows it in its toolbar
+        bool RenderPinButton();
+
+        float GetPinButtonWidth() const;
+
         // Replaces an open drawer without playing the animations of both
         void TakeOver(DrawerWindow& drawer);
 
@@ -31,6 +36,8 @@ namespace Atlas::Editor::UI {
 
         float openAmount = 0.0f;
         bool wasShown = false;
+        // Applied before the window begins, it docks or undocks the window
+        bool pinToggleRequested = false;
 
         const float minHeight = 160.0f;
         const float margin = 6.0f;

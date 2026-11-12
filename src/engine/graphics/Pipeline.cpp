@@ -112,7 +112,8 @@ namespace Atlas {
 
             auto result = vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1,
                 &pipelineInfo, nullptr, &pipeline);
-            if (result != VK_SUCCESS) {
+            // Some drivers report success without a pipeline when their shader translation failed
+            if (result != VK_SUCCESS || pipeline == VK_NULL_HANDLE) {
                 Log::Error("Failed to create graphics pipeline: " + VkResultToString(result));
                 return;
             }
@@ -148,7 +149,7 @@ namespace Atlas {
 
             auto result = vkCreateComputePipelines(device->device, VK_NULL_HANDLE, 1,
                 &pipelineInfo, nullptr, &pipeline);
-            if (result != VK_SUCCESS) {
+            if (result != VK_SUCCESS || pipeline == VK_NULL_HANDLE) {
                 Log::Error("Failed to create compute pipeline: " + VkResultToString(result));
                 return;
             }

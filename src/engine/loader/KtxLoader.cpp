@@ -129,6 +129,22 @@ namespace Atlas::Loader {
 
     }
 
+    static KTX_error_code Transcode(ktxTexture2* texture, ktx_transcode_fmt_e format) {
+
+        // The first transcode initializes global basis tables without synchronization
+        static std::mutex transcoderMutex;
+        static std::atomic_bool transcoderInitialized = false;
+        if (!transcoderInitialized) {
+            std::scoped_lock lock(transcoderMutex);
+            auto result = ktxTexture2_TranscodeBasis(texture, format, 0);
+            transcoderInitialized = true;
+            return result;
+        }
+
+        return ktxTexture2_TranscodeBasis(texture, format, 0);
+
+    }
+
     Ref<KtxImage> KtxLoader::LoadImage(const std::string& filename, bool colorSpaceConversion,
         int32_t maxImageResolution) {
 
@@ -188,17 +204,7 @@ namespace Atlas::Loader {
             else
                 transcodeFormat = KTX_TTF_RGBA32;
 
-            // The first transcode initializes global basis tables without synchronization
-            static std::mutex transcoderMutex;
-            static std::atomic_bool transcoderInitialized = false;
-            if (!transcoderInitialized) {
-                std::scoped_lock lock(transcoderMutex);
-                result = ktxTexture2_TranscodeBasis(texture, transcodeFormat, 0);
-                transcoderInitialized = true;
-            }
-            else {
-                result = ktxTexture2_TranscodeBasis(texture, transcodeFormat, 0);
-            }
+            result = Transcode(texture, transcodeFormat);
 
             if (result != KTX_SUCCESS) {
                 ktxTexture_Destroy(ktxTexture(texture));
@@ -270,6 +276,62 @@ namespace Atlas::Loader {
         }
 
         ktxTexture_Destroy(ktxTexture(texture));
+
+        return image;
+
+    }
+
+    Ref<Common::Image<uint8_t>> KtxLoader::DecodeImage(const std::vector<char>& buffer, int32_t maxImageResolution) {
+
+        std::vector<char> trimmedBuffer;
+        uint32_t trimmedLevels = 0;
+        auto trimmed = TrimLevels(buffer, maxImageResolution, trimmedBuffer, trimmedLevels);
+        const auto& fileBuffer = trimmed ? trimmedBuffer : buffer;
+
+        ktxTexture2* texture = nullptr;
+        auto result = ktxTexture2_CreateFromMemory(reinterpret_cast<const ktx_uint8_t*>(fileBuffer.data()),
+            fileBuffer.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+        if (result != KTX_SUCCESS)
+            return nullptr;
+
+        auto destroy = [&]() { ktxTexture_Destroy(ktxTexture(texture)); };
+
+        if (texture->numDimensions != 2 || texture->numFaces > 1) {
+            destroy();
+            return nullptr;
+        }
+
+        if (ktxTexture2_NeedsTranscoding(texture) && Transcode(texture, KTX_TTF_RGBA32) != KTX_SUCCESS) {
+            destroy();
+            return nullptr;
+        }
+
+        // Block compressed files which aren't supercompressed would need to be decoded by the device
+        auto format = VkFormat(texture->vkFormat);
+        if (format != VK_FORMAT_R8G8B8A8_UNORM && format != VK_FORMAT_R8G8B8A8_SRGB) {
+            destroy();
+            return nullptr;
+        }
+
+        uint32_t level = 0;
+        while (level + 1 < texture->numLevels &&
+            int32_t(glm::max(texture->baseWidth, texture->baseHeight) >> level) > maxImageResolution) {
+            level++;
+        }
+
+        auto width = int32_t(glm::max(texture->baseWidth >> level, 1u));
+        auto height = int32_t(glm::max(texture->baseHeight >> level, 1u));
+
+        ktx_size_t levelOffset;
+        ktxTexture_GetImageOffset(ktxTexture(texture), level, 0, 0, &levelOffset);
+        auto levelData = ktxTexture_GetData(ktxTexture(texture)) + levelOffset;
+
+        // The first layer of an array
+        std::vector<uint8_t> data(levelData, levelData + size_t(width) * size_t(height) * 4);
+        destroy();
+
+        auto image = CreateRef<Common::Image<uint8_t>>(width, height, 4);
+        image->SetData(data);
 
         return image;
 

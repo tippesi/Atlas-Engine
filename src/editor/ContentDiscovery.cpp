@@ -141,12 +141,15 @@ namespace Atlas::Editor {
 			auto fileSize = dirEntry.file_size(errorCode);
 			if (errorCode)
 				fileSize = 0;
+			auto writeTime = dirEntry.last_write_time(errorCode);
+			auto lastWriteTime = errorCode ? int64_t(0) : int64_t(writeTime.time_since_epoch().count());
 			directory->files.emplace_back(Content {
 				.name = filename,
 				.path = path,
 				.assetPath = assetPath,
 				.type = contentType,
 				.size = fileSize,
+				.lastWriteTime = lastWriteTime,
 			});
 
 			result->contentTypeToContentMap[contentType].push_back(directory->files.back());

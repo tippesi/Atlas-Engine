@@ -33,6 +33,8 @@ namespace Atlas::Editor {
 
         ContentType type = ContentType::None;
         uintmax_t size = 0;
+        // Ticks of the last modification, changes e.g. renew the preview of the content
+        int64_t lastWriteTime = 0;
 
         static const std::map<const std::string, ContentType> contentTypeMapping;
     };
