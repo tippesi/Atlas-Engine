@@ -244,7 +244,6 @@ namespace Atlas::Lighting {
             {"projectionMatrix", p.projectionMatrix},
             {"frustumMatrix", p.frustumMatrix},
             {"terrainFrustumMatrix", p.terrainFrustumMatrix},
-            {"orthoSize", p.orthoSize},
         };
     }
 
@@ -255,12 +254,10 @@ namespace Atlas::Lighting {
         j.at("projectionMatrix").get_to(p.projectionMatrix);
         j.at("frustumMatrix").get_to(p.frustumMatrix);
         j.at("terrainFrustumMatrix").get_to(p.terrainFrustumMatrix);
-        j.at("orthoSize").get_to(p.orthoSize);
     }
 
     void to_json(json& j, const Shadow& p) {
         j = json {
-            {"center", p.center},
             {"distance", p.distance},
             {"longRangeDistance", p.longRangeDistance},
             {"bias", p.bias},
@@ -271,7 +268,6 @@ namespace Atlas::Lighting {
             {"views", p.views},
             {"viewCount", p.viewCount},
             {"isCascaded", p.isCascaded},
-            {"followMainCamera", p.followMainCamera},
             {"useCubemap", p.useCubemap},
             {"allowDynamicEntities", p.allowDynamicEntities},
             {"allowTerrain", p.allowTerrain},
@@ -280,7 +276,6 @@ namespace Atlas::Lighting {
     }
 
     void from_json(const json& j, Shadow& p) {
-        j.at("center").get_to(p.center);
         j.at("distance").get_to(p.distance);
         j.at("longRangeDistance").get_to(p.longRangeDistance);
         j.at("bias").get_to(p.bias);
@@ -290,8 +285,8 @@ namespace Atlas::Lighting {
         j.at("resolution").get_to(p.resolution);
         j.at("views").get_to(p.views);
         j.at("viewCount").get_to(p.viewCount);
+        // A directional light replaces a shadow without cascades after loading, see LightComponent::FitShadowToType
         j.at("isCascaded").get_to(p.isCascaded);
-        j.at("followMainCamera").get_to(p.followMainCamera);
         j.at("useCubemap").get_to(p.useCubemap);
         j.at("allowDynamicEntities").get_to(p.allowDynamicEntities);
         j.at("allowTerrain").get_to(p.allowTerrain);

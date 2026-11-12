@@ -18,6 +18,12 @@ using namespace Atlas::Scene::Components;
 using namespace Atlas::Scene::Prefabs;
 using namespace Atlas::ImguiExtension;
 
+using Atlas::vec2;
+using Atlas::vec3;
+using Atlas::vec4;
+using Atlas::ivec3;
+using Atlas::mat4;
+
 void App::LoadContent() {
 
     renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
@@ -71,8 +77,7 @@ void App::LoadContent() {
 
     directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 1.0f);
     directionalLight.color = vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f,
-        vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f, 4, 0.9f);
     directionalLight.isMain = true;
 
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();

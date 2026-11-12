@@ -340,6 +340,12 @@ namespace Atlas::Scene::Components {
         if (j.contains("shadow")) {
             p.shadow = CreateRef<Lighting::Shadow>();
             j.at("shadow").get_to(*p.shadow);
+
+            // Directional lights only have cascaded shadows, an orthographic one from an older scene becomes cascades
+            if (!p.HasFittingShadow()) {
+                p.FitShadowToType();
+                Log::Message("Converted a shadow which didn't fit its light, e.g. the orthographic shadow of a directional light");
+            }
         }
     }
 
