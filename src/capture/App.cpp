@@ -362,6 +362,8 @@ namespace Atlas::Capture {
             return;
 
         graphicsDevice->WaitForIdle();
+        // The Lua environment of the player references the script state of the scene
+        player.Stop();
         scene.reset();
         scenePath.clear();
         sceneSettings = json();
@@ -381,6 +383,7 @@ namespace Atlas::Capture {
 
         graphicsDevice->WaitForIdle();
         report.DestroyValidation();
+        player.Stop();
         scene.reset();
         InstanceRegistry::Unregister();
 
@@ -503,7 +506,8 @@ namespace Atlas::Capture {
         try {
             CPUProfiler::Scope profilerScope("Capture render");
             BuildOverlay();
-            captureRenderer.Render(scene, passes, overlay->GetBatches(), job.pathTrace);
+            // Loading frames aren't captured, path tracing them stalled the GPU for more than 30 s
+            captureRenderer.Render(scene, passes, overlay->GetBatches(), job.pathTrace && phase != Phase::Loading);
         }
         catch (const std::exception& e) {
             // E.g. validation errors, which the engine throws in non-release builds
