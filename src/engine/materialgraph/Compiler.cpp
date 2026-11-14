@@ -273,7 +273,7 @@ namespace Atlas::MaterialGraph {
 
         Function function = { .stage = AllStages, .inputName = "surfaceIn" };
         for (auto node : nodes) {
-            auto definition = NodeLibrary::Find(node->type);
+            auto definition = NodeLibrary::Find(*node);
             if (definition->kind == NodeKind::Parameter)
                 EmitParameter(state, function, *node, *definition);
         }
@@ -284,7 +284,7 @@ namespace Atlas::MaterialGraph {
 
         const std::string signature = "vec4 EvaluateMaterialPreview(MaterialSurfaceInput surfaceIn) {\n";
 
-        auto definition = NodeLibrary::Find(node.type);
+        auto definition = NodeLibrary::Find(node);
 
         if (definition->kind == NodeKind::SurfaceOutput) {
             std::vector<std::string> pins;
@@ -339,7 +339,7 @@ namespace Atlas::MaterialGraph {
                 value = "0.5 * (" + value + ") + 0.5";
         }
 
-        return signature + "\n" + function.code + "\n    return vec4(" + value + ", 1.0);\n\n}\n\n";
+        return function.functions + signature + "\n" + function.code + "\n    return vec4(" + value + ", 1.0);\n\n}\n\n";
 
     }
 
@@ -362,7 +362,7 @@ namespace Atlas::MaterialGraph {
         std::unordered_map<std::string, const Node*> parameterNames;
 
         for (const auto& node : graph.nodes) {
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             if (!definition) {
                 Error(state, node.id, "Unknown node type " + node.type);
                 continue;
@@ -370,6 +370,26 @@ namespace Atlas::MaterialGraph {
 
             vertexOutputs += definition->kind == NodeKind::VertexOutput ? 1 : 0;
             surfaceOutputs += definition->kind == NodeKind::SurfaceOutput ? 1 : 0;
+
+            if (node.type == NodeLibrary::codeType) {
+                auto isNumber = [](ValueType type) { return type != ValueType::Texture && type != ValueType::Generic; };
+                if (!isNumber(node.codeOutputType))
+                    Error(state, node.id, "The result needs a number or vector type");
+
+                std::unordered_set<std::string> inputNames;
+                for (const auto& input : node.codeInputs) {
+                    auto isName = !input.name.empty() && !std::isdigit(static_cast<unsigned char>(input.name.front())) &&
+                        std::all_of(input.name.begin(), input.name.end(), [](char c) { return std::isalnum(static_cast<unsigned char>(c)) || c == '_'; });
+                    if (!isName)
+                        Error(state, node.id, "The input " + input.name + " needs a name of letters, digits and underscores");
+                    if (!inputNames.insert(input.name).second)
+                        Error(state, node.id, "The input " + input.name + " exists twice");
+                    if (!isNumber(input.type))
+                        Error(state, node.id, "The input " + input.name + " needs a number or vector type");
+                }
+                if (node.code.find("return") == std::string::npos)
+                    Error(state, node.id, "The code has to return the result");
+            }
 
             if (definition->kind != NodeKind::Parameter)
                 continue;
@@ -398,8 +418,8 @@ namespace Atlas::MaterialGraph {
                 continue;
             }
 
-            auto fromDefinition = NodeLibrary::Find(from->type);
-            auto toDefinition = NodeLibrary::Find(to->type);
+            auto fromDefinition = NodeLibrary::Find(*from);
+            auto toDefinition = NodeLibrary::Find(*to);
             if (!fromDefinition || !toDefinition)
                 continue;
 
@@ -439,7 +459,7 @@ namespace Atlas::MaterialGraph {
 
         visiting.push_back(node.id);
 
-        auto definition = NodeLibrary::Find(node.type);
+        auto definition = NodeLibrary::Find(node);
 
         auto staticInput = definition->kind == NodeKind::StaticSwitch ? GetStaticSwitchInput(node, *definition) : nullptr;
 
@@ -453,7 +473,7 @@ namespace Atlas::MaterialGraph {
                 continue;
 
             auto from = state.graph.GetNode(link->fromNode);
-            auto fromDefinition = NodeLibrary::Find(from->type);
+            auto fromDefinition = NodeLibrary::Find(*from);
             auto output = fromDefinition->FindOutput(link->fromPin);
 
             auto linkType = output->type;
@@ -486,7 +506,7 @@ namespace Atlas::MaterialGraph {
             return;
 
         auto& compiled = state.compiled;
-        auto definition = NodeLibrary::Find(node.type);
+        auto definition = NodeLibrary::Find(node);
 
         if (std::find(function.visiting.begin(), function.visiting.end(), node.id) != function.visiting.end()) {
             Error(state, node.id, "The node is part of a cycle");
@@ -574,6 +594,9 @@ namespace Atlas::MaterialGraph {
                 addVariable(output.name, type, ExpandExpression(output.expression, arguments, function.inputName));
             }
 
+            if (!definition->functions.empty() && function.functions.find(definition->functions) == std::string::npos)
+                function.functions += definition->functions;
+
             // Marks the node as emitted even without any used output
             function.variables[node.id];
             break;
@@ -614,7 +637,7 @@ namespace Atlas::MaterialGraph {
         }
 
         auto from = state.graph.GetNode(link->fromNode);
-        auto fromDefinition = NodeLibrary::Find(from->type);
+        auto fromDefinition = NodeLibrary::Find(*from);
         auto output = fromDefinition->FindOutput(link->fromPin);
 
         EmitNode(state, function, *from);
@@ -696,7 +719,7 @@ namespace Atlas::MaterialGraph {
             { NodeLibrary::opacityPin, "opacity" }
         };
 
-        auto definition = NodeLibrary::Find(output.type);
+        auto definition = NodeLibrary::Find(output);
         state.compiled.nodeStages[output.id] |= SurfaceStage;
 
         std::string assignments;
@@ -707,7 +730,7 @@ namespace Atlas::MaterialGraph {
 
         usedVaryings = function.usedVaryings;
 
-        return "\nMaterialSurfaceOutput EvaluateMaterialSurface(MaterialSurfaceInput surfaceIn) {\n\n"
+        return function.functions + "\nMaterialSurfaceOutput EvaluateMaterialSurface(MaterialSurfaceInput surfaceIn) {\n\n"
             "    MaterialSurfaceOutput surfaceOut = CreateMaterialSurfaceOutput();\n\n" + function.code + (function.code.empty() ? "" : "\n") + assignments +
             "\n    return surfaceOut;\n\n}\n\n";
 
@@ -719,13 +742,13 @@ namespace Atlas::MaterialGraph {
         std::string code;
 
         if (hasOffset && output) {
-            auto definition = NodeLibrary::Find(output->type);
+            auto definition = NodeLibrary::Find(*output);
             state.compiled.nodeStages[output->id] |= VertexStage;
 
             Function offset = { .stage = VertexStage, .inputName = "vertexIn" };
             auto input = definition->FindInput(NodeLibrary::positionOffsetPin);
             auto offsetValue = EmitInput(state, offset, *output, *input, ValueType::Vec3);
-            code += "\nvec3 EvaluateMaterialVertexOffset(MaterialVertexInput vertexIn) {\n\n" + offset.code +
+            code += offset.functions + "\nvec3 EvaluateMaterialVertexOffset(MaterialVertexInput vertexIn) {\n\n" + offset.code +
                 (offset.code.empty() ? "" : "\n") + "    return " + offsetValue + ";\n\n}\n";
 
             if (withNormal) {
@@ -745,7 +768,7 @@ namespace Atlas::MaterialGraph {
                     Function normal = { .stage = VertexStage, .inputName = "vertexIn" };
                     auto normalInput = definition->FindInput(NodeLibrary::vertexNormalPin);
                     auto normalValue = EmitInput(state, normal, *output, *normalInput, ValueType::Vec3);
-                    code += "\nvec3 EvaluateMaterialVertexNormal(MaterialVertexInput vertexIn) {\n\n" + normal.code +
+                    code += normal.functions + "\nvec3 EvaluateMaterialVertexNormal(MaterialVertexInput vertexIn) {\n\n" + normal.code +
                         (normal.code.empty() ? "" : "\n") + "    return " + normalValue + ";\n\n}\n";
                 }
             }
@@ -759,12 +782,12 @@ namespace Atlas::MaterialGraph {
         std::string assignments;
         for (auto nodeId : usedVaryings) {
             auto node = state.graph.GetNode(nodeId);
-            auto definition = NodeLibrary::Find(node->type);
+            auto definition = NodeLibrary::Find(*node);
             auto type = GetOutputType(state, *node, definition->outputs.front());
             auto value = EmitInput(state, varyings, *node, definition->inputs.front(), type);
             assignments += "    graphVarying" + std::to_string(state.varyings[nodeId]) + " = " + Convert(value, type, ValueType::Vec4) + ";\n";
         }
-        code += "\n// Values handed to the surface\nvoid WriteMaterialVaryings(MaterialVertexInput vertexIn) {\n\n" + varyings.code +
+        code += varyings.functions + "\n// Values handed to the surface\nvoid WriteMaterialVaryings(MaterialVertexInput vertexIn) {\n\n" + varyings.code +
             (varyings.code.empty() ? "" : "\n") + assignments + (assignments.empty() ? "" : "\n") + "}\n\n";
 
         return code;
@@ -778,7 +801,7 @@ namespace Atlas::MaterialGraph {
             return input.defaultExpression.find("$IN") == std::string::npos;
 
         auto from = state.graph.GetNode(link->fromNode);
-        auto definition = NodeLibrary::Find(from->type);
+        auto definition = NodeLibrary::Find(*from);
         if (std::find(visiting.begin(), visiting.end(), from->id) != visiting.end())
             return false;
 
@@ -814,10 +837,10 @@ namespace Atlas::MaterialGraph {
 
         Function function = { .stage = VertexStage, .inputName = "vertexIn" };
 
-        auto input = NodeLibrary::Find(output.type)->FindInput(NodeLibrary::opacityPin);
+        auto input = NodeLibrary::Find(output)->FindInput(NodeLibrary::opacityPin);
         auto value = EmitInput(state, function, output, *input, ValueType::Float);
 
-        return "\nfloat EvaluateMaterialOpacity(MaterialVertexInput vertexIn) {\n\n" + function.code +
+        return function.functions + "\nfloat EvaluateMaterialOpacity(MaterialVertexInput vertexIn) {\n\n" + function.code +
             (function.code.empty() ? "" : "\n") + "    return " + value + ";\n\n}\n\n";
 
     }
@@ -978,11 +1001,13 @@ namespace Atlas::MaterialGraph {
                 continue;
             }
 
-            auto index = size_t(expression[i + 1] - '0');
-            AE_ASSERT(index < arguments.size() && "Expression of a node uses an input it doesn't have");
+            auto start = i;
+            size_t index = 0;
+            while (i + 1 < expression.size() && std::isdigit(static_cast<unsigned char>(expression[i + 1])))
+                index = index * 10 + size_t(expression[++i] - '0');
+            AE_ASSERT(i > start && index < arguments.size() && "Expression of a node uses an input it doesn't have");
             if (index < arguments.size())
                 result += Enclose(arguments[index]);
-            i++;
         }
 
         return result;

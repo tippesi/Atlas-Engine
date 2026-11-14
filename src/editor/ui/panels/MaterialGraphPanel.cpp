@@ -230,7 +230,7 @@ namespace Atlas::Editor::UI {
             return;
         }
 
-        auto definition = NodeLibrary::Find(selected->type);
+        auto definition = NodeLibrary::Find(*selected);
         if (!definition)
             return;
 
@@ -406,7 +406,88 @@ namespace Atlas::Editor::UI {
             ImGui::EndDisabled();
         }
 
+        auto isCode = selected->type == NodeLibrary::codeType;
+        auto codeChanged = false;
+        if (isCode) {
+            const char* types[] = { "Float", "Vector 2", "Vector 3", "Vector 4" };
+            auto outputType = int32_t(selected->codeOutputType);
+            Widgets::PropertyLabel("Result", "Type of the value the code returns");
+            if (ImGui::Combo("##Result", &outputType, types, IM_ARRAYSIZE(types))) {
+                selected->codeOutputType = ValueType(outputType);
+                codeChanged = true;
+            }
+
+            int32_t removedInput = -1;
+            for (size_t i = 0; i < selected->codeInputs.size(); i++) {
+                auto& input = selected->codeInputs[i];
+                ImGui::PushID(int32_t(i));
+                Widgets::PropertyLabel("Input", "An argument of the code with its name and type");
+                auto buttonWidth = ImGui::GetFrameHeight();
+                auto width = ImGui::GetContentRegionAvail().x - buttonWidth - 2.0f * ImGui::GetStyle().ItemSpacing.x;
+                ImGui::SetNextItemWidth(width * 0.55f);
+                ImGui::InputText("##Name", &input.name);
+                if (ImGui::IsItemActivated())
+                    renamedCodeInput = input.name;
+                if (ImGui::IsItemDeactivatedAfterEdit() && input.name != renamedCodeInput) {
+                    // Links and values stay on the renamed input
+                    for (auto& link : graph.links) {
+                        if (link.toNode == selected->id && link.toPin == renamedCodeInput)
+                            link.toPin = input.name;
+                    }
+                    if (selected->inputValues.contains(renamedCodeInput)) {
+                        selected->inputValues[input.name] = selected->inputValues[renamedCodeInput];
+                        selected->inputValues.erase(renamedCodeInput);
+                    }
+                    codeChanged = true;
+                }
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(width * 0.45f);
+                auto inputType = int32_t(input.type);
+                if (ImGui::Combo("##Type", &inputType, types, IM_ARRAYSIZE(types))) {
+                    input.type = ValueType(inputType);
+                    codeChanged = true;
+                }
+                ImGui::SameLine();
+                if (InspectorIconButton("Remove input", IconType::Trash, "Removes the input and its link"))
+                    removedInput = int32_t(i);
+                ImGui::PopID();
+            }
+
+            if (removedInput >= 0) {
+                const auto& name = selected->codeInputs[removedInput].name;
+                graph.Disconnect(selected->id, name);
+                selected->inputValues.erase(name);
+                selected->codeInputs.erase(selected->codeInputs.begin() + removedInput);
+                codeChanged = true;
+            }
+
+            Widgets::PropertyLabel("##Add input");
+            if (ImGui::Button("Add input")) {
+                auto isUsed = [&](const std::string& name) {
+                    return std::any_of(selected->codeInputs.begin(), selected->codeInputs.end(),
+                        [&](const CodeInput& input) { return input.name == name; });
+                    };
+                int32_t index = 0;
+                while (isUsed("input" + std::to_string(index)))
+                    index++;
+                selected->codeInputs.push_back({ "input" + std::to_string(index), ValueType::Float });
+                codeChanged = true;
+            }
+        }
+
         Widgets::EndProperties();
+
+        if (isCode) {
+            ImGui::TextColored(Theme::TextMuted(), "Function body, the inputs are its arguments");
+            auto edited = false;
+            Widgets::TextArea("Code", selected->code, 12.0f, ImGuiInputTextFlags_AllowTabInput, &edited);
+            codeChanged |= edited;
+        }
+
+        if (codeChanged) {
+            NodeLibrary::UpdateCodeDefinition(*selected);
+            compileRequested = true;
+        }
 
     }
 
@@ -498,7 +579,7 @@ namespace Atlas::Editor::UI {
         // Parameters in the order materials show them: ungrouped first like in the material, then by group and order
         std::vector<const Node*> parameters;
         for (const auto& node : graph.nodes) {
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             if (definition && definition->kind == NodeKind::Parameter)
                 parameters.push_back(&node);
         }
@@ -538,7 +619,7 @@ namespace Atlas::Editor::UI {
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 1.0f));
                 for (auto i = start; isOpen && i < end; i++) {
                     auto parameter = parameters[i];
-                    auto definition = NodeLibrary::Find(parameter->type);
+                    auto definition = NodeLibrary::Find(*parameter);
                     auto isUsed = !compiled || compiled->nodeStages.contains(parameter->id);
                     auto alpha = isUsed ? 1.0f : 0.45f;
 
@@ -673,7 +754,7 @@ namespace Atlas::Editor::UI {
         std::erase_if(layouts, [&](const auto& item) { return graph.GetNode(item.first) == nullptr; });
 
         for (const auto& node : graph.nodes) {
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             auto& layout = layouts[node.id];
 
             layout.rows.clear();
@@ -779,7 +860,7 @@ namespace Atlas::Editor::UI {
         auto font = ImGui::GetFont();
 
         for (const auto& node : graph.nodes) {
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             if (!definition || definition->kind != NodeKind::Frame)
                 continue;
 
@@ -823,7 +904,7 @@ namespace Atlas::Editor::UI {
                 continue;
 
             auto fromNode = graph.GetNode(link.fromNode);
-            auto output = NodeLibrary::Find(fromNode->type)->FindOutput(link.fromPin);
+            auto output = NodeLibrary::Find(*fromNode)->FindOutput(link.fromPin);
 
             auto highlight = &link == hoveredLink || selection.contains(link.fromNode) || selection.contains(link.toNode);
             auto color = GetValueColor(output->type);
@@ -857,7 +938,7 @@ namespace Atlas::Editor::UI {
 
         for (auto& node : graph.nodes) {
             auto& layout = layouts[node.id];
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
 
             if (definition && definition->kind == NodeKind::Frame)
                 continue;
@@ -1013,7 +1094,7 @@ namespace Atlas::Editor::UI {
         if (zoom < detailZoom)
             return false;
 
-        auto definition = NodeLibrary::Find(node.type);
+        auto definition = NodeLibrary::Find(node);
         if (!definition)
             return false;
 
@@ -1271,7 +1352,7 @@ namespace Atlas::Editor::UI {
         drawList->AddRect(mapMin, mapMax, ImGui::ColorConvertFloat4ToU32(Theme::OverlayBorder()), 4.0f);
 
         for (const auto& node : graph.nodes) {
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             auto isFrame = definition && definition->kind == NodeKind::Frame;
             auto color = selection.contains(node.id) ? Theme::Accent() : isFrame ? Theme::Accent(0.2f) : Theme::TextMuted();
             drawList->AddRectFilled(toMap(node.position), toMap(node.position + GetNodeSize(node)),
@@ -1397,7 +1478,7 @@ namespace Atlas::Editor::UI {
                 for (const auto& node : graph.nodes) {
                     const auto& layout = layouts[node.id];
                     // A box inside of a frame selects the nodes in there, not the frame
-                    auto definition = NodeLibrary::Find(node.type);
+                    auto definition = NodeLibrary::Find(node);
                     if (definition && definition->kind == NodeKind::Frame) {
                         if (layout.min.x >= boxMin.x && layout.max.x <= boxMax.x && layout.min.y >= boxMin.y && layout.max.y <= boxMax.y)
                             selection.insert(node.id);
@@ -1498,7 +1579,7 @@ namespace Atlas::Editor::UI {
 
         auto node = FindNode(graph, mouse);
         if (node) {
-            auto frameDefinition = NodeLibrary::Find(graph.GetNode(node)->type);
+            auto frameDefinition = NodeLibrary::Find(*graph.GetNode(node));
             auto isFrame = frameDefinition && frameDefinition->kind == NodeKind::Frame;
 
             if (isFrame) {
@@ -1527,7 +1608,7 @@ namespace Atlas::Editor::UI {
             movedWithFrames.clear();
             for (auto id : selection) {
                 auto selectedNode = graph.GetNode(id);
-                auto selectedDefinition = selectedNode ? NodeLibrary::Find(selectedNode->type) : nullptr;
+                auto selectedDefinition = selectedNode ? NodeLibrary::Find(*selectedNode) : nullptr;
                 if (selectedDefinition && selectedDefinition->kind == NodeKind::Frame) {
                     for (auto inFrame : GetNodesInFrame(graph, *selectedNode))
                         movedWithFrames.insert(inFrame);
@@ -1805,7 +1886,7 @@ namespace Atlas::Editor::UI {
                 continue;
 
             // Frames lie behind all nodes, inside of them only the header and the corner can be grabbed
-            auto definition = NodeLibrary::Find(node->type);
+            auto definition = NodeLibrary::Find(*node);
             if (definition && definition->kind == NodeKind::Frame) {
                 auto isCorner = position.x > max.x - 14.0f && position.y > max.y - 14.0f;
                 if (!frame && (position.y <= min.y + layout->second.headerHeight || isCorner))
@@ -1893,7 +1974,7 @@ namespace Atlas::Editor::UI {
     const std::string* MaterialGraphPanel::FindPendingPartner(const Graph& graph, const NodeDefinition& definition) const {
 
         auto node = graph.GetNode(pendingPin.node);
-        auto pendingDefinition = node ? NodeLibrary::Find(node->type) : nullptr;
+        auto pendingDefinition = node ? NodeLibrary::Find(*node) : nullptr;
         if (!pendingDefinition)
             return nullptr;
 
@@ -1957,7 +2038,7 @@ namespace Atlas::Editor::UI {
                 continue;
 
             // The outputs stay, otherwise there is nothing to connect the graph to
-            auto definition = NodeLibrary::Find(node->type);
+            auto definition = NodeLibrary::Find(*node);
             if (definition && (definition->kind == NodeKind::VertexOutput || definition->kind == NodeKind::SurfaceOutput)) {
                 std::erase_if(graph.links, [&](const Link& link) { return link.toNode == id; });
                 continue;
@@ -2051,7 +2132,7 @@ namespace Atlas::Editor::UI {
         std::unordered_set<uint32_t> copied;
         json nodes = json::array();
         for (const auto& node : graph.nodes) {
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             if (!selection.contains(node.id) || (definition && (definition->kind == NodeKind::VertexOutput || definition->kind == NodeKind::SurfaceOutput)))
                 continue;
             nodes.push_back(node);
@@ -2109,7 +2190,7 @@ namespace Atlas::Editor::UI {
     void MaterialGraphPanel::Arrange(Graph& graph) {
 
         auto isFrame = [](const Node& node) {
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             return definition && definition->kind == NodeKind::Frame;
             };
 

@@ -55,6 +55,9 @@ namespace Atlas::MaterialGraph {
         std::vector<InputDefinition> inputs;
         std::vector<OutputDefinition> outputs;
 
+        // GLSL functions the expressions call, guarded such that a shader can contain them several times
+        std::string functions;
+
         // Initial value of Node::value
         vec4 defaultValue = vec4(0.0f);
         // Constants and parameters
@@ -71,9 +74,22 @@ namespace Atlas::MaterialGraph {
     public:
         static const NodeDefinition* Find(const std::string& type);
 
+        // Code nodes have their own pins, all other nodes the ones of their type
+        static const NodeDefinition* Find(const Node& node);
+
+        // Creates the pins and the function of a code node from its code, inputs and output type
+        static void UpdateCodeDefinition(Node& node);
+
+        // Names of the types in files and jobs, float to vec4 are also the GLSL types of code nodes
+        static std::string GetTypeName(ValueType type);
+
+        // Unknown names are generic
+        static ValueType FindType(const std::string& name);
+
         // All definitions in the order they are presented
         static const std::vector<NodeDefinition>& GetDefinitions();
 
+        static const std::string codeType;
         static const std::string vertexOutputType;
         static const std::string surfaceOutputType;
 

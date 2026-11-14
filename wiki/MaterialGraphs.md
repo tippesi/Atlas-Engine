@@ -29,6 +29,13 @@ changing them doesn't compile anything, so materials with the same graph share t
 into a node are baked into the shaders. Prefer parameters for what should differ per material. There is no limit on the number of
 textures, they are bindless.
 
+**Code:** a `Code` node runs GLSL, e.g. a formula that would take many nodes. Its code is the body of a function: the inputs
+added in the inspector are its arguments (name and type), it returns the result type. It can call the functions every shader
+has (`common.hsh`), but doesn't see the input of the stage; connect `Position`, `Time` and similar nodes to its inputs instead.
+Nodes with the same code share one function. Errors in the code show up when the pipeline compiles, not in the graph.
+Graph files and capture jobs store the inputs as `[["name", "vec3"], ...]` and the result type as `"codeOutputType": "vec3"`,
+types are `float`, `vec2`, `vec3` and `vec4`.
+
 **Opacity:** an `Opacity` that varies over the surface cuts out fragments, which turns off early depth tests and costs time even
 where nothing is cut out. An `Opacity` that only depends on parameters and constants, e.g. a fade or visibility switch per
 material, is evaluated per vertex instead and hides the whole draw, the fragments stay as fast as opaque ones.
@@ -38,7 +45,9 @@ material, is evaluated per vertex instead and hides the whole draw, the fragment
 - Opaque and cutout surfaces only, no transparency. The lighting model is the regular one, graphs write into the G-buffer.
 - Ray tracing doesn't run graphs: reflections, GI, ray traced shadows and the path tracer see the mesh without displacement and
   the regular material properties, which act as the fallback.
-- Impostors, vegetation clutter and terrain don't use graphs.
+- Impostors show the surface of a graph at the `Time` of its bake settings as it looked when they were generated, without
+  displacement and emission. Graphs whose shader doesn't compile show the regular properties, the log says which ones.
+  Vegetation clutter and terrain don't use graphs.
 - Pipelines compile in the background, meanwhile the regular properties of the material are drawn.
 
 ## From code and scripts

@@ -1,6 +1,11 @@
 #include "ImpostorRenderer.h"
 #include "helper/GeometryHelper.h"
 
+#include "../Log.h"
+#include "../materialgraph/Evaluator.h"
+
+#include <memory>
+
 namespace Atlas {
 
     namespace Renderer {
@@ -106,9 +111,6 @@ namespace Atlas {
             };
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
-            auto commandList = graphicsDevice->GetCommandList(Graphics::GraphicsQueue, true);
-
-            commandList->BeginCommands();
 
             Graphics::ImageDesc depthImageDesc = {
                 .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -118,6 +120,54 @@ namespace Atlas {
                 .format = VK_FORMAT_D32_SFLOAT
             };
             auto depthImage = graphicsDevice->CreateImage(depthImageDesc);
+
+            auto getRendering = [&](uint32_t layer) {
+                auto clear = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                return Graphics::RenderingDesc{
+                    .colorAttachments = {
+                        {.image = impostor->baseColorTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->normalTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->roughnessMetalnessAoTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->depthTexture->image, .layer = layer, .loadOp = clear}
+                    },
+                    .depthAttachment = {.image = depthImage, .loadOp = clear},
+                    .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
+                };
+                };
+
+            // Graphs draw their surface at the time of their bake, the vertices stay where they are. Materials without an
+            // entry or with an empty one draw their regular properties
+            struct GraphMaterial {
+                MaterialGraph::Evaluator evaluator;
+                Ref<Graphics::Pipeline> pipeline;
+            };
+
+            std::unordered_map<const Material*, std::unique_ptr<GraphMaterial>> graphMaterials;
+            for (const auto& subData : mesh->data.subData) {
+                auto material = subData.material.IsLoaded() ? subData.material.Get().get() : nullptr;
+                if (!material || !material->HasGraph() || graphMaterials.contains(material))
+                    continue;
+
+                auto graphMaterial = std::make_unique<GraphMaterial>();
+                auto shader = graphMaterial->evaluator.PrepareBake(*material);
+                if (shader.valid) {
+                    auto config = graphMaterial->evaluator.GetPipelineConfig(shader, Graphics::AttachmentFormats(getRendering(0)),
+                        mesh, material);
+                    graphMaterial->pipeline = PipelineManager::GetPipeline(config);
+                }
+
+                // Graphs which don't write the surface have no errors
+                auto isDrawable = shader.valid && graphMaterial->pipeline->isComplete;
+                if (!isDrawable && (shader.valid || !shader.errors.empty())) {
+                    auto reason = shader.valid ? "the shader of its graph doesn't compile" : "its graph has errors: " + shader.errors.front().message;
+                    Log::Warning("The impostor of " + mesh->name + " shows the regular properties of " + material->name + ", " + reason);
+                }
+                graphMaterials[material] = isDrawable ? std::move(graphMaterial) : nullptr;
+            }
+
+            auto commandList = graphicsDevice->GetCommandList(Graphics::GraphicsQueue, true);
+
+            commandList->BeginCommands();
 
             Buffer::UniformBuffer uniformBuffer(sizeof(Uniforms));
             Uniforms uniforms = {
@@ -145,24 +195,32 @@ namespace Atlas {
 
             for (size_t i = 0; i < viewMatrices.size(); i++) {
 
-                auto layer = uint32_t(i);
-                auto clear = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                auto rendering = Graphics::RenderingDesc{
-                    .colorAttachments = {
-                        {.image = impostor->baseColorTexture->image, .layer = layer, .loadOp = clear},
-                        {.image = impostor->normalTexture->image, .layer = layer, .loadOp = clear},
-                        {.image = impostor->roughnessMetalnessAoTexture->image, .layer = layer, .loadOp = clear},
-                        {.image = impostor->depthTexture->image, .layer = layer, .loadOp = clear}
-                    },
-                    .depthAttachment = {.image = depthImage, .loadOp = clear},
-                    .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
-                };
+                auto rendering = getRendering(uint32_t(i));
                 commandList->BeginRendering(rendering);
 
                 for (size_t j = 0; j < mesh->data.subData.size(); j++) {
 
                     auto subData = &mesh->data.subData[j];
                     auto material = subData->material;
+
+                    auto graphMaterial = graphMaterials.find(material.Get().get());
+                    if (graphMaterial != graphMaterials.end() && graphMaterial->second) {
+                        commandList->BindPipeline(graphMaterial->second->pipeline);
+                        graphMaterial->second->evaluator.Bind(commandList);
+
+                        auto pushConstants = MaterialGraph::Evaluator::ImpostorPushConstants {
+                            .vMatrix = viewMatrices[i],
+                            .time = material->graphBake.time,
+                            .invertUVs = mesh->invertUVs ? 1u : 0u,
+                            .distanceToPlaneCenter = distToCenter,
+                            .twoSided = material->twoSided ? 1u : 0u
+                        };
+                        commandList->PushConstants("constants", &pushConstants);
+
+                        commandList->DrawIndexed(subData->indicesCount, 1, subData->indicesOffset, 0, 0);
+                        continue;
+                    }
+
                     auto config = GetPipelineConfigForSubData(subData, mesh, Graphics::AttachmentFormats(rendering));
                     auto pipeline = PipelineManager::GetPipeline(config);
 

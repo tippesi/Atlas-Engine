@@ -226,6 +226,8 @@ namespace Atlas::Editor::UI {
         bool compileRequested = false;
         // The picker of a color is a popup, its item doesn't tell when the value is final
         bool colorEdited = false;
+        // Name of the code input being renamed, its links move once the name is final
+        std::string renamedCodeInput;
 
         static std::string clipboard;
 

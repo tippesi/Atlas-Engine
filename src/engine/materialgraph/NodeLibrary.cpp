@@ -1,10 +1,13 @@
 #include "NodeLibrary.h"
 
+#include "../common/Hash.h"
+
 #include <algorithm>
 #include <unordered_map>
 
 namespace Atlas::MaterialGraph {
 
+    const std::string NodeLibrary::codeType = "Code";
     const std::string NodeLibrary::vertexOutputType = "Vertex output";
     const std::string NodeLibrary::surfaceOutputType = "Surface output";
 
@@ -43,6 +46,63 @@ namespace Atlas::MaterialGraph {
 
         auto iter = map.find(type);
         return iter != map.end() ? iter->second : nullptr;
+
+    }
+
+    const NodeDefinition* NodeLibrary::Find(const Node& node) {
+
+        return node.codeDefinition ? node.codeDefinition.get() : Find(node.type);
+
+    }
+
+    std::string NodeLibrary::GetTypeName(ValueType type) {
+
+        switch (type) {
+        case ValueType::Float: return "float";
+        case ValueType::Vec2: return "vec2";
+        case ValueType::Vec3: return "vec3";
+        case ValueType::Vec4: return "vec4";
+        case ValueType::Texture: return "texture";
+        default: return "generic";
+        }
+
+    }
+
+    ValueType NodeLibrary::FindType(const std::string& name) {
+
+        for (auto type : { ValueType::Float, ValueType::Vec2, ValueType::Vec3, ValueType::Vec4, ValueType::Texture })
+            if (GetTypeName(type) == name)
+                return type;
+        return ValueType::Generic;
+
+    }
+
+    void NodeLibrary::UpdateCodeDefinition(Node& node) {
+
+        auto definition = CreateRef<NodeDefinition>(*Find(codeType));
+
+        Hash hash = 0;
+        HashCombine(hash, node.code);
+        HashCombine(hash, static_cast<int32_t>(node.codeOutputType));
+
+        std::string parameters, arguments;
+        for (size_t i = 0; i < node.codeInputs.size(); i++) {
+            const auto& input = node.codeInputs[i];
+            definition->inputs.push_back({ .name = input.name, .type = input.type });
+            HashCombine(hash, input.name);
+            HashCombine(hash, static_cast<int32_t>(input.type));
+
+            parameters += (i > 0 ? ", " : "") + GetTypeName(input.type) + " " + input.name;
+            arguments += (i > 0 ? ", $" : "$") + std::to_string(i);
+        }
+
+        // Nodes with the same code share their function
+        auto name = "MGCode" + std::to_string(hash);
+        definition->outputs = { { "Result", node.codeOutputType, name + "(" + arguments + ")" } };
+        definition->functions = "#ifndef " + name + "_DEFINED\n#define " + name + "_DEFINED\n" +
+            GetTypeName(node.codeOutputType) + " " + name + "(" + parameters + ") {\n" + node.code + "\n}\n#endif\n";
+
+        node.codeDefinition = definition;
 
     }
 
@@ -287,6 +347,9 @@ namespace Atlas::MaterialGraph {
         definitions.push_back({ .type = "Vertex to surface", .category = "Utility",
             .tooltip = "Calculates a value per vertex and interpolates it for the surface, which is cheaper than doing it per pixel",
             .kind = NodeKind::Varying, .inputs = { { "Value", G } }, .outputs = { { "Value", G, "" } } });
+        definitions.push_back({ .type = codeType, .category = "Utility",
+            .tooltip = "GLSL code with its own inputs, the body of a function which returns the result",
+            .outputs = { { "Result", F, "0.0" } } });
         definitions.push_back({ .type = "Comment", .category = "Utility", .tooltip = "A note in the graph",
             .kind = NodeKind::Comment });
         definitions.push_back({ .type = "Frame", .category = "Utility", .tooltip = "A box with a title around nodes, which move along with it",

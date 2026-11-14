@@ -1,9 +1,23 @@
 #include "MaterialGraphSerializer.h"
+#include "NodeLibrary.h"
 
 #include "../resource/ResourceManager.h"
 #include "../streaming/TextureStreaming.h"
 
 namespace Atlas::MaterialGraph {
+
+    void to_json(json& j, const CodeInput& p) {
+
+        j = json::array({ p.name, NodeLibrary::GetTypeName(p.type) });
+
+    }
+
+    void from_json(const json& j, CodeInput& p) {
+
+        j.at(0).get_to(p.name);
+        p.type = NodeLibrary::FindType(j.at(1).get<std::string>());
+
+    }
 
     void to_json(json& j, const Node& p) {
 
@@ -36,6 +50,12 @@ namespace Atlas::MaterialGraph {
         if (p.size.x > 0.0f)
             j["size"] = p.size;
 
+        if (p.type == NodeLibrary::codeType) {
+            j["code"] = p.code;
+            j["codeOutputType"] = NodeLibrary::GetTypeName(p.codeOutputType);
+            j["codeInputs"] = p.codeInputs;
+        }
+
     }
 
     void from_json(const json& j, Node& p) {
@@ -59,6 +79,15 @@ namespace Atlas::MaterialGraph {
         if (j.contains("inputValues")) {
             for (const auto& [name, value] : j["inputValues"].items())
                 p.inputValues[name] = value.get<vec4>();
+        }
+
+        if (p.type == NodeLibrary::codeType) {
+            std::string outputType = NodeLibrary::GetTypeName(p.codeOutputType);
+            try_get_json(j, "code", p.code);
+            try_get_json(j, "codeOutputType", outputType);
+            try_get_json(j, "codeInputs", p.codeInputs);
+            p.codeOutputType = NodeLibrary::FindType(outputType);
+            NodeLibrary::UpdateCodeDefinition(p);
         }
 
     }

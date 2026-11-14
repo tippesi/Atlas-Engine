@@ -33,17 +33,7 @@ namespace Atlas::Capture {
 
     static std::string GetTypeName(ValueType type, bool isColor = false) {
 
-        if (isColor)
-            return "color";
-
-        switch (type) {
-        case ValueType::Float: return "float";
-        case ValueType::Vec2: return "vec2";
-        case ValueType::Vec3: return "vec3";
-        case ValueType::Vec4: return "vec4";
-        case ValueType::Texture: return "texture";
-        default: return "generic";
-        }
+        return isColor ? "color" : NodeLibrary::GetTypeName(type);
 
     }
 
@@ -139,7 +129,7 @@ namespace Atlas::Capture {
     // Comments and frames keep their text in the name, it doesn't name the node
     static bool IsNote(const Node& node) {
 
-        auto definition = NodeLibrary::Find(node.type);
+        auto definition = NodeLibrary::Find(node);
         return definition && (definition->kind == NodeKind::Comment || definition->kind == NodeKind::Frame);
 
     }
@@ -284,7 +274,7 @@ namespace Atlas::Capture {
             pin = text.substr(dot + 1);
         }
 
-        auto definition = NodeLibrary::Find(node->type);
+        auto definition = NodeLibrary::Find(*node);
         if (!definition)
             throw std::runtime_error(GetLabel(*node) + " has an unknown type");
         auto outputs = GetPinNames(*definition, false);
@@ -306,11 +296,11 @@ namespace Atlas::Capture {
     static void ApplyNodeEntry(Graph& graph, GraphDocument& document, const std::map<std::string, uint32_t>& keys, uint32_t id, const json& entry) {
 
         static const std::set<std::string> known = { "key", "type", "node", "remove", "name", "value", "position", "size", "range", "group",
-            "order", "texture", "inputs" };
+            "order", "texture", "inputs", "code", "codeInputs", "codeOutputType" };
         CheckKeys(entry, known, "materialGraph node " + entry.dump());
 
         auto node = graph.GetNode(id);
-        auto definition = NodeLibrary::Find(node->type);
+        auto definition = NodeLibrary::Find(*node);
         auto label = GetLabel(*node);
 
         if (entry.contains("name"))
@@ -334,6 +324,31 @@ namespace Atlas::Capture {
             node->group = entry["group"].get<std::string>();
         if (entry.contains("order"))
             node->order = entry["order"].get<int32_t>();
+
+        if (entry.contains("code") || entry.contains("codeInputs") || entry.contains("codeOutputType")) {
+            if (node->type != NodeLibrary::codeType)
+                throw std::runtime_error(label + " isn't a code node, only those have code");
+
+            auto checkType = [&](ValueType type, const std::string& what) {
+                if (type == ValueType::Texture || type == ValueType::Generic)
+                    throw std::runtime_error(label + ": " + what + " needs one of the types float, vec2, vec3, vec4");
+                };
+
+            if (entry.contains("code"))
+                node->code = entry["code"].get<std::string>();
+            if (entry.contains("codeOutputType")) {
+                node->codeOutputType = NodeLibrary::FindType(entry["codeOutputType"].get<std::string>());
+                checkType(node->codeOutputType, "the result");
+            }
+            if (entry.contains("codeInputs")) {
+                // The format of graph files, [["name", "vec3"], ...] in the order of the arguments
+                node->codeInputs = entry["codeInputs"].get<std::vector<CodeInput>>();
+                for (const auto& input : node->codeInputs)
+                    checkType(input.type, "the input " + input.name);
+            }
+            NodeLibrary::UpdateCodeDefinition(*node);
+            definition = NodeLibrary::Find(*node);
+        }
 
         if (entry.contains("texture")) {
             if (!definition || definition->valueType != ValueType::Texture)
@@ -363,7 +378,7 @@ namespace Atlas::Capture {
                 auto [fromId, fromPin] = FindOutput(graph, keys, value.get<std::string>());
                 auto from = graph.GetNode(fromId);
                 if (!graph.Connect(fromId, fromPin, id, pin)) {
-                    auto output = NodeLibrary::Find(from->type)->FindOutput(fromPin);
+                    auto output = NodeLibrary::Find(*from)->FindOutput(fromPin);
                     auto reason = fromId == id ? "a node can't use its own output" : (output->type == ValueType::Texture) != (input->type == ValueType::Texture) ?
                         "textures only connect to textures" : "the link isn't valid";
                     throw std::runtime_error("can't connect " + GetLabel(*from) + "." + fromPin + " to " + label + "." + pin + ": " + reason);
@@ -835,7 +850,7 @@ namespace Atlas::Capture {
                 !MatchAnyPattern(filters, "#" + std::to_string(node.id)))
                 continue;
 
-            auto definition = NodeLibrary::Find(node.type);
+            auto definition = NodeLibrary::Find(node);
             auto line = "    " + GetLabel(node);
             if (definition && (definition->kind == NodeKind::Constant || (definition->kind == NodeKind::Parameter && definition->valueType != ValueType::Texture)))
                 line += " = " + FormatValue(node.value, GetComponentCount(definition->valueType));

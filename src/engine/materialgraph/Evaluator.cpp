@@ -1,4 +1,5 @@
 #include "Evaluator.h"
+#include "Compiler.h"
 
 #include "../common/ColorConverter.h"
 #include "../graphics/GraphicsDevice.h"
@@ -34,6 +35,20 @@ namespace Atlas::MaterialGraph {
         }
 
         UpdateParameters({}, 0, nullptr);
+
+    }
+
+    EvaluationShader Evaluator::PrepareBake(const Material& material) {
+
+        auto compiled = material.HasGraph() ? material.graph->GetCompiled() : nullptr;
+        if (!compiled || !compiled->hasSurface)
+            return {};
+
+        auto shader = Compiler::CompileBake(*material.graph.Get());
+        if (shader.valid)
+            UpdateParameters(shader.parameters, shader.parameterWords, &material);
+
+        return shader;
 
     }
 
@@ -89,7 +104,7 @@ namespace Atlas::MaterialGraph {
     }
 
     PipelineConfig Evaluator::GetPipelineConfig(const EvaluationShader& shader, const Graphics::AttachmentFormats& attachmentFormats,
-        Mesh::Mesh* mesh) {
+        Mesh::Mesh* mesh, const Material* impostorMaterial) {
 
         auto shaderConfig = ShaderConfig{
             { "materialGraph/evaluate.vsh", VK_SHADER_STAGE_VERTEX_BIT },
@@ -99,18 +114,26 @@ namespace Atlas::MaterialGraph {
         auto pipelineDesc = Graphics::GraphicsPipelineDesc{
             .attachmentFormats = attachmentFormats,
             .vertexInputInfo = mesh ? mesh->vertexArray.GetVertexInputState() : planeVertexArray.GetVertexInputState(),
-            .depthStencilInputInfo = Graphics::Initializers::InitPipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_ALWAYS),
         };
 
-        pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+        // Only the views of impostors have depth
+        if (!impostorMaterial)
+            pipelineDesc.depthStencilInputInfo = Graphics::Initializers::InitPipelineDepthStencilStateCreateInfo(false, false,
+                VK_COMPARE_OP_ALWAYS);
+        if (!impostorMaterial || impostorMaterial->twoSided || !mesh->cullBackFaces)
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
 
         std::vector<std::string> macros;
         if (mesh) {
             macros.push_back("EVALUATE_MESH");
+            if (mesh->data.texCoords.ContainsData())
+                macros.push_back("TEX_COORDS");
             if (mesh->data.tangents.ContainsData())
                 macros.push_back("TANGENTS");
             if (mesh->data.colors.ContainsData())
                 macros.push_back("VERTEX_COLORS");
+            if (impostorMaterial)
+                macros.push_back("EVALUATE_IMPOSTOR");
         }
         else {
             pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;

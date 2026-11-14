@@ -1,6 +1,5 @@
 #include "Baker.h"
 
-#include "Compiler.h"
 #include "Evaluator.h"
 
 #include "../common/ColorConverter.h"
@@ -38,20 +37,18 @@ namespace Atlas::MaterialGraph {
         if (!mesh->data.texCoords.ContainsData())
             return { .error = "The mesh has no texture coordinates" };
 
-        auto compiled = material->graph->GetCompiled();
-        if (!compiled || !compiled->hasSurface)
-            return { .error = "The graph doesn't write the surface, there is nothing to bake" };
-
         // The handle only gives const access
         auto target = material.Get().get();
         auto& settings = target->graphBake;
 
-        auto shader = Compiler::CompileBake(*material->graph.Get());
-        if (!shader.valid)
-            return { .error = shader.errors.empty() ? "The graph has errors" : shader.errors.front().message };
-
         Streaming::MeshStreaming::LoadGeometry(mesh);
         Streaming::TextureStreaming::LoadFullResolution(*material.Get());
+
+        Evaluator evaluator;
+        auto shader = evaluator.PrepareBake(*material.Get());
+        if (!shader.valid)
+            return { .error = shader.errors.empty() ? "The graph doesn't write the surface, there is nothing to bake" :
+                shader.errors.front().message };
 
         // An average doesn't need any details
         auto resolution = settings.mode == BakeMode::Average ? 64 : settings.resolution;
@@ -72,9 +69,6 @@ namespace Atlas::MaterialGraph {
         };
         for (size_t i = 0; i < targetCount; i++)
             rendering.colorAttachments[i] = { .image = targets[i]->image, .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR };
-
-        Evaluator evaluator;
-        evaluator.UpdateParameters(shader.parameters, shader.parameterWords, material.Get().get());
 
         auto config = evaluator.GetPipelineConfig(shader, Graphics::AttachmentFormats(rendering), mesh.Get().get());
         auto pipeline = PipelineManager::GetPipeline(config);

@@ -45,6 +45,8 @@ namespace Atlas::MaterialGraph {
             std::unordered_map<std::string, int32_t> variableNames;
             // The varyings the function reads, in the order they were found
             std::vector<uint32_t> usedVaryings;
+            // Functions of code nodes, they are defined before the function
+            std::string functions;
             // An output which is calculated without a link
             uint32_t previewNode = 0;
             std::string previewPin;

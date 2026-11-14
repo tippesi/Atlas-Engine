@@ -5,6 +5,7 @@
 #include "materialgraph/MaterialGraph.h"
 #include "materialgraph/MaterialGraphSerializer.h"
 #include "materialgraph/NodeLibrary.h"
+#include "loader/ShaderLoader.h"
 #include "mesh/MeshSerializer.h"
 
 #include <string>
@@ -964,5 +965,160 @@ TEST(MaterialGraphSerialization, UnbakedPropertiesRoundTrip) {
     EXPECT_EQ(loaded.graphBake.unbaked.emissiveIntensity, 3.0f);
     ASSERT_TRUE(loaded.graphBake.unbaked.maps.contains("normal"));
     EXPECT_EQ(loaded.graphBake.unbaked.maps["normal"], "textures/normal.png");
+
+}
+
+static uint32_t AddCode(TestGraph& test, const std::string& code, std::vector<CodeInput> inputs, ValueType output) {
+
+    auto& node = test.graph.AddNode(NodeLibrary::codeType);
+    node.code = code;
+    node.codeInputs = std::move(inputs);
+    node.codeOutputType = output;
+    NodeLibrary::UpdateCodeDefinition(node);
+    return node.id;
+
+}
+
+TEST(MaterialGraphCompiler, CodeNodesBecomeFunctions) {
+
+    TestGraph test;
+    auto color = test.Add("Color");
+    auto first = AddCode(test, "return a * b;", { { "a", ValueType::Vec3 }, { "b", ValueType::Float } }, ValueType::Vec3);
+    auto second = AddCode(test, "return a * b;", { { "a", ValueType::Vec3 }, { "b", ValueType::Float } }, ValueType::Vec3);
+    test.Link(color, "Value", first, "a");
+    test.Link(first, "Result", second, "a");
+    test.LinkSurface(second, NodeLibrary::baseColorPin, "Result");
+
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid);
+    const auto& code = compiled->mainFragmentCode;
+    EXPECT_TRUE(Contains(code, "(vec3 a, float b) {\nreturn a * b;\n}")) << code;
+    // Nodes with the same code share one function, only the stages which use it contain it
+    auto define = code.find("#define MGCode");
+    ASSERT_NE(define, std::string::npos);
+    EXPECT_EQ(code.find("#define MGCode", define + 1), std::string::npos) << code;
+    EXPECT_FALSE(Contains(compiled->mainVertexCode, "MGCode"));
+
+}
+
+TEST(MaterialGraphCompiler, InvalidCodeInputsAreReported) {
+
+    TestGraph test;
+    auto code = AddCode(test, "return x;", { { "1x", ValueType::Float }, { "x", ValueType::Float }, { "x", ValueType::Float } },
+        ValueType::Float);
+    test.LinkSurface(code, NodeLibrary::roughnessPin, "Result");
+    auto noReturn = AddCode(test, "0.5;", {}, ValueType::Float);
+    test.LinkSurface(noReturn, NodeLibrary::metalnessPin, "Result");
+
+    auto compiled = test.Compile();
+
+    EXPECT_FALSE(compiled->valid);
+    EXPECT_TRUE(test.HasError(*compiled, "letters, digits and underscores"));
+    EXPECT_TRUE(test.HasError(*compiled, "exists twice"));
+    EXPECT_TRUE(test.HasError(*compiled, "has to return"));
+
+}
+
+TEST(MaterialGraphSerialization, CodeNodesRoundTrip) {
+
+    TestGraph test;
+    auto code = AddCode(test, "return vec2(a, a);", { { "a", ValueType::Float } }, ValueType::Vec2);
+    test.LinkSurface(code, NodeLibrary::roughnessPin, "Result");
+    auto compiled = test.Compile();
+    ASSERT_TRUE(compiled->valid);
+
+    json j;
+    to_json(j, test.graph);
+    auto loaded = CreateRef<Graph>();
+    from_json(json::parse(j.dump()), *loaded);
+
+    auto node = loaded->GetNode(code);
+    ASSERT_NE(node, nullptr);
+    EXPECT_EQ(node->code, "return vec2(a, a);");
+    ASSERT_EQ(node->codeInputs.size(), size_t(1));
+    EXPECT_EQ(node->codeInputs.front().type, ValueType::Float);
+    EXPECT_EQ(node->codeOutputType, ValueType::Vec2);
+    EXPECT_EQ(loaded->Compile()->mainFragmentCode, compiled->mainFragmentCode);
+
+    // Types are stored by name, the same format capture jobs use
+    for (const auto& nodeJson : j["nodes"]) {
+        if (nodeJson["id"] != code)
+            continue;
+        EXPECT_EQ(nodeJson["codeOutputType"], "vec2");
+        EXPECT_EQ(nodeJson["codeInputs"], json::parse(R"([["a", "float"]])"));
+    }
+
+}
+
+TEST(MaterialGraphCompiler, CodeNodesWithManyInputs) {
+
+    std::vector<CodeInput> inputs;
+    for (int32_t i = 0; i < 11; i++)
+        inputs.push_back({ "a" + std::to_string(i), ValueType::Float });
+
+    TestGraph test;
+    auto code = AddCode(test, "return a10;", inputs, ValueType::Float);
+    for (int32_t i = 0; i < 11; i++)
+        test.graph.GetNode(code)->inputValues["a" + std::to_string(i)] = vec4(float(i) + 0.25f);
+    test.LinkSurface(code, NodeLibrary::roughnessPin, "Result");
+
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid);
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "(0.25, 1.25, 2.25, 3.25, 4.25, 5.25, 6.25, 7.25, 8.25, 9.25, 10.25)"))
+        << compiled->mainFragmentCode;
+
+}
+
+TEST(MaterialGraphCompiler, CodeNodesNeedNumberTypes) {
+
+    TestGraph test;
+    AddCode(test, "return 0.0;", {}, ValueType::Texture);
+    EXPECT_TRUE(test.HasError(*test.Compile(), "The result needs a number or vector type"));
+
+    // Unknown types in files are generic, which is reported as well
+    TestGraph saved;
+    auto code = AddCode(saved, "return a;", { { "a", ValueType::Float } }, ValueType::Float);
+    json j;
+    to_json(j, saved.graph);
+    for (auto& nodeJson : j["nodes"]) {
+        if (nodeJson["id"] != code)
+            continue;
+        nodeJson["codeOutputType"] = "mat3";
+        nodeJson["codeInputs"][0][1] = "sampler2D";
+    }
+
+    Graph loaded;
+    from_json(j, loaded);
+    auto compiled = loaded.Compile();
+
+    EXPECT_FALSE(compiled->valid);
+    EXPECT_TRUE(test.HasError(*compiled, "The result needs a number or vector type"));
+    EXPECT_TRUE(test.HasError(*compiled, "The input a needs a number or vector type"));
+
+}
+
+TEST(MaterialGraphEvaluation, CodeNodesAreDefinedInEvaluations) {
+
+    TestGraph test;
+    auto color = test.Add("Color");
+    auto code = AddCode(test, "return a * 0.5;", { { "a", ValueType::Vec3 } }, ValueType::Vec3);
+    test.Link(color, "Value", code, "a");
+    test.LinkSurface(code, NodeLibrary::baseColorPin, "Result");
+
+    auto preview = Compiler::CompilePreview(test.graph, code);
+    auto bake = Compiler::CompileBake(test.graph);
+
+    // The function comes before the one which calls it
+    for (const auto& [shader, signature] : { std::pair(preview, "EvaluateMaterialPreview(MaterialSurfaceInput surfaceIn) {"),
+        std::pair(bake, "EvaluateMaterialSurface(MaterialSurfaceInput surfaceIn) {") }) {
+        ASSERT_TRUE(shader.valid);
+        auto file = Loader::ShaderLoader::LoadFile(shader.fragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT).code;
+        auto definition = file.find("vec3 MGCode");
+        auto caller = file.find(signature);
+        ASSERT_NE(caller, std::string::npos) << file;
+        EXPECT_LT(definition, caller) << file;
+    }
 
 }

@@ -30,11 +30,18 @@ namespace Atlas::MaterialGraph {
         AllStages = VertexStage | SurfaceStage
     };
 
+    struct NodeDefinition;
+
     // Fallback of a texture parameter without a texture
     enum class DefaultTexture {
         White = 0,
         Black,
         Normal
+    };
+
+    struct CodeInput {
+        std::string name;
+        ValueType type = ValueType::Float;
     };
 
     struct Node {
@@ -61,6 +68,13 @@ namespace Atlas::MaterialGraph {
 
         // Size of frames, in the units of the canvas
         vec2 size = vec2(0.0f);
+
+        // Code nodes: the body of a GLSL function, which gets the inputs as arguments and returns the output
+        std::string code;
+        std::vector<CodeInput> codeInputs;
+        ValueType codeOutputType = ValueType::Float;
+        // Pins of a code node, NodeLibrary::UpdateCodeDefinition replaces it after the code or its pins changed
+        Ref<const NodeDefinition> codeDefinition;
     };
 
     struct Link {

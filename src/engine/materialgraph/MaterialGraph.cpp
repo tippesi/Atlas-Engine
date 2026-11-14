@@ -63,6 +63,11 @@ namespace Atlas::MaterialGraph {
         if (auto definition = NodeLibrary::Find(type))
             node.value = definition->defaultValue;
 
+        if (type == NodeLibrary::codeType) {
+            node.code = "return 0.0;";
+            NodeLibrary::UpdateCodeDefinition(node);
+        }
+
         return node;
 
     }
@@ -95,8 +100,8 @@ namespace Atlas::MaterialGraph {
         if (!from || !to || fromNode == toNode)
             return false;
 
-        auto fromDefinition = NodeLibrary::Find(from->type);
-        auto toDefinition = NodeLibrary::Find(to->type);
+        auto fromDefinition = NodeLibrary::Find(*from);
+        auto toDefinition = NodeLibrary::Find(*to);
         if (!fromDefinition || !toDefinition)
             return false;
 
