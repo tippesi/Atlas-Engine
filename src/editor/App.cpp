@@ -656,11 +656,19 @@ namespace Atlas::Editor {
         ImGui::Begin("##Empty state", nullptr, flags);
 
         if (!waitToLoadScenes.empty()) {
+            auto heading = "Loading " + std::to_string(waitToLoadScenes.size()) + " scenes...";
+            if (waitToLoadScenes.size() <= 3) {
+                std::string names;
+                for (const auto& handle : waitToLoadScenes)
+                    names += (names.empty() ? "" : ", ") + Common::Path::GetFileNameWithoutExtension(handle.GetResource()->path);
+                heading = "Loading " + names + "...";
+            }
+
             // The spinner is centered above the heading, the window sizes itself to the heading
-            auto textWidth = ImGui::CalcTextSize("Loading scene...").x * UI::Widgets::headingScale;
+            auto textWidth = ImGui::CalcTextSize(heading.c_str()).x * UI::Widgets::headingScale;
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (textWidth - ImGui::GetTextLineHeight() * 2.0f) * 0.5f));
             UI::Widgets::Spinner(2.0f);
-            UI::Widgets::Heading("Loading scene...");
+            UI::Widgets::Heading(heading.c_str());
             ImGui::End();
             return;
         }
@@ -1148,15 +1156,25 @@ namespace Atlas::Editor {
                     text("No scene open", ImGuiCol_TextDisabled);
                 }
 
-                // Only long running work is worth to be mentioned, short jobs would just flicker
+                // Jobs come in bursts, the peak of the last half second avoids a flickering count. Short work isn't mentioned
+                auto deltaTime = ImGui::GetIO().DeltaTime;
                 auto backgroundJobs = JobSystem::GetPendingJobCount(JobPriority::Medium) +
                     JobSystem::GetPendingJobCount(JobPriority::Low);
-                backgroundJobTime = backgroundJobs > 0 ? backgroundJobTime + ImGui::GetIO().DeltaTime : 0.0f;
-                if (backgroundJobTime > 0.5f) {
+                backgroundJobPeak = std::max(backgroundJobPeak, backgroundJobs);
+
+                backgroundJobRefreshTime += deltaTime;
+                if (backgroundJobRefreshTime > 0.5f || backgroundJobShown == 0) {
+                    backgroundJobShown = backgroundJobPeak;
+                    backgroundJobPeak = backgroundJobs;
+                    backgroundJobRefreshTime = 0.0f;
+                }
+                backgroundJobTime = backgroundJobShown > 0 ? backgroundJobTime + deltaTime : 0.0f;
+
+                if (backgroundJobTime > 0.5f && backgroundJobShown > 0) {
                     gap(16.0f);
                     const char* dots[] = { ".", "..", "..." };
                     char jobText[64];
-                    std::snprintf(jobText, sizeof(jobText), "%d background %s%s", backgroundJobs, backgroundJobs == 1 ? "job" : "jobs",
+                    std::snprintf(jobText, sizeof(jobText), "%d background %s%s", backgroundJobShown, backgroundJobShown == 1 ? "job" : "jobs",
                         dots[int32_t(ImGui::GetTime() * 2.0) % 3]);
                     text(jobText, ImGuiCol_TextDisabled);
                 }

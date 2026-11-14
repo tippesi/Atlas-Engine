@@ -136,7 +136,11 @@ namespace Atlas::Editor {
         ImGuiID drawerDockNodeID = 0;
 
         float drawerSpringTime = 0.0f;
+        // Background job count shown in the status bar, updated twice a second
         float backgroundJobTime = 0.0f;
+        float backgroundJobRefreshTime = 0.0f;
+        int32_t backgroundJobPeak = 0;
+        int32_t backgroundJobShown = 0;
 
         float systemUiScale = 0.0f;
         float fontRasterSize = 0.0f;
