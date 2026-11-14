@@ -1,5 +1,6 @@
 #include "TerrainStorageCell.h"
 #include "TerrainStorage.h"
+#include "../common/MathHelper.h"
 
 namespace Atlas {
 
@@ -82,9 +83,10 @@ namespace Atlas {
                 for (int32_t j = 0; j < heightFieldSideLength; j++) {
                     auto idx = i * heightFieldSideLength + j;
 
+                    // Holes keep a finite position, only the filler of a cell without any triangle uses them
                     vertices[idx] = vec3(
                         float(j) * stretchFactor, 
-                        heightData[idx] == FLT_MAX ? FLT_MAX : heightData[idx] * heightFactor,
+                        heightData[idx] == FLT_MAX ? 0.0f : heightData[idx] * heightFactor,
                         float(i) * stretchFactor
                     );
 
@@ -100,11 +102,11 @@ namespace Atlas {
             auto vertexSideCount = heightFieldSideLength - 1;
             AE_ASSERT(vertexSideCount > 0);
 
-            std::vector<uint32_t> indices(vertexSideCount * vertexSideCount * 6);
+            std::vector<uint32_t> indices;
+            indices.reserve(vertexSideCount * vertexSideCount * 6);
             for (int32_t i = 0; i < vertexSideCount; i++) {
                 for (int32_t j = 0; j < vertexSideCount; j++) {
-                    auto idx = i * heightFieldSideLength + j;
-                    auto baseIdx = (i * vertexSideCount + j) * 6;
+                    uint32_t idx = i * heightFieldSideLength + j;
 
                     bool hole = heightData[idx] == FLT_MAX || heightData[idx + 1] == FLT_MAX ||
                         heightData[idx + heightFieldSideLength] == FLT_MAX || 
@@ -112,15 +114,13 @@ namespace Atlas {
                     if (hole)
                         continue;
 
-                    indices[baseIdx + 0] = idx;
-                    indices[baseIdx + 1] = idx + 1;
-                    indices[baseIdx + 2] = idx + heightFieldSideLength;
-
-                    indices[baseIdx + 3] = idx + 1;
-                    indices[baseIdx + 4] = idx + heightFieldSideLength + 1;
-                    indices[baseIdx + 5] = idx + heightFieldSideLength;
+                    indices.insert(indices.end(), { idx, idx + 1, idx + heightFieldSideLength,
+                        idx + 1, idx + heightFieldSideLength + 1, idx + heightFieldSideLength });
                 }
             }
+            // A BLAS needs geometry, a cell which is all hole gets a degenerate triangle
+            if (indices.empty())
+                indices = { 0, 0, 0 };
 
             Buffer::IndexBuffer indexBuffer(VK_INDEX_TYPE_UINT32, indices.size(), indices.data(), true);
             Buffer::VertexBuffer vertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertices.size(), vertices.data(), true);
@@ -145,7 +145,7 @@ namespace Atlas {
                 triangle.v1 = vertices[indices[i * 3 + 1]];
                 triangle.v2 = vertices[indices[i * 3 + 2]];
 
-                vec3 normal = -glm::normalize(glm::cross(triangle.v0 - triangle.v1, triangle.v0 - triangle.v2));
+                vec3 normal = -Helper::Math::NormalizeOrZero(glm::cross(triangle.v0 - triangle.v1, triangle.v0 - triangle.v2));
 
                 normal *= normal.y < 0.0f ? -1.0f : 1.0f;
 

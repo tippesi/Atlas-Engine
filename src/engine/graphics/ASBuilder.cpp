@@ -330,6 +330,9 @@ namespace Atlas {
             for (const auto idx : batchIndices) {
                 auto& blas = blases[idx];
                 auto compactedSize = compactSizes[poolCounter++];
+                // Drivers report no size for structures without active triangles, e.g. terrain cells which are all hole
+                if (compactedSize == 0)
+                    continue;
 
                 BLASDesc desc;
                 desc.geometries = blas->geometries;
