@@ -49,6 +49,9 @@ namespace Atlas::Editor {
         static ImVec4 AssetCardHovered(float alpha = 1.0f);
         static ImVec4 AssetThumbnail(float alpha = 1.0f);
 
+        // Blue-grey behind small previews, e.g. in resource selections, which sets them apart from the panel
+        static ImVec4 PreviewBackground(float alpha = 1.0f);
+
         // Shadow of windows which float above the layout, e.g. drawers
         static ImVec4 Shadow(float alpha = 1.0f);
 
@@ -69,7 +72,13 @@ namespace Atlas::Editor {
         // Pins and links show the type of their value, in the order of MaterialGraph::ValueType
         static ImVec4 GraphValue(int32_t type, float alpha = 1.0f);
 
+        // Syntax highlighting: keyword, type, builtin, number, string, comment and preprocessor
+        static ImVec4 Code(int32_t type, float alpha = 1.0f);
+
         static constexpr float overlayRounding = 6.0f;
+
+        // Monospace font of code, null until the fonts are loaded
+        static ImFont* codeFont;
 
     private:
         static bool dark;

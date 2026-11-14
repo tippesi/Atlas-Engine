@@ -16,17 +16,7 @@ namespace Atlas::Editor {
         auto& mainHierarchy = mainGroup.GetComponent<HierarchyComponent>();
         mainHierarchy.root = true;
 
-        auto directionalLightEntity = scene->CreateEntity();
-        directionalLightEntity.AddComponent<NameComponent>("Directional light");
-        auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
-
-        directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 1.0f);
-        directionalLight.color = vec3(255, 236, 209) / 255.0f;
-        directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
-        directionalLight.isMain = true;
-
-        mainHierarchy.AddChild(directionalLightEntity);
+        AddDirectionalLight(scene, mainHierarchy, vec3(0.0f, -1.0f, 1.0f));
 
         scene->reflection = CreateRef<Lighting::Reflection>();
 
@@ -66,6 +56,42 @@ namespace Atlas::Editor {
 
     }
 
+    Ref<Scene::Scene> DataCreator::CreatePreviewScene(const std::string& name, const Volume::AABB& bounds) {
+
+        auto extent = std::max(glm::length(bounds.max - bounds.min), 1.0f);
+        auto scene = CreateRef<Scene::Scene>(name, vec3(-4.0f * extent), vec3(4.0f * extent), 4);
+
+        auto mainGroup = scene->CreatePrefab<Group>("Root");
+        auto& mainHierarchy = mainGroup.GetComponent<HierarchyComponent>();
+        mainHierarchy.root = true;
+
+        // Lights the side the camera of the preview looks at first
+        AddDirectionalLight(scene, mainHierarchy, vec3(-0.5f, -1.0f, -1.0f));
+
+        // Only what lights the asset, e.g. no clouds or fog, such that a preview is created fast
+        scene->reflection = CreateRef<Lighting::Reflection>();
+        scene->sky.atmosphere = CreateRef<Lighting::Atmosphere>();
+        scene->sss = CreateRef<Lighting::SSS>();
+
+        scene->postProcessing.taa = PostProcessing::TAA(0.99f);
+        scene->postProcessing.sharpen.enable = true;
+        scene->postProcessing.sharpen.factor = 0.15f;
+
+        // The probes only cover the asset
+        auto volumeMargin = vec3(0.1f * extent);
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(
+            Volume::AABB(bounds.min - volumeMargin, bounds.max + volumeMargin), ivec3(8), 1);
+        scene->irradianceVolume->rayCount = 32;
+
+        scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
+        scene->physicsWorld->pauseSimulation = true;
+
+        scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
+
+        return scene;
+
+    }
+
     Ref<Scene::Scene> DataCreator::CreateSceneFromMesh(const std::string& filename, vec3 min, vec3 max,
         int32_t depth, bool invertUVs, bool addRigidBodies, bool makeMeshesStatic, Loader::ImportTextureFormat textureFormat) {
 
@@ -75,17 +101,7 @@ namespace Atlas::Editor {
         auto rootEntity = scene->GetRootEntity();
         auto& mainHierarchy = rootEntity.GetComponent<HierarchyComponent>();
 
-        auto directionalLightEntity = scene->CreateEntity();
-        directionalLightEntity.AddComponent<NameComponent>("Directional light");
-        auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
-
-        directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 1.0f);
-        directionalLight.color = vec3(255, 236, 209) / 255.0f;
-        directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
-        directionalLight.isMain = true;
-
-        mainHierarchy.AddChild(directionalLightEntity);
+        AddDirectionalLight(scene, mainHierarchy, vec3(0.0f, -1.0f, 1.0f));
         
         scene->reflection = CreateRef<Lighting::Reflection>();
 
@@ -226,6 +242,22 @@ namespace Atlas::Editor {
         mesh->name = "Detailed sphere";
 
         return mesh;
+
+    }
+
+    void DataCreator::AddDirectionalLight(Ref<Scene::Scene>& scene, HierarchyComponent& parent, vec3 direction) {
+
+        auto directionalLightEntity = scene->CreateEntity();
+        directionalLightEntity.AddComponent<NameComponent>("Directional light");
+        auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
+
+        directionalLight.properties.directional.direction = direction;
+        directionalLight.color = vec3(255, 236, 209) / 255.0f;
+        directionalLight.intensity = 10.0f;
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
+        directionalLight.isMain = true;
+
+        parent.AddChild(directionalLightEntity);
 
     }
 

@@ -78,7 +78,8 @@ namespace Atlas {
 
             void SetPreExposure(GlobalUniforms& uniforms, const Ref<Scene::Scene>& scene);
 
-            void PreintegrateBRDF();
+            // Only recorded with the first frame, the renderer doesn't wait for it when it is created
+            void PreintegrateBRDF(Graphics::CommandList* commandList);
 
             void UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 

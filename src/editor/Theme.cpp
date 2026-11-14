@@ -5,6 +5,7 @@
 namespace Atlas::Editor {
 
     bool Theme::dark = true;
+    ImFont* Theme::codeFont = nullptr;
 
     static ImVec4 Rgb(int r, int g, int b, float a = 1.0f) {
 
@@ -363,6 +364,12 @@ namespace Atlas::Editor {
 
     }
 
+    ImVec4 Theme::PreviewBackground(float alpha) {
+
+        return dark ? Rgb(52, 60, 74, alpha) : Rgb(212, 220, 232, alpha);
+
+    }
+
     ImVec4 Theme::Shadow(float alpha) {
 
         return ImVec4(0.0f, 0.0f, 0.0f, (dark ? 0.3f : 0.15f) * alpha);
@@ -435,6 +442,20 @@ namespace Atlas::Editor {
         case 3: return Rgb(235, 130, 160, alpha);
         case 4: return Rgb(200, 140, 240, alpha);
         default: return Rgb(200, 200, 200, alpha);
+        }
+
+    }
+
+    ImVec4 Theme::Code(int32_t type, float alpha) {
+
+        switch (type) {
+        case 0: return dark ? Rgb(86, 156, 214, alpha) : Rgb(0, 92, 197, alpha);
+        case 1: return dark ? Rgb(78, 201, 176, alpha) : Rgb(38, 127, 153, alpha);
+        case 2: return dark ? Rgb(220, 220, 170, alpha) : Rgb(121, 94, 38, alpha);
+        case 3: return dark ? Rgb(181, 206, 168, alpha) : Rgb(9, 134, 88, alpha);
+        case 4: return dark ? Rgb(206, 145, 120, alpha) : Rgb(163, 21, 21, alpha);
+        case 5: return dark ? Rgb(106, 153, 85, alpha) : Rgb(0, 128, 0, alpha);
+        default: return dark ? Rgb(197, 134, 192, alpha) : Rgb(175, 0, 219, alpha);
         }
 
     }

@@ -232,13 +232,7 @@ namespace Atlas::Editor::UI {
 
         auto bounds = GetBounds();
         auto extent = std::max(glm::length(bounds.max - bounds.min), 1.0f);
-        scene = DataCreator::CreateScene(name, vec3(-4.0f * extent), vec3(4.0f * extent), 4);
-        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(-2.0f * extent), vec3(2.0f * extent)));
-
-        // Light the side the camera looks at first
-        auto lightSubset = scene->entityManager.GetSubset<LightComponent>();
-        for (auto lightEntity : lightSubset)
-            lightSubset.Get(lightEntity).properties.directional.direction = vec3(-0.5f, -1.0f, -1.0f);
+        scene = DataCreator::CreatePreviewScene(name, bounds);
 
         entity = CreatePreviewEntity();
 

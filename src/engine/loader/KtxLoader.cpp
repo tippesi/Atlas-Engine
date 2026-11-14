@@ -17,51 +17,53 @@
 #include <atomic>
 #include <random>
 #include <filesystem>
+#include <functional>
 
 namespace Atlas::Loader {
 
-    // Copies a ktx2 file without the levels above maxImageResolution, so they are neither inflated nor transcoded
+    // Copies a ktx2 file without the levels above maxImageResolution, so they are neither read, inflated nor transcoded
     // Only for supercompressed levels without global data, their level data needs no alignment
-    static bool TrimLevels(const std::vector<char>& buffer, int32_t maxImageResolution,
-        std::vector<char>& trimmed, uint32_t& skippedLevels) {
+    static bool TrimLevels(const std::function<bool(size_t, size_t, char*)>& read, size_t fileSize, int32_t maxImageResolution,
+        std::vector<char>& trimmed, uint32_t& skippedLevels, ivec2& fileResolution) {
 
         const size_t headerSize = 80;
         const size_t levelIndexEntrySize = 24;
         const uint8_t identifier[12] = { 0xAB, 'K', 'T', 'X', ' ', '2', '0', 0xBB, '\r', '\n', 0x1A, '\n' };
 
-        if (buffer.size() < headerSize || std::memcmp(buffer.data(), identifier, sizeof(identifier)) != 0)
+        char header[headerSize];
+        if (fileSize < headerSize || !read(0, headerSize, header) || std::memcmp(header, identifier, sizeof(identifier)) != 0)
             return false;
 
-        auto read32 = [&](size_t offset) {
+        auto read32 = [](const char* data, size_t offset) {
             uint32_t value;
-            std::memcpy(&value, buffer.data() + offset, sizeof(value));
+            std::memcpy(&value, data + offset, sizeof(value));
             return value;
             };
-        auto read64 = [&](size_t offset) {
+        auto read64 = [](const char* data, size_t offset) {
             uint64_t value;
-            std::memcpy(&value, buffer.data() + offset, sizeof(value));
+            std::memcpy(&value, data + offset, sizeof(value));
             return value;
             };
 
-        auto width = read32(20);
-        auto height = read32(24);
-        auto depth = read32(28);
-        auto faceCount = read32(36);
-        auto levelCount = read32(40);
-        auto supercompression = read32(44);
-        auto dfdOffset = read32(48);
-        auto dfdLength = read32(52);
-        auto kvdOffset = read32(56);
-        auto kvdLength = read32(60);
-        auto sgdLength = read64(72);
+        auto width = read32(header, 20);
+        auto height = read32(header, 24);
+        auto depth = read32(header, 28);
+        auto faceCount = read32(header, 36);
+        auto levelCount = read32(header, 40);
+        auto supercompression = read32(header, 44);
+        auto dfdOffset = read32(header, 48);
+        auto dfdLength = read32(header, 52);
+        auto kvdOffset = read32(header, 56);
+        auto kvdLength = read32(header, 60);
+        auto sgdLength = read64(header, 72);
 
         const uint32_t zstd = 2, zlib = 3;
         if ((supercompression != zstd && supercompression != zlib) || sgdLength > 0 ||
-            depth > 0 || faceCount != 1 || levelCount < 2)
+            depth > 0 || faceCount != 1 || levelCount < 2 || levelCount > 32)
             return false;
 
-        if (buffer.size() < headerSize + levelCount * levelIndexEntrySize ||
-            size_t(dfdOffset) + dfdLength > buffer.size() || size_t(kvdOffset) + kvdLength > buffer.size())
+        if (fileSize < headerSize + levelCount * levelIndexEntrySize ||
+            size_t(dfdOffset) + dfdLength > fileSize || size_t(kvdOffset) + kvdLength > fileSize)
             return false;
 
         skippedLevels = 0;
@@ -73,6 +75,10 @@ namespace Atlas::Loader {
         if (skippedLevels == 0)
             return false;
 
+        std::vector<char> levelIndex(levelCount * levelIndexEntrySize);
+        if (!read(headerSize, levelIndex.size(), levelIndex.data()))
+            return false;
+
         auto newLevelCount = levelCount - skippedLevels;
         auto newDfdOffset = uint32_t(headerSize + newLevelCount * levelIndexEntrySize);
         auto newKvdOffset = kvdLength > 0 ? newDfdOffset + dfdLength : 0u;
@@ -80,10 +86,9 @@ namespace Atlas::Loader {
 
         size_t dataSize = 0;
         for (uint32_t i = skippedLevels; i < levelCount; i++) {
-            auto entry = headerSize + i * levelIndexEntrySize;
-            auto levelOffset = read64(entry);
-            auto levelLength = read64(entry + 8);
-            if (levelOffset + levelLength > buffer.size())
+            auto levelOffset = read64(levelIndex.data(), i * levelIndexEntrySize);
+            auto levelLength = read64(levelIndex.data(), i * levelIndexEntrySize + 8);
+            if (levelLength > fileSize || levelOffset > fileSize - levelLength)
                 return false;
             dataSize += levelLength;
         }
@@ -97,7 +102,7 @@ namespace Atlas::Loader {
             std::memcpy(trimmed.data() + offset, &value, sizeof(value));
             };
 
-        std::memcpy(trimmed.data(), buffer.data(), headerSize);
+        std::memcpy(trimmed.data(), header, headerSize);
         write32(20, glm::max(width >> skippedLevels, 1u));
         write32(24, height > 0 ? glm::max(height >> skippedLevels, 1u) : 0u);
         write32(40, newLevelCount);
@@ -105,27 +110,43 @@ namespace Atlas::Loader {
         write32(56, newKvdOffset);
         write64(64, 0);
 
-        std::memcpy(trimmed.data() + newDfdOffset, buffer.data() + dfdOffset, dfdLength);
-        if (kvdLength > 0)
-            std::memcpy(trimmed.data() + newKvdOffset, buffer.data() + kvdOffset, kvdLength);
+        if (!read(dfdOffset, dfdLength, trimmed.data() + newDfdOffset))
+            return false;
+        if (kvdLength > 0 && !read(kvdOffset, kvdLength, trimmed.data() + newKvdOffset))
+            return false;
 
         // Levels are stored from the smallest to the largest one
         for (uint32_t i = levelCount; i-- > skippedLevels;) {
-            auto entry = headerSize + i * levelIndexEntrySize;
-            auto levelOffset = read64(entry);
-            auto levelLength = read64(entry + 8);
-            auto uncompressedLength = read64(entry + 16);
+            auto entry = i * levelIndexEntrySize;
+            auto levelOffset = read64(levelIndex.data(), entry);
+            auto levelLength = read64(levelIndex.data(), entry + 8);
+            auto uncompressedLength = read64(levelIndex.data(), entry + 16);
 
             auto newEntry = headerSize + (i - skippedLevels) * levelIndexEntrySize;
             write64(newEntry, dataOffset);
             write64(newEntry + 8, levelLength);
             write64(newEntry + 16, uncompressedLength);
 
-            std::memcpy(trimmed.data() + dataOffset, buffer.data() + levelOffset, levelLength);
+            if (!read(levelOffset, levelLength, trimmed.data() + dataOffset))
+                return false;
             dataOffset += levelLength;
         }
 
+        fileResolution = ivec2(width, height);
         return true;
+
+    }
+
+    static bool TrimLevels(std::ifstream& stream, int32_t maxImageResolution,
+        std::vector<char>& trimmed, uint32_t& skippedLevels, ivec2& fileResolution) {
+
+        auto read = [&](size_t offset, size_t size, char* data) {
+            stream.clear();
+            stream.seekg(std::streamoff(offset));
+            stream.read(data, std::streamsize(size));
+            return size_t(stream.gcount()) == size;
+            };
+        return TrimLevels(read, AssetLoader::GetFileSize(stream), maxImageResolution, trimmed, skippedLevels, fileResolution);
 
     }
 
@@ -145,37 +166,9 @@ namespace Atlas::Loader {
 
     }
 
-    Ref<KtxImage> KtxLoader::LoadImage(const std::string& filename, bool colorSpaceConversion,
-        int32_t maxImageResolution) {
-
-        const auto normalizedFileName = Common::Path::Normalize(filename);
-
-        auto fileStream = AssetLoader::ReadFile(normalizedFileName, std::ios::in | std::ios::binary);
-
-        if (!fileStream.is_open()) {
-            throw ResourceLoadException(normalizedFileName, "Couldn't open ktx file stream");
-        }
-
-        auto buffer = AssetLoader::GetFileContent(fileStream);
-        fileStream.close();
-
-        auto image = LoadImageFromMemory(buffer, normalizedFileName, colorSpaceConversion, maxImageResolution);
-
-        Log::Message("Loaded image " + normalizedFileName);
-
-        return image;
-
-    }
-
-    Ref<KtxImage> KtxLoader::LoadImageFromMemory(const std::vector<char>& buffer, const std::string& filename,
-        bool colorSpaceConversion, int32_t maxImageResolution) {
-
-        const auto normalizedFileName = Common::Path::Normalize(filename);
-
-        std::vector<char> trimmedBuffer;
-        uint32_t trimmedLevels = 0;
-        auto trimmed = TrimLevels(buffer, maxImageResolution, trimmedBuffer, trimmedLevels);
-        const auto& fileBuffer = trimmed ? trimmedBuffer : buffer;
+    // The levels of a ktx2 file up to maxImageResolution, the trimmed levels were removed from the file before
+    static Ref<KtxImage> LoadLevels(const std::vector<char>& fileBuffer, const std::string& normalizedFileName,
+        bool colorSpaceConversion, int32_t maxImageResolution, uint32_t trimmedLevels, ivec2 fileResolution) {
 
         ktxTexture2* texture = nullptr;
         auto result = ktxTexture2_CreateFromMemory(reinterpret_cast<const ktx_uint8_t*>(fileBuffer.data()),
@@ -232,12 +225,8 @@ namespace Atlas::Loader {
         image->layers = int32_t(texture->numLayers);
         image->mipLevels = texture->numLevels - baseLevel;
         image->skippedMipLevels = trimmedLevels + baseLevel;
-        image->fileWidth = int32_t(texture->baseWidth);
-        image->fileHeight = int32_t(texture->baseHeight);
-        if (trimmed) {
-            std::memcpy(&image->fileWidth, buffer.data() + 20, sizeof(int32_t));
-            std::memcpy(&image->fileHeight, buffer.data() + 24, sizeof(int32_t));
-        }
+        image->fileWidth = trimmedLevels > 0 ? fileResolution.x : int32_t(texture->baseWidth);
+        image->fileHeight = trimmedLevels > 0 ? fileResolution.y : int32_t(texture->baseHeight);
         image->format = format;
         image->fileName = normalizedFileName;
 
@@ -281,12 +270,62 @@ namespace Atlas::Loader {
 
     }
 
-    Ref<Common::Image<uint8_t>> KtxLoader::DecodeImage(const std::vector<char>& buffer, int32_t maxImageResolution) {
+    Ref<KtxImage> KtxLoader::LoadImage(const std::string& filename, bool colorSpaceConversion,
+        int32_t maxImageResolution) {
+
+        const auto normalizedFileName = Common::Path::Normalize(filename);
+
+        auto fileStream = AssetLoader::ReadFile(normalizedFileName, std::ios::in | std::ios::binary);
+
+        if (!fileStream.is_open()) {
+            throw ResourceLoadException(normalizedFileName, "Couldn't open ktx file stream");
+        }
+
+        // The levels above the resolution aren't read from the file at all
+        std::vector<char> trimmedBuffer;
+        uint32_t trimmedLevels = 0;
+        ivec2 fileResolution;
+        Ref<KtxImage> image;
+        if (TrimLevels(fileStream, maxImageResolution, trimmedBuffer, trimmedLevels, fileResolution)) {
+            fileStream.close();
+            image = LoadLevels(trimmedBuffer, normalizedFileName, colorSpaceConversion, maxImageResolution,
+                trimmedLevels, fileResolution);
+        }
+        else {
+            fileStream.clear();
+            auto buffer = AssetLoader::GetFileContent(fileStream);
+            fileStream.close();
+            image = LoadLevels(buffer, normalizedFileName, colorSpaceConversion, maxImageResolution, 0, ivec2(0));
+        }
+
+        Log::Message("Loaded image " + normalizedFileName);
+
+        return image;
+
+    }
+
+    Ref<KtxImage> KtxLoader::LoadImageFromMemory(const std::vector<char>& buffer, const std::string& filename,
+        bool colorSpaceConversion, int32_t maxImageResolution) {
+
+        const auto normalizedFileName = Common::Path::Normalize(filename);
+
+        auto read = [&](size_t offset, size_t size, char* data) {
+            std::memcpy(data, buffer.data() + offset, size);
+            return true;
+            };
 
         std::vector<char> trimmedBuffer;
         uint32_t trimmedLevels = 0;
-        auto trimmed = TrimLevels(buffer, maxImageResolution, trimmedBuffer, trimmedLevels);
-        const auto& fileBuffer = trimmed ? trimmedBuffer : buffer;
+        ivec2 fileResolution;
+        if (TrimLevels(read, buffer.size(), maxImageResolution, trimmedBuffer, trimmedLevels, fileResolution))
+            return LoadLevels(trimmedBuffer, normalizedFileName, colorSpaceConversion, maxImageResolution,
+                trimmedLevels, fileResolution);
+
+        return LoadLevels(buffer, normalizedFileName, colorSpaceConversion, maxImageResolution, 0, ivec2(0));
+
+    }
+
+    static Ref<Common::Image<uint8_t>> DecodeLevels(const std::vector<char>& fileBuffer, int32_t maxImageResolution) {
 
         ktxTexture2* texture = nullptr;
         auto result = ktxTexture2_CreateFromMemory(reinterpret_cast<const ktx_uint8_t*>(fileBuffer.data()),
@@ -334,6 +373,23 @@ namespace Atlas::Loader {
         image->SetData(data);
 
         return image;
+
+    }
+
+    Ref<Common::Image<uint8_t>> KtxLoader::DecodeImage(const std::string& filename, int32_t maxImageResolution) {
+
+        auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
+        if (!fileStream.is_open())
+            return nullptr;
+
+        std::vector<char> trimmedBuffer;
+        uint32_t trimmedLevels = 0;
+        ivec2 fileResolution;
+        if (TrimLevels(fileStream, maxImageResolution, trimmedBuffer, trimmedLevels, fileResolution))
+            return DecodeLevels(trimmedBuffer, maxImageResolution);
+
+        fileStream.clear();
+        return DecodeLevels(AssetLoader::GetFileContent(fileStream), maxImageResolution);
 
     }
 

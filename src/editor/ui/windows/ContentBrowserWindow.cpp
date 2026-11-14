@@ -36,9 +36,6 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::Update() {
 
-        // Also while the browser is closed, the previews release what they don't need anymore
-        previews.ReleaseUnused();
-
         // A search runs on the medium pool next to long jobs (e.g. navigation tiles), the window doesn't wait for it.
         // The next search starts once the last one has finished
         if (!show || isEditing || !searchAndFilterJob.HasFinished())
@@ -188,9 +185,6 @@ namespace Atlas::Editor::UI {
         ImGui::EndChild();
 
         RenderDeleteConfirmation();
-
-        // Generates the previews which were requested by the visible content
-        previews.Update();
 
         End();
 
@@ -600,7 +594,7 @@ namespace Atlas::Editor::UI {
         if (isDirectory)
             iconTexture = Singletons::icons->GetTintable(IconType::Folder);
         else
-            iconTexture = GetIcon(contentType);
+            iconTexture = Singletons::contentPreviews->GetIcon(contentType);
         auto set = Singletons::imguiWrapper->GetTextureId(&iconTexture);
 
         bool highlight = assetPath == hightlightPath;
@@ -713,7 +707,7 @@ namespace Atlas::Editor::UI {
         if (isVisible) {
             ContentPreviews::Preview preview;
             auto hasPreview = !isDirectory && showPreviews &&
-                previews.Get(assetRelativePath, contentType, fileSize, lastWriteTime, preview);
+                Singletons::contentPreviews->Get(assetRelativePath, contentType, fileSize, lastWriteTime, preview);
 
             if (listView) {
                 ImGui::SameLine();
@@ -817,53 +811,8 @@ namespace Atlas::Editor::UI {
         auto min = ImGui::GetCursorScreenPos();
         ImGui::Dummy(size);
 
-        DrawPreview(ImGui::GetWindowDrawList(), preview, contentType, min, ImVec2(min.x + size.x, min.y + size.y),
-            iconTexture, true);
-
-    }
-
-    void ContentBrowserWindow::DrawPreview(ImDrawList* drawList, const ContentPreviews::Preview& preview, ContentType contentType,
-        ImVec2 min, ImVec2 max, ImTextureID iconTexture, bool framed) {
-
-        auto size = ImVec2(max.x - min.x, max.y - min.y);
-
-        // The icon is replaced smoothly once the preview is generated
-        if (preview.alpha < 1.0f) {
-            auto inset = tileIconInset * std::min(size.x, size.y);
-            drawList->AddImage(iconTexture, ImVec2(min.x + inset, min.y + inset), ImVec2(max.x - inset, max.y - inset),
-                ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(Theme::ContentIcon(contentType, tileIconAlpha * (1.0f - preview.alpha))));
-        }
-
-        // Fonts and audio are only a shape, they get some room around them
-        if (preview.tintable) {
-            auto inset = 0.12f * std::min(size.x, size.y);
-            min = ImVec2(min.x + inset, min.y + inset);
-            max = ImVec2(max.x - inset, max.y - inset);
-            size = ImVec2(max.x - min.x, max.y - min.y);
-        }
-
-        // Fitted into the area with the aspect ratio of the content
-        auto scale = std::min(size.x / std::max(preview.size.x, 1.0f), size.y / std::max(preview.size.y, 1.0f));
-        auto fitted = ImVec2(std::floor(preview.size.x * scale), std::floor(preview.size.y * scale));
-        auto previewMin = ImVec2(std::floor(min.x + 0.5f * (size.x - fitted.x)), std::floor(min.y + 0.5f * (size.y - fitted.y)));
-        auto previewMax = ImVec2(previewMin.x + fitted.x, previewMin.y + fitted.y);
-
-        if (preview.tintable) {
-            drawList->AddImage(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
-                ImGui::GetColorU32(Theme::ContentIcon(contentType, 0.85f * preview.alpha)));
-        }
-        else if (preview.transparent) {
-            drawList->AddImage(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
-                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, preview.alpha)));
-        }
-        else {
-            auto rounding = framed ? std::clamp(std::min(fitted.x, fitted.y) * 0.06f, 1.0f, Theme::overlayRounding) : tileRounding - 2.0f;
-            drawList->AddImageRounded(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
-                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, preview.alpha)), rounding);
-            // Dark images stand out from the background
-            if (framed)
-                drawList->AddRect(previewMin, previewMax, ImGui::GetColorU32(ImGuiCol_Border, 0.6f * preview.alpha), rounding);
-        }
+        Singletons::contentPreviews->Draw(ImGui::GetWindowDrawList(), preview, contentType, min,
+            ImVec2(min.x + size.x, min.y + size.y), iconTexture, true);
 
     }
 
@@ -916,13 +865,13 @@ namespace Atlas::Editor::UI {
 
         if (preview) {
             // Images fill the thumbnail, rendered content and shapes have their own margin
-            DrawPreview(drawList, *preview, contentType, thumbnailMin, thumbnailMax, iconTexture, false);
+            Singletons::contentPreviews->Draw(drawList, *preview, contentType, thumbnailMin, thumbnailMax, iconTexture, false, thumbnailRounding);
         }
         else {
-            auto inset = tileIconInset * thumbnailSize;
+            auto inset = ContentPreviews::iconInset * thumbnailSize;
             drawList->AddImage(iconTexture, ImVec2(thumbnailMin.x + inset, thumbnailMin.y + inset),
                 ImVec2(thumbnailMax.x - inset, thumbnailMax.y - inset), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
-                ImGui::GetColorU32(Theme::ContentIcon(contentType, tileIconAlpha)));
+                ImGui::GetColorU32(Theme::ContentIcon(contentType, ContentPreviews::iconAlpha)));
         }
 
         // A thin line in the color of the type along the bottom of the thumbnail
@@ -1019,7 +968,7 @@ namespace Atlas::Editor::UI {
             drawList->AddRectFilled(min, max, ImGui::GetColorU32(Theme::AssetThumbnail()), tileRounding);
             auto fullPreview = *preview;
             fullPreview.alpha = 1.0f;
-            DrawPreview(drawList, fullPreview, contentType, min, max, iconTexture, false);
+            Singletons::contentPreviews->Draw(drawList, fullPreview, contentType, min, max, iconTexture, false, tileRounding - 2.0f);
         }
 
         ImGui::TextUnformatted(filename.c_str());
@@ -1092,27 +1041,6 @@ namespace Atlas::Editor::UI {
         std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
 
         return Content::contentTypeMapping.contains(fileType);
-
-    }
-
-    Texture::Texture2D& ContentBrowserWindow::GetIcon(const ContentType contentType) {
-
-        auto& icons = Singletons::icons;
-
-        switch (contentType) {
-        case ContentType::Audio: return icons->GetTintable(IconType::Audio);
-        case ContentType::Mesh: return icons->GetTintable(IconType::Mesh);
-        case ContentType::MeshSource: return icons->GetTintable(IconType::MeshSource);
-        case ContentType::Material: return icons->GetTintable(IconType::Material);
-        case ContentType::MaterialGraph: return icons->GetTintable(IconType::MaterialGraph);
-        case ContentType::Scene: return icons->GetTintable(IconType::Scene);
-        case ContentType::Font: return icons->GetTintable(IconType::Font);
-        case ContentType::Prefab: return icons->GetTintable(IconType::Prefab);
-        case ContentType::Texture: return icons->GetTintable(IconType::Image);
-        case ContentType::EnvironmentTexture: return icons->GetTintable(IconType::EnvironmentImage);
-        case ContentType::Terrain: return icons->GetTintable(IconType::Terrain);
-        default: return icons->GetTintable(IconType::Document);
-        }
 
     }
 

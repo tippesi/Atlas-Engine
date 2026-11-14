@@ -1,4 +1,5 @@
 #include "Singletons.h"
+#include "ContentPreviews.h"
 
 namespace Atlas::Editor {
 
@@ -7,9 +8,11 @@ namespace Atlas::Editor {
     Ref<Icons> Singletons::icons;
     Ref<Config> Singletons::config;
     Ref<BlockingOperation> Singletons::blockingOperation;
+    Ref<ContentPreviews> Singletons::contentPreviews;
 
     void Singletons::Destruct() {
 
+        contentPreviews.reset();
         imguiWrapper.reset();
         mainRenderer.reset();
         icons.reset();

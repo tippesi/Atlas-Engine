@@ -49,10 +49,11 @@ struct PackedPixelData {
 #else
     uvec4 data;
 #endif
-    float depth;
 };
 
+// Separate arrays, a struct with the depth would be padded to 32 bytes and exceed 32 KB of shared memory on some devices
 shared PackedPixelData pixelData[sharedDataSize];
+shared float pixelDepth[sharedDataSize];
 shared uint groupFilters;
 
 layout(push_constant) uniform constants {
@@ -80,8 +81,6 @@ PackedPixelData PackPixelData(PixelData data) {
     compressed.data.w = packHalf2x16(vec2(data.normal.z, data.roughness));
 #endif
 
-    compressed.depth = data.depth;
-
     return compressed;
 }
 
@@ -100,7 +99,6 @@ PixelData UnpackPixelData(PackedPixelData compressed) {
     data.normal.z = temp.x;
     data.roughness = temp.y;
 #endif
-    data.depth = compressed.depth;
 
     return data;
 }
@@ -129,6 +127,7 @@ void LoadGroupSharedData() {
         data.normal = DecodeNormal(texelFetch(normalTexture, texel, 0).rg);
 
         pixelData[i] = PackPixelData(data);
+        pixelDepth[i] = data.depth;
     }
 
     barrier();
@@ -139,7 +138,9 @@ PixelData GetPixel(ivec2 pixelOffset) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) + ivec2(kernelRadius);
     int sharedMemoryIdx = Flatten2D(pixel + pixelOffset, unflattenedSharedDataSize);
-    return UnpackPixelData(pixelData[sharedMemoryIdx]);
+    PixelData data = UnpackPixelData(pixelData[sharedMemoryIdx]);
+    data.depth = pixelDepth[sharedMemoryIdx];
+    return data;
 
 }
 

@@ -37,9 +37,9 @@ namespace Atlas::Loader {
         static Ref<KtxImage> LoadImageFromMemory(const std::vector<char>& buffer, const std::string& filename,
             bool colorSpaceConversion = false, int32_t maxImageResolution = 8192);
 
-        // The level of the file closest to maxImageResolution as an RGBA image, e.g. for previews. Nullptr for files
-        // which can't be decoded on the CPU, i.e. block compressed ones which aren't supercompressed
-        static Ref<Common::Image<uint8_t>> DecodeImage(const std::vector<char>& buffer, int32_t maxImageResolution);
+        // The level of the file closest to maxImageResolution as an RGBA image, e.g. for previews. Only the levels up to
+        // it are read. Nullptr for files which can't be decoded on the CPU, i.e. block compressed ones which aren't supercompressed
+        static Ref<Common::Image<uint8_t>> DecodeImage(const std::string& filename, int32_t maxImageResolution);
 
         static Ref<KtxImage> ConvertImage(const Ref<Common::Image<uint8_t>>& image);
 

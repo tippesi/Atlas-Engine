@@ -9,6 +9,8 @@
 
 namespace Atlas::Editor {
 
+    class ContentPreviews;
+
     class Singletons {
 
     public:
@@ -19,6 +21,8 @@ namespace Atlas::Editor {
         static Ref<Icons> icons;
         static Ref<Config> config;
         static Ref<BlockingOperation> blockingOperation;
+        // Shared by everything which shows content, e.g. the content browser and resource selections
+        static Ref<ContentPreviews> contentPreviews;
 
     };
 

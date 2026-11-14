@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "Singletons.h"
+#include "ContentPreviews.h"
 #include "Notifications.h"
 #include "Theme.h"
 #include "ui/Widgets.h"
@@ -37,6 +38,16 @@ namespace Atlas::Editor::UI {
                     ImguiExtension::UIElements::TexturePreview(Singletons::imguiWrapper, &resourceHandle);
                     ImGui::SameLine();
                 }
+            }
+            else if (resourceHandle.IsValid() && !resourceHandle.IsGenerated()) {
+                const auto& path = resourceHandle.GetResource()->path;
+                auto previewSize = ImGui::GetFrameHeight();
+                Singletons::contentPreviews->Render(path, ImVec2(previewSize, previewSize));
+                if (ImGui::BeginItemTooltip()) {
+                    Singletons::contentPreviews->Render(path, ImVec2(8.0f * previewSize, 8.0f * previewSize));
+                    ImGui::EndTooltip();
+                }
+                ImGui::SameLine();
             }
 
             auto region = ImGui::GetContentRegionAvail();

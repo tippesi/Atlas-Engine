@@ -17,8 +17,6 @@ namespace Atlas {
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
 
-			PreintegrateBRDF();
-
 			auto uniformBufferDesc = Graphics::BufferDesc{
 				.usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				.domain = Graphics::BufferDomain::Host,
@@ -91,6 +89,8 @@ namespace Atlas {
 			GPUProfiler::BeginQuery("Render scene");
 
 			SetUniforms(target, scene, camera);
+
+			PreintegrateBRDF(commandList);
 
 			commandList->BindBuffer(globalUniformBuffer, 1, 31);
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
@@ -467,6 +467,8 @@ namespace Atlas {
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
 			JobSystem::WaitSpin(renderState->materialUpdateJob);
+
+			PreintegrateBRDF(commandList);
 
 			// The deformation of the ray traced instances reads the global data
 			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
@@ -1176,7 +1178,10 @@ namespace Atlas {
 
 		}
 
-		void MainRenderer::PreintegrateBRDF() {
+		void MainRenderer::PreintegrateBRDF(Graphics::CommandList* commandList) {
+
+			if (dfgPreintegrationTexture.image)
+				return;
 
 			auto pipelineConfig = PipelineConfig("brdf/preintegrateDFG.csh");
 			auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -1185,9 +1190,6 @@ namespace Atlas {
 			dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT,
 				Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue, true);
-
-			commandList->BeginCommands();
 			commandList->BindPipeline(computePipeline);
 
 			auto barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
@@ -1204,9 +1206,6 @@ namespace Atlas {
 				VK_ACCESS_SHADER_READ_BIT);
 			commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
 				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-			commandList->EndCommands();
-			device->FlushCommandList(commandList);
 
 		}
 

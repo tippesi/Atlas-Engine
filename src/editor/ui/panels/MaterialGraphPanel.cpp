@@ -125,6 +125,15 @@ namespace Atlas::Editor::UI {
 
         DrawCodeWindow(compiled.get());
 
+        // Edited code is compiled once the editor loses the focus or shows another node
+        if (editedCodeNode && (codeNodeEditor.IsDeactivatedAfterEdit() || shownCodeNode != editedCodeNode)) {
+            if (auto node = graph.GetNode(editedCodeNode))
+                NodeLibrary::UpdateCodeDefinition(*node);
+            compileRequested = true;
+            editedCodeNode = 0;
+        }
+        shownCodeNode = 0;
+
         ImGui::PopID();
 
         previews.Render(graph, material);
@@ -479,9 +488,13 @@ namespace Atlas::Editor::UI {
 
         if (isCode) {
             ImGui::TextColored(Theme::TextMuted(), "Function body, the inputs are its arguments");
-            auto edited = false;
-            Widgets::TextArea("Code", selected->code, 12.0f, ImGuiInputTextFlags_AllowTabInput, &edited);
-            codeChanged |= edited;
+            // The lower edge can be dragged to resize the editor
+            ImGui::BeginChild("Code", ImVec2(-FLT_MIN, 16.0f * ImGui::GetTextLineHeightWithSpacing()), ImGuiChildFlags_ResizeY);
+            // Each node has its own id, the editor starts again for another node
+            if (codeNodeEditor.Render(("##Code" + std::to_string(selected->id)).c_str(), selected->code))
+                editedCodeNode = selected->id;
+            ImGui::EndChild();
+            shownCodeNode = selected->id;
         }
 
         if (codeChanged) {
@@ -1384,19 +1397,33 @@ namespace Atlas::Editor::UI {
             else if (compiled->mainVertexCode.empty()) {
                 ImGui::TextDisabled("The graph doesn't generate any code yet");
             }
-            else if (ImGui::BeginTabBar("Stages")) {
-                auto tab = [](const char* name, const std::string& code) {
+            else {
+                // The selected tab has the color of the editor below and is attached to it
+                auto editorColor = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
+                ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleColor(ImGuiCol_TabDimmed, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleColor(ImGuiCol_TabHovered, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+                ImGui::PushStyleColor(ImGuiCol_TabSelected, editorColor);
+                ImGui::PushStyleColor(ImGuiCol_TabDimmedSelected, editorColor);
+                ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize, 0.0f);
+                auto open = ImGui::BeginTabBar("Stages");
+                auto barBottom = ImGui::GetCursorScreenPos().y - ImGui::GetStyle().ItemSpacing.y;
+                auto tab = [&](const char* name, const std::string& code, CodeEditor& editor) {
                     if (code.empty() || !ImGui::BeginTabItem(name))
                         return;
-                    auto text = code;
-                    ImGui::InputTextMultiline("##Code", &text, ImGui::GetContentRegionAvail(), ImGuiInputTextFlags_ReadOnly);
+                    ImGui::SetCursorScreenPos(ImVec2(ImGui::GetCursorScreenPos().x, barBottom));
+                    editor.Render(name, code);
                     ImGui::EndTabItem();
                     };
-                tab("Vertex", compiled->mainVertexCode);
-                tab("Fragment", compiled->mainFragmentCode);
-                tab("Shadow vertex", compiled->shadowVertexCode);
-                tab("Shadow fragment", compiled->shadowFragmentCode);
-                ImGui::EndTabBar();
+                if (open) {
+                    tab("Vertex", compiled->mainVertexCode, generatedCodeEditors[0]);
+                    tab("Fragment", compiled->mainFragmentCode, generatedCodeEditors[1]);
+                    tab("Shadow vertex", compiled->shadowVertexCode, generatedCodeEditors[2]);
+                    tab("Shadow fragment", compiled->shadowFragmentCode, generatedCodeEditors[3]);
+                    ImGui::EndTabBar();
+                }
+                ImGui::PopStyleVar();
+                ImGui::PopStyleColor(5);
             }
         }
         ImGui::End();

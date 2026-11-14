@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "MaterialGraphPreviews.h"
 #include "ResourceSelectionPanel.h"
+#include "ui/CodeEditor.h"
 
 #include "materialgraph/Compiler.h"
 #include "materialgraph/MaterialGraph.h"
@@ -228,6 +229,13 @@ namespace Atlas::Editor::UI {
         bool colorEdited = false;
         // Name of the code input being renamed, its links move once the name is final
         std::string renamedCodeInput;
+
+        CodeEditor codeNodeEditor;
+        // Code node which was edited but isn't compiled yet and the one the editor shows in this frame
+        uint32_t editedCodeNode = 0;
+        uint32_t shownCodeNode = 0;
+        // One for each stage of the generated code
+        CodeEditor generatedCodeEditors[4];
 
         static std::string clipboard;
 

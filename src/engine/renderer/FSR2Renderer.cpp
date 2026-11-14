@@ -781,8 +781,6 @@ namespace Atlas::Renderer {
 
 		this->device = device;
 
-		GenerateShaders();
-
 	}
 
 	FSR2Renderer::~FSR2Renderer() {
@@ -803,6 +801,10 @@ namespace Atlas::Renderer {
 	}
 
 	void FSR2Renderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
+
+		// Loaded on first use, most renderers never upscale with FSR2
+		if (shaders.empty())
+			GenerateShaders();
 
 		if (!initParams.callbacks.scratchBuffer ||
             initParams.displaySize.width != target->GetWidth() ||

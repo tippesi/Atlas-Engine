@@ -54,14 +54,30 @@ namespace Atlas::Editor {
         // Requests the preview of content which is visible in this frame. False while there is no preview (yet)
         bool Get(const std::string& assetPath, ContentType type, uintmax_t size, int64_t lastWriteTime, Preview& preview);
 
+        // Same for content of which only the path is known, e.g. a resource
+        bool Get(const std::string& assetPath, Preview& preview);
+
+        // Item with the preview of the content, or the icon of its type while there is none
+        void Render(const std::string& assetPath, ImVec2 size);
+
+        // The preview fitted into the area, the icon fades out while the preview fades in. Framed previews are
+        // outlined, the others have the given rounding
+        void Draw(ImDrawList* drawList, const Preview& preview, ContentType type, ImVec2 min, ImVec2 max,
+            ImTextureID iconTexture, bool framed, float rounding = 0.0f);
+
+        // Shown for content without a preview (yet)
+        Texture::Texture2D& GetIcon(ContentType type);
+
         // Generates, uploads and evicts previews, called once per frame after the previews were requested
         void Update();
 
-        // Called every frame, also while the previews aren't shown. Stops rendering and releases the renderer
-        // once the previews weren't updated for a while
+        // Stops rendering and releases the renderer once no previews were requested for a while
         void ReleaseUnused();
 
         static constexpr int32_t slotSize = 160;
+        // Icons of content without a preview (yet), relative to the size of the area
+        static constexpr float iconInset = 0.17f;
+        static constexpr float iconAlpha = 0.85f;
 
     private:
         // The preview texture has a few mip levels, such that small icons don't flicker
@@ -192,7 +208,8 @@ namespace Atlas::Editor {
         std::vector<int32_t> freeSlots;
         int32_t nextSlot = 0;
         int64_t frame = 0;
-        float lastUpdateTime = 0.0f;
+        float lastRequestTime = 0.0f;
+        bool requestedThisFrame = false;
 
         JobGroup jobGroup{ "Content previews", JobPriority::Low };
         std::atomic_int32_t runningJobs = 0;
@@ -209,7 +226,7 @@ namespace Atlas::Editor {
         Texture::Texture2D renderTexture;
         float lastRenderTime = 0.0f;
 
-        static constexpr int32_t slotsPerRow = 13;
+        static constexpr int32_t slotsPerRow = 24;
         static constexpr uint32_t mipLevels = 6;
         // Decoding large images needs a lot of memory, so only a few run at once
         static constexpr int32_t maxRunningJobs = 2;
@@ -218,8 +235,8 @@ namespace Atlas::Editor {
         static constexpr int32_t renderFrames = 16;
         static constexpr float renderTimeout = 20.0f;
         static constexpr float retryDelay = 30.0f;
-        // The renderer is released after a while without anything to render, rendering stops once the previews
-        // weren't updated for a moment, e.g. after the content browser was closed
+        // The renderer is released after a while without anything to render, rendering stops once no previews
+        // were requested for a moment, e.g. after the content browser was closed
         static constexpr float rendererIdleTime = 30.0f;
         static constexpr float hiddenTime = 1.0f;
         static constexpr float fadeTime = 0.15f;

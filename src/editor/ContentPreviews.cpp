@@ -1,10 +1,13 @@
 #include "ContentPreviews.h"
+#include "ContentDiscovery.h"
 #include "DataCreator.h"
 #include "FileImporter.h"
 #include "Singletons.h"
+#include "Theme.h"
 
 #include "Clock.h"
 #include "Serializer.h"
+#include "common/Path.h"
 #include "graphics/GraphicsDevice.h"
 #include "loader/AssetLoader.h"
 #include "loader/KtxLoader.h"
@@ -205,6 +208,9 @@ namespace Atlas::Editor {
         HashCombine(version, slotSize);
         HashCombine(version, previewFormatVersion);
 
+        lastRequestTime = Clock::Get();
+        requestedThisFrame = true;
+
         auto [iter, inserted] = entries.try_emplace(assetPath);
         auto& entry = iter->second;
 
@@ -246,9 +252,124 @@ namespace Atlas::Editor {
 
     }
 
-    void ContentPreviews::Update() {
+    bool ContentPreviews::Get(const std::string& assetPath, Preview& preview) {
 
-        lastUpdateTime = Clock::Get();
+        // The file as the content discovery found it, such that the content browser requests the same version
+        auto normalizedPath = Common::Path::Normalize(assetPath);
+        auto directoryPath = Common::Path::GetDirectory(normalizedPath);
+        auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
+        auto directory = ContentDiscovery::GetDirectory(directoryPath.empty() ? dataDirectory : dataDirectory + "/" + directoryPath);
+        if (!directory)
+            return false;
+
+        for (const auto& file : directory->files) {
+            if (file.assetPath == normalizedPath)
+                return Get(file.assetPath, file.type, file.size, file.lastWriteTime, preview);
+        }
+
+        return false;
+
+    }
+
+    void ContentPreviews::Render(const std::string& assetPath, ImVec2 size) {
+
+        auto min = ImGui::GetCursorScreenPos();
+        auto max = ImVec2(min.x + size.x, min.y + size.y);
+        ImGui::Dummy(size);
+        if (!ImGui::IsItemVisible())
+            return;
+
+        auto fileType = Common::Path::GetFileType(assetPath);
+        std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
+        auto typeIter = Content::contentTypeMapping.find(fileType);
+        auto type = typeIter != Content::contentTypeMapping.end() ? typeIter->second : ContentType::None;
+        auto iconTexture = Singletons::imguiWrapper->GetTextureId(&GetIcon(type));
+
+        auto drawList = ImGui::GetWindowDrawList();
+        auto rounding = std::clamp(std::min(size.x, size.y) * 0.12f, 2.0f, Theme::overlayRounding);
+        drawList->AddRectFilled(min, max, ImGui::GetColorU32(Theme::PreviewBackground()), rounding);
+
+        Preview preview;
+        if (Get(assetPath, preview)) {
+            Draw(drawList, preview, type, min, max, iconTexture, false, rounding);
+        }
+        else {
+            auto inset = iconInset * std::min(size.x, size.y);
+            drawList->AddImage(iconTexture, ImVec2(min.x + inset, min.y + inset),
+                ImVec2(max.x - inset, max.y - inset), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+                ImGui::GetColorU32(Theme::ContentIcon(type, iconAlpha)));
+        }
+
+    }
+
+    void ContentPreviews::Draw(ImDrawList* drawList, const Preview& preview, ContentType contentType, ImVec2 min, ImVec2 max,
+        ImTextureID iconTexture, bool framed, float rounding) {
+
+        auto size = ImVec2(max.x - min.x, max.y - min.y);
+
+        // The icon is replaced smoothly once the preview is generated
+        if (preview.alpha < 1.0f) {
+            auto inset = iconInset * std::min(size.x, size.y);
+            drawList->AddImage(iconTexture, ImVec2(min.x + inset, min.y + inset), ImVec2(max.x - inset, max.y - inset),
+                ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(Theme::ContentIcon(contentType, iconAlpha * (1.0f - preview.alpha))));
+        }
+
+        // Fonts and audio are only a shape, they get some room around them
+        if (preview.tintable) {
+            auto inset = 0.12f * std::min(size.x, size.y);
+            min = ImVec2(min.x + inset, min.y + inset);
+            max = ImVec2(max.x - inset, max.y - inset);
+            size = ImVec2(max.x - min.x, max.y - min.y);
+        }
+
+        // Fitted into the area with the aspect ratio of the content
+        auto scale = std::min(size.x / std::max(preview.size.x, 1.0f), size.y / std::max(preview.size.y, 1.0f));
+        auto fitted = ImVec2(std::floor(preview.size.x * scale), std::floor(preview.size.y * scale));
+        auto previewMin = ImVec2(std::floor(min.x + 0.5f * (size.x - fitted.x)), std::floor(min.y + 0.5f * (size.y - fitted.y)));
+        auto previewMax = ImVec2(previewMin.x + fitted.x, previewMin.y + fitted.y);
+
+        if (preview.tintable) {
+            drawList->AddImage(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
+                ImGui::GetColorU32(Theme::ContentIcon(contentType, 0.85f * preview.alpha)));
+        }
+        else if (preview.transparent) {
+            drawList->AddImage(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
+                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, preview.alpha)));
+        }
+        else {
+            if (framed)
+                rounding = std::clamp(std::min(fitted.x, fitted.y) * 0.06f, 1.0f, Theme::overlayRounding);
+            drawList->AddImageRounded(preview.texture, previewMin, previewMax, preview.uvMin, preview.uvMax,
+                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, preview.alpha)), rounding);
+            // Dark images stand out from the background
+            if (framed)
+                drawList->AddRect(previewMin, previewMax, ImGui::GetColorU32(ImGuiCol_Border, 0.6f * preview.alpha), rounding);
+        }
+
+    }
+
+    Texture::Texture2D& ContentPreviews::GetIcon(ContentType contentType) {
+
+        auto& icons = Singletons::icons;
+
+        switch (contentType) {
+        case ContentType::Audio: return icons->GetTintable(IconType::Audio);
+        case ContentType::Mesh: return icons->GetTintable(IconType::Mesh);
+        case ContentType::MeshSource: return icons->GetTintable(IconType::MeshSource);
+        case ContentType::Material: return icons->GetTintable(IconType::Material);
+        case ContentType::MaterialGraph: return icons->GetTintable(IconType::MaterialGraph);
+        case ContentType::Scene: return icons->GetTintable(IconType::Scene);
+        case ContentType::Font: return icons->GetTintable(IconType::Font);
+        case ContentType::Prefab: return icons->GetTintable(IconType::Prefab);
+        case ContentType::Texture: return icons->GetTintable(IconType::Image);
+        case ContentType::EnvironmentTexture: return icons->GetTintable(IconType::EnvironmentImage);
+        case ContentType::Terrain: return icons->GetTintable(IconType::Terrain);
+        default: return icons->GetTintable(IconType::Document);
+        }
+
+    }
+
+    void ContentPreviews::Update() {
 
         if (!atlas && !requested.empty())
             Init();
@@ -257,11 +378,15 @@ namespace Atlas::Editor {
             ProcessResults();
             StartJobs();
             UpdateRendering();
-            Evict();
+            if (requestedThisFrame)
+                Evict();
         }
 
         requested.clear();
-        frame++;
+        // Only frames which show previews count, such that they aren't forgotten while nothing shows them
+        if (requestedThisFrame)
+            frame++;
+        requestedThisFrame = false;
 
     }
 
@@ -270,7 +395,7 @@ namespace Atlas::Editor {
         auto now = Clock::Get();
 
         // Nothing is rendered for previews which aren't shown, the content is rendered again once it is visible
-        if (renderJob && now - lastUpdateTime > hiddenTime)
+        if (renderJob && now - lastRequestTime > hiddenTime)
             CancelRender();
 
         if (renderer && !renderJob && now - lastRenderTime > rendererIdleTime) {
@@ -1020,11 +1145,8 @@ namespace Atlas::Editor {
         stbi_uc* stbiData = nullptr;
 
         if (Loader::KtxLoader::IsKtxFile(assetPath)) {
-            auto stream = Loader::AssetLoader::ReadFile(assetPath, std::ios::in | std::ios::binary);
-            if (!stream.is_open())
-                return image;
-            // Only the level closest to the preview size is decoded
-            ktxImage = Loader::KtxLoader::DecodeImage(Loader::AssetLoader::GetFileContent(stream), slotSize);
+            // Only the levels up to the preview size are read and the one closest to it is decoded
+            ktxImage = Loader::KtxLoader::DecodeImage(assetPath, slotSize);
             if (!ktxImage)
                 return image;
             width = ktxImage->width;

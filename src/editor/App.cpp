@@ -81,6 +81,7 @@ namespace Atlas::Editor {
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
         Singletons::blockingOperation = CreateRef<BlockingOperation>();
+        Singletons::contentPreviews = CreateRef<ContentPreviews>();
         Singletons::mainRenderer = mainRenderer;
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
@@ -136,6 +137,10 @@ namespace Atlas::Editor {
             return;
 
         Loader::ModelImporter::ApplyBackgroundImports();
+
+        sectionScope.Next("Content previews update");
+        // Also while no previews are shown, they release what they don't need anymore
+        Singletons::contentPreviews->ReleaseUnused();
 
         sectionScope.Next("Content browser update");
         contentBrowserWindow.Update();
@@ -552,6 +557,10 @@ namespace Atlas::Editor {
         UI::PopupPanels::Render();
         commandPalette.Render();
 
+        // Generates the previews which everything rendered in this frame requested
+        sectionScope.Next("Content previews");
+        Singletons::contentPreviews->Update();
+
         // Inactive viewports can still have scene jobs that enqueue GPU work
         sectionScope.Next("Wait for scene updates");
         waitForSceneUpdates();
@@ -755,6 +764,10 @@ namespace Atlas::Editor {
         auto& io = ImGui::GetIO();
         io.Fonts->Clear();
         io.Fonts->AddFontFromFileTTF(Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(), rasterSize)->Scale = 16.0f / rasterSize;
+        // Code is shown with the regular font if this one is missing
+        Theme::codeFont = io.Fonts->AddFontFromFileTTF(Loader::AssetLoader::GetFullPath("font/robotomono.ttf").c_str(), rasterSize);
+        if (Theme::codeFont)
+            Theme::codeFont->Scale = 15.0f / rasterSize;
         Singletons::imguiWrapper->RecreateImGuiResources();
 
     }
