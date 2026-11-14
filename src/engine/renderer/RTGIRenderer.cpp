@@ -220,6 +220,9 @@ namespace Atlas {
                     commandList->Dispatch(shadowGroupCount, 1, 1);
 
                     commandList->BufferMemoryBarrier(deferredLightBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+                    // The resolve keeps the hit distance written by the trace
+                    commandList->ImageMemoryBarrier(target->giTexture.image,
+                        VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
                     GPUProfiler::EndAndBeginQuery("Resolve");
 
@@ -289,28 +292,15 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            // Need barriers for all four images
-            Graphics::ImageBarrier preImageBarriers[] = {
-                {target->swapGiTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->giMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->historyGiTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                {target->historyGiMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-            };
-            commandList->PipelineBarrier(preImageBarriers, {},
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+            // The temporal result becomes the history, the old history is free for the spatial filter
+            std::swap(target->swapGiTexture, target->historyGiTexture);
+            std::swap(target->giMomentsTexture, target->historyGiMomentsTexture);
 
-            commandList->CopyImage(target->swapGiTexture.image, target->historyGiTexture.image);
-            commandList->CopyImage(target->giMomentsTexture.image, target->historyGiMomentsTexture.image);
-
-            // Need barriers for all four images
-            Graphics::ImageBarrier postImageBarriers[] = {
-                {target->swapGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {target->giMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            Graphics::ImageBarrier historyBarriers[] = {
                 {target->historyGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {target->historyGiMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
-            commandList->PipelineBarrier(postImageBarriers, {},
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            commandList->PipelineBarrier(historyBarriers, {});
 
             GPUProfiler::EndAndBeginQuery("Spatial filter");
 
@@ -333,7 +323,6 @@ namespace Atlas {
                     commandList->BindPipeline(pipeline);
 
                     AtrousConstants constants = {
-                        .stepSize = 1 << i,
                         .strength = rtgi->spatialFilterStrength
                     };
                     commandList->PushConstants("constants", &constants);
@@ -348,12 +337,14 @@ namespace Atlas {
                         commandList->PipelineBarrier(imageBarriers, {});
                     }
                     else {
+                        // The first pass reads the temporal result, which is the history now
+                        auto& input = i == 0 ? target->historyGiTexture : target->swapGiTexture;
                         Graphics::ImageBarrier imageBarriers[] = {
-                            {target->swapGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                            {input.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                             {target->giTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                         };
                         commandList->BindImage(target->giTexture.image, 3, 0);
-                        commandList->BindImage(target->swapGiTexture.image, target->swapGiTexture.sampler, 3, 1);
+                        commandList->BindImage(input.image, input.sampler, 3, 1);
                         commandList->PipelineBarrier(imageBarriers, {});
                     }
 

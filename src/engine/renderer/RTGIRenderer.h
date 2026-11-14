@@ -39,7 +39,6 @@ namespace Atlas {
             };
 
             struct alignas(16) AtrousConstants {
-                int32_t stepSize;
                 float strength;
             };
 

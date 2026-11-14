@@ -1,0 +1,95 @@
+#include <../globals.hsh>
+#include <convert.hsh>
+#include <utility.hsh>
+
+// Hit distances are stored as h / (h + 1 m): bounded with misses as one and independent of the camera
+float EncodeHitDistance(float hitDistance) {
+
+    return hitDistance / (hitDistance + 1.0);
+
+}
+
+float DecodeHitDistance(float encodedHitDistance) {
+
+    return encodedHitDistance / max(1.0 - encodedHitDistance, 1e-3);
+
+}
+
+// The motion of the surface itself in pixels, without the part that the camera causes
+vec2 GetObjectMotion(sampler2D velocityTexture, ivec2 texel, float depth, vec2 resolution) {
+
+    vec2 texCoord = (vec2(texel) + 0.5) / resolution;
+    vec4 lastPosition = globalData.pvMatrixLast * vec4(ConvertDepth(depth, texCoord, globalData.ipvMatrixCurrent), 1.0);
+    vec2 cameraVelocity = (lastPosition.xy / lastPosition.w * 0.5 + 0.5) - texCoord;
+    return depth < 1.0 ? (texelFetch(velocityTexture, texel, 0).rg - cameraVelocity) * resolution : vec2(0.0);
+
+}
+
+// Squared motion of a neighbor relative to the center, only neighbors around the same depth count
+float GetNearbyMotionSquared(vec2 sampleMotion, vec2 centerMotion, float linearDepth, float sampleLinearDepth) {
+
+    if (abs(linearDepth - sampleLinearDepth) >= 0.5 + 0.1 * abs(linearDepth))
+        return 0.0;
+
+    vec2 relativeMotion = sampleMotion - centerMotion;
+    return dot(relativeMotion, relativeMotion);
+
+}
+
+// Moving neighbors change what the rays see without the reprojection noticing, below half a pixel it's swaying vegetation
+float LimitHistoryByNearbyMotion(float historyLength, float nearbyMotion) {
+
+    return mix(historyLength, min(historyLength, 4.0), saturate((nearbyMotion - 0.5) / 2.0));
+
+}
+
+bool IsOffscreen(vec2 uv) {
+
+    return uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0;
+
+}
+
+// Catmull-Rom with five bilinear taps, the corners of the 4x4 footprint are left out
+vec4 SampleCatmullRom(sampler2D historyTexture, vec2 uv, vec2 resolution) {
+
+    vec2 invResolution = 1.0 / resolution;
+    vec2 samplePixel = uv * resolution;
+
+    vec2 center = floor(samplePixel - 0.5) + 0.5;
+    vec2 f = samplePixel - center;
+
+    vec2 w0 = f * (-0.5 + f * (1.0 - 0.5 * f));
+    vec2 w1 = 1.0 + f * f * (-2.5 + 1.5 * f);
+    vec2 w2 = f * (0.5 + f * (2.0 - 1.5 * f));
+    vec2 w3 = f * f * (-0.5 + 0.5 * f);
+
+    vec2 w12 = w1 + w2;
+    vec2 uv0 = (center - 1.0) * invResolution;
+    vec2 uv12 = (center + w2 / w12) * invResolution;
+    vec2 uv3 = (center + 2.0) * invResolution;
+
+    vec4 history = textureLod(historyTexture, vec2(uv12.x, uv0.y), 0.0) * (w12.x * w0.y)
+        + textureLod(historyTexture, vec2(uv0.x, uv12.y), 0.0) * (w0.x * w12.y)
+        + textureLod(historyTexture, uv12, 0.0) * (w12.x * w12.y)
+        + textureLod(historyTexture, vec2(uv3.x, uv12.y), 0.0) * (w3.x * w12.y)
+        + textureLod(historyTexture, vec2(uv12.x, uv3.y), 0.0) * (w12.x * w3.y);
+    float totalWeight = w12.x * w0.y + w0.x * w12.y + w12.x * w12.y + w3.x * w12.y + w12.x * w3.y;
+
+    return history / totalWeight;
+
+}
+
+// Effective number of accumulated frames, blending reduces the noise variance to (1 - factor)^2 + factor^2 / historyLength
+float GetAccumulatedFrames(float factor, float historyLength) {
+
+    return 1.0 / (sqr(1.0 - factor) + sqr(factor) / max(historyLength, 1e-6));
+
+}
+
+// View space direction through a pixel with a view space depth of one, it is affine in the texture coordinates
+vec3 GetViewRay(vec2 texCoord) {
+
+    vec3 position = ConvertDepthToViewSpace(0.5, texCoord);
+    return position / position.z;
+
+}

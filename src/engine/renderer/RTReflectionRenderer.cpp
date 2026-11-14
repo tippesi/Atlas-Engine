@@ -85,8 +85,10 @@ namespace Atlas {
 
             target->exposureTexture.Bind(commandList, 3, 11);
 
-            Texture::Texture2D* reflectionTexture = reflection->upsampleBeforeFiltering ? &target->swapReflectionTexture : &target->reflectionTexture;
-            Texture::Texture2D* swapReflectionTexture = reflection->upsampleBeforeFiltering ? &target->reflectionTexture : &target->swapReflectionTexture;
+            // The upsampling swaps the textures, so the last spatial filter pass always writes the reflection texture
+            auto upsample = reflection->upsampleBeforeFiltering && reflection->halfResolution;
+            Texture::Texture2D* reflectionTexture = upsample ? &target->swapReflectionTexture : &target->reflectionTexture;
+            Texture::Texture2D* swapReflectionTexture = upsample ? &target->reflectionTexture : &target->swapReflectionTexture;
 
             static uint32_t frameCount = 0;
             frameCount++;
@@ -143,7 +145,7 @@ namespace Atlas {
                 ssrPipelineConfig.ManageMacro("RT", reflection->rt);
                 ssrPipelineConfig.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility);
                 ssrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
-                ssrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
+                ssrPipelineConfig.ManageMacro("UPSCALE", upsample);
                 ssrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
 
                 auto pipeline = PipelineManager::GetPipeline(ssrPipelineConfig);
@@ -202,7 +204,7 @@ namespace Atlas {
                 config.ManageMacro("RADIANCE_VOLUME", radianceVolume);
                 config.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
                 config.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
-                config.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
+                config.ManageMacro("UPSCALE", upsample);
                 config.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
                 config.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && reflection->shaderExecutionReordering);
 
@@ -328,7 +330,7 @@ namespace Atlas {
             commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
 
 
-            if (reflection->upsampleBeforeFiltering && reflection->halfResolution) {
+            if (upsample) {
                 GPUProfiler::EndAndBeginQuery("Upscaling");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
@@ -386,20 +388,18 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
 
-                temporalPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering && reflection->halfResolution);
+                temporalPipelineConfig.ManageMacro("UPSCALE", upsample);
 
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);
 
                 // Note: We need to also denoise the radiance volume sampling, so increase cutoff value to one
                 TemporalConstants constants = {
-                    .cameraLocationLast = vec4(scene->renderState.camera.GetLastLocation(), 1.0),
                     .temporalWeight = reflection->temporalWeight,
                     .historyClipMax = reflection->historyClipMax,
                     .currentClipFactor = reflection->currentClipFactor,
                     .roughnessCutoff = radianceVolume ? 1.0f : reflection->roughnessCutoff,
                     .resetHistory = !target->HasHistory() ? 1 : 0,
-                    .frameCount = frameCount,
                 };
 
                 commandList->PushConstants("constants", &constants);
@@ -431,28 +431,15 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            // Need barriers for all four images
-            Graphics::ImageBarrier preImageBarriers[] = {
-                {swapReflectionTexture->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-            };
-            commandList->PipelineBarrier(preImageBarriers, {},
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+            // The temporal result becomes the history, the old history is free for the spatial filter
+            std::swap(*swapReflectionTexture, target->historyReflectionTexture);
+            std::swap(target->reflectionMomentsTexture, target->historyReflectionMomentsTexture);
 
-            commandList->CopyImage(swapReflectionTexture->image, target->historyReflectionTexture.image);
-            commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
-
-            // Need barriers for all four images
-            Graphics::ImageBarrier postImageBarriers[] = {
-                {swapReflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            Graphics::ImageBarrier historyBarriers[] = {
                 {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
-            commandList->PipelineBarrier(postImageBarriers, {},
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            commandList->PipelineBarrier(historyBarriers, {});
 
             GPUProfiler::EndAndBeginQuery("Spatial filter");
 
@@ -466,7 +453,8 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
                 commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 4);
-                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);                
+                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
+                commandList->BindImage(target->historyReflectionMomentsTexture.image, target->historyReflectionMomentsTexture.sampler, 3, 6);
 
                 for (int32_t i = 0; i < 3; i++) {
                     GPUProfiler::Scope sectionScope("Subpass " + std::to_string(i));
@@ -475,7 +463,6 @@ namespace Atlas {
                     commandList->BindPipeline(pipeline);
 
                     AtrousConstants constants = {
-                        .stepSize = 1 << i,
                         .strength = reflection->spatialFilterStrength,
                         .roughnessCutoff = radianceVolume ? 1.0f : reflection->roughnessCutoff,
                     };
@@ -491,12 +478,14 @@ namespace Atlas {
                         commandList->PipelineBarrier(imageBarriers, {});
                     }
                     else {
+                        // The first pass reads the temporal result, which is the history now
+                        auto& input = i == 0 ? target->historyReflectionTexture : *swapReflectionTexture;
                         Graphics::ImageBarrier imageBarriers[] = {
-                            {swapReflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                            {input.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                             {reflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                         };
                         commandList->BindImage(reflectionTexture->image, 3, 0);
-                        commandList->BindImage(swapReflectionTexture->image, swapReflectionTexture->sampler, 3, 1);
+                        commandList->BindImage(input.image, input.sampler, 3, 1);
                         commandList->PipelineBarrier(imageBarriers, {});
                     }
 

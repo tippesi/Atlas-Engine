@@ -11,6 +11,7 @@
 #include <../common/material.hsh>
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
+#include <../common/denoiser.hsh>
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
@@ -34,21 +35,20 @@ layout(set = 3, binding = 13) uniform sampler2D historyRoughnessMetallicAoTextur
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 5;
+const int kernelRadius = 3;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
 
 shared vec4 sharedRadianceDepth[sharedDataSize];
+shared vec2 sharedObjectMotion[sharedDataSize];
 
 layout(push_constant) uniform constants {
-    vec4 cameraLocationLast;
     float temporalWeight;
     float historyClipMax;
     float currentClipFactor;
     float roughnessCutoff;
     int resetHistory;
-    uint frameCount;
 } pushConstants;
 
 const ivec2 offsets[9] = ivec2[9](
@@ -97,8 +97,10 @@ void LoadGroupSharedData() {
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec4 radianceRayLength = FetchTexel(texel);
+        float depth = texelFetch(depthTexture, texel, 0).r;
         sharedRadianceDepth[i].rgb = RGBToYCoCg(radianceRayLength.rgb);
-        sharedRadianceDepth[i].a = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+        sharedRadianceDepth[i].a = ConvertDepthToViewSpaceDepth(depth);
+        sharedObjectMotion[i] = GetObjectMotion(velocityTexture, texel, depth, resolution);
     }
 
     barrier();
@@ -172,11 +174,18 @@ vec3 GetHistoryWorldPosition(ivec2 historyPixel) {
 
 }
 
-bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 history, out vec4 historyMoments) {
-    
+// The bilinear footprint is complete when all four history texels are valid, their range limits a bicubic filter.
+// The confidence is the valid part of the footprint, it shortens the history of partly valid reprojections
+bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 history, out vec4 historyMoments,
+    out bool completeFootprint, out vec4 historyMin, out vec4 historyMax, out float footprintConfidence) {
+
+    footprintConfidence = 0.0;
     history = vec4(0.0);
     historyMoments = vec4(0.0);
+    historyMin = vec4(1e30);
+    historyMax = vec4(-1e30);
 
+    int validCount = 0;
     float totalWeight = 0.0;
     float x    = fract(historyPixel.x);
     float y    = fract(historyPixel.y);
@@ -212,13 +221,21 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
         confidence *= historyMaterialIdx == materialIdx ? 1.0 : 0.0;
 
         if (confidence > 0.2) {
+            vec4 historyTexel = texelFetch(historyTexture, offsetPixel, 0);
+            historyMin = min(historyMin, historyTexel);
+            historyMax = max(historyMax, historyTexel);
+            validCount++;
+
             totalWeight += weights[i];
-            history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
+            history += historyTexel * weights[i];
             historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
         }
     }
 
+    completeFootprint = validCount == 4;
+
     if (totalWeight > 0.0) {
+        footprintConfidence = totalWeight;
         history /= totalWeight;
         historyMoments /= totalWeight;
         return true;
@@ -247,6 +264,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
     }
 
     if (totalWeight > 0.0) {
+        // None of the footprint texels matched, the neighbors around it are less trustworthy
+        footprintConfidence = totalWeight / 9.0;
         history /= totalWeight;
         historyMoments /= totalWeight;
         return true;
@@ -259,85 +278,13 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
 
 }
 
-float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal) {
-
-    float confidence = 1.0;
-
-    vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
-    confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
-
-    float depthPhi = 128.0 / abs(linearDepth);
-    float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
-    float historyLinearDepth = historyDepth;
-    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
-    
-    return confidence > 0.1 ? 1.0 : 0.0;
-
-}
-
-vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, float linearDepth, vec3 normal) {
-
-    pixel = clamp(pixel, ivec2(0), ivec2(imageSize(resolveImage) - 1));
-
-    weight *= IsHistoryPixelValid(pixel, linearDepth, normal);
-
-    return texelFetch(historyTexture, pixel, 0) * weight;
-
-}
-
-bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
-    
-    vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
-    float depth = texelFetch(depthTexture, pixel, 0).r;
-
-    vec2 position = uv * resolution;
-
-    vec2 center = floor(position - 0.5) + 0.5;
-    vec2 f = position - center;
-    vec2 f2 = f * f;
-    vec2 f3 = f2 * f;
-
-    vec2 w0 = f2 - 0.5 * (f3 + f);
-    vec2 w1 = 1.5 * f3 - 2.5 * f2 + 1.0;
-    vec2 w3 = 0.5 * (f3 - f2);
-    vec2 w2 = 1.0 - w0 - w1 - w3;
-
-    ivec2 uv0 = ivec2(center - 1.0);
-    ivec2 uv1 = ivec2(center);
-    ivec2 uv2 = ivec2(center + 1.0);
-    ivec2 uv3 = ivec2(center + 2.0);
-
-    ivec2 uvs[4] = { uv0, uv1, uv2, uv3 };
-    vec2 weights[4] = { w0, w1, w2, w3 };
-
-    history = vec4(0.0);
-
-    float totalWeight = 0.0;
-
-    for (int x = 0; x <= 3; x++) {
-        for (int y = 0; y <= 3; y++) {
-            float weight = weights[x].x * weights[y].y;
-            ivec2 uv = ivec2(uvs[x].x, uvs[y].y);
-
-            history += GetCatmullRomSample(uv, weight, depth, normal);
-            totalWeight += weight;
-        }
-    }
-    
-    if (totalWeight > 0.5) {
-        history /= totalWeight;
-        history = max(history, 0.0);
-   
-        return true;
-    }
-
-    return false;
-}
-
-void ComputeVarianceMinMax(float roughness, int radius, out vec3 mean, out vec3 std) {
+// The sample count is the effective one of the weighted neighborhood, (sum of weights)^2 / sum of squared weights.
+// The nearby motion is the fastest movement of a neighbor around the same depth relative to the pixel in pixels
+void ComputeVarianceMinMax(int radius, out vec3 mean, out vec3 std, out float sampleCount, out float nearbyMotion) {
 
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
+    float squaredWeight = 0.0;
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
@@ -348,9 +295,11 @@ void ComputeVarianceMinMax(float roughness, int radius, out vec3 mean, out vec3 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
     float depthPhi = max(1.0, abs(0.025 * linearDepth));
 
-    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-
     float totalWeight = 0.0;
+
+    vec2 centerObjectMotion = sharedObjectMotion[GetSharedMemoryIndex(ivec2(0))];
+    float nearbyMotionSquared = 0.0;
+    float depthScale = 1.442695 / depthPhi;
 
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
@@ -358,30 +307,24 @@ void ComputeVarianceMinMax(float roughness, int radius, out vec3 mean, out vec3 
 
             vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
-            
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
-        
+
+            float weight = exp2(-abs(linearDepth - sampleLinearDepth) * depthScale);
+
             m1 += sampleRadiance * weight;
             m2 += sampleRadiance * sampleRadiance * weight;
 
             totalWeight += weight;
+            squaredWeight += weight * weight;
+
+            nearbyMotionSquared = max(nearbyMotionSquared, GetNearbyMotionSquared(sharedObjectMotion[sharedMemoryIdx],
+                centerObjectMotion, linearDepth, sampleLinearDepth));
         }
     }
 
     mean = m1 / totalWeight;
     std = sqrt(max((m2 / totalWeight) - (mean * mean), 0.0));
-}
-
-float ComputeParallax(vec3 position, vec3 historyPosition) {
-
-    vec3 cameraDelta = pushConstants.cameraLocationLast.xyz - globalData.cameraLocation.xyz;
-
-    vec3 V = normalize(position);
-    vec3 historyV = normalize(historyPosition - cameraDelta);
-
-    float cosTheta = saturate(dot(V, historyV));
-    return sqrt(1.0 - cosTheta * cosTheta) / max(cosTheta, 1e-6) * 60.0;
-
+    sampleCount = sqr(totalWeight) / squaredWeight;
+    nearbyMotion = sqrt(nearbyMotionSquared);
 }
 
 float GetSpecularDominantFactor(float NdotV, float roughness) {
@@ -393,30 +336,26 @@ float GetSpecularDominantFactor(float NdotV, float roughness) {
 
 }
 
-float GetAccumulationSpeed(float NdotV, float roughness, float parallax) {
+float GetFilteredRayLength(ivec2 pixel) {
 
-    const float accumCurve = 0.5;
-    const float accumBasePower = 0.5;
+    float centerDepth = FetchDepth(GetSharedMemoryIndex(ivec2(0)));
+    float depthPhi = 32.0 / abs(centerDepth);
 
-    float acossqr = 1.0 - NdotV;
-    float rsqr = sqr(roughness);
+    float rayLength = 0.0;
+    float totalWeight = 0.0;
 
-    float a = pow(saturate(acossqr), accumCurve);
-    float b = 1.1 + rsqr;
+    // Misses have a ray length of zero and are excluded
+    for (int i = 0; i < 9; i++) {
+        ivec2 samplePixel = clamp(pixel + offsets[i], ivec2(0), ivec2(resolution) - ivec2(1));
+        float sampleRayLength = abs(texelFetch(currentTexture, samplePixel, 0).a);
+        float sampleDepth = FetchDepth(GetSharedMemoryIndex(offsets[i]));
 
-    float parallaxSensitivity = (b + a) / (b - a);
-    float powerScale = 1.0 + parallax * parallaxSensitivity;
+        float weight = sampleRayLength > 0.0 ? min(1.0, exp(-abs(centerDepth - sampleDepth) * depthPhi)) : 0.0;
+        rayLength += sampleRayLength * weight;
+        totalWeight += weight;
+    }
 
-    float f = 1.0 - exp2(-200.0 * rsqr);
-    f *= pow(saturate(roughness), accumBasePower * powerScale);
-
-    return min(f, pushConstants.temporalWeight);
-
-}
-
-vec2 SurfacePointReprojection(vec2 pixel, vec2 velocity) {
-
-    return pixel + velocity * resolution;
+    return totalWeight > 0.0 ? rayLength / totalWeight : 0.0;
 
 }
 
@@ -446,8 +385,8 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     vec2 uv = (vec2(pixel) + 0.5) * invResolution;
@@ -456,159 +395,157 @@ void main() {
     float roughness = textureLod(roughnessMetallicAoTexture, uv, .0).r;
     vec3 normal = normalize(DecodeNormal(texelFetch(normalTexture, pixel, 0).rg));
 
-    vec2 surfaceHistoryPixel = SurfacePointReprojection(vec2(pixel), velocity);
-    vec2 surfaceHistoryUV = (surfaceHistoryPixel + 0.5) * invResolution;
-
     float depth = texelFetch(depthTexture, pixel, 0).r;
-    float depthHistory = texelFetch(depthTexture, ivec2(surfaceHistoryPixel), 0).r;
-
-    //vec3 position = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, uv), 1.0));
-    //vec3 positionHistory = vec3(inverse(globalData.vMatrixLast) * vec4(ConvertDepthToViewSpace(depthHistory, surfaceHistoryUV), 1.0));
-
     vec3 position = ConvertDepthToViewSpace(depth, uv);
-    vec3 positionHistory = ConvertDepthToViewSpace(depthHistory, uv);
 
-    float parallax = ComputeParallax(position, positionHistory);
     float NdotV = abs(dot(normalize(-position), normal));
 
     float dominantFactor = GetSpecularDominantFactor(NdotV, sqrt(roughness));
 
     vec3 mean, std;
+    float sampleCount, nearbyMotion;
 #ifdef UPSCALE
     const int radius = int(mix(3.0, float(kernelRadius), min(1.0, roughness * 4.0)));
 #else
     const int radius = int(mix(2.0, float(kernelRadius), min(1.0, roughness * 4.0)));
 #endif
-    if (roughness < pushConstants.roughnessCutoff) {
-        ComputeVarianceMinMax(roughness, radius, mean, std);
-    }
-    else {
-        // Don't need much denoising here (except for roughness = 1. looks noisy for metallic surfaces)
-        ComputeVarianceMinMax(roughness, 3, mean, std);
-    }
+    // Above the cutoff the probes don't need much denoising (except for roughness = 1. looks noisy for metallic surfaces)
+    ComputeVarianceMinMax(roughness < pushConstants.roughnessCutoff ? radius : 3,
+        mean, std, sampleCount, nearbyMotion);
 
-    ivec2 velocityPixel = pixel;
-
-    uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
-    uv = (historyPixel + 0.5) * invResolution;
+    vec2 historyUv = (historyPixel + 0.5) * invResolution;
 
-    bool valid = true;
-    vec4 history = vec4(0.0);
-    vec4 historyMoments = vec4(0.0);
-    valid = SampleHistory(pixel, historyPixel, 16.0,
-        history, historyMoments);
+    vec4 history;
+    vec4 historyMoments;
+    bool completeFootprint;
+    vec4 historyMin, historyMax;
+    float footprintConfidence;
+    bool valid = SampleHistory(pixel, historyPixel, 16.0,
+        history, historyMoments, completeFootprint, historyMin, historyMax, footprintConfidence) && !IsOffscreen(historyUv);
 
 #ifdef BICUBIC_FILTER
-    // This should be implemented more efficiently, see 
-    if (roughness < pushConstants.roughnessCutoff) {
-        vec4 catmullRomHistory;
-        bool success = SampleCatmullRom(pixel, uv, catmullRomHistory);
-        history = success && valid ? catmullRomHistory : history; 
-    }
+    // The clamp removes ringing and texels outside the footprint that belong to other surfaces
+    if (roughness < pushConstants.roughnessCutoff && completeFootprint)
+        history = clamp(SampleCatmullRom(historyTexture, historyUv, resolution), historyMin, historyMax);
 #endif
+
+    // The history was stored with the pre-exposure of the last frame, the moments hold luma and its square
+    float exposureScale = globalData.preExposure / globalData.lastPreExposure;
+    vec2 momentsExposureScale = vec2(exposureScale, exposureScale * exposureScale);
+    history.rgb *= exposureScale;
+    historyMoments.rg *= momentsExposureScale;
 
     vec3 currentColor = RGBToYCoCg(texelFetch(currentTexture, pixel, 0).rgb);
     
+    // Misses have a ray length of zero. Mirrors use their own ray length, it has no noise and averaging it across
+    // the edges of reflected objects would mix their distances
+    const float virtualCutoff = 0.2;
     float rayLength = texelFetch(currentTexture, pixel, 0).a;
+    float filteredRayLength = mix(abs(rayLength), GetFilteredRayLength(pixel), saturate(roughness / virtualCutoff));
     if (rayLength != 0 &&  roughness < pushConstants.roughnessCutoff) {
-        vec2 virtualHistoryPixel = VirtualPointReprojection(pixel, imageSize(resolveImage), abs(rayLength));
+        vec2 virtualHistoryPixel = VirtualPointReprojection(pixel, imageSize(resolveImage), filteredRayLength);
+        vec2 virtualHistoryUv = (virtualHistoryPixel + 0.5) * invResolution;
 
-        bool validRepojection = true;
-        vec4 historyVirtualRepojection = vec4(0.0);
-        vec4 historyMomentsVirtualRepojection = vec4(0.0);
-        validRepojection = SampleHistory(pixel, virtualHistoryPixel, 32.0,
-            historyVirtualRepojection, historyMomentsVirtualRepojection);
+        vec4 historyVirtualRepojection;
+        vec4 historyMomentsVirtualRepojection;
+        bool completeVirtualFootprint;
+        vec4 virtualHistoryMin, virtualHistoryMax;
+        float virtualFootprintConfidence;
+        bool validRepojection = SampleHistory(pixel, virtualHistoryPixel, 32.0,
+            historyVirtualRepojection, historyMomentsVirtualRepojection,
+            completeVirtualFootprint, virtualHistoryMin, virtualHistoryMax, virtualFootprintConfidence) &&
+            !IsOffscreen(virtualHistoryUv);
 
 #ifdef BICUBIC_FILTER
-        // This should be implemented more efficiently, see 
-        if (validRepojection) {
-            vec4 catmullRomHistory;
-            uv = (virtualHistoryPixel + 0.5) * invResolution;
-            bool success = SampleCatmullRom(pixel, uv, catmullRomHistory);
-            historyVirtualRepojection = success ? catmullRomHistory : historyVirtualRepojection; 
-        }
+        if (validRepojection && completeVirtualFootprint)
+            historyVirtualRepojection = clamp(SampleCatmullRom(historyTexture, virtualHistoryUv, resolution),
+                virtualHistoryMin, virtualHistoryMax);
 #endif
+        historyVirtualRepojection.rgb *= exposureScale;
+        historyMomentsVirtualRepojection.rg *= momentsExposureScale;
 
-        vec3 virtualNormal = normalize(DecodeNormal(texelFetch(historyNormalTexture, ivec2(virtualHistoryPixel), 0).rg));
-        float virtualRoughness = texelFetch(historyRoughnessMetallicAoTexture, ivec2(virtualHistoryPixel), 0).r;
+        ivec2 virtualHistoryTexel = clamp(ivec2(virtualHistoryPixel), ivec2(0), ivec2(resolution) - ivec2(1));
+        vec3 virtualNormal = normalize(DecodeNormal(texelFetch(historyNormalTexture, virtualHistoryTexel, 0).rg));
+        float virtualRoughness = texelFetch(historyRoughnessMetallicAoTexture, virtualHistoryTexel, 0).r;
 
-        const float virtualCutoff = 0.2;
         float virtualConfidence = dominantFactor * sqr(max((virtualCutoff - roughness) / virtualCutoff, 0.0));
         virtualConfidence *= pow(max(dot(virtualNormal, normal), 0.0), 512.0);
         virtualConfidence *= pow(1.0 - abs(virtualRoughness - roughness), 32.0);
 
-        valid = valid || validRepojection;
-        history = (historyVirtualRepojection * virtualConfidence + 
-                (1.0 - virtualConfidence) * history);
+        // Only valid reprojections contribute, below the virtual cutoff the virtual one replaces an invalid surface one
+        float virtualWeight = validRepojection ? (valid ? virtualConfidence : (roughness < virtualCutoff ? 1.0 : 0.0)) : 0.0;
+        valid = valid || virtualWeight > 0.0;
+        history = mix(history, historyVirtualRepojection, virtualWeight);
+        historyMoments = mix(historyMoments, historyMomentsVirtualRepojection, virtualWeight);
+        footprintConfidence = mix(footprintConfidence, virtualFootprintConfidence, virtualWeight);
     }
 
     vec2 currentMoments;
     currentMoments.r = currentColor.r;
     currentMoments.g = currentMoments.r * currentMoments.r;
 
-    vec3 historyNeighbourhoodMin = mean - std;
-    vec3 historyNeighbourhoodMax = mean + std;
+    // Two standard deviations, a narrower box shortens converged histories at highlights and reflected edges
+    vec3 historyNeighbourhoodMin = mean - 2.0 * std;
+    vec3 historyNeighbourhoodMax = mean + 2.0 * std;
 
     vec3 currentNeighbourhoodMin = mean - pushConstants.currentClipFactor * std;
     vec3 currentNeighbourhoodMax = mean + pushConstants.currentClipFactor * std;
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
 
     vec3 historyColor = RGBToYCoCg(history.rgb);
+
+    float historyLength = historyMoments.b * footprintConfidence;
+
+    // Histories outside the neighborhood shorten, small neighborhoods (thin objects, edges) fully from ten samples on
     float clipBlend = ClipBoundingBox(historyNeighbourhoodMin, historyNeighbourhoodMax,
         historyColor, currentColor);
+    float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
+    historyLength *= 1.0 - adjClipBlend * saturate((sampleCount - 2.0) / 8.0);
 
-    // In case of clipping we might also reject the sample. TODO: Investigate
-    clipBlend = ClipBoundingBox(historyNeighbourhoodMin, historyNeighbourhoodMax,
-        historyColor, currentColor);
-    float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);    
+    historyLength = LimitHistoryByNearbyMotion(historyLength, nearbyMotion);
 
-    currentColor = valid ? currentColor : mean;
-
-    historyColor = YCoCgToRGB(historyColor);
-    currentColor = YCoCgToRGB(currentColor);
-
-    float temporalWeight = mix(pushConstants.temporalWeight, 0.0, adjClipBlend);
-
-#ifdef UPSCALE
-    float roughnessMinTemporalWeight = 0.75;
-#else
-    float roughnessMinTemporalWeight = temporalWeight;
-#endif
-    float factor = clamp(32.0 * log(roughness + 1.0), roughnessMinTemporalWeight, temporalWeight);
-    //factor = GetAccumulationSpeed(NdotV, roughness, parallax);
-    valid = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
-         || uv.y > 1.0) ? false : valid;
-
-    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
-
-    float historyLength = historyMoments.b;
-    if (factor <= 0.1 * roughness || !valid) {
+    if (pushConstants.resetHistory > 0 || !valid) {
+        valid = false;
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;
     }
 
-    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
-    factor = min(factor, historyLength / (historyLength + 1.0));
+    // New and short histories (disocclusions) start from the neighborhood mean instead of single noisy samples.
+    // Mirrors keep their sample, it has no noise and the mean would mix different reflected content
+    currentColor = mix(mean, currentColor, max(saturate(historyLength / 4.0), 1.0 - saturate(roughness / virtualCutoff)));
+
+    historyColor = YCoCgToRGB(historyColor);
+    currentColor = YCoCgToRGB(currentColor);
+
+    float factor = min(pushConstants.temporalWeight, historyLength / (historyLength + 1.0));
 
 #ifdef UPSCALE
     // Misses have a ray length of zero, so the upsampling marks pixels it filled in by their position
     bool traced = pixel % 2 == pixelOffsets[globalData.frameCount % 4];
-    factor = traced ? factor : (valid ? mix(1.0, 0.0, adjClipBlend) : factor);
+    factor = traced ? factor : (valid ? min(1.0 - adjClipBlend, historyLength / (historyLength + 1.0)) : factor);
 #endif
 
     vec3 resolve = factor <= 0.0 ? currentColor : mix(currentColor, historyColor, factor);
     vec2 momentsResolve = factor <= 0.0 ? currentMoments : mix(currentMoments, historyMoments.rg, factor);
 
+    // Accumulated for the spatial filter, which limits its radius by the lobe the reflection rays cover
+    // Pixels above the cutoff sample the probes and have no ray length
+    bool traceRay = roughness < pushConstants.roughnessCutoff && filteredRayLength > 0.0;
+    float currentHitDistance = traceRay ? EncodeHitDistance(filteredRayLength) : 1.0;
+    float hitDistance = factor <= 0.0 ? currentHitDistance : mix(currentHitDistance, historyMoments.a, factor);
+
+    float accumulatedFrames = GetAccumulatedFrames(factor, historyLength);
+
     // Boost variance when we have a small history length (we trade blur for noise)
-    float varianceBoost = max(1.0, 4.0 / (historyLength + 1.0));
+    float varianceBoost = max(1.0, 4.0 / accumulatedFrames);
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
     variance = roughness <= 0.1 ? max(variance * roughness, roughness * 1e-6) : variance;
 
-    imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
+    imageStore(momentsImage, pixel, vec4(momentsResolve, accumulatedFrames, hitDistance));
     imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));
 
 }

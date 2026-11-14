@@ -3,7 +3,7 @@
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
-layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D giImage;
+layout (set = 3, binding = 0, rgba16f) uniform image2D giImage;
 
 layout(push_constant) uniform constants {
     ivec2 resolution;
@@ -46,6 +46,7 @@ void main() {
     }
 
     gi /= float(pushConstants.sampleCount);
-    imageStore(giImage, pixel, vec4(gi, 1.0));
+    float hitDistance = imageLoad(giImage, pixel).a;
+    imageStore(giImage, pixel, vec4(gi, hitDistance));
 
 }

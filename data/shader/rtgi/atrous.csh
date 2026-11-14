@@ -5,6 +5,8 @@
 #include <../common/material.hsh>
 #include <../common/normalencode.hsh>
 
+#include <../common/denoiser.hsh>
+
 layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D outputImage;
@@ -24,6 +26,8 @@ const int kernelRadius = 4;
 const int kernelRadius = 8;
 #endif
 
+const int stepSize = kernelRadius / 2;
+
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
 
@@ -42,13 +46,17 @@ struct PackedPixelData {
 };
 
 shared PackedPixelData pixelData[sharedDataSize];
+shared uint groupFilters;
 
 layout(push_constant) uniform constants {
-    int stepSize;
     float strength;
 } pushConstants;
 
 const float kernelWeights[3] = { 1.0, 2.0 / 3.0, 1.0 / 6.0 };
+
+// In pixels, the three passes together reach 14 pixels
+const float maxBlurRadius = 16.0;
+const float minBlurRadius = 1.5;
 
 PackedPixelData PackPixelData(PixelData data) {
     PackedPixelData compressed;
@@ -93,7 +101,9 @@ void LoadGroupSharedData() {
 
         data.color = texelFetch(inputTexture, texel, 0);
 
-        data.depth = texelFetch(depthTexture, texel, 0).r;
+        // Linear depth, zero marks the sky
+        float depth = texelFetch(depthTexture, texel, 0).r;
+        data.depth = depth == 1.0 ? 0.0 : ConvertDepthToViewSpaceDepth(depth);
 
         data.materialIdx = texelFetch(materialIdxTexture, texel, 0).r;
 
@@ -118,32 +128,6 @@ float Luma(vec3 color) {
 
     const vec3 luma = vec3(0.299, 0.587, 0.114);
     return dot(color, luma);
-
-}
-
-float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
-                                vec3 centerNormal, vec3 sampleNormal,
-                                float centerDepth, float sampleDepth,
-                                uint centerMaterialIdx, uint sampleMaterialIdx,
-                                float luminancePhi, float normalPhi, 
-                                float depthPhi, bool noHistory) {
-
-    const float epsilon = 1e-10;
-
-    float luminanceDiff = abs(centerLuminance - sampleLuminance);
-    float luminanceWeight = min(exp(-luminanceDiff / (luminancePhi + epsilon)), 1.0);
-
-    luminanceWeight = noHistory ? 1.0 : luminanceWeight;
-
-    float normalDiff = saturate(dot(centerNormal, sampleNormal));
-    float normalWeight = min(pow(normalDiff, normalPhi), 1.0);
-
-    float depthDiff = abs(centerDepth - sampleDepth);
-    float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
-
-    float materialWeight = centerMaterialIdx == sampleMaterialIdx ? 1.0 : 0.0;
-
-    return luminanceWeight * normalWeight * depthWeight * materialWeight;
 
 }
 
@@ -173,75 +157,114 @@ float GetFilteredVariance(ivec2 pixel) {
 
 void main() {
 
-    LoadGroupSharedData();
-
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
     ivec2 resolution = imageSize(outputImage);
-
-    if (pixel.x >= resolution.x || pixel.y >= resolution.y)
-        return;
+    bool insideImage = pixel.x < resolution.x && pixel.y < resolution.y;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
+    vec2 texelSize = 1.0 / vec2(resolution);
+
+    float depth = insideImage ? texelFetch(depthTexture, pixel, 0).r : 1.0;
+    vec4 moments = insideImage ? texelFetch(historyLengthTexture, pixel, 0) : vec4(0.0);
+
+    vec3 viewRay = GetViewRay(texCoord);
+    vec3 centerPosition = viewRay * ConvertDepthToViewSpaceDepth(depth);
+
+    float historyLength = moments.b;
+    bool noHistory = historyLength <= 1.0;
+
+    // The blur radius shrinks with the effectively accumulated frames and is limited by the hit distance.
+    // Short histories need the blur more than the details, the limit only sets in while they grow
+    float historyRadius = maxBlurRadius / sqrt(max(historyLength, 1.0));
+
+    float hitDistance = DecodeHitDistance(moments.a);
+    // The projection flips y, its scale is negative
+    float pixelWorldSize = 2.0 * abs(centerPosition.z) / (abs(globalData.pMatrix[1][1]) * float(resolution.y));
+    float hitRadius = max(hitDistance / pixelWorldSize, maxBlurRadius / max(historyLength, 1.0));
+
+    float blurRadius = max(minBlurRadius, min(historyRadius, hitRadius));
+
+    // Below half the step size the taps of this pass have no weight left
+    bool filterPixel = insideImage && depth < 1.0 && blurRadius >= 0.5 * float(stepSize);
+
+    if (gl_LocalInvocationIndex == 0)
+        groupFilters = 0u;
+    barrier();
+    if (filterPixel)
+        atomicOr(groupFilters, 1u);
+    barrier();
+
+    if (groupFilters != 0u)
+        LoadGroupSharedData();
+
+    if (!insideImage || depth == 1.0)
+        return;
+
+    if (!filterPixel) {
+        imageStore(outputImage, pixel, texelFetch(inputTexture, pixel, 0));
+        return;
+    }
+
+    vec3 viewRayDx = GetViewRay(texCoord + vec2(texelSize.x, 0.0)) - viewRay;
+    vec3 viewRayDy = GetViewRay(texCoord + vec2(0.0, texelSize.y)) - viewRay;
 
     PixelData centerPixelData = GetPixel(ivec2(0));
-    
+
     vec4 centerColor = centerPixelData.color;
-    float centerDepth = centerPixelData.depth;
     vec3 centerNormal = centerPixelData.normal;
     uint centerMaterialIdx = centerPixelData.materialIdx;
 
-    if (centerDepth == 1.0)
-        return;
-
-    float historyLength = texelFetch(historyLengthTexture, pixel, 0).b;
-    bool noHistory = historyLength <= 1.0;
-
     float centerLuminance = Luma(centerColor.rgb);
-    float centerLinearDepth = ConvertDepthToViewSpaceDepth(centerDepth);
-    
+
     vec4 outputColor = centerColor;
     float totalWeight = 1.0;
 
     float variance = GetFilteredVariance(pixel);
     float stdDeviation = sqrt(max(0.0, variance));
 
-    vec3 viewDir = normalize(ConvertDepthToViewSpace(centerDepth, texCoord));
+    vec3 viewDir = normalize(centerPosition);
     float NdotV = abs(dot(viewDir, centerNormal));
     float depthPhi = max(32.0, NdotV * 128.0);
 
+    // All weights of a tap go into one exponent, the terms that don't depend on the tap are computed once.
+    // The distance to the surface plane is affine in the offset since the view ray is
+    const float log2e = 1.442695;
+    float planeRay = dot(viewRay, centerNormal);
+    float planeRayDx = dot(viewRayDx, centerNormal);
+    float planeRayDy = dot(viewRayDy, centerNormal);
+    float planeOffset = dot(centerPosition, centerNormal);
+    float planeScale = depthPhi * log2e / abs(centerPosition.z);
+    float luminanceScale = noHistory ? 0.0 : log2e / (stdDeviation * pushConstants.strength + 1e-10);
+    float normalPhi = noHistory ? 2.0 : NdotV * 128.0;
+    float distanceScale = log2e * float(stepSize * stepSize) / sqr(blurRadius);
+
     const int radius = 2;
     for (int x = -radius; x <= radius; x++) {
-        for (int y = -radius; y <= radius; y++) {            
-            ivec2 samplePixel = pixel + ivec2(x, y) * pushConstants.stepSize;
+        for (int y = -radius; y <= radius; y++) {
+            ivec2 offset = ivec2(x, y) * stepSize;
+            ivec2 samplePixel = pixel + offset;
 
             if (samplePixel.x >= resolution.x || samplePixel.y >= resolution.y ||
                 samplePixel.x < 0 || samplePixel.y < 0
                 || (x == 0 && y == 0))
                 continue;
 
-            PixelData samplePixelData = GetPixel(ivec2(x, y) * pushConstants.stepSize);
+            PixelData samplePixelData = GetPixel(offset);
 
-            if (samplePixelData.depth == 1.0)
+            if (samplePixelData.depth == 0.0 || samplePixelData.materialIdx != centerMaterialIdx)
                 continue;
 
             vec4 sampleColor = samplePixelData.color;
-            vec3 sampleNormal = samplePixelData.normal;
 
-            float sampleDepth = samplePixelData.depth;
-            float sampleLuminance = Luma(sampleColor.rgb);
+            // The distance to the surface plane stays stable at grazing angles, unlike the depth
+            float planeDistance = samplePixelData.depth * (planeRay + float(offset.x) * planeRayDx +
+                float(offset.y) * planeRayDy) - planeOffset;
+            float normalDot = max(dot(centerNormal, samplePixelData.normal), 1e-6);
 
-            uint sampleMaterialIdx = samplePixelData.materialIdx;
-
-            float kernelWeight = kernelWeights[abs(x)] * kernelWeights[abs(y)];
-            float edgeStoppingWeight = ComputeEdgeStoppingWeight(
-                                    centerLuminance, sampleLuminance,
-                                    centerNormal, sampleNormal,
-                                    centerDepth, sampleDepth,
-                                    centerMaterialIdx, sampleMaterialIdx,
-                                    stdDeviation * pushConstants.strength, 
-                                    noHistory ? 2.0 : NdotV * 128.0, depthPhi, noHistory);
-
-            float weight = kernelWeight * edgeStoppingWeight;
+            float exponent = abs(centerLuminance - Luma(sampleColor.rgb)) * luminanceScale +
+                abs(planeDistance) * planeScale + float(x * x + y * y) * distanceScale -
+                normalPhi * log2(normalDot);
+            float weight = kernelWeights[abs(x)] * kernelWeights[abs(y)] * exp2(-exponent);
             
             totalWeight += weight;
             outputColor += vec4(vec3(weight), weight * weight) * sampleColor;

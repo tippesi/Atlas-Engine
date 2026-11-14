@@ -49,7 +49,7 @@ void LoadGroupSharedData() {
     if (gl_LocalInvocationIndex < depthDataSize) {
         ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
         offset += workGroupOffset;
-        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0) - 1);
         depths[gl_LocalInvocationIndex] = ConvertDepthToViewSpaceDepth(texelFetch(lowResDepthTexture, offset, 0).r);
 
         vec3 normal = DecodeNormal(texelFetch(lowResNormalTexture, offset, 0).rg);
@@ -133,7 +133,7 @@ float GetPixelEdgeWeight(int sharedMemoryOffset, float referenceDepth, vec3 refe
     return depthWeight * normalWeight;
 }
 
-UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, float referenceRoughness, vec2 highResPixel) {
+UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     UpsampleResult result;
 
@@ -172,7 +172,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, float refere
     result.ao /= totalWeight;
 
     float maxWeight = 0.0;
-    int maxMemoryIdx = 0;
+    int maxMemoryIdx = Flatten2D(pixel, unflattenedDepthDataSize);
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
         
@@ -183,7 +183,8 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, float refere
         }
     }
 
-    if (totalWeight < maxWeight && referenceRoughness > 0.01) {
+    // Only fall back to the most similar neighbor when the bilinear footprint is rejected
+    if (totalWeight <= 0.05 * maxWeight) {
         result.ao = aos[maxMemoryIdx];
         result.reflection = reflections[maxMemoryIdx];
     }
@@ -224,7 +225,7 @@ void main() {
         vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
         vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
 
-        upsampleResult = Upsample(depth, surface.N, surface.material.roughness, vec2(pixel));
+        upsampleResult = Upsample(depth, surface.N, vec2(pixel));
 
         // Indirect specular BRDF
         vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));

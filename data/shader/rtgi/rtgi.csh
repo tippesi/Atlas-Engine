@@ -21,6 +21,8 @@
 #include <../ddgi/transmission.hsh>
 #include <../clouds/shadow.hsh>
 
+#include <../common/denoiser.hsh>
+
 #ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 8, local_size_y = 4) in;
 #endif
@@ -106,10 +108,14 @@ void main() {
         int pixelIdx = pixel.y * resolution.x + pixel.x;
 #endif
 
+        // Mean of the encoded hit distances, misses count as one
+        float hitDistanceSum = 0.0;
+        int hitDistanceCount = 0;
+
         if (depth < 1.0) {
 
 #ifdef AUTO_EXPOSURE
-            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r * globalData.preExposure;
 #else
             float radianceLimit = uniforms.radianceLimit;
 #endif
@@ -186,6 +192,9 @@ void main() {
                     vec3 radiance = vec3(0.0);
                     HitClosestOpacityCheck(ray, INSTANCE_MASK_ALL, 0.0, rayLength);
 
+                    hitDistanceSum += ray.hitID != -1 ? EncodeHitDistance(ray.hitDistance) : 1.0;
+                    hitDistanceCount++;
+
 #ifdef DDGI               
                     radiance = EvaluateHit(ray, sampleNormal, blueNoiseVec.z);
                     if (ray.hitID == -1) {
@@ -224,9 +233,11 @@ void main() {
             for (int i = 0; i < uniforms.sampleCount; i++)
                 deferredSamples[pixelIdx * uniforms.sampleCount + i].radiance.w = 0.0;
         }
-#else
-        imageStore(rtrImage, pixel, vec4(reflection, 1.0));
 #endif
+
+        // With deferred shadow rays the resolve adds the radiance and keeps the hit distance
+        float hitDistance = hitDistanceCount > 0 ? hitDistanceSum / float(hitDistanceCount) : 1.0;
+        imageStore(rtrImage, pixel, vec4(reflection, hitDistance));
     }
 
 }

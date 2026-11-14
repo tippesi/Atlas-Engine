@@ -21,6 +21,8 @@
 #include <../ddgi/transmission.hsh>
 #include <../clouds/shadow.hsh>
 
+#include <../common/denoiser.hsh>
+
 #ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 8, local_size_y = 4) in;
 #endif
@@ -95,6 +97,13 @@ void main() {
 
 #ifdef SSR
         vec4 reflection = imageLoad(rtrImage, pixel);
+        // Pixels SSR resolved keep its result, the resolve skips them by the marker
+        if (reflection.a != 0.0) {
+#ifdef DEFERRED_SHADOW_RAYS
+            deferredSamples[(pixel.y * resolution.x + pixel.x) * uniforms.sampleCount].radiance.w = -1.0;
+#endif
+            return;
+        }
 #else
         vec4 reflection = vec4(0.0);
 #endif
@@ -137,10 +146,13 @@ void main() {
         float roughness = texelFetch(roughnessMetallicAoTexture, highResPixel, 0).r;
         material.roughness *= material.roughnessMap || material.terrain ? roughness : 1.0;
 
-        float hitDistance = reflection.a;
 #ifdef DEFERRED_SHADOW_RAYS
         int pixelIdx = pixel.y * resolution.x + pixel.x;
 #endif
+
+        // Mean of the encoded hit distances, misses and probe samples count as one
+        float hitDistanceSum = 0.0;
+        int hitDistanceCount = 0;
 
         if (material.roughness <= 1.0 && depth < 1.0 && reflection.a == 0.0) {
 
@@ -207,11 +219,11 @@ void main() {
                     ray.hitDistance = 0.0;
 
                     vec3 radiance = vec3(0.0);
+                    float encodedHitDistance = 1.0;
 
                     if (roughness <= uniforms.roughnessCutoff) {
                         HitClosestOpacityCheck(ray, INSTANCE_MASK_ALL, 0.0, INF);
-                        // Misses have an infinite distance, which breaks the virtual reprojection of the temporal pass
-                        hitDistance = ray.hitID != -1 ? ray.hitDistance : 0.0;
+                        encodedHitDistance = ray.hitID != -1 ? EncodeHitDistance(ray.hitDistance) : 1.0;
                         radiance = EvaluateHit(ray, blueNoiseVec.z);
                     }
                     else {
@@ -223,8 +235,10 @@ void main() {
 #elif defined(IRRADIANCE_VOLUME)
                         radiance = IsInsideVolume(worldPos) ? probeIrradiance.rgb : vec3(0.0);
 #endif
-                        hitDistance = 1.0;
                     }
+
+                    hitDistanceSum += encodedHitDistance;
+                    hitDistanceCount++;
 
 #ifdef DEFERRED_SHADOW_RAYS
                     deferredSamples[deferredSampleIdx].radiance = vec4(radiance, 1.0);
@@ -249,6 +263,9 @@ void main() {
         }
 #endif
 
+        // Misses store zero, an infinite distance breaks the virtual reprojection of the temporal pass
+        float meanHitDistance = hitDistanceCount > 0 ? hitDistanceSum / float(hitDistanceCount) : 1.0;
+        float hitDistance = meanHitDistance < 1.0 ? DecodeHitDistance(meanHitDistance) : 0.0;
         imageStore(rtrImage, pixel, vec4(reflection.rgb, hitDistance));
     }
 
