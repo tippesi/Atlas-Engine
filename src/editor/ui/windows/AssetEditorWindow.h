@@ -96,6 +96,11 @@ namespace Atlas::Editor::UI {
 
         Panel propertiesPanel = Panel("Properties");
 
+        // Area of the panels in this frame, e.g. for a panel maximized within the window
+        ImVec2 dockSpacePos = ImVec2(0.0f, 0.0f);
+        ImVec2 dockSpaceSize = ImVec2(0.0f, 0.0f);
+        ImGuiID dockSpaceViewport = 0;
+
     private:
         void CreatePreview();
 

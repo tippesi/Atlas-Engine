@@ -186,10 +186,11 @@ namespace Atlas::Editor::UI {
 
         ImGui::End();
 
+        // Covers the panels of this window only, not the whole editor
         if (graphPanel.maximized && material->HasGraph()) {
-            auto viewport = ImGui::GetMainViewport();
-            ImGui::SetNextWindowPos(viewport->WorkPos);
-            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowPos(dockSpacePos);
+            ImGui::SetNextWindowSize(dockSpaceSize);
+            ImGui::SetNextWindowViewport(dockSpaceViewport);
 
             auto name = "Material graph##Maximized" + std::string(graphPanelWindow.GetNameID());
             ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
