@@ -435,7 +435,9 @@ namespace Atlas::Capture {
     void App::UnloadContent() {
 
         if (phase != Phase::Done && phase != Phase::Idle) {
-            Fail("The window was closed before the job finished");
+            // A lost device ends the main loop like a closed window, e.g. when the scene exceeds the GPU memory
+            Fail(graphicsDevice->isDeviceLost ? "The GPU device was lost before the job finished (out of GPU memory?)" :
+                "The window was closed before the job finished");
             Finish();
         }
         report.End();
