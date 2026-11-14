@@ -64,7 +64,7 @@ const float nearSurfaceCameraDepth = 1.5;
 const float nearSurfaceDistance = 15.0;
 
 // Shore softness (lower is softer)
-const float shoreSoftness = 70.5;
+const float shoreSoftness = 7.5;
 
 const float fadeoutDistance = 100.0;
 const float fadeoutFalloff = 0.2;
@@ -208,7 +208,7 @@ void main() {
 
     vec2 shoreInteraction = vec2(0.0);
 #ifdef TERRAIN
-    shoreInteraction = CalculateShoreInteraction(fModelCoord);
+    shoreInteraction = CalculateShoreInteraction(fOriginalCoord);
 #endif
 
     // Calculate foam based on folding of wave and fade it out near shores

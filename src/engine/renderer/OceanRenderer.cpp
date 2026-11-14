@@ -490,10 +490,6 @@ namespace Atlas {
             else
                 dummyTexture.Bind(commandList, 3, 2);
 
-            if (scene->renderState.sky.GetProbe()) {
-                scene->renderState.sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
-            }
-
             // Normals are only computed where the ocean isn't hidden by the scene
             auto sceneDepthTexture = target->GetData(FULL_RES)->depthTexture;
             commandList->BindImage(sceneDepthTexture->image, nearestSampler, 3, 5);
