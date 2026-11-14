@@ -71,8 +71,17 @@ namespace Atlas::Editor {
         Serialization::DeserializeConfig();
         Serialization::DeserializeContentBrowserWindow(contentBrowserWindow);
 
-        Serialization::DeserializeLogWindow(logWindow);
+        Serialization::DeserializeDrawerWindow(logWindow);
+        Serialization::DeserializeDrawerWindow(profilerWindow);
         restoringScenes = false;
+
+        // A hand edited config may name a drawer twice or one which doesn't exist
+        auto& statusBarDrawers = Singletons::config->statusBarDrawers;
+        std::vector<std::string> knownDrawers;
+        for (const auto& name : statusBarDrawers)
+            if (FindDrawer(name) && std::find(knownDrawers.begin(), knownDrawers.end(), name) == knownDrawers.end())
+                knownDrawers.push_back(name);
+        statusBarDrawers = knownDrawers;
 
         // The font depends on the scale from the config, its resources are created only once
         UpdateUiScale();
@@ -109,7 +118,8 @@ namespace Atlas::Editor {
         }
 
         Serialization::SerializeContentBrowserWindow(contentBrowserWindow);
-        Serialization::SerializeLogWindow(logWindow);
+        Serialization::SerializeDrawerWindow(logWindow);
+        Serialization::SerializeDrawerWindow(profilerWindow);
         Serialization::SerializeConfig();
         ContentDiscovery::Shutdown();
 
@@ -525,6 +535,7 @@ namespace Atlas::Editor {
             DockPinnedDrawer(logWindow);
             logWindow.Render();
             sectionScope.Next("Profiler window");
+            DockPinnedDrawer(profilerWindow);
             profilerWindow.Render();
             sectionScope.Next("Settings window");
             settingsWindow.Render();
@@ -866,6 +877,7 @@ namespace Atlas::Editor {
         registerPin("content browser", &contentBrowserWindow);
         registerPin("log", &logWindow);
         registerWindow("profiler", &profilerWindow.show);
+        registerPin("profiler", &profilerWindow);
         registerWindow("engine settings", &settingsWindow.show);
         registerWindow("geometry brush", &geometryBrushWindow.show);
         commandPalette.Register({ .category = "Window", .name = "Reset layout",
@@ -1114,18 +1126,34 @@ namespace Atlas::Editor {
                 window->DrawList->AddLine(window->Pos, ImVec2(window->Pos.x + window->Size.x, window->Pos.y),
                     ImGui::GetColorU32(ImGuiCol_Border));
 
+                auto warningCount = logWindow.GetUnseenWarningCount();
+                auto errorCount = logWindow.GetUnseenErrorCount();
+
+                // The drawers chosen for the status bar, a right click on it changes them
+                auto contentBrowserHovered = false;
+                auto firstDrawer = true;
+                for (const auto& name : Singletons::config->statusBarDrawers) {
+                    auto drawer = FindDrawer(name);
+                    if (!drawer)
+                        continue;
+                    if (!firstDrawer)
+                        gap(4.0f);
+                    firstDrawer = false;
+
+                    auto isLog = drawer->window == &logWindow;
+                    auto hovered = RenderDrawerButton(*drawer->window, drawer->icon, drawer->name, drawer->shortcut,
+                        isLog ? errorCount : 0, isLog ? warningCount : 0);
+                    if (drawer->window == &contentBrowserWindow)
+                        contentBrowserHovered = hovered;
+                }
+
                 // Dragging something onto the button opens the content browser as a drop target
-                auto contentBrowserHovered = RenderDrawerButton(contentBrowserWindow, IconType::Folder, "Content browser", "Ctrl+B");
                 auto isDragging = ImGui::IsDragDropActive();
                 drawerSpringTime = isDragging && contentBrowserHovered ? drawerSpringTime + ImGui::GetIO().DeltaTime : 0.0f;
                 if (drawerSpringTime > 0.35f)
                     contentBrowserWindow.show = true;
 
-                auto warningCount = logWindow.GetUnseenWarningCount();
-                auto errorCount = logWindow.GetUnseenErrorCount();
-
-                gap(4.0f);
-                RenderDrawerButton(logWindow, IconType::Log, "Log", "Ctrl+J", errorCount, warningCount);
+                RenderStatusBarMenu();
 
                 gap(16.0f);
 
@@ -1412,8 +1440,10 @@ namespace Atlas::Editor {
 
         if (hoveredBadge)
             ImGui::SetItemTooltip("%d new %s", hoveredBadge->count, hoveredBadge->name);
-        else
+        else if (*shortcut)
             ImGui::SetItemTooltip("Toggle %s (%s)", label, shortcut);
+        else
+            ImGui::SetItemTooltip("Toggle %s", label);
 
         return hovered;
 
@@ -1422,10 +1452,15 @@ namespace Atlas::Editor {
     void App::UpdateDrawers() {
 
         // Only one drawer is open at a time, the last one opened replaces the other one
-        if (contentBrowserWindow.IsOpening() && logWindow.show && !logWindow.pinned)
-            contentBrowserWindow.TakeOver(logWindow);
-        else if (logWindow.IsOpening() && contentBrowserWindow.show && !contentBrowserWindow.pinned)
-            logWindow.TakeOver(contentBrowserWindow);
+        for (auto& opening : drawers) {
+            if (!opening.window->IsOpening())
+                continue;
+            for (auto& other : drawers) {
+                if (other.window != opening.window && other.window->show && !other.window->pinned)
+                    opening.window->TakeOver(*other.window);
+            }
+            break;
+        }
 
         // The source item of a drag isn't rendered anymore after the drawer closed
         auto payload = ImGui::GetDragDropPayload();
@@ -1447,11 +1482,11 @@ namespace Atlas::Editor {
             auto settings = ImGui::FindWindowSettingsByID(ImHashStr(drawer.GetNameID()));
             drawer.requestDocking = !settings || !settings->DockId;
             };
-        requestDockingIfLost(contentBrowserWindow);
-        requestDockingIfLost(logWindow);
+        for (auto& drawer : drawers)
+            requestDockingIfLost(*drawer.window);
 
         drawerDockNodeID = 0;
-        if (!contentBrowserWindow.requestDocking && !logWindow.requestDocking)
+        if (std::none_of(drawers.begin(), drawers.end(), [](const Drawer& drawer) { return drawer.window->requestDocking; }))
             return;
 
         // A drawer that is docked already shares its node with the new one
@@ -1459,9 +1494,11 @@ namespace Atlas::Editor {
             auto window = ImGui::FindWindowByName(drawer.GetNameID());
             return drawer.pinned && !drawer.requestDocking && window ? window->DockId : 0;
             };
-        drawerDockNodeID = getDockID(contentBrowserWindow) ? getDockID(contentBrowserWindow) : getDockID(logWindow);
-        if (drawerDockNodeID)
-            return;
+        for (const auto& drawer : drawers) {
+            drawerDockNodeID = getDockID(*drawer.window);
+            if (drawerDockNodeID)
+                return;
+        }
 
         auto centralNode = ImGui::DockBuilderGetCentralNode(dsID);
         if (!centralNode)
@@ -1481,6 +1518,70 @@ namespace Atlas::Editor {
         drawer.requestDocking = false;
 
         ImGui::SetNextWindowDockID(drawerDockNodeID, ImGuiCond_Always);
+
+    }
+
+    void App::RenderStatusBarMenu() {
+
+        if (!ImGui::BeginPopupContextWindow("Status bar menu"))
+            return;
+
+        auto& shownDrawers = Singletons::config->statusBarDrawers;
+
+        ImGui::TextDisabled("Drawers in the status bar, drag to reorder");
+        ImGui::Separator();
+
+        int32_t removedDrawer = -1, draggedDrawer = -1;
+        std::vector<float> rowTops;
+        for (int32_t i = 0; i < int32_t(shownDrawers.size()); i++) {
+            // The id follows the entry, such that it stays active while it moves past others
+            ImGui::PushID(shownDrawers[i].c_str());
+            auto shown = true;
+            if (ImGui::Checkbox("##Shown", &shown))
+                removedDrawer = i;
+            ImGui::SameLine();
+            ImGui::Selectable(shownDrawers[i].c_str(), false, ImGuiSelectableFlags_NoAutoClosePopups);
+            rowTops.push_back(ImGui::GetItemRectMin().y);
+            if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+                draggedDrawer = i;
+            ImGui::PopID();
+        }
+        // A dragged entry moves to the row below the mouse
+        if (draggedDrawer >= 0 && removedDrawer < 0) {
+            int32_t targetDrawer = 0;
+            for (int32_t i = 1; i < int32_t(rowTops.size()); i++)
+                if (ImGui::GetIO().MousePos.y >= rowTops[i])
+                    targetDrawer = i;
+            if (targetDrawer != draggedDrawer) {
+                auto name = shownDrawers[draggedDrawer];
+                shownDrawers.erase(shownDrawers.begin() + draggedDrawer);
+                shownDrawers.insert(shownDrawers.begin() + targetDrawer, name);
+            }
+        }
+        if (removedDrawer >= 0)
+            shownDrawers.erase(shownDrawers.begin() + removedDrawer);
+
+        // Drawers which aren't shown are added at the end
+        for (const auto& drawer : drawers) {
+            if (std::find(shownDrawers.begin(), shownDrawers.end(), drawer.name) != shownDrawers.end())
+                continue;
+            ImGui::PushID(drawer.name);
+            auto shown = false;
+            if (ImGui::Checkbox("##Shown", &shown))
+                shownDrawers.push_back(drawer.name);
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", drawer.name);
+            ImGui::PopID();
+        }
+
+        ImGui::EndPopup();
+
+    }
+
+    App::Drawer* App::FindDrawer(const std::string& name) {
+
+        auto iter = std::find_if(drawers.begin(), drawers.end(), [&](const Drawer& drawer) { return name == drawer.name; });
+        return iter != drawers.end() ? &*iter : nullptr;
 
     }
 
@@ -1578,11 +1679,10 @@ namespace Atlas::Editor {
 
         ImGui::DockBuilderFinish(dsID);
 
-        profilerWindow.show = false;
         settingsWindow.show = false;
         // Pinned drawers keep their place in the new layout
-        contentBrowserWindow.show = contentBrowserWindow.requestDocking = contentBrowserWindow.pinned;
-        logWindow.show = logWindow.requestDocking = logWindow.pinned;
+        for (auto& drawer : drawers)
+            drawer.window->show = drawer.window->requestDocking = drawer.window->pinned;
 
         for (const auto& sceneWindow : sceneWindows) {
             sceneWindow->resetDockingLayout = true;

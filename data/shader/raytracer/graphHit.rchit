@@ -9,7 +9,7 @@ layout(location = 1) rayPayloadInEXT MaterialGraphHit graphHit;
 
 void main() {
 
-    mgHitTextureLevel = graphHit.textureLevel;
+    materialGraphHitTextureLevel = graphHit.textureLevel;
 
     mat4 modelMatrix = mat4(gl_ObjectToWorldEXT);
     mat3 tangentFrame = graphHit.tangentFrame;

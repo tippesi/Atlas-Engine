@@ -15,6 +15,9 @@ namespace Atlas::Editor {
 
 		std::vector<ResourceHandle<Scene::Scene>> openedScenes;
 
+		// Names of the drawers in the status bar, in their order
+		std::vector<std::string> statusBarDrawers = { "Content browser", "Log" };
+
 		// Most recently opened scene paths, newest first
 		std::vector<std::string> recentScenes;
 

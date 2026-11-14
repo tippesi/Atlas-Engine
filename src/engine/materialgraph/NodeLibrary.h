@@ -80,6 +80,9 @@ namespace Atlas::MaterialGraph {
         // Creates the pins and the function of a code node from its code, inputs and output type
         static void UpdateCodeDefinition(Node& node);
 
+        // The parameters of the function of a code node, e.g. "vec3 color, float strength"
+        static std::string GetCodeParameters(const Node& node);
+
         // Names of the types in files and jobs, float to vec4 are also the GLSL types of code nodes
         static std::string GetTypeName(ValueType type);
 

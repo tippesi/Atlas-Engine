@@ -36,7 +36,7 @@ void main() {
     mat3 tangentFrame = mat3(normalize(mat3(modelMatrix) * tri.t), normalize(mat3(modelMatrix) * bitangent), worldNormal);
     float frontFacing = gl_HitKindEXT == gl_HitKindFrontFacingTriangleEXT ? 1.0 : -1.0;
 
-    mgHitTextureLevel = 0.0;
+    materialGraphHitTextureLevel = 0.0;
     MaterialSurfaceInput surfaceIn = CreateMaterialSurfaceInput(objectPosition, objectNormal, worldPosition, worldNormal,
         vec3(modelMatrix[3]), mat3(globalData.vMatrix) * tangentFrame, texCoord, vec2(0.5), color, frontFacing,
         rayMat.graphParameterOffset);

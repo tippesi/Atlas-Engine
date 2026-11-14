@@ -85,24 +85,32 @@ namespace Atlas::MaterialGraph {
         HashCombine(hash, node.code);
         HashCombine(hash, static_cast<int32_t>(node.codeOutputType));
 
-        std::string parameters, arguments;
+        std::string arguments;
         for (size_t i = 0; i < node.codeInputs.size(); i++) {
             const auto& input = node.codeInputs[i];
             definition->inputs.push_back({ .name = input.name, .type = input.type });
             HashCombine(hash, input.name);
             HashCombine(hash, static_cast<int32_t>(input.type));
 
-            parameters += (i > 0 ? ", " : "") + GetTypeName(input.type) + " " + input.name;
             arguments += (i > 0 ? ", $" : "$") + std::to_string(i);
         }
 
         // Nodes with the same code share their function
-        auto name = "MGCode" + std::to_string(hash);
+        auto name = "MaterialGraphCode" + std::to_string(hash);
         definition->outputs = { { "Result", node.codeOutputType, name + "(" + arguments + ")" } };
         definition->functions = "#ifndef " + name + "_DEFINED\n#define " + name + "_DEFINED\n" +
-            GetTypeName(node.codeOutputType) + " " + name + "(" + parameters + ") {\n" + node.code + "\n}\n#endif\n";
+            GetTypeName(node.codeOutputType) + " " + name + "(" + GetCodeParameters(node) + ") {\n" + node.code + "\n}\n#endif\n";
 
         node.codeDefinition = definition;
+
+    }
+
+    std::string NodeLibrary::GetCodeParameters(const Node& node) {
+
+        std::string parameters;
+        for (const auto& input : node.codeInputs)
+            parameters += (parameters.empty() ? "" : ", ") + GetTypeName(input.type) + " " + input.name;
+        return parameters;
 
     }
 
@@ -184,32 +192,32 @@ namespace Atlas::MaterialGraph {
 
         texture("Sample texture", "Reads a texture. The vertex stage reads the most detailed level",
             { { "Texture", T }, { "Coordinates", V2, vec4(0.0f), coordinates } },
-            { { "Color", V3, "MGSampleTexture($0, $1).rgb" }, { "Red", F, "MGSampleTexture($0, $1).r" },
-              { "Green", F, "MGSampleTexture($0, $1).g" }, { "Blue", F, "MGSampleTexture($0, $1).b" },
-              { "Alpha", F, "MGSampleTexture($0, $1).a" } });
+            { { "Color", V3, "MaterialGraphSampleTexture($0, $1).rgb" }, { "Red", F, "MaterialGraphSampleTexture($0, $1).r" },
+              { "Green", F, "MaterialGraphSampleTexture($0, $1).g" }, { "Blue", F, "MaterialGraphSampleTexture($0, $1).b" },
+              { "Alpha", F, "MaterialGraphSampleTexture($0, $1).a" } });
         texture("Sample texture level", "Reads a level of a texture",
             { { "Texture", T }, { "Coordinates", V2, vec4(0.0f), coordinates }, { "Level", F } },
-            { { "Color", V3, "MGSampleTextureLod($0, $1, $2).rgb" }, { "Alpha", F, "MGSampleTextureLod($0, $1, $2).a" } });
+            { { "Color", V3, "MaterialGraphSampleTextureLod($0, $1, $2).rgb" }, { "Alpha", F, "MaterialGraphSampleTextureLod($0, $1, $2).a" } });
         texture("Sample normal map", "Reads a normal map as a tangent space normal",
             { { "Texture", T }, { "Coordinates", V2, vec4(0.0f), coordinates }, { "Strength", F, vec4(1.0f) } },
-            { { "Normal", V3, "MGSampleNormal($0, $1, $2)" } });
+            { { "Normal", V3, "MaterialGraphSampleNormal($0, $1, $2)" } });
         texture("Triplanar texture", "Projects a texture along the three axes, which doesn't need texture coordinates",
             { { "Texture", T }, { "Position", V3, vec4(0.0f), "$IN.worldPosition" }, { "Normal", V3, vec4(0.0f), "$IN.worldNormal" },
               { "Scale", F, vec4(1.0f) }, { "Sharpness", F, vec4(4.0f) } },
-            { { "Color", V3, "MGSampleTriplanar($0, $1, $2, $3, $4).rgb" } });
+            { { "Color", V3, "MaterialGraphSampleTriplanar($0, $1, $2, $3, $4).rgb" } });
         texture("Triplanar normal map", "Projects a normal map along the three axes, which doesn't need texture coordinates or tangents",
             { { "Texture", T }, { "Position", V3, vec4(0.0f), "$IN.worldPosition" }, { "Normal", V3, vec4(0.0f), "$IN.worldNormal" },
               { "Scale", F, vec4(1.0f) }, { "Sharpness", F, vec4(4.0f) }, { "Strength", F, vec4(1.0f) } },
-            { { "Normal", V3, "normalize(transpose($IN.tangentFrame) * (mat3(globalData.vMatrix) * MGSampleTriplanarNormal($0, $1, $2, $3, $4, $5)))" },
-              { "World normal", V3, "MGSampleTriplanarNormal($0, $1, $2, $3, $4, $5)" } }, SurfaceStage);
+            { { "Normal", V3, "normalize(transpose($IN.tangentFrame) * (mat3(globalData.vMatrix) * MaterialGraphSampleTriplanarNormal($0, $1, $2, $3, $4, $5)))" },
+              { "World normal", V3, "MaterialGraphSampleTriplanarNormal($0, $1, $2, $3, $4, $5)" } }, SurfaceStage);
         texture("Sample without tiling", "Reads a texture with a random offset per tile, which hides repetitions",
             { { "Texture", T }, { "Coordinates", V2, vec4(0.0f), coordinates }, { "Blend", F, vec4(0.25f) } },
-            { { "Color", V3, "MGSampleWithoutTiling($0, $1, $2).rgb" }, { "Alpha", F, "MGSampleWithoutTiling($0, $1, $2).a" } }, SurfaceStage);
+            { { "Color", V3, "MaterialGraphSampleWithoutTiling($0, $1, $2).rgb" }, { "Alpha", F, "MaterialGraphSampleWithoutTiling($0, $1, $2).a" } }, SurfaceStage);
         texture("Parallax coordinates", "Moves coordinates along the view direction according to a height texture, surfaces seem to have depth",
             { { "Height", T }, { "Coordinates", V2, vec4(0.0f), coordinates }, { "Scale", F, vec4(0.05f) }, { "Steps", F, vec4(16.0f) } },
-            { { "Coordinates", V2, "MGParallax($0, $1, transpose($IN.tangentFrame) * (mat3(globalData.vMatrix) * $IN.viewDirection), $2, $3)" } }, SurfaceStage);
+            { { "Coordinates", V2, "MaterialGraphParallax($0, $1, transpose($IN.tangentFrame) * (mat3(globalData.vMatrix) * $IN.viewDirection), $2, $3)" } }, SurfaceStage);
         texture("Texture size", "Width and height of a texture in pixels",
-            { { "Texture", T } }, { { "Size", V2, "MGTextureSize($0)" } });
+            { { "Texture", T } }, { { "Size", V2, "MaterialGraphTextureSize($0)" } });
 
         auto math = [&](const char* type, const char* tooltip, std::vector<InputDefinition> inputs, ValueType outputType,
             const char* expression, const char* category = "Math") {
@@ -233,7 +241,7 @@ namespace Atlas::MaterialGraph {
             { { "Edge 0", F }, { "Edge 1", F, vec4(1.0f) }, { "Value", G } }, G, "smoothstep($0, $1, $2)");
         math("Remap", "Maps a range to another one",
             { { "Value", F }, { "From minimum", F }, { "From maximum", F, vec4(1.0f) }, { "To minimum", F }, { "To maximum", F, vec4(1.0f) } },
-            F, "MGRemap($0, $1, $2, $3, $4)");
+            F, "MaterialGraphRemap($0, $1, $2, $3, $4)");
         math("One minus", "1 - value", { { "Value", G } }, G, "1.0 - $0");
         math("Negate", "-value", { { "Value", G } }, G, "-$0");
         math("Absolute", "Absolute value", { { "Value", G } }, G, "abs($0)");
@@ -253,10 +261,10 @@ namespace Atlas::MaterialGraph {
         math("Cross", "Cross product", { { "A", V3 }, { "B", V3 } }, V3, "cross($0, $1)", "Vector");
         math("Length", "Length of a vector", { { "Value", G } }, F, "length($0)", "Vector");
         math("Distance", "Distance between two points", { { "A", G }, { "B", G } }, F, "distance($0, $1)", "Vector");
-        math("Normalize", "Vector with a length of 1, zero stays zero", { { "Value", V3 } }, V3, "MGNormalize($0)", "Vector");
+        math("Normalize", "Vector with a length of 1, zero stays zero", { { "Value", V3 } }, V3, "MaterialGraphNormalize($0)", "Vector");
         math("Reflect", "Reflects a direction on a normal", { { "Direction", V3 }, { "Normal", V3, vec4(0.0f, 1.0f, 0.0f, 0.0f) } }, V3, "reflect($0, $1)", "Vector");
         math("Rotate around axis", "Rotates a vector",
-            { { "Vector", V3 }, { "Axis", V3, vec4(0.0f, 1.0f, 0.0f, 0.0f) }, { "Angle", F } }, V3, "MGRotateAxis($0, $1, $2)", "Vector");
+            { { "Vector", V3 }, { "Axis", V3, vec4(0.0f, 1.0f, 0.0f, 0.0f) }, { "Angle", F } }, V3, "MaterialGraphRotateAxis($0, $1, $2)", "Vector");
         math("Combine vector 2", "Vector from numbers", { { "X", F }, { "Y", F } }, V2, "vec2($0, $1)", "Vector");
         math("Combine vector 3", "Vector from numbers", { { "X", F }, { "Y", F }, { "Z", F } }, V3, "vec3($0, $1, $2)", "Vector");
         math("Combine vector 4", "Vector from numbers", { { "X", F }, { "Y", F }, { "Z", F }, { "W", F, vec4(1.0f) } }, V4, "vec4($0, $1, $2, $3)", "Vector");
@@ -265,7 +273,7 @@ namespace Atlas::MaterialGraph {
             .outputs = { { "X", F, "$0.x" }, { "Y", F, "$0.y" }, { "Z", F, "$0.z" }, { "W", F, "$0.w" }, { "XY", V2, "$0.xy" }, { "XYZ", V3, "$0.xyz" } } });
 
         math("Object to world direction", "Transforms a normal or direction into world space, in the vertex stage",
-            { { "Direction", V3 } }, V3, "MGNormalize(mat3($IN.modelMatrix) * $0)", "Transform");
+            { { "Direction", V3 } }, V3, "MaterialGraphNormalize(mat3($IN.modelMatrix) * $0)", "Transform");
         definitions.back().stages = VertexStage;
         math("World to object direction", "Transforms a direction or offset from world space into the space of the mesh, in the vertex stage",
             { { "Direction", V3 } }, V3, "inverse(mat3($IN.modelMatrix)) * $0", "Transform");
@@ -286,15 +294,15 @@ namespace Atlas::MaterialGraph {
         math("Pan coordinates", "Moves coordinates over time", { { "Coordinates", V2, vec4(0.0f), coordinates },
             { "Speed", V2, vec4(0.1f, 0.0f, 0.0f, 0.0f) } }, V2, "$0 + $1 * $IN.time", "Coordinates");
         math("Rotate coordinates", "Rotates coordinates around a center", { { "Coordinates", V2, vec4(0.0f), coordinates },
-            { "Center", V2, vec4(0.5f) }, { "Angle", F } }, V2, "MGRotateCoord($0, $1, $2)", "Coordinates");
+            { "Center", V2, vec4(0.5f) }, { "Angle", F } }, V2, "MaterialGraphRotateCoord($0, $1, $2)", "Coordinates");
         math("Polar coordinates", "Distance from a center and the angle around it from 0 to 1", { { "Coordinates", V2, vec4(0.0f), coordinates },
-            { "Center", V2, vec4(0.5f) }, { "Radial scale", F, vec4(1.0f) }, { "Angle scale", F, vec4(1.0f) } }, V2, "MGPolar($0, $1, $2, $3)", "Coordinates");
+            { "Center", V2, vec4(0.5f) }, { "Radial scale", F, vec4(1.0f) }, { "Angle scale", F, vec4(1.0f) } }, V2, "MaterialGraphPolar($0, $1, $2, $3)", "Coordinates");
         math("Flipbook coordinates", "Coordinates of one frame of a texture with a grid of frames", { { "Coordinates", V2, vec4(0.0f), coordinates },
-            { "Columns", F, vec4(4.0f) }, { "Rows", F, vec4(4.0f) }, { "Frame", F } }, V2, "MGFlipbook($0, $1, $2, $3)", "Coordinates");
+            { "Columns", F, vec4(4.0f) }, { "Rows", F, vec4(4.0f) }, { "Frame", F } }, V2, "MaterialGraphFlipbook($0, $1, $2, $3)", "Coordinates");
         math("Twirl coordinates", "Rotates coordinates more the further away they are from a center", { { "Coordinates", V2, vec4(0.0f), coordinates },
-            { "Center", V2, vec4(0.5f) }, { "Strength", F, vec4(2.0f) } }, V2, "MGTwirl($0, $1, $2)", "Coordinates");
+            { "Center", V2, vec4(0.5f) }, { "Strength", F, vec4(2.0f) } }, V2, "MaterialGraphTwirl($0, $1, $2)", "Coordinates");
         math("Distort coordinates", "Moves coordinates by noise", { { "Coordinates", V2, vec4(0.0f), coordinates },
-            { "Scale", F, vec4(4.0f) }, { "Strength", F, vec4(0.05f) }, { "Seed", F } }, V2, "MGDistort($0, $1, $2, $3)", "Coordinates");
+            { "Scale", F, vec4(4.0f) }, { "Strength", F, vec4(0.05f) }, { "Seed", F } }, V2, "MaterialGraphDistort($0, $1, $2, $3)", "Coordinates");
         math("Mirror coordinates", "Repeats coordinates, every second repetition is mirrored, which hides seams",
             { { "Coordinates", V2, vec4(0.0f), coordinates } }, V2, "1.0 - abs(mod($0, 2.0) - 1.0)", "Coordinates");
         definitions.push_back({ .type = "Tile coordinates", .category = "Coordinates", .tooltip = "Splits coordinates into a grid of tiles",
@@ -326,31 +334,31 @@ namespace Atlas::MaterialGraph {
             .defaultValue = vec4(1.0f) });
 
         math("Simplex noise", "Smooth noise from -1 to 1", { { "Position", V3, vec4(0.0f), "$IN.position" }, { "Scale", F, vec4(1.0f) } },
-            F, "MGSimplex($0 * $1)", "Procedural");
+            F, "MaterialGraphSimplex($0 * $1)", "Procedural");
         math("Fractal noise", "Several layers of noise from -1 to 1", { { "Position", V3, vec4(0.0f), "$IN.position" }, { "Scale", F, vec4(1.0f) },
             { "Octaves", F, vec4(4.0f) }, { "Lacunarity", F, vec4(2.0f) }, { "Gain", F, vec4(0.5f) } },
-            F, "MGFractalNoise($0 * $1, $2, $3, $4)", "Procedural");
+            F, "MaterialGraphFractalNoise($0 * $1, $2, $3, $4)", "Procedural");
         math("Ridged noise", "Noise with sharp ridges from 0 to 1, e.g. for rocks and veins", { { "Position", V3, vec4(0.0f), "$IN.position" },
             { "Scale", F, vec4(1.0f) }, { "Octaves", F, vec4(4.0f) }, { "Lacunarity", F, vec4(2.0f) }, { "Gain", F, vec4(0.5f) } },
-            F, "MGRidgedNoise($0 * $1, $2, $3, $4)", "Procedural");
+            F, "MaterialGraphRidgedNoise($0 * $1, $2, $3, $4)", "Procedural");
         definitions.push_back({ .type = "Voronoi", .category = "Procedural", .tooltip = "Cellular pattern, e.g. for cracks and crystals",
             .inputs = { { "Position", V3, vec4(0.0f), "$IN.position" }, { "Scale", F, vec4(1.0f) }, { "Jitter", F, vec4(1.0f) } },
-            .outputs = { { "Distance", F, "MGVoronoi($0 * $1, $2).x" }, { "Second distance", F, "MGVoronoi($0 * $1, $2).y" },
-                { "Edge", F, "(MGVoronoi($0 * $1, $2).y - MGVoronoi($0 * $1, $2).x)" }, { "Cell", F, "MGVoronoi($0 * $1, $2).z" } } });
+            .outputs = { { "Distance", F, "MaterialGraphVoronoi($0 * $1, $2).x" }, { "Second distance", F, "MaterialGraphVoronoi($0 * $1, $2).y" },
+                { "Edge", F, "(MaterialGraphVoronoi($0 * $1, $2).y - MaterialGraphVoronoi($0 * $1, $2).x)" }, { "Cell", F, "MaterialGraphVoronoi($0 * $1, $2).z" } } });
         math("Checker", "Alternating cells of 0 and 1", { { "Position", V3, vec4(0.0f), "$IN.position" }, { "Scale", F, vec4(1.0f) } },
-            F, "MGChecker($0 * $1)", "Procedural");
+            F, "MaterialGraphChecker($0 * $1)", "Procedural");
         math("Color ramp", "Gradient through three colors", { { "Position", F }, { "Color 0", V3 }, { "Color 1", V3, vec4(0.5f) },
-            { "Color 2", V3, vec4(1.0f) }, { "Center", F, vec4(0.5f) } }, V3, "MGRamp($0, $1, $2, $3, $4)", "Procedural");
-        math("Hue shift", "Rotates the hue of a color by radians", { { "Color", V3, vec4(1.0f) }, { "Shift", F } }, V3, "MGHueShift($0, $1)", "Procedural");
+            { "Color 2", V3, vec4(1.0f) }, { "Center", F, vec4(0.5f) } }, V3, "MaterialGraphRamp($0, $1, $2, $3, $4)", "Procedural");
+        math("Hue shift", "Rotates the hue of a color by radians", { { "Color", V3, vec4(1.0f) }, { "Shift", F } }, V3, "MaterialGraphHueShift($0, $1)", "Procedural");
         math("Fresnel", "Bright where the surface turns away from the camera", { { "Normal", V3, vec4(0.0f), "$IN.worldNormal" }, { "Power", F, vec4(5.0f) } },
             F, "pow(1.0 - clamp(dot(normalize($0), $IN.viewDirection), 0.0, 1.0), $1)", "Procedural");
 
         math("Normal from height", "Tangent space normal of a height, also for procedural heights without any texture",
             { { "Height", F }, { "Strength", F, vec4(1.0f) } }, V3,
-            "MGNormalFromHeight($0, $1, $IN.viewPosition, $IN.viewNormal, $IN.tangentFrame)", "Normal");
+            "MaterialGraphNormalFromHeight($0, $1, $IN.viewPosition, $IN.viewNormal, $IN.tangentFrame)", "Normal");
         definitions.back().stages = SurfaceStage;
         math("Blend normals", "Combines two tangent space normals, e.g. of several normal maps",
-            { { "A", V3, vec4(0.0f, 0.0f, 1.0f, 0.0f) }, { "B", V3, vec4(0.0f, 0.0f, 1.0f, 0.0f) } }, V3, "MGBlendNormals($0, $1)", "Normal");
+            { { "A", V3, vec4(0.0f, 0.0f, 1.0f, 0.0f) }, { "B", V3, vec4(0.0f, 0.0f, 1.0f, 0.0f) } }, V3, "MaterialGraphBlendNormals($0, $1)", "Normal");
 
         definitions.push_back({ .type = "Vertex to surface", .category = "Utility",
             .tooltip = "Calculates a value per vertex and interpolates it for the surface, which is cheaper than doing it per pixel",

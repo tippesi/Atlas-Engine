@@ -54,7 +54,7 @@ void main() {
         tangentFrame = mat3(tangent, normalize(correctionFactor * cross(tangent, normal)), normal);
     }
     else {
-        tangentFrame = MGCotangentFrame(normal, positionVS, texCoordVS);
+        tangentFrame = MaterialGraphCotangentFrame(normal, positionVS, texCoordVS);
     }
 
     MaterialSurfaceInput surfaceIn = CreateMaterialSurfaceInput(positionVS, normal, positionVS, normal, vec3(0.0),

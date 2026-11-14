@@ -141,6 +141,9 @@ namespace Atlas::Editor::UI {
 
         void DrawCodeWindow(const MaterialGraph::CompiledGraph* compiled);
 
+        // The functions of the material graph shaders, suggested in the code of code nodes
+        void LoadCodeFunctionCompletions();
+
         // The properties of the selected node and the settings of the graph
         void DrawInspector(MaterialGraph::Graph& graph);
 
@@ -231,6 +234,8 @@ namespace Atlas::Editor::UI {
         std::string renamedCodeInput;
 
         CodeEditor codeNodeEditor;
+        std::vector<CodeCompletion> codeFunctionCompletions;
+        bool codeFunctionCompletionsLoaded = false;
         // Code node which was edited but isn't compiled yet and the one the editor shows in this frame
         uint32_t editedCodeNode = 0;
         uint32_t shownCodeNode = 0;

@@ -11,6 +11,7 @@
 #include "Log.h"
 
 #include <algorithm>
+#include <cctype>
 #include "loader/AssetLoader.h"
 
 namespace Atlas::Editor {
@@ -18,7 +19,6 @@ namespace Atlas::Editor {
     const std::string Serialization::configPath = ".config/";
     const std::string Serialization::configFilename = configPath + "config.json";
     const std::string Serialization::contentBrowserWindowFilename = configPath + "contentBrowserWindowConfig.json";
-    const std::string Serialization::logWindowFilename = configPath + "logWindowConfig.json";
 
     void Serialization::SerializeConfig() {
 
@@ -34,7 +34,8 @@ namespace Atlas::Editor {
             { "vsync", config->vsync },
             { "uiScale", config->uiScale },
             { "scenes", scenePaths },
-            { "recentScenes", config->recentScenes }
+            { "recentScenes", config->recentScenes },
+            { "statusBarDrawers", config->statusBarDrawers }
         };
 
         TryWriteToFile(configFilename, to_string(j));
@@ -66,6 +67,8 @@ namespace Atlas::Editor {
             j.at("scenes").get_to(scenePaths);
         if (j.contains("recentScenes"))
             j.at("recentScenes").get_to(config->recentScenes);
+        if (j.contains("statusBarDrawers"))
+            j.at("statusBarDrawers").get_to(config->statusBarDrawers);
 
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)
@@ -219,20 +222,20 @@ namespace Atlas::Editor {
         contentBrowserWindow.show = contentBrowserWindow.pinned;
     }
 
-    void Serialization::SerializeLogWindow(const UI::LogWindow& logWindow) {
+    void Serialization::SerializeDrawerWindow(const UI::DrawerWindow& drawerWindow) {
 
         json j = {
-            { "pinned", logWindow.pinned },
-            { "drawerHeight", logWindow.height },
+            { "pinned", drawerWindow.pinned },
+            { "drawerHeight", drawerWindow.height },
         };
 
-        TryWriteToFile(logWindowFilename, to_string(j));
+        TryWriteToFile(GetDrawerWindowConfigFilename(drawerWindow), to_string(j));
 
     }
 
-    void Serialization::DeserializeLogWindow(UI::LogWindow& logWindow) {
+    void Serialization::DeserializeDrawerWindow(UI::DrawerWindow& drawerWindow) {
 
-        auto serialized = TryReadFromFile(logWindowFilename);
+        auto serialized = TryReadFromFile(GetDrawerWindowConfigFilename(drawerWindow));
 
         if (serialized.empty())
             return;
@@ -240,10 +243,20 @@ namespace Atlas::Editor {
         json j = json::parse(serialized);
 
         if (j.contains("pinned"))
-            j.at("pinned").get_to(logWindow.pinned);
+            j.at("pinned").get_to(drawerWindow.pinned);
         if (j.contains("drawerHeight"))
-            j.at("drawerHeight").get_to(logWindow.height);
-        logWindow.show = logWindow.pinned;
+            j.at("drawerHeight").get_to(drawerWindow.height);
+        drawerWindow.show = drawerWindow.pinned;
+
+    }
+
+    std::string Serialization::GetDrawerWindowConfigFilename(const UI::DrawerWindow& drawerWindow) {
+
+        // E.g. logWindowConfig.json for the log
+        auto name = drawerWindow.name;
+        name[0] = char(std::tolower(name[0]));
+        return configPath + name + "WindowConfig.json";
+
     }
 
     void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {

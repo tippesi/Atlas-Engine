@@ -129,7 +129,7 @@ void main() {
 #ifdef NORMAL_MAP
     graphTangentFrame = TBN;
 #else
-    graphTangentFrame = MGCotangentFrame(graphGeometryNormal, positionVS, graphTexCoord);
+    graphTangentFrame = MaterialGraphCotangentFrame(graphGeometryNormal, positionVS, graphTexCoord);
 #endif
 #endif
 

@@ -4,7 +4,9 @@
 
 #include <imgui.h>
 
+#include <functional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace Atlas::Editor::UI {
@@ -12,6 +14,20 @@ namespace Atlas::Editor::UI {
     enum class CodeLanguage {
         GLSL = 0,
         Lua
+    };
+
+    struct CodeCompletion {
+        std::string text;
+        std::string kind;
+        std::string signature;
+        std::string description;
+    };
+
+    // The word in front of the cursor and, after a . or :, what it belongs to, e.g. "entity" and ':' for "entity:Get"
+    struct CodeCompletionContext {
+        std::string prefix;
+        std::string qualifier;
+        char separator = 0;
     };
 
     // Text editor with syntax highlighting and line numbers. It keeps the cursor and undo history of the text
@@ -30,6 +46,9 @@ namespace Atlas::Editor::UI {
 
         CodeLanguage language = CodeLanguage::GLSL;
         bool readOnly = false;
+
+        // Suggestions for a context, the editor filters them by the prefix and adds the keywords and builtins of the language
+        std::function<std::vector<CodeCompletion>(const CodeCompletionContext& context)> completionProvider;
 
     private:
         // In the order of the code colors of the theme
@@ -65,6 +84,13 @@ namespace Atlas::Editor::UI {
         void HandleKeyboard(bool canEdit, float visibleHeight);
 
         void DrawLines(ImVec2 textOrigin, ImVec2 visibleMin, ImVec2 visibleMax, int32_t firstLine, int32_t lastLine, bool focused);
+
+        bool HandleCompletionKeys(bool canEdit);
+
+        void UpdateCompletion();
+
+        // Below the line of the cursor, or above it if there is no room below
+        void RenderCompletion(ImVec2 position, float lineTop);
 
         void Replace(int32_t start, int32_t end, const std::string& value, bool mergeUndo);
 
@@ -107,6 +133,15 @@ namespace Atlas::Editor::UI {
         float gutterWidth = 0.0f;
         double blinkStart = 0.0;
 
+        std::vector<CodeCompletion> completions;
+        int32_t completionIndex = 0;
+        int32_t completionStart = 0;
+        bool completionOpen = false;
+        bool completionChosen = false;
+        float completionHeight = 0.0f;
+        // The font around the editor, descriptions are text and not code
+        ImFont* interfaceFont = nullptr;
+
         bool changed = false;
         bool scrollToCursor = false;
         bool selecting = false;
@@ -115,6 +150,23 @@ namespace Atlas::Editor::UI {
         bool deactivatedAfterEdit = false;
 
         const int32_t tabSize = 4;
+
+        const std::vector<std::string_view> glslKeywords = { "if", "else", "for", "while", "do", "return", "break", "continue",
+            "discard", "switch", "case", "default", "struct", "const", "in", "out", "inout", "uniform", "buffer",
+            "layout", "shared", "flat", "precision", "highp", "mediump", "lowp", "true", "false" };
+        const std::vector<std::string_view> glslTypes = { "void", "bool", "int", "uint", "float", "double", "vec2", "vec3", "vec4",
+            "ivec2", "ivec3", "ivec4", "uvec2", "uvec3", "uvec4", "bvec2", "bvec3", "bvec4", "mat2", "mat3", "mat4",
+            "mat3x4", "mat4x3", "sampler", "sampler2D", "sampler3D", "samplerCube", "sampler2DArray", "texture2D",
+            "texture2DArray", "image2D", "image3D" };
+        const std::vector<std::string_view> glslBuiltins = { "abs", "sign", "floor", "ceil", "round", "trunc", "fract", "mod",
+            "min", "max", "clamp", "mix", "step", "smoothstep", "sqrt", "inversesqrt", "pow", "exp", "exp2", "log",
+            "log2", "sin", "cos", "tan", "asin", "acos", "atan", "radians", "degrees", "length", "distance", "dot",
+            "cross", "normalize", "reflect", "refract", "transpose", "inverse", "determinant", "texture", "textureLod",
+            "texelFetch", "textureSize", "imageLoad", "imageStore", "dFdx", "dFdy", "fwidth", "any", "all", "saturate" };
+        const std::vector<std::string_view> luaKeywords = { "and", "break", "do", "else", "elseif", "end", "false", "for",
+            "function", "goto", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while" };
+        const std::vector<std::string_view> luaBuiltins = { "print", "pairs", "ipairs", "type", "tostring", "tonumber", "require",
+            "select", "next", "error", "assert", "pcall", "setmetatable", "getmetatable", "math", "string", "table", "self" };
 
     };
 

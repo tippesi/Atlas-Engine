@@ -39,6 +39,13 @@ namespace Atlas::Editor {
         virtual void Render(float deltaTime) final;
 
     private:
+        struct Drawer {
+            UI::DrawerWindow* window;
+            IconType icon;
+            const char* name;
+            const char* shortcut;
+        };
+
         void RenderSceneMaximized();
         
         void SetupMainDockspace(ImGuiID dsID);
@@ -72,6 +79,9 @@ namespace Atlas::Editor {
         bool RenderDrawerButton(UI::DrawerWindow& drawer, IconType icon, const char* label, const char* shortcut,
             int32_t errorCount = 0, int32_t warningCount = 0);
 
+        // Chooses and orders the drawers of the status bar, opened by a right click on it
+        void RenderStatusBarMenu();
+
         // Clickable items of the status bar carry a background, such that they stand out from plain information
         bool RenderStatusChip(const char* id, IconType icon, const char* text, ImVec4 color,
             ImVec4 background, ImVec4 backgroundHovered, float maxWidth = FLT_MAX, float trailingWidth = 0.0f);
@@ -84,6 +94,8 @@ namespace Atlas::Editor {
         void PrepareDrawerDocking(ImGuiID dsID);
 
         void DockPinnedDrawer(UI::DrawerWindow& drawer);
+
+        Drawer* FindDrawer(const std::string& name);
 
         void RenderRecentScenesMenu();
 
@@ -118,6 +130,13 @@ namespace Atlas::Editor {
         UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
         UI::SettingsWindow settingsWindow = UI::SettingsWindow(false);
         UI::GeometryBrushWindow geometryBrushWindow = UI::GeometryBrushWindow(false);
+
+        // The config decides which of them the status bar shows
+        std::vector<Drawer> drawers = {
+            { &contentBrowserWindow, IconType::Folder, "Content browser", "Ctrl+B" },
+            { &logWindow, IconType::Log, "Log", "Ctrl+J" },
+            { &profilerWindow, IconType::Profiler, "Profiler", "" }
+        };
 
         ImguiExtension::PerformanceGraphPanel performanceGraphPanel;
 

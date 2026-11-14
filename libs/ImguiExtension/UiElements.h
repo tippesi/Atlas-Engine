@@ -27,6 +27,16 @@ namespace Atlas::ImguiExtension {
 
         static void EndProperties();
 
+        // All label columns of a window are as wide as its longest label. Tables with their own columns set it up
+        // with this and report each of their labels with MeasurePropertyLabel
+        static void SetupPropertyLabelColumn(const char* name);
+
+        static void MeasurePropertyLabel(float labelWidth);
+
+    private:
+        // Returns the longest label of the current window in the last frame
+        static float UpdatePropertyLabelWidth(float labelWidth);
+
     };
 
 }

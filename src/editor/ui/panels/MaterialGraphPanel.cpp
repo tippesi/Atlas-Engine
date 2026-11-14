@@ -5,6 +5,7 @@
 #include "../../Singletons.h"
 #include "../Widgets.h"
 
+#include "loader/AssetLoader.h"
 #include "materialgraph/MaterialGraphSerializer.h"
 
 #include <imgui_stdlib.h>
@@ -471,23 +472,86 @@ namespace Atlas::Editor::UI {
             }
 
             Widgets::PropertyLabel("##Add input");
-            if (ImGui::Button("Add input")) {
-                auto isUsed = [&](const std::string& name) {
-                    return std::any_of(selected->codeInputs.begin(), selected->codeInputs.end(),
-                        [&](const CodeInput& input) { return input.name == name; });
+            if (ImGui::Button("Add input"))
+                ImGui::OpenPopup("Add code input");
+
+            if (ImGui::BeginPopup("Add code input")) {
+                auto uniqueName = [&](const std::string& name, bool numbered) {
+                    auto isUsed = [&](const std::string& candidate) {
+                        return std::any_of(selected->codeInputs.begin(), selected->codeInputs.end(),
+                            [&](const CodeInput& input) { return input.name == candidate; });
+                        };
+                    auto candidate = numbered ? name + "0" : name;
+                    for (int32_t index = 1; isUsed(candidate); index++)
+                        candidate = name + std::to_string(index);
+                    return candidate;
                     };
-                int32_t index = 0;
-                while (isUsed("input" + std::to_string(index)))
-                    index++;
-                selected->codeInputs.push_back({ "input" + std::to_string(index), ValueType::Float });
-                codeChanged = true;
+
+                if (ImGui::MenuItem("Empty input")) {
+                    // Input alone is a reserved word in GLSL
+                    selected->codeInputs.push_back({ uniqueName("input", true), ValueType::Float });
+                    codeChanged = true;
+                }
+
+                // The code can't read scene data, an input node is connected to a new input instead
+                ImGui::SeparatorText("Connected to scene data");
+                for (const auto& inputDefinition : NodeLibrary::GetDefinitions()) {
+                    if (inputDefinition.category != "Input" || inputDefinition.outputs.empty())
+                        continue;
+                    if (!ImGui::MenuItem(inputDefinition.type.c_str()))
+                        continue;
+
+                    std::string name;
+                    auto capitalize = false;
+                    for (auto c : inputDefinition.type) {
+                        if (c == ' ') {
+                            capitalize = true;
+                            continue;
+                        }
+                        name += capitalize ? char(std::toupper(c)) : char(std::tolower(c));
+                        capitalize = false;
+                    }
+                    name = uniqueName(name, false);
+                    selected->codeInputs.push_back({ name, inputDefinition.outputs.front().type });
+
+                    // The graph might move its nodes in memory when one is added
+                    auto codeNodeId = selected->id;
+                    auto position = selected->position - vec2(nodeWidth + 60.0f, -60.0f * float(selected->codeInputs.size() - 1));
+                    auto inputNodeId = graph.AddNode(inputDefinition.type, position).id;
+                    selected = graph.GetNode(codeNodeId);
+                    NodeLibrary::UpdateCodeDefinition(*selected);
+                    graph.Connect(inputNodeId, inputDefinition.outputs.front().name, codeNodeId, name);
+                    codeChanged = true;
+                }
+                ImGui::EndPopup();
             }
+
+            auto signature = NodeLibrary::GetTypeName(selected->codeOutputType) + " Code(" + NodeLibrary::GetCodeParameters(*selected) + ")";
+            Widgets::PropertyLabel("Signature", "The code is the body of this function and returns the result");
+            ImGui::PushFont(Theme::codeFont ? Theme::codeFont : ImGui::GetFont());
+            ImGui::PushTextWrapPos();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(signature.c_str());
+            ImGui::PopTextWrapPos();
+            ImGui::PopFont();
         }
 
         Widgets::EndProperties();
 
         if (isCode) {
-            ImGui::TextColored(Theme::TextMuted(), "Function body, the inputs are its arguments");
+            if (!codeFunctionCompletionsLoaded)
+                LoadCodeFunctionCompletions();
+            // Only called within the render of the editor below, while the node is still valid
+            codeNodeEditor.completionProvider = [this, selected](const CodeCompletionContext& context) {
+                std::vector<CodeCompletion> completions;
+                if (context.separator)
+                    return completions;
+                for (const auto& input : selected->codeInputs)
+                    completions.push_back({ input.name, "Input", NodeLibrary::GetTypeName(input.type) + " " + input.name, "An input of the code" });
+                completions.insert(completions.end(), codeFunctionCompletions.begin(), codeFunctionCompletions.end());
+                return completions;
+                };
+
             // The lower edge can be dragged to resize the editor
             ImGui::BeginChild("Code", ImVec2(-FLT_MIN, 16.0f * ImGui::GetTextLineHeightWithSpacing()), ImGuiChildFlags_ResizeY);
             // Each node has its own id, the editor starts again for another node
@@ -1427,6 +1491,49 @@ namespace Atlas::Editor::UI {
             }
         }
         ImGui::End();
+
+    }
+
+    void MaterialGraphPanel::LoadCodeFunctionCompletions() {
+
+        codeFunctionCompletionsLoaded = true;
+
+        // Helpers of other helpers, not meant for code nodes
+        const std::vector<std::string> internalFunctions = { "MaterialGraphReadFloat", "MaterialGraphReadVec2",
+            "MaterialGraphReadVec3", "MaterialGraphReadVec4", "MaterialGraphMod289", "MaterialGraphPermute", "MaterialGraphHash3" };
+
+        auto stream = Loader::AssetLoader::ReadFile("shader/materialGraph/common.hsh", std::ios::in);
+        if (!stream.is_open())
+            return;
+
+        // Definitions start at the beginning of a line, e.g. "float MaterialGraphRemap(float value, ...) {"
+        std::string line, comment;
+        while (std::getline(stream, line)) {
+            if (line.starts_with("// ")) {
+                comment += (comment.empty() ? "" : " ") + line.substr(3);
+                continue;
+            }
+
+            auto nameStart = line.find(" MaterialGraph");
+            auto argumentsStart = line.find('(');
+            if (!line.empty() && line[0] != ' ' && line[0] != '#' && nameStart != std::string::npos &&
+                argumentsStart != std::string::npos && nameStart < argumentsStart && line.ends_with(") {")) {
+                auto name = line.substr(nameStart + 1, argumentsStart - nameStart - 1);
+                if (std::find(internalFunctions.begin(), internalFunctions.end(), name) != internalFunctions.end()) {
+                    comment.clear();
+                    continue;
+                }
+                auto signature = line.substr(0, line.size() - 2);
+                auto iter = std::find_if(codeFunctionCompletions.begin(), codeFunctionCompletions.end(),
+                    [&](const CodeCompletion& completion) { return completion.text == name; });
+                if (iter == codeFunctionCompletions.end())
+                    codeFunctionCompletions.push_back({ name, "Function", signature, comment });
+                // Overloads are listed below each other
+                else if (iter->signature.find(signature) == std::string::npos)
+                    iter->signature += "\n" + signature;
+            }
+            comment.clear();
+        }
 
     }
 

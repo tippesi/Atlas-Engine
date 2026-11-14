@@ -149,40 +149,40 @@ MaterialSurfaceInput CreateMaterialSurfaceInput(vec3 position, vec3 normal, vec3
 
 }
 
-float MGReadFloat(uint offset) {
+float MaterialGraphReadFloat(uint offset) {
 
     return uintBitsToFloat(materialGraphParameters[offset]);
 
 }
 
-vec2 MGReadVec2(uint offset) {
+vec2 MaterialGraphReadVec2(uint offset) {
 
-    return vec2(MGReadFloat(offset), MGReadFloat(offset + 1u));
-
-}
-
-vec3 MGReadVec3(uint offset) {
-
-    return vec3(MGReadFloat(offset), MGReadFloat(offset + 1u), MGReadFloat(offset + 2u));
+    return vec2(MaterialGraphReadFloat(offset), MaterialGraphReadFloat(offset + 1u));
 
 }
 
-vec4 MGReadVec4(uint offset) {
+vec3 MaterialGraphReadVec3(uint offset) {
 
-    return vec4(MGReadFloat(offset), MGReadFloat(offset + 1u), MGReadFloat(offset + 2u), MGReadFloat(offset + 3u));
+    return vec3(MaterialGraphReadFloat(offset), MaterialGraphReadFloat(offset + 1u), MaterialGraphReadFloat(offset + 2u));
+
+}
+
+vec4 MaterialGraphReadVec4(uint offset) {
+
+    return vec4(MaterialGraphReadFloat(offset), MaterialGraphReadFloat(offset + 1u), MaterialGraphReadFloat(offset + 2u), MaterialGraphReadFloat(offset + 3u));
 
 }
 
 #ifdef MATERIAL_GRAPH_STAGE_HIT
 // Hits have no derivatives, the level comes from the ray tracing pass
-float mgHitTextureLevel = 0.0;
+float materialGraphHitTextureLevel = 0.0;
 #endif
 
 // The vertex stage has no derivatives, it always samples the most detailed level
-vec4 MGSampleTexture(uint textureIdx, vec2 texCoord) {
+vec4 MaterialGraphSampleTexture(uint textureIdx, vec2 texCoord) {
 
 #if defined(MATERIAL_GRAPH_STAGE_HIT)
-    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, mgHitTextureLevel);
+    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, materialGraphHitTextureLevel);
 #elif defined(MATERIAL_GRAPH_STAGE_SURFACE)
     return texture(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, globalData.mipLodBias);
 #else
@@ -191,39 +191,39 @@ vec4 MGSampleTexture(uint textureIdx, vec2 texCoord) {
 
 }
 
-vec4 MGSampleTextureLod(uint textureIdx, vec2 texCoord, float lod) {
+vec4 MaterialGraphSampleTextureLod(uint textureIdx, vec2 texCoord, float lod) {
 
     return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, lod);
 
 }
 
-vec3 MGSampleNormal(uint textureIdx, vec2 texCoord, float strength) {
+vec3 MaterialGraphSampleNormal(uint textureIdx, vec2 texCoord, float strength) {
 
-    vec3 normal = 2.0 * MGSampleTexture(textureIdx, texCoord).rgb - 1.0;
+    vec3 normal = 2.0 * MaterialGraphSampleTexture(textureIdx, texCoord).rgb - 1.0;
     normal.xy *= strength;
     return normalize(normal);
 
 }
 
-vec4 MGSampleTriplanar(uint textureIdx, vec3 position, vec3 normal, float scale, float sharpness) {
+vec4 MaterialGraphSampleTriplanar(uint textureIdx, vec3 position, vec3 normal, float scale, float sharpness) {
 
     vec3 weights = pow(abs(normal), vec3(sharpness));
     weights /= max(weights.x + weights.y + weights.z, 0.0001);
 
-    return MGSampleTexture(textureIdx, position.zy * scale) * weights.x +
-        MGSampleTexture(textureIdx, position.xz * scale) * weights.y +
-        MGSampleTexture(textureIdx, position.xy * scale) * weights.z;
+    return MaterialGraphSampleTexture(textureIdx, position.zy * scale) * weights.x +
+        MaterialGraphSampleTexture(textureIdx, position.xz * scale) * weights.y +
+        MaterialGraphSampleTexture(textureIdx, position.xy * scale) * weights.z;
 
 }
 
-vec3 MGSampleTriplanarNormal(uint textureIdx, vec3 position, vec3 normal, float scale, float sharpness, float strength) {
+vec3 MaterialGraphSampleTriplanarNormal(uint textureIdx, vec3 position, vec3 normal, float scale, float sharpness, float strength) {
 
     vec3 weights = pow(abs(normal), vec3(sharpness));
     weights /= max(weights.x + weights.y + weights.z, 0.0001);
 
-    vec3 normalX = 2.0 * MGSampleTexture(textureIdx, position.zy * scale).rgb - 1.0;
-    vec3 normalY = 2.0 * MGSampleTexture(textureIdx, position.xz * scale).rgb - 1.0;
-    vec3 normalZ = 2.0 * MGSampleTexture(textureIdx, position.xy * scale).rgb - 1.0;
+    vec3 normalX = 2.0 * MaterialGraphSampleTexture(textureIdx, position.zy * scale).rgb - 1.0;
+    vec3 normalY = 2.0 * MaterialGraphSampleTexture(textureIdx, position.xz * scale).rgb - 1.0;
+    vec3 normalZ = 2.0 * MaterialGraphSampleTexture(textureIdx, position.xy * scale).rgb - 1.0;
 
     normalX = vec3(normalX.xy * strength + normal.zy, abs(normalX.z) * normal.x);
     normalY = vec3(normalY.xy * strength + normal.xz, abs(normalY.z) * normal.y);
@@ -233,32 +233,32 @@ vec3 MGSampleTriplanarNormal(uint textureIdx, vec3 position, vec3 normal, float 
 
 }
 
-vec2 MGTextureSize(uint textureIdx) {
+vec2 MaterialGraphTextureSize(uint textureIdx) {
 
     return vec2(textureSize(sampler2D(bindlessTextures[textureIdx], bindlessSampler), 0));
 
 }
 
-vec3 MGMod289(vec3 x) {
+vec3 MaterialGraphMod289(vec3 x) {
 
     return x - floor(x * (1.0 / 289.0)) * 289.0;
 
 }
 
-vec4 MGMod289(vec4 x) {
+vec4 MaterialGraphMod289(vec4 x) {
 
     return x - floor(x * (1.0 / 289.0)) * 289.0;
 
 }
 
-vec4 MGPermute(vec4 x) {
+vec4 MaterialGraphPermute(vec4 x) {
 
-    return MGMod289(((x * 34.0) + 10.0) * x);
+    return MaterialGraphMod289(((x * 34.0) + 10.0) * x);
 
 }
 
 // Simplex noise in the range of -1 to 1
-float MGSimplex(vec3 v) {
+float MaterialGraphSimplex(vec3 v) {
 
     const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
     const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
@@ -275,8 +275,8 @@ float MGSimplex(vec3 v) {
     vec3 x2 = x0 - i2 + C.yyy;
     vec3 x3 = x0 - D.yyy;
 
-    i = MGMod289(i);
-    vec4 p = MGPermute(MGPermute(MGPermute(
+    i = MaterialGraphMod289(i);
+    vec4 p = MaterialGraphPermute(MaterialGraphPermute(MaterialGraphPermute(
         i.z + vec4(0.0, i1.z, i2.z, 1.0)) +
         i.y + vec4(0.0, i1.y, i2.y, 1.0)) +
         i.x + vec4(0.0, i1.x, i2.x, 1.0));
@@ -320,7 +320,7 @@ float MGSimplex(vec3 v) {
 
 }
 
-float MGFractalNoise(vec3 position, float octaves, float lacunarity, float gain) {
+float MaterialGraphFractalNoise(vec3 position, float octaves, float lacunarity, float gain) {
 
     float value = 0.0;
     float amplitude = 1.0;
@@ -328,7 +328,7 @@ float MGFractalNoise(vec3 position, float octaves, float lacunarity, float gain)
 
     int count = clamp(int(octaves), 1, 8);
     for (int i = 0; i < count; i++) {
-        value += amplitude * MGSimplex(position);
+        value += amplitude * MaterialGraphSimplex(position);
         amplitudeSum += amplitude;
         amplitude *= gain;
         position = position * lacunarity + vec3(17.3, -9.1, 4.7);
@@ -339,7 +339,7 @@ float MGFractalNoise(vec3 position, float octaves, float lacunarity, float gain)
 }
 
 // Absolute noise folded into sharp ridges, in the range of 0 to 1
-float MGRidgedNoise(vec3 position, float octaves, float lacunarity, float gain) {
+float MaterialGraphRidgedNoise(vec3 position, float octaves, float lacunarity, float gain) {
 
     float value = 0.0;
     float amplitude = 1.0;
@@ -347,7 +347,7 @@ float MGRidgedNoise(vec3 position, float octaves, float lacunarity, float gain) 
 
     int count = clamp(int(octaves), 1, 8);
     for (int i = 0; i < count; i++) {
-        float ridge = 1.0 - abs(MGSimplex(position));
+        float ridge = 1.0 - abs(MaterialGraphSimplex(position));
         value += amplitude * ridge * ridge;
         amplitudeSum += amplitude;
         amplitude *= gain;
@@ -358,7 +358,7 @@ float MGRidgedNoise(vec3 position, float octaves, float lacunarity, float gain) 
 
 }
 
-vec3 MGHash3(vec3 p) {
+vec3 MaterialGraphHash3(vec3 p) {
 
     p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
     return fract(sin(p) * 43758.5453123);
@@ -366,7 +366,7 @@ vec3 MGHash3(vec3 p) {
 }
 
 // Distance to the closest feature point in x, to the second closest in y and a random value of the cell in z
-vec3 MGVoronoi(vec3 position, float jitter) {
+vec3 MaterialGraphVoronoi(vec3 position, float jitter) {
 
     vec3 cell = floor(position);
     vec3 local = fract(position);
@@ -379,7 +379,7 @@ vec3 MGVoronoi(vec3 position, float jitter) {
         for (int y = -1; y <= 1; y++) {
             for (int x = -1; x <= 1; x++) {
                 vec3 offset = vec3(float(x), float(y), float(z));
-                vec3 random = MGHash3(cell + offset);
+                vec3 random = MaterialGraphHash3(cell + offset);
                 vec3 delta = offset + random * jitter - local;
                 float dist = dot(delta, delta);
                 if (dist < first) {
@@ -398,14 +398,14 @@ vec3 MGVoronoi(vec3 position, float jitter) {
 
 }
 
-float MGChecker(vec3 position) {
+float MaterialGraphChecker(vec3 position) {
 
     vec3 cell = floor(position);
     return mod(cell.x + cell.y + cell.z, 2.0);
 
 }
 
-vec3 MGHueShift(vec3 color, float shift) {
+vec3 MaterialGraphHueShift(vec3 color, float shift) {
 
     const vec3 axis = vec3(0.57735);
     float cosAngle = cos(shift);
@@ -413,7 +413,7 @@ vec3 MGHueShift(vec3 color, float shift) {
 
 }
 
-vec3 MGRotateAxis(vec3 position, vec3 axis, float angle) {
+vec3 MaterialGraphRotateAxis(vec3 position, vec3 axis, float angle) {
 
     axis = normalize(axis);
     float sinAngle = sin(angle);
@@ -422,7 +422,7 @@ vec3 MGRotateAxis(vec3 position, vec3 axis, float angle) {
 
 }
 
-vec2 MGRotateCoord(vec2 coord, vec2 center, float angle) {
+vec2 MaterialGraphRotateCoord(vec2 coord, vec2 center, float angle) {
 
     float sinAngle = sin(angle);
     float cosAngle = cos(angle);
@@ -431,53 +431,53 @@ vec2 MGRotateCoord(vec2 coord, vec2 center, float angle) {
 
 }
 
-vec2 MGPolar(vec2 coord, vec2 center, float radialScale, float angleScale) {
+vec2 MaterialGraphPolar(vec2 coord, vec2 center, float radialScale, float angleScale) {
 
     vec2 delta = coord - center;
     return vec2(length(delta) * radialScale, (atan(delta.y, delta.x) / 6.28318530718 + 0.5) * angleScale);
 
 }
 
-vec2 MGFlipbook(vec2 coord, float columns, float rows, float frame) {
+vec2 MaterialGraphFlipbook(vec2 coord, float columns, float rows, float frame) {
 
     float index = mod(floor(frame), columns * rows);
     return (fract(coord) + vec2(mod(index, columns), floor(index / columns))) / vec2(columns, rows);
 
 }
 
-vec2 MGTwirl(vec2 coord, vec2 center, float strength) {
+vec2 MaterialGraphTwirl(vec2 coord, vec2 center, float strength) {
 
-    return MGRotateCoord(coord, center, length(coord - center) * strength);
+    return MaterialGraphRotateCoord(coord, center, length(coord - center) * strength);
 
 }
 
-vec2 MGDistort(vec2 coord, float scale, float strength, float seed) {
+vec2 MaterialGraphDistort(vec2 coord, float scale, float strength, float seed) {
 
     vec3 position = vec3(coord * scale, seed);
-    return coord + vec2(MGSimplex(position), MGSimplex(position + vec3(31.7, 11.3, 5.9))) * strength;
+    return coord + vec2(MaterialGraphSimplex(position), MaterialGraphSimplex(position + vec3(31.7, 11.3, 5.9))) * strength;
 
 }
 
-float MGRemap(float value, float fromMin, float fromMax, float toMin, float toMax) {
+float MaterialGraphRemap(float value, float fromMin, float fromMax, float toMin, float toMax) {
 
     return toMin + (value - fromMin) / (fromMax - fromMin) * (toMax - toMin);
 
 }
 
-vec3 MGRamp(float position, vec3 color0, vec3 color1, vec3 color2, float center) {
+vec3 MaterialGraphRamp(float position, vec3 color0, vec3 color1, vec3 color2, float center) {
 
     return position < center ? mix(color0, color1, clamp(position / max(center, 0.0001), 0.0, 1.0)) :
         mix(color1, color2, clamp((position - center) / max(1.0 - center, 0.0001), 0.0, 1.0));
 
 }
 
-vec3 MGBlendNormals(vec3 a, vec3 b) {
+vec3 MaterialGraphBlendNormals(vec3 a, vec3 b) {
 
     return normalize(vec3(a.xy + b.xy, a.z * b.z));
 
 }
 
-vec3 MGNormalize(vec3 value) {
+vec3 MaterialGraphNormalize(vec3 value) {
 
     float len = length(value);
     return len > 0.0 ? value / len : value;
@@ -486,7 +486,7 @@ vec3 MGNormalize(vec3 value) {
 
 #if defined(MATERIAL_GRAPH_STAGE_SURFACE) && !defined(MATERIAL_GRAPH_STAGE_HIT)
 // Tangent space normal of a height, which works for procedural values without a tangent frame of the mesh
-vec3 MGNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
+vec3 MaterialGraphNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
 
     vec3 dpdx = dFdx(viewPosition);
     vec3 dpdy = dFdy(viewPosition);
@@ -510,7 +510,7 @@ vec3 MGNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 vi
 }
 
 // Each corner of a tile has its own offset, the mip level stays the one of the continuous coordinates
-vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
+vec4 MaterialGraphSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
 
     vec2 tile = floor(coord);
     vec2 weights = smoothstep(vec2(0.5 - 0.5 * blend), vec2(0.5 + 0.5 * blend), fract(coord));
@@ -521,7 +521,7 @@ vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
     vec4 values[4];
     for (int y = 0; y < 2; y++) {
         for (int x = 0; x < 2; x++) {
-            vec2 offset = MGHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
+            vec2 offset = MaterialGraphHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
             values[y * 2 + x] = textureGrad(sampler2D(bindlessTextures[textureIdx], bindlessSampler), coord + offset, ddx, ddy);
         }
     }
@@ -530,7 +530,7 @@ vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
 
 }
 
-vec2 MGParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, float steps) {
+vec2 MaterialGraphParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, float steps) {
 
     vec2 ddx = dFdx(coord);
     vec2 ddy = dFdy(coord);
@@ -558,7 +558,7 @@ vec2 MGParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, fl
 }
 
 // Tangent frame from the derivatives, for meshes without tangents
-mat3 MGCotangentFrame(vec3 normal, vec3 viewPosition, vec2 texCoord) {
+mat3 MaterialGraphCotangentFrame(vec3 normal, vec3 viewPosition, vec2 texCoord) {
 
     vec3 dp1 = dFdx(viewPosition);
     vec3 dp2 = dFdy(viewPosition);
@@ -583,13 +583,13 @@ mat3 MGCotangentFrame(vec3 normal, vec3 viewPosition, vec2 texCoord) {
 }
 #elif defined(MATERIAL_GRAPH_STAGE_HIT)
 // Without derivatives heights keep the surface flat
-vec3 MGNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
+vec3 MaterialGraphNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
 
     return vec3(0.0, 0.0, 1.0);
 
 }
 
-vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
+vec4 MaterialGraphSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
 
     vec2 tile = floor(coord);
     vec2 weights = smoothstep(vec2(0.5 - 0.5 * blend), vec2(0.5 + 0.5 * blend), fract(coord));
@@ -597,8 +597,8 @@ vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
     vec4 values[4];
     for (int y = 0; y < 2; y++) {
         for (int x = 0; x < 2; x++) {
-            vec2 offset = MGHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
-            values[y * 2 + x] = MGSampleTexture(textureIdx, coord + offset);
+            vec2 offset = MaterialGraphHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
+            values[y * 2 + x] = MaterialGraphSampleTexture(textureIdx, coord + offset);
         }
     }
 
@@ -606,7 +606,7 @@ vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
 
 }
 
-vec2 MGParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, float steps) {
+vec2 MaterialGraphParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, float steps) {
 
     return coord;
 

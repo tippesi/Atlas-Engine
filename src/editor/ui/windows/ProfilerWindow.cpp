@@ -33,7 +33,10 @@ namespace Atlas::Editor::UI {
         }
 
         // Summary tiles: muted label on top, large value below
-        if (ImGui::BeginTable("Profiler summary", 4, ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_BordersInnerV)) {
+        // A drawer has the pin button in its header, the docked window next to the summary
+        auto pinWidth = pinned ? GetPinButtonWidth() + ImGui::GetStyle().ItemSpacing.x : 0.0f;
+        if (ImGui::BeginTable("Profiler summary", 4, ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_BordersInnerV,
+            ImVec2(-pinWidth, 0.0f))) {
             auto tile = [](const char* label, const char* format, float value) {
                 ImGui::TableNextColumn();
                 ImGui::TextDisabled("%s", label);
@@ -62,6 +65,10 @@ namespace Atlas::Editor::UI {
                 disabledTile("GPU time");
 
             ImGui::EndTable();
+        }
+        if (pinned) {
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - GetPinButtonWidth());
+            RenderPinButton();
         }
 
         profilerPanel.Render();

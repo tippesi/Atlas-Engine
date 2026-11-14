@@ -235,16 +235,16 @@ TEST(MaterialGraphCompiler, PassesOnlyContainTheirNodes) {
 
     ASSERT_TRUE(compiled->valid);
 
-    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "MGFractalNoise"));
-    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "MGVoronoi"));
-    EXPECT_FALSE(Contains(compiled->mainFragmentCode, "MGSimplex"));
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "MaterialGraphFractalNoise"));
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "MaterialGraphVoronoi"));
+    EXPECT_FALSE(Contains(compiled->mainFragmentCode, "MaterialGraphSimplex"));
 
     // Shadows don't calculate the color
-    EXPECT_FALSE(Contains(compiled->shadowFragmentCode, "MGFractalNoise"));
-    EXPECT_TRUE(Contains(compiled->shadowFragmentCode, "MGVoronoi"));
+    EXPECT_FALSE(Contains(compiled->shadowFragmentCode, "MaterialGraphFractalNoise"));
+    EXPECT_TRUE(Contains(compiled->shadowFragmentCode, "MaterialGraphVoronoi"));
 
-    EXPECT_TRUE(Contains(compiled->shadowVertexCode, "MGSimplex"));
-    EXPECT_FALSE(Contains(compiled->shadowVertexCode, "MGFractalNoise"));
+    EXPECT_TRUE(Contains(compiled->shadowVertexCode, "MaterialGraphSimplex"));
+    EXPECT_FALSE(Contains(compiled->shadowVertexCode, "MaterialGraphFractalNoise"));
 
 }
 
@@ -796,15 +796,15 @@ TEST(MaterialGraphCompiler, StaticSwitchOnlyCompilesTheSelectedInput) {
 
     auto on = graph.Compile();
     ASSERT_TRUE(on->valid);
-    EXPECT_NE(on->mainFragmentCode.find("MGVoronoi"), std::string::npos);
-    EXPECT_EQ(on->mainFragmentCode.find("MGChecker"), std::string::npos);
+    EXPECT_NE(on->mainFragmentCode.find("MaterialGraphVoronoi"), std::string::npos);
+    EXPECT_EQ(on->mainFragmentCode.find("MaterialGraphChecker"), std::string::npos);
 
     graph.graph.GetNode(staticSwitch)->value.x = 0.0f;
 
     auto off = graph.Compile();
     ASSERT_TRUE(off->valid);
-    EXPECT_EQ(off->mainFragmentCode.find("MGVoronoi"), std::string::npos);
-    EXPECT_NE(off->mainFragmentCode.find("MGChecker"), std::string::npos);
+    EXPECT_EQ(off->mainFragmentCode.find("MaterialGraphVoronoi"), std::string::npos);
+    EXPECT_NE(off->mainFragmentCode.find("MaterialGraphChecker"), std::string::npos);
     EXPECT_NE(on->hash, off->hash);
 
 }
@@ -1014,10 +1014,10 @@ TEST(MaterialGraphCompiler, CodeNodesBecomeFunctions) {
     const auto& code = compiled->mainFragmentCode;
     EXPECT_TRUE(Contains(code, "(vec3 a, float b) {\nreturn a * b;\n}")) << code;
     // Nodes with the same code share one function, only the stages which use it contain it
-    auto define = code.find("#define MGCode");
+    auto define = code.find("#define MaterialGraphCode");
     ASSERT_NE(define, std::string::npos);
-    EXPECT_EQ(code.find("#define MGCode", define + 1), std::string::npos) << code;
-    EXPECT_FALSE(Contains(compiled->mainVertexCode, "MGCode"));
+    EXPECT_EQ(code.find("#define MaterialGraphCode", define + 1), std::string::npos) << code;
+    EXPECT_FALSE(Contains(compiled->mainVertexCode, "MaterialGraphCode"));
 
 }
 
@@ -1134,7 +1134,7 @@ TEST(MaterialGraphEvaluation, CodeNodesAreDefinedInEvaluations) {
         std::pair(bake, "EvaluateMaterialSurface(MaterialSurfaceInput surfaceIn) {") }) {
         ASSERT_TRUE(shader.valid);
         auto file = Loader::ShaderLoader::LoadFile(shader.fragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT).code;
-        auto definition = file.find("vec3 MGCode");
+        auto definition = file.find("vec3 MaterialGraphCode");
         auto caller = file.find(signature);
         ASSERT_NE(caller, std::string::npos) << file;
         EXPECT_LT(definition, caller) << file;

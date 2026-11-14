@@ -330,7 +330,7 @@ namespace Atlas::MaterialGraph {
             const auto& variable = variables->second[output->name];
 
             if (type == ValueType::Texture)
-                value = "MGSampleTexture(" + variable + ", surfaceIn.texCoord).rgb";
+                value = "MaterialGraphSampleTexture(" + variable + ", surfaceIn.texCoord).rgb";
             else
                 value = Convert(variable, type, ValueType::Vec3);
 
@@ -695,10 +695,10 @@ namespace Atlas::MaterialGraph {
         auto address = function.inputName + ".parameterOffset + " + offset + "u";
 
         switch (definition.valueType) {
-        case ValueType::Float: return "MGReadFloat(" + address + ")";
-        case ValueType::Vec2: return "MGReadVec2(" + address + ")";
-        case ValueType::Vec3: return "MGReadVec3(" + address + ")";
-        case ValueType::Vec4: return "MGReadVec4(" + address + ")";
+        case ValueType::Float: return "MaterialGraphReadFloat(" + address + ")";
+        case ValueType::Vec2: return "MaterialGraphReadVec2(" + address + ")";
+        case ValueType::Vec3: return "MaterialGraphReadVec3(" + address + ")";
+        case ValueType::Vec4: return "MaterialGraphReadVec4(" + address + ")";
         default: return "materialGraphParameters[" + address + "]";
         }
 

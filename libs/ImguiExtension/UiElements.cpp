@@ -2,6 +2,8 @@
 
 #include <imgui_internal.h>
 
+#include <algorithm>
+
 namespace Atlas::ImguiExtension {
 
     void UIElements::TexturePreview(Ref<ImguiWrapper>& wrapper, const Texture::Texture* texture) {
@@ -59,8 +61,8 @@ namespace Atlas::ImguiExtension {
 
         if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings))
             return false;
-        ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch, 0.4f);
-        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.6f);
+        SetupPropertyLabelColumn("Label");
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
         return true;
 
     }
@@ -74,6 +76,7 @@ namespace Atlas::ImguiExtension {
         auto width = ImGui::GetContentRegionAvail().x;
         auto pos = ImGui::GetCursorScreenPos();
         auto textSize = ImGui::CalcTextSize(label, nullptr, true);
+        MeasurePropertyLabel(textSize.x);
         ImGui::Dummy(ImVec2(width, ImGui::GetFrameHeight()));
         auto textPos = ImVec2(pos.x, pos.y + ImGui::GetStyle().FramePadding.y);
         auto textEnd = ImVec2(pos.x + width, textPos.y + ImGui::GetTextLineHeight());
@@ -94,6 +97,46 @@ namespace Atlas::ImguiExtension {
     void UIElements::EndProperties() {
 
         ImGui::EndTable();
+
+    }
+
+    void UIElements::SetupPropertyLabelColumn(const char* name) {
+
+        // At most 40% of the width, which is also the width before the labels of the window were measured
+        auto labelWidth = UpdatePropertyLabelWidth(0.0f);
+        auto maxWidth = 0.4f * ImGui::GetContentRegionAvail().x;
+        auto width = labelWidth > 0.0f ? std::min(labelWidth + 2.0f * ImGui::GetStyle().ItemSpacing.x, maxWidth) : maxWidth;
+
+        ImGui::TableSetupColumn(name, ImGuiTableColumnFlags_WidthFixed, width);
+        // A new table has no maximum width yet, which would clamp the width, the initial width applies instead
+        auto table = ImGui::GetCurrentTable();
+        if (!table->IsInitializing)
+            ImGui::TableSetColumnWidth(table->DeclColumnsCount - 1, width);
+
+    }
+
+    void UIElements::MeasurePropertyLabel(float labelWidth) {
+
+        UpdatePropertyLabelWidth(labelWidth);
+
+    }
+
+    float UIElements::UpdatePropertyLabelWidth(float labelWidth) {
+
+        // The longest label of this frame is collected while the labels are drawn
+        auto window = ImGui::GetCurrentWindow();
+        auto& storage = window->StateStorage;
+        auto lastWidthKey = ImHashStr("Property label width", 0, window->ID);
+        auto widthKey = ImHashStr("Property label width of this frame", 0, window->ID);
+        auto frameKey = ImHashStr("Property label frame", 0, window->ID);
+        auto frame = ImGui::GetFrameCount();
+        if (storage.GetInt(frameKey) != frame) {
+            storage.SetFloat(lastWidthKey, storage.GetFloat(widthKey));
+            storage.SetFloat(widthKey, 0.0f);
+            storage.SetInt(frameKey, frame);
+        }
+        storage.SetFloat(widthKey, std::max(storage.GetFloat(widthKey), labelWidth));
+        return storage.GetFloat(lastWidthKey);
 
     }
 

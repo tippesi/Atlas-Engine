@@ -549,9 +549,11 @@ namespace Atlas::Editor::UI {
                 }
             }
 
-            if (isOpen && ImGui::BeginTable(("##Parameters" + group).c_str(), 3, ImGuiTableFlags_SizingStretchProp)) {
-                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.35f);
-                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.65f);
+            // The names line up with the labels of the properties below
+            if (isOpen && ImGui::BeginTable(("##Parameters" + group).c_str(), 3,
+                ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings)) {
+                ImguiExtension::UIElements::SetupPropertyLabelColumn("Name");
+                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableSetupColumn("Reset", ImGuiTableColumnFlags_WidthFixed, iconColumnWidth);
 
                 for (auto iter = sorted.begin() + start; iter != end; iter++) {
@@ -589,6 +591,7 @@ namespace Atlas::Editor::UI {
         // Values of the graph are muted, the ones of this material stand out
         ImGui::TableNextColumn();
         ImGui::AlignTextToFramePadding();
+        ImguiExtension::UIElements::MeasurePropertyLabel(ImGui::CalcTextSize(name.c_str()).x);
         if (isOverridden)
             ImGui::TextUnformatted(name.c_str());
         else

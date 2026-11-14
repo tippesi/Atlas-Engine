@@ -42,6 +42,7 @@ namespace Atlas::Editor::UI {
             redoStack.clear();
             wasFocused = false;
             editedWhileFocused = false;
+            completionOpen = false;
             Tokenize();
         }
         // Text changed outside, e.g. by the undo of the window
@@ -53,13 +54,15 @@ namespace Atlas::Editor::UI {
             anchor = cursor;
             undoStack.clear();
             redoStack.clear();
+            completionOpen = false;
             Tokenize();
         }
         else if (tokenizedLanguage != int32_t(language)) {
             Tokenize();
         }
 
-        ImGui::PushFont(Theme::codeFont ? Theme::codeFont : ImGui::GetFont());
+        interfaceFont = ImGui::GetFont();
+        ImGui::PushFont(Theme::codeFont ? Theme::codeFont : interfaceFont);
         characterWidth = ImGui::CalcTextSize("M").x;
         lineHeight = std::round(ImGui::GetFontSize() * 1.3f);
 
@@ -119,6 +122,13 @@ namespace Atlas::Editor::UI {
             auto firstLine = std::max(0, int32_t((ImGui::GetScrollY() - padding) / lineHeight));
             auto lastLine = std::min(lineCount - 1, int32_t((ImGui::GetScrollY() + inner.GetHeight()) / lineHeight) + 1);
             DrawLines(textOrigin, inner.Min, inner.Max, firstLine, lastLine, focused);
+
+            if (!focused)
+                completionOpen = false;
+            auto cursorPosition = ImVec2(textOrigin.x + float(GetColumn(cursor)) * characterWidth,
+                textOrigin.y + float(GetLine(cursor)) * lineHeight);
+            if (completionOpen && inner.Contains(cursorPosition))
+                RenderCompletion(ImVec2(cursorPosition.x, cursorPosition.y + lineHeight), cursorPosition.y);
         }
         ImGui::EndChild();
         ImGui::PopStyleVar();
@@ -143,6 +153,7 @@ namespace Atlas::Editor::UI {
             if (io.MouseClickedCount[ImGuiMouseButton_Left] == 2 && IsWordCharacter(offset)) {
                 for (anchor = offset; IsWordCharacter(anchor - 1); anchor--);
                 for (cursor = offset; IsWordCharacter(cursor); cursor++);
+                completionOpen = false;
             }
             else {
                 MoveCursor(offset, io.KeyShift);
@@ -236,23 +247,6 @@ namespace Atlas::Editor::UI {
     }
 
     void CodeEditor::Tokenize() {
-
-        const std::string_view glslKeywords[] = { "if", "else", "for", "while", "do", "return", "break", "continue",
-            "discard", "switch", "case", "default", "struct", "const", "in", "out", "inout", "uniform", "buffer",
-            "layout", "shared", "flat", "precision", "highp", "mediump", "lowp", "true", "false" };
-        const std::string_view glslTypes[] = { "void", "bool", "int", "uint", "float", "double", "vec2", "vec3", "vec4",
-            "ivec2", "ivec3", "ivec4", "uvec2", "uvec3", "uvec4", "bvec2", "bvec3", "bvec4", "mat2", "mat3", "mat4",
-            "mat3x4", "mat4x3", "sampler", "sampler2D", "sampler3D", "samplerCube", "sampler2DArray", "texture2D",
-            "texture2DArray", "image2D", "image3D" };
-        const std::string_view glslBuiltins[] = { "abs", "sign", "floor", "ceil", "round", "trunc", "fract", "mod",
-            "min", "max", "clamp", "mix", "step", "smoothstep", "sqrt", "inversesqrt", "pow", "exp", "exp2", "log",
-            "log2", "sin", "cos", "tan", "asin", "acos", "atan", "radians", "degrees", "length", "distance", "dot",
-            "cross", "normalize", "reflect", "refract", "transpose", "inverse", "determinant", "texture", "textureLod",
-            "texelFetch", "textureSize", "imageLoad", "imageStore", "dFdx", "dFdy", "fwidth", "any", "all", "saturate" };
-        const std::string_view luaKeywords[] = { "and", "break", "do", "else", "elseif", "end", "false", "for",
-            "function", "goto", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while" };
-        const std::string_view luaBuiltins[] = { "print", "pairs", "ipairs", "type", "tostring", "tonumber", "require",
-            "select", "next", "error", "assert", "pcall", "setmetatable", "getmetatable", "math", "string", "table", "self" };
 
         auto isGLSL = language == CodeLanguage::GLSL;
         auto size = int32_t(content.size());
@@ -381,6 +375,13 @@ namespace Atlas::Editor::UI {
         auto selectionEnd = std::max(cursor, anchor);
         auto hasSelection = selectionStart != selectionEnd;
 
+        if (completionOpen && (hasSelection || completionStart > cursor))
+            completionOpen = false;
+        if (completionOpen && HandleCompletionKeys(canEdit))
+            return;
+        // Edits keep the suggestions open, e.g. a deleted character only changes the filter
+        auto completionWasOpen = completionOpen;
+
         auto moveLines = [&](int32_t lines) {
             auto column = preferredColumn >= 0 ? preferredColumn : GetColumn(cursor);
             auto target = line + lines;
@@ -420,6 +421,7 @@ namespace Atlas::Editor::UI {
         else if (shortcut && ImGui::IsKeyPressed(ImGuiKey_A)) {
             anchor = 0;
             cursor = int32_t(content.size());
+            completionOpen = false;
         }
         else if (shortcut && hasSelection && (ImGui::IsKeyPressed(ImGuiKey_C) || ImGui::IsKeyPressed(ImGuiKey_X))) {
             ImGui::SetClipboardText(content.substr(selectionStart, selectionEnd - selectionStart).c_str());
@@ -466,14 +468,200 @@ namespace Atlas::Editor::UI {
         }
 
         auto ignoreCharacters = (io.KeyCtrl && !io.KeyAlt) || (isOsx && io.KeyCtrl);
+        auto completionRequested = shortcut && ImGui::IsKeyPressed(ImGuiKey_Space);
         for (auto character : io.InputQueueCharacters) {
             if (ignoreCharacters || character < 32 || character == 127)
                 continue;
             char buffer[5] = {};
             ImTextCharToUtf8(buffer, character);
             Replace(std::min(cursor, anchor), std::max(cursor, anchor), buffer, true);
+            // Words and members are completed while they are typed
+            completionRequested = character >= 128 || std::isalnum(int(character)) || character == '_' || character == '.' || character == ':';
         }
         io.InputQueueCharacters.resize(0);
+
+        if (completionRequested || (completionWasOpen && changed))
+            UpdateCompletion();
+
+    }
+
+    bool CodeEditor::HandleCompletionKeys(bool canEdit) {
+
+        auto& io = ImGui::GetIO();
+        if (!io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+            completionIndex = (completionIndex + 1) % int32_t(completions.size());
+            completionChosen = true;
+            return true;
+        }
+        if (!io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+            completionIndex = (completionIndex + int32_t(completions.size()) - 1) % int32_t(completions.size());
+            completionChosen = true;
+            return true;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            completionOpen = false;
+            return true;
+        }
+        // Enter at the end of a word is a new line, unless a suggestion was chosen with the arrows
+        auto enter = ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter);
+        if (canEdit && ((enter && completionChosen) || ImGui::IsKeyPressed(ImGuiKey_Tab))) {
+            Replace(completionStart, cursor, completions[completionIndex].text, false);
+            completionOpen = false;
+            return true;
+        }
+        return false;
+
+    }
+
+    void CodeEditor::UpdateCompletion() {
+
+        // The word in front of the cursor and, after a . or :, the expression it belongs to
+        CodeCompletionContext context;
+        completionStart = cursor;
+        while (IsWordCharacter(completionStart - 1))
+            completionStart--;
+        context.prefix = content.substr(completionStart, cursor - completionStart);
+        if (completionStart > 0 && (content[completionStart - 1] == '.' || content[completionStart - 1] == ':')) {
+            context.separator = content[completionStart - 1];
+            auto qualifierStart = completionStart - 1;
+            while (qualifierStart > 0 && (IsWordCharacter(qualifierStart - 1) ||
+                content[qualifierStart - 1] == '.' || content[qualifierStart - 1] == ':'))
+                qualifierStart--;
+            context.qualifier = content.substr(qualifierStart, completionStart - 1 - qualifierStart);
+        }
+
+        completions.clear();
+        completionOpen = false;
+        if (context.prefix.empty() && !context.separator)
+            return;
+
+        auto candidates = completionProvider ? completionProvider(context) : std::vector<CodeCompletion>();
+        if (!context.separator) {
+            auto addWords = [&](const auto& words, const char* kind) {
+                for (const auto& word : words)
+                    candidates.push_back({ std::string(word), kind });
+                };
+            if (language == CodeLanguage::GLSL) {
+                addWords(glslKeywords, "Keyword");
+                addWords(glslTypes, "Type");
+                addWords(glslBuiltins, "Function");
+            }
+            else {
+                addWords(luaKeywords, "Keyword");
+                addWords(luaBuiltins, "Builtin");
+            }
+        }
+
+        // Case doesn't matter while typing, an exactly typed word needs no suggestion
+        auto startsWith = [&](const std::string& text) {
+            return text.size() >= context.prefix.size() && std::equal(context.prefix.begin(), context.prefix.end(), text.begin(),
+                [](char a, char b) { return std::tolower((unsigned char)a) == std::tolower((unsigned char)b); });
+            };
+        for (auto& candidate : candidates) {
+            if (candidate.text != context.prefix && startsWith(candidate.text))
+                completions.push_back(std::move(candidate));
+        }
+        std::stable_sort(completions.begin(), completions.end(),
+            [](const CodeCompletion& a, const CodeCompletion& b) { return a.text < b.text; });
+        completions.erase(std::unique(completions.begin(), completions.end(),
+            [](const CodeCompletion& a, const CodeCompletion& b) { return a.text == b.text; }), completions.end());
+
+        completionIndex = 0;
+        completionChosen = false;
+        completionOpen = !completions.empty();
+
+    }
+
+    void CodeEditor::RenderCompletion(ImVec2 position, float lineTop) {
+
+        const int32_t visibleCount = 8;
+        const float padding = 6.0f;
+        const float rowPadding = 3.0f;
+
+        auto first = std::clamp(completionIndex - visibleCount / 2, 0, std::max(int32_t(completions.size()) - visibleCount, 0));
+        auto last = std::min(first + visibleCount, int32_t(completions.size()));
+
+        // As wide as the visible suggestions with their kinds, but not wider than a comfortable reading width
+        auto kindWidth = [&](const std::string& kind) {
+            ImGui::PushFont(interfaceFont);
+            auto width = ImGui::CalcTextSize(kind.c_str()).x;
+            ImGui::PopFont();
+            return width;
+            };
+        auto contentWidth = ImGui::GetFontSize() * 16.0f;
+        for (auto i = first; i < last; i++)
+            contentWidth = std::max(contentWidth, ImGui::CalcTextSize(completions[i].text.c_str()).x +
+                kindWidth(completions[i].kind) + 4.0f * padding);
+        contentWidth = std::min(contentWidth, ImGui::GetFontSize() * 28.0f);
+
+        // Inside the window, above the line if there is no room below it
+        auto viewport = ImGui::GetMainViewport();
+        auto width = contentWidth + 2.0f * padding;
+        position.x = std::max(viewport->WorkPos.x, std::min(position.x, viewport->WorkPos.x + viewport->WorkSize.x - width));
+        auto rowHeight = ImGui::GetTextLineHeight() + 2.0f * rowPadding;
+        auto height = std::max(completionHeight, float(last - first) * rowHeight + 2.0f * padding);
+        if (position.y + height > viewport->WorkPos.y + viewport->WorkSize.y)
+            position.y = lineTop - height;
+
+        // Looks like a tooltip but isn't one, other tooltips would be added to it or hide it
+        const auto flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+            ImGuiWindowFlags_NoDocking;
+        const auto& style = ImGui::GetStyle();
+        ImGui::SetNextWindowPos(position);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, style.Colors[ImGuiCol_PopupBg]);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, style.PopupRounding);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, style.PopupBorderSize);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(padding, padding));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+        auto open = ImGui::Begin("##CodeCompletion", nullptr, flags);
+        ImGui::PopStyleVar(4);
+        ImGui::PopStyleColor();
+        ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+        if (!open) {
+            ImGui::End();
+            return;
+        }
+
+        auto drawList = ImGui::GetWindowDrawList();
+        for (auto i = first; i < last; i++) {
+            const auto& completion = completions[i];
+            auto min = ImGui::GetCursorScreenPos();
+            auto max = ImVec2(min.x + contentWidth, min.y + rowHeight);
+            if (i == completionIndex)
+                drawList->AddRectFilled(min, max, ImGui::GetColorU32(Theme::Accent(0.35f)), 4.0f);
+
+            auto kindX = max.x - padding - kindWidth(completion.kind);
+            drawList->PushClipRect(min, ImVec2(kindX - padding, max.y), true);
+            drawList->AddText(ImVec2(min.x + padding, min.y + rowPadding), ImGui::GetColorU32(ImGuiCol_Text), completion.text.c_str());
+            drawList->PopClipRect();
+
+            ImGui::PushFont(interfaceFont);
+            auto kindY = min.y + (rowHeight - ImGui::GetFontSize()) * 0.5f;
+            drawList->AddText(ImVec2(kindX, kindY), ImGui::GetColorU32(Theme::TextMuted()), completion.kind.c_str());
+            ImGui::PopFont();
+
+            ImGui::Dummy(ImVec2(contentWidth, rowHeight));
+        }
+
+        const auto& selected = completions[completionIndex];
+        if (!selected.signature.empty() || !selected.description.empty()) {
+            ImGui::Dummy(ImVec2(0.0f, padding));
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0.0f, padding));
+            ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + contentWidth);
+            if (!selected.signature.empty())
+                ImGui::TextUnformatted(selected.signature.c_str());
+            if (!selected.description.empty()) {
+                ImGui::PushFont(interfaceFont);
+                ImGui::TextColored(Theme::TextMuted(), "%s", selected.description.c_str());
+                ImGui::PopFont();
+            }
+            ImGui::PopTextWrapPos();
+        }
+
+        completionHeight = ImGui::GetWindowHeight();
+        ImGui::End();
 
     }
 
@@ -526,6 +714,7 @@ namespace Atlas::Editor::UI {
         if (!select)
             anchor = offset;
         preferredColumn = -1;
+        completionOpen = false;
         scrollToCursor = true;
         blinkStart = ImGui::GetTime();
 

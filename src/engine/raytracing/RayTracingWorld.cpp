@@ -201,14 +201,15 @@ namespace Atlas {
             std::unordered_map<void*, GraphHit> graphHits;
 
             // Hit shaders compile in the background, graphs without compiled ones use their baked values. Graphs
-            // without an opacity use the any hit stage of the other materials
+            // without an opacity use the any hit stage of the other materials. Only ray tracing pipelines have hit groups
             auto isCompiled = [](const std::string& file, VkShaderStageFlagBits stage) {
                 return file.empty() || MaterialGraph::PipelineCache::RequestStage(file, stage) == MaterialGraph::PipelineCache::State::Ready;
             };
             std::set<MaterialGraphHitGroup> hitGroups;
             for (const auto& [material, data] : sceneState->materialGraphMap) {
                 auto compiled = static_cast<Material*>(material)->graph->GetCompiled();
-                if (compiled && !compiled->hitFile.empty() && isCompiled(compiled->hitFile, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) &&
+                if (hardwareRayTracing && compiled && !compiled->hitFile.empty() &&
+                    isCompiled(compiled->hitFile, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) &&
                     isCompiled(compiled->hitOpacityFile, VK_SHADER_STAGE_ANY_HIT_BIT_KHR))
                     hitGroups.insert({ compiled->hitFile, compiled->hitOpacityFile });
             }

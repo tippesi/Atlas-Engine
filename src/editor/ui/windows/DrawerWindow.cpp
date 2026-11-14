@@ -143,15 +143,11 @@ namespace Atlas::Editor::UI {
         ImGui::TextUnformatted(name.c_str());
 
         auto& style = ImGui::GetStyle();
-        auto iconSize = ImGui::GetTextLineHeight();
-        auto closeWidth = iconSize + 2.0f;
-
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - GetPinButtonWidth() - closeWidth - style.ItemSpacing.x);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 2.0f * GetPinButtonWidth() - style.ItemSpacing.x);
         RenderPinButton();
 
         ImGui::SameLine();
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + style.FramePadding.y - 1.0f);
-        if (Widgets::IconButton("Close drawer", Singletons::icons->Get(IconType::ArrowDown), iconSize, "Close (Esc)"))
+        if (Widgets::ToolbarIconButton("Close drawer", Singletons::icons->Get(IconType::ArrowDown), "Close (Esc)"))
             show = false;
 
         ImGui::Separator();
