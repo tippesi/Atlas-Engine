@@ -17,7 +17,7 @@ namespace Atlas::Capture {
         fs::path server;
         bool detach = false;
         float timeout = 540.0f;
-        bool waitGpu = false;
+        bool waitGpu = true;
         // Options of the server process itself, a server started with others is restarted
         std::vector<std::string> serverOptions;
         // The command and its arguments, job options are passed on to the job
@@ -212,10 +212,17 @@ namespace Atlas::Capture {
 
         auto path = options.server / (command + ".result.json");
         auto start = std::chrono::steady_clock::now();
+        bool printedGpuWait = false;
         while (!fs::exists(path)) {
-            if (!ReadServer(options.server) && !fs::exists(path)) {
+            auto status = ReadServer(options.server);
+            if (!status && !fs::exists(path)) {
                 Print("The server ended before " + command + " was done, its log:" + GetLogTail(options.server / "server.log", 20));
                 return 3;
+            }
+            if (status && !printedGpuWait && status->value("state", std::string()) == "waiting for the GPU" &&
+                status->value("command", std::string()) == command) {
+                Print("The server waits for the GPU before it loads " + status->value("scene", std::string()) + ", status shows for whom");
+                printedGpuWait = true;
             }
             if (options.timeout > 0.0f && SecondsSince(start) > options.timeout) {
                 Print(command + " still runs after " + FormatFloat(options.timeout, 0) + " s, wait for it with: AtlasEngineCapture wait " +
@@ -236,9 +243,8 @@ namespace Atlas::Capture {
         if (!server)
             return 2;
 
+        // The server waits for the GPU itself before it loads a scene
         auto serverProcess = server->value("pid", uint32_t(0));
-        if (options.waitGpu && !WaitForGpu(options.timeout, serverProcess))
-            return 4;
         if (!options.waitGpu) {
             for (const auto& instance : InstanceRegistry::GetInstances())
                 if (instance.busy && instance.pid != serverProcess && instance.pid != CurrentProcessId())
@@ -262,6 +268,8 @@ namespace Atlas::Capture {
 
         const auto& jobArgument = options.arguments[1];
         std::vector<std::string> jobOptions(options.arguments.begin() + 2, options.arguments.end());
+        if (!options.waitGpu)
+            jobOptions.push_back("--no-wait-gpu");
 
         json command = { { "command", "run" }, { "args", jobOptions } };
         std::string name;
@@ -320,6 +328,8 @@ namespace Atlas::Capture {
         };
         if (!scene.empty())
             job["scene"] = scene;
+        if (!options.waitGpu)
+            job["waitGpu"] = false;
 
         return SendCommand(options, { { "command", "run" }, { "job", job } }, "eval", true);
 
@@ -360,8 +370,11 @@ namespace Atlas::Capture {
                 options.detach = true;
             else if (arg == "--timeout" && i + 1 < args.size())
                 options.timeout = std::stof(args[++i]);
-            else if (arg == "--wait-gpu")
-                options.waitGpu = true;
+            else if (arg == "--no-wait-gpu")
+                options.waitGpu = false;
+            else if (arg == "--wait-gpu") {
+                // The default, accepted for older command lines
+            }
             else if (arg == "--streaming" || arg == "--validation")
                 options.serverOptions.push_back(arg);
             else
@@ -405,7 +418,8 @@ namespace Atlas::Capture {
 
     void PrintInstances() {
 
-        auto instances = InstanceRegistry::GetInstances();
+        auto all = InstanceRegistry::GetInstances();
+        auto instances = all;
         std::erase_if(instances, [](const auto& instance) { return instance.pid == CurrentProcessId(); });
         if (instances.empty()) {
             Print("No other engine application runs");
@@ -420,23 +434,24 @@ namespace Atlas::Capture {
                 arguments += " " + arg;
             if (arguments.size() > 100)
                 arguments = arguments.substr(0, 97) + "...";
+            std::string waitsFor;
+            if (instance.waitingSince)
+                for (const auto& other : InstanceRegistry::GetInstancesAhead(instance, all))
+                    waitsFor += (waitsFor.empty() ? ", waits for " : ", ") + std::to_string(other.pid);
             Print("  " + std::to_string(instance.pid) + " " + instance.executable + (instance.busy ? " [busy] " : " ") + instance.activity +
-                ", running " + std::to_string((now - instance.started) / 60) + " min" +
+                waitsFor + ", running " + std::to_string((now - instance.started) / 60) + " min" +
                 (instance.expectedEnd ? ", expected end in " + std::to_string(std::max(*instance.expectedEnd - now, int64_t(0))) + " s" : "") +
                 " |" + arguments);
         }
 
     }
 
-    bool WaitForGpu(float timeoutSeconds, uint32_t ignoredProcess) {
+    bool WaitForGpu(float timeoutSeconds) {
 
         auto start = std::chrono::steady_clock::now();
         bool printed = false;
         while (true) {
-            std::vector<InstanceRegistry::Instance> busy;
-            for (const auto& instance : InstanceRegistry::GetInstances())
-                if (instance.busy && instance.pid != CurrentProcessId() && instance.pid != ignoredProcess)
-                    busy.push_back(instance);
+            auto busy = InstanceRegistry::GetBusyInstances();
             if (busy.empty())
                 return true;
 

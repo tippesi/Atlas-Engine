@@ -17,7 +17,10 @@ library, for game hosts). A running capture tool is renamed aside when it is lin
 - Look at `sheet.jpg` (all captures of a job, at most 1536 px wide) instead of single images; let `diff` or `compare`
   decide whether something changed before looking at all.
 - Measure with queries and `eval` instead of probe scripts that log values. Never guess coordinates or heights.
-- `status` before starting anything on the GPU, `--wait-gpu` to queue behind other engine applications.
+- Scenes load once no other engine application keeps the GPU busy and no earlier run waits for it, their scenes would
+  fill its memory (`--no-wait-gpu` or `"waitGpu": false` loads right away, the job fails after `gpuWaitTimeout`,
+  1800 s); `status` shows whom a waiting run waits for. The window opens behind the other windows without taking the
+  focus, `--foreground` brings it to the front.
 - Games: each build passes a short job with `"playerDisplay": true` first, the start a player gets (see Jobs in a game).
 
 ## Commands
@@ -27,7 +30,7 @@ AtlasEngineCapture <job.json> [options]          # direct run in this process
 AtlasEngineCapture --scene <scene> [options]     # quick shot or inspection without a job file
 AtlasEngineCapture run <job.json | '{inline}'> [job options]   # on the server of this executable, prints the summary
 AtlasEngineCapture eval "<lua>" [--play 3] [--scene <scene>]  # the value of Lua in the loaded scene after playing
-AtlasEngineCapture wait <command> | status | cancel | stop     # --server <dir> --detach --timeout <s> --wait-gpu
+AtlasEngineCapture wait <command> | status | cancel | stop     # --server <dir> --detach --timeout <s> --no-wait-gpu
 AtlasEngineCapture check <job.json> ...          # mistakes in jobs without loading anything
 AtlasEngineCapture inspect <scene|prefab|mesh|model> [--filter <pattern>] [--assembly <pattern>] [--limit n] [--out f]
 AtlasEngineCapture inspect <graph.aematgraph> [--filter <pattern>] [--code] [--out f] | inspect nodes [--filter <pattern>]
@@ -40,11 +43,12 @@ AtlasEngineCapture --serve <dir> | --pipeline <pipeline.json> [--from <step>] [-
 
 The commands without a scene start in milliseconds, they don't create a window or a GPU device. Job options (also after
 the job file, they override it): `--out`, `--name`, `--resolution WxH`, `--render-scale`, `--settle <frames>`,
-`--timeout <s>`, `--hidden` (no window, as fast as possible; runs stay visible by default), `--fast` (shown, as fast as
+`--timeout <s>`, `--foreground` (the window opens in front with the focus instead of behind the other windows),
+`--hidden` (no window, as fast as possible; runs stay visible by default), `--fast` (shown, as fast as
 possible), `--no-shots`, `--overlay`, `--play <s>`, `--set path=value` (settings), `--profile <frames>`, `--pause`
-(pause at the start of playing), `--hitches [ms]`, `--inspect [file]`, `--sound`, and before the engine starts:
-`--validation`, `--streaming`, `--shader-dir <dir>` (relative to `data/`), `--wait-gpu`, `--verbose` (the whole engine log,
-otherwise only its errors). Shot options:
+(pause at the start of playing), `--hitches [ms]`, `--inspect [file]`, `--sound`, `--no-wait-gpu`,
+`--gpu-wait-timeout <s>`, and before the engine starts: `--validation`, `--streaming`, `--shader-dir <dir>` (relative
+to `data/`), `--verbose` (the whole engine log, otherwise only its errors). Shot options:
 `--focus <pattern>`, `--views front,low`, `--camera x,y,z`, `--look-at x,y,z`, `--yaw`, `--pitch`, `--fov`,
 `--distance`, `--overview`, `--passes albedo,normal`, `--shot <name>`. Outputs: `bin/capture/<job name>/` or `--out`.
 
@@ -54,24 +58,30 @@ otherwise only its errors). Shot options:
 client starts a server when none runs and replaces one of another build or with other `--streaming`/`--validation`
 options once it is idle. Commands queue in file name order, several clients share a server. The server keeps the last
 scene loaded; a job for another scene, or after a job that played or edited, loads it again and keeps the meshes,
-materials and textures meanwhile. While waiting for commands it presents with vsync, jobs run without. The client waits up to `--timeout` (540 s), then prints the command to `wait` for and
-exits with 4; `--detach` returns right away. `cancel` stops the running job, `stop` the server.
+materials and textures meanwhile. While waiting for commands or for the GPU it presents with vsync, jobs run without.
+The client waits up to `--timeout` (540 s), also while the server waits for the GPU, then prints the command to `wait`
+for and exits with 4; `--detach` returns right away. `cancel` stops the running job, `stop` the server.
 
 The summary: status, duration (load, played), errors and failed checks grouped with counts, failed expectations with
 their values, conditions that never happened, `results`, warnings and the outputs. Everything else is in `report.json`
 and `log.txt` of the output directory.
 
 Server protocol, for other clients: JSON files in the directory, `{ "command": "run", "job": "<file>" | {inline},
-"args": [...] }`, `loadScene` (`scene`, `timeout`, `camera`), `reloadScene`, `unloadScene`, `stop`; results in
-`<command>.result.json` (`status`, `exitCode`, `reason`, `report`, `outputDirectory`), processed commands in `done/`.
-`server.json` names the process, its build and its state (idle, loading, running), a file named `cancel` stops the job.
+"args": [...] }`, `loadScene` (`scene`, `timeout`, `camera`, `waitGpu`, `gpuWaitTimeout`), `reloadScene`, `unloadScene`,
+`stop`; results in `<command>.result.json` (`status`, `exitCode`, `reason`, `report`, `outputDirectory`), processed
+commands in `done/`. `server.json` names the process, its build and its state (idle, waiting for the GPU, loading,
+running), a file named `cancel` stops the job.
 
 ### Engine applications on the machine
 
 The capture tool and games linking `AtlasEngineCaptureLibrary` register themselves in `LoadContent` (`InstanceRegistry`,
 one file per process in `%LOCALAPPDATA%/AtlasEngine/instances`) with what they do and whether they are busy. The
-editor and the demo don't, the engine doesn't know the registry. `status` lists them, runs print the busy ones,
-`--wait-gpu` waits until none is busy besides the own server.
+editor and the demo don't, the engine doesn't know the registry. `status` lists them and whom a waiting one waits for.
+Every scene load queues for the GPU: direct runs, pipelines and servers (also for commands of other programs) right
+before each scene they load, games before a job starts them (they pass `--no-wait-gpu` and `--gpu-wait-timeout <s>` of
+their command line to the job). A waiting process isn't busy. It loads once nothing is busy and nobody waits longer,
+after claiming the GPU for one more check, so two processes starting together don't load at once. Games register as
+busy while they run, a run waits for a game until `gpuWaitTimeout`.
 
 ## Jobs
 
@@ -80,7 +90,7 @@ editor and the demo don't, the engine doesn't know the registry. `status` lists 
     "scene": "scenes/Kingdom.aescene",   // relative to data/ or the job; the only required key
     "name": "kingdom", "out": "...",     // defaults: file name, bin/capture/<name>
     "resolution": [1280, 720], "renderScale": 0.75, "settleFrames": 60, "loadTimeout": 300, "fixedDt": 0.016667,
-    "showWindow": true, "realTime": true, "pathTrace": false,
+    "showWindow": true, "foreground": false, "realTime": true, "pathTrace": false, "waitGpu": true, "gpuWaitTimeout": 1800,
     "settings": { "fog": { "density": 0.02 } }, "variants": [ { "name": "noFog", "settings": { "fog": { "enable": false } } } ],
     "inspect": { "file": "scene.json", "filter": ["*Gate*"], "detail": ["Player"] },
     "queries": [], "edit": {}, "shots": [],
@@ -247,8 +257,8 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
 { "op": "material", "material": "x.aematerial", "set": { "metalness": 0, "roughnessMapPath": null } }
 { "op": "materialCopy", "material": "a", "output": "b", "set": {}, "remove": [] }   { "op": "meshMaterials", "meshes": [...], "replace": { "a": "b" } }
 { "op": "meshCopy", "mesh": "a.aemesh", "output": "b.aemesh", "invertNormals": true, "set": {}, "assign": ["Grass*"] }
-{ "op": "meshSettings", "meshes": "x/*.aemesh", "set": { "cullBackFaces": false, "movable": true, "animations": "..." },
-  "impostor": { "views": 12, "resolution": 256, "distance": 150, "textureFormat": "ktx2" } }
+{ "op": "meshSettings", "meshes": "x/*.aemesh", "set": { "cullBackFaces": false, "movable": true, "animations": "...",
+  "impostor": { "views": 12, "resolution": 256, "distance": 150, "textureFormat": "ktx2" } } }
 { "op": "compressTextures", "directories": ["ancient"] }   { "op": "bakeMaterial", "material": "...", "mode": "textures|average" }
 { "op": "materialGraph", "graph": "x/graphs/fire.aematgraph", "create": true, "from": "y.aematgraph", "name": "Fire", "maxDisplacement": 0.3,
   "nodes": [ { "key": "noise", "type": "Fractal noise", "inputs": { "Position": "Object position", "Scale": 5.5 } },

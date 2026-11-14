@@ -200,7 +200,7 @@ namespace Atlas::Capture {
                     auto directory = output / jobName / (variant.name + "_" + std::to_string(round));
                     std::vector<std::string> command = { variant.executable.string(), jobFile.string(), "--out", directory.string(),
                         "--resolution", "1920x1080", "--profile", "64", "--settle", std::to_string(frames),
-                        "--set", "postProcessing.autoExposure.enable=false", "--pause" };
+                        "--set", "postProcessing.autoExposure.enable=false", "--pause", "--no-wait-gpu" };
                     if (!variant.shaderDirectory.empty())
                         command.insert(command.end(), { "--shader-dir", variant.shaderDirectory });
                     command.insert(command.end(), extraArgs.begin(), extraArgs.end());

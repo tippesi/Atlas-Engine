@@ -5,6 +5,7 @@
 #include "Summary.h"
 #include "Tools.h"
 #include "InstanceRegistry.h"
+#include "Process.h"
 
 #include "Serializer.h"
 #include "loader/ImageLoader.h"
@@ -23,6 +24,7 @@
 #include <SDL3/SDL.h>
 
 #include <cstdio>
+#include <thread>
 
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../data",
@@ -121,8 +123,7 @@ namespace Atlas::Capture {
                     font = CreateRef<Font>("font/roboto.ttf", 16.0f, 5);
                     auto panelHeight = CaptureRenderer::GetPanelHeight(font, outputLineCount + 1);
                     window.SetSize(job.resolution.x, job.resolution.y + int32_t(panelHeight));
-                    window.Show();
-                    SDL_RaiseWindow(window.GetSDLWindow());
+                    ShowWindow(std::find(jobArguments.begin(), jobArguments.end(), "--foreground") != jobArguments.end());
                 }
 
                 report.Print("Serving commands from " + server->directory.string());
@@ -223,9 +224,7 @@ namespace Atlas::Capture {
             auto panelHeight = CaptureRenderer::GetPanelHeight(font, outputLineCount + 1);
             auto scale = std::min({ 1.0f, 1600.0f / float(job.resolution.x), 900.0f / float(job.resolution.y) });
             window.SetSize(int32_t(float(job.resolution.x) * scale), int32_t(float(job.resolution.y) * scale + panelHeight));
-            window.Show();
-            // Runs started from a background shell would otherwise open behind other windows
-            SDL_RaiseWindow(window.GetSDLWindow());
+            ShowWindow(job.foreground);
         }
         else if (mode != Mode::Job) {
             window.Hide();
@@ -246,9 +245,7 @@ namespace Atlas::Capture {
 
         report.Print("Job '" + job.name + "' with scene " + job.scene + " (run " + report.runId + ")" +
             (report.previousSeconds > 0.0f ? ", the previous run took " + FormatFloat(report.previousSeconds, 0) + " s" : ""));
-        auto now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        InstanceRegistry::SetActivity("job " + job.name, true,
-            report.previousSeconds > 0.0f ? std::optional<int64_t>(now + int64_t(report.previousSeconds)) : std::nullopt);
+        SetBusyActivity();
         if (server)
             server->WriteStatus("running", job.scene, job.name);
 
@@ -332,11 +329,72 @@ namespace Atlas::Capture {
 
     void App::LoadScene(const std::string& path) {
 
+        scenePath = path;
+        if (!job.waitGpu) {
+            SetBusyActivity();
+            BeginLoading();
+            return;
+        }
+
+        // Scenes of other engine applications fill the GPU memory, a second one on top of them runs out of it
+        phase = Phase::WaitingForGpu;
+        gpuWaitStart = std::chrono::steady_clock::now();
+        nextGpuCheck = gpuWaitStart;
+        nextGpuWaitPrint = gpuWaitStart;
+        gpuWaitReason.clear();
+        InstanceRegistry::QueueForGpu("waiting for the GPU to load " + path);
+        if (server)
+            server->WriteStatus("waiting for the GPU", path, job.name);
+
+    }
+
+    void App::UpdateGpuWait() {
+
+        auto now = std::chrono::steady_clock::now();
+        if (now < nextGpuCheck)
+            return;
+        nextGpuCheck = now + std::chrono::milliseconds(500);
+
+        std::vector<InstanceRegistry::Instance> ahead;
+        auto seconds = SecondsSince(gpuWaitStart);
+        if (InstanceRegistry::PollGpu(ahead)) {
+            // The wait doesn't count into the duration of the job, the next run expects its end from that
+            startTime += now - gpuWaitStart;
+            report.data["gpuWaitSeconds"] = Round(seconds, 1);
+            if (!gpuWaitReason.empty())
+                report.Print("The GPU is free after " + FormatFloat(seconds, 0) + " s, loading " + scenePath);
+            if (server)
+                server->WriteStatus(loadingForCommand ? "loading" : "running", scenePath, loadingForCommand ? "" : job.name);
+            SetBusyActivity();
+            BeginLoading();
+            return;
+        }
+
+        if (seconds > job.gpuWaitTimeout) {
+            Fail("The GPU is still busy after " + FormatFloat(seconds, 0) + " s (gpuWaitTimeout), waiting for " + gpuWaitReason);
+            return;
+        }
+
+        // Nobody ahead: this process claimed the GPU and gets it in the next step
+        if (ahead.empty())
+            return;
+
+        auto reason = InstanceRegistry::Describe(ahead);
+        if (reason != gpuWaitReason || now >= nextGpuWaitPrint) {
+            report.Print("Waiting for the GPU before loading " + scenePath + " (" + FormatFloat(seconds, 0) + " s): " + reason);
+            nextGpuWaitPrint = now + std::chrono::seconds(60);
+        }
+        gpuWaitReason = reason;
+
+    }
+
+    void App::BeginLoading() {
+
         loadStartTime = std::chrono::steady_clock::now();
         frameCount = 0;
         rtWaitFrames = 0;
-        scenePath = path;
         phase = Phase::Loading;
+        const auto& path = scenePath;
 
         try {
             auto binary = fs::path(path).extension() != ".json";
@@ -401,10 +459,21 @@ namespace Atlas::Capture {
             graphicsDevice->WaitForPreviousFrameSubmission();
         }
 
-        if (vsync != (phase == Phase::Idle)) {
-            vsync = phase == Phase::Idle;
+        auto waiting = phase == Phase::Idle || phase == Phase::WaitingForGpu;
+        if (vsync != waiting) {
+            vsync = waiting;
             graphicsDevice->CreateSwapChain(vsync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
                 graphicsDevice->swapChain->colorSpace);
+            // A new swap chain and its first presents can bring the window to the front
+            if (job.showWindow && !job.foreground && !window.IsFocused())
+                backgroundUntil = Clock::Get() + 3.0f;
+        }
+
+        if (backgroundUntil > Clock::Get()) {
+            if (window.IsFocused())
+                backgroundUntil = 0.0f;
+            else
+                MoveWindowToBack(window.GetSDLWindow());
         }
 
         try {
@@ -422,6 +491,12 @@ namespace Atlas::Capture {
             case Phase::Idle:
                 sectionScope.Next("Commands");
                 ProcessNextCommand();
+                break;
+            case Phase::WaitingForGpu:
+                sectionScope.Next("Wait for the GPU");
+                UpdateGpuWait();
+                // Leaves the GPU to the others, also without vsync in a hidden window
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 break;
             case Phase::Loading: {
                 sectionScope.Next("Loading");
@@ -549,6 +624,9 @@ namespace Atlas::Capture {
         std::string line = job.name + "  |  ";
         switch (phase) {
         case Phase::Idle:
+            break;
+        case Phase::WaitingForGpu:
+            line += "waiting for the GPU" + (gpuWaitReason.empty() ? std::string() : ": " + gpuWaitReason);
             break;
         case Phase::Loading:
             line += "loading " + job.scene;
@@ -1400,6 +1478,8 @@ namespace Atlas::Capture {
         job.name = server->commandName;
         job.scene = path;
         job.loadTimeout = command.value("timeout", job.loadTimeout);
+        job.waitGpu = command.value("waitGpu", std::find(jobArguments.begin(), jobArguments.end(), "--no-wait-gpu") == jobArguments.end());
+        job.gpuWaitTimeout = command.value("gpuWaitTimeout", job.gpuWaitTimeout);
         ResetJobState();
         activeCamera = command.contains("camera") ? ParseCamera(command["camera"]) : CameraSpec {};
         report.SkipLog();
@@ -1408,7 +1488,6 @@ namespace Atlas::Capture {
         loadingForCommand = true;
         report.Print("Loading " + path);
         server->WriteStatus("loading", path);
-        InstanceRegistry::SetActivity("loading " + path, true);
         LoadScene(path);
 
     }
@@ -1449,6 +1528,38 @@ namespace Atlas::Capture {
         UnloadScene();
         phase = Phase::Done;
         Exit(0);
+
+    }
+
+    void App::ShowWindow(bool foreground) {
+
+        // Only a window which isn't shown yet goes behind the others, one the user brought to the front stays there
+        auto sdlWindow = window.GetSDLWindow();
+        auto wasHidden = (SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_HIDDEN) != 0;
+        SDL_SetHint(SDL_HINT_WINDOW_ACTIVATE_WHEN_SHOWN, foreground ? "1" : "0");
+        window.Show();
+
+        if (foreground) {
+            backgroundUntil = 0.0f;
+            SDL_RaiseWindow(sdlWindow);
+        }
+        else if (wasHidden) {
+            backgroundUntil = Clock::Get() + 3.0f;
+            MoveWindowToBack(sdlWindow);
+        }
+
+    }
+
+    void App::SetBusyActivity() {
+
+        if (loadingForCommand) {
+            InstanceRegistry::SetActivity("loading " + scenePath, true);
+            return;
+        }
+
+        auto now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        InstanceRegistry::SetActivity("job " + job.name, true,
+            report.previousSeconds > 0.0f ? std::optional<int64_t>(now + int64_t(report.previousSeconds)) : std::nullopt);
 
     }
 

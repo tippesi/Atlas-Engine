@@ -333,6 +333,12 @@ namespace Atlas::Capture {
         float fixedDeltaTime = 1.0f / 60.0f;
         // Shows the frames and the output while running, playback then runs in real time unless realTime is off
         bool showWindow = true;
+        // The window opens in front and takes the focus, otherwise it opens behind the other windows
+        bool foreground = false;
+        // The scene only loads once no other engine application keeps the GPU busy, their scenes fill its memory
+        bool waitGpu = true;
+        // The job fails when the GPU is still busy after this many seconds
+        float gpuWaitTimeout = 1800.0f;
         bool realTime = true;
         // Jobs in a game: the host keeps the display settings of the player instead of a window without vsync
         bool playerDisplay = false;

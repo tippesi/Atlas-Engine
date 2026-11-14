@@ -2,6 +2,8 @@
 
 #include "Common.h"
 
+struct SDL_Window;
+
 namespace Atlas::Capture {
 
     uint32_t CurrentProcessId();
@@ -22,5 +24,8 @@ namespace Atlas::Capture {
 
     // Ends a process and every process it started, returns the ids of the ended processes
     std::vector<uint32_t> KillProcessTree(uint32_t processId);
+
+    // Puts a window behind all other windows without activating it, only on Windows
+    void MoveWindowToBack(SDL_Window* window);
 
 }

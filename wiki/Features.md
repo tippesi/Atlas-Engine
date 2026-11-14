@@ -235,7 +235,8 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Logging**: `Log` (C++ and Lua, `Log::printToConsole` switches the console output), editor `LogWindow`.
 - **Running engine applications** (who uses the GPU, process list, busy, wait for the GPU): capture `InstanceRegistry`,
   the capture tool and games linking the capture library register themselves with what they do (not the editor and
-  demo); capture `status`, `--wait-gpu`, `kill`.
+  demo); capture `status`, every scene load waits until no other application is busy (`--no-wait-gpu`, job key
+  `waitGpu`), `kill`.
 - **Command line tools without the GPU** (modes before the engine starts): `EngineConfig::commandLineTool`.
 
 ## Common helpers
@@ -279,7 +280,7 @@ Renders, plays, measures, checks and edits scenes from JSON jobs, details in `ca
 
 - **Running**: jobs, the client `run`/`eval`/`wait`/`status`/`cancel`/`stop` of a server that keeps the scene loaded
   (`--serve`), `--pipeline` (scene builds from edit steps with snapshots), `--no-shots`, `--set`, `--validation`,
-  `--streaming`, `--shader-dir`, `--wait-gpu`.
+  `--streaming`, `--shader-dir`, `--no-wait-gpu`, `--foreground` (windows open in the background by default).
 - **Without loading** (offline, no GPU, scene file, mesh file, model file, glTF, FBX, pivot, part offsets): `check`
   (job mistakes, entity names with the closest ones, Lua, preflight of `capture.project.json`), `inspect` (scene,
   prefab, mesh, model and material graph files, `--assembly`), `diff` (images as numbers), `compose` (contact sheets), `kill`.

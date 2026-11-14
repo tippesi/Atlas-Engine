@@ -5,7 +5,10 @@
 
 #include "InstanceRegistry.h"
 
+#include <SDL3/SDL.h>
+
 #include <fstream>
+#include <thread>
 
 namespace Atlas::Capture {
 
@@ -15,10 +18,19 @@ namespace Atlas::Capture {
         if (option == args.end() || option + 1 == args.end())
             return nullptr;
 
-        // The scene is the one of the game, the other options of the game aren't options of the job
+        // The scene is the one of the game, the other options of the game aren't options of the job besides the GPU wait
+        std::vector<std::string> jobArgs = { args.front(), "--scene", scenePath };
+        for (size_t i = 1; i < args.size(); i++) {
+            if (args[i] == "--no-wait-gpu")
+                jobArgs.push_back(args[i]);
+            else if (args[i] == "--gpu-wait-timeout" && i + 1 < args.size())
+                jobArgs.insert(jobArgs.end(), { args[i], args[i + 1] });
+        }
+        jobArgs.push_back(*(option + 1));
+
         auto hosted = std::make_unique<HostedJob>();
         auto& job = hosted->job;
-        job = ParseCommandLine({ args.front(), "--scene", scenePath, *(option + 1) });
+        job = ParseCommandLine(jobArgs);
 
         auto unsupported = [](const std::string& what) {
 
@@ -76,6 +88,37 @@ namespace Atlas::Capture {
 
         report.Print("Job '" + job.name + "' in the game, it starts with the game" + (report.previousSeconds > 0.0f ?
             ", the previous run took " + FormatFloat(report.previousSeconds, 0) + " s" : ""));
+        // The game loads its world after this, scenes of other engine applications would leave too little GPU memory.
+        // Its window exists already and has to handle its messages meanwhile
+        if (job.waitGpu) {
+            InstanceRegistry::QueueForGpu("waiting for the GPU to start job " + job.name);
+            auto waitStart = std::chrono::steady_clock::now();
+            auto nextPrint = waitStart;
+            std::string waitingFor;
+            std::vector<InstanceRegistry::Instance> ahead;
+            while (!InstanceRegistry::PollGpu(ahead)) {
+                auto seconds = SecondsSince(waitStart);
+                auto reason = InstanceRegistry::Describe(ahead);
+                if (!reason.empty() && (reason != waitingFor || std::chrono::steady_clock::now() >= nextPrint)) {
+                    report.Print("Waiting for the GPU (" + FormatFloat(seconds, 0) + " s): " + reason);
+                    nextPrint = std::chrono::steady_clock::now() + std::chrono::seconds(60);
+                    waitingFor = reason;
+                }
+                if (seconds > job.gpuWaitTimeout) {
+                    auto error = "The GPU is still busy after " + FormatFloat(seconds, 0) + " s (gpuWaitTimeout), waiting for " + waitingFor;
+                    hosted->fatal = true;
+                    report.Error(error);
+                    hosted->Finish();
+                    throw std::runtime_error(error);
+                }
+                for (int32_t i = 0; i < 10; i++) {
+                    SDL_PumpEvents();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                }
+            }
+            // The wait doesn't count into the duration of the job
+            hosted->startTime += std::chrono::steady_clock::now() - waitStart;
+        }
         InstanceRegistry::SetActivity("job " + job.name, true);
         return hosted;
 

@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 #ifdef AE_OS_WINDOWS
 #define NOMINMAX
@@ -65,7 +66,8 @@ namespace Atlas::Capture {
         json j = {
             { "pid", self->pid }, { "processStart", selfProcessStart }, { "executable", self->executable },
             { "args", self->args }, { "started", self->started }, { "activity", self->activity }, { "busy", self->busy },
-            { "expectedEnd", self->expectedEnd ? json(*self->expectedEnd) : json() }
+            { "expectedEnd", self->expectedEnd ? json(*self->expectedEnd) : json() },
+            { "waitingSince", self->waitingSince ? json(*self->waitingSince) : json() }
         };
 
         std::error_code error;
@@ -78,7 +80,13 @@ namespace Atlas::Capture {
             std::ofstream stream(temporary);
             stream << j.dump();
         }
-        fs::rename(temporary, path, error);
+        // Fails on Windows while another process reads the file, the order of the GPU queue relies on the write
+        for (int32_t attempt = 0; attempt < 20; attempt++) {
+            fs::rename(temporary, path, error);
+            if (!error)
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
 
     }
 
@@ -115,6 +123,7 @@ namespace Atlas::Capture {
         self->activity = activity;
         self->busy = busy;
         self->expectedEnd = expectedEnd;
+        self->waitingSince.reset();
         Write();
 
     }
@@ -150,10 +159,85 @@ namespace Atlas::Capture {
             instance.busy = j.value("busy", true);
             if (j.contains("expectedEnd") && j["expectedEnd"].is_number())
                 instance.expectedEnd = j["expectedEnd"].get<int64_t>();
+            if (j.contains("waitingSince") && j["waitingSince"].is_number())
+                instance.waitingSince = j["waitingSince"].get<int64_t>();
             instances.push_back(instance);
         }
 
         return instances;
+
+    }
+
+    std::vector<InstanceRegistry::Instance> InstanceRegistry::GetBusyInstances() {
+
+        auto instances = GetInstances();
+        std::erase_if(instances, [](const Instance& instance) { return !instance.busy || instance.pid == CurrentProcessId(); });
+        return instances;
+
+    }
+
+    std::vector<InstanceRegistry::Instance> InstanceRegistry::GetInstancesAhead(const Instance& waiter, const std::vector<Instance>& instances) {
+
+        std::vector<Instance> ahead;
+        for (const auto& instance : instances) {
+            if (instance.pid == waiter.pid)
+                continue;
+            // A later waiter which claimed the GPU before it saw this one backs off in its next step
+            auto isAhead = instance.waitingSince && waiter.waitingSince ?
+                std::pair(*instance.waitingSince, instance.pid) < std::pair(*waiter.waitingSince, waiter.pid) : instance.busy;
+            if (isAhead)
+                ahead.push_back(instance);
+        }
+        return ahead;
+
+    }
+
+    void InstanceRegistry::QueueForGpu(const std::string& activity) {
+
+        if (!self)
+            return;
+
+        self->activity = activity;
+        self->busy = false;
+        self->expectedEnd.reset();
+        self->waitingSince = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        Write();
+
+    }
+
+    bool InstanceRegistry::PollGpu(std::vector<Instance>& ahead) {
+
+        if (!self) {
+            ahead = GetBusyInstances();
+            return ahead.empty();
+        }
+
+        ahead = GetInstancesAhead(*self, GetInstances());
+        if (!ahead.empty()) {
+            if (self->busy) {
+                self->busy = false;
+                Write();
+            }
+            return false;
+        }
+
+        if (self->busy)
+            return true;
+
+        self->busy = true;
+        Write();
+        return false;
+
+    }
+
+    std::string InstanceRegistry::Describe(const std::vector<Instance>& instances) {
+
+        std::string description;
+        for (const auto& instance : instances)
+            description += (description.empty() ? "" : ", ") + instance.executable + " (process " + std::to_string(instance.pid) +
+                "): " + instance.activity;
+        return description;
 
     }
 

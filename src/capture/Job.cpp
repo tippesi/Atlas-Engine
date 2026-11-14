@@ -319,9 +319,10 @@ namespace Atlas::Capture {
     Job ParseJob(const json& j, const fs::path& baseDirectory) {
 
         CheckKeys(j,
-            { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow", "realTime", "pathTrace",
-                "playerDisplay", "settings", "variants", "inspect", "queries", "edit", "shots", "play", "duration", "timeline", "strips", "observer",
-                "scripts", "track", "overlay", "checks", "profile", "hitches", "compare", "$schema", "description" },
+            { "name", "scene", "out", "resolution", "renderScale", "settleFrames", "loadTimeout", "fixedDt", "showWindow", "foreground",
+                "waitGpu", "gpuWaitTimeout", "realTime", "pathTrace", "playerDisplay", "settings", "variants", "inspect", "queries", "edit",
+                "shots", "play", "duration", "timeline", "strips", "observer", "scripts", "track", "overlay", "checks", "profile", "hitches",
+                "compare", "$schema", "description" },
             "job");
 
         Job job;
@@ -355,6 +356,9 @@ namespace Atlas::Capture {
         job.loadTimeout = j.value("loadTimeout", job.loadTimeout);
         job.fixedDeltaTime = j.value("fixedDt", job.fixedDeltaTime);
         job.showWindow = j.value("showWindow", job.showWindow);
+        job.foreground = j.value("foreground", job.foreground);
+        job.waitGpu = j.value("waitGpu", job.waitGpu);
+        job.gpuWaitTimeout = j.value("gpuWaitTimeout", job.gpuWaitTimeout);
         job.pathTrace = j.value("pathTrace", job.pathTrace);
         job.realTime = j.value("realTime", job.realTime);
         job.playerDisplay = j.value("playerDisplay", job.playerDisplay);
@@ -707,6 +711,12 @@ namespace Atlas::Capture {
                 j["showWindow"] = true;
             else if (arg == "--hidden")
                 j["showWindow"] = false;
+            else if (arg == "--foreground")
+                j["foreground"] = true;
+            else if (arg == "--no-wait-gpu")
+                j["waitGpu"] = false;
+            else if (arg == "--gpu-wait-timeout")
+                j["gpuWaitTimeout"] = std::stof(next());
             else if (arg == "--no-shots")
                 j["shots"] = json::array();
             else if (arg == "--fast")
@@ -721,8 +731,11 @@ namespace Atlas::Capture {
                     json { { "minimumMs", std::stof(next()) } } : json(true);
             else if (arg == "--sound")
                 sound = true;
-            else if (arg == "--streaming" || arg == "--wait-gpu" || arg == "--verbose") {
-                // Read before any job, streaming has to be set up before the scene loads and the GPU is free before the engine starts
+            else if (arg == "--streaming" || arg == "--verbose") {
+                // Read before any job, streaming has to be set up before the scene loads
+            }
+            else if (arg == "--wait-gpu") {
+                // The default, accepted for older command lines
             }
             else if (arg == "--shader-dir")
                 // Read by the engine before it starts
@@ -840,6 +853,7 @@ Options:
   --settle <frames>       Frames rendered before each capture (default 60)
   --timeout <seconds>     Maximum time to wait for the scene to load
   --show                  Show the frames and the output in a window (default)
+  --foreground            Open the window in front with the focus (default: behind the other windows)
   --hidden                Render in a hidden window and play as fast as possible
   --no-shots              Skip the shots of the job, e.g. the review images of the steps of a pipeline
   --fast                  Play as fast as possible in the shown window
@@ -854,7 +868,8 @@ Options:
   --profile <frames>      Write the GPU and CPU times averaged over the last frames to profile.json
   --pause                 Pause the scene at the start of playing
   --shader-dir <dir>      Shaders from another directory relative to data/, e.g. for a bench
-  --wait-gpu              Wait until no other engine application keeps the GPU busy
+  --no-wait-gpu           Load right away, by default scenes load once no other engine application keeps the GPU busy
+  --gpu-wait-timeout <s>  Fail when the GPU is still busy after this time (default 1800)
   --verbose               Print the whole engine log, otherwise only its errors (log.txt has everything)
 Shot options (create one additional shot):
   --shot <name>           Name of the shot

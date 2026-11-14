@@ -4,6 +4,8 @@
 #include <chrono>
 #include <thread>
 
+#include <SDL3/SDL.h>
+
 #ifdef AE_OS_WINDOWS
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -274,6 +276,17 @@ namespace Atlas::Capture {
 #endif
 
         return killed;
+
+    }
+
+    void MoveWindowToBack(SDL_Window* window) {
+
+#ifdef AE_OS_WINDOWS
+        auto handle = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+        // A window without one below it is at the bottom already
+        if (handle && GetWindow(handle, GW_HWNDNEXT))
+            SetWindowPos(handle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+#endif
 
     }
 

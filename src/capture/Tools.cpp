@@ -234,7 +234,7 @@ namespace Atlas::Capture {
   run <job.json | inline job> [job options]   Run a job on the server of this executable and print its summary
   eval <lua> [--play <s>] [--scene <scene>]   Evaluate Lua in the loaded scene, after playing it for a while
   wait <command> | status | cancel | stop     The server: wait for a command, show what runs, cancel the job, stop it
-      --server <dir> --detach --timeout <s> --wait-gpu --streaming --validation
+      --server <dir> --detach --timeout <s> --no-wait-gpu --streaming --validation
   check <job.json> ...                        Find mistakes in jobs without loading their scenes
   kill <pid | captures>                       End a process and the processes it started
   compose <out> [--title t] [--columns n] [--width px] <image | label=image | directory | pattern> ...
@@ -303,14 +303,10 @@ namespace Atlas::Capture {
                 return 2;
         }
 
-        if (std::find(args.begin(), args.end(), "--wait-gpu") != args.end()) {
-            if (!WaitForGpu(0.0f))
-                return 4;
-        }
-        else if (!isRendering || std::find(args.begin(), args.end(), "--serve") == args.end()) {
-            for (const auto& instance : InstanceRegistry::GetInstances())
-                if (instance.busy && instance.pid != CurrentProcessId())
-                    Print("Note: " + instance.executable + " (process " + std::to_string(instance.pid) + ") is busy: " + instance.activity);
+        // Runs wait for the GPU in the queue of InstanceRegistry before each scene they load, see App::LoadScene
+        if (std::find(args.begin(), args.end(), "--no-wait-gpu") != args.end() && std::find(args.begin(), args.end(), "--serve") == args.end()) {
+            for (const auto& instance : InstanceRegistry::GetBusyInstances())
+                Print("Note: " + instance.executable + " (process " + std::to_string(instance.pid) + ") is busy: " + instance.activity);
         }
 
         return std::nullopt;

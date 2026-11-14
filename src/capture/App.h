@@ -37,6 +37,8 @@ namespace Atlas::Capture {
         enum class Phase {
             // Server mode: waiting for the next command
             Idle,
+            // Other engine applications keep the GPU busy, the scene loads once they are done
+            WaitingForGpu,
             Loading,
             Prepare,
             EditSave,
@@ -131,6 +133,18 @@ namespace Atlas::Capture {
         // Server mode: waits for the next command
         void SetIdle();
 
+        // What this process does for the other engine applications, see InstanceRegistry
+        void SetBusyActivity();
+
+        // Loads the scene of scenePath, LoadScene waits for the GPU first
+        void BeginLoading();
+
+        // One step of waiting for the GPU, loads the scene once it's this process' turn
+        void UpdateGpuWait();
+
+        // Shows the window behind the other windows without the focus, or in front of them
+        void ShowWindow(bool foreground);
+
         // Called once the report of a job is written: exits, continues the pipeline or waits for the next command
         void FinishJob();
 
@@ -206,7 +220,7 @@ namespace Atlas::Capture {
         // The phase a failure ended, e.g. to unload a scene that didn't finish loading
         Phase phaseBeforeFinish = Phase::Loading;
         bool fatal = false;
-        // Jobs present without vsync, an idle server with vsync
+        // Jobs present without vsync, an idle or waiting process with vsync
         bool vsync = false;
 
         Ref<Scene::Scene> scene;
@@ -250,6 +264,13 @@ namespace Atlas::Capture {
         json baseSettings;
         float baseRenderScale = 1.0f;
         int32_t editFrames = 0;
+        // Until then a window shown in the background is kept behind the others, in seconds of the clock
+        float backgroundUntil = 0.0f;
+        std::chrono::steady_clock::time_point gpuWaitStart;
+        std::chrono::steady_clock::time_point nextGpuCheck;
+        std::chrono::steady_clock::time_point nextGpuWaitPrint;
+        // Whom this process waits for, for the status line
+        std::string gpuWaitReason;
         EditState editState;
         SceneState editBefore;
 
