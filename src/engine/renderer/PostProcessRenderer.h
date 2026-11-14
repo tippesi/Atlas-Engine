@@ -25,7 +25,6 @@ namespace Atlas {
 
         private:
             struct alignas(16) Uniforms {
-                float exposure;
                 float autoExposureMipLevel;
                 float paperWhiteLuminance;
                 float maxScreenLuminance;
@@ -39,6 +38,7 @@ namespace Atlas {
                 float vignetteOffset;
                 float vignettePower;
                 float vignetteStrength;
+                float padding0;
                 float padding1;
                 float padding2;
                 vec4 vignetteColor;
@@ -48,8 +48,7 @@ namespace Atlas {
             void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* sourceTexture,
                 Texture::Texture2D* hdrTexture, Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
 
-            void SetUniforms(const CameraComponent& camera, const Ref<RenderTarget>& target,  
-                const Ref<Scene::Scene>& scene);
+            void SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene);
 
             PipelineConfig GetMainPipelineConfig();
 

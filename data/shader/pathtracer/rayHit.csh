@@ -43,7 +43,6 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     int sampleCount;
     int bounceCount;
     float seed;
-    float exposure;
     int samplesPerFrame;
     float maxRadiance;
 } Uniforms;
@@ -129,7 +128,8 @@ void main() {
             accumColor += vec4(payload.radiance, 1.0);
             imageStore(outAccumImage, pixel, accumColor);
 
-            vec3 color = accumColor.rgb * Uniforms.exposure / float(Uniforms.sampleCount + 1);
+            // The pre-exposure of the radiance is the exposure
+            vec3 color = accumColor.rgb / float(Uniforms.sampleCount + 1);
             color = vec3(1.0) - exp(-color);
             //color = color / (vec3(1.0) + color);
 

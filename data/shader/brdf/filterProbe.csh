@@ -73,7 +73,7 @@ vec3 FilterDiffuse(vec3 worldDirection, ivec2 cubeMapSize) {
 
         NdotL = saturate(NdotL);
         if (NdotL > 0.0) {
-            color.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 5.0);
+            color.xyz += min(textureLod(cubeMap, L, 5.0).rgb * globalData.skyCubemapExposure, 5.0);
             color.w += 1.0;
         }
 
@@ -121,7 +121,7 @@ vec3 FilterSpecular(vec3 worldDirection, ivec2 cubeMapSize) {
 
             lod = pushConstants.mipLevel == 0u ? 0.0 : lod;
 
-            color.xyz += clamp(textureLod(cubeMap, L, lod).rgb, vec3(0.0), vec3(5.0)) * NdotL;
+            color.xyz += clamp(textureLod(cubeMap, L, lod).rgb * globalData.skyCubemapExposure, vec3(0.0), vec3(5.0)) * NdotL;
             color.w += NdotL;
 
         }

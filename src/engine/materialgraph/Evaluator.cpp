@@ -68,6 +68,9 @@ namespace Atlas::MaterialGraph {
         uniforms.ivMatrix = mat4(1.0f);
         uniforms.pMatrix = mat4(1.0f);
         uniforms.ipMatrix = mat4(1.0f);
+        uniforms.preExposure = 1.0f;
+        uniforms.lastPreExposure = 1.0f;
+        uniforms.skyCubemapExposure = 1.0f;
         globalBuffer.SetData(&uniforms, 0);
 
         if (words.size() > parameterBuffer.GetElementCount())

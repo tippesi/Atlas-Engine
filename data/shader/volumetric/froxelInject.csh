@@ -336,6 +336,7 @@ void main() {
     vec4 history = GetHistory(center, volumetricResolution, validHistory);
     // A single invalid value would stay in the history forever
     validHistory = validHistory && !any(isnan(history)) && !any(isinf(history));
+    history.rgb *= globalData.preExposure / globalData.lastPreExposure;
     vec4 result = validHistory ? mix(history, current, 0.1) : current;
 
     if (validFroxel)

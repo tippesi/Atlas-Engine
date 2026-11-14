@@ -162,7 +162,7 @@ namespace Atlas::Renderer {
         dispatch.enableSharpening = postProcessing.sharpen.enable;
         dispatch.sharpness = postProcessing.sharpen.factor;
         dispatch.frameTimeDelta = scene->renderState.deltaTime * 1000.0f;
-        dispatch.preExposure = 1.0f;
+        dispatch.preExposure = scene->renderState.preExposure;
         dispatch.reset = !target->HasHistory();
         dispatch.cameraNear = camera.nearPlane;
         dispatch.cameraFar = camera.farPlane;

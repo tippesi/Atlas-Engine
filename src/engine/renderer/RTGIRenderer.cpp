@@ -74,8 +74,6 @@ namespace Atlas {
 
             GPUProfiler::BeginQuery("Trace rays");
 
-            auto mainCamera = scene->renderState.camera;
-
             auto downsampledRT = target->GetData(target->GetGIResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetGIResolution());
 
@@ -172,7 +170,7 @@ namespace Atlas {
                         commandList->BindImage(target->giTexture.image, 3, 0);
 
                         RTUniforms uniforms;
-                        uniforms.radianceLimit = rtgi->radianceLimit / glm::max(mainCamera.exposure, 0.00001f);
+                        uniforms.radianceLimit = rtgi->radianceLimit;
                         uniforms.bias = rtgi->bias;
                         uniforms.frameSeed = frameCount++;
                         uniforms.sampleCount = rtgi->sampleCount;

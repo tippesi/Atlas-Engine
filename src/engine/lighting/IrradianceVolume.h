@@ -55,6 +55,9 @@ namespace Atlas {
             Buffer::Buffer probeStateBuffer;
             Buffer::Buffer historyProbeStateBuffer;
 
+            // Pre-exposure the probes were last updated with
+            float preExposure = 1.0f;
+
             // Used for debugging
             Ref<Material> probeDebugMaterial;
             Ref<Material> probeDebugActiveMaterial;

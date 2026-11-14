@@ -29,7 +29,6 @@ layout(push_constant) uniform constants {
     float historyClipMax;
     float currentClipFactor;
     float maxHistoryLength;
-    float exposure;
     int samplesPerFrame;
     float maxRadiance;
 } pushConstants;

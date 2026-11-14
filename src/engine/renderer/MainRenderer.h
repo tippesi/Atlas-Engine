@@ -76,6 +76,8 @@ namespace Atlas {
 
             void SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera);
 
+            void SetPreExposure(GlobalUniforms& uniforms, const Ref<Scene::Scene>& scene);
+
             void PreintegrateBRDF();
 
             void UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
@@ -134,9 +136,11 @@ namespace Atlas {
             UpscalingRenderer* activeUpscaler = nullptr;
 
             uint32_t frameCount = 0;
+            float lastPreExposure = 0.0f;
 
             Ref<Graphics::Image> filteredSkyProbeSource;
             Ref<Graphics::Image> filteredSkyProbeTarget;
+            float filteredSkyProbePreExposure = 0.0f;
             bool atmosphereProbeNeedsFilter = false;
 
             std::vector<Graphics::ImageBarrier> shadowImageBarriers;

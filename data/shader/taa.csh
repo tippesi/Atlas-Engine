@@ -2,6 +2,7 @@
 #include <common/PI.hsh>
 #include <common/stencil.hsh>
 #include <common/flatten.hsh>
+#include <globals.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -244,6 +245,8 @@ vec4 SampleHistory(vec2 texCoord) {
 #else
     historyColor = texture(historyTexture, texCoord);
 #endif
+    // The history was stored with the pre-exposure of the last frame
+    historyColor.rgb *= globalData.preExposure / globalData.lastPreExposure;
 
 #ifdef TAA_TONE
     historyColor.rgb = Tonemap(historyColor.rgb);

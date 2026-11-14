@@ -68,7 +68,6 @@ namespace Atlas {
                 int32_t sampleCount;
                 int32_t bounceCount;
                 float seed;
-                float exposure;
                 int32_t samplesPerFrame;
                 float maxRadiance;
                 int32_t frameCount;
@@ -78,6 +77,7 @@ namespace Atlas {
 
             vec3 cameraLocation;
             vec2 cameraRotation;
+            float preExposure = 0.0f;
 
             int32_t sampleCount = 0;
             ivec2 imageOffset = ivec2(0);

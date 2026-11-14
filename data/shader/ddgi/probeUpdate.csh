@@ -389,6 +389,7 @@ void main() {
     if (probeState == PROBE_STATE_NEW || reset) {
         lastResult = GetHistoryFromHigherCascade(pix, probeGroup, cascadeIndex).rgb;
     }
+    lastResult *= ddgiData.historyExposureScale;
     vec3 resultOut = lastResult;
     if (result.w > 0.0) {
         vec4 fullResult = vec4(result);
@@ -415,6 +416,7 @@ void main() {
     if (probeState == PROBE_STATE_NEW || reset) {
         lastResult = GetHistoryFromHigherCascade(pix, probeGroup, cascadeIndex).rgb;
     }
+    lastResult *= ddgiData.historyExposureScale;
     vec3 resultOut = lastResult;
     if (result.w > 0.0) {
         vec4 fullResult = vec4(result);

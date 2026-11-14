@@ -28,7 +28,6 @@ namespace Atlas {
 
             auto& postProcessing = scene->renderState.postProcessing;
 
-            auto& camera = scene->renderState.camera;
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
             auto& sharpen = postProcessing.sharpen;
@@ -173,7 +172,7 @@ namespace Atlas {
                         target->exposureTexture.Bind(commandList, 3, 5);
                     }
 
-                    SetUniforms(camera, target, scene);
+                    SetUniforms(target, scene);
 
                     readTexture->Bind(commandList, 3, 0);
                     commandList->BindBuffer(uniformBuffer, 3, 4);
@@ -217,10 +216,11 @@ namespace Atlas {
                     float blackLevel;
                 };
 
+                // The bins are of the luminance without the pre-exposure, the lighting carries it
                 auto pushConstants = HistogramPushConstants{
-                    .logLuminanceMin = logLuminanceMin,
+                    .logLuminanceMin = logLuminanceMin + log2(scene->renderState.preExposure),
                     .invLogLuminanceRange = 1.0f / logLuminanceRange,
-                    .blackLevel = exposure.blackLevel
+                    .blackLevel = exposure.blackLevel * scene->renderState.preExposure
                 };
 
                 ivec2 groupCount = histogramResolution / 16;
@@ -432,8 +432,7 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::SetUniforms(const CameraComponent& camera,
-            const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene) {
+        void PostProcessRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene) {
 
             const auto& postProcessing = scene->renderState.postProcessing;
 
@@ -443,7 +442,6 @@ namespace Atlas {
             const auto& bloom = postProcessing.bloom;
 
             Uniforms uniforms = {
-                .exposure = camera.exposure * glm::exp2(postProcessing.exposureCompensation),
                 .autoExposureMipLevel = float(target->lightingTexture.image->mipLevels - 1),
                 .paperWhiteLuminance = postProcessing.paperWhiteLuminance,
                 .maxScreenLuminance = postProcessing.screenMaxLuminance,

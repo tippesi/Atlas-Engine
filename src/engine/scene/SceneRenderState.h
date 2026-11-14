@@ -142,6 +142,8 @@ namespace Atlas::Scene {
         Ref<Lighting::Reflection> reflection;
         Ref<Lighting::SSS> sss;
         PostProcessing::PostProcessing postProcessing;
+        // See Scene::GetPreExposure
+        float preExposure = 1.0f;
 
         // Only set while the volume is enabled
         Ref<Lighting::IrradianceVolume> irradianceVolume;

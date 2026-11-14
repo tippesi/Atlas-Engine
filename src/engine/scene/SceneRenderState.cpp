@@ -817,8 +817,9 @@ namespace Atlas::Scene {
 
         auto& camera = scene->GetMainCamera();
         auto cameraFrustum = camera.frustum;
+        auto lightPreExposure = scene->GetPreExposure();
 
-        JobSystem::Execute(cullAndSortLightsJob, [&, camera, cameraFrustum](JobData&) {
+        JobSystem::Execute(cullAndSortLightsJob, [&, camera, cameraFrustum, lightPreExposure](JobData&) {
 
             lightEntities.clear();
             lightEntities.reserve(scene->GetComponentCount<LightComponent>());
@@ -870,7 +871,7 @@ namespace Atlas::Scene {
                     auto packedType = reinterpret_cast<float&>(type);
                     Renderer::Light lightUniform {
                         .color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), packedType),
-                        .intensity = light.intensity,
+                        .intensity = light.intensity * lightPreExposure,
                         .scatteringFactor = 1.0f,
                     };
 
@@ -963,7 +964,7 @@ namespace Atlas::Scene {
                             .location = lightUniform.location,
                             .direction = lightUniform.direction,
                             .color = lightUniform.color,
-                            .intensity = light.volumetricIntensity * light.intensity,
+                            .intensity = light.volumetricIntensity * light.intensity * lightPreExposure,
                             .typeSpecific0 = lightUniform.typeSpecific0,
                             .typeSpecific1 = lightUniform.typeSpecific1,
                             .shadowIdx = light.shadow ? int32_t(volumetricShadows.size()) : -1
@@ -1026,6 +1027,7 @@ namespace Atlas::Scene {
         // The renderers jitter the copy of the camera, the jitter of the last frame is part of the history
         auto lastCamera = camera;
         hasCamera = scene->HasMainCamera();
+        preExposure = scene->GetPreExposure();
         if (hasCamera) {
             camera = scene->GetMainCamera();
             camera.jitterVector = lastCamera.jitterVector;
@@ -1090,7 +1092,7 @@ namespace Atlas::Scene {
                     // The scattering factor only scales the light, the density stays the extinction
                     .scatteringAndDensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.scatteringColor) * volume.scatteringFactor,
                         volume.density * fade),
-                    .emissiveAndEdgeFade = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.emissiveColor), volume.edgeFade),
+                    .emissiveAndEdgeFade = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.emissiveColor) * preExposure, volume.edgeFade),
                     .noiseOffsetAndFrequency = vec4(windOffset * volume.windInfluence, 1.0f / volume.noiseScale),
                     .noiseAmount = volume.noiseAmount,
                     .noiseCoverage = volume.noiseCoverage,

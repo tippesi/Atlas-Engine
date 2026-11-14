@@ -249,7 +249,7 @@ void main() {
                 }
 
 #ifdef AUTO_EXPOSURE
-                float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+                float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r * globalData.preExposure;
 #else
                 float radianceLimit = uniforms.radianceLimit;
 #endif

@@ -365,7 +365,7 @@ namespace Atlas {
                 auto transmittance = scene->renderState.sky.GetDirectLightTransmittance(scene->renderState.camera.GetLocation(), direction);
                 uniforms.light.direction = vec4(direction, 0.0f);
                 uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color) * transmittance, 1.0f);
-                uniforms.light.intensity = light.intensity;
+                uniforms.light.intensity = light.intensity * scene->renderState.preExposure;
             }
             else {
                 uniforms.light.intensity = 0.0f;

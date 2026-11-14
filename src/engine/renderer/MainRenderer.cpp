@@ -108,12 +108,13 @@ namespace Atlas {
 
 			if (scene->renderState.sky.probe) {
 				auto& probe = scene->renderState.sky.probe;
-				// A static cubemap only needs to be filtered once
+				// A static cubemap is only filtered again when the pre-exposure changes
 				if (probe->update && (probe->GetCubemap().image != filteredSkyProbeSource ||
-					probe->filteredDiffuse.image != filteredSkyProbeTarget)) {
+					probe->filteredDiffuse.image != filteredSkyProbeTarget || renderState->preExposure != filteredSkyProbePreExposure)) {
 					FilterProbe(probe, commandList);
 					filteredSkyProbeSource = probe->GetCubemap().image;
 					filteredSkyProbeTarget = probe->filteredDiffuse.image;
+					filteredSkyProbePreExposure = renderState->preExposure;
 				}
 			}
 			else if (scene->renderState.sky.atmosphere) {
@@ -459,6 +460,7 @@ namespace Atlas {
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
 			};
+			SetPreExposure(globalUniforms, scene);
 
 			pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
@@ -1025,6 +1027,16 @@ namespace Atlas {
 
 		}
 
+		void MainRenderer::SetPreExposure(GlobalUniforms& uniforms, const Ref<Scene::Scene>& scene) {
+
+			auto preExposure = scene->renderState.preExposure;
+			uniforms.preExposure = preExposure;
+			uniforms.lastPreExposure = lastPreExposure > 0.0f ? lastPreExposure : preExposure;
+			uniforms.skyCubemapExposure = scene->renderState.sky.probe ? preExposure : 1.0f;
+			lastPreExposure = preExposure;
+
+		}
+
 		void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
 			bool mipBias = scene->renderState.postProcessing.upscaler != PostProcessing::Upscaler::None;
@@ -1057,6 +1069,7 @@ namespace Atlas {
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
 			};
+			SetPreExposure(globalUniforms, scene);
 
 			auto frustumPlanes = camera.frustum.GetPlanes();
 			std::copy(frustumPlanes.begin(), frustumPlanes.end(), &globalUniforms.frustumPlanes[0]);
@@ -1073,6 +1086,12 @@ namespace Atlas {
 					auto volumeAABB = Volume::AABB(-volumeSize / 2.0f + pos, volumeSize / 2.0f + pos);
 					volume->SetAABB(volumeAABB);
 				}
+
+				// Only an update of the probes in DDGIRenderer brings them to the current pre-exposure
+				auto preExposure = scene->renderState.preExposure;
+				auto historyPreExposure = volume->internal.preExposure;
+				if (volume->update && scene->IsRtDataValid())
+					volume->internal.preExposure = preExposure;
 
 				auto probeCountPerCascade = volume->probeCount.x * volume->probeCount.y *
 					volume->probeCount.z;
@@ -1092,7 +1111,9 @@ namespace Atlas {
 					.depthSharpness = volume->sharpness,
 					.optimizeProbes = volume->optimizeProbes ? 1 : 0,
 					.volumeEnabled = 1,
-					.volumeStorageScale = volume->storageScale
+					.volumeStorageScale = volume->storageScale,
+					.historyExposureScale = glm::pow(preExposure / historyPreExposure, 1.0f / volume->gamma),
+					.volumeExposureScale = preExposure / volume->internal.preExposure
 				};
 
 				for (int32_t i = 0; i < volume->cascadeCount; i++) {

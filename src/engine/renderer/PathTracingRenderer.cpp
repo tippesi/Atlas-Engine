@@ -47,9 +47,11 @@ namespace Atlas {
 
             if (glm::distance(camera.GetLocation(), cameraLocation) > 1e-3f ||
                 glm::distance(camera.rotation, cameraRotation) > 1e-3f ||
+                scene->renderState.preExposure != preExposure ||
                 helper.GetRayBuffer()->GetElementCount() != rayCount) {
                 cameraLocation = camera.GetLocation();
                 cameraRotation = camera.rotation;
+                preExposure = scene->renderState.preExposure;
 
                 sampleCount = 0;
                 imageOffset = ivec2(0);
@@ -98,8 +100,6 @@ namespace Atlas {
 
                 uniforms.resolution = resolution;
                 uniforms.seed = Common::Random::SampleFastUniformFloat();
-
-                uniforms.exposure = camera.exposure;
 
                 uniforms.samplesPerFrame = samplesPerFrame;
                 uniforms.maxRadiance = maxRadiance;
@@ -256,7 +256,6 @@ namespace Atlas {
                     float historyClipMax;
                     float currentClipFactor;
                     float maxHistoryLength;
-                    float exposure;
                     int samplesPerFrame;
                     float maxRadiance;
                 };
@@ -267,7 +266,6 @@ namespace Atlas {
                     .historyClipMax = historyClipMax,
                     .currentClipFactor = currentClipFactor,
                     .maxHistoryLength = float(historyLengthMax),
-                    .exposure = camera.exposure,
                     .samplesPerFrame = samplesPerFrame,
                     .maxRadiance = maxRadiance
                 };

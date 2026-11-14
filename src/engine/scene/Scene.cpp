@@ -956,6 +956,13 @@ namespace Atlas {
 
         }
 
+        float Scene::GetPreExposure() {
+
+            auto exposure = HasMainCamera() ? GetMainCamera().exposure : 1.0f;
+            return exposure * glm::exp2(postProcessing.exposureCompensation);
+
+        }
+
         bool Scene::HasMainCamera() const {
 
             return mainCameraEntity.IsValid() && mainCameraEntity.HasComponent<CameraComponent>();

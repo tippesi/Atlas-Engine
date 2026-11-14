@@ -164,6 +164,9 @@ namespace Atlas {
             float mipLodBias;
             float cameraNearPlane;
             float cameraFarPlane;
+            float preExposure;
+            float lastPreExposure;
+            float skyCubemapExposure;
         };
 
         struct alignas(16) DDGICascade {
@@ -200,6 +203,9 @@ namespace Atlas {
 
             int32_t volumeEnabled;
             float volumeStorageScale;
+
+            float historyExposureScale;
+            float volumeExposureScale;
         };
 
     }

@@ -93,7 +93,7 @@ Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMater
     mat.ID = rayMat.ID;
 
     mat.baseColor = vec3(rayMat.baseR, rayMat.baseG, rayMat.baseB);
-    mat.emissiveColor = vec3(rayMat.emissR, rayMat.emissG, rayMat.emissB);
+    mat.emissiveColor = vec3(rayMat.emissR, rayMat.emissG, rayMat.emissB) * globalData.preExposure;
     mat.transmissiveColor = unpackColorVector(int(rayMat.transmissionColor)).rgb;
     mat.transmissive = any(greaterThan(mat.transmissiveColor, vec3(0.0)));
 
@@ -213,11 +213,12 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
 
         hitObjectExecuteShaderEXT(closestHitObject, 1);
 
-        mat.baseColor = graphHit.baseColor;
-        mat.roughness = graphHit.roughness;
-        mat.metalness = graphHit.metalness;
-        mat.ao = graphHit.ao;
-        mat.emissiveColor = graphHit.emissive;
+        // The G-buffer limits these values, an albedo above one would amplify itself in the bounces of the DDGI
+        mat.baseColor = saturate(graphHit.baseColor);
+        mat.roughness = saturate(graphHit.roughness);
+        mat.metalness = saturate(graphHit.metalness);
+        mat.ao = saturate(graphHit.ao);
+        mat.emissiveColor = graphHit.emissive * globalData.preExposure;
 
         vec3 graphNormal = TBN * graphHit.normal;
         if (useNormalMaps && dot(graphNormal, graphNormal) > 0.0)

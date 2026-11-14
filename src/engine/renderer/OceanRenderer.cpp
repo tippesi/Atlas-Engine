@@ -66,7 +66,7 @@ namespace Atlas {
             lightUniform.direction = vec4(light.transformedProperties.directional.direction, 0.0);
             auto transmittance = scene->renderState.sky.GetDirectLightTransmittance(scene->renderState.camera.GetLocation(), direction);
             lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color) * transmittance, 0.0);
-            lightUniform.intensity = light.intensity;
+            lightUniform.intensity = light.intensity * scene->renderState.preExposure;
 
             if (fog && fog->enable) {
                 target->volumetricTexture.Bind(commandList, 3, 7);

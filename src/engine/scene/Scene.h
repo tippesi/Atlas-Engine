@@ -145,6 +145,9 @@ namespace Atlas {
 
             bool HasMainCamera() const;
 
+            // Camera exposure all light sources are multiplied with, keeps physical light values within half float range
+            float GetPreExposure();
+
             LightComponent& GetMainLight();
 
             /**

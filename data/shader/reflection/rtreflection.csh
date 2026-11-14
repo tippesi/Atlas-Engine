@@ -158,7 +158,7 @@ void main() {
             float alpha = sqr(max(0.0, roughness));
             float viewOffset = max(1.0, 2.0 * length(viewPos));
 #ifdef AUTO_EXPOSURE
-            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r * globalData.preExposure;
 #else
             float radianceLimit = uniforms.radianceLimit;
 #endif

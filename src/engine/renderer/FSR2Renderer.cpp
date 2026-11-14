@@ -850,7 +850,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
 		dispatchParameters.frameTimeDelta = scene->renderState.deltaTime * 1000.0f;
-		dispatchParameters.preExposure = 1.0f;
+		dispatchParameters.preExposure = scene->renderState.preExposure;
 		dispatchParameters.renderSize.width = uint32_t(target->GetScaledWidth());
 		dispatchParameters.renderSize.height = uint32_t(target->GetScaledHeight());
 		dispatchParameters.cameraFar = camera.farPlane;

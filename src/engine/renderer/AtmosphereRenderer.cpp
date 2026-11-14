@@ -37,7 +37,7 @@ namespace Atlas {
             auto& light = *mainLight;
             vec3 cameraLocation = camera.GetLocation();
             vec3 sunDirection = GetSunDirection(light);
-            vec3 sunRadiance = GetSunRadiance(light);
+            vec3 sunRadiance = GetSunRadiance(light) * scene->renderState.preExposure;
             auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->renderState.sky);
 
             CPUProfiler::Scope profilerScope("Atmosphere");
@@ -122,7 +122,7 @@ namespace Atlas {
 
             const auto& light = *mainLight;
             vec3 sunDirection = GetSunDirection(light);
-            vec3 sunRadiance = GetSunRadiance(light);
+            vec3 sunRadiance = GetSunRadiance(light) * scene->renderState.preExposure;
             auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->renderState.sky);
 
             bool needsLutUpdate = scene->renderState.atmosphereNeedsUpdate || HasMissingLuts(*atmosphere, false);

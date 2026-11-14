@@ -5,6 +5,7 @@
 #include <../common/flatten.hsh>
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
+#include <../globals.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -288,6 +289,8 @@ void main() {
     vec4 history;
     float historyLength;
     valid = SampleHistory(pixel, historyPixel, history, historyLength);
+    // The history was stored with the pre-exposure of the last frame
+    history.rgb *= globalData.preExposure / globalData.lastPreExposure;
 
     vec4 historyValue = history;
     vec4 currentValue = texelFetch(currentTexture, pixel, 0);

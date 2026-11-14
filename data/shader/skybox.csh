@@ -34,7 +34,7 @@ void main() {
 
     vec3 cubemapCoord = normalize(worldPos - globalData.cameraLocation.xyz);
 
-    vec3 color = textureLod(skyCubemap, cubemapCoord, 0).rgb;
+    vec3 color = textureLod(skyCubemap, cubemapCoord, 0).rgb * globalData.skyCubemapExposure;
 
     vec3 cameraLocationDiff = globalData.cameraLocation.xyz - pushConstants.cameraLocationLast.xyz;
 

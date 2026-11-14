@@ -106,7 +106,7 @@ void main() {
 
 
         if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {    
-            direct += surface.material.emissiveColor;
+            direct += surface.material.emissiveColor * globalData.preExposure;
         }
     }
 

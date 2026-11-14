@@ -158,6 +158,7 @@ namespace Atlas::Renderer {
         evalParams.InRenderSubrectDimensions = { uint32_t(renderSize.x), uint32_t(renderSize.y) };
         evalParams.InReset = target->HasHistory() ? 0 : 1;
         evalParams.InFrameTimeDeltaInMsec = scene->renderState.deltaTime * 1000.0f;
+        evalParams.InPreExposure = scene->renderState.preExposure;
 
         auto result = NGX_VULKAN_EVALUATE_DLSS_EXT(commandList->commandBuffer, feature, parameters, &evalParams);
         commandList->InvalidateBoundState();

@@ -1,4 +1,5 @@
 #include <structures.hsh>
+#include <../globals.hsh>
 #include <../common/random.hsh>
 #include <../common/PI.hsh>
 #include <../common/packing.hsh>
@@ -112,7 +113,8 @@ Light UnpackLight(PackedLight compressed) {
     light.P = compressed.P.xyz;
     light.N = normalize(compressed.N.xyz);
 
-    light.radiance = compressed.color.rgb;
+    // The lights of ray tracing are built once, the pre-exposure follows the camera
+    light.radiance = compressed.color.rgb * globalData.preExposure;
 
     uint data0 = floatBitsToUint(compressed.data.x);
     uint data1 = floatBitsToUint(compressed.P.w);
