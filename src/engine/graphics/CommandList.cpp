@@ -258,6 +258,9 @@ namespace Atlas {
 
         void CommandList::BindPipeline(const Ref<Pipeline>& pipeline) {
 
+            AE_ASSERT(pipeline->isComplete && "Can't bind a pipeline which wasn't created");
+            if (!pipeline->isComplete) return;
+
             // Reset previous descriptor data such that a new descriptor
             // set must be provided to the new pipeline only if descriptor set changes
             if (pipelineInUse != nullptr) {

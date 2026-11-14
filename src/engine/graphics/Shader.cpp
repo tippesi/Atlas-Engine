@@ -219,7 +219,7 @@ namespace Atlas {
                 bool isCompiled = false;
                 auto spirvBinary = ShaderCompiler::Compile(stage, macros, true, isCompiled);
 
-                AE_ASSERT(isCompiled && "Shader compilation was unsuccessful");
+                // The compiler logs the errors, user written shaders (e.g. code nodes) can fail
                 if (!isCompiled) return;
 
                 VkShaderModuleCreateInfo createInfo = {};

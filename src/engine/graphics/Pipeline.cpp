@@ -13,11 +13,11 @@ namespace Atlas {
         Pipeline::Pipeline(GraphicsDevice* device, const GraphicsPipelineDesc& desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS), shader(desc.shader), device(device) {
 
+            // Shaders which didn't compile leave the pipeline incomplete, users check isComplete
+            if (!desc.shader->isComplete) return;
+
             AE_ASSERT(!desc.shader->isCompute && "Can't create a graphics pipeline with a compute shader");
             if (desc.shader->isCompute) return;
-
-            AE_ASSERT(desc.shader->isComplete && "Can't create a graphics pipeline with a shader which didn't compile");
-            if (!desc.shader->isComplete) return;
 
             const auto& formats = desc.attachmentFormats;
             AE_ASSERT((desc.swapChain || formats.colorAttachmentCount || formats.depthFormat) &&
@@ -128,6 +128,8 @@ namespace Atlas {
         Pipeline::Pipeline(GraphicsDevice* device, const ComputePipelineDesc& desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), device(device) {
 
+            if (!desc.shader->isComplete) return;
+
             AE_ASSERT(desc.shader->isCompute && "Can't create a compute pipeline without a compute shader");
             if (!desc.shader->isCompute) return;
 
@@ -164,7 +166,6 @@ namespace Atlas {
         Pipeline::Pipeline(GraphicsDevice* device, const RayTracingPipelineDesc& desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), shader(desc.shader), device(device) {
 
-            AE_ASSERT(desc.shader->isComplete && "Can't create a ray tracing pipeline with a shader which didn't compile");
             if (!desc.shader->isComplete) return;
 
             GeneratePipelineLayoutFromShader();
