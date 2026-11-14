@@ -40,6 +40,7 @@ namespace Atlas {
             int32_t historyLengthMax = 32;
             float historyClipMax = 0.2f;
             float currentClipFactor = 2.0f;
+            float spatialFilterStrength = 4.0f;
 
             float maxRadiance = 65535.0f;
 
@@ -73,6 +74,10 @@ namespace Atlas {
                 int32_t frameCount;
             };
 
+            struct alignas(16) AtrousConstants {
+                float strength;
+            };
+
             Helper::RayTracingHelper helper;
 
             vec3 cameraLocation;
@@ -85,6 +90,7 @@ namespace Atlas {
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
             PipelineConfig rayHitRayTracingPipelineConfig;
+            PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;

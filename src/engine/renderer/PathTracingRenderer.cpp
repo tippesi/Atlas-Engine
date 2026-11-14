@@ -24,6 +24,9 @@ namespace Atlas {
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
             rayHitRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("pathtracer/rayHit.rgen");
+            atrousPipelineConfig[0] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE1" });
+            atrousPipelineConfig[1] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE2" });
+            atrousPipelineConfig[2] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE4", "REMODULATE" });
 
             rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
             rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms), bounces + 1);
@@ -151,8 +154,16 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
                 imageBarriers.push_back({ baseColorTexture->image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->emissionTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->swapRadianceTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->radianceMomentsTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->historyRadianceMomentsTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT });
 
-                commandList->BindImage(renderTarget->lightingTexture.image, 3, 0);
+                commandList->BindImage(renderTarget->swapRadianceTexture.image, 3, 0);
                 commandList->BindImage(renderTarget->frameAccumTexture.image, 3, 1);
                 commandList->BindImage(renderTarget->radianceTexture.image, 3, 3);
 
@@ -163,6 +174,7 @@ namespace Atlas {
                 commandList->BindImage(normalTexture->image, 3, 7);
                 commandList->BindImage(materialIdxTexture->image, 3, 8);
                 commandList->BindImage(baseColorTexture->image, 3, 9);
+                commandList->BindImage(renderTarget->emissionTexture.image, 3, 10);
             }
 
             commandList->PipelineBarrier(imageBarriers, {});
@@ -235,6 +247,8 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
                 imageBarriers.push_back({ baseColorTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->emissionTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
                 imageBarriers.push_back({ historyDepthTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
                 imageBarriers.push_back({ historyNormalTexture->image,
@@ -248,9 +262,12 @@ namespace Atlas {
                 depthTexture->Bind(commandList, 3, 5);
                 normalTexture->Bind(commandList, 3, 6);
                 materialIdxTexture->Bind(commandList, 3, 7);
+                baseColorTexture->Bind(commandList, 3, 8);
                 historyDepthTexture->Bind(commandList, 3, 9);
                 historyNormalTexture->Bind(commandList, 3, 10);
                 historyMaterialIdxTexture->Bind(commandList, 3, 11);
+                commandList->BindImage(renderTarget->radianceMomentsTexture.image, 3, 12);
+                renderTarget->historyRadianceMomentsTexture.Bind(commandList, 3, 13);
 
                 struct alignas(16) PushConstants {
                     float historyClipMax;
@@ -258,16 +275,18 @@ namespace Atlas {
                     float maxHistoryLength;
                     int samplesPerFrame;
                     float maxRadiance;
+                    int resetHistory;
                 };
 
-                GPUProfiler::Scope sectionScope("Temporal");
+                GPUProfiler::BeginQuery("Temporal");
 
                 PushConstants constants = {
                     .historyClipMax = historyClipMax,
                     .currentClipFactor = currentClipFactor,
                     .maxHistoryLength = float(historyLengthMax),
                     .samplesPerFrame = samplesPerFrame,
-                    .maxRadiance = maxRadiance
+                    .maxRadiance = maxRadiance,
+                    .resetHistory = !renderTarget->HasHistory() ? 1 : 0
                 };
                 auto pipelineConfig = PipelineConfig("pathtracer/temporal.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -280,6 +299,42 @@ namespace Atlas {
                 groupCount.y += ((groupCount.y * 16 == resolution.y) ? 0 : 1);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                GPUProfiler::EndAndBeginQuery("Spatial filter");
+
+                depthTexture->Bind(commandList, 3, 2);
+                normalTexture->Bind(commandList, 3, 3);
+                materialIdxTexture->Bind(commandList, 3, 4);
+                baseColorTexture->Bind(commandList, 3, 5);
+                renderTarget->emissionTexture.Bind(commandList, 3, 6);
+
+                Texture::Texture2D* textures[] = { &renderTarget->swapRadianceTexture, &renderTarget->lightingTexture };
+                for (int32_t i = 0; i < 3; i++) {
+                    auto input = textures[i % 2];
+                    auto output = textures[(i + 1) % 2];
+
+                    imageBarriers.clear();
+                    imageBarriers.push_back({ input->image,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                    imageBarriers.push_back({ output->image,
+                        VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                    commandList->PipelineBarrier(imageBarriers, {});
+
+                    auto atrousPipeline = PipelineManager::GetPipeline(atrousPipelineConfig[i]);
+                    commandList->BindPipeline(atrousPipeline);
+
+                    AtrousConstants atrousConstants = {
+                        .strength = spatialFilterStrength
+                    };
+                    commandList->PushConstants("constants", &atrousConstants);
+
+                    commandList->BindImage(output->image, 3, 0);
+                    input->Bind(commandList, 3, 1);
+
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                }
+
+                GPUProfiler::EndQuery();
 
             }
 

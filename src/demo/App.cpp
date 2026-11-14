@@ -512,6 +512,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderInt("Max accumulated frames##Pathtrace", &mainRenderer->pathTracingRenderer.historyLengthMax, 1, 256);
                 ImGui::SliderFloat("Current clip##Pathtrace", &mainRenderer->pathTracingRenderer.currentClipFactor, 0.1f, 4.0f);
                 ImGui::SliderFloat("Max history clip##Pathtrace", &mainRenderer->pathTracingRenderer.historyClipMax, 0.0f, 1.0f);
+                ImGui::SliderFloat("Spatial filter strength##Pathtrace", &mainRenderer->pathTracingRenderer.spatialFilterStrength, 0.0f, 16.0f);
 
                 scene->rayTracingWorld->includeObjectHistory = pathTrace;
             }

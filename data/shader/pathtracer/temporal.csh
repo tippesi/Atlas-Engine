@@ -8,6 +8,7 @@
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
 #include <../common/edgePreserving.hsh>
+#include <../common/denoiser.hsh>
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
@@ -20,10 +21,13 @@ layout (set = 3, binding = 4) uniform sampler2D velocityTexture;
 layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 6) uniform sampler2D normalTexture;
 layout (set = 3, binding = 7) uniform usampler2D materialIdxTexture;
+layout (set = 3, binding = 8) uniform sampler2D albedoTexture;
 
 layout(set = 3, binding = 9) uniform sampler2D historyDepthTexture;
 layout(set = 3, binding = 10) uniform sampler2D historyNormalTexture;
 layout(set = 3, binding = 11) uniform usampler2D historyMaterialIdxTexture;
+layout(set = 3, binding = 12, rg32f) writeonly uniform image2D momentsImage;
+layout(set = 3, binding = 13) uniform sampler2D historyMomentsTexture;
 
 layout(push_constant) uniform constants {
     float historyClipMax;
@@ -31,6 +35,7 @@ layout(push_constant) uniform constants {
     float maxHistoryLength;
     int samplesPerFrame;
     float maxRadiance;
+    int resetHistory;
 } pushConstants;
 
 vec2 invResolution = 1.0 / vec2(imageSize(outAccumImage));
@@ -89,7 +94,7 @@ vec3 FetchTexel(ivec2 texel) {
             float(pushConstants.samplesPerFrame) * pushConstants.maxRadiance;
     }
     
-    return max(color, 0.0);
+    return max(color, 0.0) / texelFetch(albedoTexture, texel, 0).rgb;
 
 }
 
@@ -216,13 +221,13 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, vec2 velocity, out vec4 histo
         if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx, normal) > 0.0) {
             totalWeight += weights[i];
             history += texelFetch(inAccumImage, offsetPixel, 0) * weights[i];
-            //historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
+            historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
         }
     }
 
     if (totalWeight > 0.0) {
         history /= totalWeight;
-        //historyMoments /= totalWeight;
+        historyMoments /= totalWeight;
         return true;
     }
 
@@ -238,7 +243,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, vec2 velocity, out vec4 histo
         if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx, normal) > 0.0) {
             totalWeight += 1.0;
             history += texelFetch(inAccumImage, offsetPixel, 0);
-            //historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
+            historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0);
         }
     }
 
@@ -380,6 +385,7 @@ void main() {
     ComputeVarianceMinMax(mean, std);
 
     vec3 currentRadiance = FetchTexel(pixel);
+    float currentLuma = Luma(currentRadiance);
 
     vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
 
@@ -424,7 +430,7 @@ void main() {
     factor = (historyUV.x < 0.0 || historyUV.y < 0.0 || historyUV.x > 1.0
          || historyUV.y > 1.0) ? 0.0 : factor;
 
-    if (factor < 0.1 || !valid) {
+    if (factor < 0.1 || !valid || pushConstants.resetHistory > 0) {
         historyLength = 0.0;
     }
     
@@ -443,8 +449,17 @@ void main() {
 
     vec3 resolve = mix(currentRadiance, historyRadiance, factor);
 
+    vec2 momentsResolve = mix(vec2(currentLuma, sqr(currentLuma)), historyMoments.rg, factor);
+    float accumulatedFrames = GetAccumulatedFrames(factor, historyLength);
+
+    // Short histories use the variance of the neighbourhood, the resolve has the variance of the mean
+    float variance = max(momentsResolve.g - sqr(momentsResolve.r), 0.0);
+    variance = accumulatedFrames < 4.0 ? max(variance, sqr(std.x)) : variance;
+    variance /= accumulatedFrames;
+
     imageStore(outAccumImage, pixel, vec4(resolve, historyLength + 1.0));
-    imageStore(outputImage, pixel, vec4(resolve, 1.0));
+    imageStore(momentsImage, pixel, vec4(momentsResolve, 0.0, 0.0));
+    imageStore(outputImage, pixel, vec4(min(resolve, vec3(65000.0)), min(variance, 65000.0)));
     //imageStore(outAccumImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), historyLength + 1.0));
     //imageStore(outAccumImage, pixel, vec4(vec3(historyLength / 10.0), historyLength + 1.0));
 

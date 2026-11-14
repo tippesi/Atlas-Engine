@@ -303,6 +303,10 @@ namespace Atlas::Renderer {
 
         Texture::Texture2D radianceTexture;
         Texture::Texture2D historyRadianceTexture;
+        Texture::Texture2D radianceMomentsTexture;
+        Texture::Texture2D historyRadianceMomentsTexture;
+        Texture::Texture2D swapRadianceTexture;
+        Texture::Texture2D emissionTexture;
         Texture::Texture2DArray frameAccumTexture;
 
         Texture::Texture2D lightingTexture;

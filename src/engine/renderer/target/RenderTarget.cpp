@@ -150,6 +150,7 @@ namespace Atlas::Renderer {
         swap = !swap;
 
         std::swap(historyRadianceTexture, radianceTexture);
+        std::swap(historyRadianceMomentsTexture, radianceMomentsTexture);
 
         historyData.Swap(targetData);
         if (targetDataDownsampled2x.depthTexture)
@@ -428,6 +429,14 @@ namespace Atlas::Renderer {
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             historyRadianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            radianceMomentsTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            historyRadianceMomentsTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            swapRadianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            emissionTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             frameAccumTexture = Texture::Texture2DArray(scaledWidth, scaledHeight, 3, VK_FORMAT_R32_UINT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Nearest, false, true);
         }
@@ -442,6 +451,10 @@ namespace Atlas::Renderer {
 
             radianceTexture.Reset();
             historyRadianceTexture.Reset();
+            radianceMomentsTexture.Reset();
+            historyRadianceMomentsTexture.Reset();
+            swapRadianceTexture.Reset();
+            emissionTexture.Reset();
             frameAccumTexture.Reset();
         }
 
