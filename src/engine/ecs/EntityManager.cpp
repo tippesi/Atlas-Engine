@@ -1,5 +1,6 @@
 #include "EntityManager.h"
 #include <cassert>
+#include <algorithm>
 
 namespace Atlas {
 
@@ -27,6 +28,26 @@ namespace Atlas {
                 entity = entities.emplace_back(Entity{ entities.size() });
 
             }
+
+            return entity;
+
+        }
+
+        Entity EntityManager::Create(Entity entity) {
+
+            auto pos = EntityToPosition(entity);
+            if (pos >= entities.size() || entities[pos] != EntityConfig::InvalidEntity)
+                return EntityConfig::InvalidEntity;
+
+            // Restored entities were usually destroyed last
+            auto iter = std::find_if(destroyed.rbegin(), destroyed.rend(),
+                [&](Entity destroyedEntity) { return EntityToPosition(destroyedEntity) == pos; });
+            if (iter != destroyed.rend()) {
+                *iter = destroyed.back();
+                destroyed.pop_back();
+            }
+
+            entities[pos] = entity;
 
             return entity;
 

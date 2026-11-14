@@ -5,6 +5,9 @@
 #include "OceanState.h"
 #include "OceanNode.h"
 #include "OceanSimulation.h"
+#include "OceanSurfaceQueries.h"
+#include "../resource/Resource.h"
+#include "../texture/Texture2D.h"
 
 #include <vector>
 
@@ -17,10 +20,11 @@ namespace Atlas {
         public:
             Ocean() = default;
 
-            Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f),
-                int32_t N = 512, int32_t L = 4000);
+            Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f), int32_t N = 512);
 
             void Update(const CameraComponent& camera, float deltaTime);
+
+            int32_t GetLoDCount() const;
 
             /**
              * Sets the distance of a specific level of detail.
@@ -32,21 +36,22 @@ namespace Atlas {
             std::vector<OceanNode*> GetRenderList();
 
             OceanSimulation simulation;
+            OceanSurfaceQueries surfaceQueries;
 
-            Texture::Texture2D rippleTexture;
-            Texture::Texture2D foamTexture;
+            // The normals of the small ripples over the waves and the texture of the foam, both repeated over the surface
+            ResourceHandle<Texture::Texture2D> rippleTexture;
+            ResourceHandle<Texture::Texture2D> foamTexture;
 
             vec3 translation = vec3(0.0f);
 
             vec3 waterBodyColor = vec3(0.1f, 1.0f, 0.7f);
-            vec3 deepWaterBodyColor = vec3(0.1f, 0.15f, 0.5f);
             vec3 scatterColor = vec3(0.3f, 0.7f, 0.6f);
             vec2 waterColorIntensity = vec2(0.1f, 0.2f);
 
-            float displacementScale = 0.011f;
-            float choppynessScale = 0.021f;
+            float displacementScale = 1.0f;
+            float choppynessScale = 1.5f;
 
-            float tiling = 64.0f;
+            float tiling = 32.0f;
 
             float shoreWaveDistanceOffset = 100.0f;
             float shoreWaveDistanceScale = 30.0f;
@@ -59,6 +64,9 @@ namespace Atlas {
             bool wireframe = false;
             bool enable = true;
             bool underwaterShader = true;
+
+            // Bodies float on the waves and the surface can be queried
+            bool physics = false;
 
         private:
             void SortNodes(std::vector<OceanNode*>& nodes, vec3 cameraLocation);

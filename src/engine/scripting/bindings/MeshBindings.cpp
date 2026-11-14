@@ -16,9 +16,32 @@ namespace Atlas::Scripting::Bindings {
             { "HostAccessBit", Mesh::MeshUsageBits::HostAccessBit },
         });
 
+        ns->new_usertype<Mesh::Joint>("Joint",
+            "name", &Mesh::Joint::name,
+            "parentIdx", &Mesh::Joint::parentIdx,
+            "inverseBindMatrix", &Mesh::Joint::inverseBindMatrix,
+            "position", &Mesh::Joint::position,
+            "rotation", &Mesh::Joint::rotation,
+            "scale", &Mesh::Joint::scale,
+            "aabb", &Mesh::Joint::aabb,
+            "hasVertices", &Mesh::Joint::hasVertices
+            );
+
+        ns->new_usertype<Mesh::Skeleton>("Skeleton",
+            "GetJointIndex", &Mesh::Skeleton::GetJointIndex,
+            "GetJointCount", &Mesh::Skeleton::GetJointCount,
+            "UpdateRestPose", &Mesh::Skeleton::UpdateRestPose,
+            "joints", &Mesh::Skeleton::joints,
+            "restJointMatrices", &Mesh::Skeleton::restJointMatrices,
+            "restAABB", &Mesh::Skeleton::restAABB
+            );
+
         ns->new_usertype<Mesh::MeshData>("MeshData",
+            "IsSkinned", &Mesh::MeshData::IsSkinned,
             "filename", &Mesh::MeshData::name,
             "materials", &Mesh::MeshData::materials,
+            "animations", &Mesh::MeshData::animations,
+            "skeleton", &Mesh::MeshData::skeleton,
             "primitiveType", &Mesh::MeshData::primitiveType,
             "aabb", &Mesh::MeshData::aabb,
             "radius", &Mesh::MeshData::radius
@@ -44,6 +67,9 @@ namespace Atlas::Scripting::Bindings {
             "shadowDistanceCulling", &Mesh::Mesh::shadowDistanceCulling,
             "impostorDistance", &Mesh::Mesh::impostorDistance,
             "impostorShadowDistance", &Mesh::Mesh::impostorShadowDistance,
+            "minScreenSize", &Mesh::Mesh::minScreenSize,
+            "animationLodDistance", &Mesh::Mesh::animationLodDistance,
+            "animationMaxInterval", &Mesh::Mesh::animationMaxInterval,
             "invertUVs", &Mesh::Mesh::invertUVs
             );
 
@@ -80,7 +106,13 @@ namespace Atlas::Scripting::Bindings {
             "roughnessMap", &Material::roughnessMap,
             "metalnessMap", &Material::metalnessMap,
             "aoMap", &Material::aoMap,
-            "displacementMap", &Material::displacementMap
+            "displacementMap", &Material::displacementMap,
+            "SetGraphParameter", sol::overload(
+                &Material::SetGraphParameter,
+                [](Material& material, const std::string& parameter, float value) { material.SetGraphParameter(parameter, vec4(value)); },
+                [](Material& material, const std::string& parameter, const vec2& value) { material.SetGraphParameter(parameter, vec4(value, 0.0f, 0.0f)); },
+                [](Material& material, const std::string& parameter, const vec3& value) { material.SetGraphParameter(parameter, vec4(value, 0.0f)); }
+            )
             );
 
     }

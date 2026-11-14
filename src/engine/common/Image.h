@@ -2,9 +2,11 @@
 
 #include "../System.h"
 #include "../Filter.h"
+#include "MathHelper.h"
 
 #include <stb_image_resize2.h>
 
+#include <algorithm>
 #include <vector>
 #include <type_traits>
 
@@ -131,11 +133,30 @@ namespace Atlas {
             void Fill(T value);
 
             /**
+             * Fills a rectangle of mipmap level 0 with a pixel value. Parts outside of the image are skipped.
+             * @param value The pixel value in the range of the image type, like the result of Sample()
+             */
+            void FillRect(int32_t x, int32_t y, int32_t width, int32_t height, vec4 value);
+
+            /**
+             * Blends a pixel value into a pixel of mipmap level 0. Positions outside of the image are skipped.
+             * @param value The pixel value in the range of the image type, like the result of Sample()
+             * @param alpha The weight of the value, 1 replaces the pixel.
+             */
+            void BlendPixel(int32_t x, int32_t y, vec4 value, float alpha = 1.0f);
+
+            /**
+             * Copies an image with the same channel count into mipmap level 0 at the given position.
+             * Parts outside of the image are skipped.
+             */
+            void Blit(const Image<T>& source, int32_t x, int32_t y);
+
+            /**
              * Returns the mipmap level structure at a given level.
              * @param mipLevel The mipmap level which should be returned.
              * @return The mipmap level structure at level mipLevel.
              */
-            MipLevel<T>& GetMipLevel(int32_t mipLevel) const;
+            const MipLevel<T>& GetMipLevel(int32_t mipLevel) const;
 
             /**
              * Returns the selected channel data of the whole image.
@@ -218,8 +239,9 @@ namespace Atlas {
             void ExpandToChannelCount(int32_t channels, T fill);
 
             /**
-             * Converts the data into the specified type
-             * @tparam R
+             * Converts the data into the specified type. Integer formats are normalized to [0,1]
+             * (e.g. 255 becomes 1.0), floating point values are clamped to [0,1] when converted to integers.
+             * @tparam R uint8_t, uint16_t, float or float16
              * @return
              */
             template<typename R>
@@ -255,7 +277,7 @@ namespace Atlas {
                 auto index = (y * width + x) * channels;
 
                 if constexpr (std::is_integral_v<T>) {
-                    glm::ivec4 result(0);
+                    ivec4 result(0);
 
                     for (int32_t i = 0; i < channels; i++)
                         result[i] = int32_t(level.data[index + i]);
@@ -263,7 +285,7 @@ namespace Atlas {
                     return result;
                 }
                 else {
-                    glm::vec4 result(0);
+                    vec4 result(0);
 
                     for (int32_t i = 0; i < channels; i++)
                         result[i] = float(level.data[index + i]);
@@ -296,7 +318,7 @@ namespace Atlas {
                 auto index = (iy * width + ix) * channels;
 
                 if constexpr (std::is_integral_v<T>) {
-                    glm::ivec4 result(0);
+                    ivec4 result(0);
 
                     for (int32_t i = 0; i < channels; i++)
                         result[i] = int32_t(level.data[index + i]);
@@ -304,7 +326,7 @@ namespace Atlas {
                     return result;
                 }
                 else {
-                    glm::vec4 result(0);
+                    vec4 result(0);
 
                     for (int32_t i = 0; i < channels; i++)
                         result[i] = float(level.data[index + i]);
@@ -349,43 +371,43 @@ namespace Atlas {
                     auto h1 = (1.0f - x) * q01 + x * q11;
 
                     if constexpr (std::is_integral_v<T>) {
-                        return glm::ivec4(int32_t((1.0f - y) * h0 + y * h1));
+                        return ivec4(int32_t((1.0f - y) * h0 + y * h1));
                     }
                     else {
-                        return glm::vec4((1.0f - y) * h0 + y * h1);
+                        return vec4((1.0f - y) * h0 + y * h1);
                     }
                 }
                 else if (channels == 3) {
                     // Fetch the four texture samples
-                    auto q00 = glm::vec3(Sample(ox, oy, mipLevel));
-                    auto q10 = glm::vec3(Sample(ox + 1, oy, mipLevel));
-                    auto q01 = glm::vec3(Sample(ox, oy + 1, mipLevel));
-                    auto q11 = glm::vec3(Sample(ox + 1, oy + 1, mipLevel));
+                    auto q00 = vec3(Sample(ox, oy, mipLevel));
+                    auto q10 = vec3(Sample(ox + 1, oy, mipLevel));
+                    auto q01 = vec3(Sample(ox, oy + 1, mipLevel));
+                    auto q11 = vec3(Sample(ox + 1, oy + 1, mipLevel));
 
                     // Interpolate samples horizontally
                     auto h0 = (1.0f - x) * q00 + x * q10;
                     auto h1 = (1.0f - x) * q01 + x * q11;
 
                     if constexpr (std::is_integral_v<T>) {
-                        return glm::ivec4((1.0f - y) * h0 + y * h1, 1.0f);
+                        return ivec4((1.0f - y) * h0 + y * h1, 1.0f);
                     }
                     else {
-                        return glm::vec4((1.0f - y) * h0 + y * h1, 1.0f);
+                        return vec4((1.0f - y) * h0 + y * h1, 1.0f);
                     }
                 }
                 else {
                     // Fetch the four texture samples
-                    auto q00 = glm::vec4(Sample(ox, oy, mipLevel));
-                    auto q10 = glm::vec4(Sample(ox + 1, oy, mipLevel));
-                    auto q01 = glm::vec4(Sample(ox, oy + 1, mipLevel));
-                    auto q11 = glm::vec4(Sample(ox + 1, oy + 1, mipLevel));
+                    auto q00 = vec4(Sample(ox, oy, mipLevel));
+                    auto q10 = vec4(Sample(ox + 1, oy, mipLevel));
+                    auto q01 = vec4(Sample(ox, oy + 1, mipLevel));
+                    auto q11 = vec4(Sample(ox + 1, oy + 1, mipLevel));
 
                     // Interpolate samples horizontally
                     auto h0 = (1.0f - x) * q00 + x * q10;
                     auto h1 = (1.0f - x) * q01 + x * q11;
 
                     if constexpr (std::is_integral_v<T>) {
-                        return glm::ivec4((1.0f - y) * h0 + y * h1);
+                        return ivec4((1.0f - y) * h0 + y * h1);
                     }
                     else {
                         return (1.0f - y) * h0 + y * h1;
@@ -437,8 +459,8 @@ namespace Atlas {
 
             AE_ASSERT(sizeof(S) / 4 == size_t(channels) && "Data can't be fitted into channels");
 
-            if constexpr (std::is_integral_v<T> && (std::is_same_v<S, glm::ivec2>
-                || std::is_same_v<S, glm::ivec3> || std::is_same_v<S, glm::ivec4>)) {
+            if constexpr (std::is_integral_v<T> && (std::is_same_v<S, ivec2>
+                || std::is_same_v<S, ivec3> || std::is_same_v<S, ivec4>)) {
                 auto min = std::min(int32_t(sizeof(S)) / 4, channels);
                 auto index = (y * width + x) * channels;
 
@@ -446,8 +468,8 @@ namespace Atlas {
                     mipLevels[0].data[index + i] = T(value[i]);
                 }
             }
-            else if constexpr ((!std::is_integral_v<T> && (std::is_same_v<S, glm::vec2>
-                || std::is_same_v<S, glm::vec3> || std::is_same_v<S, glm::vec4>))) {
+            else if constexpr ((!std::is_integral_v<T> && (std::is_same_v<S, vec2>
+                || std::is_same_v<S, vec3> || std::is_same_v<S, vec4>))) {
                 auto min = std::min(int32_t(sizeof(S)) / 4, channels);
                 auto index = (y * width + x) * channels;
 
@@ -499,7 +521,58 @@ namespace Atlas {
         }
 
         template<typename T>
-        typename Image<T>::template MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) const {
+        void Image<T>::FillRect(int32_t x, int32_t y, int32_t width, int32_t height, vec4 value) {
+
+            auto& data = mipLevels[0].data;
+            auto maxX = std::min(x + width, this->width);
+            auto maxY = std::min(y + height, this->height);
+
+            for (int32_t py = std::max(y, 0); py < maxY; py++) {
+                for (int32_t px = std::max(x, 0); px < maxX; px++) {
+                    auto index = (py * this->width + px) * channels;
+                    for (int32_t i = 0; i < channels; i++)
+                        data[index + i] = T(value[i]);
+                }
+            }
+
+        }
+
+        template<typename T>
+        void Image<T>::BlendPixel(int32_t x, int32_t y, vec4 value, float alpha) {
+
+            if (x < 0 || y < 0 || x >= width || y >= height)
+                return;
+
+            auto& data = mipLevels[0].data;
+            auto index = (y * width + x) * channels;
+            for (int32_t i = 0; i < channels; i++)
+                data[index + i] = T(glm::mix(float(data[index + i]), value[i], alpha));
+
+        }
+
+        template<typename T>
+        void Image<T>::Blit(const Image<T>& source, int32_t x, int32_t y) {
+
+            AE_ASSERT(source.channels == channels && "Images need the same channel count");
+
+            const auto& sourceData = source.mipLevels[0].data;
+            auto& data = mipLevels[0].data;
+
+            auto minX = std::max(x, 0);
+            auto maxX = std::min(x + source.width, width);
+            if (minX >= maxX)
+                return;
+
+            for (int32_t py = std::max(y, 0); py < std::min(y + source.height, height); py++) {
+                auto sourceIndex = ((py - y) * source.width + minX - x) * channels;
+                std::copy_n(sourceData.begin() + sourceIndex, (maxX - minX) * channels,
+                    data.begin() + (py * width + minX) * channels);
+            }
+
+        }
+
+        template<typename T>
+        const typename Image<T>::template MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) const {
 
             return mipLevels[mipLevel];
 
@@ -565,9 +638,8 @@ namespace Atlas {
             for (int32_t i = 0; i < int32_t(mipLevels.size()); i++) {
                 mipLevels[i].width = dim.x;
                 mipLevels[i].height = dim.y;
-                mipLevels[i].data.resize(dim.x * dim.y * channels);
-                dim.x /= 2;
-                dim.y /= 2;
+                mipLevels[i].data.resize(size_t(dim.x) * size_t(dim.y) * size_t(channels));
+                dim = glm::max(dim / 2, ivec2(1));
             }
 
             stbir_pixel_layout pixelLayout = STBIR_RGBA;
@@ -578,30 +650,21 @@ namespace Atlas {
             default: pixelLayout = STBIR_RGBA; break;
             }
 
+            stbir_datatype dataType = STBIR_TYPE_UINT8;
+            if constexpr (std::is_same_v<T, uint16_t>) {
+                dataType = STBIR_TYPE_UINT16;
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+                dataType = STBIR_TYPE_FLOAT;
+            }
+
             for (int32_t i = 1; i < int32_t(mipLevels.size()); i++) {
-                dim.x /= 2;
-                dim.y /= 2;
-                if constexpr (std::is_same_v<T, uint8_t>) {
-                    stbir_resize_uint8_generic(mipLevels[i - 1].data.data(), dim.x * 2,
-                        dim.y * 2, dim.x * 2 * channels,
-                        mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * channels, channels, pixelLayout,
-                        STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
-                }
-                else if constexpr (std::is_same_v<T, uint16_t>) {
-                    stbir_resize_uint16_generic(mipLevels[i - 1].data.data(), dim.x * 2,
-                        dim.y * 2, dim.x * 4 * channels,
-                        mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * 2 * channels, channels, pixelLayout,
-                        STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
-                }
-                else if constexpr (std::is_same_v<T, float>) {
-                    stbir_resize_float_generic(mipLevels[i - 1].data.data(), dim.x * 2,
-                        dim.y * 2, dim.x * 8 * channels,
-                        mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * 4 * channels, channels, pixelLayout,
-                        STBIR_TYPE_FLOAT, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
-                }
+                auto& previousLevel = mipLevels[i - 1];
+                auto& level = mipLevels[i];
+                stbir_resize(previousLevel.data.data(), previousLevel.width, previousLevel.height,
+                    int32_t(previousLevel.width * channels * sizeof(T)), level.data.data(), level.width,
+                    level.height, int32_t(level.width * channels * sizeof(T)), pixelLayout, dataType,
+                    STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
             }
 
         }
@@ -676,11 +739,11 @@ namespace Atlas {
                 for (int32_t y = 0; y < height; y++) {
                     for (int32_t x = 0; x < width; x++) {
 
-                        auto color = glm::vec4(0.0f);
+                        auto color = vec4(0.0f);
 
                         for (int32_t i = 0; i < int32_t(weights.size()); i++) {
                             int32_t off = x + int32_t(offsets[i]);
-                            color += glm::vec4(Sample(off, y)) * weights[i];
+                            color += vec4(Sample(off, y)) * weights[i];
                         }
 
                         if constexpr (std::is_integral_v<T>) {
@@ -699,11 +762,11 @@ namespace Atlas {
                 for (int32_t y = 0; y < height; y++) {
                     for (int32_t x = 0; x < width; x++) {
 
-                        auto color = glm::vec4(0.0f);
+                        auto color = vec4(0.0f);
 
                         for (int32_t i = 0; i < weights.size(); i++) {
                             int32_t off = y + (int32_t)offsets[i];
-                            color += glm::vec4(tmp.Sample(x, off)) * weights[i];
+                            color += vec4(tmp.Sample(x, off)) * weights[i];
                         }
 
                         if constexpr (std::is_integral_v<T>) {
@@ -722,20 +785,20 @@ namespace Atlas {
             else {
 
                 std::vector<std::vector<float>> weights;
-                std::vector<std::vector<glm::ivec2>> offsets;
+                std::vector<std::vector<ivec2>> offsets;
 
                 filter.Get(&weights, &offsets);
 
                 for (int32_t y = 0; y < height; y++) {
                     for (int32_t x = 0; x < width; x++) {
 
-                        auto color = glm::vec4(0.0f);
+                        auto color = vec4(0.0f);
 
                         for (uint32_t i = 0; i < int32_t(weights.size()); i++) {
                             for (uint32_t j = 0; j < int32_t(weights.size()); j++) {
                                 int32_t offX = x + offsets[i][j].x;
                                 int32_t offY = y + offsets[i][j].y;
-                                color += glm::vec4(tmp.Sample(offX, offY)) * weights[i][j];
+                                color += vec4(tmp.Sample(offX, offY)) * weights[i][j];
                             }
                         }
 
@@ -847,28 +910,22 @@ namespace Atlas {
 
             std::vector<R> convertedData;
             auto& data = GetData();
+            convertedData.reserve(data.size());
 
             for (auto value : data) {
+                auto normalized = float(value) / MaxPixelValue();
+
                 if constexpr (std::is_same_v<R, uint8_t>) {
-                    T t = std::max(T(0), std::min(T(255), value));
-                    convertedData.push_back(reinterpret_cast<R>(t));
+                    convertedData.push_back(R(Helper::Math::Saturate(normalized) * 255.0f + 0.5f));
                 }
                 else if constexpr (std::is_same_v<R, uint16_t>) {
-                    T t = std::max(T(0), std::min(T(65535), value));
-                    convertedData.push_back(reinterpret_cast<R>(t));
+                    convertedData.push_back(R(Helper::Math::Saturate(normalized) * 65535.0f + 0.5f));
                 }
                 else if constexpr (std::is_same_v<R, float>) {
-                    convertedData.push_back(reinterpret_cast<R>(value));
+                    convertedData.push_back(normalized);
                 }
                 else if constexpr (std::is_same_v<R, float16>) {
-                    float t = 0.0f;
-                    if constexpr (std::is_same_v<T, float>) {
-                        t = value;
-                    }
-                    else {
-                        t = reinterpret_cast<float>(value);
-                    }
-                    convertedData.push_back(glm::detail::toFloat16(t));
+                    convertedData.push_back(glm::detail::toFloat16(normalized));
                 }
             }
 

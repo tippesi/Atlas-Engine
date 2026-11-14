@@ -1,0 +1,608 @@
+// Interface between the geometry and shadow shaders and the code generated from material graphs
+// Only shaders generated from a graph include this file, see materialgraph/Compiler
+
+#include <../globals.hsh>
+
+#if (defined(MATERIAL_GRAPH_WRITES_NORMAL) || defined(MATERIAL_GRAPH_USES_TANGENTS)) && defined(TANGENTS) && defined(TEX_COORDS) && !defined(NORMAL_MAP)
+#define NORMAL_MAP
+#endif
+
+// Parameter values and bindless texture indices of all graph materials, indexed by the offset of the material
+// Ray tracing passes use binding 9 of set 3 for other resources
+#ifdef MATERIAL_GRAPH_STAGE_HIT
+layout(std430, set = 3, binding = 24) readonly buffer MaterialGraphParameters {
+#else
+layout(std430, set = 3, binding = 9) readonly buffer MaterialGraphParameters {
+#endif
+    uint materialGraphParameters[];
+};
+
+struct MaterialVertexInput {
+    vec3 position;
+    vec3 normal;
+    vec3 tangent;
+    vec3 worldPosition;
+    vec3 worldNormal;
+    vec3 instancePosition;
+    vec3 viewDirection;
+    vec2 texCoord;
+    vec4 color;
+    float time;
+    uint parameterOffset;
+    mat4 modelMatrix;
+};
+
+struct MaterialSurfaceInput {
+    vec3 position;
+    vec3 normal;
+    vec3 worldPosition;
+    vec3 worldNormal;
+    vec3 viewPosition;
+    vec3 viewNormal;
+    vec3 instancePosition;
+    vec3 viewDirection;
+    // Tangent to view space
+    mat3 tangentFrame;
+    vec2 texCoord;
+    vec2 screenCoord;
+    vec4 color;
+    float time;
+    float frontFacing;
+    uint parameterOffset;
+#ifdef MATERIAL_GRAPH_STAGE_EVALUATE
+    // Nodes of the vertex stage are calculated per fragment in an evaluation
+    vec3 tangent;
+    mat4 modelMatrix;
+#endif
+};
+
+struct MaterialSurfaceOutput {
+    vec3 baseColor;
+    // In tangent space
+    vec3 normal;
+    vec3 emissive;
+    float roughness;
+    float metalness;
+    float ao;
+    float opacity;
+};
+
+MaterialSurfaceOutput CreateMaterialSurfaceOutput() {
+
+    MaterialSurfaceOutput surface;
+
+    surface.baseColor = vec3(1.0);
+    surface.normal = vec3(0.0, 0.0, 1.0);
+    surface.emissive = vec3(0.0);
+    surface.roughness = 1.0;
+    surface.metalness = 0.0;
+    surface.ao = 1.0;
+    surface.opacity = 1.0;
+
+    return surface;
+
+}
+
+// The object position is the one of the mesh file, on skinned meshes it stays the same while they are animated
+MaterialVertexInput CreateMaterialVertexInput(vec3 objectPosition, vec3 position, vec3 normal, vec3 tangent, vec2 texCoord, vec4 color,
+    mat4 modelMatrix, float time, uint parameterOffset) {
+
+    MaterialVertexInput vertexIn;
+
+    vertexIn.position = objectPosition;
+    vertexIn.normal = normal;
+    vertexIn.tangent = tangent;
+    vertexIn.worldPosition = vec3(modelMatrix * vec4(position, 1.0));
+    vertexIn.worldNormal = normalize(mat3(modelMatrix) * normal);
+    vertexIn.instancePosition = vec3(modelMatrix[3]);
+    vertexIn.viewDirection = normalize(globalData.cameraLocation.xyz - vertexIn.worldPosition);
+    vertexIn.texCoord = texCoord;
+    vertexIn.color = color;
+    vertexIn.time = time;
+    vertexIn.parameterOffset = parameterOffset;
+    vertexIn.modelMatrix = modelMatrix;
+
+    return vertexIn;
+
+}
+
+// The same vertex at another position, e.g. to find the normal of the displaced surface
+MaterialVertexInput MoveMaterialVertexInput(MaterialVertexInput vertexIn, vec3 offset) {
+
+    vertexIn.position += offset;
+    vertexIn.worldPosition += mat3(vertexIn.modelMatrix) * offset;
+    vertexIn.viewDirection = normalize(globalData.cameraLocation.xyz - vertexIn.worldPosition);
+
+    return vertexIn;
+
+}
+
+MaterialSurfaceInput CreateMaterialSurfaceInput(vec3 position, vec3 normal, vec3 worldPosition, vec3 worldNormal,
+    vec3 instancePosition, mat3 tangentFrame, vec2 texCoord, vec2 screenCoord, vec4 color, float frontFacing,
+    uint parameterOffset) {
+
+    MaterialSurfaceInput surfaceIn;
+
+    surfaceIn.position = position;
+    surfaceIn.normal = normal;
+    surfaceIn.worldPosition = worldPosition;
+    surfaceIn.worldNormal = worldNormal;
+    surfaceIn.viewPosition = vec3(globalData.vMatrix * vec4(worldPosition, 1.0));
+    surfaceIn.viewNormal = mat3(globalData.vMatrix) * worldNormal;
+    surfaceIn.instancePosition = instancePosition;
+    surfaceIn.viewDirection = normalize(globalData.cameraLocation.xyz - worldPosition);
+    surfaceIn.tangentFrame = tangentFrame;
+    surfaceIn.texCoord = texCoord;
+    surfaceIn.screenCoord = screenCoord;
+    surfaceIn.color = color;
+    surfaceIn.time = globalData.time;
+    surfaceIn.frontFacing = frontFacing;
+    surfaceIn.parameterOffset = parameterOffset;
+
+    return surfaceIn;
+
+}
+
+float MGReadFloat(uint offset) {
+
+    return uintBitsToFloat(materialGraphParameters[offset]);
+
+}
+
+vec2 MGReadVec2(uint offset) {
+
+    return vec2(MGReadFloat(offset), MGReadFloat(offset + 1u));
+
+}
+
+vec3 MGReadVec3(uint offset) {
+
+    return vec3(MGReadFloat(offset), MGReadFloat(offset + 1u), MGReadFloat(offset + 2u));
+
+}
+
+vec4 MGReadVec4(uint offset) {
+
+    return vec4(MGReadFloat(offset), MGReadFloat(offset + 1u), MGReadFloat(offset + 2u), MGReadFloat(offset + 3u));
+
+}
+
+#ifdef MATERIAL_GRAPH_STAGE_HIT
+// Hits have no derivatives, the level comes from the ray tracing pass
+float mgHitTextureLevel = 0.0;
+#endif
+
+// The vertex stage has no derivatives, it always samples the most detailed level
+vec4 MGSampleTexture(uint textureIdx, vec2 texCoord) {
+
+#if defined(MATERIAL_GRAPH_STAGE_HIT)
+    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, mgHitTextureLevel);
+#elif defined(MATERIAL_GRAPH_STAGE_SURFACE)
+    return texture(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, globalData.mipLodBias);
+#else
+    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, 0.0);
+#endif
+
+}
+
+vec4 MGSampleTextureLod(uint textureIdx, vec2 texCoord, float lod) {
+
+    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, lod);
+
+}
+
+vec3 MGSampleNormal(uint textureIdx, vec2 texCoord, float strength) {
+
+    vec3 normal = 2.0 * MGSampleTexture(textureIdx, texCoord).rgb - 1.0;
+    normal.xy *= strength;
+    return normalize(normal);
+
+}
+
+vec4 MGSampleTriplanar(uint textureIdx, vec3 position, vec3 normal, float scale, float sharpness) {
+
+    vec3 weights = pow(abs(normal), vec3(sharpness));
+    weights /= max(weights.x + weights.y + weights.z, 0.0001);
+
+    return MGSampleTexture(textureIdx, position.zy * scale) * weights.x +
+        MGSampleTexture(textureIdx, position.xz * scale) * weights.y +
+        MGSampleTexture(textureIdx, position.xy * scale) * weights.z;
+
+}
+
+vec3 MGSampleTriplanarNormal(uint textureIdx, vec3 position, vec3 normal, float scale, float sharpness, float strength) {
+
+    vec3 weights = pow(abs(normal), vec3(sharpness));
+    weights /= max(weights.x + weights.y + weights.z, 0.0001);
+
+    vec3 normalX = 2.0 * MGSampleTexture(textureIdx, position.zy * scale).rgb - 1.0;
+    vec3 normalY = 2.0 * MGSampleTexture(textureIdx, position.xz * scale).rgb - 1.0;
+    vec3 normalZ = 2.0 * MGSampleTexture(textureIdx, position.xy * scale).rgb - 1.0;
+
+    normalX = vec3(normalX.xy * strength + normal.zy, abs(normalX.z) * normal.x);
+    normalY = vec3(normalY.xy * strength + normal.xz, abs(normalY.z) * normal.y);
+    normalZ = vec3(normalZ.xy * strength + normal.xy, abs(normalZ.z) * normal.z);
+
+    return normalize(normalX.zyx * weights.x + normalY.xzy * weights.y + normalZ * weights.z);
+
+}
+
+vec2 MGTextureSize(uint textureIdx) {
+
+    return vec2(textureSize(sampler2D(bindlessTextures[textureIdx], bindlessSampler), 0));
+
+}
+
+vec3 MGMod289(vec3 x) {
+
+    return x - floor(x * (1.0 / 289.0)) * 289.0;
+
+}
+
+vec4 MGMod289(vec4 x) {
+
+    return x - floor(x * (1.0 / 289.0)) * 289.0;
+
+}
+
+vec4 MGPermute(vec4 x) {
+
+    return MGMod289(((x * 34.0) + 10.0) * x);
+
+}
+
+// Simplex noise in the range of -1 to 1
+float MGSimplex(vec3 v) {
+
+    const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+
+    vec3 i = floor(v + dot(v, C.yyy));
+    vec3 x0 = v - i + dot(i, C.xxx);
+
+    vec3 g = step(x0.yzx, x0.xyz);
+    vec3 l = 1.0 - g;
+    vec3 i1 = min(g.xyz, l.zxy);
+    vec3 i2 = max(g.xyz, l.zxy);
+
+    vec3 x1 = x0 - i1 + C.xxx;
+    vec3 x2 = x0 - i2 + C.yyy;
+    vec3 x3 = x0 - D.yyy;
+
+    i = MGMod289(i);
+    vec4 p = MGPermute(MGPermute(MGPermute(
+        i.z + vec4(0.0, i1.z, i2.z, 1.0)) +
+        i.y + vec4(0.0, i1.y, i2.y, 1.0)) +
+        i.x + vec4(0.0, i1.x, i2.x, 1.0));
+
+    float n_ = 0.142857142857;
+    vec3 ns = n_ * D.wyz - D.xzx;
+
+    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+
+    vec4 x_ = floor(j * ns.z);
+    vec4 y_ = floor(j - 7.0 * x_);
+
+    vec4 x = x_ * ns.x + ns.yyyy;
+    vec4 y = y_ * ns.x + ns.yyyy;
+    vec4 h = 1.0 - abs(x) - abs(y);
+
+    vec4 b0 = vec4(x.xy, y.xy);
+    vec4 b1 = vec4(x.zw, y.zw);
+
+    vec4 s0 = floor(b0) * 2.0 + 1.0;
+    vec4 s1 = floor(b1) * 2.0 + 1.0;
+    vec4 sh = -step(h, vec4(0.0));
+
+    vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+    vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+
+    vec3 p0 = vec3(a0.xy, h.x);
+    vec3 p1 = vec3(a0.zw, h.y);
+    vec3 p2 = vec3(a1.xy, h.z);
+    vec3 p3 = vec3(a1.zw, h.w);
+
+    vec4 norm = 1.79284291400159 - 0.85373472095314 * vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3));
+    p0 *= norm.x;
+    p1 *= norm.y;
+    p2 *= norm.z;
+    p3 *= norm.w;
+
+    vec4 m = max(0.5 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+    m = m * m;
+    return 105.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+
+}
+
+float MGFractalNoise(vec3 position, float octaves, float lacunarity, float gain) {
+
+    float value = 0.0;
+    float amplitude = 1.0;
+    float amplitudeSum = 0.0;
+
+    int count = clamp(int(octaves), 1, 8);
+    for (int i = 0; i < count; i++) {
+        value += amplitude * MGSimplex(position);
+        amplitudeSum += amplitude;
+        amplitude *= gain;
+        position = position * lacunarity + vec3(17.3, -9.1, 4.7);
+    }
+
+    return value / amplitudeSum;
+
+}
+
+// Absolute noise folded into sharp ridges, in the range of 0 to 1
+float MGRidgedNoise(vec3 position, float octaves, float lacunarity, float gain) {
+
+    float value = 0.0;
+    float amplitude = 1.0;
+    float amplitudeSum = 0.0;
+
+    int count = clamp(int(octaves), 1, 8);
+    for (int i = 0; i < count; i++) {
+        float ridge = 1.0 - abs(MGSimplex(position));
+        value += amplitude * ridge * ridge;
+        amplitudeSum += amplitude;
+        amplitude *= gain;
+        position = position * lacunarity + vec3(17.3, -9.1, 4.7);
+    }
+
+    return value / amplitudeSum;
+
+}
+
+vec3 MGHash3(vec3 p) {
+
+    p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
+    return fract(sin(p) * 43758.5453123);
+
+}
+
+// Distance to the closest feature point in x, to the second closest in y and a random value of the cell in z
+vec3 MGVoronoi(vec3 position, float jitter) {
+
+    vec3 cell = floor(position);
+    vec3 local = fract(position);
+
+    float first = 8.0;
+    float second = 8.0;
+    float id = 0.0;
+
+    for (int z = -1; z <= 1; z++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+                vec3 offset = vec3(float(x), float(y), float(z));
+                vec3 random = MGHash3(cell + offset);
+                vec3 delta = offset + random * jitter - local;
+                float dist = dot(delta, delta);
+                if (dist < first) {
+                    second = first;
+                    first = dist;
+                    id = random.x;
+                }
+                else if (dist < second) {
+                    second = dist;
+                }
+            }
+        }
+    }
+
+    return vec3(sqrt(first), sqrt(second), id);
+
+}
+
+float MGChecker(vec3 position) {
+
+    vec3 cell = floor(position);
+    return mod(cell.x + cell.y + cell.z, 2.0);
+
+}
+
+vec3 MGHueShift(vec3 color, float shift) {
+
+    const vec3 axis = vec3(0.57735);
+    float cosAngle = cos(shift);
+    return color * cosAngle + cross(axis, color) * sin(shift) + axis * dot(axis, color) * (1.0 - cosAngle);
+
+}
+
+vec3 MGRotateAxis(vec3 position, vec3 axis, float angle) {
+
+    axis = normalize(axis);
+    float sinAngle = sin(angle);
+    float cosAngle = cos(angle);
+    return position * cosAngle + cross(axis, position) * sinAngle + axis * dot(axis, position) * (1.0 - cosAngle);
+
+}
+
+vec2 MGRotateCoord(vec2 coord, vec2 center, float angle) {
+
+    float sinAngle = sin(angle);
+    float cosAngle = cos(angle);
+    coord -= center;
+    return vec2(coord.x * cosAngle - coord.y * sinAngle, coord.x * sinAngle + coord.y * cosAngle) + center;
+
+}
+
+vec2 MGPolar(vec2 coord, vec2 center, float radialScale, float angleScale) {
+
+    vec2 delta = coord - center;
+    return vec2(length(delta) * radialScale, (atan(delta.y, delta.x) / 6.28318530718 + 0.5) * angleScale);
+
+}
+
+vec2 MGFlipbook(vec2 coord, float columns, float rows, float frame) {
+
+    float index = mod(floor(frame), columns * rows);
+    return (fract(coord) + vec2(mod(index, columns), floor(index / columns))) / vec2(columns, rows);
+
+}
+
+vec2 MGTwirl(vec2 coord, vec2 center, float strength) {
+
+    return MGRotateCoord(coord, center, length(coord - center) * strength);
+
+}
+
+vec2 MGDistort(vec2 coord, float scale, float strength, float seed) {
+
+    vec3 position = vec3(coord * scale, seed);
+    return coord + vec2(MGSimplex(position), MGSimplex(position + vec3(31.7, 11.3, 5.9))) * strength;
+
+}
+
+float MGRemap(float value, float fromMin, float fromMax, float toMin, float toMax) {
+
+    return toMin + (value - fromMin) / (fromMax - fromMin) * (toMax - toMin);
+
+}
+
+vec3 MGRamp(float position, vec3 color0, vec3 color1, vec3 color2, float center) {
+
+    return position < center ? mix(color0, color1, clamp(position / max(center, 0.0001), 0.0, 1.0)) :
+        mix(color1, color2, clamp((position - center) / max(1.0 - center, 0.0001), 0.0, 1.0));
+
+}
+
+vec3 MGBlendNormals(vec3 a, vec3 b) {
+
+    return normalize(vec3(a.xy + b.xy, a.z * b.z));
+
+}
+
+vec3 MGNormalize(vec3 value) {
+
+    float len = length(value);
+    return len > 0.0 ? value / len : value;
+
+}
+
+#if defined(MATERIAL_GRAPH_STAGE_SURFACE) && !defined(MATERIAL_GRAPH_STAGE_HIT)
+// Tangent space normal of a height, which works for procedural values without a tangent frame of the mesh
+vec3 MGNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
+
+    vec3 dpdx = dFdx(viewPosition);
+    vec3 dpdy = dFdy(viewPosition);
+    float dhdx = dFdx(height) * strength;
+    float dhdy = dFdy(height) * strength;
+
+    vec3 normal = normalize(viewNormal);
+    vec3 r1 = cross(dpdy, normal);
+    vec3 r2 = cross(normal, dpdx);
+    float determinant = dot(dpdx, r1);
+
+    // Degenerate triangles, e.g. at the poles of spheres, have no direction
+    if (determinant == 0.0)
+        return vec3(0.0, 0.0, 1.0);
+
+    vec3 gradient = sign(determinant) * (dhdx * r1 + dhdy * r2);
+    vec3 perturbed = normalize(abs(determinant) * normal - gradient);
+
+    return normalize(transpose(tangentFrame) * perturbed);
+
+}
+
+// Each corner of a tile has its own offset, the mip level stays the one of the continuous coordinates
+vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
+
+    vec2 tile = floor(coord);
+    vec2 weights = smoothstep(vec2(0.5 - 0.5 * blend), vec2(0.5 + 0.5 * blend), fract(coord));
+
+    vec2 ddx = dFdx(coord);
+    vec2 ddy = dFdy(coord);
+
+    vec4 values[4];
+    for (int y = 0; y < 2; y++) {
+        for (int x = 0; x < 2; x++) {
+            vec2 offset = MGHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
+            values[y * 2 + x] = textureGrad(sampler2D(bindlessTextures[textureIdx], bindlessSampler), coord + offset, ddx, ddy);
+        }
+    }
+
+    return mix(mix(values[0], values[1], weights.x), mix(values[2], values[3], weights.x), weights.y);
+
+}
+
+vec2 MGParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, float steps) {
+
+    vec2 ddx = dFdx(coord);
+    vec2 ddy = dFdy(coord);
+
+    int count = clamp(int(steps), 1, 64);
+    float layerDepth = 1.0 / float(count);
+    vec2 delta = viewDirection.xy / max(viewDirection.z, 0.05) * scale * layerDepth;
+
+    vec2 current = coord;
+    float depth = 0.0;
+    float height = 1.0 - textureGrad(sampler2D(bindlessTextures[textureIdx], bindlessSampler), current, ddx, ddy).r;
+    float previousHeight = height;
+
+    for (int i = 0; i < count && depth < height; i++) {
+        previousHeight = height;
+        current -= delta;
+        depth += layerDepth;
+        height = 1.0 - textureGrad(sampler2D(bindlessTextures[textureIdx], bindlessSampler), current, ddx, ddy).r;
+    }
+
+    float after = height - depth;
+    float before = previousHeight - depth + layerDepth;
+    return mix(current, current + delta, clamp(after / min(after - before, -0.0001), 0.0, 1.0));
+
+}
+
+// Tangent frame from the derivatives, for meshes without tangents
+mat3 MGCotangentFrame(vec3 normal, vec3 viewPosition, vec2 texCoord) {
+
+    vec3 dp1 = dFdx(viewPosition);
+    vec3 dp2 = dFdy(viewPosition);
+    vec2 duv1 = dFdx(texCoord);
+    vec2 duv2 = dFdy(texCoord);
+
+    vec3 dp2perp = cross(dp2, normal);
+    vec3 dp1perp = cross(normal, dp1);
+    vec3 tangent = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 bitangent = dp2perp * duv1.y + dp1perp * duv2.y;
+
+    float scale = max(dot(tangent, tangent), dot(bitangent, bitangent));
+    if (scale <= 0.0) {
+        vec3 up = abs(normal.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+        tangent = normalize(cross(up, normal));
+        return mat3(tangent, cross(normal, tangent), normal);
+    }
+
+    float invScale = inversesqrt(scale);
+    return mat3(tangent * invScale, bitangent * invScale, normal);
+
+}
+#elif defined(MATERIAL_GRAPH_STAGE_HIT)
+// Without derivatives heights keep the surface flat
+vec3 MGNormalFromHeight(float height, float strength, vec3 viewPosition, vec3 viewNormal, mat3 tangentFrame) {
+
+    return vec3(0.0, 0.0, 1.0);
+
+}
+
+vec4 MGSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) {
+
+    vec2 tile = floor(coord);
+    vec2 weights = smoothstep(vec2(0.5 - 0.5 * blend), vec2(0.5 + 0.5 * blend), fract(coord));
+
+    vec4 values[4];
+    for (int y = 0; y < 2; y++) {
+        for (int x = 0; x < 2; x++) {
+            vec2 offset = MGHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
+            values[y * 2 + x] = MGSampleTexture(textureIdx, coord + offset);
+        }
+    }
+
+    return mix(mix(values[0], values[1], weights.x), mix(values[2], values[3], weights.x), weights.y);
+
+}
+
+vec2 MGParallax(uint textureIdx, vec2 coord, vec3 viewDirection, float scale, float steps) {
+
+    return coord;
+
+}
+#endif

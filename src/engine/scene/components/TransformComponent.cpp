@@ -19,17 +19,21 @@ namespace Atlas {
 
             }
 
-			void TransformComponent::Set(const glm::mat4& matrix) {
+			void TransformComponent::Set(const mat4& matrix) {
 
 				this->matrix = matrix;
+				if (!changed)
+					entity.MarkDirty();
 				changed = true;
                 updated = false;
 
 			}
 			
-			void TransformComponent::Translate(glm::vec3 translation) {
+			void TransformComponent::Translate(vec3 translation) {
 
 				this->matrix = glm::translate(matrix, translation);
+				if (!changed)
+					entity.MarkDirty();
 				changed = true;
                 updated = false;
 
@@ -40,31 +44,50 @@ namespace Atlas {
 
 			}
 
-			void TransformComponent::ReconstructLocalMatrix(const Entity& parentEntity) {
+			void TransformComponent::SetGlobal(const mat4& matrix, const Entity& parentEntity) {
 
-                mat4 parentGlobalMatrix = mat4(1.0f);
-
-                if (parentEntity.IsValid()) {
-                    const auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
-                    parentGlobalMatrix = parentHierarchy.globalMatrix;
+                // Motion vectors need the matrix from before the first change in this frame
+                if (!lastGlobalMatrixSet) {
+                    lastGlobalMatrix = globalMatrix;
+                    lastGlobalMatrixSet = true;
                 }
 
-                auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
-                Set(inverseParentMatrix * globalMatrix);
+                globalMatrix = matrix;
+                ReconstructLocalMatrix(parentEntity);
 
 			}
 
-			void TransformComponent::Update(const glm::mat4& parentMatrix, bool parentChanged) {
+			void TransformComponent::ReconstructLocalMatrix(const Entity& parentEntity) {
+
+                Set(GetReconstructedLocalMatrix(parentEntity));
+
+			}
+
+			mat4 TransformComponent::GetReconstructedLocalMatrix(const Entity& parentEntity) const {
+
+                // Uses the parent transform if possible, it already contains changes made through SetGlobal
+                mat4 parentGlobalMatrix = mat4(1.0f);
+                if (parentEntity.IsValid())
+                    parentGlobalMatrix = parentEntity.GetScene()->GetGlobalMatrix(parentEntity);
+
+                auto animationComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<AnimationComponent>() : nullptr;
+                if (parentJoint >= 0 && animationComponent)
+                    parentGlobalMatrix = parentGlobalMatrix * animationComponent->GetJointMatrix(parentJoint);
+
+                auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
+                return inverseParentMatrix * globalMatrix;
+
+			}
+
+			void TransformComponent::Update(const mat4& parentMatrix, bool parentChanged) {
 
                 wasStatic = isStatic;
 
+				if (parentChanged && !changed)
+					entity.MarkDirty();
 				changed |= parentChanged;
 
 				if (changed) {
-
-					// A transform can be updated multiple times per frame, keep the matrix of the last frame
-					if (!updated)
-						lastGlobalMatrix = globalMatrix;
 
 					globalMatrix = parentMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));

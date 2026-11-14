@@ -4,6 +4,7 @@
 #include "texture/Texture2DArray.h"
 #include "buffer/Buffer.h"
 
+#include <unordered_map>
 #include <vector>
 
 #define AE_FONT_GLYPH_COUNT 4096
@@ -18,7 +19,8 @@ namespace Atlas {
 
         int32_t codepoint;
 
-        int32_t advance;
+        // In pixels, kept fractional such that the spacing doesn't shrink with every character
+        float advance;
 
         int32_t width;
         int32_t height;
@@ -27,8 +29,6 @@ namespace Atlas {
 
         vec2 textureScale;
         vec2 offset;
-
-        std::vector<int32_t> kern;
 
     };
 
@@ -86,6 +86,13 @@ namespace Atlas {
          */
         void ComputeDimensions(std::string text, float scale, float *width, float *height);
 
+        /**
+         * Returns the kerning between two characters in pixels
+         * @param first The codepoint of the first character
+         * @param second The codepoint of the following character
+         */
+        float GetKerning(int32_t first, int32_t second) const;
+
         float lineGap;
         float ascent;
         float descent;
@@ -107,7 +114,12 @@ namespace Atlas {
         Buffer::Buffer glyphBuffer;
 
     private:
+        static uint32_t KerningKey(int32_t first, int32_t second);
+
         std::vector<Glyph> glyphs;
+
+        // Only pairs of characters with a kerning value, keyed by both codepoints
+        std::unordered_map<uint32_t, float> kerning;
 
     };
 

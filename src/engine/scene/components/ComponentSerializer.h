@@ -7,6 +7,10 @@
 
 namespace Atlas::Scene::Components {
 
+    void to_json(json& j, const AnimationComponent& p);
+
+    void from_json(const json& j, AnimationComponent& p);
+
     void to_json(json& j, const AudioComponent& p);
 
     void from_json(const json& j, AudioComponent& p);
@@ -14,6 +18,10 @@ namespace Atlas::Scene::Components {
     void to_json(json& j, const AudioVolumeComponent& p);
 
     void from_json(const json& j, AudioVolumeComponent& p);
+
+    void to_json(json& j, const FogVolumeComponent& p);
+
+    void from_json(const json& j, FogVolumeComponent& p);
 
     void to_json(json& j, const CameraComponent& p);
 
@@ -46,6 +54,10 @@ namespace Atlas::Scene::Components {
     void to_json(json& j, const PlayerComponent& p);
 
     void from_json(const json& j, PlayerComponent& p);
+
+    void to_json(json& j, const ConstraintComponent& p);
+
+    void from_json(const json& j, ConstraintComponent& p);
 
 	void to_json(json& j, const LuaScriptComponent& p);
 

@@ -259,6 +259,23 @@ namespace Atlas::Editor {
 
     }
 
+    void Theme::PushDangerButton() {
+
+        // Tinted instead of filled, a destructive action shouldn't look like the main action of a group
+        ImGui::PushStyleColor(ImGuiCol_Button, Error(0.14f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Error(0.28f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, Error(0.4f));
+        ImGui::PushStyleColor(ImGuiCol_Border, Error(0.45f));
+        ImGui::PushStyleColor(ImGuiCol_Text, Error());
+
+    }
+
+    void Theme::PopDangerButton() {
+
+        ImGui::PopStyleColor(5);
+
+    }
+
     ImVec4 Theme::Base(float alpha) {
 
         return WithAlpha(GetPalette(dark).base, alpha);
@@ -289,12 +306,135 @@ namespace Atlas::Editor {
 
     }
 
+    ImVec4 Theme::ContentIcon(ContentType type, float alpha) {
+
+        // Only folders stand out, files keep the color of the text
+        if (type != ContentType::None)
+            return WithAlpha(GetPalette(dark).text, alpha);
+
+        return dark ? Rgb(242, 199, 107, alpha) : Rgb(196, 140, 40, alpha);
+
+    }
+
+    ImVec4 Theme::ContentTypeColor(Editor::ContentType type, float alpha) {
+
+        // Distinct hues per type, slightly darker in light mode such that the strips keep their contrast
+        ImVec4 color;
+        switch (type) {
+        case Editor::ContentType::Texture: color = Rgb(214, 86, 78); break;
+        case Editor::ContentType::EnvironmentTexture: color = Rgb(230, 146, 64); break;
+        case Editor::ContentType::Material: color = Rgb(102, 187, 92); break;
+        case Editor::ContentType::MaterialGraph: color = Rgb(56, 178, 150); break;
+        case Editor::ContentType::Mesh: color = Rgb(64, 172, 226); break;
+        case Editor::ContentType::MeshSource: color = Rgb(112, 146, 186); break;
+        case Editor::ContentType::Prefab: color = Rgb(92, 120, 240); break;
+        case Editor::ContentType::Scene: color = Rgb(238, 186, 64); break;
+        case Editor::ContentType::Audio: color = Rgb(170, 110, 226); break;
+        case Editor::ContentType::Font: color = Rgb(180, 180, 188); break;
+        case Editor::ContentType::Script: color = Rgb(218, 206, 84); break;
+        case Editor::ContentType::Terrain: color = Rgb(140, 160, 80); break;
+        case Editor::ContentType::Animation: color = Rgb(226, 104, 164); break;
+        default: color = GetPalette(dark).textMuted; break;
+        }
+
+        if (!dark)
+            color = ImVec4(color.x * 0.85f, color.y * 0.85f, color.z * 0.85f, color.w);
+
+        return WithAlpha(color, alpha);
+
+    }
+
+    ImVec4 Theme::AssetCard(float alpha) {
+
+        return WithAlpha(GetPalette(dark).elevated, alpha);
+
+    }
+
+    ImVec4 Theme::AssetCardHovered(float alpha) {
+
+        return WithAlpha(GetPalette(dark).control, alpha);
+
+    }
+
+    ImVec4 Theme::AssetThumbnail(float alpha) {
+
+        // Darker than the card in dark mode, the previews of meshes and materials stand out on it
+        return dark ? Rgb(16, 17, 19, alpha) : WithAlpha(GetPalette(dark).base, alpha);
+
+    }
+
+    ImVec4 Theme::Shadow(float alpha) {
+
+        return ImVec4(0.0f, 0.0f, 0.0f, (dark ? 0.3f : 0.15f) * alpha);
+
+    }
+
     ImVec4 Theme::Axis(int32_t axis, float alpha) {
 
         switch (axis) {
         case 0: return dark ? Rgb(226, 82, 82, alpha) : Rgb(204, 52, 52, alpha);
         case 1: return dark ? Rgb(110, 192, 70, alpha) : Rgb(64, 150, 40, alpha);
         default: return dark ? Rgb(74, 140, 240, alpha) : Rgb(40, 100, 220, alpha);
+        }
+
+    }
+
+    ImVec4 Theme::GraphBackground(float alpha) {
+
+        return dark ? Rgb(24, 25, 28, alpha) : Rgb(236, 237, 240, alpha);
+
+    }
+
+    ImVec4 Theme::GraphGrid(float alpha) {
+
+        return dark ? Rgb(255, 255, 255, 0.07f * alpha) : Rgb(0, 0, 0, 0.09f * alpha);
+
+    }
+
+    ImVec4 Theme::GraphNode(float alpha) {
+
+        return dark ? Rgb(44, 46, 51, alpha) : Rgb(250, 250, 252, alpha);
+
+    }
+
+    ImVec4 Theme::GraphNodeBorder(float alpha) {
+
+        return dark ? Rgb(255, 255, 255, 0.14f * alpha) : Rgb(0, 0, 0, 0.2f * alpha);
+
+    }
+
+    ImVec4 Theme::GraphNodeHeader(const char* category, float alpha) {
+
+        const std::string name = category;
+
+        vec3 color(0.45f, 0.47f, 0.52f);
+        if (name == "Input") color = vec3(0.68f, 0.28f, 0.33f);
+        else if (name == "Constant") color = vec3(0.32f, 0.42f, 0.55f);
+        else if (name == "Parameter") color = vec3(0.56f, 0.38f, 0.72f);
+        else if (name == "Texture") color = vec3(0.62f, 0.44f, 0.2f);
+        else if (name == "Math") color = vec3(0.24f, 0.46f, 0.6f);
+        else if (name == "Vector") color = vec3(0.22f, 0.52f, 0.5f);
+        else if (name == "Transform") color = vec3(0.3f, 0.5f, 0.4f);
+        else if (name == "Coordinates") color = vec3(0.42f, 0.5f, 0.28f);
+        else if (name == "Procedural") color = vec3(0.26f, 0.54f, 0.34f);
+        else if (name == "Normal") color = vec3(0.34f, 0.36f, 0.72f);
+        else if (name == "Logic") color = vec3(0.66f, 0.3f, 0.52f);
+        else if (name == "Output") color = vec3(0.72f, 0.42f, 0.14f);
+
+        // The text on top stays readable in both modes
+        return ImVec4(color.x * (dark ? 0.8f : 1.1f), color.y * (dark ? 0.8f : 1.1f), color.z * (dark ? 0.8f : 1.1f), alpha);
+
+    }
+
+    ImVec4 Theme::GraphValue(int32_t type, float alpha) {
+
+        switch (type) {
+        case 0: return Rgb(160, 200, 240, alpha);
+        case 1: return Rgb(110, 210, 160, alpha);
+        case 2: return Rgb(235, 200, 90, alpha);
+        case 3: return Rgb(235, 130, 160, alpha);
+        case 4: return Rgb(200, 140, 240, alpha);
+        default: return Rgb(200, 200, 200, alpha);
         }
 
     }

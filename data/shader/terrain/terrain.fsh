@@ -16,10 +16,6 @@ layout (location = 6) out vec2 velocityFS;
 
 layout (set = 3, binding = 1) uniform sampler2D normalMap;
 layout (set = 3, binding = 2) uniform usampler2D splatMap;
-layout (set = 3, binding = 3) uniform sampler2DArray baseColorMaps;
-layout (set = 3, binding = 4) uniform sampler2DArray roughnessMaps;
-layout (set = 3, binding = 5) uniform sampler2DArray aoMaps;
-layout (set = 3, binding = 6) uniform sampler2DArray normalMaps;
 
 layout (set = 3, binding = 10) uniform sampler2D noiseMap;
 
@@ -64,19 +60,18 @@ vec3 hueShift(vec3 color, float hue) {
     return vec3(color * cosAngle + cross(k, color) * sin(hue) + k * dot(k, color) * (1.0 - cosAngle));
 }
 
-vec4 sampleTexture(sampler2DArray texArray, vec2 coords, vec2 origCoords, uint index) {
+vec4 SampleTexture(uint textureIdx, vec2 coords, vec2 ddx, vec2 ddy) {
 
-    float lod = textureQueryLod(texArray, origCoords).x;
-    return textureLod(texArray, vec3(coords, nonuniformEXT(float(index))), lod + globalData.mipLodBias);
+    return textureGrad(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), coords, ddx, ddy);
 
 }
 
-vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 origCoords) {
+vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 ddx, vec2 ddy) {
     
-    vec3 q00 = nonuniformEXT(sampleTexture(baseColorMaps, coords * tiling.x, origCoords * tiling.x, indices.x).rgb);
-    vec3 q10 = nonuniformEXT(indices.y != indices.x ? sampleTexture(baseColorMaps, coords * tiling.y, origCoords * tiling.y, indices.y).rgb : q00);
-    vec3 q01 = nonuniformEXT(indices.z != indices.x ? sampleTexture(baseColorMaps, coords * tiling.z, origCoords * tiling.z, indices.z).rgb : q00);
-    vec3 q11 = nonuniformEXT(indices.w != indices.x ? sampleTexture(baseColorMaps, coords * tiling.w, origCoords * tiling.w, indices.w).rgb : q00);
+    vec3 q00 = SampleTexture(Materials.materials[nonuniformEXT(indices.x)].baseColorTextureIdx, coords * tiling.x, ddx * tiling.x, ddy * tiling.x).rgb;
+    vec3 q10 = indices.y != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.y)].baseColorTextureIdx, coords * tiling.y, ddx * tiling.y, ddy * tiling.y).rgb : q00;
+    vec3 q01 = indices.z != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.z)].baseColorTextureIdx, coords * tiling.z, ddx * tiling.z, ddy * tiling.z).rgb : q00;
+    vec3 q11 = indices.w != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.w)].baseColorTextureIdx, coords * tiling.w, ddx * tiling.w, ddy * tiling.w).rgb : q00;
     
     // Interpolate samples horizontally
     vec3 h0 = mix(q00, q10, off.x);
@@ -87,12 +82,12 @@ vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 ori
     
 }
 
-float SampleRoughness(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 origCoords) {
+float SampleRoughness(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 ddx, vec2 ddy) {
 
-    float q00 = nonuniformEXT(sampleTexture(roughnessMaps, coords * tiling.x, origCoords * tiling.x, indices.x).r);
-    float q10 = nonuniformEXT(indices.y != indices.x ? sampleTexture(roughnessMaps, coords * tiling.y, origCoords * tiling.y, indices.y).r : q00);
-    float q01 = nonuniformEXT(indices.z != indices.x ? sampleTexture(roughnessMaps, coords * tiling.z, origCoords * tiling.z, indices.z).r : q00);
-    float q11 = nonuniformEXT(indices.w != indices.x ? sampleTexture(roughnessMaps, coords * tiling.w, origCoords * tiling.w, indices.w).r : q00);
+    float q00 = SampleTexture(Materials.materials[nonuniformEXT(indices.x)].roughnessTextureIdx, coords * tiling.x, ddx * tiling.x, ddy * tiling.x).r;
+    float q10 = indices.y != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.y)].roughnessTextureIdx, coords * tiling.y, ddx * tiling.y, ddy * tiling.y).r : q00;
+    float q01 = indices.z != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.z)].roughnessTextureIdx, coords * tiling.z, ddx * tiling.z, ddy * tiling.z).r : q00;
+    float q11 = indices.w != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.w)].roughnessTextureIdx, coords * tiling.w, ddx * tiling.w, ddy * tiling.w).r : q00;
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -103,12 +98,12 @@ float SampleRoughness(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 or
     
 }
 
-float SampleAo(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 origCoords) {
+float SampleAo(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 ddx, vec2 ddy) {
 
-    float q00 = nonuniformEXT(sampleTexture(aoMaps, coords * tiling.x, origCoords * tiling.x, indices.x).r);
-    float q10 = nonuniformEXT(indices.y != indices.x ? sampleTexture(aoMaps, coords * tiling.y, origCoords * tiling.y, indices.y).r : q00);
-    float q01 = nonuniformEXT(indices.z != indices.x ? sampleTexture(aoMaps, coords * tiling.z, origCoords * tiling.z, indices.z).r : q00);
-    float q11 = nonuniformEXT(indices.w != indices.x ? sampleTexture(aoMaps, coords * tiling.w, origCoords * tiling.w, indices.w).r : q00);
+    float q00 = SampleTexture(Materials.materials[nonuniformEXT(indices.x)].aoTextureIdx, coords * tiling.x, ddx * tiling.x, ddy * tiling.x).r;
+    float q10 = indices.y != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.y)].aoTextureIdx, coords * tiling.y, ddx * tiling.y, ddy * tiling.y).r : q00;
+    float q01 = indices.z != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.z)].aoTextureIdx, coords * tiling.z, ddx * tiling.z, ddy * tiling.z).r : q00;
+    float q11 = indices.w != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.w)].aoTextureIdx, coords * tiling.w, ddx * tiling.w, ddy * tiling.w).r : q00;
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -119,12 +114,12 @@ float SampleAo(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 origCoord
     
 }
 
-vec3 SampleNormal(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 origCoords) {
+vec3 SampleNormal(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 ddx, vec2 ddy) {
 
-    vec3 q00 = nonuniformEXT(sampleTexture(normalMaps, coords * tiling.x, origCoords * tiling.x, indices.x).rgb);
-    vec3 q10 = nonuniformEXT(indices.y != indices.x ? sampleTexture(normalMaps, coords * tiling.y, origCoords * tiling.y, indices.y).rgb : q00);
-    vec3 q01 = nonuniformEXT(indices.z != indices.x ? sampleTexture(normalMaps, coords * tiling.z, origCoords * tiling.z, indices.z).rgb : q00);
-    vec3 q11 = nonuniformEXT(indices.w != indices.x ? sampleTexture(normalMaps, coords * tiling.w, origCoords * tiling.w, indices.w).rgb : q00);
+    vec3 q00 = SampleTexture(Materials.materials[nonuniformEXT(indices.x)].normalTextureIdx, coords * tiling.x, ddx * tiling.x, ddy * tiling.x).rgb;
+    vec3 q10 = indices.y != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.y)].normalTextureIdx, coords * tiling.y, ddx * tiling.y, ddy * tiling.y).rgb : q00;
+    vec3 q01 = indices.z != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.z)].normalTextureIdx, coords * tiling.z, ddx * tiling.z, ddy * tiling.z).rgb : q00;
+    vec3 q11 = indices.w != indices.x ? SampleTexture(Materials.materials[nonuniformEXT(indices.w)].normalTextureIdx, coords * tiling.w, ddx * tiling.w, ddy * tiling.w).rgb : q00;
     
     // Interpolate samples horizontally
     vec3 h0 = mix(q00, q10, off.x);
@@ -192,7 +187,11 @@ void main() {
     vec2 flooredCoords = floor(position + vec2(noiseX, noiseY));
     float rand = random(flooredCoords);
     vec2 rotTexCoords = rotateUV(position, rand);
-    //rotTexCoords = materialTexCoords;
+
+    // Gradients of the rotated coordinates without the jumps between the randomly rotated cells
+    float gradientScale = exp2(globalData.mipLodBias);
+    vec2 ddx = rotateUV(dFdx(materialTexCoords) * gradientScale + vec2(0.5), rand) - vec2(0.5);
+    vec2 ddy = rotateUV(dFdy(materialTexCoords) * gradientScale + vec2(0.5), rand) - vec2(0.5);
     
     vec4 tiling = vec4(
         Materials.materials[nonuniformEXT(indices.x)].tiling,
@@ -209,7 +208,7 @@ void main() {
         off
     );
     
-    baseColorFS *= SampleBaseColor(off, indices, tiling, rotTexCoords, materialTexCoords);
+    baseColorFS *= SampleBaseColor(off, indices, tiling, rotTexCoords, ddx, ddy);
     baseColorFS = hueShift(baseColorFS, noiseZ - 0.5);
     baseColorFS = baseColorFS * (noiseW * 0.5 + 0.5);
     
@@ -256,7 +255,7 @@ void main() {
         Materials.materials[nonuniformEXT(indices.w)].normalScale,
         off
         );
-    vec3 normal = SampleNormal(off, indices, tiling, rotTexCoords, materialTexCoords);
+    vec3 normal = SampleNormal(off, indices, tiling, rotTexCoords, ddx, ddy);
     vec3 tang = vec3(1.0, 0.0, 0.0);
     tang.y = -((norm.x*tang.x) / norm.y) - ((norm.z*tang.z) / norm.y);
     tang = normalize(tang);
@@ -264,8 +263,8 @@ void main() {
     mat3 tbn = mat3(tang, bitang, norm);
     normal = normalize(tbn * (2.0 * normal - 1.0));
     normal = mix(norm, normal, normalScale);
-    //ao *= SampleAo(off, indices, tiling, rotTexCoords, materialTexCoords);
-    //roughness *= SampleRoughness(off, indices, tiling, rotTexCoords, materialTexCoords);
+    //ao *= SampleAo(off, indices, tiling, rotTexCoords, ddx, ddy);
+    //roughness *= SampleRoughness(off, indices, tiling, rotTexCoords, ddx, ddy);
 #else
     vec3 normal = norm;
 #endif

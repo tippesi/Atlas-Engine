@@ -24,35 +24,35 @@ endif()
 
 # Set built type macros ###########################################################################
 if (DEFINED CMAKE_BUILD_TYPE)
-    # We want the better/safer usertypes, such that we don't crash everything
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
     elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO)
     else()
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG)
     endif()
 else()
     # This is for non-single config generators like XCode
-    # Release compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Release>:AE_BUILDTYPE_RELEASE>" 
-        "$<$<CONFIG:Release>:SOL_ALL_SAFETIES_ON>")
-    # RelWithDebInfo compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:RelWithDebInfo>:AE_BUILDTYPE_RELWITHDEBINFO>" 
-        "$<$<CONFIG:RelWithDebInfo>:SOL_ALL_SAFETIES_ON>")
-    # Debug compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>" 
-        "$<$<CONFIG:Debug>:SOL_ALL_SAFETIES_ON>")
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Release>:AE_BUILDTYPE_RELEASE>"
+        "$<$<CONFIG:RelWithDebInfo>:AE_BUILDTYPE_RELWITHDEBINFO>" "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>")
 endif()
+
+# Checked usertypes and calls, such that a script error doesn't crash everything
+if(ATLAS_LUA_SAFETIES)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} SOL_ALL_SAFETIES_ON)
+endif()
+
+# Default constructed glm types are zero or identity like before glm 0.9.9
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} GLM_FORCE_CTOR_INIT)
 
 # Configure platform specific stuff ###############################################################
 if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
             unofficial::spirv-reflect glslang::SPIRV Jolt::Jolt
-            ${LUA_LIBRARIES} fsr2)
+            ${LUA_LIBRARIES} KTX::ktx fsr2 RecastNavigation::Recast RecastNavigation::Detour)
 endif()
 
 if (MINGW)
@@ -64,17 +64,17 @@ if(APPLE)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
             volk::volk SPIRV-Tools-opt Jolt::Jolt fsr2
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
-            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES})
+            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx RecastNavigation::Recast RecastNavigation::Detour)
 endif()
 
 if(ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi
-            ${LUA_LIBRARIES} fsr2)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
+            ${LUA_LIBRARIES} KTX::ktx fsr2 RecastNavigation::Recast RecastNavigation::Detour)
     set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
@@ -84,9 +84,9 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
     set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
     
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 fsr2
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Jolt::Jolt
-            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES})
+            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx RecastNavigation::Recast RecastNavigation::Detour)
 
     if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14.0)
         message("USe gcc14!")
@@ -156,10 +156,6 @@ if (ATLAS_HEADLESS)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_HEADLESS)
 endif()
 
-if (ATLAS_BINDLESS)
-set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BINDLESS)
-endif()
-
 # Precompile otherwise slow headers ###############################################################
 target_precompile_headers(${PROJECT_NAME}
   PUBLIC
@@ -191,3 +187,6 @@ message(${VULKAN_HEADERS_INCLUDE_DIRS})
     
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})
+
+# Optional vendor upscalers ########################################################################
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../libs/upscalers/Upscalers.cmake)

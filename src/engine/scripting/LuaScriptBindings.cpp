@@ -12,9 +12,13 @@
 #include "bindings/LightingBindings.h"
 #include "bindings/MathBindings.h"
 #include "bindings/MeshBindings.h"
+#include "bindings/NavigationBindings.h"
+#include "bindings/AnimationBindings.h"
 #include "bindings/PhysicsBindings.h"
+#include "bindings/PostProcessingBindings.h"
 #include "bindings/ResourceBindings.h"
 #include "bindings/SceneBindings.h"
+#include "bindings/StreamingBindings.h"
 #include "bindings/UtilityBindings.h"
 
 namespace Atlas::Scripting {
@@ -38,12 +42,17 @@ namespace Atlas::Scripting {
         Bindings::GenerateMaterialBindings(atlasNs);
         Bindings::GenerateAudioBindings(atlasNs);
         Bindings::GenerateMeshBindings(atlasNs);
+        Bindings::GenerateAnimationBindings(atlasNs);
         Bindings::GeneratePhysicsBindings(atlasNs);
+        Bindings::GenerateNavigationBindings(atlasNs);
         Bindings::GenerateVolumeBindings(atlasNs);
         Bindings::GenerateLightingBindings(atlasNs);
+        Bindings::GeneratePostProcessingBindings(atlasNs);
         Bindings::GenerateKeyboardBindings(atlasNs);
+        Bindings::GenerateControllerBindings(atlasNs);
         Bindings::GenerateGraphicBindings(atlasNs);
         Bindings::GenerateResourceManagerBindings(atlasNs);
+        Bindings::GenerateStreamingBindings(atlasNs);
 
     }    
 

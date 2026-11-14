@@ -1,5 +1,6 @@
 #include <../globals.hsh>
 #include <../common/normalencode.hsh>
+#include <depthOffset.hsh>
 
 layout (location = 0) out vec4 baseColorFS;
 layout (location = 1) out vec2 normalFS;
@@ -28,7 +29,7 @@ layout(location=4) flat in int indexVS;
 
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=10) in vec3 modelPositionVS;
-layout(location=11) flat in vec3 instanceScale;
+layout(location=11) in float depthScale;
 #endif
 layout(location=12) flat in mat3 rotationMatrix;
 
@@ -127,13 +128,14 @@ void main() {
     float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias + globalData.mipLodBias).r;
     float depth2 = texture(depthMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias + globalData.mipLodBias).r;
 
-    float depthOffset = weight0VS * depth0 +
-        weight1VS * depth1 +
-        weight2VS * depth2;
+    // Decoded together, views without the surface at this texel would push the depth back
+    float depthOffset = ImpostorDepthOffset(weight0VS * depth0 + weight1VS * depth1 + weight2VS * depth2, baseColor.a);
 #else
-    float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias + globalData.mipLodBias).r;
+    float depthOffset = ImpostorDepthOffset(texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias + globalData.mipLodBias).r,
+        baseColor.a);
 #endif
-    vec3 modelPosition = modelPositionVS + depthOffset * -globalData.cameraDirection.xyz * instanceScale;
+    vec3 toCamera = normalize(globalData.cameraLocation.xyz - modelPositionVS);
+    vec3 modelPosition = modelPositionVS + depthOffset * toCamera * depthScale;
     vec4 modelPositionFS = globalData.pMatrix * globalData.vMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;

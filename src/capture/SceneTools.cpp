@@ -1,0 +1,1642 @@
+#include "SceneTools.h"
+#include "Image.h"
+#include "TerrainTools.h"
+
+#include "scene/SceneSerializer.h"
+#include "scene/components/ComponentSerializer.h"
+#include "scene/components/LuaScriptComponent.h"
+#include "lighting/LightingSerializer.h"
+#include "postprocessing/PostProcessingSerializer.h"
+#include "mesh/MeshSerializer.h"
+#include "resource/ResourceManager.h"
+#include "common/MathHelper.h"
+#include "graphics/ShaderCompiler.h"
+#include "jobsystem/JobSystem.h"
+#include "loader/AssetLoader.h"
+#include "loader/MaterialGraphLoader.h"
+#include "loader/ShaderLoader.h"
+#include "materialgraph/Compiler.h"
+#include "common/MatrixDecomposition.h"
+
+#include <algorithm>
+#include <array>
+#include <cfloat>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <optional>
+#include <set>
+#include <stdexcept>
+
+namespace Atlas::Capture {
+
+    using namespace Scene::Components;
+
+    static json HitToJson(const RaycastHit& hit) {
+
+        if (!hit.valid)
+            return json{ { "hit", false } };
+
+        return json{
+            { "material", GetHitMaterial(hit) },
+            { "hit", true },
+            { "distance", Round(hit.distance) },
+            { "position", FromVec3(hit.position) },
+            { "normal", FromVec3(hit.normal) },
+            { "kind", hit.kind },
+            { "entity", hit.entity.IsValid() ? GetEntityLabel(hit.entity) : "" }
+        };
+
+    }
+
+    static json BoundsToJson(const Volume::AABB& aabb) {
+
+        return json{ { "min", FromVec3(aabb.min) }, { "max", FromVec3(aabb.max) }, { "size", FromVec3(aabb.GetSize()) } };
+
+    }
+
+    static EntitySet GetIgnoredEntities(Scene::Scene& scene, const json& query) {
+
+        return CollectHierarchies(scene, query.value("ignore", std::vector<std::string>()));
+
+    }
+
+    static const char* componentNames[] = { "Name", "Transform", "Hierarchy", "Mesh", "Camera", "Light", "RigidBody", "Player",
+        "LuaScript", "Audio", "AudioVolume", "Text", "Spline", "FogVolume" };
+    static constexpr uint32_t meshBit = 1u << 3, scriptBit = 1u << 8;
+
+    static uint32_t GetComponentMask(Scene::Entity entity) {
+
+        bool has[] = { entity.HasComponent<NameComponent>(), entity.HasComponent<TransformComponent>(),
+            entity.HasComponent<HierarchyComponent>(), entity.HasComponent<MeshComponent>(), entity.HasComponent<CameraComponent>(),
+            entity.HasComponent<LightComponent>(), entity.HasComponent<RigidBodyComponent>(), entity.HasComponent<PlayerComponent>(),
+            entity.HasComponent<LuaScriptComponent>(), entity.HasComponent<AudioComponent>(), entity.HasComponent<AudioVolumeComponent>(),
+            entity.HasComponent<TextComponent>(), entity.HasComponent<SplineComponent>(), entity.HasComponent<FogVolumeComponent>() };
+        uint32_t mask = 0;
+        for (uint32_t i = 0; i < std::size(has); i++)
+            mask |= has[i] ? 1u << i : 0u;
+        return mask;
+
+    }
+
+    static std::vector<std::string> GetComponentNames(uint32_t mask) {
+
+        std::vector<std::string> names;
+        for (uint32_t i = 0; i < std::size(componentNames); i++)
+            if (mask & (1u << i))
+                names.push_back(componentNames[i]);
+        return names;
+
+    }
+
+    static std::vector<std::string> GetComponentNames(Scene::Entity entity) {
+
+        return GetComponentNames(GetComponentMask(entity));
+
+    }
+
+    static json ComponentDetails(Scene::Entity entity) {
+
+        json j;
+        if (auto comp = entity.TryGetComponent<TransformComponent>())
+            j["transform"] = *comp;
+        if (auto comp = entity.TryGetComponent<MeshComponent>())
+            j["mesh"] = *comp;
+        if (auto comp = entity.TryGetComponent<CameraComponent>())
+            j["camera"] = *comp;
+        if (auto comp = entity.TryGetComponent<LightComponent>())
+            j["light"] = *comp;
+        if (auto comp = entity.TryGetComponent<RigidBodyComponent>())
+            j["rigidBody"] = *comp;
+        if (auto comp = entity.TryGetComponent<PlayerComponent>())
+            j["player"] = *comp;
+        if (auto comp = entity.TryGetComponent<LuaScriptComponent>())
+            j["luaScript"] = *comp;
+        if (auto comp = entity.TryGetComponent<AudioComponent>())
+            j["audio"] = *comp;
+        if (auto comp = entity.TryGetComponent<AudioVolumeComponent>())
+            j["audioVolume"] = *comp;
+        if (auto comp = entity.TryGetComponent<FogVolumeComponent>())
+            j["fogVolume"] = *comp;
+        if (auto comp = entity.TryGetComponent<TextComponent>())
+            j["text"] = *comp;
+        if (auto comp = entity.TryGetComponent<SplineComponent>())
+            j["spline"] = *comp;
+        return j;
+
+    }
+
+    std::string GetHitMaterial(const RaycastHit& hit) {
+
+        if (hit.triangle < 0 || !hit.entity.IsValid())
+            return "";
+
+        auto meshComponent = hit.entity.TryGetComponent<MeshComponent>();
+        if (!meshComponent || !meshComponent->mesh.IsLoaded())
+            return "";
+
+        auto subData = meshComponent->mesh->data.GetSubDataOfTriangle(int32_t(hit.triangle));
+        if (!subData)
+            return "";
+
+        return subData->material.IsValid() ? subData->material.GetResource()->path : subData->name;
+
+    }
+
+    std::string GetHitLabel(const RaycastHit& hit) {
+
+        return hit.entity.IsValid() ? GetEntityLabel(hit.entity) : hit.kind;
+
+    }
+
+    std::string GetEntityName(Scene::Entity entity) {
+
+        if (!entity.IsValid())
+            return "";
+
+        auto nameComponent = entity.TryGetComponent<NameComponent>();
+        return nameComponent ? nameComponent->name : "";
+
+    }
+
+    std::string GetEntityLabel(Scene::Entity entity) {
+
+        auto name = GetEntityName(entity);
+        return (name.empty() ? "<unnamed>" : name) + " (#" + std::to_string(entity.GetID()) + ")";
+
+    }
+
+    std::vector<Scene::Entity> FindEntities(Scene::Scene& scene, const std::vector<std::string>& patterns) {
+
+        std::vector<Scene::Entity> entities;
+        if (patterns.empty())
+            return entities;
+
+        auto nameSubset = scene.GetSubset<NameComponent>();
+        for (auto entity : nameSubset) {
+            const auto& nameComponent = nameSubset.Get(entity);
+            if (MatchAnyPattern(patterns, nameComponent.name))
+                entities.push_back({ entity, &scene.entityManager });
+        }
+
+        // Allow to address entities by id as well, e.g. "#123"
+        for (const auto& pattern : patterns) {
+            if (pattern.size() > 1 && pattern[0] == '#') {
+                auto id = ECS::Entity(std::stoull(pattern.substr(1)));
+                Scene::Entity entity = { id, &scene.entityManager };
+                if (entity.IsValid())
+                    entities.push_back(entity);
+            }
+        }
+
+        return entities;
+
+    }
+
+    std::vector<Scene::Entity> FindEntities(Scene::Scene& scene, const std::string& pattern) {
+
+        return FindEntities(scene, std::vector<std::string> { pattern });
+
+    }
+
+    std::vector<Scene::Entity> FindTopmostEntities(Scene::Scene& scene, const std::vector<std::string>& patterns) {
+
+        auto entities = FindEntities(scene, patterns);
+        EntitySet contained(entities.begin(), entities.end());
+
+        std::vector<Scene::Entity> result;
+        for (auto entity : entities) {
+            bool ancestorContained = false;
+            auto parent = scene.GetParentEntity(entity);
+            while (parent.IsValid() && !ancestorContained) {
+                ancestorContained = contained.contains(parent);
+                parent = scene.GetParentEntity(parent);
+            }
+
+            if (!ancestorContained)
+                result.push_back(entity);
+        }
+
+        return result;
+
+    }
+
+    std::vector<Scene::Entity> FindTopmostEntities(Scene::Scene& scene, const std::string& pattern) {
+
+        return FindTopmostEntities(scene, std::vector<std::string> { pattern });
+
+    }
+
+    std::vector<Scene::Entity> FindMeshInstances(Scene::Scene& scene, const std::vector<std::string>& patterns,
+        const std::vector<std::string>& excluded) {
+
+        std::vector<Scene::Entity> entities;
+        auto meshSubset = scene.GetSubset<MeshComponent>();
+        for (auto entity : meshSubset) {
+            const auto& mesh = meshSubset.Get(entity).mesh;
+            if (!mesh.IsLoaded())
+                continue;
+            const auto& path = mesh.GetResource()->path;
+            if (MatchAnyPattern(patterns, path) && !MatchAnyPattern(excluded, path))
+                entities.push_back({ entity, &scene.entityManager });
+        }
+
+        return entities;
+
+    }
+
+    void CollectHierarchy(Scene::Entity entity, EntitySet& set) {
+
+        if (!entity.IsValid() || set.contains(entity))
+            return;
+
+        set.insert(entity);
+
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+        if (!hierarchyComponent)
+            return;
+
+        for (auto child : hierarchyComponent->GetChildren())
+            CollectHierarchy(child, set);
+
+    }
+
+    EntitySet CollectHierarchies(Scene::Scene& scene, const std::vector<std::string>& patterns) {
+
+        EntitySet set;
+        for (auto entity : FindEntities(scene, patterns))
+            CollectHierarchy(entity, set);
+
+        return set;
+
+    }
+
+    bool IsInHierarchies(Scene::Scene& scene, Scene::Entity entity, const std::vector<std::string>& patterns) {
+
+        if (patterns.empty())
+            return false;
+
+        for (; entity.IsValid(); entity = scene.GetParentEntity(entity)) {
+            auto nameComponent = entity.TryGetComponent<NameComponent>();
+            if (nameComponent && MatchAnyPattern(patterns, nameComponent->name))
+                return true;
+
+            for (const auto& pattern : patterns)
+                if (pattern.size() > 1 && pattern[0] == '#' && ECS::Entity(std::stoull(pattern.substr(1))) == ECS::Entity(entity))
+                    return true;
+        }
+
+        return false;
+
+    }
+
+    Volume::AABB GetEntityBounds(Scene::Entity entity, bool* hasMesh) {
+
+        auto bounds = entity.GetScene()->GetHierarchyBounds(entity);
+        if (hasMesh)
+            *hasMesh = bounds.has_value();
+        if (bounds)
+            return *bounds;
+
+        auto position = GetEntityPosition(entity);
+        return Volume::AABB(position - vec3(0.05f), position + vec3(0.05f));
+
+    }
+
+    Volume::AABB GetBounds(const std::vector<Scene::Entity>& entities) {
+
+        Volume::AABB bounds(vec3(std::numeric_limits<float>::max()), vec3(-std::numeric_limits<float>::max()));
+        for (auto entity : entities)
+            bounds.Grow(GetEntityBounds(entity));
+
+        return bounds;
+
+    }
+
+    Volume::AABB GetSceneBounds(Scene::Scene& scene) {
+
+        Volume::AABB bounds(vec3(std::numeric_limits<float>::max()), vec3(-std::numeric_limits<float>::max()));
+        bool found = false;
+
+        auto meshSubset = scene.GetSubset<MeshComponent>();
+        for (auto entity : meshSubset) {
+            const auto& meshComponent = meshSubset.Get(entity);
+            if (!meshComponent.mesh.IsLoaded())
+                continue;
+
+            bounds.Grow(meshComponent.aabb);
+            found = true;
+        }
+
+        if (scene.terrain.IsLoaded()) {
+            auto& terrain = scene.terrain;
+            bounds.Grow(terrain->translation);
+            bounds.Grow(terrain->translation + vec3(terrain->sideLength, terrain->heightScale, terrain->sideLength));
+            found = true;
+        }
+
+        if (!found)
+            bounds = Volume::AABB(vec3(-10.0f), vec3(10.0f));
+
+        return bounds;
+
+    }
+
+    vec3 GetEntityPosition(Scene::Entity entity) {
+
+        auto transformComponent = entity.TryGetComponent<TransformComponent>();
+        if (!transformComponent)
+            return vec3(0.0f);
+
+        return vec3(transformComponent->globalMatrix[3]);
+
+    }
+
+    float GetEntityYaw(Scene::Entity entity) {
+
+        auto transformComponent = entity.TryGetComponent<TransformComponent>();
+        if (!transformComponent)
+            return 0.0f;
+
+        auto forward = vec3(transformComponent->globalMatrix * vec4(0.0f, 0.0f, 1.0f, 0.0f));
+        return std::atan2(forward.x, forward.z);
+
+    }
+
+    RaycastHit Raycast(Scene::Scene& scene, vec3 origin, vec3 direction, float maxDistance, const EntitySet& ignored,
+        Scene::SceneQueryComponents components) {
+
+        return Raycast(scene, origin, direction, maxDistance, [&](const Scene::Entity& entity) {
+            return ignored.contains(entity);
+        }, components);
+
+    }
+
+    RaycastHit Raycast(Scene::Scene& scene, vec3 origin, vec3 direction, float maxDistance,
+        const std::function<bool(const Scene::Entity&)>& isIgnored, Scene::SceneQueryComponents components) {
+
+        RaycastHit hit;
+        direction = Helper::Math::NormalizeOrZero(direction);
+        if (direction == vec3(0.0f))
+            return hit;
+
+        // Skip invisible meshes and players for visual and ground queries
+        auto ray = Volume::Ray(origin, direction, 0.0f, maxDistance);
+        auto result = scene.CastRay(ray, components, [&](const Scene::Entity& entity) {
+
+            if (isIgnored(entity) || entity.HasComponent<PlayerComponent>())
+                return true;
+            auto meshComponent = entity.TryGetComponent<MeshComponent>();
+            return meshComponent && !meshComponent->visible;
+
+        });
+
+        if (!result.valid)
+            return hit;
+
+        hit.valid = true;
+        hit.distance = result.hitDistance;
+        hit.position = ray.Get(result.hitDistance);
+        hit.normal = result.normal;
+        hit.entity = result.data;
+        hit.triangle = result.triangleIndex;
+        if (result.triangleIndex >= 0)
+            hit.kind = "mesh";
+        else if (!result.data.IsValid())
+            hit.kind = "terrain";
+        else
+            hit.kind = result.data.HasComponent<TextComponent>() ? "text" : "body";
+
+        return hit;
+
+    }
+
+    RaycastHit GroundBelow(Scene::Scene& scene, vec3 position, const EntitySet& ignored) {
+
+        return Raycast(scene, position, vec3(0.0f, -1.0f, 0.0f), 4096.0f, ignored, CollisionComponents);
+
+    }
+
+    EntityGround GroundBelowEntity(Scene::Scene& scene, Scene::Entity entity, float searchAbove, const EntitySet& alsoIgnored) {
+
+        EntityGround result;
+        result.bounds = GetEntityBounds(entity, &result.hasMesh);
+
+        auto ignored = alsoIgnored;
+        CollectHierarchy(entity, ignored);
+        auto center = result.bounds.GetCenter();
+        result.ground = GroundBelow(scene, vec3(center.x, result.bounds.max.y + searchAbove, center.z), ignored);
+
+        return result;
+
+    }
+
+    FootprintGap MeasureFootprint(Scene::Scene& scene, Scene::Entity entity, const Volume::AABB& bounds, int32_t grid, float baseHeight,
+        const EntitySet& alsoIgnored) {
+
+        EntitySet hierarchy;
+        CollectHierarchy(entity, hierarchy);
+        auto ignored = alsoIgnored;
+        ignored.insert(hierarchy.begin(), hierarchy.end());
+        auto outsideHierarchy = [&](const Scene::Entity& hit) { return !hierarchy.contains(hit); };
+
+        FootprintGap result;
+        result.maxGap = -std::numeric_limits<float>::infinity();
+        auto inset = bounds.GetSize() * 0.05f;
+        auto min = bounds.min + inset, max = bounds.max - inset;
+        grid = std::max(grid, 2);
+        for (int32_t a = 0; a < grid; a++) {
+            for (int32_t b = 0; b < grid; b++) {
+                auto x = glm::mix(min.x, max.x, float(a) / float(grid - 1)), z = glm::mix(min.z, max.z, float(b) / float(grid - 1));
+
+                // The underside of the entity from below, then the ground with the entity left out
+                auto underside = Raycast(scene, vec3(x, bounds.min.y - 1.0f, z), vec3(0.0f, 1.0f, 0.0f), bounds.GetSize().y + 2.0f,
+                    outsideHierarchy, VisualComponents);
+                if (!underside.valid || underside.position.y > bounds.min.y + baseHeight)
+                    continue;
+
+                auto ground = GroundBelow(scene, vec3(x, bounds.max.y + 0.5f, z), ignored);
+                if (!ground.valid)
+                    continue;
+
+                result.samples++;
+                auto gap = underside.position.y - ground.position.y;
+                if (gap > result.maxGap) {
+                    result.maxGap = gap;
+                    result.worst = vec3(x, underside.position.y, z);
+                }
+            }
+        }
+        return result;
+
+    }
+
+    json InspectScene(Scene::Scene& scene, const std::vector<std::string>& filter,
+        const std::vector<std::string>& detail, const EntitySet& excluded) {
+
+        json j;
+        j["name"] = scene.name;
+        j["entityCount"] = scene.GetEntityCount() - excluded.size();
+        j["bounds"] = BoundsToJson(GetSceneBounds(scene));
+        j["hasMainCamera"] = scene.HasMainCamera();
+        j["hasTerrain"] = scene.terrain.IsValid();
+        j["hasOcean"] = scene.ocean != nullptr;
+        j["settings"] = ExportSettings(scene);
+
+        json entities = json::array();
+        for (auto entity : scene) {
+            if (excluded.contains(entity))
+                continue;
+
+            auto name = GetEntityName(entity);
+            if (!filter.empty() && !MatchAnyPattern(filter, name))
+                continue;
+
+            json e;
+            e["id"] = entity.GetID();
+            e["name"] = name;
+            e["components"] = GetComponentNames(entity);
+
+            auto parent = scene.GetParentEntity(entity);
+            if (parent.IsValid())
+                e["parent"] = GetEntityLabel(parent);
+
+            if (auto hierarchy = entity.TryGetComponent<HierarchyComponent>())
+                e["childCount"] = hierarchy->GetChildren().size();
+
+            if (auto transform = entity.TryGetComponent<TransformComponent>()) {
+                auto local = transform->Decompose();
+                e["position"] = FromVec3(vec3(transform->globalMatrix[3]));
+                e["localPosition"] = FromVec3(local.translation);
+                e["localRotationDegrees"] = FromVec3(glm::degrees(local.rotation));
+                e["localScale"] = FromVec3(local.scale);
+                e["worldYawDegrees"] = Round(glm::degrees(GetEntityYaw(entity)), 2);
+                e["static"] = transform->IsStatic();
+            }
+
+            bool hasMesh = false;
+            auto bounds = GetEntityBounds(entity, &hasMesh);
+            if (hasMesh)
+                e["bounds"] = BoundsToJson(bounds);
+
+            if (auto mesh = entity.TryGetComponent<MeshComponent>()) {
+                e["mesh"] = mesh->mesh.IsValid() ? mesh->mesh.GetResource()->path : "";
+                e["visible"] = mesh->visible;
+            }
+            if (auto camera = entity.TryGetComponent<CameraComponent>())
+                e["camera"] = { { "isMain", camera->isMain }, { "fov", camera->fieldOfView },
+                    { "location", FromVec3(camera->GetLocation()) } };
+            if (auto light = entity.TryGetComponent<LightComponent>())
+                e["light"] = { { "type", int32_t(light->type) }, { "isMain", light->isMain } };
+            if (auto script = entity.TryGetComponent<LuaScriptComponent>())
+                e["script"] = script->script.IsValid() ? script->script.GetResource()->path : "";
+
+            if (!detail.empty() && MatchAnyPattern(detail, name))
+                e["detail"] = ComponentDetails(entity);
+
+            entities.push_back(e);
+        }
+        j["entities"] = entities;
+
+        return j;
+
+    }
+
+    SceneState CaptureSceneState(Scene::Scene& scene, const EntitySet& excluded) {
+
+        SceneState state;
+        state.reserve(scene.GetEntityCount());
+        for (auto entity : scene) {
+            if (excluded.contains(entity))
+                continue;
+
+            auto& e = state[entity.GetID()];
+            e.name = GetEntityName(entity);
+            auto parent = scene.GetParentEntity(entity);
+            e.parent = parent.IsValid() ? parent.GetID() : ECS::EntityConfig::InvalidEntity;
+            e.components = GetComponentMask(entity);
+            if (auto transform = entity.TryGetComponent<TransformComponent>()) {
+                e.hasTransform = true;
+                e.local = transform->matrix;
+                e.global = transform->globalMatrix;
+            }
+            if (auto mesh = entity.TryGetComponent<MeshComponent>()) {
+                e.mesh = mesh->mesh.IsValid() ? mesh->mesh.GetResource()->path : "";
+                e.visible = mesh->visible;
+            }
+            if (auto script = entity.TryGetComponent<LuaScriptComponent>())
+                e.script = script->script.IsValid() ? script->script.GetResource()->path : "";
+        }
+        return state;
+
+    }
+
+    json DiffSceneStates(const SceneState& before, const SceneState& after) {
+
+        // The inspection rounds to 4 decimals, smaller differences don't count as changes
+        auto same = [](const mat4& a, const mat4& b) {
+            for (int32_t c = 0; c < 4; c++)
+                for (int32_t r = 0; r < 4; r++)
+                    if (std::abs(a[c][r] - b[c][r]) > 1e-4f)
+                        return false;
+            return true;
+        };
+        auto parentLabel = [](const SceneState& state, uint64_t parent) -> json {
+            if (parent == ECS::EntityConfig::InvalidEntity)
+                return json();
+            auto it = state.find(parent);
+            auto name = it != state.end() ? it->second.name : std::string();
+            return (name.empty() ? "<unnamed>" : name) + " (#" + std::to_string(parent) + ")";
+        };
+        auto decompose = [](const EntityState& e) -> std::array<json, 3> {
+            if (!e.hasTransform)
+                return { json(), json(), json() };
+            Common::MatrixDecomposition local(e.local);
+            return { FromVec3(local.translation), FromVec3(glm::degrees(local.rotation)), FromVec3(local.scale) };
+        };
+        auto meshField = [](const EntityState& e, json value) { return e.components & meshBit ? value : json(); };
+
+        // Sorted by id like the inspections, so the lists don't depend on the hashing
+        std::vector<uint64_t> ids;
+        ids.reserve(before.size());
+        for (const auto& [id, _] : before)
+            ids.push_back(id);
+        std::sort(ids.begin(), ids.end());
+
+        json changed = json::array(), added = json::array(), removed = json::array();
+        for (auto id : ids) {
+            const auto& b = before.at(id);
+            auto it = after.find(id);
+            if (it == after.end()) {
+                removed.push_back({ { "id", id }, { "name", b.name } });
+                continue;
+            }
+            const auto& a = it->second;
+
+            json changes = json::object();
+            auto change = [&](const char* field, const json& beforeValue, const json& afterValue) {
+                if (beforeValue != afterValue)
+                    changes[field] = { { "before", beforeValue }, { "after", afterValue } };
+            };
+            change("name", b.name, a.name);
+            if (b.parent != a.parent)
+                change("parent", parentLabel(before, b.parent), parentLabel(after, a.parent));
+            if (b.components != a.components)
+                change("components", GetComponentNames(b.components), GetComponentNames(a.components));
+            if (b.hasTransform != a.hasTransform || !same(b.global, a.global))
+                change("position", b.hasTransform ? FromVec3(vec3(b.global[3])) : json(), a.hasTransform ? FromVec3(vec3(a.global[3])) : json());
+            if (b.hasTransform != a.hasTransform || !same(b.local, a.local)) {
+                auto beforeLocal = decompose(b), afterLocal = decompose(a);
+                change("localPosition", beforeLocal[0], afterLocal[0]);
+                change("localRotationDegrees", beforeLocal[1], afterLocal[1]);
+                change("localScale", beforeLocal[2], afterLocal[2]);
+            }
+            change("mesh", meshField(b, b.mesh), meshField(a, a.mesh));
+            change("visible", meshField(b, b.visible), meshField(a, a.visible));
+            change("script", b.components & scriptBit ? json(b.script) : json(), a.components & scriptBit ? json(a.script) : json());
+
+            if (!changes.empty())
+                changed.push_back({ { "id", id }, { "name", a.name }, { "changes", changes } });
+        }
+
+        ids.clear();
+        for (const auto& [id, _] : after)
+            if (!before.contains(id))
+                ids.push_back(id);
+        std::sort(ids.begin(), ids.end());
+        for (auto id : ids) {
+            const auto& a = after.at(id);
+            added.push_back({ { "id", id }, { "name", a.name }, { "position", a.hasTransform ? FromVec3(vec3(a.global[3])) : json() } });
+        }
+
+        json diff;
+        diff["changed"] = changed;
+        diff["added"] = added;
+        diff["removed"] = removed;
+        diff["summary"] = std::to_string(changed.size()) + " changed, " + std::to_string(added.size()) + " added, " +
+            std::to_string(removed.size()) + " removed";
+        return diff;
+
+    }
+
+    json ExportSettings(Scene::Scene& scene) {
+
+        json j;
+        Scene::SceneSettingsToJson(j, &scene);
+
+        // Variants restore these settings, so the sun has to be part of them
+        if (scene.HasMainLight()) {
+            const auto& light = scene.GetMainLight();
+            j["sun"] = { { "direction", FromVec3(light.properties.directional.direction) },
+                { "color", FromVec3(light.color) }, { "intensity", light.intensity } };
+            if (light.shadow)
+                j["sun"]["shadow"] = { { "cascades", light.shadow->viewCount - (light.shadow->longRange ? 1 : 0) },
+                    { "longRange", light.shadow->longRange }, { "longRangeDistance", light.shadow->longRangeDistance } };
+        }
+        return j;
+
+    }
+
+    void ApplySettings(Scene::Scene& scene, const json& settings) {
+
+        json features = json::object();
+
+        for (auto& [key, patch] : settings.items()) {
+            if (key == "materials") {
+                ApplyMaterialPatches(patch);
+            }
+            else if (key == "sun") {
+                if (!scene.HasMainLight())
+                    throw std::runtime_error("The scene has no main directional light for the sun settings");
+
+                auto& light = scene.GetMainLight();
+                if (patch.contains("direction"))
+                    light.properties.directional.direction = glm::normalize(ToVec3(patch["direction"]));
+                // Light direction points from the sun towards the scene
+                if (patch.contains("elevation") || patch.contains("azimuth"))
+                    light.properties.directional.direction =
+                        -GetDirection(patch.value("azimuth", 0.0f), patch.value("elevation", 45.0f));
+                if (patch.contains("color"))
+                    light.color = ToVec3(patch["color"]);
+                if (patch.contains("intensity"))
+                    light.intensity = patch["intensity"].get<float>();
+                if (patch.contains("shadow")) {
+                    if (!light.shadow)
+                        throw std::runtime_error("The main light has no shadow for the sun shadow settings");
+
+                    // The shadow is created anew for its cascades, the long range view is one more after the near ones
+                    auto previous = light.shadow;
+                    const auto& shadow = patch["shadow"];
+                    auto longRange = shadow.value("longRange", previous->longRange);
+                    auto longRangeDistance = shadow.value("longRangeDistance", previous->longRangeDistance);
+                    auto cascades = shadow.value("cascades", previous->viewCount - (previous->longRange ? 1 : 0));
+                    light.AddDirectionalShadow(previous->distance, previous->bias, previous->resolution, previous->edgeSoftness,
+                        cascades + (longRange ? 1 : 0), previous->splitCorrection, longRange, longRangeDistance);
+                    light.shadow->allowTerrain = previous->allowTerrain;
+                    light.shadow->allowDynamicEntities = previous->allowDynamicEntities;
+                    light.shadow->cascadeBlendDistance = previous->cascadeBlendDistance;
+                }
+            }
+            else {
+                // A default constructed ocean has no valid simulation to patch, so it starts with the editor defaults
+                if (key == "ocean" && !scene.ocean)
+                    scene.ocean = CreateRef<Ocean::Ocean>(9, 4096.0f);
+
+                features[key] = patch;
+            }
+        }
+
+        Scene::PatchSceneSettings(features, &scene);
+
+        json applied;
+        Scene::SceneSettingsToJson(applied, &scene);
+        for (auto& [key, patch] : features.items()) {
+            // A null patch removes a feature, which then isn't exported anymore
+            if (!applied.contains(key) && !patch.is_null())
+                throw std::runtime_error("Unknown settings key '" + key + "'. Known keys: the scene settings "
+                    "(sky, postProcessing, wind, fog, ...), materials and sun");
+        }
+
+    }
+
+    void PatchMaterial(Material& material, const json& patch) {
+
+        // Round trip through the engine serializer, so the keys are the ones of the material files
+        json j = material;
+        j.merge_patch(patch);
+        from_json(j, material);
+
+        // Added or removed maps change the shader variants
+        UpdatePipelinesOfMaterials({ &material });
+
+    }
+
+    void UpdatePipelinesOfMaterials(const std::set<const Material*>& changed) {
+
+        if (changed.empty())
+            return;
+
+        for (auto& mesh : ResourceManager<Mesh::Mesh>::GetResources()) {
+            if (!mesh.IsLoaded())
+                continue;
+
+            const auto& materials = mesh->data.materials;
+            if (std::any_of(materials.begin(), materials.end(), [&](const auto& handle) { return changed.contains(handle.Get().get()); }))
+                mesh->UpdatePipelines();
+        }
+
+    }
+
+    int32_t ApplyMaterialPatches(const json& patches) {
+
+        int32_t count = 0;
+        for (auto& material : ResourceManager<Material>::GetResources()) {
+            if (!material.IsLoaded())
+                continue;
+
+            const auto& path = material.GetResource()->path;
+            for (auto& [pattern, patch] : patches.items()) {
+                if (!Helper::String::MatchWildcard(pattern, path))
+                    continue;
+
+                PatchMaterial(*material.Get(), patch);
+                count++;
+            }
+        }
+
+        if (count == 0)
+            throw std::runtime_error("No loaded material matches the material patches " + patches.dump());
+
+        return count;
+
+    }
+
+    struct QueryContext {
+
+        Scene::Scene& scene;
+        const PickRayFunction& pickRay;
+        const fs::path& outputDirectory;
+
+    };
+
+    static json QueryRaycast(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        auto ignored = GetIgnoredEntities(scene, query);
+
+        // Physics bodies can be included explicitly, by default only visible geometry is hit
+        Scene::SceneQueryComponents components = VisualComponents;
+        if (query.value("bodies", false))
+            components |= Scene::RigidBodyComponentBit;
+
+        auto hit = Raycast(scene, ToVec3(query.at("origin")), ToVec3(query.at("direction")),
+            query.value("maxDistance", 4096.0f), ignored, components);
+        return HitToJson(hit);
+
+    }
+
+    static json QueryGround(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        // Ground height at x/z, cast from above the scene unless a start height is given
+        auto bounds = GetSceneBounds(scene);
+        auto from = query.value("from", bounds.max.y + 10.0f);
+        auto hit = GroundBelow(scene, vec3(query.at("x").get<float>(), from, query.at("z").get<float>()));
+        return HitToJson(hit);
+
+    }
+
+    static json QueryEntity(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        json matches = json::array();
+        for (auto entity : FindEntities(scene, query.at("entity").get<std::string>())) {
+            auto [bounds, hasMesh, ground] = GroundBelowEntity(scene, entity);
+
+            json match;
+            match["entity"] = GetEntityLabel(entity);
+            match["position"] = FromVec3(GetEntityPosition(entity));
+            match["yawDegrees"] = glm::degrees(GetEntityYaw(entity));
+            match["bounds"] = BoundsToJson(bounds);
+            match["hasMesh"] = hasMesh;
+            match["groundBelow"] = HitToJson(ground);
+            if (ground.valid)
+                match["gapToGround"] = Round(bounds.min.y - ground.position.y);
+            matches.push_back(match);
+        }
+        return matches;
+
+    }
+
+    // Compiles shaders of material graphs for all the meshes they can be used with. Without a graph directory it
+    // only checks each node of the library, in each stage and with each input type
+    static json QueryMaterialGraphShaders(const QueryContext& context, const json& query) {
+
+        using namespace MaterialGraph;
+        namespace fs = std::filesystem;
+
+        std::vector<Ref<Graph>> graphs;
+        std::vector<std::string> names;
+
+        if (query.contains("directory")) {
+            auto directory = Loader::AssetLoader::GetFullPath(query["directory"].get<std::string>());
+            for (const auto& file : fs::directory_iterator(directory)) {
+                if (file.path().extension() != ".aematgraph")
+                    continue;
+                auto path = query["directory"].get<std::string>() + "/" + file.path().filename().string();
+                graphs.push_back(Loader::MaterialGraphLoader::LoadGraph(path));
+                names.push_back(file.path().filename().string());
+            }
+        }
+
+        // Every node with the types of its generic inputs, connected to the output of every stage it can be used in
+        if (query.value("library", true)) {
+            const std::vector<std::string> sources = { "Float", "Vector 2", "Vector 3", "Vector 4" };
+            for (const auto& definition : NodeLibrary::GetDefinitions()) {
+                if (definition.kind == NodeKind::VertexOutput || definition.kind == NodeKind::SurfaceOutput ||
+                    definition.kind == NodeKind::Comment)
+                    continue;
+
+                auto isGeneric = std::any_of(definition.inputs.begin(), definition.inputs.end(),
+                    [](const auto& input) { return input.type == ValueType::Generic; });
+
+                for (const auto& source : sources) {
+                    if (!isGeneric && source != sources.front())
+                        break;
+
+                    for (const auto& output : definition.outputs) {
+                        for (auto stage : { VertexStage, SurfaceStage }) {
+                            if (!(definition.stages & stage) || output.type == ValueType::Texture)
+                                continue;
+
+                            auto graph = CreateRef<Graph>();
+                            auto vertexOutput = graph->AddNode(NodeLibrary::vertexOutputType).id;
+                            auto surfaceOutput = graph->AddNode(NodeLibrary::surfaceOutputType).id;
+
+                            auto nodeId = graph->AddNode(definition.type).id;
+                            graph->GetNode(nodeId)->name = "Value";
+
+                            for (const auto& input : definition.inputs) {
+                                if (input.type == ValueType::Texture) {
+                                    auto textureId = graph->AddNode("Texture parameter").id;
+                                    graph->GetNode(textureId)->name = "Texture";
+                                    graph->Connect(textureId, "Value", nodeId, input.name);
+                                }
+                                else if (input.type == ValueType::Generic) {
+                                    auto sourceId = graph->AddNode(source).id;
+                                    graph->Connect(sourceId, "Value", nodeId, input.name);
+                                }
+                            }
+
+                            if (stage == VertexStage)
+                                graph->Connect(nodeId, output.name, vertexOutput, NodeLibrary::positionOffsetPin);
+                            else
+                                graph->Connect(nodeId, output.name, surfaceOutput, NodeLibrary::emissivePin);
+
+                            graph->Compile();
+                            graphs.push_back(graph);
+                            names.push_back(definition.type + " / " + output.name + " / " + source +
+                                (stage == VertexStage ? " / vertex" : " / surface"));
+                        }
+                    }
+                }
+            }
+        }
+
+        // The macros the renderers can set, a mesh has or doesn't have each of the attributes
+        std::vector<std::vector<std::string>> meshMacros;
+        for (int32_t texCoords = 0; texCoords < 2; texCoords++) {
+            for (int32_t tangents = 0; tangents < 2; tangents++) {
+                for (int32_t colors = 0; colors < 2; colors++) {
+                    for (int32_t skinned = 0; skinned < 2; skinned++) {
+                        std::vector<std::string> macros;
+                        if (texCoords) macros.push_back("TEX_COORDS");
+                        if (tangents) macros.push_back("TANGENTS");
+                        if (colors) macros.push_back("VERTEX_COLORS");
+                        macros.push_back(skinned ? "SKINNED" : "INSTANCE_BUFFER");
+                        meshMacros.push_back(macros);
+                    }
+                }
+            }
+        }
+
+        struct Compilation {
+            std::string name;
+            std::string file;
+            VkShaderStageFlagBits stage;
+            std::vector<std::string> macros;
+            bool success = false;
+        };
+
+        std::vector<Compilation> compilations;
+        auto add = [&](const std::string& name, const std::string& file, VkShaderStageFlagBits stage, const std::vector<std::string>& macros) {
+            if (!file.empty())
+                compilations.push_back({ name, file, stage, macros });
+            };
+
+        int32_t graphErrors = 0;
+        json failedGraphs = json::array();
+
+        auto allMeshMacros = query.value("allMeshes", true);
+        for (size_t i = 0; i < graphs.size(); i++) {
+            auto compiled = graphs[i]->GetCompiled();
+            if (!compiled || !compiled->valid) {
+                graphErrors++;
+                failedGraphs.push_back({ { "graph", names[i] }, { "error", compiled && !compiled->errors.empty() ? compiled->errors.front().message : "" } });
+                continue;
+            }
+
+            // Checking the library once is enough, the macros only matter for the code around the nodes
+            for (const auto& macros : meshMacros) {
+                add(names[i], compiled->mainVertexFile, VK_SHADER_STAGE_VERTEX_BIT, macros);
+                add(names[i], compiled->mainFragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT, macros);
+                add(names[i], compiled->shadowVertexFile, VK_SHADER_STAGE_VERTEX_BIT, macros);
+                add(names[i], compiled->CutsOutFragments() ? compiled->shadowFragmentFile : std::string(), VK_SHADER_STAGE_FRAGMENT_BIT, macros);
+
+                // Without a surface of the graph the regular maps of a material are used
+                if (!compiled->hasSurface) {
+                    auto withMaps = macros;
+                    for (auto map : { "BASE_COLOR_MAP", "OPACITY_MAP", "ROUGHNESS_MAP", "METALNESS_MAP", "AO_MAP", "EMISSIVE_MAP" })
+                        withMaps.push_back(map);
+                    if (std::find(macros.begin(), macros.end(), "TANGENTS") != macros.end()) {
+                        withMaps.push_back("NORMAL_MAP");
+                        withMaps.push_back("HEIGHT_MAP");
+                    }
+                    if (std::find(macros.begin(), macros.end(), "TEX_COORDS") != macros.end()) {
+                        add(names[i], compiled->mainVertexFile, VK_SHADER_STAGE_VERTEX_BIT, withMaps);
+                        add(names[i], compiled->mainFragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT, withMaps);
+                        auto shadowMacros = macros;
+                        shadowMacros.push_back("OPACITY_MAP");
+                        add(names[i], compiled->shadowVertexFile, VK_SHADER_STAGE_VERTEX_BIT, shadowMacros);
+                        add(names[i], compiled->shadowFragmentFile, VK_SHADER_STAGE_FRAGMENT_BIT, shadowMacros);
+                    }
+                }
+
+                if (!allMeshMacros)
+                    break;
+            }
+        }
+
+        auto spirvDirectory = query.value("spirvDirectory", std::string());
+        if (!spirvDirectory.empty())
+            fs::create_directories(spirvDirectory);
+
+        JobGroup group{ "Material graph shaders", JobPriority::Medium };
+        JobSystem::ExecuteMultiple(group, int32_t(compilations.size()), [&](JobData& data) {
+            auto& compilation = compilations[data.idx];
+            auto stageFile = Loader::ShaderLoader::LoadFile(compilation.file, compilation.stage);
+            auto binary = Graphics::ShaderCompiler::Compile(stageFile, compilation.macros, false, compilation.success);
+
+            if (compilation.success && !spirvDirectory.empty()) {
+                auto suffix = compilation.stage == VK_SHADER_STAGE_VERTEX_BIT ? ".vert.spv" : ".frag.spv";
+                std::ofstream file(spirvDirectory + "/" + std::to_string(data.idx) + suffix, std::ios::binary);
+                file.write(reinterpret_cast<const char*>(binary.data()), binary.size() * sizeof(uint32_t));
+            }
+            });
+        JobSystem::Wait(group);
+
+        json failed = json::array();
+        int32_t succeeded = 0;
+        for (const auto& compilation : compilations) {
+            if (compilation.success) {
+                succeeded++;
+                continue;
+            }
+            std::string macros;
+            for (const auto& macro : compilation.macros)
+                macros += macro + " ";
+            if (failed.size() < 40)
+                failed.push_back({ { "graph", compilation.name }, { "file", compilation.file }, { "macros", macros } });
+        }
+
+        return { { "graphs", graphs.size() }, { "invalidGraphs", graphErrors }, { "failedGraphs", failedGraphs },
+            { "compilations", compilations.size() }, { "succeeded", succeeded }, { "failed", failed } };
+
+    }
+
+    static json QueryAround(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        auto position = ToVec3(query.at("position"));
+        auto radius = query.at("radius").get<float>();
+        auto aabb = Volume::AABB(position - vec3(radius), position + vec3(radius));
+
+        json matches = json::array();
+        for (auto entity : scene.QueryAABB(aabb)) {
+            auto meshComponent = entity.TryGetComponent<MeshComponent>();
+            if (!meshComponent)
+                continue;
+            matches.push_back({ { "entity", GetEntityLabel(entity) },
+                { "distance", meshComponent->aabb.GetDistance(position) },
+                { "bounds", BoundsToJson(meshComponent->aabb) } });
+        }
+        std::sort(matches.begin(), matches.end(), [](const json& a, const json& b) {
+
+            return a["distance"].get<float>() < b["distance"].get<float>();
+
+        });
+        return matches;
+
+    }
+
+    static json QueryClearance(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        // Sample clearance with a ray grid on the bounds face
+        auto entities = FindEntities(scene, query.at("entity").get<std::string>());
+        if (entities.empty())
+            throw std::runtime_error("No entity matches " + query["entity"].get<std::string>());
+
+        auto direction = glm::normalize(ToVec3(query.at("direction")));
+        auto distance = query.value("distance", 100.0f);
+        auto samples = std::max(query.value("samples", 5), 2);
+
+        auto ignored = GetIgnoredEntities(scene, query);
+        for (auto entity : entities)
+            CollectHierarchy(entity, ignored);
+
+        auto bounds = GetBounds(entities);
+        // Shrink slightly so rays don't start inside touching neighbors
+        auto inset = bounds.GetSize() * 0.02f;
+        auto min = bounds.min + inset, max = bounds.max - inset;
+
+        float minClearance = distance;
+        json blocker;
+        for (int32_t a = 0; a < samples; a++) {
+            for (int32_t b = 0; b < samples; b++) {
+                auto fa = float(a) / float(samples - 1), fb = float(b) / float(samples - 1);
+                vec3 start;
+                // Pick the face of the bounds in the movement direction
+                auto axis = glm::abs(direction);
+                if (axis.y >= axis.x && axis.y >= axis.z)
+                    start = vec3(glm::mix(min.x, max.x, fa), direction.y > 0.0f ? max.y : min.y,
+                        glm::mix(min.z, max.z, fb));
+                else if (axis.x >= axis.z)
+                    start = vec3(direction.x > 0.0f ? max.x : min.x, glm::mix(min.y, max.y, fa),
+                        glm::mix(min.z, max.z, fb));
+                else
+                    start = vec3(glm::mix(min.x, max.x, fa), glm::mix(min.y, max.y, fb),
+                        direction.z > 0.0f ? max.z : min.z);
+
+                auto hit = Raycast(scene, start, direction, distance, ignored, CollisionComponents);
+                if (hit.valid && hit.distance < minClearance) {
+                    minClearance = hit.distance;
+                    blocker = HitToJson(hit);
+                }
+            }
+        }
+
+        return { { "clearance", Round(minClearance) },
+            { "blocked", !blocker.is_null() }, { "blocker", blocker }, { "bounds", BoundsToJson(bounds) } };
+
+    }
+
+    static json QueryPick(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        // Use the shot camera convention for pixel picking
+        if (!context.pickRay)
+            throw std::runtime_error("pick queries are not available here");
+
+        json hits = json::array();
+        for (const auto& pixel : query.at("pixels")) {
+            auto [origin, direction] = context.pickRay(query.at("camera"), vec2(pixel.at(0).get<float>(), pixel.at(1).get<float>()));
+            auto hit = Raycast(scene, origin, direction, 4096.0f);
+            auto entry = HitToJson(hit);
+            entry["pixel"] = pixel;
+            entry["origin"] = FromVec3(origin);
+            hits.push_back(entry);
+        }
+        return hits;
+
+    }
+
+    static json QueryPath(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        // Sample ground height and obstacles along the polyline
+        auto spacing = std::max(query.value("spacing", 0.5f), 0.05f);
+        auto maxStep = query.value("maxStep", 0.3f);
+        auto radius = query.value("radius", 0.4f);
+        // Points given as x/z start at the terrain height with "snap": true
+        auto snap = query.value("snap", false);
+        std::vector<vec3> points;
+        for (const auto& point : query.at("points"))
+            points.push_back(point.size() == 2 ? vec3(point[0].get<float>(), 0.0f, point[1].get<float>()) : ToVec3(point));
+        if (points.size() < 2)
+            throw std::runtime_error("A path needs at least two points");
+
+        auto ignored = GetIgnoredEntities(scene, query);
+
+        json issues = json::array();
+        json samples = json::array();
+        std::optional<vec3> last;
+        float length = 0.0f;
+
+        for (size_t i = 0; i + 1 < points.size(); i++) {
+            auto segment = points[i + 1] - points[i];
+            auto count = std::max(int32_t(std::ceil(glm::length(vec2(segment.x, segment.z)) / spacing)), 1);
+            for (int32_t k = (i == 0 ? 0 : 1); k <= count; k++) {
+                auto guess = points[i] + segment * (float(k) / float(count));
+                if (snap) {
+                    auto sample = SampleTerrain(GetCompleteTerrain(scene), vec2(guess.x, guess.z));
+                    if (sample.valid && !sample.hole)
+                        guess.y = sample.height;
+                }
+                auto ground = Raycast(scene, guess + vec3(0.0f, 1.5f, 0.0f), vec3(0.0f, -1.0f, 0.0f), 4.0f, ignored, CollisionComponents);
+                if (!ground.valid) {
+                    issues.push_back({ { "at", FromVec3(guess) },
+                        { "issue", "no ground within 1.5 m above and 2.5 m below" } });
+                    continue;
+                }
+
+                auto position = ground.position;
+                samples.push_back({ { "position", FromVec3(position) }, { "on", GetHitLabel(ground) } });
+
+                if (last) {
+                    auto step = position.y - last->y;
+                    if (std::abs(step) > maxStep)
+                        issues.push_back({ { "at", FromVec3(position) },
+                            { "issue", "step of " + FormatFloat(step, 2) + " m onto " + GetHitLabel(ground) } });
+
+                    // Obstacles between the previous and this sample, at knee and chest height and at the sides
+                    auto direction = position - *last;
+                    direction.y = 0.0f;
+                    auto distance = glm::length(direction);
+                    if (distance > 1e-4f) {
+                        direction /= distance;
+                        auto side = vec3(-direction.z, 0.0f, direction.x) * radius;
+                        for (auto height : { 0.5f, 1.3f }) {
+                            for (auto offset : { vec3(0.0f), side, -side }) {
+                                auto origin = *last + vec3(0.0f, height, 0.0f) + offset;
+                                auto hit = Raycast(scene, origin, direction, distance, ignored, CollisionComponents);
+                                if (hit.valid)
+                                    issues.push_back({ { "at", FromVec3(hit.position) },
+                                        { "issue", "blocked by " + GetHitLabel(hit) + " (" + hit.kind + ")" } });
+                            }
+                        }
+                    }
+                    length += glm::distance(position, *last);
+                }
+                last = position;
+            }
+        }
+
+        // Neighboring samples often report the same obstacle, keep the first occurrence per description
+        json uniqueIssues = json::array();
+        std::set<std::string> seen;
+        for (const auto& issue : issues)
+            if (seen.insert(issue["issue"].get<std::string>()).second)
+                uniqueIssues.push_back(issue);
+
+        return { { "walkable", uniqueIssues.empty() }, { "length", length },
+            { "issues", uniqueIssues }, { "samples", samples } };
+
+    }
+
+    static json QueryTerrain(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        return DescribeTerrain(GetCompleteTerrain(scene));
+
+    }
+
+    static json QueryTerrainSample(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        // Points or a grid ("min", "max", "step") of x/z positions
+        const auto& terrain = GetCompleteTerrain(scene);
+        std::vector<vec2> points;
+        if (query.contains("points")) {
+            for (const auto& point : query["points"])
+                points.emplace_back(point.at(0).get<float>(), point.at(point.size() == 3 ? 2 : 1).get<float>());
+        }
+        else {
+            auto min = vec2(query.at("min").at(0).get<float>(), query.at("min").at(1).get<float>());
+            auto max = vec2(query.at("max").at(0).get<float>(), query.at("max").at(1).get<float>());
+            auto step = query.at("step").get<float>();
+            if (step <= 0.0f)
+                throw std::runtime_error("terrainSample: the step has to be positive");
+            for (auto z = min.y; z <= max.y + 1e-3f; z += step)
+                for (auto x = min.x; x <= max.x + 1e-3f; x += step)
+                    points.emplace_back(x, z);
+        }
+
+        json samples = json::array();
+        for (auto point : points) {
+            auto sample = SampleTerrain(terrain, point);
+            json entry = { { "x", point.x }, { "z", point.y }, { "valid", sample.valid } };
+            if (sample.valid) {
+                entry["hole"] = sample.hole;
+                entry["material"] = sample.material;
+                if (!sample.hole) {
+                    entry["height"] = Round(sample.height);
+                    entry["slope"] = Round(sample.slopeDegrees, 1);
+                }
+            }
+            samples.push_back(entry);
+        }
+        return samples;
+
+    }
+
+    static json QueryTerrainMap(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        if (context.outputDirectory.empty())
+            throw std::runtime_error("terrainMap needs an output directory");
+        auto file = query.value("file", std::string("terrain_map.png"));
+        auto image = RenderTerrainMap(scene, query);
+        WritePng(image, context.outputDirectory / file);
+        return { { "file", file }, { "width", image->width }, { "height", image->height } };
+
+    }
+
+    static json QueryRoute(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        return FindRoute(scene, query, context.outputDirectory);
+
+    }
+
+    static json QueryBuried(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+
+        // Meshes of a hierarchy which reach above the terrain (or lie below a hole), e.g. to check
+        // that a level placed under the terrain only shows at its entrance
+        const auto& terrain = GetCompleteTerrain(scene);
+        auto margin = query.value("margin", 0.0f);
+        auto members = CollectHierarchies(scene, { query.at("entity").get<std::string>() });
+
+        json exposed = json::array();
+        int32_t meshCount = 0;
+        for (auto member : members) {
+            Scene::Entity entity = { member, &scene.entityManager };
+            auto mesh = entity.TryGetComponent<MeshComponent>();
+            if (!mesh || !mesh->visible || !mesh->mesh.IsLoaded())
+                continue;
+            meshCount++;
+
+            const auto& aabb = mesh->aabb;
+            float lowest = FLT_MAX, worst = -FLT_MAX;
+            bool underHole = false;
+            for (auto fraction : { vec2(0.5f), vec2(0.1f), vec2(0.9f), vec2(0.1f, 0.9f), vec2(0.9f, 0.1f) }) {
+                auto point = glm::mix(vec2(aabb.min.x, aabb.min.z), vec2(aabb.max.x, aabb.max.z), fraction);
+                auto sample = SampleTerrain(terrain, point);
+                if (!sample.valid)
+                    continue;
+                if (sample.hole) {
+                    underHole = true;
+                    continue;
+                }
+                lowest = std::min(lowest, sample.height);
+                worst = std::max(worst, aabb.max.y - sample.height);
+            }
+            if (underHole || worst > -margin)
+                exposed.push_back({ { "entity", GetEntityLabel(entity) }, { "above", worst }, { "underHole", underHole },
+                    { "top", aabb.max.y }, { "terrain", lowest }, { "center", FromVec3(aabb.GetCenter()) } });
+        }
+
+        std::sort(exposed.begin(), exposed.end(), [](const json& a, const json& b) {
+
+            return a["above"].get<float>() > b["above"].get<float>();
+
+        });
+        auto exposedCount = exposed.size();
+        if (exposed.size() > 200)
+            exposed.erase(exposed.begin() + 200, exposed.end());
+        return { { "meshes", meshCount }, { "exposedCount", exposedCount }, { "exposed", exposed } };
+
+    }
+
+    // An area from min/max [x, z], a center and radius or the bounds of entities
+    static Volume::AABB GetArea(Scene::Scene& scene, const json& query) {
+
+        if (query.contains("entity")) {
+            auto entities = FindTopmostEntities(scene, query["entity"].get<std::string>());
+            if (entities.empty())
+                throw std::runtime_error("No entity matches " + query["entity"].get<std::string>());
+            return GetBounds(entities);
+        }
+
+        auto sceneBounds = GetSceneBounds(scene);
+        if (query.contains("center")) {
+            auto center = ToVec2(query["center"]);
+            auto radius = query.at("radius").get<float>();
+            return Volume::AABB(vec3(center.x - radius, sceneBounds.min.y, center.y - radius), vec3(center.x + radius, sceneBounds.max.y, center.y + radius));
+        }
+        if (query.contains("min") && query.contains("max")) {
+            auto min = ToVec2(query["min"]), max = ToVec2(query["max"]);
+            return Volume::AABB(vec3(min.x, sceneBounds.min.y, min.y), vec3(max.x, sceneBounds.max.y, max.y));
+        }
+        return sceneBounds;
+
+    }
+
+    // Vertical rays on a grid with every surface they pass: floors, ceilings, decks and the terrain. The full grid goes to a
+    // file, the result groups the surfaces into levels and counts points where the terrain lies above a floor
+    static json QuerySurfaceGrid(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+        auto area = GetArea(scene, query);
+        auto step = std::max(query.value("step", 1.0f), 0.05f);
+        auto maxHits = std::max(query.value("maxHits", 8), 1);
+        auto tolerance = query.value("tolerance", 0.25f);
+        auto top = query.value("from", area.max.y + 5.0f);
+        auto ignored = GetIgnoredEntities(scene, query);
+
+        struct Hit {
+
+            float y;
+            bool up;
+            std::string kind;
+            std::string name;
+
+        };
+
+        json points = json::array();
+        std::vector<Hit> allHits;
+        json terrainAbove = json::array();
+        int32_t pointCount = 0, terrainAboveCount = 0;
+        for (auto x = area.min.x; x <= area.max.x + 1e-3f; x += step) {
+            for (auto z = area.min.z; z <= area.max.z + 1e-3f; z += step) {
+                pointCount++;
+                std::vector<Hit> hits;
+                auto origin = vec3(x, top, z);
+                auto remaining = top - area.min.y + 5.0f;
+                while (int32_t(hits.size()) < maxHits && remaining > 0.0f) {
+                    auto hit = Raycast(scene, origin, vec3(0.0f, -1.0f, 0.0f), remaining, ignored, CollisionComponents);
+                    if (!hit.valid)
+                        break;
+                    hits.push_back({ hit.position.y, hit.normal.y >= 0.0f, hit.kind, hit.entity.IsValid() ? GetEntityName(hit.entity) : hit.kind });
+                    // The terrain is the last surface a ray can pass
+                    if (hit.kind == "terrain")
+                        break;
+                    origin = hit.position - vec3(0.0f, 0.01f, 0.0f);
+                    remaining -= hit.distance + 0.01f;
+                }
+
+                json pointHits = json::array();
+                for (const auto& hit : hits)
+                    pointHits.push_back({ Round(hit.y, 2), hit.up ? "up" : "down", hit.name });
+                points.push_back({ { "x", Round(x, 2) }, { "z", Round(z, 2) }, { "hits", pointHits } });
+                allHits.insert(allHits.end(), hits.begin(), hits.end());
+
+                // The terrain above a floor of a mesh: it stands in a room
+                auto terrain = std::find_if(hits.begin(), hits.end(), [](const Hit& hit) { return hit.kind == "terrain"; });
+                if (terrain == hits.end())
+                    continue;
+                auto floorBelow = std::any_of(hits.begin(), hits.end(), [&](const Hit& hit) {
+                    return hit.kind != "terrain" && hit.up && hit.y < terrain->y - tolerance; });
+                if (floorBelow) {
+                    terrainAboveCount++;
+                    if (terrainAbove.size() < 10)
+                        terrainAbove.push_back(FromVec3(vec3(x, terrain->y, z)));
+                }
+            }
+        }
+
+        // Levels: surfaces facing the same way within the tolerance, the largest first
+        std::sort(allHits.begin(), allHits.end(), [](const Hit& a, const Hit& b) { return a.up != b.up ? a.up : a.y < b.y; });
+        json levels = json::array();
+        for (size_t i = 0; i < allHits.size();) {
+            size_t end = i;
+            std::map<std::string, int32_t> names;
+            double sum = 0.0;
+            while (end < allHits.size() && allHits[end].up == allHits[i].up && allHits[end].y - allHits[i].y <= tolerance) {
+                names[allHits[end].name]++;
+                sum += allHits[end].y;
+                end++;
+            }
+            std::vector<std::pair<int32_t, std::string>> sortedNames;
+            for (const auto& [name, count] : names)
+                sortedNames.emplace_back(count, name);
+            std::sort(sortedNames.rbegin(), sortedNames.rend());
+            json top3 = json::array();
+            for (size_t n = 0; n < std::min(sortedNames.size(), size_t(3)); n++)
+                top3.push_back(sortedNames[n].second);
+            levels.push_back({ { "y", Round(sum / double(end - i), 2) }, { "facing", allHits[i].up ? "up" : "down" },
+                { "points", end - i }, { "coverage", Round(100.0 * double(end - i) / double(pointCount), 1) }, { "surfaces", top3 } });
+            i = end;
+        }
+        std::sort(levels.begin(), levels.end(), [](const json& a, const json& b) { return a["points"].get<size_t>() > b["points"].get<size_t>(); });
+        if (levels.size() > 12)
+            levels.erase(levels.begin() + 12, levels.end());
+
+        json result = { { "points", pointCount }, { "step", step }, { "levels", levels },
+            { "terrainAboveFloors", { { "points", terrainAboveCount }, { "examples", terrainAbove } } } };
+        auto file = query.value("file", std::string("surface_grid.json"));
+        if (!context.outputDirectory.empty()) {
+            WriteFileAtomic(context.outputDirectory / file, points.dump());
+            result["file"] = file;
+        }
+        return result;
+
+    }
+
+    // Entities that reach into a corridor along a path of points: width across it, height above it
+    static json QueryCorridor(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+        std::vector<vec3> points;
+        for (const auto& point : query.at("points"))
+            points.push_back(ToVec3(point));
+        if (points.size() < 2)
+            throw std::runtime_error("A corridor needs at least two points");
+
+        auto halfWidth = query.value("width", 3.0f) * 0.5f;
+        auto height = query.value("height", 3.0f);
+        auto ignored = GetIgnoredEntities(scene, query);
+        auto ignorePatterns = query.value("ignore", std::vector<std::string>());
+
+        std::map<uint64_t, json> found;
+        float along = 0.0f;
+        for (size_t i = 0; i + 1 < points.size(); i++) {
+            auto a = points[i], b = points[i + 1];
+            auto segment = vec2(b.x - a.x, b.z - a.z);
+            auto length = glm::length(segment);
+            auto direction = length > 0.0f ? segment / length : vec2(1.0f, 0.0f);
+
+            Volume::AABB box(glm::min(a, b) - vec3(halfWidth, 0.2f, halfWidth), glm::max(a, b) + vec3(halfWidth, height, halfWidth));
+            for (auto entity : scene.QueryAABB(box, Scene::MeshComponentBit)) {
+                if (ignored.contains(entity) || found.contains(uint64_t(ECS::Entity(entity))))
+                    continue;
+                auto mesh = entity.TryGetComponent<MeshComponent>();
+                if (!mesh || !mesh->visible || !mesh->mesh.IsLoaded())
+                    continue;
+                if (!ignorePatterns.empty() && (MatchAnyPattern(ignorePatterns, GetEntityName(entity)) ||
+                    MatchAnyPattern(ignorePatterns, mesh->mesh.GetResource()->path)))
+                    continue;
+
+                // The closest point of the bounds to the path, across it in the plane and along its height
+                auto bounds = GetEntityBounds(entity);
+                auto center = vec2(bounds.GetCenter().x, bounds.GetCenter().z);
+                auto t = glm::clamp(glm::dot(center - vec2(a.x, a.z), direction), 0.0f, length);
+                auto onPath = vec2(a.x, a.z) + direction * t;
+                auto closest = glm::clamp(onPath, vec2(bounds.min.x, bounds.min.z), vec2(bounds.max.x, bounds.max.z));
+                auto lateral = glm::distance(closest, onPath);
+                auto pathY = glm::mix(a.y, b.y, length > 0.0f ? t / length : 0.0f);
+                if (lateral > halfWidth || bounds.max.y < pathY - 0.2f || bounds.min.y > pathY + height)
+                    continue;
+
+                found[uint64_t(ECS::Entity(entity))] = { { "entity", GetEntityLabel(entity) }, { "mesh", mesh->mesh.GetResource()->path },
+                    { "along", Round(along + t, 2) }, { "lateral", Round(lateral, 2) }, { "bounds", BoundsToJson(bounds) } };
+            }
+            along += length;
+        }
+
+        std::vector<json> entities;
+        for (const auto& [id, entry] : found)
+            entities.push_back(entry);
+        std::sort(entities.begin(), entities.end(), [](const json& x, const json& y) { return x["along"].get<float>() < y["along"].get<float>(); });
+        return { { "count", entities.size() }, { "length", Round(along, 2) }, { "entities", entities } };
+
+    }
+
+    // Visible meshes without a rigid body on them or an ancestor, by mesh, e.g. walls the player walks through
+    static json QueryCollisionCoverage(const QueryContext& context, const json& query) {
+
+        auto& scene = context.scene;
+        auto area = GetArea(scene, query);
+        auto minSize = query.value("minSize", 0.5f);
+        auto meshPatterns = query.value("meshes", std::vector<std::string>());
+        auto ignorePatterns = query.value("ignore", std::vector<std::string>());
+
+        auto hasBody = [&](Scene::Entity entity) {
+
+            for (auto current = entity; current.IsValid(); current = scene.GetParentEntity(current))
+                if (current.HasComponent<RigidBodyComponent>())
+                    return true;
+            return false;
+
+        };
+
+        struct Missing {
+
+            int32_t count = 0;
+            json examples = json::array();
+
+        };
+        std::map<std::string, Missing> missing;
+        int32_t covered = 0, uncovered = 0;
+        auto meshSubset = scene.GetSubset<MeshComponent>();
+        for (auto ecsEntity : meshSubset) {
+            const auto& mesh = meshSubset.Get(ecsEntity);
+            if (!mesh.visible || !mesh.mesh.IsLoaded())
+                continue;
+            const auto& path = mesh.mesh.GetResource()->path;
+            Scene::Entity entity = { ecsEntity, &scene.entityManager };
+            if ((!meshPatterns.empty() && !MatchAnyPattern(meshPatterns, path)) ||
+                (!ignorePatterns.empty() && (MatchAnyPattern(ignorePatterns, path) || MatchAnyPattern(ignorePatterns, GetEntityName(entity)))))
+                continue;
+
+            auto bounds = GetEntityBounds(entity);
+            auto size = bounds.GetSize();
+            if (std::max({ size.x, size.y, size.z }) < minSize || !area.Intersects(bounds))
+                continue;
+
+            if (hasBody(entity)) {
+                covered++;
+                continue;
+            }
+            uncovered++;
+            auto& entry = missing[path];
+            entry.count++;
+            if (entry.examples.size() < 3)
+                entry.examples.push_back({ { "entity", GetEntityLabel(entity) }, { "position", FromVec3(bounds.GetCenter()) } });
+        }
+
+        std::vector<std::pair<int32_t, std::string>> sorted;
+        for (const auto& [path, entry] : missing)
+            sorted.emplace_back(entry.count, path);
+        std::sort(sorted.rbegin(), sorted.rend());
+        json meshes = json::array();
+        for (const auto& [count, path] : sorted)
+            meshes.push_back({ { "mesh", path }, { "count", count }, { "examples", missing[path].examples } });
+        return { { "withBody", covered }, { "withoutBody", uncovered }, { "meshes", meshes } };
+
+    }
+
+    static const std::map<std::string, json(*)(const QueryContext&, const json&)> queryTypes = {
+        { "raycast", QueryRaycast },
+        { "ground", QueryGround },
+        { "entity", QueryEntity },
+        { "around", QueryAround },
+        { "materialGraphShaders", QueryMaterialGraphShaders },
+        { "clearance", QueryClearance },
+        { "pick", QueryPick },
+        { "path", QueryPath },
+        { "terrain", QueryTerrain },
+        { "terrainSample", QueryTerrainSample },
+        { "terrainMap", QueryTerrainMap },
+        { "route", QueryRoute },
+        { "buried", QueryBuried },
+        { "surfaceGrid", QuerySurfaceGrid },
+        { "corridor", QueryCorridor },
+        { "collisionCoverage", QueryCollisionCoverage }
+    };
+
+    json RunQueries(Scene::Scene& scene, const json& queries, const PickRayFunction& pickRay, const fs::path& outputDirectory) {
+
+        QueryContext context = { scene, pickRay, outputDirectory };
+
+        json results = json::array();
+        for (const auto& query : queries) {
+            json result;
+            result["query"] = query;
+
+            try {
+                auto type = query.at("type").get<std::string>();
+                auto handler = queryTypes.find(type);
+                if (handler == queryTypes.end()) {
+                    std::string known;
+                    for (const auto& [name, _] : queryTypes)
+                        known += (known.empty() ? "" : ", ") + name;
+                    throw std::runtime_error("Unknown query type '" + type + "' (" + known + ")");
+                }
+                result["result"] = handler->second(context, query);
+            }
+            catch (const std::exception& e) {
+                result["error"] = e.what();
+            }
+
+            results.push_back(result);
+        }
+
+        return results;
+
+    }
+
+}

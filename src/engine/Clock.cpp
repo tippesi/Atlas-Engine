@@ -3,13 +3,13 @@
 #include <numeric>
 #include <algorithm>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 namespace Atlas {
 
     std::mutex Clock::mutex;
 
-    double Clock::timeStamp = 0.0;
+    uint64_t Clock::timeStamp = 0;
     float Clock::deltaTime = 0.0f;
 
     std::vector<float> Clock::deltas;
@@ -18,7 +18,7 @@ namespace Atlas {
 
     float Clock::Get() {
 
-        return (float)SDL_GetTicks() / 1000.0f;
+        return (float)((double)SDL_GetTicksNS() / (double)SDL_NS_PER_SECOND);
 
     }
 
@@ -78,9 +78,8 @@ namespace Atlas {
         if (!deltas.size())
             deltas.resize(300);
 
-        auto time = (double)SDL_GetPerformanceCounter();
-        deltaTime = (float)((time - timeStamp) / (double)
-            SDL_GetPerformanceFrequency());
+        auto time = SDL_GetTicksNS();
+        deltaTime = (float)((double)(time - timeStamp) / (double)SDL_NS_PER_SECOND);
 
         deltas[frameCount] = deltaTime;
 

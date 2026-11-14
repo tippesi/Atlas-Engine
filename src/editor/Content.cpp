@@ -12,14 +12,22 @@ namespace Atlas::Editor {
         { "usd", ContentType::MeshSource },
         { "usda", ContentType::MeshSource },
         { "aematerial", ContentType::Material },
+        { "aematgraph", ContentType::MaterialGraph },
         { "aeterrain", ContentType::Terrain },
         { "aescene", ContentType::Scene },
         { "lua", ContentType::Script },
         { "ttf", ContentType::Font },
         { "aeprefab", ContentType::Prefab },
         { "jpg", ContentType::Texture },
+        { "jpeg", ContentType::Texture },
         { "png", ContentType::Texture },
+        { "tga", ContentType::Texture },
+        { "bmp", ContentType::Texture },
+        { "gif", ContentType::Texture },
+        { "psd", ContentType::Texture },
+        { "ktx2", ContentType::Texture },
         { "hdr", ContentType::EnvironmentTexture },
+        { "aeanimation", ContentType::Animation },
     };
 
 }

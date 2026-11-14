@@ -1,6 +1,11 @@
 #include "ImpostorRenderer.h"
 #include "helper/GeometryHelper.h"
 
+#include "../Log.h"
+#include "../materialgraph/Evaluator.h"
+
+#include <memory>
+
 namespace Atlas {
 
     namespace Renderer {
@@ -15,17 +20,50 @@ namespace Atlas {
 
         void ImpostorRenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList, RenderList* renderList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+            std::unordered_map<void*, uint16_t>& materialMap, bool lateDraws) {
 
             struct alignas(16) PushConstants {
                 uint32_t materialIdx;
             };
 
-            Graphics::Profiler::BeginQuery("Impostors");
+            CPUProfiler::Scope profilerScope("Impostors");
+            GPUProfiler::Scope gpuScope("Impostors");
 
             auto mainPass = renderList->GetMainPass();
 
             vertexArray.Bind(commandList);
+
+            // The instances are read from the instance buffer, except the ones of skinned meshes. All impostors share
+            // a few pipeline variants, a pipeline is only looked up and bound when the variant changes
+            int32_t boundVariant = -1;
+            const Graphics::PushConstantRange* constantsRange = nullptr;
+            auto bindImpostor = [&](Mesh::Mesh* mesh, bool useInstanceBuffer) {
+                auto& impostor = mesh->impostor;
+                auto variant = int32_t(impostor->interpolation) | int32_t(impostor->pixelDepthOffset) << 1 | int32_t(useInstanceBuffer) << 2;
+                if (variant != boundVariant) {
+                    boundVariant = variant;
+                    auto config = GetPipelineConfig(Graphics::AttachmentFormats(target->gBufferRendering),
+                        impostor->interpolation, impostor->pixelDepthOffset, useInstanceBuffer);
+                    auto pipeline = PipelineManager::GetPipeline(config);
+                    commandList->BindPipeline(pipeline);
+                    constantsRange = pipeline->shader->GetPushConstantRange("constants");
+                }
+
+                impostor->baseColorTexture->Bind(commandList, 3, 0);
+                impostor->roughnessMetalnessAoTexture->Bind(commandList, 3, 1);
+                impostor->normalTexture->Bind(commandList, 3, 2);
+                impostor->depthTexture->Bind(commandList, 3, 3);
+
+                // Base 0 is used by the materials
+                impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
+                impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
+
+                auto material = materialMap.find(impostor.Get().get());
+                PushConstants constants = {
+                    .materialIdx = material != materialMap.end() ? uint32_t(material->second) : 0u,
+                };
+                commandList->PushConstants(constantsRange, &constants);
+            };
 
             for (const auto& item : mainPass->meshToInstancesMap) {
 
@@ -33,39 +71,27 @@ namespace Atlas {
                 auto instance = item.second;
 
                 // If there aren't any impostors there won't be a buffer
-                if (!instance.impostorCount)
+                if (!instance.impostorCount || lateDraws)
                     continue;
 
                 const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
-                auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
-                auto pipeline = PipelineManager::GetPipeline(config);
-
-                commandList->BindPipeline(pipeline);
-
-                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
-                mesh->impostor->roughnessMetalnessAoTexture->Bind(commandList, 3, 1);
-                mesh->impostor->normalTexture->Bind(commandList, 3, 2);
-                mesh->impostor->depthTexture->Bind(commandList, 3, 3);
-
-                // Base 0 is used by the materials
-                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
-                mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
-
-                PushConstants constants = {
-                    .materialIdx = uint32_t(materialMap[mesh->impostor.Get().get()]),
-                };
-                commandList->PushConstants("constants", &constants);
-
+                bindImpostor(mesh.Get().get(), !mesh->data.IsSkinned());
                 commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
             }
 
-            Graphics::Profiler::EndQuery();
+            for (const auto& draw : lateDraws ? mainPass->gpuLateDraws : mainPass->gpuDraws) {
+                if (draw.type != RenderList::GPUDrawType::Impostor)
+                    continue;
+
+                bindImpostor(draw.mesh, true);
+                renderList->DrawGPUCulled(commandList, draw);
+            }
 
         }
 
         void ImpostorRenderer::Generate(const std::vector<mat4> &viewMatrices,
-            glm::mat4 projectionMatrix, float distToCenter, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
+            mat4 projectionMatrix, float distToCenter, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
 
             struct alignas(16) PushConstants {
                 mat4 vMatrix = mat4(1.0f);
@@ -85,11 +111,63 @@ namespace Atlas {
             };
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
+            Graphics::ImageDesc depthImageDesc = {
+                .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
+                .width = uint32_t(impostor->resolution),
+                .height = uint32_t(impostor->resolution),
+                .format = VK_FORMAT_D32_SFLOAT
+            };
+            auto depthImage = graphicsDevice->CreateImage(depthImageDesc);
+
+            auto getRendering = [&](uint32_t layer) {
+                auto clear = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                return Graphics::RenderingDesc{
+                    .colorAttachments = {
+                        {.image = impostor->baseColorTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->normalTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->roughnessMetalnessAoTexture->image, .layer = layer, .loadOp = clear},
+                        {.image = impostor->depthTexture->image, .layer = layer, .loadOp = clear}
+                    },
+                    .depthAttachment = {.image = depthImage, .loadOp = clear},
+                    .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
+                };
+                };
+
+            // Graphs draw their surface at the time of their bake, the vertices stay where they are. Materials without an
+            // entry or with an empty one draw their regular properties
+            struct GraphMaterial {
+                MaterialGraph::Evaluator evaluator;
+                Ref<Graphics::Pipeline> pipeline;
+            };
+
+            std::unordered_map<const Material*, std::unique_ptr<GraphMaterial>> graphMaterials;
+            for (const auto& subData : mesh->data.subData) {
+                auto material = subData.material.IsLoaded() ? subData.material.Get().get() : nullptr;
+                if (!material || !material->HasGraph() || graphMaterials.contains(material))
+                    continue;
+
+                auto graphMaterial = std::make_unique<GraphMaterial>();
+                auto shader = graphMaterial->evaluator.PrepareBake(*material);
+                if (shader.valid) {
+                    auto config = graphMaterial->evaluator.GetPipelineConfig(shader, Graphics::AttachmentFormats(getRendering(0)),
+                        mesh, material);
+                    graphMaterial->pipeline = PipelineManager::GetPipeline(config);
+                }
+
+                // Graphs which don't write the surface have no errors
+                auto isDrawable = shader.valid && graphMaterial->pipeline->isComplete;
+                if (!isDrawable && (shader.valid || !shader.errors.empty())) {
+                    auto reason = shader.valid ? "the shader of its graph doesn't compile" : "its graph has errors: " + shader.errors.front().message;
+                    Log::Warning("The impostor of " + mesh->name + " shows the regular properties of " + material->name + ", " + reason);
+                }
+                graphMaterials[material] = isDrawable ? std::move(graphMaterial) : nullptr;
+            }
+
             auto commandList = graphicsDevice->GetCommandList(Graphics::GraphicsQueue, true);
 
             commandList->BeginCommands();
-
-            auto frameBuffer = GenerateFrameBuffer(impostor);
 
             Buffer::UniformBuffer uniformBuffer(sizeof(Uniforms));
             Uniforms uniforms = {
@@ -101,7 +179,7 @@ namespace Atlas {
             mesh->vertexArray.Bind(commandList);
 
             {
-                // Transfer all framebuffer images including all mips into same layout/access as end of render pass
+                // Transfer all images including all mips into same layout/access as end of render pass
 
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
@@ -110,7 +188,6 @@ namespace Atlas {
                     {impostor->normalTexture->image,               layout, access},
                     {impostor->roughnessMetalnessAoTexture->image, layout, access},
                     {impostor->depthTexture->image, layout, access},
-                    {frameBuffer->GetDepthImage(), layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
@@ -118,36 +195,50 @@ namespace Atlas {
 
             for (size_t i = 0; i < viewMatrices.size(); i++) {
 
-                frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture->image, i, 0);
-                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture->image, i, 1);
-                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture->image, i, 2);
-                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture->image, i, 3);
-                frameBuffer->Refresh();
-
-                commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
+                auto rendering = getRendering(uint32_t(i));
+                commandList->BeginRendering(rendering);
 
                 for (size_t j = 0; j < mesh->data.subData.size(); j++) {
 
                     auto subData = &mesh->data.subData[j];
                     auto material = subData->material;
-                    auto config = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
+
+                    auto graphMaterial = graphMaterials.find(material.Get().get());
+                    if (graphMaterial != graphMaterials.end() && graphMaterial->second) {
+                        commandList->BindPipeline(graphMaterial->second->pipeline);
+                        graphMaterial->second->evaluator.Bind(commandList);
+
+                        auto pushConstants = MaterialGraph::Evaluator::ImpostorPushConstants {
+                            .vMatrix = viewMatrices[i],
+                            .time = material->graphBake.time,
+                            .invertUVs = mesh->invertUVs ? 1u : 0u,
+                            .distanceToPlaneCenter = distToCenter,
+                            .twoSided = material->twoSided ? 1u : 0u
+                        };
+                        commandList->PushConstants("constants", &pushConstants);
+
+                        commandList->DrawIndexed(subData->indicesCount, 1, subData->indicesOffset, 0, 0);
+                        continue;
+                    }
+
+                    auto config = GetPipelineConfigForSubData(subData, mesh, Graphics::AttachmentFormats(rendering));
                     auto pipeline = PipelineManager::GetPipeline(config);
 
                     commandList->BindPipeline(pipeline);
 
-                    if (material->HasBaseColorMap())
+                    if (material->baseColorMap.IsLoaded())
                         commandList->BindImage(material->baseColorMap->image, material->baseColorMap->sampler, 3, 0);
-                    if (material->HasOpacityMap())
+                    if (material->opacityMap.IsLoaded())
                         commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
-                    if (material->HasNormalMap())
+                    if (material->normalMap.IsLoaded())
                         commandList->BindImage(material->normalMap->image, material->normalMap->sampler, 3, 2);
-                    if (material->HasRoughnessMap())
+                    if (material->roughnessMap.IsLoaded())
                         commandList->BindImage(material->roughnessMap->image, material->roughnessMap->sampler, 3, 3);
-                    if (material->HasMetalnessMap())
+                    if (material->metalnessMap.IsLoaded())
                         commandList->BindImage(material->metalnessMap->image, material->metalnessMap->sampler, 3, 4);
-                    if (material->HasAoMap())
+                    if (material->aoMap.IsLoaded())
                         commandList->BindImage(material->aoMap->image, material->aoMap->sampler, 3, 5);
-                    if (material->HasDisplacementMap())
+                    if (material->displacementMap.IsLoaded())
                         commandList->BindImage(material->displacementMap->image, material->displacementMap->sampler, 3, 6);
 
                     auto pushConstants = PushConstants {
@@ -168,7 +259,7 @@ namespace Atlas {
 
                 }
 
-                commandList->EndRenderPass();
+                commandList->EndRendering();
 
             }
 
@@ -207,70 +298,15 @@ namespace Atlas {
 
         }
 
-        Ref<Graphics::FrameBuffer> ImpostorRenderer::GenerateFrameBuffer(Mesh::Impostor *impostor) {
-
-            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
-
-            Graphics::ImageDesc imageDesc = {
-                .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
-                .width = uint32_t(impostor->resolution),
-                .height = uint32_t(impostor->resolution),
-                .format = VK_FORMAT_D32_SFLOAT
-            };
-            auto depthImage = graphicsDevice->CreateImage(imageDesc);
-
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_R16_SFLOAT}
-            };
-
-            for (auto &attachment : colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = VK_FORMAT_D32_SFLOAT,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            };
-
-            auto renderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3]},
-                .depthAttachment = depthAttachment,
-                .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
-            };
-            auto renderPass = graphicsDevice->CreateRenderPass(renderPassDesc);
-
-            auto frameBufferDesc = Graphics::FrameBufferDesc{
-                .renderPass = renderPass,
-                .colorAttachments = {
-                    {impostor->baseColorTexture->image, 0, true},
-                    {impostor->normalTexture->image, 0, true},
-                    {impostor->roughnessMetalnessAoTexture->image, 0, true},
-                    {impostor->depthTexture->image, 0, true}
-                },
-                .depthAttachment = {depthImage, 0, true},
-                .extent = {uint32_t(impostor->resolution), uint32_t(impostor->resolution)}
-            };
-            return graphicsDevice->CreateFrameBuffer(frameBufferDesc);
-
-        }
-
-        PipelineConfig ImpostorRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
-            bool interpolation, bool pixelDepthOffset) {
+        PipelineConfig ImpostorRenderer::GetPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
+            bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer) {
 
             auto shaderConfig = ShaderConfig {
                 {"impostor/impostor.vsh", VK_SHADER_STAGE_VERTEX_BIT},
                 {"impostor/impostor.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = frameBuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 
@@ -280,13 +316,14 @@ namespace Atlas {
             std::vector<std::string> macros;
             if (interpolation) macros.push_back("INTERPOLATION");
             if (pixelDepthOffset) macros.push_back("PIXEL_DEPTH_OFFSET");
+            if (useInstanceBuffer) macros.push_back("INSTANCE_BUFFER");
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
         }
 
         PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(const Mesh::MeshSubData *subData,
-            Mesh::Mesh *mesh, const Ref<Graphics::FrameBuffer>& frameBuffer) {
+            Mesh::Mesh *mesh, const Graphics::AttachmentFormats& attachmentFormats) {
 
             auto material = subData->material;
 
@@ -295,7 +332,7 @@ namespace Atlas {
                 {"impostor/generate.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = frameBuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 
@@ -304,25 +341,25 @@ namespace Atlas {
             }
 
             std::vector<std::string> macros;
-            if (material->HasBaseColorMap()) {
+            if (material->baseColorMap.IsLoaded()) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            if (material->HasOpacityMap()) {
+            if (material->opacityMap.IsLoaded()) {
                 macros.push_back("OPACITY_MAP");
             }
-            if (material->HasNormalMap()) {
+            if (material->normalMap.IsLoaded()) {
                 macros.push_back("NORMAL_MAP");
             }
-            if (material->HasRoughnessMap()) {
+            if (material->roughnessMap.IsLoaded()) {
                 macros.push_back("ROUGHNESS_MAP");
             }
-            if (material->HasMetalnessMap()) {
+            if (material->metalnessMap.IsLoaded()) {
                 macros.push_back("METALNESS_MAP");
             }
-            if (material->HasAoMap()) {
+            if (material->aoMap.IsLoaded()) {
                 macros.push_back("AO_MAP");
             }
-            if (material->HasDisplacementMap()) {
+            if (material->displacementMap.IsLoaded()) {
                 macros.push_back("HEIGHT_MAP");
             }
             // This is a check if we have any maps at all (no macros, no maps)

@@ -20,13 +20,17 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
-                RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap);
+                RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap, bool lateDraws = false);
 
         private:
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, const Ref<RenderTarget>& target);
+                Mesh::Mesh* mesh, const Ref<RenderTarget>& target, const MaterialGraph::CompiledGraph* graph = nullptr);
 
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+            // Switches to the pipelines of the graph once they are created
+            void UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const Ref<RenderTarget>& target);
+
+            // Draws culled on the GPU have a draw command
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*>> subDatas;
 
             struct alignas(16) PushConstants {
                 uint32_t vegetation;
@@ -50,6 +54,11 @@ namespace Atlas {
                 uint32_t aoTextureIdx;
                 uint32_t heightTextureIdx;
                 uint32_t emissiveTextureIdx;
+                uint32_t jointOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
+                // Only part of the push constants of graphs, the others don't push it
+                uint32_t materialGraphOffset;
             };
 
 

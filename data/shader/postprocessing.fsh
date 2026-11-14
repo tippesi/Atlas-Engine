@@ -18,7 +18,6 @@ layout(set = 3, binding = 5) uniform sampler2D autoExposureTexture;
 #endif
 
 layout(set = 3, binding = 4) uniform UniformBuffer {
-    float exposure;
     float autoExposureMipLevel;
     float paperWhiteLuminance;
     float maxScreenLuminance;
@@ -34,6 +33,7 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float vignetteStrength;
     float padding0;
     float padding1;
+    float padding2;
     vec4 vignetteColor;
     vec4 tintColor;
 } Uniforms;
@@ -136,9 +136,9 @@ void main() {
     bloom = Uniforms.bloomDirtStrength * textureLod(bloomDirtTexture, texCoord, 0.0).r * bloom + bloom;
 #endif
 
-    color += bloom;
+    color = color * Uniforms.tintColor.rgb + bloom;
 
-    color *= Uniforms.exposure;
+    // The camera exposure is already applied as the pre-exposure of the lighting
 #ifdef AUTO_EXPOSURE
     float exposureBrightness = texelFetch(autoExposureTexture, ivec2(0.0), 0).r;
     color /= (9.6 * exposureBrightness);
@@ -186,8 +186,6 @@ void main() {
     color = pow(color, vec3(gamma));
 #endif
 #endif
-
-    color = color * Uniforms.tintColor.rgb;
 
     color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
 

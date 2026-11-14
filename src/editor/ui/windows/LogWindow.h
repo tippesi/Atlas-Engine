@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Window.h"
+#include "DrawerWindow.h"
 #include "Log.h"
 
 #include <deque>
@@ -8,12 +8,23 @@
 
 namespace Atlas::Editor::UI {
 
-    class LogWindow : public Window {
+    class LogWindow : public DrawerWindow {
 
     public:
-        explicit LogWindow(bool show) : Window("Log", show) {}
+        explicit LogWindow(bool show) : DrawerWindow("Log", show) { height = 320.0f; }
+
+        // Keeps the entry counts up to date while the drawer is closed
+        void Update();
 
         void Render();
+
+        // Warnings and errors the user hasn't seen, because the log wasn't open
+        int32_t GetUnseenWarningCount() const { return unseenWarningCount; }
+        int32_t GetUnseenErrorCount() const { return unseenErrorCount; }
+
+        // First line of the newest warning or error
+        const std::string& GetLastProblem() const { return lastProblem; }
+        bool IsLastProblemError() const { return lastProblemIsError; }
 
     private:
         // One displayed line. Multi-line messages are split, such that every line has the same height
@@ -54,6 +65,11 @@ namespace Atlas::Editor::UI {
         int32_t messageCount = 0;
         int32_t warningCount = 0;
         int32_t errorCount = 0;
+        int32_t unseenWarningCount = 0;
+        int32_t unseenErrorCount = 0;
+
+        std::string lastProblem;
+        bool lastProblemIsError = false;
 
         std::string logSearch;
         std::string lowerSearch;

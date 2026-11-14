@@ -45,6 +45,12 @@ namespace Atlas {
 
             bool sampleEmissives = false;
 
+            // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
+            // they hit before shading
+            bool shaderExecutionReordering = true;
+            // Hits of material graphs use their baked values instead of the graphs, e.g. for debugging
+            bool materialGraphs = true;
+
         private:
             struct alignas(16) RayGenUniforms {
                 vec4 origin;
@@ -62,7 +68,6 @@ namespace Atlas {
                 int32_t sampleCount;
                 int32_t bounceCount;
                 float seed;
-                float exposure;
                 int32_t samplesPerFrame;
                 float maxRadiance;
                 int32_t frameCount;
@@ -72,12 +77,14 @@ namespace Atlas {
 
             vec3 cameraLocation;
             vec2 cameraRotation;
+            float preExposure = 0.0f;
 
             int32_t sampleCount = 0;
             ivec2 imageOffset = ivec2(0);
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
+            PipelineConfig rayHitRayTracingPipelineConfig;
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;

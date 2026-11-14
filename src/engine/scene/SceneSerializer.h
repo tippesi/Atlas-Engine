@@ -7,6 +7,9 @@
 
 namespace Atlas::Scene {
 
+    // Components of the entity without its id and children
+    void ComponentsToJson(json& j, const Entity& p, Scene* scene);
+
     void EntityToJson(json& j, const Entity& p, Scene* scene,
         std::set<ECS::Entity>& insertedEntities);
 
@@ -16,6 +19,14 @@ namespace Atlas::Scene {
     void SceneToJson(json& j, Scene* scene);
 
     void SceneFromJson(const json& j, Ref<Scene>& scene);
+
+    // Scene wide feature settings (sky, post processing, wind and the optional lighting features)
+    void SceneSettingsToJson(json& j, const Scene* scene);
+
+    void SceneSettingsFromJson(const json& j, Scene* scene);
+
+    // Applies a JSON merge patch to the settings, missing features are created with default settings
+    void PatchSceneSettings(const json& patch, Scene* scene);
 
     void EntityManagerToJson(json& j, const ECS::EntityManager& p);
 

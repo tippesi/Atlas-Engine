@@ -1,5 +1,6 @@
 #include "CommandList.h"
 #include "GraphicsDevice.h"
+#include "../profiler/CPUProfiler.h"
 
 #include <cassert>
 #include <thread>
@@ -78,6 +79,12 @@ namespace Atlas {
 
             VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo))
 
+            // A new command buffer doesn't have any sets bound
+            for (auto& sets : boundDescriptorSets)
+                for (auto& set : sets)
+                    set = {};
+            descriptorsChanged = true;
+
             // Shader-read access is not supported by transfer-only queues.
             // This is only effective for the first time it's called.
             if (queueType != TransferQueue) ChangePlaceholderLayouts();
@@ -132,104 +139,78 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
-            bool clear, bool autoAdjustImageLayouts) {
+        void CommandList::BeginRendering(const RenderingDesc& desc) {
 
-            if (autoAdjustImageLayouts) {
-                std::vector<VkImageMemoryBarrier> barriers;
-                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    auto& rpAttachment = renderPass->colorAttachments[i];
-                    auto& fbAttachment = frameBuffer->colorAttachments[i];
-                    if (!fbAttachment.isValid) continue;
-                    if (fbAttachment.image->layout != rpAttachment.initialLayout) {
-                        auto barrier = Initializers::InitImageMemoryBarrier(fbAttachment.image->image,
-                            fbAttachment.image->layout, rpAttachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
-                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "A render pass is already in use");
 
-                        barriers.push_back(barrier);
-                        fbAttachment.image->layout = rpAttachment.initialLayout;
-                    }
-                }
+            VkRenderingAttachmentInfo colorAttachmentInfos[MAX_COLOR_ATTACHMENTS] = {};
+            uint32_t colorAttachmentCount = 0;
 
-                auto& rpAttachment = renderPass->depthAttachment;
-                auto& fbAttachment = frameBuffer->depthAttachment;
-                if (fbAttachment.isValid && fbAttachment.image->layout != rpAttachment.initialLayout) {
-                    auto barrier = Initializers::InitImageMemoryBarrier(fbAttachment.image->image,
-                        fbAttachment.image->layout, rpAttachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
-                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+            auto fillAttachmentInfo = [&](const RenderingAttachment& attachment, VkImageLayout layout,
+                VkClearValue clearValue, VkRenderingAttachmentInfo& attachmentInfo) {
 
-                    barriers.push_back(barrier);
-                    fbAttachment.image->layout = rpAttachment.initialLayout;
-                }
+                AE_ASSERT(attachment.layer < attachment.image->layers && "Image doesn't contain this layer");
+                attachmentInfo.imageView = attachment.image->attachmentViews[attachment.layer];
+                attachmentInfo.imageLayout = layout;
+                attachmentInfo.loadOp = attachment.loadOp;
+                attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                attachmentInfo.clearValue = clearValue;
 
-                if (barriers.size()) {
-                    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                        0, 0, nullptr, 0, nullptr, uint32_t(barriers.size()), barriers.data());
-                }
+            };
+
+            for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+                const auto& attachment = desc.colorAttachments[i];
+
+                colorAttachmentInfos[i].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+                if (!attachment.image) continue;
+
+                fillAttachmentInfo(attachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    desc.colorClearValue, colorAttachmentInfos[i]);
+                colorAttachmentCount = i + 1;
             }
 
-            VkRenderPassBeginInfo rpInfo = {};
-            rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            rpInfo.pNext = nullptr;
-            rpInfo.renderPass = renderPass->renderPass;
-            rpInfo.renderArea.offset.x = 0;
-            rpInfo.renderArea.offset.y = 0;
-            rpInfo.renderArea.extent = frameBuffer->extent;
-            rpInfo.framebuffer = frameBuffer->frameBuffer;
-
-            clearValues.clear();
-            for (auto& attachment : renderPass->colorAttachments) {
-                if (!attachment.isValid) continue;
-                if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                    clearValues.push_back(renderPass->colorClearValue);
-                }
-            }
-            auto& attachment = renderPass->depthAttachment;
-            if (attachment.isValid && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                clearValues.push_back(renderPass->depthClearValue);
+            VkRenderingAttachmentInfo depthAttachmentInfo = {};
+            depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+            if (desc.depthAttachment.image) {
+                fillAttachmentInfo(desc.depthAttachment, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    desc.depthClearValue, depthAttachmentInfo);
             }
 
-            if (clearValues.size()) {
-                rpInfo.clearValueCount = uint32_t(clearValues.size());
-                rpInfo.pClearValues = clearValues.data();
-            }
+            renderingInUse = desc;
+            renderingExtent = desc.GetExtent();
 
-            vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-            renderPassInUse = renderPass;
-            frameBufferInUse = frameBuffer;
+            AttachmentBarriers(true);
 
-            if (clear) ClearAttachments();
+            VkRenderingInfo renderingInfo = {};
+            renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+            renderingInfo.renderArea.extent = renderingExtent;
+            renderingInfo.layerCount = 1;
+            renderingInfo.colorAttachmentCount = colorAttachmentCount;
+            renderingInfo.pColorAttachments = colorAttachmentInfos;
+            renderingInfo.pDepthAttachment = desc.depthAttachment.image ? &depthAttachmentInfo : nullptr;
+
+            vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
         }
 
         void CommandList::EndRenderPass() {
 
+            AE_ASSERT(swapChainInUse && "No swap chain render pass is in use");
+            if (!swapChainInUse) return;
+
             vkCmdEndRenderPass(commandBuffer);
-
-            // We need to keep track of the image layouts
-            if (swapChainInUse) {
-                // TODO...
-            }
-            if (renderPassInUse) {
-                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    const auto& rpAttachment = renderPassInUse->colorAttachments[i];
-                    const auto& fbAttachment = frameBufferInUse->colorAttachments[i];
-                    if (!fbAttachment.isValid) continue;
-                    fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
-                }
-                if (frameBufferInUse->depthAttachment.isValid) {
-                    const auto& rpAttachment = renderPassInUse->depthAttachment;
-                    const auto& fbAttachment = frameBufferInUse->depthAttachment;
-                    fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
-                }
-            }
-
             swapChainInUse = nullptr;
-            renderPassInUse = nullptr;
-            frameBufferInUse = nullptr;
+
+        }
+
+        void CommandList::EndRendering() {
+
+            AE_ASSERT(renderingInUse && "No rendering is in use");
+            if (!renderingInUse) return;
+
+            vkCmdEndRendering(commandBuffer);
+            AttachmentBarriers(false);
+            renderingInUse.reset();
 
         }
 
@@ -257,7 +238,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginDebugMarker(const std::string &name, glm::vec4 color) {
+        void CommandList::BeginDebugMarker(const std::string &name, vec4 color) {
 
             VkDebugMarkerMarkerInfoEXT markerInfo = {};
             markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
@@ -277,6 +258,9 @@ namespace Atlas {
 
         void CommandList::BindPipeline(const Ref<Pipeline>& pipeline) {
 
+            AE_ASSERT(pipeline->isComplete && "Can't bind a pipeline which wasn't created");
+            if (!pipeline->isComplete) return;
+
             // Reset previous descriptor data such that a new descriptor
             // set must be provided to the new pipeline only if descriptor set changes
             if (pipelineInUse != nullptr) {
@@ -291,16 +275,21 @@ namespace Atlas {
                 }                
             }
             else {
-                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++)
+                // The layouts have to be known for the next pipeline, otherwise a set of another layout stays in use
+                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                     descriptorBindingData.changed[i] = true;
+                    if (pipeline->shader->sets[i].bindingCount > 0)
+                        descriptorBindingData.layouts[i] = pipeline->shader->sets[i].layout;
+                }
             }
             
 
             pipelineInUse = pipeline;
+            descriptorsChanged = true;
 
             vkCmdBindPipeline(commandBuffer, pipeline->bindPoint, pipeline->pipeline);
 
-            if (!pipeline->isCompute) {
+            if (pipeline->bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
                 // Set default values for viewport/scissor, they are required
                 auto extent = GetRenderPassExtent();
                 SetViewport(0, 0, extent.width, extent.height);
@@ -352,50 +341,21 @@ namespace Atlas {
 
         void CommandList::ClearAttachments() {
 
-            clearAttachments.clear();
+            // Renderings are cleared with their load operations
+            AE_ASSERT(swapChainInUse && "Only swap chain render passes can be cleared");
+            if (!swapChainInUse) return;
+
+            VkClearAttachment clears[2] = {};
+            clears[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            clears[0].clearValue = swapChainInUse->colorClearValue;
+            clears[1].aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            clears[1].clearValue = swapChainInUse->depthClearValue;
+
             VkClearRect clearRect = {};
-            if (swapChainInUse) {
-                VkClearAttachment colorClear = {}, depthClear = {};
-                colorClear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                colorClear.clearValue = swapChainInUse->colorClearValue;
-                colorClear.colorAttachment = 0;
-                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                depthClear.clearValue = swapChainInUse->depthClearValue;
-                depthClear.colorAttachment = 0;
-                clearAttachments.push_back(colorClear);
-                clearAttachments.push_back(depthClear);
+            clearRect.layerCount = 1;
+            clearRect.rect.extent = swapChainInUse->extent;
 
-                clearRect.layerCount = 1;
-                clearRect.baseArrayLayer = 0;
-                clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = swapChainInUse->extent;
-            }
-            if (renderPassInUse) {
-                VkClearAttachment colorClear = {}, depthClear = {};
-                colorClear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    if (!renderPassInUse->colorAttachments[i].isValid) continue;
-                    colorClear.clearValue = renderPassInUse->colorClearValue;
-                    colorClear.colorAttachment = i;
-                    clearAttachments.push_back(colorClear);
-                }
-
-                if (renderPassInUse->depthAttachment.isValid) {
-                    depthClear.clearValue = renderPassInUse->depthClearValue;
-                    depthClear.colorAttachment = 0;
-                    clearAttachments.push_back(depthClear);
-                }
-
-                clearRect.layerCount = 1;
-                clearRect.baseArrayLayer = 0;
-                clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = frameBufferInUse->extent;
-            }
-
-            vkCmdClearAttachments(commandBuffer, uint32_t(clearAttachments.size()),
-                clearAttachments.data(), 1, &clearRect);
+            vkCmdClearAttachments(commandBuffer, 2, clears, 1, &clearRect);
 
         }
 
@@ -404,8 +364,14 @@ namespace Atlas {
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
-            auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
-            if (!pushConstantRange) return;
+            PushConstants(pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName), data, size);
+
+        }
+
+        void CommandList::PushConstants(const PushConstantRange* pushConstantRange, void* data, uint32_t size) {
+
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse || !pushConstantRange) return;
 
             size = size != 0 ? size : pushConstantRange->range.size;
             vkCmdPushConstants(commandBuffer, pipelineInUse->layout, pushConstantRange->range.stageFlags,
@@ -467,6 +433,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), 0u };
@@ -490,6 +457,7 @@ namespace Atlas {
             bool changed = boundBuffer != buffer.get();
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Only indicate a change if the buffer changed, not just the offset
             descriptorBindingData.changed[set] |= changed;
@@ -510,14 +478,15 @@ namespace Atlas {
             std::vector<Buffer*> buffersPtr;
             buffersPtr.reserve(buffers.size());
             for (const auto& buffer : buffers) {
-                AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
-                AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT &&
+                AE_ASSERT((!buffer || buffer->size > 0) && "Invalid buffer size");
+                AE_ASSERT((!buffer || buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) &&
                        "Only storage buffers support array bindings");
 
                 buffersPtr.push_back(buffer.get());
             }
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffersArray[set][binding] = { buffersPtr };
@@ -536,6 +505,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer->GetCurrent(), 0 };
@@ -555,6 +525,7 @@ namespace Atlas {
             bool changed = descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // Only indicate a change of the buffer has changed, not just the offset
             descriptorBindingData.changed[set] |= changed;
@@ -576,6 +547,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.images[set][binding] = { image.get(), mipLevel };
             descriptorBindingData.maxImageBinding[set] = std::max(descriptorBindingData.maxImageBinding[set], binding);
@@ -593,6 +565,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
             descriptorBindingData.maxSampledImageBinding[set] = std::max(descriptorBindingData.maxSampledImageBinding[set], binding);
@@ -612,6 +585,7 @@ namespace Atlas {
             for (const auto& image : images) imagesPtr.push_back(image.get());
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             // We don't do any checks here if the same things were bound already
             descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr };
@@ -629,6 +603,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.samplers[set][binding] = sampler.get();
             descriptorBindingData.maxSamplerBinding[set] = std::max(descriptorBindingData.maxSamplerBinding[set], binding);
@@ -645,6 +620,7 @@ namespace Atlas {
                 return;
 
             descriptorBindingData.ResetBinding(set, binding);
+            descriptorsChanged = true;
 
             descriptorBindingData.tlases[set][binding] = tlas.get();
             descriptorBindingData.maxTLASBinding[set] = std::max(descriptorBindingData.maxTLASBinding[set], binding);
@@ -655,6 +631,19 @@ namespace Atlas {
         void CommandList::ResetBindings() {
 
             descriptorBindingData.Reset();
+            descriptorsChanged = true;
+
+        }
+
+        void CommandList::InvalidateBoundState() {
+
+            pipelineInUse = nullptr;
+            for (auto& sets : boundDescriptorSets)
+                for (auto& set : sets)
+                    set = {};
+            for (auto& changed : descriptorBindingData.changed)
+                changed = true;
+            descriptorsChanged = true;
 
         }
 
@@ -778,7 +767,7 @@ namespace Atlas {
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
-            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT((swapChainInUse || renderingInUse) && "No render pass is in use");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
             AE_ASSERT(indexCount && instanceCount && "Index or instance count should not be zero");
@@ -792,7 +781,7 @@ namespace Atlas {
         void CommandList::DrawIndexedIndirect(const Ref<Graphics::Buffer> &buffer, size_t offset,
             uint32_t drawCount, uint32_t stride) {
 
-            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT((swapChainInUse || renderingInUse) && "No render pass is in use");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
@@ -815,9 +804,22 @@ namespace Atlas {
 
         }
 
+        void CommandList::DrawIndirect(const Ref<Graphics::Buffer>& buffer, size_t offset,
+            uint32_t drawCount, uint32_t stride) {
+
+            AE_ASSERT((swapChainInUse || renderingInUse) && "No render pass is in use");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+
+            BindDescriptorSets();
+
+            vkCmdDrawIndirect(commandBuffer, buffer->buffer, offset, drawCount, stride);
+
+        }
+
         void CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 
-            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for compute commands");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
             AE_ASSERT(groupCountX && groupCountY && groupCountZ && "Group counts have to be larger equal to one");
@@ -830,13 +832,42 @@ namespace Atlas {
 
         void CommandList::DispatchIndirect(const Ref<Buffer> &buffer, uint32_t offset) {
 
-            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for compute commands");
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             BindDescriptorSets();
 
             vkCmdDispatchIndirect(commandBuffer, buffer->buffer, VkDeviceSize(offset));
+
+        }
+
+        void CommandList::TraceRays(const ShaderBindingTable& shaderBindingTable, uint32_t width, uint32_t height, uint32_t depth) {
+
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for ray tracing commands");
+            AE_ASSERT(pipelineInUse && pipelineInUse->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
+                "No ray tracing pipeline is bound");
+            if (!pipelineInUse || pipelineInUse->bindPoint != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) return;
+            AE_ASSERT(width && height && depth && "Launch sizes have to be larger equal to one");
+
+            BindDescriptorSets();
+
+            vkCmdTraceRaysKHR(commandBuffer, &shaderBindingTable.rayGenRegion, &shaderBindingTable.missRegion,
+                &shaderBindingTable.hitRegion, &shaderBindingTable.callableRegion, width, height, depth);
+
+        }
+
+        void CommandList::TraceRaysIndirect(const ShaderBindingTable& shaderBindingTable, const Ref<Buffer>& buffer, uint32_t offset) {
+
+            AE_ASSERT(!swapChainInUse && !renderingInUse && "No render pass should be in use for ray tracing commands");
+            AE_ASSERT(pipelineInUse && pipelineInUse->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
+                "No ray tracing pipeline is bound");
+            if (!pipelineInUse || pipelineInUse->bindPoint != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) return;
+
+            BindDescriptorSets();
+
+            vkCmdTraceRaysIndirectKHR(commandBuffer, &shaderBindingTable.rayGenRegion, &shaderBindingTable.missRegion,
+                &shaderBindingTable.hitRegion, &shaderBindingTable.callableRegion, buffer->GetDeviceAddress() + offset);
 
         }
 
@@ -854,6 +885,18 @@ namespace Atlas {
         void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy) {
 
             vkCmdCopyBuffer(commandBuffer, srcBuffer->buffer, dstBuffer->buffer, 1, &copy);
+
+        }
+
+        void CommandList::CopyBuffer(const Ref<MultiBuffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy) {
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer->GetCurrent()->buffer, dstBuffer->buffer, 1, &copy);
+
+        }
+
+        void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<MultiBuffer>& dstBuffer, VkBufferCopy copy) {
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer->buffer, dstBuffer->GetCurrent()->buffer, 1, &copy);
 
         }
 
@@ -949,6 +992,17 @@ namespace Atlas {
 
         }
 
+        void CommandList::BuildBLASes(std::span<const VkAccelerationStructureBuildGeometryInfoKHR> buildInfos,
+            std::span<const VkAccelerationStructureBuildRangeInfoKHR* const> rangeInfos) {
+
+            AE_ASSERT(buildInfos.size() == rangeInfos.size() && "Every build needs its ranges");
+            if (buildInfos.size() != rangeInfos.size())
+                return;
+
+            vkCmdBuildAccelerationStructuresKHR(commandBuffer, uint32_t(buildInfos.size()), buildInfos.data(), rangeInfos.data());
+
+        }
+
         void CommandList::BuildTLAS(const Ref<TLAS> &tlas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo) {
 
             vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildInfo, &tlas->rangeInfo);
@@ -956,6 +1010,11 @@ namespace Atlas {
         }
 
         void CommandList::BindDescriptorSets() {
+
+            // Draws in a row with the same bindings, e.g. one per mesh, don't need to check them again
+            if (!descriptorsChanged)
+                return;
+            descriptorsChanged = false;
 
             auto& setWrites = descriptorBindingData.setWrites;
             auto& bufferInfos = descriptorBindingData.bufferInfos;
@@ -989,6 +1048,7 @@ namespace Atlas {
 
                 // We could run into issue
                 if (descriptorBindingData.changed[i] && shader->sets[i].bindingCount > 0) {
+                    CPUProfiler::Scope profilerScope("Update descriptor set");
                     uint32_t bindingCounter = 0;
                     uint32_t imageInfoCounter = 0;
                     uint32_t bufferInfoCounter = 0;
@@ -1161,9 +1221,10 @@ namespace Atlas {
 
                     // SAMPLED IMAGE ARRAYS
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxSampledImageArrayBinding[i]; j++) {
-                        auto descriptorArraySize = descriptorBindingData.sets[i]->sampledImageArraySize[j];
+                        const auto& images = descriptorBindingData.sampledImagesArray[i][j];
+                        auto& writtenImages = descriptorBindingData.sets[i]->sampledImageArrays[j];
 
-                        if (descriptorBindingData.sampledImagesArray[i][j].empty() && !descriptorArraySize) continue;
+                        if (images.empty() && writtenImages.empty()) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
                         if (!shaderBinding.valid) continue;
@@ -1174,53 +1235,68 @@ namespace Atlas {
                         if (descriptorType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                             continue;
 
-                        auto sampledImageArraySize = uint32_t(descriptorBindingData.sampledImagesArray[i][j].size());
-                        AE_ASSERT(size_t(imageInfoCounter + sampledImageArraySize) < imageInfos.size() &&
-                            "Too much data written into buffer infos for descriptor set update");
-
-                        if (size_t(imageInfoCounter) + sampledImageArraySize >= imageInfos.size() ||
-                            (sampledImageArraySize == 0 && descriptorArraySize == 0))
-                            continue;
-
-                        auto& setWrite = setWrites[bindingCounter++];
-                        setWrite = {};
-                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                        setWrite.pNext = nullptr;
-                        setWrite.dstBinding = j;
-                        setWrite.dstArrayElement = 0;
-                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
-                        setWrite.descriptorCount = std::max(sampledImageArraySize, descriptorArraySize);
-                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                        setWrite.pImageInfo = &imageInfos[imageInfoCounter];
-
-                        for (uint32_t k = 0; k < sampledImageArraySize; k++) {
-                            auto image = descriptorBindingData.sampledImagesArray[i][j][k];
-
-                            auto& imageInfo = imageInfos[imageInfoCounter++];
-                            imageInfo.sampler = VK_NULL_HANDLE;
-                            imageInfo.imageView = image->view;
-                            imageInfo.imageLayout = image->layout;
-                        }
-
-                        // We need to overwrite old descriptor binding data. If we don't it might
+                        // We need to overwrite old descriptor binding data with placeholders. If we don't it might
                         // lead to crashes since resource in descriptor set are deleted already
-                        if (sampledImageArraySize < descriptorBindingData.sets[i]->sampledImageArraySize[j]) {
-                            for (uint32_t k = sampledImageArraySize; k < descriptorArraySize; k++) {
+                        auto elementCount = std::max(images.size(), writtenImages.size());
+                        writtenImages.resize(elementCount);
+
+                        size_t rangeStart = 0, rangeEnd = 0;
+                        for (size_t k = 0; k <= elementCount; k++) {
+                            bool changed = false;
+                            if (k < elementCount) {
+                                auto image = k < images.size() && images[k] ? images[k] : placeholderImage.get();
+                                changed = writtenImages[k].id != image->id || writtenImages[k].layout != image->layout;
+                                if (changed && rangeStart == rangeEnd)
+                                    rangeStart = rangeEnd = k;
+                                if (changed)
+                                    rangeEnd = k + 1;
+                                if (changed || k < rangeEnd + 16)
+                                    continue;
+                            }
+                            if (rangeStart == rangeEnd)
+                                continue;
+
+                            auto rangeCount = uint32_t(rangeEnd - rangeStart);
+                            AE_ASSERT(imageInfoCounter + rangeCount <= imageInfos.size() &&
+                                "Too much data written into image infos for descriptor set update");
+                            if (imageInfoCounter + rangeCount > imageInfos.size())
+                                break;
+
+                            if (bindingCounter == setWrites.size())
+                                setWrites.emplace_back();
+
+                            auto& setWrite = setWrites[bindingCounter++];
+                            setWrite = {};
+                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                            setWrite.pNext = nullptr;
+                            setWrite.dstBinding = j;
+                            setWrite.dstArrayElement = uint32_t(rangeStart);
+                            setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                            setWrite.descriptorCount = rangeCount;
+                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                            setWrite.pImageInfo = &imageInfos[imageInfoCounter];
+
+                            for (size_t l = rangeStart; l < rangeEnd; l++) {
+                                auto image = l < images.size() && images[l] ? images[l] : placeholderImage.get();
+
                                 auto& imageInfo = imageInfos[imageInfoCounter++];
                                 imageInfo.sampler = VK_NULL_HANDLE;
-                                imageInfo.imageView = placeholderImage->view;
-                                imageInfo.imageLayout = placeholderImage->layout;
-                            }
-                        }
+                                imageInfo.imageView = image->view;
+                                imageInfo.imageLayout = image->layout;
 
-                        descriptorBindingData.sets[i]->sampledImageArraySize[j] = sampledImageArraySize;
+                                writtenImages[l] = { image->id, image->layout };
+                            }
+
+                            rangeStart = rangeEnd = 0;
+                        }
                     }
 
                     // BUFFER ARRAYS
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxBufferArrayBinding[i]; j++) {
-                        auto descriptorArraySize = descriptorBindingData.sets[i]->bufferArraySize[j];
+                        const auto& buffers = descriptorBindingData.buffersArray[i][j];
+                        auto& writtenBuffers = descriptorBindingData.sets[i]->bufferArrays[j];
 
-                        if (descriptorBindingData.buffersArray[i][j].empty() && !descriptorArraySize) continue;
+                        if (buffers.empty() && writtenBuffers.empty()) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
                         if (!shaderBinding.valid) continue;
@@ -1231,56 +1307,92 @@ namespace Atlas {
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
                             continue;
 
-                        auto bufferArraySize = uint32_t(descriptorBindingData.buffersArray[i][j].size());
-                        AE_ASSERT(size_t(bufferInfoCounter + bufferArraySize) < bufferInfos.size() &&
-                            "Too much data written into buffer infos for descriptor set update");
-
-                        if (size_t(bufferInfoCounter) + bufferArraySize >= bufferInfos.size() ||
-                            (bufferArraySize == 0 && descriptorArraySize == 0))
-                            continue;
-
-                        auto& setWrite = setWrites[bindingCounter++];
-                        setWrite = {};
-                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                        setWrite.pNext = nullptr;
-                        setWrite.dstBinding = j;
-                        setWrite.dstArrayElement = 0;
-                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
-                        setWrite.descriptorCount = std::max(bufferArraySize, descriptorArraySize);;
-                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                        setWrite.pBufferInfo = &bufferInfos[bufferInfoCounter];
-
-                        for (uint32_t k = 0; k < bufferArraySize; k++) {
-                            auto buffer = descriptorBindingData.buffersArray[i][j][k];
-
-                            auto& bufferInfo = bufferInfos[bufferInfoCounter++];
-                            bufferInfo.offset = 0;
-                            bufferInfo.buffer = buffer->buffer;
-                            bufferInfo.range = VK_WHOLE_SIZE;
-                        }
-
-                        // We need to overwrite old descriptor binding data. If we don't it might
+                        // We need to overwrite old descriptor binding data with placeholders. If we don't it might
                         // lead to crashes since resource in descriptor set are deleted already
-                        if (bufferArraySize < descriptorBindingData.sets[i]->bufferArraySize[j]) {
-                            for (uint32_t k = bufferArraySize; k < descriptorArraySize; k++) {
+                        auto elementCount = std::max(buffers.size(), writtenBuffers.size());
+                        writtenBuffers.resize(elementCount);
+
+                        size_t rangeStart = 0, rangeEnd = 0;
+                        for (size_t k = 0; k <= elementCount; k++) {
+                            bool changed = false;
+                            if (k < elementCount) {
+                                auto buffer = k < buffers.size() && buffers[k] ? buffers[k] : placeholderBuffer.get();
+                                changed = writtenBuffers[k] != buffer->id;
+                                if (changed && rangeStart == rangeEnd)
+                                    rangeStart = rangeEnd = k;
+                                if (changed)
+                                    rangeEnd = k + 1;
+                                if (changed || k < rangeEnd + 16)
+                                    continue;
+                            }
+                            if (rangeStart == rangeEnd)
+                                continue;
+
+                            auto rangeCount = uint32_t(rangeEnd - rangeStart);
+                            AE_ASSERT(bufferInfoCounter + rangeCount <= bufferInfos.size() &&
+                                "Too much data written into buffer infos for descriptor set update");
+                            if (bufferInfoCounter + rangeCount > bufferInfos.size())
+                                break;
+
+                            if (bindingCounter == setWrites.size())
+                                setWrites.emplace_back();
+
+                            auto& setWrite = setWrites[bindingCounter++];
+                            setWrite = {};
+                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                            setWrite.pNext = nullptr;
+                            setWrite.dstBinding = j;
+                            setWrite.dstArrayElement = uint32_t(rangeStart);
+                            setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                            setWrite.descriptorCount = rangeCount;
+                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                            setWrite.pBufferInfo = &bufferInfos[bufferInfoCounter];
+
+                            for (size_t l = rangeStart; l < rangeEnd; l++) {
+                                auto buffer = l < buffers.size() && buffers[l] ? buffers[l] : placeholderBuffer.get();
+
                                 auto& bufferInfo = bufferInfos[bufferInfoCounter++];
                                 bufferInfo.offset = 0;
-                                bufferInfo.buffer = placeholderBuffer->buffer;
+                                bufferInfo.buffer = buffer->buffer;
                                 bufferInfo.range = VK_WHOLE_SIZE;
-                            }
-                        }
 
-                        descriptorBindingData.sets[i]->bufferArraySize[j] = bufferArraySize;
+                                writtenBuffers[l] = buffer->id;
+                            }
+
+                            rangeStart = rangeEnd = 0;
+                        }
                     }
 
-                    vkUpdateDescriptorSets(device, bindingCounter, setWrites.data(), 0, nullptr);
+                    if (bindingCounter > 0)
+                        vkUpdateDescriptorSets(device, bindingCounter, setWrites.data(), 0, nullptr);
 
                 }
 
                 if (descriptorBindingData.sets[i] != nullptr && shader->sets[i].bindingCount > 0) {
+                    // Sets stay bound between draws, they only need to be bound again when they or their offsets
+                    // change or a pipeline with another layout is in use
+                    auto bindPointIdx = pipelineInUse->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR ? 2 :
+                        (pipelineInUse->isCompute ? 1 : 0);
+                    auto& boundSets = boundDescriptorSets[bindPointIdx];
+                    auto& bound = boundSets[i];
+                    auto set = descriptorBindingData.sets[i]->set;
+                    if (bound.set == set && bound.layout == pipelineInUse->layout &&
+                        bound.dynamicOffsetCount == dynamicOffsetCounter &&
+                        std::equal(dynamicOffsets, dynamicOffsets + dynamicOffsetCounter, bound.dynamicOffsets))
+                        continue;
+
                     vkCmdBindDescriptorSets(commandBuffer, pipelineInUse->bindPoint,
-                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i]->set,
-                        dynamicOffsetCounter, dynamicOffsets);
+                        pipelineInUse->layout, i, 1, &set, dynamicOffsetCounter, dynamicOffsets);
+
+                    // Binding with another pipeline layout can disturb the other sets
+                    for (auto& otherBound : boundSets)
+                        if (otherBound.layout != pipelineInUse->layout)
+                            otherBound = {};
+
+                    bound.set = set;
+                    bound.layout = pipelineInUse->layout;
+                    bound.dynamicOffsetCount = dynamicOffsetCounter;
+                    std::copy(dynamicOffsets, dynamicOffsets + dynamicOffsetCounter, bound.dynamicOffsets);
                 }
             }
 
@@ -1290,6 +1402,56 @@ namespace Atlas {
 
             descriptorBindingData.Reset();
             descriptorPool->ResetAllocationCounters();
+            descriptorsChanged = true;
+
+        }
+
+        void CommandList::AttachmentBarriers(bool beginPass) {
+
+            // Dynamic rendering doesn't transition the attachment layouts, cleared attachments discard their content
+            attachmentBarriers.clear();
+            VkPipelineStageFlags srcStageMask = 0, dstStageMask = 0;
+
+            auto addBarrier = [&](const RenderingAttachment& attachment, VkImageLayout attachmentLayout,
+                VkPipelineStageFlags stageMask, VkAccessFlags accessMask) {
+
+                auto& image = attachment.image;
+                auto initialLayout = attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD ?
+                    image->layout : VK_IMAGE_LAYOUT_UNDEFINED;
+                auto barrier = beginPass ?
+                    Initializers::InitImageMemoryBarrier(image->image, initialLayout, attachmentLayout,
+                        accessMask, accessMask, image->aspectFlags) :
+                    Initializers::InitImageMemoryBarrier(image->image, attachmentLayout, attachment.outputLayout,
+                        accessMask, VK_ACCESS_SHADER_READ_BIT, image->aspectFlags);
+                barrier.subresourceRange.baseArrayLayer = attachment.layer;
+                attachmentBarriers.push_back(barrier);
+
+                srcStageMask |= stageMask;
+                dstStageMask |= beginPass ? stageMask : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+                if (!beginPass) {
+                    image->layout = attachment.outputLayout;
+                    image->accessMask = VK_ACCESS_SHADER_READ_BIT;
+                }
+
+            };
+
+            for (const auto& attachment : renderingInUse->colorAttachments) {
+                if (!attachment.image) continue;
+
+                addBarrier(attachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    RenderingDesc::colorStageMask, RenderingDesc::colorAccessMask);
+            }
+
+            if (renderingInUse->depthAttachment.image) {
+                addBarrier(renderingInUse->depthAttachment, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    RenderingDesc::depthStageMask, RenderingDesc::depthAccessMask);
+            }
+
+            if (attachmentBarriers.empty()) return;
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr,
+                uint32_t(attachmentBarriers.size()), attachmentBarriers.data());
 
         }
 
@@ -1300,8 +1462,8 @@ namespace Atlas {
             if (swapChainInUse) {
                 extent = swapChainInUse->extent;
             }
-            else if (renderPassInUse) {
-                extent = frameBufferInUse->extent;
+            else if (renderingInUse) {
+                extent = renderingExtent;
             }
             else {
                 AE_ASSERT(0 && "No valid render pass found");

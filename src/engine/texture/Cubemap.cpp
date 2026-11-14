@@ -1,7 +1,6 @@
 #include "Cubemap.h"
 #include "../loader/ImageLoader.h"
 #include "../Log.h"
-#include "../volume/Frustum.h"
 
 namespace Atlas {
 
@@ -52,38 +51,32 @@ namespace Atlas {
            Reallocate(Graphics::ImageType::ImageCube, resolution, resolution, 6, filtering, wrapping);
            RecreateSampler(filtering, wrapping);
 
-           mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-           vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-                            vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f),
-                            vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
-
-           vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                          vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f),
-                          vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+           // Direction of a texel according to the cube map face selection of Vulkan
+           auto faceDirection = [](uint8_t face, vec2 coord) {
+               switch (face) {
+               case 0: return vec3(1.0f, -coord.y, -coord.x);
+               case 1: return vec3(-1.0f, -coord.y, coord.x);
+               case 2: return vec3(coord.x, 1.0f, coord.y);
+               case 3: return vec3(coord.x, -1.0f, -coord.y);
+               case 4: return vec3(coord.x, -coord.y, 1.0f);
+               default: return vec3(-coord.x, -coord.y, -1.0f);
+               }
+           };
 
            Common::Image<float> faceImage(resolution, resolution, 4);
            faceImage.fileFormat = Common::ImageFormat::HDR;
 
            for (uint8_t i = 0; i < 6; i++) {
-               Volume::Frustum frustum(projectionMatrix *
-                   glm::lookAt(vec3(0.0f), faces[i], ups[i]));
-               auto corners = frustum.GetCorners();
-
-               vec3 planeOrigin = corners[0];
-               vec3 planeRight = corners[1] - corners[0];
-               vec3 planeBottom = corners[2] - corners[0];
-
                for (int32_t y = 0; y < resolution; y++) {
                    for (int32_t x = 0; x < resolution; x++) {
-                       auto coord = glm::vec2(((float)x + 0.5f) / (float)resolution,
+                       auto coord = vec2(((float)x + 0.5f) / (float)resolution,
                            ((float)y + 0.5f) / (float)resolution);
 
-                       auto direction = glm::normalize(planeOrigin + coord.x * planeRight
-                           + coord.y * planeBottom);
+                       auto direction = glm::normalize(faceDirection(i, coord * 2.0f - 1.0f));
 
-                       // Cubemap direction to equirectangular image coordinates
+                       // Cubemap direction to equirectangular image coordinates, the first image row is the zenith
                        const vec2 invAtan = vec2(0.1591f, 0.3183f);
-                       vec2 uv = vec2(glm::atan(direction.z, direction.x), asin(direction.y));
+                       vec2 uv = vec2(glm::atan(direction.z, direction.x), -asin(direction.y));
                        uv *= invAtan;
                        uv += 0.5f;
 

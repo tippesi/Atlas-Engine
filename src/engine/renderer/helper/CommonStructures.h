@@ -73,6 +73,34 @@ namespace Atlas {
             int32_t shadowIdx;
         };
 
+        // One bit per volume in the cluster masks of the froxel fog
+        constexpr int32_t MAX_FOG_VOLUMES = 32;
+
+        struct alignas(16) FogVolume {
+            vec4 worldToUnit0;
+            vec4 worldToUnit1;
+            vec4 worldToUnit2;
+
+            vec4 scatteringAndDensity;
+            vec4 emissiveAndEdgeFade;
+            vec4 noiseOffsetAndFrequency;
+
+            float noiseAmount;
+            float noiseCoverage;
+            float noiseSharpness;
+            int32_t noiseOctaves;
+
+            float heightFalloff;
+            float ambientFactor;
+            int32_t shape;
+            float selfShadowing;
+
+            float scatteringAnisotropy;
+            float padding0;
+            float padding1;
+            float padding2;
+        };
+
         struct alignas(16) CloudShadow {
             mat4 vMatrix;
             mat4 pMatrix;
@@ -136,6 +164,9 @@ namespace Atlas {
             float mipLodBias;
             float cameraNearPlane;
             float cameraFarPlane;
+            float preExposure;
+            float lastPreExposure;
+            float skyCubemapExposure;
         };
 
         struct alignas(16) DDGICascade {
@@ -172,6 +203,9 @@ namespace Atlas {
 
             int32_t volumeEnabled;
             float volumeStorageScale;
+
+            float historyExposureScale;
+            float volumeExposureScale;
         };
 
     }

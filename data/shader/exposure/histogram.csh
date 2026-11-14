@@ -32,7 +32,7 @@ void main() {
 
     barrier();
 
-    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+    ivec2 pixel = 2 * ivec2(gl_GlobalInvocationID);
     if (pixel.x < textureSize(hdrTexture, 0).x &&
         pixel.y < textureSize(hdrTexture, 0).y) {
 

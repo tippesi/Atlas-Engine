@@ -10,6 +10,7 @@
 #include <vector>
 #include <atomic>
 #include <functional>
+#include <mutex>
 
 #define RESOURCE_RETENTION_FRAME_COUNT 30
 
@@ -56,18 +57,18 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const ResourceLoadException exception) {
+            catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch (const std::exception exception) {
+            catch (const std::exception& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
             }
             catch(...) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = "Unknown issue occurred";
             }
 
         }
@@ -79,18 +80,18 @@ namespace Atlas {
                 data = loaderFunction(path, std::forward<Args>(args)...);
                 isLoaded = true;
             }
-            catch (const ResourceLoadException exception) {
+            catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch(const std::exception exception) {
+            catch(const std::exception& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = exception.what();
             }
             catch (...) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = "Unknown issue occurred";
             }
 
         }
@@ -130,6 +131,20 @@ namespace Atlas {
 
         }
 
+        // An async load held back by the resource manager doesn't wait for the hold anymore
+        void StartHeldLoad() {
+
+            std::function<void()> load;
+            {
+                std::scoped_lock lock(heldLoadMutex);
+                load.swap(heldLoad);
+            }
+
+            if (load)
+                load();
+
+        }
+
         Hash ID = 0;
 
         ResourceOrigin origin = System;
@@ -138,7 +153,8 @@ namespace Atlas {
         bool permanent = false;
 
         bool errorOnLoad = false;
-        std::exception exceptionOnLoad;
+        // Exceptions are copied as std::exception, which loses their message
+        std::string errorMessageOnLoad;
 
         std::filesystem::file_time_type loadModifiedTime;        
 
@@ -147,6 +163,9 @@ namespace Atlas {
 
         std::atomic_bool isLoaded = false;
         JobGroup jobGroup{ "Load resource", JobPriority::Low};
+
+        std::function<void()> heldLoad;
+        static inline std::mutex heldLoadMutex;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };
@@ -183,8 +202,11 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (IsValid()) {
-                while (!resource->isLoaded && !resource->errorOnLoad)
+                while (!resource->isLoaded && !resource->errorOnLoad) {
+                    // Whoever waits could be the one the hold depends on
+                    resource->StartHeldLoad();
                     JobSystem::Wait(resource->jobGroup);
+                }
             }
         }
 

@@ -24,6 +24,8 @@ namespace Atlas {
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
             allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+            // Smaller blocks than the default 256 MB empty out more often, so memory the streaming frees is returned
+            allocatorInfo.preferredLargeHeapBlockSize = 64ull << 20;
 
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
@@ -75,20 +77,6 @@ namespace Atlas {
             vmaDestroyPool(allocator, highPriorityMemoryPool);
             vmaDestroyPool(allocator, highPriorityRenderTargetPool);
             vmaDestroyAllocator(allocator);
-
-        }
-
-        void MemoryManager::DestroyAllocation(Ref<RenderPass>& allocation) {
-
-            deleteRenderPassAllocations.
-                emplace_back(DeleteResource<RenderPass> { allocation, frameIndex + framesToDeletion });
-
-        }
-
-        void MemoryManager::DestroyAllocation(Ref<FrameBuffer>& allocation) {
-
-            deleteFrameBufferAllocations.
-                emplace_back(DeleteResource<FrameBuffer> { allocation, frameIndex + framesToDeletion });
 
         }
 
@@ -177,9 +165,11 @@ namespace Atlas {
 
         void MemoryManager::DestroyAllImmediate() {
 
-            // Cheap trick to make sure everything is deleted
-            frameIndex += framesToDeletion;
+            // Every pending deletion is due, without moving the frame index of later deletions
+            auto currentFrameIndex = frameIndex;
+            frameIndex = std::numeric_limits<size_t>::max();
             DeleteData();
+            frameIndex = currentFrameIndex;
 
         }
 
@@ -204,8 +194,6 @@ namespace Atlas {
             DeleteAllocations(deleteTLASAllocations);
             DeleteAllocations(deleteBLASAllocations);
             DeleteAllocations(deletePipelineAllocations);
-            DeleteAllocations(deleteFrameBufferAllocations);
-            DeleteAllocations(deleteRenderPassAllocations);
             DeleteAllocations(deleteShaderAllocations);
             DeleteAllocations(deleteBufferAllocations);
             DeleteAllocations(deleteMultiBufferAllocations);

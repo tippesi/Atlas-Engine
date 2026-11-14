@@ -1,0 +1,53 @@
+// Alpha tests the candidate hits of a material graph with an opacity like opacity.rahit does for other materials. The
+// shaders generated from graphs include this file after their surface function, see materialgraph/Compiler
+#extension GL_EXT_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier : require
+
+#include <surface.hsh>
+
+hitAttributeEXT vec2 barycentrics;
+
+void main() {
+
+    int meshIdx = gl_InstanceCustomIndexEXT;
+    int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[nonuniformEXT(gl_GeometryIndexEXT)]);
+    int hitID = gl_PrimitiveID + triangleOffset;
+
+    Instance instance = bvhInstances[nonuniformEXT(gl_InstanceID)];
+    Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[nonuniformEXT(hitID)]);
+    RaytraceMaterial rayMat = materials[nonuniformEXT(tri.materialIndex + instance.materialOffset)];
+
+    float s = barycentrics.x;
+    float t = barycentrics.y;
+    float r = 1.0 - s - t;
+
+    vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
+    texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+    texCoord *= rayMat.tiling;
+    vec4 color = r * tri.color0 + s * tri.color1 + t * tri.color2;
+
+    mat4 modelMatrix = mat4(gl_ObjectToWorldEXT);
+    vec3 objectNormal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
+    vec3 worldNormal = normalize(transpose(mat3(gl_WorldToObjectEXT)) * objectNormal);
+    vec3 worldPosition = gl_WorldRayOriginEXT + gl_HitTEXT * gl_WorldRayDirectionEXT;
+    vec3 objectPosition = gl_ObjectRayOriginEXT + gl_HitTEXT * gl_ObjectRayDirectionEXT;
+
+    vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;
+    mat3 tangentFrame = mat3(normalize(mat3(modelMatrix) * tri.t), normalize(mat3(modelMatrix) * bitangent), worldNormal);
+    float frontFacing = gl_HitKindEXT == gl_HitKindFrontFacingTriangleEXT ? 1.0 : -1.0;
+
+    mgHitTextureLevel = 0.0;
+    MaterialSurfaceInput surfaceIn = CreateMaterialSurfaceInput(objectPosition, objectNormal, worldPosition, worldNormal,
+        vec3(modelMatrix[3]), mat3(globalData.vMatrix) * tangentFrame, texCoord, vec2(0.5), color, frontFacing,
+        rayMat.graphParameterOffset);
+
+    // Rays see the surface from their origin, not from the camera
+    surfaceIn.viewDirection = -gl_WorldRayDirectionEXT;
+    surfaceIn.tangent = normalize(tri.t);
+    surfaceIn.modelMatrix = modelMatrix;
+
+    // The same cutoff as the rasterizer
+    if (EvaluateMaterialSurface(surfaceIn).opacity < 0.2)
+        ignoreIntersectionEXT;
+
+}

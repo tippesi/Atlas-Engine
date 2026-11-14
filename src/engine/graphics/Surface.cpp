@@ -1,7 +1,7 @@
 #include "Surface.h"
 #include "Instance.h"
 
-#include <SDL_vulkan.h>
+#include <SDL3/SDL_vulkan.h>
 #include <cassert>
 
 
@@ -13,7 +13,7 @@ namespace Atlas {
             instance(instance), window(window) {
 
             auto nativeInstance = instance->GetNativeInstance();
-            success = SDL_Vulkan_CreateSurface(window, nativeInstance, &surface);
+            success = SDL_Vulkan_CreateSurface(window, nativeInstance, nullptr, &surface);
             AE_ASSERT(success && "Error creating surface for window");
 
         }
@@ -60,7 +60,7 @@ namespace Atlas {
         void Surface::GetExtent(int32_t& width, int32_t& height) {
 
             if ((this->width < 0 || this->height < 0) && window != nullptr) {
-                SDL_Vulkan_GetDrawableSize(window, &width, &height);
+                SDL_GetWindowSizeInPixels(window, &width, &height);
             }
             else if (window == nullptr) {
                 width = this->width;

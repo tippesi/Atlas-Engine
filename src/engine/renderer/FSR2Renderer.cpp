@@ -2,7 +2,6 @@
 
 #include "graphics/Format.h"
 
-#include "Clock.h"
 #include "loader/ShaderLoader.h"
 
 #include <string.h>
@@ -792,12 +791,12 @@ namespace Atlas::Renderer {
 
 	}
 
-	vec2 FSR2Renderer::GetJitter(const Ref<RenderTarget>& target, uint32_t index) const {
+	vec2 FSR2Renderer::GetJitter(const Ref<RenderTarget>& target, uint32_t frameIndex) const {
 
 		vec2 jitter;
 
 		const int32_t jitterPhaseCount = ffxFsr2GetJitterPhaseCount(target->GetScaledWidth(), target->GetWidth());
-		ffxFsr2GetJitterOffset(&jitter.x, &jitter.y, index, jitterPhaseCount);
+		ffxFsr2GetJitterOffset(&jitter.x, &jitter.y, frameIndex, jitterPhaseCount);
 
 		return vec2(2.0f * jitter.x / (float)target->GetScaledWidth(), 2.0f * jitter.y / (float)target->GetScaledHeight());
 
@@ -814,11 +813,11 @@ namespace Atlas::Renderer {
 			CreateContext(target, device);
 		}
 
-		Graphics::Profiler::BeginQuery("FSR2");
+		GPUProfiler::Scope gpuScope("FSR2");
 
-		auto& postProcessing = scene->postProcessing;
+		auto& postProcessing = scene->renderState.postProcessing;
 		auto& sharpen = postProcessing.sharpen;
-		auto& camera = scene->GetMainCamera();
+		auto& camera = scene->renderState.camera;
 
 		auto targetData = target->GetData(FULL_RES);
 
@@ -827,8 +826,6 @@ namespace Atlas::Renderer {
 		auto reactiveMaskImage = target->reactiveMaskTexture.image;
 		auto depthImage = targetData->depthTexture->image;
 		auto outputImage = target->hdrTexture.image;
-
-		auto& taa = scene->postProcessing.taa;
 
 		Graphics::ImageBarrier imageBarriers[] = {{outputImage,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT}};
 		commandList->PipelineBarrier(imageBarriers, {});
@@ -852,8 +849,8 @@ namespace Atlas::Renderer {
 		dispatchParameters.reset = !target->HasHistory();
 		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
-		dispatchParameters.frameTimeDelta = Clock::GetDelta() * 1000.0f;
-		dispatchParameters.preExposure = 1.0f;
+		dispatchParameters.frameTimeDelta = scene->renderState.deltaTime * 1000.0f;
+		dispatchParameters.preExposure = scene->renderState.preExposure;
 		dispatchParameters.renderSize.width = uint32_t(target->GetScaledWidth());
 		dispatchParameters.renderSize.height = uint32_t(target->GetScaledHeight());
 		dispatchParameters.cameraFar = camera.farPlane;
@@ -866,8 +863,6 @@ namespace Atlas::Renderer {
 		commandList->ImageMemoryBarrier(outputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-		Graphics::Profiler::EndQuery();
 
 	}
 
@@ -912,9 +907,8 @@ namespace Atlas::Renderer {
 
 	void FSR2Renderer::DestroyContext() {
 
-		device->WaitForIdle();
-
 		if (initParams.callbacks.scratchBuffer != nullptr) {
+			device->WaitForIdle();
 			ffxFsr2ContextDestroy(&context);
 			FSR2Context* fsr2Context = reinterpret_cast<FSR2Context*>(initParams.callbacks.scratchBuffer);
 			delete fsr2Context;

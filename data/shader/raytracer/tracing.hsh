@@ -1,3 +1,10 @@
+// Ray generation stages of ray tracing pipelines launch one invocation per element like a compute dispatch
+#ifdef RAY_TRACING_PIPELINE
+#define INVOCATION_ID gl_LaunchIDEXT
+#else
+#define INVOCATION_ID gl_GlobalInvocationID
+#endif
+
 #include <surface.hsh>
 #include <common.hsh>
 #include <texture.hsh>
@@ -8,6 +15,17 @@
 #include <../common/utility.hsh>
 #include <../common/octahedron.hsh>
 #include <../common/flatten.hsh>
+
+layout(push_constant) uniform constants {
+    int lightCount;
+    uint rayBufferOffset;
+    uint rayPayloadBufferOffset;
+    uint rayBufferSize;
+    int useRayBinning;
+    int padding0;
+    int padding1;
+    int padding2;
+} PushConstants;
 
 // We use double buffering for the ray and payload buffers,
 // which means the buffer has an actual size of rayBufferSize * 2
@@ -29,11 +47,11 @@ Ray AddRayToBin(Ray ray) {
 }
 
 bool IsRayInvocationValid() {
-    return gl_GlobalInvocationID.x < readAtomic[0];
+    return INVOCATION_ID.x < readAtomic[0];
 }
 
 uint GetRayInvocation() {
-    return gl_GlobalInvocationID.x;
+    return INVOCATION_ID.x;
 }
 
 bool IsRayIndexValid(uint idx) {
@@ -41,12 +59,12 @@ bool IsRayIndexValid(uint idx) {
 }
 
 Ray ReadRay() {
-    uint idx = (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
+    uint idx = (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize + INVOCATION_ID.x;
     return UnpackRay(rays[idx]);
 }
 
 RayPayload ReadRayPayload() {
-    uint idx = (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
+    uint idx = (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize + INVOCATION_ID.x;
     return UnpackRayPayload(rayPayloads[idx]);
 }
 

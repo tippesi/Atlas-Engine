@@ -14,7 +14,7 @@ namespace Atlas {
             /**
              * Represents a time stamp.
              * @param delta The delta time in milliseconds to other stamp
-             * @param stamp The stamp data (this is not a time)
+             * @param stamp The time in nanoseconds
              */
             struct TimeStamp {
                 double delta = 0.0;

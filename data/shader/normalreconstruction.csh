@@ -47,8 +47,8 @@ void main() {
 
     LoadGroupSharedData();
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(normalImage).x ||
-        pixel.y > imageSize(normalImage).y)
+    if (pixel.x >= imageSize(normalImage).x ||
+        pixel.y >= imageSize(normalImage).y)
         return;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(normalImage));

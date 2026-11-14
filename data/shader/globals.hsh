@@ -1,12 +1,7 @@
-#ifdef AE_BINDLESS
+// Has to match the counts in graphics/Common.h
 #define TEXTURE_COUNT 16384
 #define CUBEMAP_COUNT 1024
 #define TEXTURE_ARRAY_COUNT 128
-#else
-#define TEXTURE_COUNT 1
-#define CUBEMAP_COUNT 1
-#define TEXTURE_ARRAY_COUNT 1
-#endif
 
 layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     vec4 frustumPlanes[6];
@@ -36,6 +31,11 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     float mipLodBias;
     float cameraNearPlane;
     float cameraFarPlane;
+    // Exposure the lighting buffers are stored with, keeps strong physical lights within the limits of the GI
+    float preExposure;
+    float lastPreExposure;
+    // A loaded sky cubemap doesn't carry the pre-exposure, a generated one does
+    float skyCubemapExposure;
 } globalData;
 
 layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];

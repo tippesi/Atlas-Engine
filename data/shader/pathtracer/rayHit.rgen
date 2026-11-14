@@ -1,0 +1,7 @@
+// Traces and shades a bounce of the path tracer as the ray generation stage of a ray tracing pipeline, see bvh.hsh
+#extension GL_EXT_ray_tracing : require
+#extension GL_EXT_shader_invocation_reorder : require
+
+#define RAY_TRACING_PIPELINE
+
+#include <rayHit.csh>

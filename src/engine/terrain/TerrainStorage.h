@@ -15,6 +15,9 @@ namespace Atlas {
         class TerrainStorage {
 
         public:
+            // The size of the material array of the terrain shaders
+            static constexpr int32_t maxMaterialCount = 128;
+
             TerrainStorage() = default;
 
             /**
@@ -23,8 +26,7 @@ namespace Atlas {
              * @param LoDCount The level of detail count of the terrain
              * @param sideLength The side length of the terrain
              */
-            TerrainStorage(int32_t rootNodeCount, int32_t LoDCount, float sideLength, 
-                int32_t materialResolution, int32_t materialCount);
+            TerrainStorage(int32_t rootNodeCount, int32_t LoDCount, float sideLength, int32_t materialCount);
 
             /**
              * Finds the cell to the corresponding arguments in the storage object
@@ -48,21 +50,11 @@ namespace Atlas {
             int32_t GetCellCount(int32_t LoD);
 
             /**
-             * Makes it possible to write materials afterwards
-             */
-            void BeginMaterialWrite();
-
-            /**
              *
              * @param slot
              * @param material
              */
             void WriteMaterial(int32_t slot, ResourceHandle<Material> material);
-
-            /**
-             * Generates all mipmaps after materials have been written
-             */
-            void EndMaterialWrite();
 
             /**
              *
@@ -98,30 +90,16 @@ namespace Atlas {
             std::set<TerrainStorageCell*> requestedCellQueue;
             std::set<TerrainStorageCell*> requestedBvhCellQueue;           
 
-            Texture::Texture2DArray baseColorMaps;
-            Texture::Texture2DArray roughnessMaps;
-            Texture::Texture2DArray aoMaps;
-            Texture::Texture2DArray normalMaps;
-            Texture::Texture2DArray displacementMaps;
-
             std::vector<ResourceHandle<Material>> materials;
             std::vector<std::vector<TerrainStorageCell>> cells;
 
             bool inEditing = false;
 
         private:
-            void BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
-                Ref<Graphics::Image>& dstImage, int32_t slot);
-
             int32_t rootNodeCount;
             int32_t LoDCount;
 
-            int32_t materialResolution;
-            int32_t materialCount;
-
             std::vector<int32_t> LoDSideLengths;
-
-            Graphics::CommandList* commandList = nullptr;
 
             std::mutex unusedCellQueueMutex;
             std::mutex cellQueueMutex;

@@ -1,12 +1,12 @@
 #include <common.hsh>
 
-layout (local_size_x = 8, local_size_y = 8) in;
+// One work group per texel, each invocation integrates one direction
+layout (local_size_x = 64) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D multipleScatteringImage;
 layout(set = 3, binding = 1) uniform sampler2D transmittanceTexture;
 
 layout(set = 3, binding = 2, std140) uniform UniformBuffer {
-    vec4 sunRadiance;
     vec4 rayleighScatteringCoeff;
     vec4 groundAlbedo;
     float mieScatteringCoeff;
@@ -20,16 +20,17 @@ layout(set = 3, binding = 2, std140) uniform UniformBuffer {
 const int multipleScatteringDirectionSampleCount = 64;
 const int multipleScatteringRaySampleCount = 20;
 
+shared vec3 sharedLuminance[multipleScatteringDirectionSampleCount];
+shared vec3 sharedMultiScatteringFactor[multipleScatteringDirectionSampleCount];
+
 AtmosphereParameters GetAtmosphereParameters();
 vec3 GetSphericalFibonacciDirection(int index, int count);
 
 void main() {
 
-    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 pixel = ivec2(gl_WorkGroupID.xy);
     ivec2 resolution = imageSize(multipleScatteringImage);
-
-    if (pixel.x >= resolution.x || pixel.y >= resolution.y)
-        return;
+    int index = int(gl_LocalInvocationIndex);
 
     vec2 uv = (vec2(pixel) + 0.5) / vec2(resolution);
 
@@ -40,24 +41,35 @@ void main() {
 
     vec3 samplePosition = vec3(0.0, 0.0, radius);
     vec3 sunDirection = vec3(sqrt(max(1.0 - muS * muS, 0.0)), 0.0, muS);
+    vec3 rayDirection = GetSphericalFibonacciDirection(index, multipleScatteringDirectionSampleCount);
 
-    vec3 inScatteredLuminance = vec3(0.0);
-    vec3 multiScatteringFactor = vec3(0.0);
+    vec3 rayLuminance;
+    vec3 rayMultiScatteringFactor;
+    // Computed for a unit sun radiance, the sun is applied where the table is sampled
+    IntegrateAtmosphereMultiScattering(transmittanceTexture, samplePosition, rayDirection, sunDirection,
+        vec3(0.0), atmosphere, vec3(1.0), multipleScatteringRaySampleCount, 1.4,
+        rayLuminance, rayMultiScatteringFactor);
+
+    sharedLuminance[index] = rayLuminance;
+    sharedMultiScatteringFactor[index] = rayMultiScatteringFactor;
+
+    barrier();
+
+    for (int stride = multipleScatteringDirectionSampleCount / 2; stride > 0; stride /= 2) {
+        if (index < stride) {
+            sharedLuminance[index] += sharedLuminance[index + stride];
+            sharedMultiScatteringFactor[index] += sharedMultiScatteringFactor[index + stride];
+        }
+
+        barrier();
+    }
+
+    if (index > 0)
+        return;
 
     float sampleWeight = 4.0 * PI / float(multipleScatteringDirectionSampleCount);
-
-    for (int i = 0; i < multipleScatteringDirectionSampleCount; i++) {
-        vec3 rayDirection = GetSphericalFibonacciDirection(i, multipleScatteringDirectionSampleCount);
-
-        vec3 rayLuminance;
-        vec3 rayMultiScatteringFactor;
-        IntegrateAtmosphereMultiScattering(transmittanceTexture, samplePosition, rayDirection, sunDirection,
-            vec3(0.0), atmosphere, uniforms.sunRadiance.rgb, multipleScatteringRaySampleCount, 1.4,
-            rayLuminance, rayMultiScatteringFactor);
-
-        inScatteredLuminance += rayLuminance * sampleWeight * atmosphereIsotropicPhase;
-        multiScatteringFactor += rayMultiScatteringFactor * sampleWeight;
-    }
+    vec3 inScatteredLuminance = sharedLuminance[0] * sampleWeight * atmosphereIsotropicPhase;
+    vec3 multiScatteringFactor = sharedMultiScatteringFactor[0] * sampleWeight;
 
     vec3 clampedFactor = min(multiScatteringFactor, vec3(0.999));
     vec3 multipleScattering = inScatteredLuminance / max(vec3(1.0) - clampedFactor, vec3(0.01));

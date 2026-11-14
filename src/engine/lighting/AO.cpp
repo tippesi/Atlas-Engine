@@ -30,7 +30,7 @@ namespace Atlas {
             samples.clear();
             for (int32_t i = 0; i < sampleCount; i++) {
 
-                glm::vec3 sample = normalize(glm::vec3(
+                vec3 sample = normalize(vec3(
                     2.0f * Random::SampleUniformFloat() - 1.0f, 
                     2.0f * Random::SampleUniformFloat() - 1.0f, 
                     Random::SampleUniformFloat()));

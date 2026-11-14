@@ -1,0 +1,20 @@
+// Data exchanged between the surface of hits and the hit shader of a material graph, see graphHit.rchit
+
+struct MaterialGraphHit {
+    // Tangent, bitangent and normal in world space, the hit shader gets positions and transforms from the hit object
+    mat3 tangentFrame;
+    // Vertex color packed as unorm 4x8
+    uint color;
+    vec2 texCoord;
+    float frontFacing;
+    float textureLevel;
+    uint parameterOffset;
+
+    vec3 baseColor;
+    // In tangent space
+    vec3 normal;
+    vec3 emissive;
+    float roughness;
+    float metalness;
+    float ao;
+};

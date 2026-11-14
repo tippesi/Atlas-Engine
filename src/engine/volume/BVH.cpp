@@ -26,8 +26,8 @@ namespace Atlas {
             }
 
             // Calculate initial aabb of root
-            AABB aabb(glm::vec3(std::numeric_limits<float>::max()),
-                glm::vec3(-std::numeric_limits<float>::max()));
+            AABB aabb(vec3(std::numeric_limits<float>::max()),
+                vec3(-std::numeric_limits<float>::max()));
             for (auto& ref : refs)
                 aabb.Grow(aabbs[ref.idx]);
 
@@ -100,14 +100,15 @@ namespace Atlas {
             */
 
             // Calculate initial aabb of root
-            AABB aabb(glm::vec3(std::numeric_limits<float>::max()),
-                glm::vec3(-std::numeric_limits<float>::max()));
+            AABB aabb(vec3(std::numeric_limits<float>::max()),
+                vec3(-std::numeric_limits<float>::max()));
             for (auto& ref : refs)
                 aabb.Grow(aabbs[ref.idx]);
 
             auto builder = new BVHBuilder(aabb, 0, refs.size(), 128);
 
-            JobGroup group { "Build tlas structure", JobPriority::Medium};
+            // The frame waits for the top level structure
+            JobGroup group { "Build tlas structure", JobPriority::High};
             builder->Build(refs, group, parallelBuild);
             JobSystem::Wait(group);
 
@@ -136,7 +137,7 @@ namespace Atlas {
 
         }
         
-        bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection) {
+        bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, vec3& intersection) {
 
             intersection.x = ray.tMax;
 
@@ -161,7 +162,7 @@ namespace Atlas {
                             auto& triangle = data[ptr];
                             endOfNode = triangle.endOfNode;
 
-                            glm::vec3 intersect;
+                            vec3 intersect;
                             bool hit = ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect);
 
                             // Only allow intersections "in range"
@@ -227,7 +228,7 @@ namespace Atlas {
                             auto& triangle = data[triPtr++];
                             endOfNode = triangle.endOfNode;
 
-                            glm::vec3 intersect;
+                            vec3 intersect;
                             bool hit = ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect);
 
                             // Only allow intersections "in range"
@@ -796,7 +797,7 @@ namespace Atlas {
             Ref& leftRef, Ref& rightRef, const float planePos, const int32_t axis) {
 
             for (uint8_t i = 0; i < 3; i++) {
-                glm::vec3 v0, v1;
+                vec3 v0, v1;
                 switch (i) {
                 case 0: v0 = triangle.v0; v1 = triangle.v1; break;
                 case 1: v0 = triangle.v1; v1 = triangle.v2; break;
@@ -897,8 +898,8 @@ namespace Atlas {
 
         AABB BVHBuilder::InitialAABB() {
 
-            const auto min = glm::vec3(std::numeric_limits<float>::max());
-            const auto max = glm::vec3(-std::numeric_limits<float>::max());
+            const auto min = vec3(std::numeric_limits<float>::max());
+            const auto max = vec3(-std::numeric_limits<float>::max());
             return AABB(min, max);
 
         }

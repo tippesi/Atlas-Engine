@@ -3,8 +3,9 @@
 #include "../../common/RandomHelper.h"
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
-#include "../../graphics/Profiler.h"
+#include "../../profiler/GPUProfiler.h"
 #include "../../pipeline/PipelineManager.h"
+#include "../../materialgraph/PipelineCache.h"
 #include <glm/gtx/norm.hpp>
 
 #define DIRECTIONAL_LIGHT 0
@@ -22,14 +23,15 @@ namespace Atlas {
 
                 const size_t lightCount = 128;
 
-                indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
-                    3 * sizeof(uint32_t), 0);
+                // The second command launches ray tracing pipelines, which read it through its device address
+                indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit |
+                    Buffer::BufferUsageBits::DeviceAddressBit, 3 * sizeof(uint32_t), 0);
                 counterBuffer0 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
                     sizeof(uint32_t), 0);
                 counterBuffer1 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
                     sizeof(uint32_t), 0);
 
-                indirectDispatchBuffer.SetSize(1);
+                indirectDispatchBuffer.SetSize(2);
                 counterBuffer0.SetSize(1);
                 counterBuffer1.SetSize(1);
 
@@ -66,9 +68,33 @@ namespace Atlas {
 
             }
 
+            PipelineConfig RayTracingHelper::GetRayTracingPipelineConfig(const std::string& rayGenFile) {
+
+                ShaderConfig shaderConfig = {
+                    { rayGenFile, VK_SHADER_STAGE_RAYGEN_BIT_KHR },
+                    { "raytracer/miss.rmiss", VK_SHADER_STAGE_MISS_BIT_KHR },
+                    { "raytracer/opacity.rahit", VK_SHADER_STAGE_ANY_HIT_BIT_KHR }
+                };
+
+                return PipelineConfig(shaderConfig, std::vector<std::string>{});
+
+            }
+
+            Ref<Graphics::Pipeline> RayTracingHelper::GetRayTracingPipeline(PipelineConfig& config,
+                const Ref<Scene::Scene>& scene) {
+
+                const auto& rayTracingWorld = scene->renderState.rayTracingWorld;
+                auto graphConfig = rayTracingWorld ? rayTracingWorld->GetMaterialGraphPipelineConfig(config) : nullptr;
+                if (graphConfig && MaterialGraph::PipelineCache::Request(*graphConfig, false) == MaterialGraph::PipelineCache::State::Ready)
+                    return PipelineManager::GetPipeline(*graphConfig);
+
+                return PipelineManager::GetPipeline(config);
+
+            }
+
             void RayTracingHelper::DispatchAndHit(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
-                glm::ivec3 dimensions, std::function<void(void)> prepare) {
+                ivec3 dimensions, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 
@@ -99,7 +125,7 @@ namespace Atlas {
                         }
                     }
                     else if (lights.size() > lightCount && !stochasticLightSelection) {
-                        auto& camera = scene->GetMainCamera();
+                        auto& camera = scene->renderState.camera;
                         auto cameraLocation = camera.GetLocation();
 
                         std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {  
@@ -126,15 +152,17 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    const auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->renderState.rayTracingWorld;
 
-                    if (scene->sky.GetProbe())
-                        commandList->BindImage(scene->sky.GetProbe()->GetCubemap().image,
-                            scene->sky.GetProbe()->GetCubemap().sampler, 2, 6);
+                    if (scene->renderState.sky.GetProbe())
+                        commandList->BindImage(scene->renderState.sky.GetProbe()->GetCubemap().image,
+                            scene->renderState.sky.GetProbe()->GetCubemap().sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
                     rtData->materialBuffer.Bind(commandList, 2, 7);
+                    // The hit shaders of material graphs read their parameters
+                    scene->renderState.materialGraphBuffer.Bind(commandList, 3, 24);
                     rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
                     if (rtData->includeObjectHistory)
                         rtData->lastMatricesBuffer.Bind(commandList, 2, 28);
@@ -158,14 +186,26 @@ namespace Atlas {
 
                     prepare();
 
-                    commandList->Dispatch(dimensions.x, dimensions.y, dimensions.z);
+                    if (dispatchAndHitPipeline->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+                        // The barriers of the renderers only cover the compute stage
+                        commandList->MemoryBarrier(VK_ACCESS_MEMORY_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+                        const auto& shaderBindingTable = scene->renderState.rayTracingWorld->GetShaderBindingTable(
+                            dispatchAndHitPipeline, commandList);
+                        commandList->TraceRays(shaderBindingTable, dimensions.x, dimensions.y, dimensions.z);
+                        commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                            VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+                    }
+                    else {
+                        commandList->Dispatch(dimensions.x, dimensions.y, dimensions.z);
+                    }
                 }
 
             }
 
             void RayTracingHelper::DispatchRayGen(Ref<Scene::Scene> scene, 
                 Graphics::CommandList* commandList, const Ref<Graphics::Pipeline>& rayGenPipeline, 
-                glm::ivec3 dimensions, bool binning, std::function<void(void)> prepare) {
+                ivec3 dimensions, bool binning, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 
@@ -200,7 +240,7 @@ namespace Atlas {
                         }
                     }
                     else if (lights.size() > lightCount && !stochasticLightSelection) {
-                        auto& camera = scene->GetMainCamera();
+                        auto& camera = scene->renderState.camera;
                         auto cameraLocation = camera.GetLocation();
 
                         std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {
@@ -264,15 +304,17 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    const auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->renderState.rayTracingWorld;
 
-                    if (scene->sky.GetProbe())
-                        commandList->BindImage(scene->sky.GetProbe()->GetCubemap().image,
-                            scene->sky.GetProbe()->GetCubemap().sampler, 2, 6);
+                    if (scene->renderState.sky.GetProbe())
+                        commandList->BindImage(scene->renderState.sky.GetProbe()->GetCubemap().image,
+                            scene->renderState.sky.GetProbe()->GetCubemap().sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
                     rtData->materialBuffer.Bind(commandList, 2, 7);
+                    // The hit shaders of material graphs read their parameters
+                    scene->renderState.materialGraphBuffer.Bind(commandList, 3, 24);
                     rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
                     if (rtData->includeObjectHistory)
                         rtData->lastMatricesBuffer.Bind(commandList, 2, 28);
@@ -286,7 +328,7 @@ namespace Atlas {
                     }
                 }
 
-                Graphics::Profiler::BeginQuery("Setup command buffer");
+                GPUProfiler::BeginQuery("Setup command buffer");
 
                 commandList->BindBuffer(indirectDispatchBuffer.Get(), 2, 12);
 
@@ -343,7 +385,7 @@ namespace Atlas {
                 /*
                 if (binning) {
 
-                    Graphics::Profiler::EndAndBeginQuery("Binning offsets");
+                    GPUProfiler::EndAndBeginQuery("Binning offsets");
 
                     // Calculate binning offsets
                     {
@@ -358,7 +400,7 @@ namespace Atlas {
                         // glDispatchCompute(1, 1, 1);
                     }
 
-                    Graphics::Profiler::EndAndBeginQuery("Binning rays");
+                    GPUProfiler::EndAndBeginQuery("Binning rays");
 
                     // Order rays by their bins
                     {
@@ -382,7 +424,38 @@ namespace Atlas {
                 }
                 */
 
-                Graphics::Profiler::EndAndBeginQuery("Trace rays");
+                // A ray tracing pipeline traces and shades in one stage, it reads the rays of the ray generation
+                if (hitPipeline->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+                    GPUProfiler::EndAndBeginQuery("Trace and shade rays");
+
+                    commandList->BindPipeline(hitPipeline);
+
+                    PushConstants constants;
+                    constants.lightCount = int32_t(selectedLights.size());
+                    // Reads the rays of the last pass and writes new ones into the other half like a hit shader
+                    constants.rayBufferOffset = uint32_t(rayOffsetCounter++ % 2);
+                    constants.rayPayloadBufferOffset = uint32_t(payloadOffsetCounter++ % 2);
+                    constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
+                    constants.useRayBinning = binning ? 1 : 0;
+
+                    commandList->PushConstants("constants", &constants);
+
+                    prepare();
+
+                    commandList->MemoryBarrier(VK_ACCESS_MEMORY_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+                    const auto& shaderBindingTable = scene->renderState.rayTracingWorld->GetShaderBindingTable(hitPipeline, commandList);
+                    commandList->TraceRaysIndirect(shaderBindingTable, indirectDispatchBuffer.Get(), uint32_t(sizeof(VkTraceRaysIndirectCommandKHR)));
+                    commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+                    GPUProfiler::EndQuery();
+
+                    dispatchCounter++;
+                    return;
+                }
+
+                GPUProfiler::EndAndBeginQuery("Trace rays");
 
                 // Trace rays for closest intersection
                 {
@@ -402,7 +475,7 @@ namespace Atlas {
                     commandList->DispatchIndirect(indirectDispatchBuffer.Get());
                 }
 
-                Graphics::Profiler::EndAndBeginQuery("Execute hit shader");
+                GPUProfiler::EndAndBeginQuery("Execute hit shader");
 
                 Graphics::BufferBarrier preShaderBufferBarriers[3] = {
                     { rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
@@ -436,7 +509,7 @@ namespace Atlas {
                     commandList->DispatchIndirect(indirectDispatchBuffer.Get());
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
 
                 dispatchCounter++;
 
@@ -475,14 +548,15 @@ namespace Atlas {
 
                 lights.clear();
 
-                auto& camera = scene->GetMainCamera();
+                auto& camera = scene->renderState.camera;
                 auto cameraLocation = camera.GetLocation();
 
-                auto lightSubset = scene->GetSubset<LightComponent>();
-                for (auto& lightEntity : lightSubset) {
-                    auto& light = lightEntity.GetComponent<LightComponent>();
+                for (const auto& lightEntity : scene->renderState.allLights) {
+                    const auto& light = lightEntity.comp;
 
                     auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light.color) * light.intensity;
+                    if (light.type == LightType::DirectionalLight)
+                        radiance *= scene->renderState.sky.GetDirectLightTransmittance(cameraLocation, light.transformedProperties.directional.direction);
                     auto brightness = dot(radiance, vec3(0.3333f));
 
                     vec3 P = vec3(0.0f);
@@ -542,7 +616,7 @@ namespace Atlas {
                 }
 
                 if (useEmissivesAsLights && scene->IsRtDataValid()) {
-                    const auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->renderState.rayTracingWorld;
                     lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
                 

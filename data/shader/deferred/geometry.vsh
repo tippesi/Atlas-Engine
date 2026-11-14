@@ -25,6 +25,14 @@ layout(location=3) in vec4 vTangent;
 layout(location=4) in vec4 vVertexColors;
 #endif
 
+#ifdef SKINNED
+layout(location=5) in uvec4 vJoints;
+layout(location=6) in vec4 vWeights;
+#endif
+
+#ifdef INSTANCE_BUFFER
+#include <../culling/instances.hsh>
+#else
 layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
@@ -32,6 +40,17 @@ layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
 layout(std430, set = 1, binding = 2) readonly buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
+#endif
+
+#ifdef SKINNED
+layout(std430, set = 1, binding = 4) readonly buffer CurrentJointMatrices {
+    mat3x4 currentJointMatrices[];
+};
+
+layout(std430, set = 1, binding = 5) readonly buffer LastJointMatrices {
+    mat3x4 lastJointMatrices[];
+};
+#endif
 
 // Vertex out parameters
 layout(location=0) out vec3 positionVS;
@@ -49,6 +68,12 @@ layout(location=5) out vec4 vertexColorsVS;
 // Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=7) out mat3 TBN;
+#endif
+
+#ifdef MATERIAL_GRAPH_SURFACE
+layout(location=10) out vec3 objectPositionVS;
+layout(location=11) out vec3 instancePositionVS;
+layout(location=12) out vec3 objectNormalVS;
 #endif
 
 layout(set = 3, binding = 8) uniform sampler2D windNoiseMap;
@@ -75,13 +100,25 @@ layout(push_constant) uniform constants {
     uint aoTextureIdx;
     uint heightTextureIdx;
     uint emissiveTextureIdx;
+    uint jointOffset;
+    uint jointCount;
+    uint instanceOffset;
+#ifdef MATERIAL_GRAPH
+    uint materialGraphOffset;
+#endif
 } PushConstants;
 
 // Functions
 void main() {
 
+#ifdef INSTANCE_BUFFER
+    uint instanceIdx = instanceIndices[gl_InstanceIndex];
+    mat4 mMatrix = GetInstanceMatrix(instanceIdx);
+    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : GetLastInstanceMatrix(instanceIdx);
+#else
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
     mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
+#endif
 
 #ifdef TEX_COORDS
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord; 
@@ -93,15 +130,87 @@ void main() {
 
     vec3 position = vPosition;
     vec3 lastPosition = vPosition;
+    vec3 normal = vNormal.xyz;
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+    vec3 tangent = vTangent.xyz;
+#endif
+
+#ifdef SKINNED
+    uint jointOffset = PushConstants.jointOffset + (gl_InstanceIndex - PushConstants.instanceOffset) * PushConstants.jointCount;
+    vec4 weights = vWeights / dot(vWeights, vec4(1.0));
+
+    mat3x4 skinMatrix = weights.x * currentJointMatrices[jointOffset + vJoints.x] +
+        weights.y * currentJointMatrices[jointOffset + vJoints.y] +
+        weights.z * currentJointMatrices[jointOffset + vJoints.z] +
+        weights.w * currentJointMatrices[jointOffset + vJoints.w];
+    mat3x4 lastSkinMatrix = weights.x * lastJointMatrices[jointOffset + vJoints.x] +
+        weights.y * lastJointMatrices[jointOffset + vJoints.y] +
+        weights.z * lastJointMatrices[jointOffset + vJoints.z] +
+        weights.w * lastJointMatrices[jointOffset + vJoints.w];
+
+    position = vec4(vPosition, 1.0) * skinMatrix;
+    lastPosition = vec4(vPosition, 1.0) * lastSkinMatrix;
+    normal = vec4(normal, 0.0) * skinMatrix;
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+    tangent = vec4(tangent, 0.0) * skinMatrix;
+#endif
+#endif
+
+#ifdef MATERIAL_GRAPH
+    vec2 graphTexCoord = vec2(0.0);
+    vec3 graphTangent = vec3(1.0, 0.0, 0.0);
+    vec4 graphColor = vec4(1.0);
+#ifdef TEX_COORDS
+    graphTexCoord = texCoordVS;
+#endif
+#ifdef TANGENTS
+    graphTangent = vTangent.xyz;
+#endif
+#ifdef VERTEX_COLORS
+    graphColor = vVertexColors;
+#endif
+
+    MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, normal, graphTangent, graphTexCoord, graphColor,
+        mMatrix, globalData.time, PushConstants.materialGraphOffset);
+
+#ifdef MATERIAL_GRAPH_VERTEX_OPACITY
+    // The opacity is the same for the whole draw, moving all vertices outside the view keeps fragments free of discards
+    if (EvaluateMaterialOpacity(graphInput) < 0.2) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        return;
+    }
+#endif
+
+    WriteMaterialVaryings(graphInput);
+
+#ifdef MATERIAL_GRAPH_SURFACE
+    // Patterns stay on the surface when it moves
+    objectPositionVS = vPosition;
+    instancePositionVS = vec3(mMatrix[3]);
+#endif
+
+#ifdef MATERIAL_GRAPH_VERTEX_OFFSET
+    normal = EvaluateMaterialVertexNormal(graphInput);
+    position += EvaluateMaterialVertexOffset(graphInput);
+
+    graphInput = CreateMaterialVertexInput(vPosition, lastPosition, graphInput.normal, graphTangent, graphTexCoord, graphColor,
+        mMatrixLast, globalData.time - globalData.deltaTime, PushConstants.materialGraphOffset);
+    lastPosition += EvaluateMaterialVertexOffset(graphInput);
+#endif
+
+#ifdef MATERIAL_GRAPH_SURFACE
+    objectNormalVS = normal;
+#endif
+#endif
 
     if (PushConstants.vegetation > 0) {
 
         // This is not well optimized and could use some work
         vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
-        vec2 windDir = normalize((inverse(mMatrix) * vec4(globalData.windDir.x, 0.0, globalData.windDir.y, 0.0)).xz);
-        position = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
+        vec2 windDir = GetWindDirection(mMatrix);
+        position = WindAnimation(windNoiseMap, position, windDir, PushConstants.windBendScale,
             PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
-        lastPosition = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
+        lastPosition = WindAnimation(windNoiseMap, lastPosition, windDir, PushConstants.windBendScale,
             PushConstants.windWiggleScale, PushConstants.windTextureLod,
             globalData.time - globalData.deltaTime, windPosition);
 
@@ -127,18 +236,18 @@ void main() {
     mat3 cofactorMatrix = mat3(cross(modelView[1], modelView[2]),
         cross(modelView[2], modelView[0]), cross(modelView[0], modelView[1]));
     float orientation = dot(modelView[0], cofactorMatrix[0]) < 0.0 ? -1.0 : 1.0;
-    normalVS = orientation * (cofactorMatrix * vNormal.xyz);
+    normalVS = orientation * (cofactorMatrix * normal);
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-    vec3 normal = normalize(normalVS);
+    vec3 normalView = normalize(normalVS);
     float correctionFactor = orientation * vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
-    vec3 tangent = mat3(mvMatrix) * vTangent.xyz;
-    tangent = normalize(tangent - normal * dot(tangent, normal));
+    vec3 tangentView = mat3(mvMatrix) * tangent;
+    tangentView = normalize(tangentView - normalView * dot(tangentView, normalView));
     
     vec3 bitangent = normalize(correctionFactor * 
-        cross(tangent, normal));
+        cross(tangentView, normalView));
 
-    TBN = mat3(tangent, bitangent, normal);
+    TBN = mat3(tangentView, bitangent, normalView);
 #endif
 
 #ifdef VERTEX_COLORS

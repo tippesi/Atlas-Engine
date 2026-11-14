@@ -4,23 +4,14 @@
 #include "audio/AudioSerializer.h"
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
+#include "ocean/OceanSerializer.h"
+#include "navigation/NavigationSerializer.h"
 
 #include "loader/TerrainLoader.h"
 
 namespace Atlas::Scene {
 
-    void EntityToJson(json& j, const Entity& p, Scene* scene,
-        std::set<ECS::Entity>& insertedEntities) {
-
-        if (!p.IsValid())
-            return;
-
-        AE_ASSERT(!insertedEntities.contains(p) && "Entity should only be present once in the hierarchy");
-
-        if (!insertedEntities.contains(p))
-            insertedEntities.insert(p);
-
-        j["id"] = size_t(p);
+    void ComponentsToJson(json& j, const Entity& p, Scene* scene) {
 
         if (p.HasComponent<NameComponent>()) {
             j["name"] = p.GetComponent<NameComponent>();
@@ -47,11 +38,17 @@ namespace Atlas::Scene {
         if (p.HasComponent<AudioVolumeComponent>()) {
             j["audioVolume"] = p.GetComponent<AudioVolumeComponent>();
         }
+        if (p.HasComponent<FogVolumeComponent>()) {
+            j["fogVolume"] = p.GetComponent<FogVolumeComponent>();
+        }
         if (p.HasComponent<RigidBodyComponent>()) {
             j["rigidBody"] = p.GetComponent<RigidBodyComponent>();
         }
         if (p.HasComponent<PlayerComponent>()) {
             j["player"] = p.GetComponent<PlayerComponent>();
+        }
+        if (p.HasComponent<ConstraintComponent>()) {
+            j["constraint"] = p.GetComponent<ConstraintComponent>();
         }
         if (p.HasComponent<TextComponent>()) {
             j["text"] = p.GetComponent<TextComponent>();
@@ -62,6 +59,27 @@ namespace Atlas::Scene {
         if (p.HasComponent<SplineComponent>()) {
             j["spline"] = p.GetComponent<SplineComponent>();
         }
+        if (p.HasComponent<AnimationComponent>()) {
+            j["animation"] = p.GetComponent<AnimationComponent>();
+        }
+
+    }
+
+    void EntityToJson(json& j, const Entity& p, Scene* scene,
+        std::set<ECS::Entity>& insertedEntities) {
+
+        if (!p.IsValid())
+            return;
+
+        AE_ASSERT(!insertedEntities.contains(p) && "Entity should only be present once in the hierarchy");
+
+        if (!insertedEntities.contains(p))
+            insertedEntities.insert(p);
+
+        j["id"] = size_t(p);
+
+        ComponentsToJson(j, p, scene);
+
         if (p.HasComponent<HierarchyComponent>()) {
             // Need to check how to get this to work
             auto& hierarchyComponent = p.GetComponent<HierarchyComponent>();
@@ -105,6 +123,10 @@ namespace Atlas::Scene {
             AudioVolumeComponent comp = j["audioVolume"];
             p.AddComponent<AudioVolumeComponent>(comp);
         }
+        if (j.contains("fogVolume")) {
+            FogVolumeComponent comp = j["fogVolume"];
+            p.AddComponent<FogVolumeComponent>(comp);
+        }
         if (j.contains("rigidBody")) {
             RigidBodyComponent comp = j["rigidBody"];
             p.AddComponent<RigidBodyComponent>(comp);
@@ -112,6 +134,10 @@ namespace Atlas::Scene {
         if (j.contains("player")) {
             PlayerComponent comp = j["player"];
             p.AddComponent<PlayerComponent>(comp);
+        }
+        if (j.contains("constraint")) {
+            ConstraintComponent comp = j["constraint"];
+            p.AddComponent<ConstraintComponent>(comp);
         }
         if (j.contains("text")) {
             TextComponent comp = j["text"];
@@ -124,6 +150,10 @@ namespace Atlas::Scene {
         if (j.contains("spline")) {
             SplineComponent comp = j["spline"];
             p.AddComponent<SplineComponent>(comp);
+        }
+        if (j.contains("animation")) {
+            AnimationComponent comp = j["animation"];
+            p.AddComponent<AnimationComponent>(comp);
         }
         if (j.contains("entities")) {
             // We need to first push back to a temporary vector to not invalidate
@@ -172,6 +202,10 @@ namespace Atlas::Scene {
                 continue;
             if (!entity.IsValid())
                 continue;
+            // Children are written by their parent. Reused entity slots can come before the slot of their parent,
+            // they would otherwise be written twice and loaded as two entities
+            if (scene->GetParentEntity(entity).IsValid())
+                continue;
 
             entities.emplace_back();
             EntityToJson(entities.back(), entity, scene, insertedEntities);
@@ -183,23 +217,10 @@ namespace Atlas::Scene {
         j["name"] = scene->name;
         j["aabb"] = scene->aabb;
         j["depth"] = scene->depth;
-        j["sky"] = scene->sky;
-        j["postProcessing"] = scene->postProcessing;
-        j["wind"] = scene->wind;
-        
+
+        SceneSettingsToJson(j, scene);
+
         // Parse all optional members
-        if (scene->fog)
-            j["fog"] = *scene->fog;
-        if (scene->irradianceVolume)
-            j["irradianceVolume"] = *scene->irradianceVolume;
-        if (scene->reflection)
-            j["reflection"] = *scene->reflection;
-        if (scene->rtgi)
-            j["rtgi"] = *scene->rtgi;
-        if (scene->sss)
-            j["sss"] = *scene->sss;
-        if (scene->ssgi)
-            j["ssgi"] = *scene->ssgi;
         if (scene->terrain.IsValid() && !scene->terrain.IsGenerated())
             j["terrain"] = scene->terrain.GetResource()->path;
 
@@ -242,40 +263,91 @@ namespace Atlas::Scene {
             EntityFromJson(jEntity, entity, scene.get(), containsEntityManager);
         }
 
-        scene->sky = j["sky"];
-        scene->postProcessing = j["postProcessing"];
-
-        if (j.contains("fog")) {
-            scene->fog = CreateRef<Lighting::Fog>();
-            *scene->fog = j["fog"];
-        }
-        if (j.contains("irradianceVolume")) {
-            scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>();
-            *scene->irradianceVolume = j["irradianceVolume"];
-        }
-        if (j.contains("reflection")) {
-            scene->reflection = CreateRef<Lighting::Reflection>();
-            *scene->reflection = j["reflection"];
-        }
-        if (j.contains("rtgi")) {
-            scene->rtgi = CreateRef<Lighting::RTGI>();
-            *scene->rtgi = j["rtgi"];
-        }
-        if (j.contains("sss")) {
-            scene->sss = CreateRef<Lighting::SSS>();
-            *scene->sss = j["sss"];
-        }
-        if (j.contains("ssgi")) {
-            scene->ssgi = CreateRef<Lighting::SSGI>();
-            *scene->ssgi = j["ssgi"];
-        }
-        if (j.contains("wind")) {
-            scene->wind = j["wind"];
-        }
+        SceneSettingsFromJson(j, scene.get());
 
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
 
         scene->physicsWorld->OptimizeBroadphase();
+
+    }
+
+    void SceneSettingsToJson(json& j, const Scene* scene) {
+
+        j["sky"] = scene->sky;
+        j["postProcessing"] = scene->postProcessing;
+        j["wind"] = scene->wind;
+        j["occlusionCulling"] = scene->occlusionCulling;
+
+        if (scene->fog)
+            j["fog"] = *scene->fog;
+        if (scene->irradianceVolume)
+            j["irradianceVolume"] = *scene->irradianceVolume;
+        if (scene->reflection)
+            j["reflection"] = *scene->reflection;
+        if (scene->rtgi)
+            j["rtgi"] = *scene->rtgi;
+        if (scene->sss)
+            j["sss"] = *scene->sss;
+        if (scene->ssgi)
+            j["ssgi"] = *scene->ssgi;
+        if (scene->ocean)
+            j["ocean"] = *scene->ocean;
+        if (scene->navigation)
+            j["navigation"] = *scene->navigation;
+
+    }
+
+    static void ReadSceneSettings(const json& j, Scene* scene, bool mergePatch) {
+
+        auto readSettings = [&]<class T>(const char* key, T& settings) {
+            if (!j.contains(key))
+                return;
+
+            // Read into the existing settings, such that e.g. the clouds keep their textures
+            if (!mergePatch) {
+                j[key].get_to(settings);
+                return;
+            }
+
+            json merged = settings;
+            merged.merge_patch(j[key]);
+            merged.get_to(settings);
+        };
+
+        auto readFeature = [&]<class T>(const char* key, Ref<T>& feature) {
+            if (!j.contains(key))
+                return;
+
+            if (!feature)
+                feature = CreateRef<T>();
+            readSettings(key, *feature);
+        };
+
+        readSettings("sky", scene->sky);
+        readSettings("postProcessing", scene->postProcessing);
+        readSettings("wind", scene->wind);
+        readSettings("occlusionCulling", scene->occlusionCulling);
+
+        readFeature("fog", scene->fog);
+        readFeature("irradianceVolume", scene->irradianceVolume);
+        readFeature("reflection", scene->reflection);
+        readFeature("rtgi", scene->rtgi);
+        readFeature("sss", scene->sss);
+        readFeature("ssgi", scene->ssgi);
+        readFeature("ocean", scene->ocean);
+        readFeature("navigation", scene->navigation);
+
+    }
+
+    void SceneSettingsFromJson(const json& j, Scene* scene) {
+
+        ReadSceneSettings(j, scene, false);
+
+    }
+
+    void PatchSceneSettings(const json& patch, Scene* scene) {
+
+        ReadSceneSettings(patch, scene, true);
 
     }
 

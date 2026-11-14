@@ -1,9 +1,11 @@
 #include <globals.hsh>
+#include <common/stencil.hsh>
 
 layout (location=0) out vec4 colorFS;
 
 #ifdef TEXT_3D
 layout (location=1) out vec2 velocityFS;
+layout (location=2) out uint stencilFS;
 #endif
 
 layout(location=0) in vec3 texCoordVS;
@@ -72,11 +74,15 @@ void main() {
     if (colorFS.a < 0.5)
         discard;
 
+    StencilFeatures features = CreateStencilFeatures();
+    features.noTemporalAccumulation = true;
+    stencilFS = EncodeStencilFeatures(features);
+
     vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
     vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
+    // The current position is unjittered already (see text.vsh), the last one used the jittered matrix
     ndcL -= globalData.jitterLast;
-    ndcC -= globalData.jitterCurrent;
 
     velocityFS = (ndcL - ndcC) * 0.5;
 #endif

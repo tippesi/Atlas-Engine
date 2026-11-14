@@ -21,20 +21,31 @@ namespace Atlas::Editor::UI {
             textComponent.ChangeResource(handle);
         }
 
-        ImGui::InputTextMultiline("##Text", &textComponent.text,
-            ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 4.0f + ImGui::GetStyle().FramePadding.y * 2.0f));
+        Widgets::TextArea("Text", textComponent.text, 7.0f);
 
         ImGui::SeparatorText("Layout");
 
-        Widgets::DragVec3("Position", textComponent.position, 0.1f, 0.0f);
-        ImGui::DragFloat2("Half size", glm::value_ptr(textComponent.halfSize), 0.1f);
+        if (Widgets::BeginProperties("TextLayout")) {
+            Widgets::PropertyLabel("Position");
+            Widgets::DragVec3("##Position", textComponent.position, 0.1f, 0.0f);
+            Widgets::PropertyLabel("Half size");
+            ImGui::DragFloat2("##Half size", glm::value_ptr(textComponent.halfSize), 0.1f);
+            Widgets::EndProperties();
+        }
 
         ImGui::SeparatorText("Style");
 
-        ImGui::DragFloat("Scale", &textComponent.textScale, 0.01f, 0.0f, 100.0f);
-        ImGui::ColorEdit4("Color", glm::value_ptr(textComponent.textColor));
-        ImGui::ColorEdit4("Outline color", glm::value_ptr(textComponent.outlineColor));
-        ImGui::DragFloat("Outline factor", &textComponent.outlineFactor, 0.01f, 0.0f, 1.0f);
+        if (Widgets::BeginProperties("TextStyle")) {
+            Widgets::PropertyLabel("Scale");
+            ImGui::DragFloat("##Scale", &textComponent.textScale, 0.01f, 0.0f, 100.0f);
+            Widgets::PropertyLabel("Color");
+            ImGui::ColorEdit4("##Color", glm::value_ptr(textComponent.textColor));
+            Widgets::PropertyLabel("Outline color");
+            ImGui::ColorEdit4("##Outline color", glm::value_ptr(textComponent.outlineColor));
+            Widgets::PropertyLabel("Outline factor");
+            ImGui::DragFloat("##Outline factor", &textComponent.outlineFactor, 0.01f, 0.0f, 1.0f);
+            Widgets::EndProperties();
+        }
 
         ImGui::PopID();
 

@@ -7,6 +7,7 @@
 #include "../volume/AABB.h"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <mutex>
 
 namespace Atlas::Physics {
@@ -22,6 +23,9 @@ namespace Atlas::Physics {
 
         static void Update();
 
+        // Builds the shape of the mesh in a job, returns true once shapes of the mesh can be created without building it
+        static bool PrepareMeshShape(const ResourceHandle<Mesh::Mesh>& mesh);
+
     private:
         template<class T>
         struct CacheItem {
@@ -34,9 +38,20 @@ namespace Atlas::Physics {
         static bool TryCreateShapeFromSphere(Shape* shape, const SphereShapeSettings& settings);
         static bool TryCreateShapeFromCapsule(Shape* shape, const CapsuleShapeSettings& settings);
         static bool TryCreateShapeFromHeightField(Shape* shape, const HeightFieldShapeSettings& settings);
+        static bool TryCreateShapeFromConvexHull(Shape* shape, const ConvexHullShapeSettings& settings);
+        static bool TryCreateShapeFromCylinder(Shape* shape, const CylinderShapeSettings& settings);
+        static bool TryCreateShapeFromCompound(Shape* shape, const CompoundShapeSettings& settings);
 
         static std::unordered_map<Hash, CacheItem<Mesh::Mesh>> meshShapeCache;
         static std::mutex meshShapeCacheMutex;
+        static std::unordered_set<Hash> pendingMeshShapes;
+        static JobGroup meshShapeJobs;
+
+        static std::unordered_map<Hash, ShapeRef> heightFieldShapeCache;
+        static std::mutex heightFieldShapeCacheMutex;
+
+        static std::unordered_map<Hash, CacheItem<Mesh::Mesh>> convexHullShapeCache;
+        static std::mutex convexHullShapeCacheMutex;
 
         static const float epsilon;
 
@@ -74,6 +89,21 @@ namespace Atlas::Physics {
             shape->type = ShapeType::HeightField;
             success = TryCreateShapeFromHeightField(shape.get(), shapeSettings);
             shape->settings = CreateRef<HeightFieldShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<ConvexHullShapeSettings, T>) {
+            shape->type = ShapeType::ConvexHull;
+            success = TryCreateShapeFromConvexHull(shape.get(), shapeSettings);
+            shape->settings = CreateRef<ConvexHullShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<CylinderShapeSettings, T>) {
+            shape->type = ShapeType::Cylinder;
+            success = TryCreateShapeFromCylinder(shape.get(), shapeSettings);
+            shape->settings = CreateRef<CylinderShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<CompoundShapeSettings, T>) {
+            shape->type = ShapeType::Compound;
+            success = TryCreateShapeFromCompound(shape.get(), shapeSettings);
+            shape->settings = CreateRef<CompoundShapeSettings>(shapeSettings);
         }
 
         /*

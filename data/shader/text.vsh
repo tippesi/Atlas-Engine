@@ -83,7 +83,8 @@ void main() {
     vec3 worldPosition = right * screenPositionVS.x + down * screenPositionVS.y;
     worldPosition = worldPosition + pushConstants.position.xyz - right * halfSize.x - down * halfSize.y;
 
-    gl_Position = globalData.pMatrix * globalData.vMatrix * vec4(worldPosition, 1.0);
+    // Text isn't accumulated temporally (see text.fsh), the jitter would only make it shake
+    gl_Position = globalData.pMatrixUnjitterd * globalData.vMatrix * vec4(worldPosition, 1.0);
 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
     // For moving objects we need the last frames matrix

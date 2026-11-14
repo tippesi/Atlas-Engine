@@ -14,7 +14,9 @@
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
+#ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 32) in;
+#endif
 
 #ifdef REALTIME
 layout (set = 3, binding = 1, r32ui) uniform uimage2DArray frameAccumImage;
@@ -41,7 +43,6 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     int sampleCount;
     int bounceCount;
     float seed;
-    float exposure;
     int samplesPerFrame;
     float maxRadiance;
 } Uniforms;
@@ -57,6 +58,7 @@ void main() {
     
     if (IsRayInvocationValid()) {
         Ray ray = ReadRay();
+        TraceBufferedRay(ray);
         RayPayload payload;
 
         payload.radiance = vec3(0.0);
@@ -126,7 +128,8 @@ void main() {
             accumColor += vec4(payload.radiance, 1.0);
             imageStore(outAccumImage, pixel, accumColor);
 
-            vec3 color = accumColor.rgb * Uniforms.exposure / float(Uniforms.sampleCount + 1);
+            // The pre-exposure of the radiance is the exposure
+            vec3 color = accumColor.rgb / float(Uniforms.sampleCount + 1);
             color = vec3(1.0) - exp(-color);
             //color = color / (vec3(1.0) + color);
 
@@ -176,10 +179,8 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     int lod = int(ray.hitDistance / 30.0);
     lod = 0;
     
-    // Unpack the compressed triangle and extract surface parameters
-    Instance instance = GetInstance(ray);
-    Triangle tri = GetTriangle(ray, instance);
-    surface = GetSurfaceParameters(instance, tri, ray, true, lod);
+    bool backfaceHit;
+    surface = GetHitSurface(ray, true, backfaceHit, lod);
 
     // If we hit an emissive surface we need to terminate the ray
 #ifndef REALTIME
@@ -221,7 +222,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
         return vec3(0.0);
 
     float curSeed = Uniforms.seed;
-    float raySeed = float(gl_GlobalInvocationID.x);
+    float raySeed = float(INVOCATION_ID.x);
 
     float lightPdf;
     Light light = GetLight(surface, raySeed, curSeed, lightPdf);

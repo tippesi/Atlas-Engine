@@ -14,10 +14,15 @@ namespace Atlas {
         class MemoryManager;
 
         struct DescriptorSet {
+            struct WrittenImage {
+                uint64_t id = 0;
+                VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            };
+
             VkDescriptorSet set;
 
-            uint32_t sampledImageArraySize[BINDINGS_PER_DESCRIPTOR_SET] = {};
-            uint32_t bufferArraySize[BINDINGS_PER_DESCRIPTOR_SET] = {};
+            std::vector<WrittenImage> sampledImageArrays[BINDINGS_PER_DESCRIPTOR_SET];
+            std::vector<uint64_t> bufferArrays[BINDINGS_PER_DESCRIPTOR_SET];
         };
 
         struct DescriptorPoolDesc {
@@ -47,7 +52,7 @@ namespace Atlas {
                 size_t counter = 0;
             };
 
-            VkDescriptorPool InitPool(const DescriptorSetSize& size);
+            void AddPool(const DescriptorSetSize& size);
 
             bool PoolFits(const DescriptorSetSize& poolSize, const DescriptorSetSize& requestedSize) const;
 

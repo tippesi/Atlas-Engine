@@ -6,7 +6,7 @@
 #include "ImpostorShadowRenderer.h"
 
 #include <mutex>
-#include <map>
+#include <set>
 #include <tuple>
 
 namespace Atlas {
@@ -26,12 +26,14 @@ namespace Atlas {
             void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
                 RenderList* renderList, Ref<RenderList::Pass> shadowPass);
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
+            Graphics::RenderingDesc GetRendering(const LightComponent& light, uint32_t layer);
 
-            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
+                const Graphics::AttachmentFormats& attachmentFormats, const MaterialGraph::CompiledGraph* graph = nullptr);
 
-            using LightMap = std::map<Scene::Entity, Ref<Graphics::FrameBuffer>>;
+            // Switches to the pipelines of the graph once they are created
+            void UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
+                const Graphics::AttachmentFormats& attachmentFormats);
 
             struct alignas(16) PushConstants {
                 mat4 lightSpaceMatrix;
@@ -41,14 +43,19 @@ namespace Atlas {
                 float windBendScale;
                 float windWiggleScale;
                 uint32_t textureID;
+                uint32_t jointOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
+                // Only part of the push constants of graphs, the others don't push it
+                uint32_t materialGraphOffset;
             };
 
-            LightMap prevLightMap;
-            LightMap lightMap;
+            std::set<Scene::Entity> processedLights;
 
             ImpostorShadowRenderer impostorRenderer;
 
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+            // Draws culled on the GPU have a draw command
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*>> subDatas;
 
 
         };

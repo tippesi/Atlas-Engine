@@ -222,6 +222,7 @@ void GetRadiusMuFromMultipleScatteringTextureUv(vec2 uv, AtmosphereParameters at
 
 }
 
+// Multiple scattering for a unit sun radiance
 vec3 GetMultipleScattering(sampler2D multipleScatteringTexture, float radius, float muS,
     AtmosphereParameters atmosphere) {
 
@@ -263,7 +264,7 @@ vec3 GetGroundRadiance(sampler2D transmittanceTexture, sampler2D multipleScatter
     vec3 transmittanceToSun = GetTransmittanceToSun(transmittanceTexture, groundRadius,
         sunZenithCosAngle, atmosphere);
     vec3 directIrradiance = sunRadiance * transmittanceToSun * saturate(sunZenithCosAngle);
-    vec3 indirectIrradiance = GetMultipleScattering(multipleScatteringTexture, groundRadius,
+    vec3 indirectIrradiance = sunRadiance * GetMultipleScattering(multipleScatteringTexture, groundRadius,
         sunZenithCosAngle, atmosphere) * PI * atmosphereGroundIndirectFactor;
 
     return atmosphere.groundAlbedo * (directIrradiance + indirectIrradiance) / PI;
@@ -365,7 +366,7 @@ vec3 IntegrateAtmosphereScattering(sampler2D transmittanceTexture, sampler2D mul
         vec3 transmittanceToSun = GetTransmittanceToSun(transmittanceTexture, sampleRadius,
             muS, atmosphere);
         vec3 phaseScattering = GetAtmospherePhaseScattering(densities, cosTheta, atmosphere);
-        vec3 multipleScattering = GetMultipleScattering(multipleScatteringTexture, sampleRadius,
+        vec3 multipleScattering = sunRadiance * GetMultipleScattering(multipleScatteringTexture, sampleRadius,
             muS, atmosphere);
         float shadowVisibility = max3(transmittanceToSun);
         float multipleScatteringVisibility = shadowVisibility *

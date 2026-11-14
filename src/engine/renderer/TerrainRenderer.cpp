@@ -8,31 +8,30 @@ namespace Atlas {
 
         void TerrainRenderer::Init(Graphics::GraphicsDevice* device) {
 
+            this->device = device;
+
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
-            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 128, 1);
+            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * Terrain::TerrainStorage::maxMaterialCount, 1);
 
-            Common::Image<float> noiseImage(512, 512, 1);
-            std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
-            Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
-
-            noiseTexture = Texture::Texture2D(512, 512,
-                VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear);
-            auto data = noiseImage.ConvertData<float16>();
-            noiseTexture.SetData(data);
         }
 
         void TerrainRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+            std::unordered_map<void*, uint16_t>& materialMap) {
 
-            if (!scene->terrain.IsLoaded())
+            if (!scene->renderState.terrain.IsLoaded())
                 return;
 
-            Graphics::Profiler::BeginQuery("Terrain");
+            // Generating the noise takes a while, renderers without a terrain don't need it
+            if (!noiseTexture.IsValid())
+                GenerateNoiseTexture();
 
-            auto& camera = scene->GetMainCamera();
-            auto terrain = scene->terrain;
+            CPUProfiler::Scope profilerScope("Terrain");
+            GPUProfiler::BeginQuery("Terrain");
+
+            auto& camera = scene->renderState.camera;
+            auto terrain = scene->renderState.terrain;
 
             terrain->UpdateRenderlist(camera.frustum, camera.GetLocation());
 
@@ -41,6 +40,13 @@ namespace Atlas {
             std::vector<Terrain::TerrainNode*> distanceNodes;
 
             vec3 cameraLocation = camera.GetLocation();
+
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
+            // Bindless and tesselation with MoltenVK don't seem to properly work and cause crashes
+            bool disableTessellation = true;
+#else
+            bool disableTessellation = false;
+#endif
 
             for (auto node : terrain->renderList) {
                 if (node->cell->LoD >= terrain->LoDCount - terrain->detailNodeIdx) {
@@ -51,28 +57,28 @@ namespace Atlas {
                     auto dy = glm::max(glm::max(nodeMin.y - cameraLocation.z, cameraLocation.z - nodeMax.y), 0.0f);
                     auto dist = glm::sqrt(dx * dx + dy * dy);
 
-#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
-                    // Bindless and tesselation on Mac with MoltenVK don't seem to properly work and cause crashes
-                    detailNodes.push_back(node);
-#else
-                    if (dist < terrain->displacementDistance)
+                    if (dist < terrain->displacementDistance && !disableTessellation)
                         detailDisplacementNodes.push_back(node);
                     else
                         detailNodes.push_back(node);
-#endif
                 }
                 else {
                     distanceNodes.push_back(node);
                 }
             }
 
+            auto sceneState = &scene->renderState;
             auto materials = terrain->storage->GetMaterials();
 
-            std::vector<TerrainMaterial> terrainMaterials(128);
+            std::vector<TerrainMaterial> terrainMaterials(Terrain::TerrainStorage::maxMaterialCount);
 
             for (size_t i = 0; i < materials.size(); i++) {
                 if (materials[i].IsLoaded()) {
-                    terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].Get().get()];
+                    auto materialIdx = uint32_t(materialMap[materials[i].Get().get()]);
+                    auto textureIndices = materialIdx < sceneState->materialTextureIndices.size() ?
+                        sceneState->materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
+
+                    terrainMaterials[i].idx = materialIdx;
                     terrainMaterials[i].baseColor = vec4(materials[i]->baseColor, 1.0);
                     terrainMaterials[i].roughness = materials[i]->roughness;
                     terrainMaterials[i].metalness = materials[i]->metalness;
@@ -80,16 +86,15 @@ namespace Atlas {
                     terrainMaterials[i].displacementScale = materials[i]->displacementScale;
                     terrainMaterials[i].normalScale = materials[i]->normalScale;
                     terrainMaterials[i].tiling = materials[i]->tiling;
+                    terrainMaterials[i].baseColorTextureIdx = textureIndices.baseColor;
+                    terrainMaterials[i].roughnessTextureIdx = textureIndices.roughness;
+                    terrainMaterials[i].aoTextureIdx = textureIndices.ao;
+                    terrainMaterials[i].normalTextureIdx = textureIndices.normal;
+                    terrainMaterials[i].displacementTextureIdx = textureIndices.height;
                 }
             }
 
             terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, 1);
-
-            terrain->storage->baseColorMaps.Bind(commandList, 3, 3);
-            terrain->storage->roughnessMaps.Bind(commandList, 3, 4);
-            terrain->storage->aoMaps.Bind(commandList, 3, 5);
-            terrain->storage->normalMaps.Bind(commandList, 3, 6);
-            terrain->storage->displacementMaps.Bind(commandList, 3, 7);
 
             Uniforms uniforms = {
                 .translation = vec4(terrain->translation, 1.0f),
@@ -122,17 +127,17 @@ namespace Atlas {
                 switch (i) {
                 case 0: config = GeneratePipelineConfig(target, terrain.Get(), true, true);
                     terrain->vertexArray.Bind(commandList);
-                    Graphics::Profiler::BeginQuery("Detail with displacement");
+                    GPUProfiler::BeginQuery("Detail with displacement");
                     nodes = detailDisplacementNodes;
                     break;
                 case 1: config = GeneratePipelineConfig(target, terrain.Get(), false, true);
                     terrain->distanceVertexArray.Bind(commandList);
-                    Graphics::Profiler::BeginQuery("Detail");
+                    GPUProfiler::BeginQuery("Detail");
                     nodes = detailNodes;
                     break;
                 case 2: config = GeneratePipelineConfig(target, terrain.Get(), false, false);
                     terrain->distanceVertexArray.Bind(commandList);
-                    Graphics::Profiler::BeginQuery("Distance");
+                    GPUProfiler::BeginQuery("Distance");
                     nodes = distanceNodes;
                     break;
                 default: break;
@@ -173,11 +178,27 @@ namespace Atlas {
 
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
 
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
+
+        }
+
+        void TerrainRenderer::GenerateNoiseTexture() {
+
+            // The noise is the same for all renderers, e.g. each editor viewport has one
+            static auto data = []() {
+                Common::Image<float> noiseImage(512, 512, 1);
+                std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
+                Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
+                return noiseImage.ConvertData<float16>();
+            }();
+
+            noiseTexture = Texture::Texture2D(512, 512,
+                VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+            noiseTexture.SetData(data);
 
         }
 
@@ -193,7 +214,7 @@ namespace Atlas {
                 };
 
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .frameBuffer = target->gBufferFrameBuffer,
+                    .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                     .vertexInputInfo = terrain->vertexArray.GetVertexInputState(),
                 };
 
@@ -212,7 +233,7 @@ namespace Atlas {
                 };
 
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .frameBuffer = target->gBufferFrameBuffer,
+                    .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                     .vertexInputInfo = terrain->distanceVertexArray.GetVertexInputState(),
                 };
 

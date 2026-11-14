@@ -1,0 +1,52 @@
+#ifdef FOG_VOLUMES
+
+#define FOG_VOLUME_BOX 0
+#define FOG_VOLUME_ELLIPSOID 1
+
+struct FogVolume {
+    vec4 worldToUnit0;
+    vec4 worldToUnit1;
+    vec4 worldToUnit2;
+
+    vec4 scatteringAndDensity;
+    vec4 emissiveAndEdgeFade;
+    vec4 noiseOffsetAndFrequency;
+
+    float noiseAmount;
+    float noiseCoverage;
+    float noiseSharpness;
+    int noiseOctaves;
+
+    float heightFalloff;
+    float ambientFactor;
+    int shape;
+    float selfShadowing;
+
+    float scatteringAnisotropy;
+    float padding0;
+    float padding1;
+    float padding2;
+};
+
+layout(std430, set = 3, binding = 11) buffer FogVolumes {
+    FogVolume fogVolumes[];
+};
+
+layout(std430, set = 3, binding = 13) buffer FogVolumeMasks {
+    uint fogVolumeMasks[];
+};
+
+uint GetFogVolumeClusterIndex() {
+
+    return gl_WorkGroupID.x + (gl_WorkGroupID.y + gl_WorkGroupID.z * gl_NumWorkGroups.y) * gl_NumWorkGroups.x;
+
+}
+
+vec3 GetFogVolumeUnitPosition(FogVolume volume, vec3 worldPosition) {
+
+    vec4 position = vec4(worldPosition, 1.0);
+    return vec3(dot(volume.worldToUnit0, position), dot(volume.worldToUnit1, position), dot(volume.worldToUnit2, position));
+
+}
+
+#endif

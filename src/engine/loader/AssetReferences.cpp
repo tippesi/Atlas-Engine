@@ -14,23 +14,30 @@ namespace Atlas {
         static const std::vector<std::string> sceneReferences = {
             "/terrain",
             "/sky/probe/cubemapPath",
-            "/postProcessing/bloom/dirtMap"
+            "/postProcessing/bloom/dirtMap",
+            "/ocean/rippleTexture",
+            "/ocean/foamTexture"
         };
 
         static const std::vector<std::string> entityReferences = {
             "/mesh/resourcePath",
+            "/animation/resourcePath",
             "/text/resourcePath",
             "/script/resourcePath",
             "/audio/stream/resourcePath",
-            "/audioVolume/stream/resourcePath",
-            "/rigidBody/creationSettings/shape/meshSettings/resourcePath",
-            // Prefabs store the body creation settings of the root entity separately
-            "/body/shape/meshSettings/resourcePath"
+            "/audioVolume/stream/resourcePath"
+        };
+
+        // Shapes of bodies, relative to the creation settings. Compound shapes contain further shapes
+        static const std::vector<std::string> shapeReferences = {
+            "/meshSettings/resourcePath",
+            "/convexHullSettings/resourcePath"
         };
 
         static const std::vector<std::string> meshReferences = {
             "/impostor",
-            "/data/materials"
+            "/data/materials",
+            "/data/animations"
         };
 
         static const std::vector<std::string> materialReferences = {
@@ -41,7 +48,16 @@ namespace Atlas {
             "/metalnessMapPath",
             "/aoMapPath",
             "/displacementMapPath",
-            "/emissiveMapPath"
+            "/emissiveMapPath",
+            "/graphPath",
+            "/graphBake/meshPath",
+            "/graphBake/unbaked/maps/baseColor",
+            "/graphBake/unbaked/maps/normal",
+            "/graphBake/unbaked/maps/roughness",
+            "/graphBake/unbaked/maps/metalness",
+            "/graphBake/unbaked/maps/ao",
+            "/graphBake/unbaked/maps/emissive",
+            "/graphBake/unbaked/maps/opacity"
         };
 
         template<class Func>
@@ -67,9 +83,37 @@ namespace Atlas {
         }
 
         template<class Func>
+        static void TransformShape(json& j, Func& func) {
+
+            TransformPaths(j, shapeReferences, func);
+
+            auto childrenPointer = json::json_pointer("/compoundSettings/children");
+            if (j.contains(childrenPointer)) {
+                for (auto& child : j[childrenPointer])
+                    if (child.contains("shape"))
+                        TransformShape(child["shape"], func);
+            }
+
+        }
+
+        template<class Func>
         static void TransformEntity(json& j, Func& func) {
 
             TransformPaths(j, entityReferences, func);
+
+            // Prefabs store the body creation settings of the root entity separately
+            for (const auto& pointer : { "/rigidBody/creationSettings/shape", "/player/creationSettings/shape", "/body/shape" }) {
+                auto shapePointer = json::json_pointer(pointer);
+                if (j.contains(shapePointer))
+                    TransformShape(j[shapePointer], func);
+            }
+
+            // The layers of an animation component are a list of objects with a path each
+            auto layersPointer = json::json_pointer("/animation/layers");
+            if (j.contains(layersPointer)) {
+                for (auto& layer : j[layersPointer])
+                    TransformPaths(layer, { "/resourcePath" }, func);
+            }
 
             if (j.contains("entities")) {
                 for (auto& child : j["entities"])
@@ -91,7 +135,20 @@ namespace Atlas {
                 break;
             case AssetReferences::Type::Entity: TransformEntity(j, func); break;
             case AssetReferences::Type::Mesh: TransformPaths(j, meshReferences, func); break;
-            case AssetReferences::Type::Material: TransformPaths(j, materialReferences, func); break;
+            case AssetReferences::Type::Material:
+                TransformPaths(j, materialReferences, func);
+                // The textures of graph parameters are stored by the name of their parameter
+                if (j.contains("graphTextures")) {
+                    for (auto& [_, texture] : j["graphTextures"].items())
+                        texture = func(texture.template get<std::string>());
+                }
+                break;
+            case AssetReferences::Type::MaterialGraph:
+                if (j.contains("nodes")) {
+                    for (auto& node : j["nodes"])
+                        TransformPaths(node, { "/texturePath" }, func);
+                }
+                break;
             }
 
         }

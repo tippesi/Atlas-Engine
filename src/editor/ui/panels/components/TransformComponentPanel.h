@@ -15,6 +15,9 @@ namespace Atlas::Editor::UI {
 
         bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, TransformComponent& transform);
 
+        // Decomposes the matrix again on the next render, e.g. after a tool moved the entity
+        void Refresh() { lastEntity = Scene::Entity(); }
+
     private:
         Scene::Entity lastEntity;
 
@@ -23,7 +26,7 @@ namespace Atlas::Editor::UI {
         vec3 scale;
         quat quaternion;
 
-        glm::mat4 lastTransform;
+        mat4 lastTransform;
 
     };
 

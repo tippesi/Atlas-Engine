@@ -1,12 +1,16 @@
 #include "Serialization.h"
 #include "Singletons.h"
 #include "FileImporter.h"
+#include "Notifications.h"
 
 #include "common/SerializationHelper.h"
 #include "tools/ToolSerializer.h"
 #include "scene/SceneSerializer.h"
+#include "physics/PhysicsSerializer.h"
 
 #include "Log.h"
+
+#include <algorithm>
 #include "loader/AssetLoader.h"
 
 namespace Atlas::Editor {
@@ -14,6 +18,7 @@ namespace Atlas::Editor {
     const std::string Serialization::configPath = ".config/";
     const std::string Serialization::configFilename = configPath + "config.json";
     const std::string Serialization::contentBrowserWindowFilename = configPath + "contentBrowserWindowConfig.json";
+    const std::string Serialization::logWindowFilename = configPath + "logWindowConfig.json";
 
     void Serialization::SerializeConfig() {
 
@@ -27,6 +32,7 @@ namespace Atlas::Editor {
             { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
             { "vsync", config->vsync },
+            { "uiScale", config->uiScale },
             { "scenes", scenePaths },
             { "recentScenes", config->recentScenes }
         };
@@ -54,6 +60,8 @@ namespace Atlas::Editor {
             j.at("pathTrace").get_to(config->pathTrace);
         if (j.contains("vsync"))
             j.at("vsync").get_to(config->vsync);
+        if (j.contains("uiScale"))
+            j.at("uiScale").get_to(config->uiScale);
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
         if (j.contains("recentScenes"))
@@ -62,6 +70,16 @@ namespace Atlas::Editor {
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)
             FileImporter::ImportFile(scenePath);
+
+    }
+
+    std::string Serialization::GetSceneWindowConfigFilename(const ResourceHandle<Scene::Scene>& scene) {
+
+        // The path without its extension, e.g. scenes_sponzaWindowConfig.json for scenes/sponza.aescene
+        auto key = UI::SceneWindow::GetScenePath(scene);
+        key = key.substr(0, key.rfind('.'));
+        std::replace_if(key.begin(), key.end(), [](char c) { return c == '/' || c == '\\' || c == ':'; }, '_');
+        return configPath + key + "WindowConfig.json";
 
     }
 
@@ -84,6 +102,9 @@ namespace Atlas::Editor {
             { "showGrid", sceneWindow->showGrid },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
             { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
+            { "showPhysics", sceneWindow->showPhysics },
+            { "depthTestPhysics", sceneWindow->depthTestPhysics },
+            { "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings },
             { "playMaximized", sceneWindow->playMaximized },
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
             { "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator },
@@ -92,9 +113,7 @@ namespace Atlas::Editor {
             { "camera", camera }
         };
 
-        auto filename = configPath + sceneWindow->scene->name + "WindowConfig.json";
-
-        TryWriteToFile(filename, to_string(j));
+        TryWriteToFile(GetSceneWindowConfigFilename(sceneWindow->scene), to_string(j));
 
     }
 
@@ -103,11 +122,12 @@ namespace Atlas::Editor {
         if (!handle.IsLoaded())
             return nullptr;
 
-        auto filename = configPath + handle->name + "WindowConfig.json";
-
         auto sceneWindow = CreateRef<UI::SceneWindow>(handle, true);
 
-        auto serialized = TryReadFromFile(filename);
+        // Configs written before they were named by the file are named by the scene, saving moves them over
+        auto serialized = TryReadFromFile(GetSceneWindowConfigFilename(handle));
+        if (serialized.empty())
+            serialized = TryReadFromFile(configPath + handle->name + "WindowConfig.json");
 
         if (serialized.empty())
             return sceneWindow;
@@ -125,12 +145,18 @@ namespace Atlas::Editor {
         try_get_json(j, "showGrid", sceneWindow->showGrid);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
         try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
+        try_get_json(j, "showPhysics", sceneWindow->showPhysics);
+        try_get_json(j, "depthTestPhysics", sceneWindow->depthTestPhysics);
+        try_get_json(j, "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings);
         try_get_json(j, "playMaximized", sceneWindow->playMaximized);
         try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);
         try_get_json(j, "camera", camera);
         try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
         try_get_json(j, "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator);
         try_get_json(j, "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter);
+        // A filter saved before the fog volume bit with everything enabled
+        if (sceneWindow->sceneHierarchyPanel.hierarchyFilter == UI::SceneHierarchyPanel::HierarchyFilterBits::FogVolumeBit - 1)
+            sceneWindow->sceneHierarchyPanel.hierarchyFilter = UI::SceneHierarchyPanel::HierarchyFilterBits::AllBit;
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), false);
@@ -149,6 +175,11 @@ namespace Atlas::Editor {
             { "searchRecursively", contentBrowserWindow.searchRecursively },
             { "contentFilter", contentBrowserWindow.contentFilter },
             { "iconSize", contentBrowserWindow.iconSize },
+            { "folderPanelWidth", contentBrowserWindow.folderPanelWidth },
+            { "listView", contentBrowserWindow.listView },
+            { "showPreviews", contentBrowserWindow.showPreviews },
+            { "pinned", contentBrowserWindow.pinned },
+            { "drawerHeight", contentBrowserWindow.height },
         };
 
         TryWriteToFile(contentBrowserWindowFilename, to_string(j));
@@ -170,8 +201,49 @@ namespace Atlas::Editor {
             j.at("searchRecursively").get_to(contentBrowserWindow.searchRecursively);
         if (j.contains("contentFilter"))
             j.at("contentFilter").get_to(contentBrowserWindow.contentFilter);
+        // All types before animations and material graphs could be filtered
+        if (contentBrowserWindow.contentFilter == (1 << 11) - 1 || contentBrowserWindow.contentFilter == (1 << 12) - 1)
+            contentBrowserWindow.contentFilter = UI::ContentBrowserWindow::AllBit;
         if (j.contains("iconSize"))
             j.at("iconSize").get_to(contentBrowserWindow.iconSize);
+        if (j.contains("folderPanelWidth"))
+            j.at("folderPanelWidth").get_to(contentBrowserWindow.folderPanelWidth);
+        if (j.contains("listView"))
+            j.at("listView").get_to(contentBrowserWindow.listView);
+        if (j.contains("showPreviews"))
+            j.at("showPreviews").get_to(contentBrowserWindow.showPreviews);
+        if (j.contains("pinned"))
+            j.at("pinned").get_to(contentBrowserWindow.pinned);
+        if (j.contains("drawerHeight"))
+            j.at("drawerHeight").get_to(contentBrowserWindow.height);
+        contentBrowserWindow.show = contentBrowserWindow.pinned;
+    }
+
+    void Serialization::SerializeLogWindow(const UI::LogWindow& logWindow) {
+
+        json j = {
+            { "pinned", logWindow.pinned },
+            { "drawerHeight", logWindow.height },
+        };
+
+        TryWriteToFile(logWindowFilename, to_string(j));
+
+    }
+
+    void Serialization::DeserializeLogWindow(UI::LogWindow& logWindow) {
+
+        auto serialized = TryReadFromFile(logWindowFilename);
+
+        if (serialized.empty())
+            return;
+
+        json j = json::parse(serialized);
+
+        if (j.contains("pinned"))
+            j.at("pinned").get_to(logWindow.pinned);
+        if (j.contains("drawerHeight"))
+            j.at("drawerHeight").get_to(logWindow.height);
+        logWindow.show = logWindow.pinned;
     }
 
     void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {
@@ -180,6 +252,7 @@ namespace Atlas::Editor {
 
         if (!fileStream.is_open()) {
             Log::Error("Couldn't write config file");
+            Notifications::Push({ .message = "Couldn't write the editor settings to " + filename, .type = NotificationType::Error });
             return;
         }
 

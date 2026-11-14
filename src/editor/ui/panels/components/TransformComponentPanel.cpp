@@ -1,6 +1,9 @@
 #include "TransformComponentPanel.h"
 #include "../../Widgets.h"
 
+#include "scene/components/MeshComponent.h"
+#include "scene/components/AnimationComponent.h"
+
 #include <imgui.h>
 #include <ImGuizmo.h>
 
@@ -12,9 +15,17 @@ namespace Atlas::Editor::UI {
         ImGui::PushID(GetNameID());
 
         // Make sure the local matrix is updated from the global one
-        // This needs to happen when external system like physics just updated the globalMatrix
+        // This needs to happen when external system like physics just updated the globalMatrix.
+        // Otherwise the local matrix stays, rebuilding it each frame would add up rounding errors
         auto parentEntity = scene->GetParentEntity(entity);
-        transform.ReconstructLocalMatrix(parentEntity);
+        auto localMatrix = transform.GetReconstructedLocalMatrix(parentEntity);
+        for (int32_t i = 0; i < 4; i++) {
+            auto tolerance = 1e-5f * glm::max(vec4(1.0f), glm::abs(transform.matrix[i]));
+            if (glm::any(glm::greaterThan(glm::abs(localMatrix[i] - transform.matrix[i]), tolerance))) {
+                transform.Set(localMatrix);
+                break;
+            }
+        }
 
         // The matrix decomposition/composition code is a bit unstable and
         // we work with fixed information that is recomposed when changed,
@@ -30,14 +41,47 @@ namespace Atlas::Editor::UI {
 
         vec3 localPosition = position, localRotation = rotation, localScale = scale;
 
-        Widgets::DragVec3("Position", position, 0.01f);
+        if (Widgets::BeginProperties("TransformComponent")) {
+            Widgets::PropertyLabel("Position");
+            Widgets::DragVec3("##Position", position, 0.01f);
 
-        // Rotation is stored in radians, but degrees are easier to work with
-        auto rotationDegrees = glm::degrees(rotation);
-        if (Widgets::DragVec3("Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
-            rotation = glm::radians(rotationDegrees);
+            // Rotation is stored in radians, but degrees are easier to work with
+            auto rotationDegrees = glm::degrees(rotation);
+            Widgets::PropertyLabel("Rotation");
+            if (Widgets::DragVec3("##Rotation", rotationDegrees, 0.5f, 0.0f, 0.0f, 0.0f, "%.2f\xc2\xb0"))
+                rotation = glm::radians(rotationDegrees);
 
-        Widgets::DragVec3("Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
+            Widgets::PropertyLabel("Scale");
+            Widgets::DragVec3("##Scale", scale, 0.01f, 1.0f, -100.0f, 100.0f);
+
+            // Entities below an animated mesh can follow one of its joints, they keep their position when it changes
+            auto parentAnimationComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<AnimationComponent>() : nullptr;
+            auto parentMeshComponent = parentEntity.IsValid() ? parentEntity.TryGetComponent<MeshComponent>() : nullptr;
+            if (parentAnimationComponent && parentMeshComponent && parentMeshComponent->mesh.IsLoaded() &&
+                parentMeshComponent->mesh->data.IsSkinned()) {
+                const auto& joints = parentMeshComponent->mesh->data.skeleton.joints;
+                auto jointName = transform.parentJoint >= 0 && transform.parentJoint < int32_t(joints.size()) ?
+                    joints[transform.parentJoint].name : std::string("None");
+
+                Widgets::PropertyLabel("Parent joint");
+                if (ImGui::BeginCombo("##Parent joint", jointName.c_str())) {
+                    if (ImGui::Selectable("None", transform.parentJoint < 0)) {
+                        transform.parentJoint = -1;
+                        transform.ReconstructLocalMatrix(parentEntity);
+                    }
+                    for (int32_t i = 0; i < int32_t(joints.size()); i++) {
+                        ImGui::PushID(i);
+                        if (ImGui::Selectable(joints[i].name.c_str(), transform.parentJoint == i)) {
+                            transform.parentJoint = i;
+                            transform.ReconstructLocalMatrix(parentEntity);
+                        }
+                        ImGui::PopID();
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+            Widgets::EndProperties();
+        }
 
         // Only recompose when a local change happened
         if (localPosition != position || localScale != scale ||

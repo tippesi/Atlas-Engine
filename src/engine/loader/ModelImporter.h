@@ -2,7 +2,9 @@
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
+#include "../animation/Animation.h"
 #include "../scene/Scene.h"
+#include "KtxLoader.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -16,19 +18,43 @@ namespace Atlas {
 
     namespace Loader {
 
+        enum class ImportTextureFormat {
+            Original = 0,
+            KTX2
+        };
+
         class ModelImporter {
 
         public:
             static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
                 bool saveToDisk = false, int32_t maxTextureResolution = 4096);
 
+            static Ref<Mesh::Mesh> ImportMesh(const std::string& filename, bool saveToDisk,
+                int32_t maxTextureResolution, ImportTextureFormat textureFormat);
+
             static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
                 Mesh::MeshMobility mobility, bool saveToDisk = false,
                 int32_t maxTextureResolution = 4096);
 
+            static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
+                Mesh::MeshMobility mobility, bool saveToDisk,
+                int32_t maxTextureResolution, ImportTextureFormat textureFormat);
+
             static Ref<Scene::Scene> ImportScene(const std::string& filename, vec3 min, vec3 max,
                 int32_t depth, bool saveToDisk = true, bool makeMeshesStatic = false,
-                bool invertUVs = false, int32_t maxTextureResolution = 4096);
+                bool invertUVs = false, int32_t maxTextureResolution = 4096,
+                ImportTextureFormat textureFormat = ImportTextureFormat::Original, bool background = false);
+
+            // Materials and meshes of scenes imported in the background are still being imported until this returns
+            static void WaitForBackgroundImports();
+
+            // Gives the materials of finished background imports their maps, has to be called while nothing renders
+            static void ApplyBackgroundImports();
+
+            static std::vector<Ref<Animation::Animation>> ImportAnimations(const std::string& filename,
+                bool saveToDisk = false);
+
+            static std::string GetAnimationFilename(const std::string& filename, const std::string& animationName);
 
         private:
             struct Paths {
@@ -37,6 +63,7 @@ namespace Atlas {
                 std::string meshPath;
                 std::string materialPath;
                 std::string texturePath;
+                std::string animationPath;
             };
 
             enum class MaterialImageType {
@@ -131,22 +158,81 @@ namespace Atlas {
                 const aiScene* scene;
 
                 bool isObj;
+
+                JobPriority jobPriority = JobPriority::High;
             };
+
+            struct MaterialTexture {
+                ResourceHandle<Texture::Texture2D> texture;
+                Ref<Common::Image<uint8_t>> image;
+                MaterialImageType type;
+                std::string path;
+            };
+
+            struct SceneMesh {
+                ResourceHandle<Mesh::Mesh> mesh;
+                std::string name;
+                std::string path;
+                vec3 offset = vec3(0.0f);
+                bool isSkinned = false;
+                // Whether the import fills the resource or it was already there
+                bool created = false;
+            };
+
+            struct SceneImportResult {
+                struct MaterialMaps {
+                    ResourceHandle<Material> material;
+                    Ref<Material> maps;
+                };
+
+                std::vector<MaterialMaps> materials;
+                std::vector<ResourceHandle<Mesh::Mesh>> meshes;
+            };
+
+            static void ImportSceneMeshes(ImporterState& state, std::vector<SceneMesh>& meshes, bool invertUVs,
+                int32_t maxTextureResolution, ImportTextureFormat textureFormat, bool saveToDisk, bool background);
+
+            // Loads the images and gives them texture resources, which are empty until they are created
+            static std::vector<MaterialTexture> PrepareMaterialTextures(ImporterState& state, int32_t maxTextureResolution,
+                ImportTextureFormat textureFormat);
+
+            static void CreateMaterialTextures(const ImporterState& state, std::vector<MaterialTexture>& textures,
+                ImportTextureFormat textureFormat, bool saveToDisk);
+
+            static void ApplyMaterialMaps(const SceneImportResult& result);
+
+            static JobGroup backgroundImports;
+            static std::mutex completedImportsMutex;
+            static std::vector<SceneImportResult> completedImports;
+
+            static void ImportSkeleton(ImporterState& state, Mesh::Skeleton& skeleton, bool rigidMeshJoints);
+
+            static void ImportVertexWeights(const aiMesh* mesh, const Mesh::Skeleton& skeleton, int32_t defaultJointIdx,
+                std::vector<vec4>& joints, std::vector<vec4>& weights);
+
+            static mat4 GetBindSpaceMatrix(const aiMesh* mesh, const Mesh::Skeleton& skeleton);
+
+            static void ImportJointBounds(Mesh::MeshData& meshData);
 
             static void InitImporterState(ImporterState& state, const std::string& filename, bool optimizeMeshes);
 
-            static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution, bool saveToDisk);
+            static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution,
+                ImportTextureFormat textureFormat, bool saveToDisk);
 
             static void LoadMaterial(ImporterState& state, aiMaterial* assimpMaterial, Material& material);
 
             static void LoadMaterialImages(ImporterState& state, aiMaterial* material, bool hasTangents,
                 int32_t maxTextureResolution);
 
-            static std::vector<Ref<Common::Image<uint8_t>>> ImagesToTextures(ImporterState& state);
+            static std::string GetMaterialImagePath(const ImporterState& state, const aiString& aiPath);
+
+            static Ref<Common::Image<uint8_t>> LoadMaterialImage(const ImporterState& state, const aiString& aiPath,
+                bool colorSpaceConversion, int32_t forceChannels, int32_t maxTextureResolution);
 
             static Paths GetPaths(const std::string& filename);
 
-            static std::string GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type, const std::string& filename);
+            static std::string GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type,
+                const std::string& filename, ImportTextureFormat textureFormat);
 
             static bool IsImageValid(Ref<Common::Image<uint8_t>>& image);
 

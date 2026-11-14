@@ -9,19 +9,46 @@
 #include "common/Hash.h"
 #include "tools/TerrainTool.h"
 #include "Clock.h"
+#include "profiler/CPUProfiler.h"
+#include "ImguiExtension/panels/PostProcessingPanel.h"
 
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
+#include <glm/gtx/quaternion.hpp>
 
 namespace Atlas::Editor::UI {
 
     SceneWindow::SceneWindow(ResourceHandle<Scene::Scene> scene, bool show) :
-        Window(scene.IsLoaded() ? scene->name : "No scene", show), scene(scene) {
+        Window(scene.IsLoaded() ? GetSceneLabel(scene) : "No scene", show), scene(scene) {
     
         RegisterViewportAndGizmoOverlay();
 
-        // Overwrite the window name, there should only be one scene with the same name
-        nameID = scene->name;
+        // Overwrite the window name, the file identifies the scene: two files can contain scenes with the same name.
+        // The id stays the same while the label gets room for the unsaved marker
+        nameID = GetSceneLabel(scene) + "###" + GetScenePath(scene);
+
+        sceneHierarchyPanel.history = &history;
+
+    }
+
+    std::string SceneWindow::GetScenePath(const ResourceHandle<Scene::Scene>& scene) {
+
+        if (!scene.IsLoaded())
+            return "";
+        // Scenes created in the editor without a file are saved by their name
+        if (scene.IsGenerated())
+            return "scenes/" + scene->name + ".aescene";
+        return scene.GetResource()->path;
+
+    }
+
+    std::string SceneWindow::GetSceneLabel(const ResourceHandle<Scene::Scene>& scene) {
+
+        if (!scene.IsLoaded())
+            return "No scene";
+        if (scene.IsGenerated())
+            return scene->name;
+        return Common::Path::GetFileNameWithoutExtension(scene.GetResource()->path);
 
     }
 
@@ -36,11 +63,33 @@ namespace Atlas::Editor::UI {
         if (!scene.IsLoaded() || !show)
             return;
 
+        scene->buildMeshShapesInBackground = true;
+
         if (!cameraEntity.IsValid()) {
+            // Scenes opened for the first time start with the view of their camera, later on the window config has the last view
+            auto startLocation = vec3(0.0f);
+            auto startRotation = vec2(0.0f);
+            auto cameraSubset = scene->GetSubset<CameraComponent>();
+            for (auto entity : cameraSubset) {
+                const auto& sceneCamera = cameraSubset.Get(entity);
+                if (sceneCamera.isMain) {
+                    startLocation = sceneCamera.location;
+                    startRotation = sceneCamera.rotation;
+                    break;
+                }
+            }
+
             cameraEntity = scene->CreateEntity();
             auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 2000.0f);
+            camera.location = startLocation;
+            camera.rotation = startRotation;
             camera.isMain = true;
         }
+
+        // Deleting the viewed scene camera returns to the editor camera
+        bool viewingCamera = ECS::Entity(viewedCameraEntity) != ECS::EntityConfig::InvalidEntity;
+        if (viewingCamera && !isPlaying && (!viewedCameraEntity.IsValid() || !viewedCameraEntity.HasComponent<CameraComponent>()))
+            ReturnToEditorCamera();
 
         sceneHierarchyPanel.Update(scene.Get());
 
@@ -53,6 +102,7 @@ namespace Atlas::Editor::UI {
             camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
 
             ApplyBrush();
+            ApplyNavigationTools();
         }
 
         bool controlDown;        
@@ -64,6 +114,9 @@ namespace Atlas::Editor::UI {
         if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false) && !isPlaying) {
             SaveScene();
         }
+
+        if (inFocus && !isPlaying && scene.IsLoaded())
+            requestedHistorySteps += history.history.GetShortcutDirection();
         
         if (controlDown && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
@@ -81,6 +134,8 @@ namespace Atlas::Editor::UI {
                 guizmo.mode = ImGuizmo::OPERATION::SCALE;
             if (ImGui::IsKeyPressed(ImGuiKey_F, false))
                 FocusSelection();
+            if (ImGui::IsKeyPressed(ImGuiKey_End, false))
+                DropSelectionToGround();
             if (ImGui::IsKeyPressed(ImGuiKey_G, false))
                 showGrid = !showGrid;
         }
@@ -89,8 +144,28 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::Render() {
 
+        if (scene.IsLoaded())
+            nameID = GetSceneLabel(scene) + (hasUnsavedChanges ? "   ###" : "###") + GetScenePath(scene);
+
         if (!Begin())
             return;
+
+        if (hasUnsavedChanges && scene.IsLoaded()) {
+            // A title has only one color, the marker goes into the room after the name
+            auto window = ImGui::GetCurrentWindow();
+            const auto& style = ImGui::GetStyle();
+            bool docked = window->DockIsActive && window->DockNode && window->DockNode->HostWindow;
+            auto titleRect = docked ? window->DC.DockTabItemRect : window->TitleBarRect();
+            auto drawList = docked ? window->DockNode->HostWindow->DrawList : window->DrawList;
+            // Undocked windows have the collapse button in front of the name
+            auto textOffset = docked ? style.FramePadding.x : style.FramePadding.x + ImGui::GetFontSize() + style.ItemInnerSpacing.x;
+            auto markerPos = ImVec2(titleRect.Min.x + textOffset + ImGui::CalcTextSize(GetSceneLabel(scene).c_str()).x + 0.5f * style.ItemInnerSpacing.x,
+                titleRect.Min.y + style.FramePadding.y);
+
+            drawList->PushClipRect(titleRect.Min, titleRect.Max, false);
+            drawList->AddText(markerPos, ImGui::GetColorU32(Theme::Error()), "*");
+            drawList->PopClipRect();
+        }
 
         if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
             ImGui::SetWindowFocus();
@@ -117,7 +192,7 @@ namespace Atlas::Editor::UI {
 
             uint32_t dockIdLeft, dockIdMiddle, dockIdRight;
             ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.15f, &dockIdLeft, &dockIdMiddle);
-            ImGui::DockBuilderSplitNode(dockIdMiddle, ImGuiDir_Left, 0.8f, &dockIdMiddle, &dockIdRight);
+            ImGui::DockBuilderSplitNode(dockIdMiddle, ImGuiDir_Left, 0.77f, &dockIdMiddle, &dockIdRight);
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow(sceneHierarchyPanel.GetNameID(), dockIdLeft);
@@ -128,7 +203,8 @@ namespace Atlas::Editor::UI {
             resetDockingLayout = false;
         }
 
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
+        // Panels which are alone in their node don't need a tab bar
+        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_AutoHideTabBar);
 
         // Due to docking it doesn't register child windows as focused as well, need to check in child itself
         inFocus = ImGui::IsWindowFocused() ||
@@ -136,9 +212,10 @@ namespace Atlas::Editor::UI {
 
         Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
 
+        CPUProfiler::Scope sectionScope("Properties panel");
         // Depending on the selection in the scene hierarchy panel, render the properties in a different window
         if (scene.IsLoaded()) {
-            const auto& target = Singletons::renderTarget;
+            const auto& target = viewportPanel.renderTarget;
 
             EntityProperties entityProperties = {
                 .entity = sceneHierarchyPanel.selectedEntity,
@@ -147,6 +224,10 @@ namespace Atlas::Editor::UI {
 
             if (sceneHierarchyPanel.selectedProperty.terrain)
                 scenePropertiesPanel.Render(scene->terrain, refScene, target);
+            else if (sceneHierarchyPanel.selectedProperty.ocean)
+                scenePropertiesPanel.Render(scene->ocean);
+            else if (sceneHierarchyPanel.selectedProperty.navigation)
+                scenePropertiesPanel.Render(scene->navigation);
             else if (sceneHierarchyPanel.selectedProperty.fog)
                 scenePropertiesPanel.Render(scene->fog, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
@@ -177,7 +258,24 @@ namespace Atlas::Editor::UI {
             scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
         }
 
+        sectionScope.Next("Hierarchy panel");
         sceneHierarchyPanel.Render(refScene, inFocus);
+
+        // Widgets of the properties panel edit the scene, the hierarchy reports its own changes
+        auto& context = *ImGui::GetCurrentContext();
+        auto propertiesWindow = ImGui::FindWindowByName(scenePropertiesPanel.GetNameID());
+        bool propertiesEdited = context.ActiveIdHasBeenEditedThisFrame && context.ActiveIdWindow &&
+            context.ActiveIdWindow->RootWindow == propertiesWindow;
+        if (!isPlaying && (propertiesEdited || sceneHierarchyPanel.sceneChanged))
+            hasUnsavedChanges = true;
+        sceneHierarchyPanel.sceneChanged = false;
+
+        // Only the window the user works in has edits, an interaction which moved the focus away still has to finish
+        if (!isPlaying && scene.IsLoaded() && (inFocus || history.history.IsInteracting()))
+            history.Update(scene.Get(), sceneHierarchyPanel.selectedEntities);
+        if (scene.IsLoaded())
+            scenePropertiesPanel.navigationPanel.Update(scene->navigation);
+        sectionScope.Next("Overlays");
 
         if (sceneHierarchyPanel.focusRequested) {
             sceneHierarchyPanel.focusRequested = false;
@@ -195,44 +293,39 @@ namespace Atlas::Editor::UI {
             RenderEntityBoundingVolumes(selectedEntity);
         }
 
-        if (showGrid && !isPlaying && scene.IsLoaded())
-            RenderGrid();
+        if (showGrid && !isPlaying && scene.IsLoaded() && cameraEntity.IsValid())
+            viewportPanel.RenderGrid(cameraEntity.GetComponent<CameraComponent>());
 
+        if (showPhysics && scene.IsLoaded())
+            RenderPhysics();
+
+        sectionScope.Next("Update scene");
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
-            // Temporarily disable all scene cameras, only let editor camera be main
-            std::map<ECS::Entity, bool> cameraMainMap;
-            auto cameraSubset = scene->GetSubset<CameraComponent>();
-            for (auto entity : cameraSubset) {
-                if (entity == cameraEntity)
-                    continue;
-
-                auto& comp = cameraSubset.Get(entity);
-                cameraMainMap[entity] = comp.isMain;
-                comp.isMain = false;
-            }
-
             // Path tracing needs history while ray tracing
             scene->rayTracingWorld->includeObjectHistory = Singletons::config->pathTrace;
 
-            scene->Update(Clock::GetDelta());
+            ApplyRequestedHistorySteps();
+            scene->Update(Clock::GetDelta(), cameraEntity);
 
-            // Restore all previous camera main values
-            for (auto entity : cameraSubset) {
-                if (entity == cameraEntity)
-                    continue;
-
-                auto& comp = cameraSubset.Get(entity);
-                comp.isMain = cameraMainMap[entity];
+            if (focusAfterUpdate) {
+                FocusSelection();
+                focusAfterUpdate = false;
             }
         }
 
-        viewportPanel.Render(refScene, isActiveWindow);
+        sectionScope.Next("Viewport panel");
+        viewportPanel.frameColor = !isPlaying ? ImVec4(0.0f, 0.0f, 0.0f, 0.0f) :
+            scene->paused ? Theme::Warning() : Theme::Success();
+        viewportPanel.Render(refScene);
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
         if (!path.empty()) {
+            history.BeginChange(scene.Get(), {});
             auto entity = Serializer::DeserializePrefab(scene.Get(), path);
             PushEntityIntoSceneHierarchy(entity);
+            history.EndChange("Add " + Common::Path::GetFileNameWithoutExtension(path), { entity });
+            hasUnsavedChanges = true;
         }
 
         End();
@@ -248,75 +341,26 @@ namespace Atlas::Editor::UI {
 
         viewportPanel.DrawMenuBar([&]() {
 
-            // Toolbar is drawn as floating, rounded button groups on top of the viewport
-            const float margin = 8.0f;
-            const float groupPadding = 3.0f;
-            const float buttonSpacing = 2.0f;
-            const ImVec2 framePadding = ImVec2(5.0f, 5.0f);
+            const float margin = ViewportPanel::toolbarMargin;
 
-            auto iconSize = ImGui::GetTextLineHeight() * 1.15f;
             auto region = ImGui::GetContentRegionAvail();
             auto windowPos = ImGui::GetWindowPos();
             auto drawList = ImGui::GetWindowDrawList();
 
-            auto buttonExtent = iconSize + 2.0f * framePadding.x;
-            auto groupHeight = buttonExtent + 2.0f * groupPadding;
-            auto groupWidth = [&](int32_t buttonCount) {
-                return float(buttonCount) * buttonExtent + float(buttonCount - 1) * buttonSpacing + 2.0f * groupPadding;
-                };
-
-            auto beginGroup = [&](float x, int32_t buttonCount) {
-                auto min = ImVec2(windowPos.x + x, windowPos.y + margin);
-                auto max = ImVec2(min.x + groupWidth(buttonCount), min.y + groupHeight);
-                drawList->AddRectFilled(min, max, ImGui::GetColorU32(Theme::OverlayBackground()), Theme::overlayRounding);
-                drawList->AddRect(min, max, ImGui::GetColorU32(Theme::OverlayBorder()), Theme::overlayRounding);
-                ImGui::SetCursorPos(ImVec2(x + groupPadding, margin + groupPadding));
-                };
-
-            auto iconButton = [&](const char* id, IconType iconType, bool selected, bool enabled,
-                const char* tooltip, ImVec2 uvMin = ImVec2(0.15f, 0.15f), ImVec2 uvMax = ImVec2(0.85f, 0.85f)) {
-                auto& icon = Singletons::icons->Get(iconType);
-                auto set = Singletons::imguiWrapper->GetTextureId(&icon);
-
-                // Light mode icons are dark, so they would vanish on a solid accent fill, use a tint there
-                bool darkMode = Singletons::config->darkMode;
-                auto selectedColor = darkMode ? Theme::AccentFill() : Theme::Accent(0.22f);
-                auto selectedHoverColor = darkMode ? Theme::AccentFillHovered() : Theme::Accent(0.32f);
-
-                auto hoverColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-                ImGui::PushStyleColor(ImGuiCol_Button, selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, selected ? selectedHoverColor : hoverColor);
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, selectedColor);
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, framePadding);
-                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-
-                ImGui::BeginDisabled(!enabled);
-                bool pressed = ImGui::ImageButton(id, set, ImVec2(iconSize, iconSize), uvMin, uvMax);
-                ImGui::EndDisabled();
-
-                ImGui::PopStyleVar(2);
-                ImGui::PopStyleColor(3);
-
-                ImGui::SetItemTooltip("%s", tooltip);
-                ImGui::SameLine(0.0f, buttonSpacing);
-
-                return pressed && enabled;
-                };
-
             // Left: gizmo operations
             if (!isPlaying) {
-                beginGroup(margin, 4);
+                viewportPanel.BeginToolbarGroup(margin, 4);
 
-                if (iconButton("Translate button", IconType::Move, guizmo.mode == ImGuizmo::OPERATION::TRANSLATE,
+                if (viewportPanel.ToolbarButton("Translate button", IconType::Move, guizmo.mode == ImGuizmo::OPERATION::TRANSLATE,
                     true, "Translate (1)"))
                     guizmo.mode = ImGuizmo::OPERATION::TRANSLATE;
-                if (iconButton("Rotate button", IconType::Rotate, guizmo.mode == ImGuizmo::OPERATION::ROTATE,
+                if (viewportPanel.ToolbarButton("Rotate button", IconType::Rotate, guizmo.mode == ImGuizmo::OPERATION::ROTATE,
                     true, "Rotate (2)"))
                     guizmo.mode = ImGuizmo::OPERATION::ROTATE;
-                if (iconButton("Scale button", IconType::Scale, guizmo.mode == ImGuizmo::OPERATION::SCALE,
+                if (viewportPanel.ToolbarButton("Scale button", IconType::Scale, guizmo.mode == ImGuizmo::OPERATION::SCALE,
                     true, "Scale (3)"))
                     guizmo.mode = ImGuizmo::OPERATION::SCALE;
-                if (iconButton("More button", IconType::MoreHorizontal, false, true, "Gizmo settings"))
+                if (viewportPanel.ToolbarButton("More button", IconType::MoreHorizontal, false, true, "Gizmo settings"))
                     ImGui::OpenPopup("Guizmo settings");
 
                 if (ImGui::BeginPopup("Guizmo settings")) {
@@ -332,6 +376,10 @@ namespace Atlas::Editor::UI {
 
                     ImGui::SeparatorText("Manipulate");
                     ImGui::Checkbox("Object space", &guizmo.objectSpace);
+
+                    ImGui::SeparatorText("Surface snapping");
+                    ImGui::TextDisabled("Hold Shift while translating to place on surfaces");
+                    ImGui::Checkbox("Align to surface normal", &guizmo.alignToSurface);
 
                     ImGui::EndPopup();
                 }
@@ -364,12 +412,18 @@ namespace Atlas::Editor::UI {
                 auto playUvMin = ImVec2(0.2f, 0.2f);
                 auto playUvMax = ImVec2(0.8f, 0.8f);
 
-                beginGroup((region.x - groupWidth(2)) * 0.5f, 2);
+                viewportPanel.BeginToolbarGroup((region.x - viewportPanel.GetToolbarGroupWidth(2)) * 0.5f, 2);
 
-                if (iconButton("Play button", IconType::Play, isPlaying, scene.IsLoaded() && !isPlaying,
-                    "Play scene", playUvMin, playUvMax))
-                    StartPlaying();
-                if (iconButton("Stop button", IconType::Stop, false, scene.IsLoaded() && isPlaying,
+                // While playing, the play button pauses and resumes
+                bool running = isPlaying && !scene->paused;
+                if (viewportPanel.ToolbarButton("Play button", running ? IconType::Pause : IconType::Play, false, scene.IsLoaded(),
+                    !isPlaying ? "Play scene" : running ? "Pause playing" : "Resume playing", playUvMin, playUvMax)) {
+                    if (isPlaying)
+                        TogglePause();
+                    else
+                        StartPlaying();
+                }
+                if (viewportPanel.ToolbarButton("Stop button", IconType::Stop, false, scene.IsLoaded() && isPlaying,
                     "Stop playing (Ctrl+Q)", playUvMin, playUvMax))
                     StopPlaying();
             }
@@ -379,15 +433,52 @@ namespace Atlas::Editor::UI {
                 auto uvMin = ImVec2(0.1f, 0.1f);
                 auto uvMax = ImVec2(0.9f, 0.9f);
 
-                beginGroup(region.x - margin - groupWidth(2), 2);
+                viewportPanel.BeginToolbarGroup(region.x - margin - viewportPanel.GetToolbarGroupWidth(3), 3);
 
-                if (iconButton("Viewport settings button", IconType::Settings, false, scene.IsLoaded(),
+                if (viewportPanel.ToolbarButton("Scene cameras button", IconType::Camera, viewedCameraEntity.IsValid(),
+                    scene.IsLoaded(), "View through a scene camera", uvMin, uvMax))
+                    ImGui::OpenPopup("Scene cameras");
+                if (viewportPanel.ToolbarButton("Viewport settings button", IconType::Settings, false, scene.IsLoaded(),
                     "Viewport settings", uvMin, uvMax))
                     ImGui::OpenPopup("Viewport settings");
-                if (iconButton("Visualization settings button", IconType::Visibility,
+                if (viewportPanel.ToolbarButton("Visualization settings button", IconType::Visibility,
                     viewportPanel.visualization != ViewportVisualization::Lit, scene.IsLoaded(),
                     "Visualization", uvMin, uvMax))
                     ImGui::OpenPopup("Visualization settings");
+            }
+
+            if (ImGui::BeginPopup("Scene cameras")) {
+                ImGui::SeparatorText("View through");
+
+                bool hasSceneCamera = false;
+                auto cameraSubset = scene->GetSubset<CameraComponent>();
+                for (auto ecsEntity : cameraSubset) {
+                    if (ecsEntity == cameraEntity)
+                        continue;
+
+                    Scene::Entity entity(ecsEntity, &scene->entityManager);
+                    auto nameComponent = entity.TryGetComponent<NameComponent>();
+                    auto name = nameComponent ? nameComponent->name : "Camera " + std::to_string(entity.GetID());
+
+                    ImGui::PushID(int32_t(entity.GetID()));
+                    if (ImGui::Selectable(name.c_str(), entity == viewedCameraEntity))
+                        ViewThroughCamera(entity);
+                    ImGui::PopID();
+                    hasSceneCamera = true;
+                }
+                if (!hasSceneCamera)
+                    ImGui::TextDisabled("The scene has no cameras");
+
+                if (viewedCameraEntity.IsValid()) {
+                    ImGui::Separator();
+                    if (ImGui::Selectable("Apply view to camera"))
+                        ApplyViewToCamera();
+                    ImGui::SetItemTooltip("Moves the scene camera to the current view, including field of view, planes and exposure");
+                    if (ImGui::Selectable("Back to editor camera"))
+                        ReturnToEditorCamera();
+                }
+
+                ImGui::EndPopup();
             }
 
             if (ImGui::BeginPopup("Viewport settings")) {
@@ -395,9 +486,24 @@ namespace Atlas::Editor::UI {
                 ImGui::Checkbox("Show grid (G)", &showGrid);
                 ImGui::Checkbox("Depth test bounding volumes", &depthTestBoundingVolumes);
 
+                ImGui::SeparatorText("Physics");
+                ImGui::Checkbox("Show physics", &showPhysics);
+                ImGui::SetItemTooltip("Static bodies are gray, dynamic green (dark when sleeping), kinematic orange, "
+                    "triggers cyan, fluids blue, contacts red and constraints magenta");
+                if (showPhysics) {
+                    auto& settings = physicsDebugDrawSettings;
+                    ImGui::Checkbox("Depth test physics", &depthTestPhysics);
+                    ImGui::Checkbox("Shapes", &settings.drawShapes);
+                    ImGui::Checkbox("Bounds", &settings.drawBounds);
+                    ImGui::Checkbox("Static bodies", &settings.drawStaticBodies);
+                    ImGui::Checkbox("Contacts", &settings.drawContacts);
+                    ImGui::Checkbox("Constraints", &settings.drawConstraints);
+                    ImGui::DragFloat("Distance", &settings.distance, 1.0f, 1.0f, 10000.0f);
+                }
+
                 ImGui::SeparatorText("Movement");
 
-                ImGui::DragFloat("Movement speed", &cameraMovementSpeed, 0.1f, 0.1f, 100.0f);
+                ImGui::DragFloat("Movement speed", &cameraMovementSpeed, 0.1f, 0.1f, 500.0f);
                 ImGui::SetItemTooltip("The mouse wheel over the viewport changes the speed as well");
                 ImGui::DragFloat("Rotation speed", &cameraRotationSpeed, 0.1f, 0.1f, 10.0f);
 
@@ -411,14 +517,23 @@ namespace Atlas::Editor::UI {
                 ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
                 ImGui::DragFloat("Far plane", &camera.farPlane, 1.0f, 1.0f, 20000.0f);
 
-                ImGui::SeparatorText("Rendering scale");
+                ImGui::SeparatorText("Rendering");
 
                 ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
+                // The upscaler is a setting of the scene, the same as in its post processing properties
+                ImguiExtension::PostProcessingPanel::RenderUpscalerSelection(scene->postProcessing.upscaler,
+                    [&](PostProcessing::Upscaler upscaler) { return viewportPanel.mainRenderer->IsUpscalerSupported(upscaler); }, false);
 
                 ImGui::SeparatorText("Path tracer samples");
-                // ImGui::Checkbox("Realtime", &Singletons::mainRenderer->pathTracingRenderer.realTime);
-                ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
-                ImGui::DragFloat("Max clipping", &Singletons::mainRenderer->pathTracingRenderer.historyClipMax, 0.001f, 0.0f, 1.0f);
+                // ImGui::Checkbox("Realtime", &viewportPanel.mainRenderer->pathTracingRenderer.realTime);
+                ImGui::DragInt("Sample count", &viewportPanel.mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
+                ImGui::DragFloat("Max clipping", &viewportPanel.mainRenderer->pathTracingRenderer.historyClipMax, 0.001f, 0.0f, 1.0f);
+                ImGui::BeginDisabled(!Graphics::GraphicsDevice::DefaultDevice->support.shaderExecutionReordering);
+                ImGui::Checkbox("Shader execution reordering##PathTracer", &viewportPanel.mainRenderer->pathTracingRenderer.shaderExecutionReordering);
+                ImGui::Checkbox("Material graphs##PathTracer", &viewportPanel.mainRenderer->pathTracingRenderer.materialGraphs);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                    ImGui::SetTooltip("Without them the hits of graph materials use their baked values");
+                ImGui::EndDisabled();
 
                 ImGui::SeparatorText("Playing");
                 ImGui::Checkbox("Play maximized", &playMaximized);
@@ -427,42 +542,10 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
-                Singletons::renderTarget->SetScalingFactor(resolutionScale);
+            if (viewportPanel.renderTarget->GetScalingFactor() != resolutionScale)
+                viewportPanel.renderTarget->SetScalingFactor(resolutionScale);
 
-            auto menuItem = [&](const char* name, ViewportVisualization vis) {
-                bool selected = viewportPanel.visualization == vis;
-                ImGui::MenuItem(name, nullptr, &selected);
-                if (selected)
-                    viewportPanel.visualization = vis;
-            };
-
-            if (ImGui::BeginPopup("Visualization settings")) {
-                ImGui::SeparatorText("Visualization");
-
-                menuItem("Lit", ViewportVisualization::Lit);
-
-                if (ImGui::BeginMenu("GBuffer")) {
-                    menuItem("Base color", ViewportVisualization::GBufferBaseColor);
-                    menuItem("Roughness/Metalness/Ao", ViewportVisualization::GBufferRoughnessMetalnessAo);
-                    menuItem("Emissive color", ViewportVisualization::GBufferEmissive);
-                    menuItem("Depth", ViewportVisualization::GBufferDepth);
-                    menuItem("Normals", ViewportVisualization::GBufferNormals);
-                    menuItem("Geometry normals", ViewportVisualization::GBufferGeometryNormals);
-                    menuItem("Velocity", ViewportVisualization::GBufferVelocity);
-                    menuItem("Material index", ViewportVisualization::GBufferMaterialIdx);
-                    menuItem("Stencil", ViewportVisualization::GBufferStencil);
-                    ImGui::EndMenu();
-                }
-
-                menuItem("Volumetrics", ViewportVisualization::Volumetrics);
-                menuItem("Clouds", ViewportVisualization::Clouds);
-                menuItem("Reflections", ViewportVisualization::Reflections);
-                menuItem("SSS", ViewportVisualization::SSS);
-                menuItem("SSGI", ViewportVisualization::SSGI);
-
-                ImGui::EndPopup();
-            }
+            viewportPanel.RenderVisualizationPopup();
 
             // Short hint after the camera speed was changed with the mouse wheel
             auto timeSinceSpeedChange = Clock::Get() - cameraSpeedChangeTime;
@@ -491,7 +574,7 @@ namespace Atlas::Editor::UI {
             // Mouse wheel over the viewport changes the camera speed
             const auto& wheelIO = ImGui::GetIO();
             if (!isPlaying && ImGui::IsWindowHovered() && wheelIO.MouseWheel != 0.0f && !wheelIO.KeyCtrl) {
-                cameraMovementSpeed = std::clamp(cameraMovementSpeed * std::pow(1.25f, wheelIO.MouseWheel), 0.1f, 100.0f);
+                cameraMovementSpeed = std::clamp(cameraMovementSpeed * std::pow(1.25f, wheelIO.MouseWheel), 0.1f, 500.0f);
                 cameraSpeedChangeTime = Clock::Get();
             }
 
@@ -522,15 +605,21 @@ namespace Atlas::Editor::UI {
                 auto& entityPropPanel = scenePropertiesPanel.entityPropertiesPanel;
                 auto selectionType = sceneHierarchyPanel.selectedType;
 
-                auto globalMatrix = GetGlobalMatrix(selectedEntity);
+                auto globalMatrix = scene->GetGlobalMatrix(selectedEntity);
 
                 if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
                     auto mesh = selectedEntity.TryGetComponent<MeshComponent>();
 
                     auto globalDecomp = Common::MatrixDecomposition(transform.globalMatrix);
-                    if (mesh)
-                        guizmo.offset = (0.5f * (mesh->aabb.min + mesh->aabb.max)) - globalDecomp.translation;
+                    if (mesh) {
+                        // The bounds of animated meshes change with their pose, the gizmo stays at the center of the rest pose
+                        auto bounds = mesh->mesh.IsLoaded() ? mesh->mesh->data.aabb.Transform(transform.globalMatrix) : mesh->aabb;
+                        guizmo.offset = (0.5f * (bounds.min + bounds.max)) - globalDecomp.translation;
+                    }
+                    else {
+                        guizmo.offset = vec3(0.0f);
+                    }
                     guizmo.transform = transform.globalMatrix;
                 }
                 else if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Spline && selectedEntity.HasComponent<SplineComponent>()) {
@@ -568,6 +657,9 @@ namespace Atlas::Editor::UI {
                     }
                 }
 
+                if (ImGuizmo::IsUsing())
+                    hasUnsavedChanges = true;
+
                 if (ImGuizmo::IsUsing() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
                     // Update both the local and global matrix, since e.g. the transform component
@@ -577,17 +669,45 @@ namespace Atlas::Editor::UI {
                     auto invPrevGlobalMatrix = glm::inverse(transform.globalMatrix);
                     auto newGlobalMatrix = guizmo.transform;
 
+                    // Shift places the bottom of the selection on the surface under the cursor
+                    auto bounds = scene->GetHierarchyBounds(selectedEntity);
+                    if (guizmo.mode == ImGuizmo::OPERATION::TRANSLATE && ImGui::GetIO().KeyShift && bounds) {
+                        auto mousePosition = ImGui::GetMousePos();
+                        Volume::Ray ray(viewport, camera, vec2(mousePosition.x, mousePosition.y));
+                        auto result = scene->CastRay(ray, Scene::SceneQueryComponentBits::AllComponentsBit,
+                            [&](const Scene::Entity& entity) { return IsInSelection(entity); });
+
+                        if (result.valid) {
+                            auto hit = ray.Get(result.hitDistance);
+                            auto bottom = vec3(0.5f * (bounds->min.x + bounds->max.x), bounds->min.y,
+                                0.5f * (bounds->min.z + bounds->max.z));
+                            newGlobalMatrix = glm::translate(hit - bottom) * prevGlobalMatrix;
+
+                            if (guizmo.alignToSurface && result.IsNormalValid()) {
+                                auto up = Helper::Math::NormalizeOrZero(vec3(prevGlobalMatrix[1]));
+                                auto rotation = glm::mat4_cast(glm::rotation(up, result.normal));
+                                newGlobalMatrix = glm::translate(hit) * rotation * glm::translate(-hit) * newGlobalMatrix;
+                            }
+                        }
+                    }
+
+                    // Children of selected entities follow their parent through the hierarchy
+                    auto hasSelectedAncestor = [&](Scene::Entity entity) {
+                        for (auto parent = scene->GetParentEntity(entity); parent.IsValid(); parent = scene->GetParentEntity(parent))
+                            if (sceneHierarchyPanel.selectedEntities.contains(parent) && parent.HasComponent<TransformComponent>())
+                                return true;
+                        return false;
+                    };
+
                     for (auto& entity : sceneHierarchyPanel.selectedEntities) {
                         Scene::Entity transformEntity(entity, &scene->entityManager);
 
-                        if (!transformEntity.HasComponent<TransformComponent>())
+                        if (!transformEntity.HasComponent<TransformComponent>() || hasSelectedAncestor(transformEntity))
                             continue;
 
                         auto& selectedTransform = transformEntity.GetComponent<TransformComponent>();
-                        selectedTransform.globalMatrix = newGlobalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix;
-
-                        auto parentEntity = scene->GetParentEntity(transformEntity);
-                        selectedTransform.ReconstructLocalMatrix(parentEntity);
+                        selectedTransform.SetGlobal(newGlobalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix,
+                            scene->GetParentEntity(transformEntity));
                     }
                 }
                 else if (ImGuizmo::IsUsing() && selectionType == EntitySelectionType::Spline && selectedEntity.HasComponent<SplineComponent>()) {
@@ -631,7 +751,7 @@ namespace Atlas::Editor::UI {
         if (entity.HasComponent<MeshComponent>()) {
             const auto& meshComponent = entity.GetComponent<MeshComponent>();
             auto aabb = meshComponent.aabb;
-            wrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<AudioComponent>()) {
             const auto& audioComponent = entity.GetComponent<AudioComponent>();
@@ -643,41 +763,44 @@ namespace Atlas::Editor::UI {
 
             // After this the audio will be cutoff
             float radius = powf(audioComponent.falloffFactor / audioComponent.cutoff, 1.0f / audioComponent.falloffPower);
-            wrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<AudioVolumeComponent>()) {
             const auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
             auto aabb = audioVolumeComponent.GetTransformedAABB();
-            wrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f));
+        }
+        if (entity.HasComponent<FogVolumeComponent>()) {
+            auto aabb = Volume::AABB(vec3(-1.0f), vec3(1.0f)).Transform(scene->GetGlobalMatrix(entity));
+            wrapper.GetBatch(testDepth)->AddLineAABB(aabb, vec3(0.6f, 0.8f, 1.0f));
         }
         if (entity.HasComponent<CameraComponent>()) {
             const auto& cameraComponent = entity.GetComponent<CameraComponent>();
-            wrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f));
         }
         if (entity.HasComponent<LightComponent>()) {
             const auto& lightComponent = entity.GetComponent<LightComponent>();
             if (lightComponent.shadow) {
                 for (const auto& component : lightComponent.shadow->views)
-                    wrapper.RenderLineFrustum(
-                        Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f), testDepth);
+                    wrapper.GetBatch(testDepth)->AddLineFrustum(Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f));
             }
         }
         if (entity.HasComponent<TextComponent>()) {
             const auto& textComponent = entity.GetComponent<TextComponent>();
             auto rectangle = textComponent.GetRectangle();
-            wrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f), testDepth);
+            wrapper.GetBatch(testDepth)->AddLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f));
         }
         if (entity.HasComponent<SplineComponent>()) {
             const auto& splineComponent = entity.GetComponent<SplineComponent>();
             auto transformComponent = entity.TryGetComponent<TransformComponent>();
 
-            glm::mat4 globalMatrix = GetGlobalMatrix(entity);
+            mat4 globalMatrix = scene->GetGlobalMatrix(entity);
 
             SplinePoint lastSplinePoint = splineComponent.GetInterpolatedFromIndex(0, 0.0f);
             lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));
 
             if (!splineComponent.controlPoints.empty())
-                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
+                wrapper.GetBatch(testDepth)->AddLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f));
 
             const int32_t linesPerSegment = 20;
             for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()) - 1; i++) {
@@ -686,13 +809,13 @@ namespace Atlas::Editor::UI {
                     auto splinePoint = splineComponent.GetInterpolatedFromIndex(i, t);
                     splinePoint.position = vec3(globalMatrix * vec4(splinePoint.position, 1.0f));
 
-                    wrapper.RenderLine(lastSplinePoint.position, splinePoint.position, 
-                        vec3(1.0f, 0.15f, 0.0f), testDepth);
+                    wrapper.GetBatch(testDepth)->AddLine(lastSplinePoint.position, splinePoint.position,
+                        vec3(1.0f, 0.15f, 0.0f), vec3(1.0f, 0.15f, 0.0f));
 
                     lastSplinePoint = splinePoint;
                 }
 
-                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
+                wrapper.GetBatch(testDepth)->AddLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f));
             }
         }
 
@@ -702,13 +825,9 @@ namespace Atlas::Editor::UI {
         auto parentEntity = sceneHierarchyPanel.selectedEntity;
 
         if (!parentEntity.IsValid())
-            parentEntity = scene->GetEntityByName("Root");
+            parentEntity = scene->GetRootEntity();
 
-        if (!parentEntity.HasComponent<HierarchyComponent>())
-            parentEntity.AddComponent<HierarchyComponent>();
-
-        auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
-        parentHierarchy.AddChild(entity);
+        entity.SetParent(parentEntity);
 
         // We don't know where this entity came from, so disable root hierarchy in any case to
         // avoid setting the matrices twice and getting unwanted movements
@@ -722,6 +841,9 @@ namespace Atlas::Editor::UI {
     }
 
     void SceneWindow::StartPlaying() {
+
+        // Steps which weren't applied yet would change the scene while playing
+        requestedHistorySteps = 0;
 
         JobSystem::WaitAll();
 
@@ -737,13 +859,14 @@ namespace Atlas::Editor::UI {
             }
 
             if (!hasMainPlayingCamera) {
-                Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .color = vec3(1.0f, 1.0f, 0.0f) });
+                Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .type = NotificationType::Warning });
                 return;
             }
 
             SaveSceneState();
 
             scene->physicsWorld->pauseSimulation = false;
+            scene->paused = false;
             // Unselect when starting the simulation/scene (otherwise some physics settings might not
             // be reverted after stopping
             sceneHierarchyPanel.ClearSelection();
@@ -754,6 +877,15 @@ namespace Atlas::Editor::UI {
                 Notifications::Push({ "To stop playing, press Ctrl + Q" });
             }
             });        
+
+    }
+
+    void SceneWindow::TogglePause() {
+
+        if (!isPlaying)
+            return;
+
+        scene->paused = !scene->paused;
 
     }
 
@@ -799,13 +931,31 @@ namespace Atlas::Editor::UI {
         if (!scene.IsLoaded())
             return;
 
+        if (IsPrefab()) {
+            Scene::Entity root(prefabRoot, &scene->entityManager);
+            if (!root.IsValid()) {
+                Notifications::Push({ .message = "The root entity of the prefab was deleted", .type = NotificationType::Error });
+                return;
+            }
+            auto hierarchy = root.TryGetComponent<HierarchyComponent>();
+            if (hierarchy)
+                hierarchy->root = prefabRootIsHierarchyRoot;
+            Serializer::SerializePrefab(scene.Get(), root, prefabPath);
+            if (hierarchy)
+                hierarchy->root = false;
+            Notifications::Push({ .message = "Saved prefab " + Common::Path::GetFileName(prefabPath) });
+            hasUnsavedChanges = false;
+            return;
+        }
+
         Singletons::blockingOperation->Block("Saving scene. Please wait...",
             [&]() {
                 cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
 
                 scene->DestroyEntity(cameraEntity);
 
-                Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene", true, true);
+                // Back into the file the scene came from, its name can differ from the file name
+                Serializer::SerializeScene(scene.Get(), GetScenePath(scene), true, true);
 
                 // Here we can finally reset the in-editing status, as it was now saved and we could reload from disk
                 if (scene->terrain.IsLoaded())
@@ -815,48 +965,37 @@ namespace Atlas::Editor::UI {
 
                 cameraState.clear();
 
-                Notifications::Push({ .message = "Saved scene " + scene->name });
+                Notifications::Push({ .message = "Saved scene " + GetSceneLabel(scene) });
+                hasUnsavedChanges = false;
             });       
 
     }
 
-    void SceneWindow::RenderGrid() {
+    void SceneWindow::OpenPrefab(const std::string& path) {
 
-        if (!cameraEntity.IsValid())
+        prefabPath = path;
+        sceneHierarchyPanel.showSceneSettings = false;
+
+        auto root = Serializer::DeserializePrefab(scene.Get(), path);
+        auto hierarchy = root.TryGetComponent<HierarchyComponent>();
+        prefabRootIsHierarchyRoot = hierarchy && hierarchy->root;
+        PushEntityIntoSceneHierarchy(root);
+        prefabRoot = root;
+
+        // The bounds of the prefab are known after the scene was updated
+        focusAfterUpdate = true;
+
+    }
+
+    void SceneWindow::RenderPhysics() {
+
+        if (!scene->physicsWorld || !scene->HasMainCamera())
             return;
 
-        const auto& camera = cameraEntity.GetComponent<CameraComponent>();
-        auto location = camera.GetLocation();
-
-        // The spacing grows with the camera height (1, 10, 100, ...), such that the grid stays readable
-        auto height = std::max(std::abs(location.y), 1.0f);
-        auto spacing = std::pow(10.0f, std::floor(std::log10(height)));
-
-        const int32_t halfLineCount = 50;
-        auto extent = spacing * float(halfLineCount);
-        auto center = glm::round(vec2(location.x, location.z) / spacing) * spacing;
-
-        const auto minorColor = vec3(0.25f);
-        const auto majorColor = vec3(0.45f);
-        const auto xAxisColor = vec3(0.85f, 0.25f, 0.25f);
-        const auto zAxisColor = vec3(0.25f, 0.45f, 0.95f);
+        physicsDebugDrawSettings.center = scene->GetMainCamera().GetLocation();
 
         auto& wrapper = viewportPanel.primitiveBatchWrapper;
-        for (int32_t i = -halfLineCount; i <= halfLineCount; i++) {
-            auto offset = float(i) * spacing;
-
-            // Line parallel to the z axis at this x position
-            auto x = center.x + offset;
-            auto xIndex = int64_t(std::round(x / spacing));
-            auto xColor = std::abs(x) < 0.5f * spacing ? zAxisColor : (xIndex % 10 == 0 ? majorColor : minorColor);
-            wrapper.RenderLine(vec3(x, 0.0f, center.y - extent), vec3(x, 0.0f, center.y + extent), xColor, true);
-
-            // Line parallel to the x axis at this z position
-            auto z = center.y + offset;
-            auto zIndex = int64_t(std::round(z / spacing));
-            auto zColor = std::abs(z) < 0.5f * spacing ? xAxisColor : (zIndex % 10 == 0 ? majorColor : minorColor);
-            wrapper.RenderLine(vec3(center.x - extent, 0.0f, z), vec3(center.x + extent, 0.0f, z), zColor, true);
-        }
+        scene->physicsWorld->DebugDraw(wrapper.GetBatch(depthTestPhysics).get(), physicsDebugDrawSettings);
 
     }
 
@@ -867,8 +1006,10 @@ namespace Atlas::Editor::UI {
         if (!scene.IsLoaded() || isPlaying)
             return Scene::Entity();
 
+        hasUnsavedChanges = true;
+
         if (!parent.IsValid())
-            parent = scene->GetEntityByName("Root");
+            parent = scene->GetRootEntity();
 
         const char* name = "Entity";
         switch (type) {
@@ -878,15 +1019,16 @@ namespace Atlas::Editor::UI {
         case Template::Camera: name = "Camera"; break;
         case Template::AudioSource: name = "Audio source"; break;
         case Template::Text: name = "Text"; break;
+        case Template::FogVolume: name = "Fog volume"; break;
         default: break;
         }
+
+        history.BeginChange(scene.Get(), {});
 
         auto entity = scene->CreateEntity();
         entity.AddComponent<NameComponent>(name);
 
-        if (!parent.HasComponent<HierarchyComponent>())
-            parent.AddComponent<HierarchyComponent>();
-        parent.GetComponent<HierarchyComponent>().AddChild(entity);
+        entity.SetParent(parent);
 
         // Place it in front of the editor camera, such that it is directly visible
         auto worldPosition = vec3(0.0f);
@@ -900,8 +1042,7 @@ namespace Atlas::Editor::UI {
         // Lights, cameras etc. take their position from the transform, their own position stays at the origin
         auto worldMatrix = glm::translate(mat4(1.0f), worldPosition);
         auto& transform = entity.AddComponent<TransformComponent>(worldMatrix, false);
-        transform.globalMatrix = worldMatrix;
-        transform.ReconstructLocalMatrix(parent);
+        transform.SetGlobal(worldMatrix, parent);
 
         switch (type) {
         case Template::PointLight:
@@ -931,13 +1072,67 @@ namespace Atlas::Editor::UI {
         case Template::Text:
             entity.AddComponent<TextComponent>();
             break;
+        case Template::FogVolume:
+            entity.AddComponent<FogVolumeComponent>();
+            // The scale is the half size of the volume
+            transform.SetGlobal(glm::scale(worldMatrix, vec3(8.0f, 4.0f, 8.0f)), parent);
+            break;
         default:
             break;
         }
 
+        history.EndChange("Create " + std::string(name), { entity });
+
         sceneHierarchyPanel.SelectEntity(entity);
 
         return entity;
+
+    }
+
+    void SceneWindow::Undo() {
+
+        requestedHistorySteps--;
+
+    }
+
+    void SceneWindow::Redo() {
+
+        requestedHistorySteps++;
+
+    }
+
+    void SceneWindow::ApplyRequestedHistorySteps() {
+
+        bool changed = false;
+        for (; requestedHistorySteps < 0; requestedHistorySteps++)
+            changed |= history.Undo(scene.Get());
+        for (; requestedHistorySteps > 0; requestedHistorySteps--)
+            changed |= history.Redo(scene.Get());
+
+        if (changed)
+            ApplyHistoryChange();
+
+    }
+
+    void SceneWindow::ApplyHistoryChange() {
+
+        hasUnsavedChanges = true;
+
+        auto changedEntities = history.GetChangedEntities();
+        if (!changedEntities.empty()) {
+            sceneHierarchyPanel.ClearSelection();
+            for (auto entity : changedEntities)
+                sceneHierarchyPanel.SelectEntity(entity, true);
+        }
+        else {
+            std::erase_if(sceneHierarchyPanel.selectedEntities, [&](ECS::Entity entity) {
+                return !scene->entityManager.Valid(entity);
+                });
+            if (!sceneHierarchyPanel.selectedEntity.IsValid())
+                sceneHierarchyPanel.ClearSelection();
+        }
+
+        scenePropertiesPanel.entityPropertiesPanel.transformComponentPanel.Refresh();
 
     }
 
@@ -954,13 +1149,12 @@ namespace Atlas::Editor::UI {
             if (!entity.IsValid())
                 continue;
 
-            // Meshes have proper world space bounds, everything else is treated as a small box around its origin
-            auto meshComponent = entity.TryGetComponent<MeshComponent>();
-            if (meshComponent) {
-                bounds.Grow(meshComponent->aabb);
+            // Meshes of the hierarchy have proper world space bounds, everything else is treated as a small box around its origin
+            if (auto hierarchyBounds = scene->GetHierarchyBounds(entity)) {
+                bounds.Grow(*hierarchyBounds);
             }
             else {
-                auto position = vec3(GetGlobalMatrix(entity)[3]);
+                auto position = vec3(scene->GetGlobalMatrix(entity)[3]);
                 bounds.Grow(Volume::AABB(position - vec3(0.5f), position + vec3(0.5f)));
             }
             hasBounds = true;
@@ -982,11 +1176,152 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void SceneWindow::DropSelectionToGround() {
+
+        if (!scene.IsLoaded() || isPlaying)
+            return;
+
+        for (auto ecsEntity : sceneHierarchyPanel.selectedEntities) {
+            Scene::Entity entity(ecsEntity, &scene->entityManager);
+            if (!entity.IsValid() || !entity.HasComponent<TransformComponent>())
+                continue;
+
+            auto parent = scene->GetParentEntity(entity);
+            if (parent.IsValid() && IsInSelection(parent))
+                continue;
+
+            auto& transform = entity.GetComponent<TransformComponent>();
+            auto position = vec3(transform.globalMatrix[3]);
+            auto bounds = scene->GetHierarchyBounds(entity).value_or(Volume::AABB(position, position));
+
+            // From above the bounds, such that entities sunk into the ground come back up and the ray doesn't start
+            // inside of what the entity rests on
+            auto center = 0.5f * (bounds.min + bounds.max);
+            auto height = std::max(bounds.max.y - bounds.min.y, 1.0f);
+            Volume::Ray ray(vec3(center.x, bounds.max.y + height, center.z), vec3(0.0f, -1.0f, 0.0f));
+            auto result = scene->CastRay(ray, Scene::SceneQueryComponentBits::AllComponentsBit,
+                [&](const Scene::Entity& hitEntity) { return IsInSelection(hitEntity); });
+            if (!result.valid)
+                continue;
+
+            auto offset = ray.Get(result.hitDistance).y - bounds.min.y;
+            transform.SetGlobal(glm::translate(vec3(0.0f, offset, 0.0f)) * transform.globalMatrix, parent);
+            hasUnsavedChanges = true;
+        }
+
+        scenePropertiesPanel.entityPropertiesPanel.transformComponentPanel.Refresh();
+
+    }
+
+    // Inverse of the direction CameraComponent::UpdateView computes from the rotation
+    static vec2 RotationFromDirection(vec3 direction) {
+
+        return vec2(std::atan2(direction.x, direction.z), std::asin(glm::clamp(direction.y, -1.0f, 1.0f)));
+
+    }
+
+    void SceneWindow::ViewThroughCamera(Scene::Entity entity) {
+
+        if (!scene.IsLoaded() || isPlaying || !cameraEntity.IsValid() || entity == cameraEntity ||
+            !entity.IsValid() || !entity.HasComponent<CameraComponent>())
+            return;
+
+        auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        if (!viewedCameraEntity.IsValid())
+            editorCameraBackup = camera;
+
+        const auto& sceneCamera = entity.GetComponent<CameraComponent>();
+
+        camera.location = sceneCamera.globalLocation;
+        camera.rotation = RotationFromDirection(sceneCamera.globalDirection);
+        camera.fieldOfView = sceneCamera.fieldOfView;
+        camera.nearPlane = sceneCamera.nearPlane;
+        camera.farPlane = sceneCamera.farPlane;
+        camera.exposure = sceneCamera.exposure;
+        camera.thirdPerson = sceneCamera.thirdPerson;
+        camera.thirdPersonDistance = sceneCamera.thirdPersonDistance;
+
+        viewedCameraEntity = entity;
+
+    }
+
+    void SceneWindow::ApplyViewToCamera() {
+
+        if (!viewedCameraEntity.IsValid() || !viewedCameraEntity.HasComponent<CameraComponent>())
+            return;
+
+        history.BeginEdit(scene.Get(), { viewedCameraEntity });
+
+        const auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        auto& sceneCamera = viewedCameraEntity.GetComponent<CameraComponent>();
+
+        // The scene camera is relative to its entity, depending on which parts of the entity transform it uses
+        auto transform = viewedCameraEntity.TryGetComponent<TransformComponent>();
+        auto inverseMatrix = transform ? glm::inverse(transform->globalMatrix) : mat4(1.0f);
+
+        sceneCamera.location = sceneCamera.useEntityTranslation ?
+            vec3(inverseMatrix * vec4(camera.location, 1.0f)) : camera.location;
+        auto direction = sceneCamera.useEntityRotation ?
+            glm::normalize(mat3(inverseMatrix) * camera.direction) : camera.direction;
+        sceneCamera.rotation = RotationFromDirection(direction);
+
+        sceneCamera.fieldOfView = camera.fieldOfView;
+        sceneCamera.nearPlane = camera.nearPlane;
+        sceneCamera.farPlane = camera.farPlane;
+        sceneCamera.exposure = camera.exposure;
+        sceneCamera.thirdPersonDistance = camera.thirdPersonDistance;
+        hasUnsavedChanges = true;
+
+        history.EndEdit("Apply view to camera");
+
+        auto nameComponent = viewedCameraEntity.TryGetComponent<NameComponent>();
+        Notifications::Push({ .message = "Applied the view to " + (nameComponent ? nameComponent->name : std::string("the camera")) });
+
+    }
+
+    void SceneWindow::ReturnToEditorCamera() {
+
+        if (!cameraEntity.IsValid() || ECS::Entity(viewedCameraEntity) == ECS::EntityConfig::InvalidEntity)
+            return;
+
+        auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        camera.location = editorCameraBackup.location;
+        camera.rotation = editorCameraBackup.rotation;
+        camera.fieldOfView = editorCameraBackup.fieldOfView;
+        camera.nearPlane = editorCameraBackup.nearPlane;
+        camera.farPlane = editorCameraBackup.farPlane;
+        camera.exposure = editorCameraBackup.exposure;
+        camera.thirdPerson = editorCameraBackup.thirdPerson;
+        camera.thirdPersonDistance = editorCameraBackup.thirdPersonDistance;
+
+        viewedCameraEntity = Scene::Entity();
+
+    }
+
+    bool SceneWindow::IsInSelection(Scene::Entity entity) {
+
+        for (; entity.IsValid(); entity = scene->GetParentEntity(entity))
+            if (sceneHierarchyPanel.selectedEntities.contains(entity))
+                return true;
+        return false;
+
+    }
+
     void SceneWindow::ApplyBrush() {
 
         auto& terrainPanel = scenePropertiesPanel.terrainPanel;
 
         brushActive = terrainPanel.editingMode;
+
+        // Rebuilding the height field is expensive, it's done once a stroke ends
+        bool mousePressed = ImGui::GetIO().MouseDown[ImGuiMouseButton_Right];
+        if (terrainHeightsEdited)
+            hasUnsavedChanges = true;
+        if (terrainHeightsEdited && (!mousePressed || !brushActive)) {
+            terrainPanel.RebuildTerrainBody(scene.Get());
+            terrainHeightsEdited = false;
+        }
+
         if (!brushActive || !cameraEntity.IsValid())
             return;
 
@@ -1003,7 +1338,6 @@ namespace Atlas::Editor::UI {
 
         auto result = scene->CastRay(ray, componentBits);
 
-        bool mousePressed = ImGui::GetIO().MouseDown[ImGuiMouseButton_Right];
         bool brushTerrain = mousePressed && result.valid && terrainPanel.editingMode;
 
         if (!mousePressed)
@@ -1012,7 +1346,7 @@ namespace Atlas::Editor::UI {
         float brushRadius = terrainPanel.brushSize * scene->terrain->resolution;
 
         auto intersection = ray.Get(result.hitDistance);
-        viewportPanel.primitiveBatchWrapper.RenderLineSphere(intersection, brushRadius, vec3(1.0f), true);
+        viewportPanel.primitiveBatchWrapper.GetBatch(true)->AddLineSphere(intersection, brushRadius, vec3(1.0f));
 
         // Check for right mouse button down
         if (brushTerrain) {
@@ -1051,6 +1385,7 @@ namespace Atlas::Editor::UI {
                     Tools::TerrainTool::FlattenHeight(scene->terrain.Get(), brushSize,
                         brushStrength, vec2(intersection.x, intersection.z), terrainFlattenHeight);
                 }
+                terrainHeightsEdited = true;
 
             }
             else if (terrainPanel.brushType == TerrainPanel::TerrainBrushType::Material) {
@@ -1063,10 +1398,78 @@ namespace Atlas::Editor::UI {
                 brushSize = 2 * brushSize + 1;
                 Atlas::Tools::TerrainTool::BrushHole(scene->terrain.Get(),
                     vec2(intersection.x, intersection.z), brushSize);
+                terrainHeightsEdited = true;
             }
 
             
         }
+
+    }
+
+    void SceneWindow::ApplyNavigationTools() {
+
+        auto& navigationPanel = scenePropertiesPanel.navigationPanel;
+        const auto& navigation = scene->navigation;
+        if (!navigation || !navigation->mesh || !cameraEntity.IsValid())
+            return;
+
+        const auto& mesh = navigation->mesh;
+        const auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        const auto& batch = viewportPanel.primitiveBatchWrapper.GetBatch(true);
+        // Lifted a little, the ground would hide the lines in the depth test
+        const auto lift = vec3(0.0f, 0.05f, 0.0f);
+
+        if (navigationPanel.showMesh) {
+            // All built tiles, collected again when the mesh changes
+            if (navigationPanel.meshEdgesMesh != mesh.get() || navigationPanel.meshEdgesRevision != mesh->GetRevision()) {
+                navigationPanel.meshEdges = mesh->GetPolygonEdges(Volume::AABB(vec3(-1e30f), vec3(1e30f)));
+                navigationPanel.meshEdgesMesh = mesh.get();
+                navigationPanel.meshEdgesRevision = mesh->GetRevision();
+            }
+
+            const auto& edges = navigationPanel.meshEdges;
+            for (size_t i = 0; i + 1 < edges.size(); i += 2)
+                batch->AddLine(edges[i] + lift, edges[i + 1] + lift, vec3(0.0f, 0.6f, 1.0f), vec3(0.0f, 0.6f, 1.0f));
+        }
+
+        if (!navigationPanel.pathTest || !sceneHierarchyPanel.selectedProperty.navigation)
+            return;
+
+        // Right clicks set the points instead of selecting entities
+        brushActive = true;
+
+        const auto& viewport = viewportPanel.viewport;
+        auto mousePos = ImGui::GetMousePos();
+        bool inViewport = mousePos.x > float(viewport->x) && mousePos.y > float(viewport->y) &&
+            mousePos.x < float(viewport->x + viewport->width) && mousePos.y < float(viewport->y + viewport->height);
+
+        if (inViewport && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            Volume::Ray ray(viewport, camera, vec2(mousePos.x, mousePos.y));
+            auto result = scene->CastRay(ray);
+            if (result.valid) {
+                auto point = ray.Get(result.hitDistance);
+                if (!navigationPanel.pathStart || navigationPanel.pathGoal) {
+                    navigationPanel.pathStart = point;
+                    navigationPanel.pathGoal.reset();
+                }
+                else {
+                    navigationPanel.pathGoal = point;
+                }
+            }
+        }
+
+        // The tiles change while they are built, the path is searched again every frame
+        navigationPanel.path.clear();
+        if (navigationPanel.pathStart && navigationPanel.pathGoal)
+            navigationPanel.path = mesh->FindPath(*navigationPanel.pathStart, *navigationPanel.pathGoal);
+
+        if (navigationPanel.pathStart)
+            batch->AddLineCross(*navigationPanel.pathStart, 0.5f, vec3(0.0f, 1.0f, 0.0f));
+        if (navigationPanel.pathGoal)
+            batch->AddLineCross(*navigationPanel.pathGoal, 0.5f, vec3(1.0f, 0.0f, 0.0f));
+        for (size_t i = 1; i < navigationPanel.path.size(); i++)
+            batch->AddLine(navigationPanel.path[i - 1] + 2.0f * lift, navigationPanel.path[i] + 2.0f * lift,
+                vec3(1.0f, 0.9f, 0.1f), vec3(1.0f, 0.9f, 0.1f));
 
     }
 
@@ -1095,7 +1498,7 @@ namespace Atlas::Editor::UI {
         if (selectedEntity.IsValid() && selectedEntity.HasComponent<SplineComponent>()) {
             auto& splineComponent = selectedEntity.GetComponent<SplineComponent>();
             
-            auto globalMatrix = GetGlobalMatrix(selectedEntity);
+            auto globalMatrix = scene->GetGlobalMatrix(selectedEntity);
             for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()); i++) {
                 auto controlPoint = splineComponent.controlPoints[i];
                 controlPoint.transform = globalMatrix * controlPoint.transform;
@@ -1120,31 +1523,13 @@ namespace Atlas::Editor::UI {
         if (rayCastResult.valid && selectionType == EntitySelectionType::Entity) {
             bool shiftPressed = ImGui::IsKeyDown(ImGuiKey_LeftShift);
             sceneHierarchyPanel.SelectEntity(rayCastResult.data, shiftPressed);
+            sceneHierarchyPanel.RevealEntity(scene.Get(), rayCastResult.data);
         }
         else if (selectionType == EntitySelectionType::Spline) {
             entityPropPanel.splineComponentPanel.selectControlPointIdx = selectedIdx;
         }
         
         sceneHierarchyPanel.selectedType = selectionType;
-    
-    }
-
-    mat4 SceneWindow::GetGlobalMatrix(Scene::Entity entity) {
-
-        if (!entity.IsValid())
-            return mat4(1.0f);
-
-        auto transformComponent = entity.TryGetComponent<TransformComponent>();
-        if (transformComponent) {
-            return transformComponent->globalMatrix;
-        }
-
-        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
-        if (hierarchyComponent) {
-            return hierarchyComponent->globalMatrix;
-        }
-
-        return mat4(1.0f);
 
     }
 

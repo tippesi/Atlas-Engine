@@ -6,4 +6,6 @@ namespace Atlas::Scripting::Bindings {
 
     void GenerateKeyboardBindings(sol::table* ns);
 
+    void GenerateControllerBindings(sol::table* ns);
+
 }

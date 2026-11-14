@@ -10,33 +10,16 @@ namespace Atlas::RayTracing {
 
     JobGroup RayTracingManager::bvhUpdateGroup{ "Bvh manager update" };
 	std::vector<Ref<Graphics::BLAS>> RayTracingManager::blases;
+	std::atomic_bool RayTracingManager::meshBVHsRequested = false;
+	std::mutex RayTracingManager::meshBuildMutex;
 
 	void RayTracingManager::Update() {
-
-        auto device = Graphics::GraphicsDevice::DefaultDevice;
-        if (!device->support.bindless)
-            return;
 
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
         auto buildRTStructure = [](JobData) {
-            auto meshes = ResourceManager<Mesh::Mesh>::GetOwnedResources();
-
-            JobGroup bvhBuildGroup{ "Bvh build" };
-            for (const auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-                if (mesh->IsBVHBuilt() || !mesh->rayTrace)
-                    continue;
-                if (mesh->data.GetIndexCount() == 0 ||
-                    mesh->data.GetVertexCount() == 0)
-                    continue;
-
-                JobSystem::Execute(bvhBuildGroup, [mesh](JobData&) {
-                    mesh->BuildBVH(false);
-                    });
-            }
-
+            // Mesh BVHs are only needed by rt effects, while terrain BVHs are also needed by the terrain LoD
+            JobGroup terrainBuildGroup{ "Terrain bvh build" };
             auto terrains = ResourceManager<Terrain::Terrain>::GetOwnedResources();
             for (const auto& terrain : terrains) {
                 if (!terrain.IsLoaded())
@@ -54,17 +37,40 @@ namespace Atlas::RayTracing {
                     float nodeStretch = terrain->resolution * powf(2.0f,
                         (float)(terrain->LoDCount - cell->LoD) - 1.0f);
                     float heightStretch = terrain->heightScale;
-                    JobSystem::Execute(bvhBuildGroup, [cell = cell, nodeStretch, heightStretch](JobData&) {
+                    JobSystem::Execute(terrainBuildGroup, [cell = cell, nodeStretch, heightStretch](JobData&) {
                         cell->BuildBVH(nodeStretch, heightStretch);
                         });
                 }
             }
 
-            JobSystem::Wait(bvhBuildGroup);
+            // The streaming can't unload the geometry of meshes while their BVHs are built
+            if (meshBVHsRequested.exchange(false)) {
+                std::scoped_lock meshLock(meshBuildMutex);
+                auto meshes = ResourceManager<Mesh::Mesh>::GetOwnedResources();
 
-            auto device = Graphics::GraphicsDevice::DefaultDevice;
-            if (device->support.hardwareRayTracing)
-                BuildStaticBLAS(meshes, terrains);
+                JobGroup meshBuildGroup{ "Mesh bvh build" };
+                for (const auto& mesh : meshes) {
+                    if (!mesh.IsLoaded() || !mesh->IsGeometryResident())
+                        continue;
+                    if (mesh->IsBVHBuilt() || !mesh->rayTrace)
+                        continue;
+                    if (mesh->data.GetIndexCount() == 0 ||
+                        mesh->data.GetVertexCount() == 0)
+                        continue;
+
+                    JobSystem::Execute(meshBuildGroup, [mesh](JobData&) {
+                        mesh->BuildBVH(false);
+                        });
+                }
+
+                JobSystem::Wait(meshBuildGroup);
+
+                auto device = Graphics::GraphicsDevice::DefaultDevice;
+                if (device->support.hardwareRayTracing)
+                    BuildStaticBLAS(meshes, terrains);
+            }
+
+            JobSystem::Wait(terrainBuildGroup);
             };
 
         if (bvhUpdateGroup.HasFinished()) {
@@ -73,22 +79,25 @@ namespace Atlas::RayTracing {
 
 	}
 
+    void RayTracingManager::RequestMeshBVHs() {
+
+        meshBVHsRequested = true;
+
+    }
+
     void RayTracingManager::BuildStaticBLAS(std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
         std::vector<ResourceHandle<Terrain::Terrain>>& terrains) {        
 
         Graphics::ASBuilder asBuilder;
 
-        for (auto it = meshes.begin(); it != meshes.end();) {
-            auto& mesh = *it;
+        // Only static meshes, this runs every frame for all meshes and usually finds none
+        std::vector<Mesh::Mesh*> builtMeshes;
+        for (auto& mesh : meshes) {
+            if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || !mesh->blas->needsBvhRefresh || mesh->blas->blas->isDynamic)
+                continue;
 
-            // Only want static meshes
-            if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || !mesh->blas->needsBvhRefresh || mesh->blas->blas->isDynamic) {
-                it = meshes.erase(it);
-            }
-            else {
-                blases.push_back(mesh->blas->blas);
-                ++it;
-            }
+            blases.push_back(mesh->blas->blas);
+            builtMeshes.push_back(mesh.Get().get());
         }
 
         size_t blasBuiltCount = 0;
@@ -98,8 +107,8 @@ namespace Atlas::RayTracing {
 
         // Copy the non-compacted versions over
         for (size_t i = 0; i < blasBuiltCount; i++) {
-            meshes[i]->blas->blas = blases[i];
-            meshes[i]->blas->needsBvhRefresh = false;
+            builtMeshes[i]->blas->blas = blases[i];
+            builtMeshes[i]->blas->needsBvhRefresh = false;
         }
 
         blases.clear();

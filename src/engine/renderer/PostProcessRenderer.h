@@ -14,8 +14,8 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget>& target, Ref<Scene::Scene>& scene,
-                Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
+            void Render(Ref<RenderTarget>& target, Ref<Scene::Scene>& scene, Graphics::CommandList* commandList,
+                bool upscalerSharpens, Texture::Texture2D* texture = nullptr);
 
             void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
                 Graphics::CommandList* commandList);
@@ -25,7 +25,6 @@ namespace Atlas {
 
         private:
             struct alignas(16) Uniforms {
-                float exposure;
                 float autoExposureMipLevel;
                 float paperWhiteLuminance;
                 float maxScreenLuminance;
@@ -39,21 +38,21 @@ namespace Atlas {
                 float vignetteOffset;
                 float vignettePower;
                 float vignetteStrength;
+                float padding0;
                 float padding1;
                 float padding2;
                 vec4 vignetteColor;
                 vec4 tintColor;
             };
 
-            void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture,
-                Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
+            void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* sourceTexture,
+                Texture::Texture2D* hdrTexture, Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
 
-            void SetUniforms(const CameraComponent& camera, const Ref<RenderTarget>& target,  
-                const Ref<Scene::Scene>& scene);
+            void SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene);
 
             PipelineConfig GetMainPipelineConfig();
 
-            PipelineConfig GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer);
+            PipelineConfig GetMainPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats);
 
             std::vector<std::string> GetMacros() const;
 

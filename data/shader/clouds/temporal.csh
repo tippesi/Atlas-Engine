@@ -277,8 +277,8 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     vec4 localNeighbourhoodMin, localNeighbourhoodMax;
@@ -302,7 +302,7 @@ void main() {
         history = success && valid ? catmullRomHistory : history;  
     }
 
-    vec4 historyValue = history;
+    vec4 historyValue = vec4(history.rgb * globalData.preExposure / globalData.lastPreExposure, history.a);
     vec4 currentValue = texelFetch(currentTexture, pixel, 0);
 
     float currentDepth = texelFetch(depthTexture, pixel, 0).r;

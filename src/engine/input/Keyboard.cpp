@@ -77,7 +77,7 @@ namespace Atlas {
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
 
-            auto velocity = fast ? interpolatedLinearVelocity * player.fastVelocity : 
+            auto velocity = fast != alwaysRun ? interpolatedLinearVelocity * player.fastVelocity : 
                 interpolatedLinearVelocity * player.slowVelocity;
 
             player.SetInputVelocity(velocity);
@@ -86,6 +86,9 @@ namespace Atlas {
 
             if (slide)
                 player.Slide();
+
+            if (crouch)
+                player.Crouch();
 
         }
 
@@ -148,29 +151,20 @@ namespace Atlas {
                 movement.z += 1.0f;
             }
 
-            if (event.keyCode == Keycode::KeySpace && event.state == AE_BUTTON_PRESSED) {
-                jump = true;
-            }
+            if (event.keyCode == Keycode::KeyUnknown)
+                return;
 
-            if (event.keyCode == Keycode::KeySpace && event.state == AE_BUTTON_RELEASED) {
-                jump = false;
-            }
+            if (event.keyCode == jumpKey)
+                jump = event.state == AE_BUTTON_PRESSED;
 
-            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_PRESSED) {
-                fast = true;
-            }
+            if (event.keyCode == runKey)
+                fast = event.state == AE_BUTTON_PRESSED;
 
-            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_RELEASED) {
-                fast = false;
-            }
+            if (event.keyCode == slideKey)
+                slide = event.state == AE_BUTTON_PRESSED;
 
-            if (event.keyCode == Keycode::KeyLeftControl && event.state == AE_BUTTON_PRESSED) {
-                slide = true;
-            }
-
-            if (event.keyCode == Keycode::KeyLeftControl && event.state == AE_BUTTON_RELEASED) {
-                slide = false;
-            }
+            if (event.keyCode == crouchKey)
+                crouch = event.state == AE_BUTTON_PRESSED;
            
         }
 

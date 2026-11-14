@@ -2,6 +2,7 @@
 
 #include <../brdf/brdfEval.hsh>
 #include <../common/flatten.hsh>
+#include <../common/stencil.hsh>
 
 #ifdef DDGI
 #include <../ddgi/ddgi.hsh>
@@ -14,6 +15,10 @@ layout(set = 3, binding = 1) uniform sampler2D reflectionTexture;
 layout(set = 3, binding = 2) uniform sampler2D giTexture;
 layout(set = 3, binding = 3) uniform sampler2D lowResDepthTexture;
 layout(set = 3, binding = 4) uniform sampler2D lowResNormalTexture;
+#ifdef OCEAN_REFLECTION
+layout(set = 3, binding = 6) uniform sampler2D oceanDepthTexture;
+layout(set = 3, binding = 7) uniform usampler2D oceanStencilTexture;
+#endif
 
 layout(set = 3, binding = 5) uniform UniformBuffer {
     int reflectionDownsampled2x;
@@ -44,7 +49,7 @@ void LoadGroupSharedData() {
     if (gl_LocalInvocationIndex < depthDataSize) {
         ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
         offset += workGroupOffset;
-        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0) - 1);
         depths[gl_LocalInvocationIndex] = ConvertDepthToViewSpaceDepth(texelFetch(lowResDepthTexture, offset, 0).r);
 
         vec3 normal = DecodeNormal(texelFetch(lowResNormalTexture, offset, 0).rg);
@@ -128,7 +133,7 @@ float GetPixelEdgeWeight(int sharedMemoryOffset, float referenceDepth, vec3 refe
     return depthWeight * normalWeight;
 }
 
-UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, float referenceRoughness, vec2 highResPixel) {
+UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     UpsampleResult result;
 
@@ -167,7 +172,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, float refere
     result.ao /= totalWeight;
 
     float maxWeight = 0.0;
-    int maxMemoryIdx = 0;
+    int maxMemoryIdx = Flatten2D(pixel, unflattenedDepthDataSize);
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
         
@@ -178,7 +183,8 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, float refere
         }
     }
 
-    if (totalWeight < maxWeight && referenceRoughness > 0.01) {
+    // Only fall back to the most similar neighbor when the bilinear footprint is rejected
+    if (totalWeight <= 0.05 * maxWeight) {
         result.ao = aos[maxMemoryIdx];
         result.reflection = reflections[maxMemoryIdx];
     }
@@ -194,8 +200,8 @@ void main() {
 
     if (Uniforms.giDownsampled2x > 0 || Uniforms.reflectionDownsampled2x > 0) LoadGroupSharedData();
 
-    if (gl_GlobalInvocationID.x > imageSize(image).x ||
-        gl_GlobalInvocationID.y > imageSize(image).y)
+    if (gl_GlobalInvocationID.x >= imageSize(image).x ||
+        gl_GlobalInvocationID.y >= imageSize(image).y)
         return;
 
     ivec2 resolution = imageSize(image);
@@ -219,7 +225,7 @@ void main() {
         vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
         vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
 
-        upsampleResult = Upsample(depth, surface.N, surface.material.roughness, vec2(pixel));
+        upsampleResult = Upsample(depth, surface.N, vec2(pixel));
 
         // Indirect specular BRDF
         vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
@@ -231,6 +237,13 @@ void main() {
 
 #ifdef REFLECTION
         vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? upsampleResult.reflection : textureLod(reflectionTexture, texCoord, 0.0).rgb;
+#ifdef OCEAN_REFLECTION
+        // Below the visible ocean surface the reflections were traced from the ocean
+        float oceanDepth = texelFetch(oceanDepthTexture, pixel, 0).r;
+        StencilFeatures oceanFeatures = DecodeStencilFeatures(texelFetch(oceanStencilTexture, pixel, 0).r);
+        if (oceanDepth < depth && !oceanFeatures.underWaterPixel)
+            indirectSpecular = prefilteredSpecular;
+#endif
 #else
 #ifdef DDGI
         vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;
@@ -245,7 +258,7 @@ void main() {
         // This normally only accounts for diffuse occlusion, we need seperate terms
         // for diffuse and specular.
 #ifdef SSGI
-        float ao = Uniforms.giDownsampled2x > 0 ? upsampleResult.ao : texelFetch(giTexture, pixel, 0).r;
+        float ao = Uniforms.giDownsampled2x > 0 ? upsampleResult.ao : texelFetch(giTexture, pixel, 0).a;
         indirect *= vec3(pow(ao, Uniforms.aoStrength));
 #endif
 

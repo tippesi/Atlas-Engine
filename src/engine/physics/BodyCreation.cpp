@@ -19,6 +19,9 @@ namespace Atlas::Physics {
 
         gravityFactor = settings.mGravityFactor;
 
+        isTrigger = settings.mIsSensor;
+        kinematicContacts = settings.mCollideKinematicVsNonDynamic;
+
         //shapePtr = settings.GetShape();
 
     }
@@ -35,6 +38,10 @@ namespace Atlas::Physics {
             default: motionType = JPH::EMotionType::Static; break;
         }
 
+        // Active kinematic sensors also detect sleeping bodies and the kinematic player bodies
+        if (isTrigger)
+            motionType = JPH::EMotionType::Kinematic;
+
         settings.mObjectLayer = objectLayer;
         settings.mMotionQuality = motionQuality;
         settings.mMotionType = motionType;
@@ -49,6 +56,9 @@ namespace Atlas::Physics {
         settings.mAngularDamping = angularDampening;
 
         settings.mGravityFactor = gravityFactor;
+
+        settings.mIsSensor = isTrigger;
+        settings.mCollideKinematicVsNonDynamic = kinematicContacts;
 
         settings.SetShape(shape->ref);
 

@@ -55,6 +55,9 @@ namespace Atlas {
             Buffer::Buffer probeStateBuffer;
             Buffer::Buffer historyProbeStateBuffer;
 
+            // Pre-exposure the probes were last updated with
+            float preExposure = 1.0f;
+
             // Used for debugging
             Ref<Material> probeDebugMaterial;
             Ref<Material> probeDebugActiveMaterial;
@@ -140,13 +143,16 @@ namespace Atlas {
             bool sampleEmissives = false;
             bool debug = false;
             bool optimizeProbes = true;
-            bool useShadowMap = false;
             bool lowerResMoments = false;
             bool lowerResRadiance = true;
             bool opacityCheck = false;
             bool visibility = true;
             bool radiance = true;
             bool scroll = false;
+
+            // Devices with hit objects trace and shade the probe rays in one ray tracing pipeline, which can reorder
+            // the threads by the mesh they hit before shading
+            bool shaderExecutionReordering = true;
 
             InternalIrradianceVolume internal;
 

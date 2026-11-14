@@ -1,4 +1,5 @@
 #include <structures.hsh>
+#include <../globals.hsh>
 #include <../common/random.hsh>
 #include <../common/PI.hsh>
 #include <../common/packing.hsh>
@@ -56,6 +57,9 @@ Ray UnpackRay(PackedRay compressed) {
     ray.hitDistance = compressed.hit.x;
     ray.hitInstanceID = floatBitsToInt(compressed.hit.z);
 
+    ray.hitBarycentrics = unpackUnorm2x16(floatBitsToUint(compressed.direction.w));
+    ray.hitGeometryNormal = unpackUnitVector(floatBitsToInt(compressed.hit.w)).xyz;
+
     return ray;
 }
 
@@ -69,6 +73,9 @@ PackedRay PackRay(Ray ray) {
     compressed.hit.x = ray.hitDistance;
     compressed.hit.y = intBitsToFloat(ray.hitID);
     compressed.hit.z = intBitsToFloat(ray.hitInstanceID);
+
+    compressed.direction.w = uintBitsToFloat(packUnorm2x16(ray.hitBarycentrics));
+    compressed.hit.w = intBitsToFloat(packUnitVector(ray.hitGeometryNormal));
 
     
     return compressed;
@@ -106,7 +113,8 @@ Light UnpackLight(PackedLight compressed) {
     light.P = compressed.P.xyz;
     light.N = normalize(compressed.N.xyz);
 
-    light.radiance = compressed.color.rgb;
+    // The lights of ray tracing are built once, the pre-exposure follows the camera
+    light.radiance = compressed.color.rgb * globalData.preExposure;
 
     uint data0 = floatBitsToUint(compressed.data.x);
     uint data1 = floatBitsToUint(compressed.P.w);

@@ -10,9 +10,10 @@ layout(set = 3, binding = 4) uniform sampler2D noise2;
 layout(set = 3, binding = 5) uniform sampler2D noise3;
 
 layout(push_constant) uniform constants {
-    ivec4 L;
+    vec4 L;
     vec2 w;
     int N;
+    int C;
     float A;
     float windspeed;
     float windDependency;
@@ -21,13 +22,17 @@ layout(push_constant) uniform constants {
 
 const float g = 9.81;
 
+// Each cascade keeps the waves between a fraction of its size and that of the next smaller cascade
+const float bandWavelengthFraction = 0.25;
+
 // Box-Muller transform: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
 vec2 gaussrnd() {
 
-    vec2 coord = vec2(gl_GlobalInvocationID.xy) / float(PushConstants.N);
-    
-    float U00 = clamp(texture(noise0, coord).r + 0.00001, 0.0, 1.0);
-    float U01 = clamp(texture(noise1, coord).r + 0.00001, 0.0, 1.0);
+    // The cascades use the same wave vector indices, with the same random numbers they would repeat each other
+    ivec2 pixel = (ivec2(gl_GlobalInvocationID.xy) + int(gl_GlobalInvocationID.z) * ivec2(131, 241)) % PushConstants.N;
+
+    float U00 = clamp(texelFetch(noise0, pixel, 0).r + 0.00001, 0.0, 1.0);
+    float U01 = clamp(texelFetch(noise1, pixel, 0).r + 0.00001, 0.0, 1.0);
     
     float R0 = sqrt(-2.0 * log(U00));
     float T0 = 2.0 * PI * U01;
@@ -58,16 +63,30 @@ void main() {
 
     vec2 coord = vec2(gl_GlobalInvocationID.xy) - float(PushConstants.N) / 2.0;
     
-    vec2 waveVector = 2.0 * PI / float(PushConstants.L[spectrumIdx]) * coord;
+    vec2 waveVector = 2.0 * PI / PushConstants.L[spectrumIdx] * coord;
     
     float l = (PushConstants.windspeed * PushConstants.windspeed) / g;
     
-    float h0k = sqrt(phillips(waveVector, PushConstants.A, l, PushConstants.w)) / sqrt(2.0);
+    // Scaled by the frequency step, such that the wave heights don't depend on the cascade size
+    float dk = 2.0 * PI / PushConstants.L[spectrumIdx];
+    float h0k = sqrt(phillips(waveVector, PushConstants.A, l, PushConstants.w)) / sqrt(2.0) * dk;
     
     vec2 rnd = gaussrnd();
     
-    if (waveVector.x == 0.0 &&
-        waveVector.y == 0.0) {
+    float L = PushConstants.L[spectrumIdx];
+    float smallerL = 0.0;
+    bool hasLarger = false;
+    for (int i = 0; i < PushConstants.C; i++) {
+        if (PushConstants.L[i] < L)
+            smallerL = max(smallerL, PushConstants.L[i]);
+        hasLarger = hasLarger || PushConstants.L[i] > L;
+    }
+
+    float k = length(waveVector);
+    float kMin = hasLarger ? 2.0 * PI / (bandWavelengthFraction * L) : 0.0;
+    float kMax = smallerL > 0.0 ? 2.0 * PI / (bandWavelengthFraction * smallerL) : 1e20;
+
+    if (k == 0.0 || k < kMin || k >= kMax) {
         h0k = 0.0;
     }
     

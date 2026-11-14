@@ -4,6 +4,7 @@
 #include "../common/Packing.h"
 #include "../common/RandomHelper.h"
 #include "../pipeline/PipelineManager.h"
+#include "helper/RayTracingHelper.h"
 
 #include "../volume/BVH.h"
 
@@ -22,6 +23,7 @@ namespace Atlas {
 
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
+            rayHitRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("pathtracer/rayHit.rgen");
 
             rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
             rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms), bounces + 1);
@@ -34,9 +36,10 @@ namespace Atlas {
             if (!scene->IsRtDataValid())
                 return;
 
-            Graphics::Profiler::BeginQuery("Path tracing");
+            CPUProfiler::Scope profilerScope("Path tracing");
+            GPUProfiler::Scope gpuScope("Path tracing");
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
             auto width = renderTarget->GetScaledWidth();
             auto height = renderTarget->GetScaledHeight();
 
@@ -44,9 +47,11 @@ namespace Atlas {
 
             if (glm::distance(camera.GetLocation(), cameraLocation) > 1e-3f ||
                 glm::distance(camera.rotation, cameraRotation) > 1e-3f ||
+                scene->renderState.preExposure != preExposure ||
                 helper.GetRayBuffer()->GetElementCount() != rayCount) {
                 cameraLocation = camera.GetLocation();
                 cameraRotation = camera.rotation;
+                preExposure = scene->renderState.preExposure;
 
                 sampleCount = 0;
                 imageOffset = ivec2(0);
@@ -60,8 +65,15 @@ namespace Atlas {
                 frameCount++;
             }
 
+            // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+            auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+            auto& rayHitConfig = useRayTracingPipeline ? rayHitRayTracingPipelineConfig : rayHitPipelineConfig;
+
             rayGenPipelineConfig.ManageMacro("REALTIME", realTime);
-            rayHitPipelineConfig.ManageMacro("REALTIME", realTime);
+            rayHitConfig.ManageMacro("REALTIME", realTime);
+            // The compute path traces in a separate pass of the helper
+            rayHitConfig.ManageMacro("OPACITY_CHECK", useRayTracingPipeline);
+            rayHitConfig.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && shaderExecutionReordering);
 
             helper.UpdateLights(scene, sampleEmissives);
 
@@ -88,8 +100,6 @@ namespace Atlas {
 
                 uniforms.resolution = resolution;
                 uniforms.seed = Common::Random::SampleFastUniformFloat();
-
-                uniforms.exposure = camera.exposure;
 
                 uniforms.samplesPerFrame = samplesPerFrame;
                 uniforms.maxRadiance = maxRadiance;
@@ -163,7 +173,7 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == tileResolution.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 8 == tileResolution.y) ? 0 : 1);
 
-            Graphics::Profiler::BeginQuery("Ray generation");
+            GPUProfiler::BeginQuery("Ray generation");
 
             helper.DispatchRayGen(scene, commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
                 ivec3(groupCount.x, groupCount.y, samplesPerFrame), false,
@@ -195,9 +205,11 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
+                GPUProfiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
-                helper.DispatchHitClosest(scene, commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
+                auto rayHitPipeline = useRayTracingPipeline && materialGraphs ?
+                    Helper::RayTracingHelper::GetRayTracingPipeline(rayHitConfig, scene) : PipelineManager::GetPipeline(rayHitConfig);
+                helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, true,
                     [=]() {
                         commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);
@@ -205,7 +217,7 @@ namespace Atlas {
                     );
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
             if (realTime) {
 
@@ -244,26 +256,23 @@ namespace Atlas {
                     float historyClipMax;
                     float currentClipFactor;
                     float maxHistoryLength;
-                    float exposure;
                     int samplesPerFrame;
                     float maxRadiance;
                 };
 
-                Graphics::Profiler::BeginQuery("Temporal");
+                GPUProfiler::Scope sectionScope("Temporal");
 
                 PushConstants constants = {
                     .historyClipMax = historyClipMax,
                     .currentClipFactor = currentClipFactor,
                     .maxHistoryLength = float(historyLengthMax),
-                    .exposure = camera.exposure,
                     .samplesPerFrame = samplesPerFrame,
                     .maxRadiance = maxRadiance
                 };
-                commandList->PushConstants("constants", &constants);
-
                 auto pipelineConfig = PipelineConfig("pathtracer/temporal.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
 
                 groupCount = resolution / 16;
 
@@ -271,8 +280,6 @@ namespace Atlas {
                 groupCount.y += ((groupCount.y * 16 == resolution.y) ? 0 : 1);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                Graphics::Profiler::EndQuery();
 
             }
 
@@ -296,8 +303,6 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             helper.InvalidateRayBuffer(commandList);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

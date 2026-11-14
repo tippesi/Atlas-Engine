@@ -1,5 +1,6 @@
 #include "TemporalAARenderer.h"
 #include "helper/GeometryHelper.h"
+#include "helper/HaltonSequence.h"
 
 #include "Clock.h"
 
@@ -14,11 +15,21 @@ namespace Atlas {
             pipelineConfig = PipelineConfig("taa.csh");
             PipelineManager::AddPipeline(pipelineConfig);
 
+            haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
+
         }
 
-        void TemporalAARenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        vec2 TemporalAARenderer::GetJitter(const Ref<RenderTarget>& target, uint32_t frameIndex) const {
 
-            Graphics::Profiler::BeginQuery("TAA");
+            auto jitter = 2.0f * haltonSequence[frameIndex % haltonSequence.size()] - 1.0f;
+            return jitter / vec2(float(target->GetScaledWidth()), float(target->GetScaledHeight()));
+
+        }
+
+        void TemporalAARenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
+
+            CPUProfiler::Scope profilerScope("TAA");
+            GPUProfiler::Scope gpuScope("TAA");
 
             pipelineConfig.ManageMacro("PATHTRACE", false);
 
@@ -32,7 +43,7 @@ namespace Atlas {
             groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
             groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
 
             auto targetData = target->GetData(FULL_RES);
 
@@ -42,11 +53,13 @@ namespace Atlas {
             auto const velocity = target->GetVelocity();
             const auto depth = targetData->depthTexture;
             const auto stencil = targetData->stencilTexture;
+            const auto lastStencil = target->GetHistoryData(FULL_RES)->stencilTexture;
 
             Graphics::ImageBarrier imageBarriers[] = {
                 {lastHistory->image,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT},
                 {history->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT},
-                {lastVelocity->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT}
+                {lastVelocity->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT},
+                {lastStencil->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT}
             };
             commandList->PipelineBarrier(imageBarriers, {});
 
@@ -58,13 +71,15 @@ namespace Atlas {
             commandList->BindImage(depth->image, depth->sampler, 3, 4);
             commandList->BindImage(lastVelocity->image, lastVelocity->sampler, 3, 5);
             commandList->BindImage(stencil->image, stencil->sampler, 3, 6);
+            commandList->BindImage(lastStencil->image, lastStencil->sampler, 3, 7);
 
             auto constants = PushConstants {
                 .resolution = vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
                 .invResolution = 1.0f / vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
                 .jitter = camera.GetJitter(),
-                .resetHistory = !target->HasHistory() ? 1 : 0
+                .resetHistory = historyInvalid || !target->HasHistory() ? 1 : 0
             };
+            historyInvalid = false;
 
             commandList->PushConstants("constants", &constants);
 
@@ -72,8 +87,6 @@ namespace Atlas {
 
             commandList->ImageMemoryBarrier(lastHistory->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

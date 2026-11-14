@@ -1,0 +1,61 @@
+#pragma once
+
+#include "Job.h"
+#include "MaterialGraphTools.h"
+#include "SceneTools.h"
+
+#include "loader/ModelImporter.h"
+
+#include <set>
+
+namespace Atlas::Capture {
+
+    // Applies edit operations to a loaded scene. Operations selecting existing entities use name patterns or #ids
+    // and by default require exactly one match to avoid accidental mass edits ("all": true allows more)
+    // Throws std::runtime_error on invalid operations, the scene must not be saved in that case
+    struct EditState {
+
+        // Patched materials are only changed in memory, they are saved once the checks passed
+        std::set<std::string> changedMaterials;
+        // Material graphs of the operations, saved together with the materials
+        MaterialGraphEdits graphEdits;
+        // Terrain of the scene as it was loaded, it is only edited after a terrainCopy (or with "overwriteTerrain")
+        std::string loadedTerrain;
+        bool terrainChanged = false;
+        // Operations which only make sense for inspection (detachTerrain) require a dry run
+        bool dryRun = false;
+        // Format of the textures of imported models
+        Loader::ImportTextureFormat textureFormat = Loader::ImportTextureFormat::Original;
+
+    };
+
+    json ApplyEditOperations(const Ref<Scene::Scene>& scene, const json& operations, EditState& state);
+
+    // Model files (glTF, FBX, ...) are imported next to the source into meshes/ and materials/ first,
+    // scenes can only reference .aemesh files
+    ResourceHandle<Mesh::Mesh> LoadMeshForScene(const std::string& path);
+
+    // An animation file or the name of an animation of the model file
+    ResourceHandle<Animation::Animation> LoadAnimationForScene(const std::string& animation, const std::string& modelPath);
+
+    // Writes the materials to their files, a .backup of the original file is kept
+    json SaveMaterials(const std::set<std::string>& paths);
+
+    // Loaded materials and graphs an edit changed without saving them (dry runs, failed checks) go back to their files,
+    // the server keeps them loaded for the next jobs
+    void RevertUnsavedEdits(EditState& state);
+
+    // Moves an entity to a world position, keeping its rotation (the parent transform is taken into account)
+    void SetWorldPosition(Scene::Entity entity, vec3 position);
+
+    // Static body with the mesh as its collision shape
+    void AddMeshBody(Scene::Entity entity, const ResourceHandle<Mesh::Mesh>& mesh, vec3 scale);
+
+    // Point or spot light at the entity origin, the light of the add and scatter operations
+    void AddLight(Scene::Entity entity, const json& spec);
+
+    // Lists of more than count entries are reduced to their length and the first entries, large edits of a pipeline
+    // otherwise write reports of hundreds of megabytes
+    json CapList(const json& list, size_t count = 200);
+
+}

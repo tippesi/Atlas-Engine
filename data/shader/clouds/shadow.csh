@@ -27,8 +27,8 @@ vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos);
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(volumetricCloudShadowImage).x ||
-        pixel.y > imageSize(volumetricCloudShadowImage).y)
+    if (pixel.x >= imageSize(volumetricCloudShadowImage).x ||
+        pixel.y >= imageSize(volumetricCloudShadowImage).y)
         return;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricCloudShadowImage));

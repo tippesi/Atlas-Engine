@@ -331,16 +331,16 @@ namespace Atlas::Editor {
         if (ImGui::Button("Generate", ImVec2(width, 0.0f))) {
 
             if (name.empty()) {
-                Notifications::Push({ "Terrain name is missing!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "Terrain name is missing!", NotificationType::Error });
             }
             else if (!materials.size() && advanced) {
-                Notifications::Push({ "At least one material is required!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "At least one material is required!", NotificationType::Error });
             }
             else if (!selectedMaterial.IsLoaded() && !advanced) {
-                Notifications::Push({ "At least one material is required!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "At least one material is required!", NotificationType::Error });
             }
             else if (heightMapSelection && (!heightMap.IsLoaded() || !heightMapImage->HasData())) {
-                Notifications::Push({ "No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "No heightmap loaded!", NotificationType::Error });
             }
             else {
                 Singletons::blockingOperation->Block("Generating terrain. Please wait...", [&]() {
@@ -434,7 +434,7 @@ namespace Atlas::Editor {
         float heightD = (float)heightImg.SampleBilinear(x, y - yTex).r * scale / 65535.0f;
         float heightU = (float)heightImg.SampleBilinear(x, y + yTex).r * scale / 65535.0f;
 
-        auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
+        auto normal = glm::normalize(vec3(heightL - heightR, 1.0f,
             heightD - heightU));
 
         height = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;

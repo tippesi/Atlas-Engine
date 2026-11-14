@@ -98,9 +98,9 @@ namespace Atlas {
                 macros.push_back("ALPHA_BLENDING");
             }
 
-            auto frameBuffer = commandList->swapChainInUse ? nullptr : commandList->frameBufferInUse;
+            auto rendering = commandList->renderingInUse ? &commandList->renderingInUse.value() : nullptr;
 
-            auto pipelineConfig = GeneratePipelineConfig(frameBuffer, macros);
+            auto pipelineConfig = GeneratePipelineConfig(rendering, macros);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
@@ -126,7 +126,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig TextureRenderer::GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
+        PipelineConfig TextureRenderer::GeneratePipelineConfig(const Graphics::RenderingDesc* rendering,
             const std::vector<std::string>& macros) {
 
             auto shaderConfig = ShaderConfig {
@@ -134,8 +134,8 @@ namespace Atlas {
                 {"rectangle.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             Graphics::GraphicsPipelineDesc pipelineDesc {
-                .swapChain = frameBuffer == nullptr ? device->swapChain : nullptr,
-                .frameBuffer = frameBuffer,
+                .swapChain = rendering ? nullptr : device->swapChain,
+                .attachmentFormats = rendering ? Graphics::AttachmentFormats(*rendering) : Graphics::AttachmentFormats(),
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
                 .assemblyInputInfo = Graphics::Initializers::InitPipelineInputAssemblyStateCreateInfo(
                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP),

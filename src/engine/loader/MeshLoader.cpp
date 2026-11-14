@@ -41,7 +41,7 @@ namespace Atlas::Loader {
     }
 
     void MeshLoader::SaveMesh(const Ref<Mesh::Mesh>& mesh, const std::string& filename, 
-        bool binaryJson, bool formatJson) {
+        bool binaryJson, bool formatJson, bool saveImpostor) {
 
         auto path = Loader::AssetLoader::GetFullPath(filename);
         auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
@@ -65,7 +65,10 @@ namespace Atlas::Loader {
 
         fileStream.close();
 
-        if (mesh->impostor.IsLoaded()) {
+        // Impostors the streaming reduced keep the file they were loaded from
+        const auto& impostor = mesh->impostor;
+        if (saveImpostor && impostor.IsLoaded() && impostor->IsResident() &&
+            impostor->baseColorTexture->width == impostor->resolution) {
             ImpostorLoader::SaveImpostor(mesh->impostor.Get(), mesh->impostor.GetResource()->path, binaryJson);
         }
 

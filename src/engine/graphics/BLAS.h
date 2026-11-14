@@ -18,6 +18,8 @@ namespace Atlas {
             VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 
             bool isDynamic = false;
+            // Allows to refit the BLAS after the vertices moved instead of building it again
+            bool allowUpdate = false;
 
             std::vector<VkAccelerationStructureGeometryKHR> geometries;
             std::vector<VkAccelerationStructureBuildRangeInfoKHR> buildRanges;
@@ -35,6 +37,10 @@ namespace Atlas {
 
             void Allocate();
 
+            // Vertices written every frame, e.g. by a deformation pass, can move to another buffer between builds and
+            // refits, format and count stay the same
+            void SetVertexData(VkDeviceAddress vertexAddress, VkDeviceSize vertexStride);
+
             VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo;
             VkAccelerationStructureBuildSizesInfoKHR sizesInfo;
             VkAccelerationStructureBuildRangeInfoKHR* rangeInfo;
@@ -45,6 +51,7 @@ namespace Atlas {
             VkDeviceAddress deviceAddress = 0;
 
             bool isDynamic = false;
+            bool allowUpdate = false;
             std::atomic_bool isBuilt = false;
 
         private:

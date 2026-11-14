@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../System.h"
-#include "../Filter.h"
 #include "Renderer.h"
 
 namespace Atlas {
@@ -18,61 +17,68 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) CullingPushConstants {
+            struct alignas(16) FroxelPushConstants {
+                ivec2 columnCount;
+                ivec2 resolution;
+                int32_t sliceCount;
+                int32_t tileSize;
+                float near;
+                float far;
                 int32_t lightCount;
+                int32_t resetHistory;
+                int32_t fogVolumeCount;
+                int32_t padding0;
+                vec4 jitter;
+                float extendedFar;
+                float distributionExponent;
+                float padding1;
+                float padding2;
             };
 
             struct alignas(16) VolumetricUniforms {
-                int sampleCount;
                 float intensity;
-                int fogEnabled;
-                float oceanHeight;
-                int lightCount;
-                int offsetX;
-                int offsetY;
                 int directionalLightCount;
+                int padding0;
+                int padding1;
                 vec4 planetCenterAndRadius;
                 Fog fog;
                 CloudShadow cloudShadow;
             };
 
-            struct alignas(16) BlurConstants {
-
-            };
-
             struct alignas(16) ResolveUniforms {
-                Fog fog;
                 vec4 planetCenter;
-                vec4 mainLightColor;
-                vec4 mainLightDirection;
                 int downsampled2x;
                 int cloudsEnabled;
-                int fogEnabled;
                 float innerCloudRadius;
                 float planetRadius;
                 float cloudDistanceLimit;
             };
 
-            Filter blurFilter;
+            void RenderFroxels(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
+                Graphics::CommandList* commandList);
 
-            PipelineConfig volumetricPipelineConfig;
+            PipelineConfig froxelCullingPipelineConfig;
+            PipelineConfig froxelInjectPipelineConfig;
+            PipelineConfig froxelHorizontalFilterPipelineConfig;
+            PipelineConfig froxelVerticalFilterPipelineConfig;
+            PipelineConfig froxelIntegratePipelineConfig;
+            PipelineConfig froxelApplyPipelineConfig;
 
-            PipelineConfig horizontalBlurPipelineConfig;
-            PipelineConfig verticalBlurPipelineConfig;
+            uint64_t froxelFrameCount = 0;
+
+            // Has to match FROXEL_CLUSTER_SIZE
+            const int32_t froxelClusterSize = 4;
 
             PipelineConfig resolvePipelineConfig;
 
-            Texture::Texture2D scramblingRankingTexture;
-            Texture::Texture2D sobolSequenceTexture;
-
             Buffer::Buffer lightCullingBuffer;
-            Buffer::Buffer blurWeightsUniformBuffer;
+            Buffer::Buffer fogVolumeBuffer;
+            Buffer::Buffer fogVolumeMaskBuffer;
             Buffer::UniformBuffer volumetricUniformBuffer;
             Buffer::UniformBuffer resolveUniformBuffer;
-            
-            Ref<Graphics::Sampler> shadowSampler;
 
-            const int32_t filterSize = 4;
+            Ref<Graphics::Sampler> shadowSampler;
+            Ref<Graphics::Sampler> shadowDepthSampler;
 
         };
 

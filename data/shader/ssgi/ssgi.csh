@@ -34,6 +34,7 @@ layout(set = 3, binding = 6) uniform sampler2D directLightTexture;
 
 layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
+layout(set = 3, binding = 14) uniform sampler2D hiZTexture;
 
 layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
@@ -55,6 +56,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     uint rayCount;
     uint sampleCount;
     int downsampled2x;
+    int hiZLevelCount;
 } uniforms;
 
 float Luma(vec3 color) {
@@ -80,8 +82,10 @@ void main() {
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
-        vec2 recontructTexCoord = (2.0 * vec2(pixel) + pixelOffset + vec2(0.5)) / (2.0 * vec2(resolution));
-        vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
+        // The downsampled data belongs to one pixel of the 2x2 block
+        vec2 recontructTexCoord = uniforms.downsampled2x > 0 ?
+            (2.0 * vec2(pixel) + pixelOffset + vec2(0.5)) / (2.0 * vec2(resolution)) : texCoord;
+        vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
         vec3 viewNorm = normalize(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg));
@@ -110,7 +114,7 @@ void main() {
         if (depth < 1.0) {
 
 #ifdef AUTO_EXPOSURE
-            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r * globalData.preExposure;
 #else
             float radianceLimit = uniforms.radianceLimit;
 #endif
@@ -148,8 +152,8 @@ void main() {
                 
                 vec2 hitPixel;
                 vec3 hitPoint;
-                float jitter =  GetInterleavedGradientNoise(vec2(pixel)) / float(uniforms.rayCount) + j / float(uniforms.rayCount);
-                if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 4.0, 16.0, jitter, 64.0, 1000.0, false, false, hitPixel, hitPoint)) {
+                if (traceScreenSpaceHiZ(viewRayOrigin, viewDir, hiZTexture, uniforms.hiZLevelCount, vec2(textureSize(depthTexture, 0)),
+                    32, rayLength, false, hitPixel, hitPoint)) {
                     vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
                     vec3 stepViewNorm = normalize(DecodeNormal(texelFetch(normalTexture, ivec2(hitPixel), 0).rg));
                     float depth = texelFetch(depthTexture, ivec2(hitPixel), 0).r;
@@ -158,7 +162,10 @@ void main() {
                     float NdotV = saturate(dot(-viewDir, stepViewNorm));
                     NdotL = saturate(dot(viewNorm, hitPoint));
                     if (NdotV > 0.0) {
-                        irradiance += textureLod(directLightTexture, hitTexCoord, 0).rgb;
+                        vec3 radiance = textureLod(directLightTexture, hitTexCoord, 0).rgb;
+                        float radianceMax = max(max(max(radiance.r,
+                            max(radiance.g, radiance.b)), radianceLimit), 1e-12);
+                        irradiance += radiance * (radianceLimit / radianceMax);
                     }
                     else {
                         aoHits += 1.0;
@@ -167,10 +174,6 @@ void main() {
                 }
             }
 
-            float irradianceMax = max(max(max(irradiance.r,
-                max(irradiance.g, irradiance.b)), radianceLimit), 1e-12);
-            irradiance *= (radianceLimit / irradianceMax);
-            
             // Supplement misses with the probe irradiance
             irradiance += float(uniforms.rayCount - hits) * probeIrradiance;
             irradiance /= (float(uniforms.rayCount));

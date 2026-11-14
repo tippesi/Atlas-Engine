@@ -6,6 +6,7 @@
 #include "../raytracing/BLAS.h"
 #include "../volume/AABB.h"
 
+#include <shared_mutex>
 #include <vector>
 
 namespace Atlas {
@@ -42,7 +43,10 @@ namespace Atlas {
 
             Ref<RayTracing::BLAS> blas;
 
+            // Kept after an unload, height queries read it while cells are streamed on another thread
             std::vector<float> heightData;
+            std::shared_mutex heightDataMutex;
+
             std::vector<uint8_t> materialIdxData;
             std::vector<uint8_t> normalData;
 

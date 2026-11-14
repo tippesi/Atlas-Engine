@@ -135,7 +135,7 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
                 auto resource = GetResourceInternal(relativePath);
-                JobSystem::Execute(resource->jobGroup, [resource, args...](JobData&) {
+                StartAsyncLoad(resource, [resource, args...]() {
                     resource->Load(args...);
                     });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
@@ -180,7 +180,7 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
                 auto resource = GetResourceInternal(relativePath);
-                JobSystem::Execute(resource->jobGroup, [resource, loaderFunction, args...](JobData&) {
+                StartAsyncLoad(resource, [resource, loaderFunction, args...]() {
                     resource->LoadWithExternalLoader(loaderFunction, args...);
                     });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
@@ -188,6 +188,35 @@ namespace Atlas {
             }
 
             return handle;
+
+        }
+
+        // Priority of the jobs loading resources of this type asynchronously
+        static inline JobPriority loadPriority = JobPriority::Low;
+
+        // Called when an async load of this type is requested and when it's done, e.g. to hold the loads of other types
+        static inline std::function<void()> onAsyncLoadRequested;
+        static inline std::function<void()> onAsyncLoadFinished;
+
+        // The jobs of async loads of this type only start once all holds are released
+        static void HoldAsyncLoads() {
+
+            std::scoped_lock lock(asyncLoadMutex);
+            asyncLoadHolds++;
+
+        }
+
+        static void ReleaseAsyncLoads() {
+
+            std::vector<Ref<Resource<T>>> loads;
+            {
+                std::scoped_lock lock(asyncLoadMutex);
+                if (--asyncLoadHolds == 0)
+                    loads.swap(heldAsyncLoads);
+            }
+
+            for (const auto& resource : loads)
+                resource->StartHeldLoad();
 
         }
 
@@ -326,6 +355,39 @@ namespace Atlas {
         }
 
     private:
+        static void StartAsyncLoad(const Ref<Resource<T>>& resource, std::function<void()> load) {
+
+            resource->jobGroup.priority = loadPriority;
+
+            if (onAsyncLoadRequested)
+                onAsyncLoadRequested();
+
+            auto start = [resource, load = std::move(load)]() {
+                JobSystem::Execute(resource->jobGroup, [load](JobData&) {
+                    load();
+                    if (onAsyncLoadFinished)
+                        onAsyncLoadFinished();
+                    });
+                };
+
+            {
+                std::scoped_lock lock(asyncLoadMutex);
+                if (asyncLoadHolds > 0) {
+                    std::scoped_lock heldLoadLock(Resource<T>::heldLoadMutex);
+                    resource->heldLoad = start;
+                    heldAsyncLoads.push_back(resource);
+                    return;
+                }
+            }
+
+            start();
+
+        }
+
+        static inline std::mutex asyncLoadMutex;
+        static inline int32_t asyncLoadHolds = 0;
+        static inline std::vector<Ref<Resource<T>>> heldAsyncLoads;
+
         static std::mutex mutex;
         static std::mutex subscriberMutex;
 

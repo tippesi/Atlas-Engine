@@ -83,7 +83,7 @@ namespace Atlas {
             // Approximation of total padding by assuming to stuff
             // the smallest texture over and over again.
             auto largest = textureStructures.front();
-            ivec2 totalPadding = ivec2(glm::ceil(glm::log2(glm::vec2(float(largest.width), float(largest.height))))) * padding;
+            ivec2 totalPadding = ivec2(glm::ceil(glm::log2(vec2(float(largest.width), float(largest.height))))) * padding;
 
             // Add total padding to total size
             width += totalPadding.x;

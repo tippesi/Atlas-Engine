@@ -2,6 +2,7 @@
 #include <common/PI.hsh>
 #include <common/stencil.hsh>
 #include <common/flatten.hsh>
+#include <globals.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -15,6 +16,7 @@ layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
 
 #ifndef PATHTRACE
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
+layout(set = 3, binding = 7) uniform usampler2D lastStencilTexture;
 #endif
 
 layout(push_constant) uniform constants {
@@ -243,6 +245,8 @@ vec4 SampleHistory(vec2 texCoord) {
 #else
     historyColor = texture(historyTexture, texCoord);
 #endif
+    // The history was stored with the pre-exposure of the last frame
+    historyColor.rgb *= globalData.preExposure / globalData.lastPreExposure;
 
 #ifdef TAA_TONE
     historyColor.rgb = Tonemap(historyColor.rgb);
@@ -313,8 +317,8 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     LoadLocalData();
@@ -356,6 +360,21 @@ void main() {
     float velocityBlend = saturate(600.0 * max(length(velocity), length(lastVelocity)));
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * PushConstants.invResolution + velocity;
+
+#ifndef PATHTRACE
+    StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
+    bool rejectHistory = features.noTemporalAccumulation;
+    if (PushConstants.resetHistory == 0) {
+        ivec2 historyPixel = clamp(ivec2(uv * PushConstants.resolution), ivec2(0), ivec2(PushConstants.resolution) - 1);
+        StencilFeatures historyFeatures = DecodeStencilFeatures(texelFetch(lastStencilTexture, historyPixel, 0).r);
+        StencilFeatures previousFeatures = DecodeStencilFeatures(texelFetch(lastStencilTexture, pixel, 0).r);
+        rejectHistory = rejectHistory || historyFeatures.noTemporalAccumulation || previousFeatures.noTemporalAccumulation;
+    }
+    if (rejectHistory) {
+        imageStore(resolveImage, pixel, vec4(texelFetch(currentTexture, pixel, 0).rgb, 0.0));
+        return;
+    }
+#endif
 
     // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
@@ -408,7 +427,6 @@ void main() {
 #endif
 
 #ifndef PATHTRACE
-    StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
 #endif    
 

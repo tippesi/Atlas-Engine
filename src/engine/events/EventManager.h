@@ -1,8 +1,5 @@
 #pragma once
 
-#define AE_BUTTON_RELEASED 0
-#define AE_BUTTON_PRESSED 1
-
 #include "../System.h"
 
 #include "WindowEvent.h"
@@ -21,7 +18,6 @@
 #include "FrameEvent.h"
 
 #include <mutex>
-#include <unordered_map>
 
 namespace Atlas {
 
@@ -57,14 +53,7 @@ namespace Atlas {
             static EventDelegate<> ShutdownEventDelegate;
 
         private:
-            struct ControllerDevice {
-                SDL_Joystick *joystick;
-                SDL_GameController *controller;
-                SDL_Haptic *haptic;
-            };
-
             static std::mutex handlerMutex;
-            static std::unordered_map<int32_t, ControllerDevice> controllers;
 
         };
 

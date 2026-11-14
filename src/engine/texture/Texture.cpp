@@ -94,7 +94,7 @@ namespace Atlas {
         }
 
         void Texture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
-            Filtering filtering, Wrapping wrapping, bool dedicatedMemory, bool usedForRenderTarget) {
+            Filtering filtering, Wrapping wrapping, bool dedicatedMemory, bool usedForRenderTarget, uint32_t mipLevels) {
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -117,8 +117,10 @@ namespace Atlas {
                 additionalUsageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             }
             else {
-                additionalUsageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-                additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+                if (graphicsDevice->CheckFormatSupport(format, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT))
+                    additionalUsageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                if (graphicsDevice->CheckFormatSupport(format, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT))
+                    additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
             }
 
             auto arrayType = imageType == Graphics::ImageType::Image2DArray ||
@@ -144,6 +146,7 @@ namespace Atlas {
                 .height = uint32_t(height),
                 .depth = arrayType ? 1 : uint32_t(depth),
                 .layers = arrayType ? uint32_t(depth) : 1,
+                .mipLevels = mipLevels,
                 .format = format,
                 .mipMapping = generateMipMaps,
                 .dedicatedMemoryPool = vmaPool

@@ -3,14 +3,14 @@
 
 namespace Atlas::Physics {
 
-    void Body::SetMatrix(glm::mat4 matrix) {
+    void Body::SetMatrix(mat4 matrix) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->SetBodyMatrix(bodyId, matrix);
 
     }
 
-    void Body::MoveKinematic(glm::mat4 matrix, float deltaTime) {
+    void Body::MoveKinematic(mat4 matrix, float deltaTime) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->MoveKinematicBody(bodyId, matrix, deltaTime);
@@ -38,7 +38,7 @@ namespace Atlas::Physics {
 
     }
 
-    void Body::SetLinearVelocity(glm::vec3 velocity) {
+    void Body::SetLinearVelocity(vec3 velocity) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->SetLinearVelocity(bodyId, velocity);
@@ -52,7 +52,14 @@ namespace Atlas::Physics {
 
     }
 
-    void Body::SetAngularVelocity(glm::vec3 velocity) {
+    bool Body::IsActive() {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        return world->IsActive(bodyId);
+
+    }
+
+    void Body::SetAngularVelocity(vec3 velocity) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         world->SetAngularVelocity(bodyId, velocity);
@@ -91,6 +98,48 @@ namespace Atlas::Physics {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
         return world->GetFriction(bodyId);
+
+    }
+
+    void Body::AddForce(vec3 force) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddForce(bodyId, force);
+
+    }
+
+    void Body::AddForce(vec3 force, vec3 position) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddForce(bodyId, force, position);
+
+    }
+
+    void Body::AddImpulse(vec3 impulse) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddImpulse(bodyId, impulse);
+
+    }
+
+    void Body::AddImpulse(vec3 impulse, vec3 position) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddImpulse(bodyId, impulse, position);
+
+    }
+
+    void Body::AddTorque(vec3 torque) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddTorque(bodyId, torque);
+
+    }
+
+    void Body::AddAngularImpulse(vec3 angularImpulse) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->AddAngularImpulse(bodyId, angularImpulse);
 
     }
 

@@ -136,11 +136,27 @@ vec3 ComputeAmbientColor(vec3 pos, float extinction) {
     float distFromCenter = distance(pos, cloudPlanetCenter);
 
     vec3 isotropicLightTop = textureLod(diffuseProbe, vec3(0.0, 1.0, 0.0), 0.0).rgb;
+    vec3 isotropicLightBottom = textureLod(diffuseProbe, vec3(0.0, -1.0, 0.0), 0.0).rgb;
 
-    float heightFraction = (distFromCenter - cloudUniforms.innerRadius) /
-        (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
-    float ambientContribution = saturate(0.5);
-    return 0.5 * isotropicLightTop * ambientContribution;
+    float heightFraction = saturate((distFromCenter - cloudUniforms.innerRadius) /
+        (cloudUniforms.outerRadius - cloudUniforms.innerRadius));
+
+    // The sky lights the tops, the bases only get light reflected from the ground below
+    vec3 topAmbient = ambientTopStrength * isotropicLightTop;
+    vec3 bottomAmbient = ambientBottomStrength * mix(isotropicLightTop, isotropicLightBottom, ambientGroundMix);
+    return mix(bottomAmbient, topAmbient, sqrt(heightFraction));
+
+}
+
+float ComputePowder(vec3 lightExtinction, float lightDotView) {
+
+    // Powder term 1 - exp(-2 * depth) with the optical depth -log(lightExtinction) towards the light
+    float extinctionToLight = dot(lightExtinction, vec3(0.3333));
+    float powder = 1.0 - extinctionToLight * extinctionToLight;
+
+    // Only applied when looking away from the sun, forward scattering is unaffected
+    float viewWeight = saturate(0.5 - lightDotView * 0.5);
+    return mix(1.0, mix(1.0 - powderStrength, 1.0, powder), viewWeight);
 
 }
 
@@ -245,7 +261,8 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
                 vec4 clampedExtinction = max(extinctionCoefficient, 0.0000001);
                 vec4 stepExtinction = exp(-extinctionCoefficient * smallStepLength);
 
-                float lightDotView = dot(cloudUniforms.light.direction.xyz, rayDirection);
+                // Cosine between the view ray and the direction to the sun, positive eccentricities scatter forward
+                float lightDotView = dot(-cloudUniforms.light.direction.xyz, rayDirection);
                 vec3 lightColor = cloudUniforms.light.color.rgb * cloudUniforms.light.intensity;
                 vec4 lightExtinction =  GetExtinctionToLight(rayPos, i % 4, noiseVector);
 
@@ -253,7 +270,8 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
                     cloudUniforms.eccentricitySecondPhase, cloudUniforms.phaseAlpha, lightDotView);
                 vec3 multipleScattering = ApproximateMultipleScattering(lightExtinction.rgb,
                     lightDotView);
-                vec3 directLighting = directAlbedo * phaseFunction * lightColor * lightExtinction.rgb;
+                vec3 directLighting = directAlbedo * phaseFunction * lightColor * lightExtinction.rgb *
+                    ComputePowder(lightExtinction.rgb, lightDotView);
                 vec3 multiScatterLighting = directAlbedo * multiScatteringIntensity *
                     lightColor * multipleScattering;
                 vec3 ambientLighting = ambientAlbedo * ComputeAmbientColor(rayPos, extinction.a);

@@ -6,14 +6,17 @@ namespace Atlas {
 
     namespace Graphics {
 
-        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : isDynamic(desc.isDynamic), device(device), 
+        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : isDynamic(desc.isDynamic), allowUpdate(desc.allowUpdate), device(device), 
             geometries(desc.geometries), buildRanges(desc.buildRanges), flags(desc.flags)    {
 
             buildGeometryInfo = {};
             buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
             buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
             buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-            buildGeometryInfo.flags = desc.flags | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
+            // Hits read the triangle positions from the acceleration structure
+            buildGeometryInfo.flags = desc.flags | (device->support.positionFetch ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_BIT_KHR : 0) |
+                (desc.allowUpdate ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR :
+                VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
             buildGeometryInfo.geometryCount = uint32_t(geometries.size());
             buildGeometryInfo.pGeometries = geometries.data();
 
@@ -32,6 +35,15 @@ namespace Atlas {
 
         }
 
+        void BLAS::SetVertexData(VkDeviceAddress vertexAddress, VkDeviceSize vertexStride) {
+
+            for (auto& geometry : geometries) {
+                geometry.geometry.triangles.vertexData.deviceAddress = vertexAddress;
+                geometry.geometry.triangles.vertexStride = vertexStride;
+            }
+
+        }
+
         BLAS::~BLAS() {
 
             vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
@@ -39,6 +51,10 @@ namespace Atlas {
         }
 
         void BLAS::Allocate() {
+
+            // Rebuilds, e.g. of animated meshes every frame, reuse the acceleration structure. Compacted ones are too small
+            if (accelerationStructure != VK_NULL_HANDLE && buffer && buffer->size >= sizesInfo.accelerationStructureSize)
+                return;
 
             BufferDesc desc = {
                 .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR

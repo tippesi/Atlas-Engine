@@ -5,7 +5,7 @@
 #else
 #include <volk.h>
 #endif
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 namespace Atlas {
 

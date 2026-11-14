@@ -9,6 +9,42 @@ namespace Atlas::Editor {
 
     }
 
+    Texture::Texture2D& Icons::GetTintable(IconType type) {
+
+        // The dark mode icons are white already
+        if (Singletons::config->darkMode)
+            return Get(type);
+
+        if (tintableIcons.empty()) {
+            tintableIcons = std::map<IconType, Texture::Texture2D>{
+                { IconType::Audio, Texture::Texture2D("editor/icons/audio.png") },
+                { IconType::Document, Texture::Texture2D("editor/icons/document.png") },
+                { IconType::Folder, Texture::Texture2D("editor/icons/folder.png") },
+                { IconType::Image, Texture::Texture2D("editor/icons/image.png") },
+                { IconType::Mesh, Texture::Texture2D("editor/icons/mesh.png") },
+                { IconType::Scene, Texture::Texture2D("editor/icons/scene.png") },
+                { IconType::Terrain, Texture::Texture2D("editor/icons/terrain.png") },
+                { IconType::Font, Texture::Texture2D("editor/icons/font.png") },
+                { IconType::Prefab, Texture::Texture2D("editor/icons/prefab.png") },
+                { IconType::Material, Texture::Texture2D("editor/icons/material.png") },
+                { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource.png") },
+                { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
+                { IconType::MaterialGraph, Texture::Texture2D("editor/icons/materialGraph.png") },
+                { IconType::Log, Texture::Texture2D("editor/icons/log.png") },
+                { IconType::Error, Texture::Texture2D("editor/icons/error.png") },
+                { IconType::Warning, Texture::Texture2D("editor/icons/warning.png") },
+                { IconType::Play, Texture::Texture2D("editor/icons/play.png") },
+                { IconType::Notifications, Texture::Texture2D("editor/icons/notifications.png") },
+            };
+        }
+
+        if (!tintableIcons.contains(type))
+            return tintableIcons[IconType::Document];
+
+        return tintableIcons[type];
+
+    }
+
     Texture::Texture2D &Icons::Get(IconType type) {
 
         auto darkMode = Singletons::config->darkMode;
@@ -37,6 +73,7 @@ namespace Atlas::Editor {
                 { IconType::Mesh, Texture::Texture2D("editor/icons/mesh.png") },
                 { IconType::Play, Texture::Texture2D("editor/icons/play.png") },
                 { IconType::Stop, Texture::Texture2D("editor/icons/stop.png") },
+                { IconType::Pause, Texture::Texture2D("editor/icons/pause.png") },
                 { IconType::Scene, Texture::Texture2D("editor/icons/scene.png") },
                 { IconType::Terrain, Texture::Texture2D("editor/icons/terrain.png") },
                 { IconType::Settings, Texture::Texture2D("editor/icons/settings.png") },
@@ -58,6 +95,29 @@ namespace Atlas::Editor {
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
                 { IconType::Trash, Texture::Texture2D("editor/icons/delete.png") },
                 { IconType::Filter, Texture::Texture2D("editor/icons/filter.png") },
+                { IconType::OpenInNew, Texture::Texture2D("editor/icons/openInNew.png") },
+                { IconType::Reset, Texture::Texture2D("editor/icons/reset.png") },
+                { IconType::MaterialGraph, Texture::Texture2D("editor/icons/materialGraph.png") },
+                { IconType::Ocean, Texture::Texture2D("editor/icons/ocean.png") },
+                { IconType::Navigation, Texture::Texture2D("editor/icons/navigation.png") },
+                { IconType::IrradianceVolume, Texture::Texture2D("editor/icons/irradianceVolume.png") },
+                { IconType::GlobalIllumination, Texture::Texture2D("editor/icons/globalIllumination.png") },
+                { IconType::Reflection, Texture::Texture2D("editor/icons/reflection.png") },
+                { IconType::Shadow, Texture::Texture2D("editor/icons/shadow.png") },
+                { IconType::Clouds, Texture::Texture2D("editor/icons/clouds.png") },
+                { IconType::Fog, Texture::Texture2D("editor/icons/fog.png") },
+                { IconType::Sky, Texture::Texture2D("editor/icons/sky.png") },
+                { IconType::Wind, Texture::Texture2D("editor/icons/wind.png") },
+                { IconType::PostProcessing, Texture::Texture2D("editor/icons/postProcessing.png") },
+                { IconType::ViewList, Texture::Texture2D("editor/icons/viewList.png") },
+                { IconType::ViewGrid, Texture::Texture2D("editor/icons/viewGrid.png") },
+                { IconType::Log, Texture::Texture2D("editor/icons/log.png") },
+                { IconType::Error, Texture::Texture2D("editor/icons/error.png") },
+                { IconType::Warning, Texture::Texture2D("editor/icons/warning.png") },
+                { IconType::Notifications, Texture::Texture2D("editor/icons/notifications.png") },
+                { IconType::ScaleInverse, Texture::Texture2D("editor/icons/scaleInverse.png") },
+                { IconType::Pin, Texture::Texture2D("editor/icons/pin.png") },
+                { IconType::PinFilled, Texture::Texture2D("editor/icons/pinFilled.png") },
             };
         }
         else {
@@ -70,6 +130,7 @@ namespace Atlas::Editor {
                 { IconType::Mesh, Texture::Texture2D("editor/icons/mesh_light.png") },
                 { IconType::Play, Texture::Texture2D("editor/icons/play_light.png") },
                 { IconType::Stop, Texture::Texture2D("editor/icons/stop_light.png") },
+                { IconType::Pause, Texture::Texture2D("editor/icons/pause_light.png") },
                 { IconType::Scene, Texture::Texture2D("editor/icons/scene_light.png") },
                 { IconType::Terrain, Texture::Texture2D("editor/icons/terrain_light.png") },
                 { IconType::Settings, Texture::Texture2D("editor/icons/settings_light.png") },
@@ -91,6 +152,29 @@ namespace Atlas::Editor {
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment_light.png") },
                 { IconType::Trash, Texture::Texture2D("editor/icons/delete_light.png") },
                 { IconType::Filter, Texture::Texture2D("editor/icons/filter_light.png") },
+                { IconType::OpenInNew, Texture::Texture2D("editor/icons/openInNew_light.png") },
+                { IconType::Reset, Texture::Texture2D("editor/icons/reset_light.png") },
+                { IconType::MaterialGraph, Texture::Texture2D("editor/icons/materialGraph_light.png") },
+                { IconType::Ocean, Texture::Texture2D("editor/icons/ocean_light.png") },
+                { IconType::Navigation, Texture::Texture2D("editor/icons/navigation_light.png") },
+                { IconType::IrradianceVolume, Texture::Texture2D("editor/icons/irradianceVolume_light.png") },
+                { IconType::GlobalIllumination, Texture::Texture2D("editor/icons/globalIllumination_light.png") },
+                { IconType::Reflection, Texture::Texture2D("editor/icons/reflection_light.png") },
+                { IconType::Shadow, Texture::Texture2D("editor/icons/shadow_light.png") },
+                { IconType::Clouds, Texture::Texture2D("editor/icons/clouds_light.png") },
+                { IconType::Fog, Texture::Texture2D("editor/icons/fog_light.png") },
+                { IconType::Sky, Texture::Texture2D("editor/icons/sky_light.png") },
+                { IconType::Wind, Texture::Texture2D("editor/icons/wind_light.png") },
+                { IconType::PostProcessing, Texture::Texture2D("editor/icons/postProcessing_light.png") },
+                { IconType::ViewList, Texture::Texture2D("editor/icons/viewList_light.png") },
+                { IconType::ViewGrid, Texture::Texture2D("editor/icons/viewGrid_light.png") },
+                { IconType::Log, Texture::Texture2D("editor/icons/log_light.png") },
+                { IconType::Error, Texture::Texture2D("editor/icons/error_light.png") },
+                { IconType::Warning, Texture::Texture2D("editor/icons/warning_light.png") },
+                { IconType::Notifications, Texture::Texture2D("editor/icons/notifications_light.png") },
+                { IconType::ScaleInverse, Texture::Texture2D("editor/icons/scaleInverse_light.png") },
+                { IconType::Pin, Texture::Texture2D("editor/icons/pin_light.png") },
+                { IconType::PinFilled, Texture::Texture2D("editor/icons/pinFilled_light.png") },
             };
         }
 

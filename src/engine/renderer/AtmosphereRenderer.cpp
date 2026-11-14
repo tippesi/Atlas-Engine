@@ -18,7 +18,7 @@ namespace Atlas {
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(RenderUniforms), 2);
             transmittanceUniformBuffer = Buffer::UniformBuffer(sizeof(AtmosphereParameters));
-            multipleScatteringUniformBuffer = Buffer::UniformBuffer(sizeof(MultipleScatteringUniforms));
+            multipleScatteringUniformBuffer = Buffer::UniformBuffer(sizeof(AtmosphereParameters));
             skyViewUniformBuffer = Buffer::UniformBuffer(sizeof(SkyViewUniforms));
             probeMatricesBuffer = Buffer::UniformBuffer(sizeof(mat4) * 6);
 
@@ -27,40 +27,38 @@ namespace Atlas {
         void AtmosphereRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
             Graphics::CommandList* commandList) {
 
-            auto atmosphere = scene->sky.atmosphere;
+            auto atmosphere = scene->renderState.sky.atmosphere;
 
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!mainLightEntity.IsValid() || !atmosphere)
+            auto& mainLight = scene->renderState.mainLight;
+            if (!mainLight || !atmosphere)
                 return;
 
-            auto& camera = scene->GetMainCamera();
-            auto& light = mainLightEntity.GetComponent<LightComponent>();
+            auto& camera = scene->renderState.camera;
+            auto& light = *mainLight;
             vec3 cameraLocation = camera.GetLocation();
             vec3 sunDirection = GetSunDirection(light);
-            vec3 sunRadiance = GetSunRadiance(light);
-            auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->sky);
+            vec3 sunRadiance = GetSunRadiance(light) * scene->renderState.preExposure;
+            auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->renderState.sky);
 
-            Graphics::Profiler::BeginQuery("Atmosphere");
+            CPUProfiler::Scope profilerScope("Atmosphere");
+            GPUProfiler::Scope gpuScope("Atmosphere");
 
-            if (atmosphere->needsUpdate || HasMissingLuts(*atmosphere, true)) {
-                MultipleScatteringUniforms multipleScatteringUniforms {
-                    .sunRadiance = vec4(sunRadiance, 0.0f),
-                    .atmosphere = atmosphereParameters
-                };
-
-                SkyViewUniforms skyViewUniforms {
-                    .cameraLocation = vec4(cameraLocation, 1.0f),
-                    .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
-                    .sunDirection = vec4(sunDirection, 0.0f),
-                    .sunRadiance = vec4(sunRadiance, 0.0f),
-                    .atmosphere = atmosphereParameters
-                };
-
+            if (scene->renderState.atmosphereNeedsUpdate || HasMissingLuts(*atmosphere, false)) {
                 UpdateTransmittanceLut(atmosphereParameters, atmosphere.get(), commandList);
-                UpdateMultipleScatteringLut(multipleScatteringUniforms, atmosphere.get(), commandList);
-                UpdateSkyViewLut(skyViewUniforms, atmosphere.get(), commandList);
-                atmosphere->needsUpdate = false;
+                UpdateMultipleScatteringLut(atmosphereParameters, atmosphere.get(), commandList);
             }
+
+            SkyViewUniforms skyViewUniforms {
+                .cameraLocation = vec4(cameraLocation, 1.0f),
+                .planetCenter = vec4(scene->renderState.sky.planetCenter, 1.0f),
+                .sunDirection = vec4(sunDirection, 0.0f),
+                .sunRadiance = vec4(sunRadiance, 0.0f),
+                .atmosphere = atmosphereParameters
+            };
+
+            // Depends on the sun and the camera, which can change every frame
+            UpdateSkyViewLut(skyViewUniforms, atmosphere.get(), commandList);
+            scene->renderState.atmosphereNeedsUpdate = false;
 
             auto pipeline = PipelineManager::GetPipeline(defaultPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -73,7 +71,7 @@ namespace Atlas {
                 .ivMatrix = camera.invViewMatrix,
                 .ipMatrix = camera.invProjectionMatrix,
                 .cameraLocation = vec4(cameraLocation, 1.0f),
-                .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
+                .planetCenter = vec4(scene->renderState.sky.planetCenter, 1.0f),
                 .sunDirection = vec4(sunDirection, 0.0f),
                 .sunRadiance = vec4(sunRadiance, 0.0f),
                 .atmosphere = atmosphereParameters
@@ -107,37 +105,49 @@ namespace Atlas {
             commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
-        void AtmosphereRenderer::Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
+        bool AtmosphereRenderer::Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
             Graphics::CommandList* commandList) {
 
-            auto atmosphere = scene->sky.atmosphere;
+            auto atmosphere = scene->renderState.sky.atmosphere;
 
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!mainLightEntity.IsValid() || !atmosphere) {
+            auto& mainLight = scene->renderState.mainLight;
+            if (!mainLight || !atmosphere) {
+                lastProbeState.image = nullptr;
                 commandList->ImageMemoryBarrier(probe->generatedCubemap.image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                return;
+                return true;
             }
 
-            const auto& light = mainLightEntity.GetComponent<LightComponent>();
+            const auto& light = *mainLight;
             vec3 sunDirection = GetSunDirection(light);
-            vec3 sunRadiance = GetSunRadiance(light);
-            auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->sky);
+            vec3 sunRadiance = GetSunRadiance(light) * scene->renderState.preExposure;
+            auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->renderState.sky);
 
-            MultipleScatteringUniforms multipleScatteringUniforms {
-                .sunRadiance = vec4(sunRadiance, 0.0f),
+            bool needsLutUpdate = scene->renderState.atmosphereNeedsUpdate || HasMissingLuts(*atmosphere, false);
+
+            // The probe only depends on these, so it stays valid while they don't change
+            ProbeState probeState {
+                .image = probe->generatedCubemap.image,
+                .projectionMatrix = probe->projectionMatrix,
+                .position = probe->GetPosition(),
+                .planetCenter = scene->renderState.sky.planetCenter,
+                .sunDirection = sunDirection,
+                .sunRadiance = sunRadiance,
+                .indirectLight = atmosphere->indirectLight,
                 .atmosphere = atmosphereParameters
             };
+            if (!needsLutUpdate && probeState == lastProbeState)
+                return false;
+            lastProbeState = probeState;
 
-            Graphics::Profiler::BeginQuery("Atmosphere environment probe");
+            CPUProfiler::Scope profilerScope("Atmosphere environment probe");
+            GPUProfiler::Scope gpuScope("Atmosphere environment probe");
 
-            if (atmosphere->needsUpdate || HasMissingLuts(*atmosphere, false)) {
+            if (needsLutUpdate) {
                 UpdateTransmittanceLut(atmosphereParameters, atmosphere.get(), commandList);
-                UpdateMultipleScatteringLut(multipleScatteringUniforms, atmosphere.get(), commandList);
+                UpdateMultipleScatteringLut(atmosphereParameters, atmosphere.get(), commandList);
             }
 
             auto pipeline = PipelineManager::GetPipeline(cubeMapPipelineConfig);
@@ -153,9 +163,10 @@ namespace Atlas {
             RenderUniforms uniforms {
                 .ipMatrix = glm::inverse(probe->projectionMatrix),
                 .cameraLocation = vec4(probe->GetPosition(), 1.0f),
-                .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
+                .planetCenter = vec4(scene->renderState.sky.planetCenter, 1.0f),
                 .sunDirection = vec4(sunDirection, 0.0f),
-                .sunRadiance = vec4(sunRadiance, 0.0f),
+                // The probe only lights the scene, its radiance follows the sun's
+                .sunRadiance = vec4(sunRadiance * glm::max(atmosphere->indirectLight, 0.0f), 0.0f),
                 .atmosphere = atmosphereParameters
             };
             uniformBuffer.SetData(&uniforms, 1);
@@ -169,14 +180,14 @@ namespace Atlas {
                 atmosphere->multipleScatteringLutTexture.sampler, 3, 5);
             commandList->BindBufferOffset(probeMatricesBuffer.Get(), 0, 3, 6);
 
-            Graphics::Profiler::BeginQuery("Render probe faces");
+            GPUProfiler::Scope sectionScope("Render probe faces");
 
             auto resolution = ivec2(probe->GetCubemap().width, probe->GetCubemap().height);
             auto groupCount = GetGroupCount(resolution);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
-            Graphics::Profiler::EndAndBeginQuery("Generate mipmaps");
+            sectionScope.Next("Generate mipmaps");
 
             commandList->ImageMemoryBarrier(probe->generatedCubemap.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -184,8 +195,7 @@ namespace Atlas {
 
             commandList->GenerateMipMaps(probe->generatedCubemap.image);
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
+            return true;
 
         }
 
@@ -194,7 +204,7 @@ namespace Atlas {
 
             EnsureLutTexture(atmosphere->transmittanceLutTexture, transmittanceLutResolution);
 
-            Graphics::Profiler::BeginQuery("Atmosphere transmittance");
+            GPUProfiler::Scope gpuScope("Atmosphere transmittance");
 
             auto pipeline = PipelineManager::GetPipeline(transmittancePipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -217,23 +227,20 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void AtmosphereRenderer::UpdateMultipleScatteringLut(
-            const MultipleScatteringUniforms& uniforms, Lighting::Atmosphere* atmosphere,
+            AtmosphereParameters atmosphereParameters, Lighting::Atmosphere* atmosphere,
             Graphics::CommandList* commandList) {
 
             EnsureLutTexture(atmosphere->multipleScatteringLutTexture, multipleScatteringLutResolution);
 
-            Graphics::Profiler::BeginQuery("Atmosphere multiple scattering");
+            GPUProfiler::Scope gpuScope("Atmosphere multiple scattering");
 
             auto pipeline = PipelineManager::GetPipeline(multipleScatteringPipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            auto uploadUniforms = uniforms;
-            multipleScatteringUniformBuffer.SetData(&uploadUniforms, 0);
+            multipleScatteringUniformBuffer.SetData(&atmosphereParameters, 0);
 
             commandList->ImageMemoryBarrier(atmosphere->multipleScatteringLutTexture.image,
                 VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
@@ -243,17 +250,13 @@ namespace Atlas {
             commandList->BindBufferOffset(multipleScatteringUniformBuffer.Get(),
                 multipleScatteringUniformBuffer.GetAlignedOffset(0), 3, 2);
 
-            auto resolution = ivec2(atmosphere->multipleScatteringLutTexture.width,
-                atmosphere->multipleScatteringLutTexture.height);
-            auto groupCount = GetGroupCount(resolution);
-
-            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+            // One work group per texel
+            commandList->Dispatch(atmosphere->multipleScatteringLutTexture.width,
+                atmosphere->multipleScatteringLutTexture.height, 1);
 
             commandList->ImageMemoryBarrier(atmosphere->multipleScatteringLutTexture.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 
@@ -262,7 +265,7 @@ namespace Atlas {
 
             EnsureLutTexture(atmosphere->skyViewLutTexture, skyViewLutResolution);
 
-            Graphics::Profiler::BeginQuery("Atmosphere sky view");
+            GPUProfiler::Scope gpuScope("Atmosphere sky view");
 
             auto pipeline = PipelineManager::GetPipeline(skyViewPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -290,8 +293,6 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         AtmosphereRenderer::AtmosphereParameters AtmosphereRenderer::GetAtmosphereParameters(
@@ -305,7 +306,8 @@ namespace Atlas {
                 .mieHeightScale = atmosphere.mieHeightScale,
                 .surfaceHeightOffset = -(sky.planetCenter.y + sky.planetRadius),
                 .planetRadius = sky.planetRadius,
-                .atmosphereRadius = sky.planetRadius + atmosphere.height
+                .atmosphereRadius = sky.planetRadius + atmosphere.height,
+                .sunAngularRadius = glm::radians(glm::max(atmosphere.sunDiskSize, 0.01f) * 0.5f)
             };
 
         }

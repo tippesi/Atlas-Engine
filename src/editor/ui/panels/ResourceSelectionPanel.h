@@ -4,9 +4,14 @@
 #include "Singletons.h"
 #include "Notifications.h"
 #include "Theme.h"
+#include "ui/Widgets.h"
 #include "ui/popups/ResourceSelectionPopup.h"
 #include "tools/ResourcePayloadHelper.h"
 #include "ui/windows/ContentBrowserWindow.h"
+
+#include <Material.h>
+#include <ImguiExtension/UiElements.h>
+#include <type_traits>
 
 namespace Atlas::Editor::UI {
 
@@ -27,10 +32,24 @@ namespace Atlas::Editor::UI {
 
             const float padding = 8.0f;
 
+            if constexpr (std::is_same_v<T, Texture::Texture2D>) {
+                if (resourceHandle.IsLoaded()) {
+                    ImguiExtension::UIElements::TexturePreview(Singletons::imguiWrapper, &resourceHandle);
+                    ImGui::SameLine();
+                }
+            }
+
             auto region = ImGui::GetContentRegionAvail();
             auto lineHeight = ImGui::GetTextLineHeight();
             auto deleteButtonSize = ImVec2(lineHeight, lineHeight);
             auto resourceButtonSize = region.x - (resourceHandle.IsValid() ? deleteButtonSize.x + 2.0f * padding : 0.0f);
+
+            // Materials and graphs open in their editor from here, like meshes do from their component
+            auto canOpen = false;
+            if constexpr (std::is_same_v<T, Material> || std::is_same_v<T, MaterialGraph::Graph>)
+                canOpen = resourceHandle.IsValid() && !resourceHandle.IsGenerated();
+            if (canOpen)
+                resourceButtonSize -= deleteButtonSize.x + 2.0f * padding;
 
             resourceChanged = false;
             auto buttonName = resourceHandle.IsValid() ? resourceHandle.GetResource()->GetFileName() :
@@ -86,20 +105,33 @@ namespace Atlas::Editor::UI {
                 resourceChanged = true;
             }
 
-            if (resourceHandle.IsValid()) {
-                ImGui::SameLine();
-                
-                auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
-                auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
+            // Buttons next to the resource have the frame padding of the resource button, so they are as high as the row
+            auto rowIconButton = [&](const char* id, IconType iconType, const char* tooltip) {
+                auto& icon = Singletons::icons->Get(iconType);
+                auto set = Singletons::imguiWrapper->GetTextureId(&icon);
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-                if (ImGui::ImageButton("Resource delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+                auto pressed = ImGui::ImageButton(id, set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f));
+                ImGui::PopStyleVar();
+                ImGui::PopStyleColor();
+
+                ImGui::SetItemTooltip("%s", tooltip);
+                return pressed;
+                };
+
+            if (canOpen) {
+                ImGui::SameLine();
+                if (rowIconButton("Resource open button", IconType::OpenInNew, "Open in material editor"))
+                    ContentBrowserWindow::contentToEditPath = resourceHandle.GetResource()->path;
+            }
+
+            if (resourceHandle.IsValid()) {
+                ImGui::SameLine();
+                if (rowIconButton("Resource delete button", IconType::Trash, "Remove")) {
                     resourceHandle = ResourceHandle<T>();
                     resourceChanged = true;
                 }
-                ImGui::PopStyleVar();
-                ImGui::PopStyleColor();
             }
 
             /*

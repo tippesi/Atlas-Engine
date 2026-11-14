@@ -8,7 +8,7 @@
   "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
   "dependencies": [
     {
-      "name": "sdl2",
+      "name": "sdl3",
       "default-features": false,
       "features": [
         "vulkan"
@@ -36,11 +36,16 @@
     "spirv-tools",
     "nlohmann-json",
     "gtest",
-    "joltphysics",
+    {
+      "name": "joltphysics",
+      "features": [ "rtti" ]
+    },
     "imguizmo",
     "implot",
     "lua",
-    "sol2"
+    "sol2",
+    "ktx",
+    "recastnavigation"
   ],
   "overrides": [
     {
@@ -49,7 +54,7 @@
     },
     {
       "name": "glm",
-      "version": "0.9.8.0"
+      "version": "1.0.3"
     },
     {
       "name": "assimp",
@@ -57,23 +62,23 @@
     },
     {
       "name": "spirv-tools",
-      "version": "1.4.328.0#0"
+      "version": "1.4.357.0#0"
     },
     {
       "name": "spirv-headers",
-      "version": "1.4.328.0#0"
+      "version": "1.4.357.0#0"
     },
     {
       "name": "spirv-reflect",
-      "version": "1.4.328.0#0"
+      "version": "1.4.357.0#0"
     },
     {
       "name": "glslang",
-      "version": "13.1.1#1"
+      "version": "16.4.0#0"
     },
     {
-      "name": "sdl2",
-      "version": "2.30.5#1"
+      "name": "sdl3",
+      "version": "3.4.18#0"
     },
     {
       "name": "imgui",
@@ -93,15 +98,15 @@
     },
     {
       "name": "volk",
-      "version": "1.4.328.0#0"
+      "version": "1.4.357.0#0"
     },
     {
       "name": "vulkan-headers",
-      "version": "1.4.328.0#0"
+      "version": "1.4.357.0#0"
     },
     {
       "name": "joltphysics",
-      "version": "5.5.0#0"
+      "version": "5.6.0#0"
     },
     {
       "name": "lua",
@@ -110,6 +115,14 @@
     {
       "name": "sol2",
       "version": "3.5.0#0"
+    },
+    {
+      "name": "ktx",
+      "version": "4.4.2#0"
+    },
+    {
+      "name": "recastnavigation",
+      "version": "1.6.0#1"
     }
   ]
 }

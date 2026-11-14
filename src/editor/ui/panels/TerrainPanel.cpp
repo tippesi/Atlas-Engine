@@ -68,33 +68,52 @@ namespace Atlas::Editor::UI {
             return;
         }
 
-        ImGui::Checkbox("Wireframe", &terrain->wireframe);
-        Widgets::DragVec3("Translation", terrain->translation, 1.0f, 0.0f, -10000.0f, 10000.0f);
-        ImGui::SliderFloat("Height", &terrain->heightScale, 1.0f, 2000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        if (Widgets::BeginProperties("General")) {
+            Widgets::PropertyLabel("Wireframe");
+            ImGui::Checkbox("##Wireframe", &terrain->wireframe);
+            Widgets::PropertyLabel("Translation");
+            Widgets::DragVec3("##Translation", terrain->translation, 1.0f, 0.0f, -10000.0f, 10000.0f);
+            Widgets::PropertyLabel("Height");
+            ImGui::SliderFloat("##Height", &terrain->heightScale, 1.0f, 2000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            Widgets::EndProperties();
+        }
 
         ImGui::SeparatorText("Tessellation");
 
-        ImGui::SliderFloat("Factor", &terrain->tessellationFactor, 0.0f,
-            16000.0f, "%.3f", 4.0f);
+        if (Widgets::BeginProperties("Tessellation")) {
+            Widgets::PropertyLabel("Factor");
+            ImGui::SliderFloat("##Factor", &terrain->tessellationFactor, 0.0f,
+                16000.0f, "%.3f", 4.0f);
 
-        ImGui::SliderFloat("Slope", &terrain->tessellationSlope, 0.0f, 10.0f);
-        ImGui::SliderFloat("Shift", &terrain->tessellationShift, 0.0f, 10.0f);
+            Widgets::PropertyLabel("Slope");
+            ImGui::SliderFloat("##Slope", &terrain->tessellationSlope, 0.0f, 10.0f);
+            Widgets::PropertyLabel("Shift");
+            ImGui::SliderFloat("##Shift", &terrain->tessellationShift, 0.0f, 10.0f);
 
-        ImGui::SliderFloat("Subdivisions", &terrain->maxTessellationLevel, 1.0f,
-            64.0f);
-        ImGui::SliderFloat("Distance", &terrain->displacementDistance, 0.0f, 100.0f,
-            "%.3f", ImGuiSliderFlags_Logarithmic);
+            Widgets::PropertyLabel("Subdivisions");
+            ImGui::SliderFloat("##Subdivisions", &terrain->maxTessellationLevel, 1.0f,
+                64.0f);
+            Widgets::PropertyLabel("Distance");
+            ImGui::SliderFloat("##Distance", &terrain->displacementDistance, 0.0f, 100.0f,
+                "%.3f", ImGuiSliderFlags_Logarithmic);
+            Widgets::EndProperties();
+        }
 
         ImGui::SeparatorText("Lod distances");
 
         if (editingMode)
             Widgets::Callout("Lods can't be changed in editing mode", Theme::Warning());
 
-        for (size_t i = 0; i < terrain->LoDCount; i++) {
-            auto distance = terrain->GetLoDDistance((int32_t)i);
-            ImGui::SliderFloat(("LoD" + std::to_string(i)).c_str(),
-                &distance, 1.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            terrain->SetLoDDistance((int32_t)i, distance);
+        if (Widgets::BeginProperties("Lod distances")) {
+            for (size_t i = 0; i < terrain->LoDCount; i++) {
+                auto distance = terrain->GetLoDDistance((int32_t)i);
+                auto label = "LoD" + std::to_string(i);
+                Widgets::PropertyLabel(label.c_str());
+                ImGui::SliderFloat(("##" + label).c_str(),
+                    &distance, 1.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+                terrain->SetLoDDistance((int32_t)i, distance);
+            }
+            Widgets::EndProperties();
         }
 
     }
@@ -106,34 +125,14 @@ namespace Atlas::Editor::UI {
             return;
         }
 
-        bool changed = false;
         materialsPanel.Render(Singletons::imguiWrapper, terrain->storage->materials,
             [&](ResourceHandle<Material> material) {
                 bool materialChanged = false;
-                auto handle = materialSelectionPanel.Render(material, materialChanged);
-                changed |= materialChanged;
-                return handle;
+                return materialSelectionPanel.Render(material, materialChanged);
             },
             [&](ResourceHandle<Texture::Texture2D> texture) {
-                bool textureChanged = false;
-                auto handle = textureSelectionPanel.Render(texture);
-                changed |= textureChanged;
-                return handle;
+                return textureSelectionPanel.Render(texture);
             });
-
-        if (changed) {
-            terrain->storage->BeginMaterialWrite();
-
-            for (int32_t i = 0; i < int32_t(terrain->storage->materials.size()); i++) {
-                auto material = terrain->storage->materials[i];
-                if (!material.IsLoaded())
-                    continue;
-
-                terrain->storage->WriteMaterial(i, material);
-            }
-
-            terrain->storage->EndMaterialWrite();
-        }
 
     }
 
@@ -146,7 +145,11 @@ namespace Atlas::Editor::UI {
 
         auto region = ImGui::GetContentRegionAvail();
 
-        ImGui::Checkbox("Editing mode", &editingMode);
+        if (Widgets::BeginProperties("Editing")) {
+            Widgets::PropertyLabel("Editing mode", "Pushes LoD distances to 512 to enable editing without baking");
+            ImGui::Checkbox("##Editing mode", &editingMode);
+            Widgets::EndProperties();
+        }
 
         if (editingMode && !LoDDistances.size()) {
             // Can't really reset other than when the scene is finally saved (together with the new terrain)
@@ -162,10 +165,6 @@ namespace Atlas::Editor::UI {
             }
         }
 
-        ImGui::SameLine();
-
-        UIElements::Tooltip("Pushes LoD distances to 512 to enable editing without baking");
-
         if (!editingMode)
             Widgets::Callout("Enable editing mode, then hold the right mouse button in the viewport to paint.",
                 Theme::Accent());
@@ -173,62 +172,73 @@ namespace Atlas::Editor::UI {
         // Only one brush can be active, show the settings of the selected one
         ImGui::SeparatorText("Brush");
 
-        const char* brushTypeItems[] = { "Height", "Material", "Hole" };
-        int32_t brushTypeSelection = static_cast<int32_t>(brushType);
-        Widgets::SegmentedControl("Type", brushTypeSelection, brushTypeItems, IM_ARRAYSIZE(brushTypeItems));
-        brushType = static_cast<TerrainBrushType>(brushTypeSelection);
+        if (Widgets::BeginProperties("Brush")) {
+            const char* brushTypeItems[] = { "Height", "Material", "Hole" };
+            int32_t brushTypeSelection = static_cast<int32_t>(brushType);
+            Widgets::PropertyLabel("Type");
+            Widgets::SegmentedControl("##Type", brushTypeSelection, brushTypeItems, IM_ARRAYSIZE(brushTypeItems));
+            brushType = static_cast<TerrainBrushType>(brushTypeSelection);
 
-        auto maxSize = 8.0f * terrain->patchSizeFactor - 1.0f;
-        ImGui::DragFloat("Brush size", &brushSize, 0.25f, 1.0f, maxSize);
+            auto maxSize = 8.0f * terrain->patchSizeFactor - 1.0f;
+            Widgets::PropertyLabel("Brush size");
+            ImGui::DragFloat("##Brush size", &brushSize, 0.25f, 1.0f, maxSize);
 
-        if (brushType == TerrainBrushType::Height) {
-            ImGui::PushID("Height");
+            if (brushType == TerrainBrushType::Height) {
+                ImGui::PushID("Height");
 
-            const char* functionItems[] = { "Gauss", "Box", "Smooth", "Flatten" };
-            int32_t heightBrushSelection = static_cast<int32_t>(brushFunction);
-            Widgets::SegmentedControl("Function", heightBrushSelection, functionItems, IM_ARRAYSIZE(functionItems));
-            brushFunction = static_cast<TerrainBrushFunction>(heightBrushSelection);
+                const char* functionItems[] = { "Gauss", "Box", "Smooth", "Flatten" };
+                int32_t heightBrushSelection = static_cast<int32_t>(brushFunction);
+                Widgets::PropertyLabel("Function");
+                Widgets::SegmentedControl("##Function", heightBrushSelection, functionItems, IM_ARRAYSIZE(functionItems));
+                brushFunction = static_cast<TerrainBrushFunction>(heightBrushSelection);
 
-            auto brushStrengthMin = -2000.0f;
-            auto brushStrengthMax = 2000.0f;
+                auto brushStrengthMin = -2000.0f;
+                auto brushStrengthMax = 2000.0f;
 
-            if (brushFunction == TerrainBrushFunction::Smooth ||
-                brushFunction == TerrainBrushFunction::Flatten) {
-                brushStrengthMin = 0.0f;
-                brushStrengthMax = 1.0f;
-                brushStrength = glm::min(1.0f, brushStrength);
+                if (brushFunction == TerrainBrushFunction::Smooth ||
+                    brushFunction == TerrainBrushFunction::Flatten) {
+                    brushStrengthMin = 0.0f;
+                    brushStrengthMax = 1.0f;
+                    brushStrength = glm::min(1.0f, brushStrength);
+                }
+                Widgets::PropertyLabel("Brush strength");
+                ImGui::SliderFloat("##Brush strength", &brushStrength, brushStrengthMin,
+                    brushStrengthMax, "%.3f", ImGuiSliderFlags_Logarithmic);
+
+                // Need some extra setting here
+                if (brushFunction == TerrainBrushFunction::Flatten) {
+                    Widgets::PropertyLabel("Query regular geometry");
+                    ImGui::Checkbox("##Query regular geometry", &brushFlattenQueryRegularGeometry);
+                }
+
+                ImGui::PopID();
             }
-            ImGui::SliderFloat("Brush strength", &brushStrength, brushStrengthMin,
-                brushStrengthMax, "%.3f", ImGuiSliderFlags_Logarithmic);
+            else if (brushType == TerrainBrushType::Material) {
+                ImGui::PushID("Material");
 
-            // Need some extra setting here
-            if (brushFunction == TerrainBrushFunction::Flatten) {
-                ImGui::Checkbox("Query regular geometry", &brushFlattenQueryRegularGeometry);
+                std::vector<std::string> counter;
+                std::vector<const char*> pointer;
+
+                for (size_t count = 0; count < terrain->storage->materials.size(); count++) {
+                    auto& material = terrain->storage->materials[count];
+                    auto name = material.IsLoaded() ? material->name : std::string("Empty");
+                    counter.push_back(std::to_string(count) + ": " + name);
+                }
+                for (const auto& name : counter) {
+                    pointer.push_back(name.c_str());
+                }
+
+                Widgets::PropertyLabel("Slot");
+                ImGui::Combo("##Slot", &materialBrushSelection,
+                    pointer.data(), pointer.size());
+
+                ImGui::PopID();
             }
 
-            ImGui::PopID();
+            Widgets::EndProperties();
         }
-        else if (brushType == TerrainBrushType::Material) {
-            ImGui::PushID("Material");
 
-            std::vector<std::string> counter;
-            std::vector<const char*> pointer;
-
-            for (size_t count = 0; count < terrain->storage->materials.size(); count++) {
-                auto& material = terrain->storage->materials[count];
-                auto name = material.IsLoaded() ? material->name : std::string("Empty");
-                counter.push_back(std::to_string(count) + ": " + name);
-            }
-            for (const auto& name : counter) {
-                pointer.push_back(name.c_str());
-            }
-
-            ImGui::Combo("Slot", &materialBrushSelection,
-                pointer.data(), pointer.size());
-
-            ImGui::PopID();
-        }
-        else if (brushType == TerrainBrushType::Hole) {
+        if (brushType == TerrainBrushType::Hole) {
             ImGui::TextDisabled("Paints holes into the terrain");
         }
 
@@ -258,12 +268,19 @@ namespace Atlas::Editor::UI {
 
         terrain.WaitForLoad();
 
-        auto heightImage = scene->terrain->GetHeightField(terrain->LoDCount - 1);
+        RebuildTerrainBody(scene);
+
+    }
+
+    void TerrainPanel::RebuildTerrainBody(Ref<Scene::Scene>& scene) {
+
+        auto& terrain = scene->terrain;
+        auto heightImage = terrain->GetHeightField(terrain->LoDCount - 1);
 
         Atlas::Physics::HeightFieldShapeSettings terrainShapeSettings{
             .heightData = heightImage.GetData(),
             .translation = terrain->translation,
-            .scale = glm::vec3(terrain->resolution, terrain->heightScale, terrain->resolution)
+            .scale = vec3(terrain->resolution, terrain->heightScale, terrain->resolution)
         };
         auto terrainShape = Atlas::Physics::ShapesManager::CreateShape(terrainShapeSettings);
 
@@ -286,9 +303,7 @@ namespace Atlas::Editor::UI {
             terrainPhysicsEntity = scene->CreateEntity();
             terrainPhysicsEntity.AddComponent<NameComponent>(terrain->filename);
             
-            auto root = scene->GetEntityByName("Root");
-            if (root.IsValid() && root.HasComponent<HierarchyComponent>())
-                root.GetComponent<HierarchyComponent>().AddChild(terrainPhysicsEntity);
+            terrainPhysicsEntity.SetParent(scene->GetRootEntity());
         }
         else {
             terrainPhysicsEntity.RemoveComponent<RigidBodyComponent>();
@@ -298,7 +313,7 @@ namespace Atlas::Editor::UI {
 
         auto bodySettings = Atlas::Physics::BodyCreationSettings{ .shape = terrainShape };
         terrainPhysicsEntity.AddComponent<RigidBodyComponent>(bodySettings);
-        terrainPhysicsEntity.AddComponent<TransformComponent>(glm::mat4(1.0f));
+        terrainPhysicsEntity.AddComponent<TransformComponent>(mat4(1.0f));
 
     }
 

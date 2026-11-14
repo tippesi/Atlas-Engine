@@ -5,6 +5,7 @@
 #include <../common/flatten.hsh>
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
+#include <../globals.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -261,8 +262,8 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     vec4 mean, std;
@@ -288,6 +289,8 @@ void main() {
     vec4 history;
     float historyLength;
     valid = SampleHistory(pixel, historyPixel, history, historyLength);
+    // The history was stored with the pre-exposure of the last frame
+    history.rgb *= globalData.preExposure / globalData.lastPreExposure;
 
     vec4 historyValue = history;
     vec4 currentValue = texelFetch(currentTexture, pixel, 0);
@@ -299,14 +302,10 @@ void main() {
 
     // At the edge we have invalid information we want to get rid of
     historyLength = mix(min(historyLength, 8.0), historyLength, EdgeFadeOut(uv, 0.05));
-    float factor = 31.0 / 32.0;
-    factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
-         || uv.y > 1.0) ? 0.0 : factor;
-    
-    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
-    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
+    float factor = max(0.75, 31.0 / 32.0 - 20.0 * max(abs(velocity.x), abs(velocity.y)));
 
-    if (factor == 0.0 || !valid) {
+    bool offscreen = uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0;
+    if (offscreen || pushConstants.resetHistory > 0 || !valid) {
         historyLength = 0.0;
     }
 

@@ -29,10 +29,16 @@ namespace Atlas {
 
                 std::vector<Entity>& GetChildren();
 
+                /**
+                 * Returns the matrix a child transform is relative to, which is either the global matrix
+                 * or the matrix of a joint, see {@link TransformComponent::parentJoint}
+                 */
+                mat4 GetParentMatrix(const TransformComponent& transform) const;
+
                 bool root = false;
                 int32_t level = 0;
 
-                glm::mat4 globalMatrix {1.0f};            
+                mat4 globalMatrix {1.0f};            
 
             protected:
                 void Update(const TransformComponent& transform, bool parentChanged, ECS::Pool<TransformComponent>& transformComponentPool,

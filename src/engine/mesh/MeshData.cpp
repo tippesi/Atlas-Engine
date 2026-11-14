@@ -6,6 +6,20 @@ namespace Atlas {
 
     namespace Mesh {
 
+        void MeshSubData::ResetPipelines() {
+
+            mainConfig = PipelineConfig();
+            shadowConfig = PipelineConfig();
+            mainReversedWindingConfig = PipelineConfig();
+            shadowReversedWindingConfig = PipelineConfig();
+
+            mainGraphPending = false;
+            shadowGraphPending = false;
+            mainUsesGraph = false;
+            shadowUsesGraph = false;
+
+        }
+
         MeshData::MeshData(const MeshData& that) {
 
             DeepCopy(that);
@@ -21,6 +35,8 @@ namespace Atlas {
             normals = DataComponent<vec4>(ComponentFormat::PackedNormal);
             tangents = DataComponent<vec4>(ComponentFormat::PackedNormal);
             colors = DataComponent<vec4>(ComponentFormat::PackedColor);
+            joints = DataComponent<vec4>(ComponentFormat::UnsignedShort);
+            weights = DataComponent<vec4>(ComponentFormat::PackedColor);
 
         }
 
@@ -73,6 +89,14 @@ namespace Atlas {
 
             triangles.resize(triangleCount);
 
+            // Skinned meshes are ray traced in their rest pose
+            std::vector<vec3> restVertices;
+            std::vector<vec4> restNormals;
+            if (IsSkinned())
+                GetRestPoseVertices(restVertices, restNormals);
+            const auto& bvhVertices = IsSkinned() ? restVertices : vertices.Get();
+            const auto& bvhNormals = IsSkinned() ? restNormals : normals.Get();
+
             triangleCount = 0;
 
             for (auto& sub : subData) {
@@ -88,13 +112,13 @@ namespace Atlas {
                     auto idx2 = indices.Get()[k * 3 + 2];
 
                     // Transform everything
-                    triangles[k].v0 = vertices.Get()[idx0];
-                    triangles[k].v1 = vertices.Get()[idx1];
-                    triangles[k].v2 = vertices.Get()[idx2];
+                    triangles[k].v0 = bvhVertices[idx0];
+                    triangles[k].v1 = bvhVertices[idx1];
+                    triangles[k].v2 = bvhVertices[idx2];
 
-                    triangles[k].n0 = normalize(normals.Get()[idx0]);
-                    triangles[k].n1 = normalize(normals.Get()[idx1]);
-                    triangles[k].n2 = normalize(normals.Get()[idx2]);
+                    triangles[k].n0 = normalize(bvhNormals[idx0]);
+                    triangles[k].n1 = normalize(bvhNormals[idx1]);
+                    triangles[k].n2 = normalize(bvhNormals[idx2]);
 
                     if (texCoords.ContainsData()) {
                         triangles[k].uv0 = texCoords.Get()[idx0];
@@ -114,13 +138,55 @@ namespace Atlas {
                     }
 
                     triangles[k].materialIdx = sub.materialIdx;
-                    triangles[k].opacity = sub.material->HasOpacityMap() ? -1.0f : sub.material->opacity;
+                    triangles[k].opacity = sub.material->opacityMap.IsValid() ? -1.0f : sub.material->opacity;
 
                 }
 
                 triangleCount += subDataTriangleCount;
 
             }
+
+        }
+
+        bool MeshData::IsSkinned() const {
+
+            return !skeleton.joints.empty() && joints.GetElementCount() > 0;
+
+        }
+
+        void MeshData::GetRestPoseVertices(std::vector<vec3>& restVertices, std::vector<vec4>& restNormals) const {
+
+            const auto& restJointMatrices = skeleton.restJointMatrices;
+            restVertices.resize(vertices.GetElementCount());
+            restNormals.resize(normals.GetElementCount());
+
+            for (size_t i = 0; i < restVertices.size(); i++) {
+                auto vertexJoints = ivec4(joints[i]);
+                auto vertexWeights = weights[i] / glm::dot(weights[i], vec4(1.0f));
+                auto skinMatrix = glm::transpose(vertexWeights.x * restJointMatrices[vertexJoints.x] +
+                    vertexWeights.y * restJointMatrices[vertexJoints.y] +
+                    vertexWeights.z * restJointMatrices[vertexJoints.z] +
+                    vertexWeights.w * restJointMatrices[vertexJoints.w]);
+
+                restVertices[i] = skinMatrix * vec4(vertices[i], 1.0f);
+                if (i < restNormals.size())
+                    restNormals[i] = vec4(skinMatrix * vec4(vec3(normals[i]), 0.0f), 0.0f);
+            }
+
+        }
+
+        const MeshSubData* MeshData::GetSubDataOfTriangle(int32_t triangleIndex) const {
+
+            if (triangleIndex < 0)
+                return nullptr;
+
+            auto index = uint32_t(triangleIndex) * 3;
+            for (const auto& sub : subData) {
+                if (index >= sub.indicesOffset && index < sub.indicesOffset + sub.indicesCount)
+                    return &sub;
+            }
+
+            return nullptr;
 
         }
 
@@ -135,6 +201,10 @@ namespace Atlas {
             normals = that.normals;
             tangents = that.tangents;
             colors = that.colors;
+            joints = that.joints;
+            weights = that.weights;
+
+            skeleton = that.skeleton;
 
             indexCount = that.indexCount;
             vertexCount = that.vertexCount;
@@ -145,6 +215,8 @@ namespace Atlas {
 
             materials.clear();
             subData.clear();
+
+            animations = that.animations;
 
             materials.resize(that.materials.size());
             subData.resize(that.subData.size());

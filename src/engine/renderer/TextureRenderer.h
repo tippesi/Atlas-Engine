@@ -56,7 +56,7 @@ namespace Atlas {
                 float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
                 float rotation, float brightness, bool alphaBlending, bool invert, const std::string& macro);
 
-            PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
+            PipelineConfig GeneratePipelineConfig(const Graphics::RenderingDesc* rendering,
                 const std::vector<std::string>& macros);
 
             Buffer::VertexArray vertexArray;

@@ -84,6 +84,13 @@ namespace Atlas {
             Entity Create();
 
             /**
+             * Creates a destroyed entity again with the same id.
+             * @param entity The destroyed entity.
+             * @return The entity or an invalid entity if its position is used by another entity.
+             */
+            Entity Create(Entity entity);
+
+            /**
              * Destroy an entity.
              * @param entity The entity to be destroyed.
              * @note A destroyed entity might be recycled later on.

@@ -48,11 +48,21 @@ namespace Atlas {
 
         static Ref<Graphics::Pipeline> GetOrCreatePipeline(PipelineConfig &config);
 
+        static Ref<PipelineVariants> GetOrCreateVariants(size_t shaderHash);
+
+        static std::vector<Ref<PipelineVariants>> GetAllVariants();
+
         static std::atomic_bool hotReload;
+        // Only guards the map. Compiling happens with the variants locked, so other threads can still look up their shaders
         static std::shared_mutex shaderToVariantsMutex;
         static std::unordered_map<size_t, Ref<PipelineVariants>> shaderToVariantsMap;
         static JobGroup hotReloadGroup;
+        static float lastHotReloadCheck;
 
+        // In seconds
+        static constexpr float hotReloadInterval = 0.25f;
+
+        static std::mutex globalLayoutOverridesMutex;
         static Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
 
     };

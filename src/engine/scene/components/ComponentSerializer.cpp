@@ -7,8 +7,124 @@
 #include "resource/ResourceManager.h"
 #include "audio/AudioManager.h"
 #include "loader/MeshLoader.h"
+#include "loader/AnimationLoader.h"
 
 namespace Atlas::Scene::Components {
+
+    void to_json(json& j, const AnimationComponent& p) {
+        j = json {
+            {"time", p.time},
+            {"speed", p.speed},
+            {"loop", p.loop},
+            {"playing", p.playing},
+        };
+
+        if (p.animation.IsValid() && !p.animation.IsGenerated())
+            j["resourcePath"] = p.animation.GetResource()->path;
+
+        auto layers = json::array();
+        for (const auto& layer : p.layers) {
+            json layerJson = {
+                {"mode", static_cast<int>(layer.mode)},
+                {"time", layer.time},
+                {"speed", layer.speed},
+                {"loop", layer.loop},
+                {"playing", layer.playing},
+                {"weight", layer.GetTargetWeight()},
+                {"maskRoot", layer.GetMaskRoot()},
+                {"maskBlendJoints", layer.GetMaskBlendJoints()},
+            };
+
+            if (layer.animation.IsValid() && !layer.animation.IsGenerated())
+                layerJson["resourcePath"] = layer.animation.GetResource()->path;
+
+            layers.push_back(layerJson);
+        }
+        if (!layers.empty())
+            j["layers"] = layers;
+
+        auto ikChains = json::array();
+        for (const auto& chain : p.ikChains) {
+            ikChains.push_back(json {
+                {"upperJoint", chain.GetUpperJoint()},
+                {"middleJoint", chain.GetMiddleJoint()},
+                {"endJoint", chain.GetEndJoint()},
+                {"target", chain.target},
+                {"relativeTarget", chain.relativeTarget},
+                {"weight", chain.weight},
+                {"pole", chain.pole},
+                {"normal", chain.normal},
+                {"normalWeight", chain.normalWeight},
+            });
+        }
+        if (!ikChains.empty())
+            j["ikChains"] = ikChains;
+    }
+
+    void from_json(const json& j, AnimationComponent& p) {
+        j.at("time").get_to(p.time);
+        j.at("speed").get_to(p.speed);
+        j.at("loop").get_to(p.loop);
+        j.at("playing").get_to(p.playing);
+
+        if (j.contains("resourcePath")) {
+            std::string resourcePath;
+            j.at("resourcePath").get_to(resourcePath);
+
+            p.animation = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
+        }
+
+        if (j.contains("layers")) {
+            for (const auto& layerJson : j["layers"]) {
+                auto& layer = p.GetLayer(p.GetLayerCount());
+
+                int mode = 0;
+                float weight = 1.0f;
+                std::string maskRoot;
+                int32_t maskBlendJoints = 0;
+                try_get_json(layerJson, "mode", mode);
+                try_get_json(layerJson, "time", layer.time);
+                try_get_json(layerJson, "speed", layer.speed);
+                try_get_json(layerJson, "loop", layer.loop);
+                try_get_json(layerJson, "playing", layer.playing);
+                try_get_json(layerJson, "weight", weight);
+                try_get_json(layerJson, "maskRoot", maskRoot);
+                try_get_json(layerJson, "maskBlendJoints", maskBlendJoints);
+
+                layer.mode = static_cast<AnimationBlendMode>(mode);
+                layer.FadeTo(weight);
+                layer.SetMask(maskRoot, maskBlendJoints);
+
+                if (layerJson.contains("resourcePath")) {
+                    std::string resourcePath;
+                    layerJson.at("resourcePath").get_to(resourcePath);
+
+                    layer.animation = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                        ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
+                }
+            }
+        }
+
+        if (j.contains("ikChains")) {
+            for (const auto& chainJson : j["ikChains"]) {
+                auto& chain = p.GetIKChain(p.GetIKChainCount());
+
+                std::string upperJoint, middleJoint, endJoint;
+                try_get_json(chainJson, "upperJoint", upperJoint);
+                try_get_json(chainJson, "middleJoint", middleJoint);
+                try_get_json(chainJson, "endJoint", endJoint);
+                chain.SetJoints(upperJoint, middleJoint, endJoint);
+
+                try_get_json(chainJson, "target", chain.target);
+                try_get_json(chainJson, "relativeTarget", chain.relativeTarget);
+                try_get_json(chainJson, "weight", chain.weight);
+                try_get_json(chainJson, "pole", chain.pole);
+                try_get_json(chainJson, "normal", chain.normal);
+                try_get_json(chainJson, "normalWeight", chain.normalWeight);
+            }
+        }
+    }
 
     void to_json(json& j, const AudioComponent& p) {
         j = json {
@@ -66,6 +182,53 @@ namespace Atlas::Scene::Components {
         if (j.contains("stream")) {
             j.at("stream").get_to(*p.stream);
         }
+    }
+
+    void to_json(json& j, const FogVolumeComponent& p) {
+        j = json {
+            {"enable", p.enable},
+            {"shape", static_cast<int32_t>(p.shape)},
+            {"density", p.density},
+            {"scatteringColor", p.scatteringColor},
+            {"scatteringFactor", p.scatteringFactor},
+            {"scatteringAnisotropy", p.scatteringAnisotropy},
+            {"emissiveColor", p.emissiveColor},
+            {"ambientFactor", p.ambientFactor},
+            {"selfShadowing", p.selfShadowing},
+            {"edgeFade", p.edgeFade},
+            {"heightFalloff", p.heightFalloff},
+            {"noiseAmount", p.noiseAmount},
+            {"noiseScale", p.noiseScale},
+            {"noiseCoverage", p.noiseCoverage},
+            {"noiseSharpness", p.noiseSharpness},
+            {"noiseOctaves", p.noiseOctaves},
+            {"windInfluence", p.windInfluence},
+            {"fadeDistance", p.fadeDistance}
+        };
+    }
+
+    void from_json(const json& j, FogVolumeComponent& p) {
+        auto shape = static_cast<int32_t>(p.shape);
+        try_get_json(j, "shape", shape);
+        p.shape = static_cast<FogVolumeShape>(shape);
+
+        try_get_json(j, "enable", p.enable);
+        try_get_json(j, "density", p.density);
+        try_get_json(j, "scatteringColor", p.scatteringColor);
+        try_get_json(j, "scatteringFactor", p.scatteringFactor);
+        try_get_json(j, "scatteringAnisotropy", p.scatteringAnisotropy);
+        try_get_json(j, "emissiveColor", p.emissiveColor);
+        try_get_json(j, "ambientFactor", p.ambientFactor);
+        try_get_json(j, "selfShadowing", p.selfShadowing);
+        try_get_json(j, "edgeFade", p.edgeFade);
+        try_get_json(j, "heightFalloff", p.heightFalloff);
+        try_get_json(j, "noiseAmount", p.noiseAmount);
+        try_get_json(j, "noiseScale", p.noiseScale);
+        try_get_json(j, "noiseCoverage", p.noiseCoverage);
+        try_get_json(j, "noiseSharpness", p.noiseSharpness);
+        try_get_json(j, "noiseOctaves", p.noiseOctaves);
+        try_get_json(j, "windInfluence", p.windInfluence);
+        try_get_json(j, "fadeDistance", p.fadeDistance);
     }
 
     void to_json(json& j, const CameraComponent& p) {
@@ -173,9 +336,16 @@ namespace Atlas::Scene::Components {
             typeProperties.at("innerConeAngle").get_to(p.properties.spot.innerConeAngle);
         }
 
+        p.shadow = nullptr;
         if (j.contains("shadow")) {
             p.shadow = CreateRef<Lighting::Shadow>();
             j.at("shadow").get_to(*p.shadow);
+
+            // Directional lights only have cascaded shadows, an orthographic one from an older scene becomes cascades
+            if (!p.HasFittingShadow()) {
+                p.FitShadowToType();
+                Log::Message("Converted a shadow which didn't fit its light, e.g. the orthographic shadow of a directional light");
+            }
         }
     }
 
@@ -217,12 +387,14 @@ namespace Atlas::Scene::Components {
         j = json {
             {"matrix", p.matrix},
             {"isStatic", p.isStatic},
+            {"parentJoint", p.parentJoint},
         };
     }
 
     void from_json(const json& j, TransformComponent& p) {
         j.at("matrix").get_to(p.matrix);
         j.at("isStatic").get_to(p.isStatic);
+        try_get_json(j, "parentJoint", p.parentJoint);
 
         // Reconstruct some immediate values, don't need to be true.
         // Just that a call to p.ReconstructLocalMatrix() before a scene updates 
@@ -303,7 +475,12 @@ namespace Atlas::Scene::Components {
             {"slowVelocity", p.slowVelocity},
             {"fastVelocity", p.fastVelocity},
             {"jumpVelocity", p.jumpVelocity},
+            {"acceleration", p.acceleration},
+            {"deceleration", p.deceleration},
             {"allowInput", p.allowInput},
+            {"crouchHeight", p.crouchHeight},
+            {"crouchVelocity", p.crouchVelocity},
+            {"walkStairStepUpDistance", p.walkStairStepUpDistance},
         };
 
         if (p.creationSettings != nullptr)
@@ -315,11 +492,30 @@ namespace Atlas::Scene::Components {
         j.at("fastVelocity").get_to(p.fastVelocity);
         j.at("jumpVelocity").get_to(p.jumpVelocity);
         j.at("allowInput").get_to(p.allowInput);
+        try_get_json(j, "acceleration", p.acceleration);
+        try_get_json(j, "deceleration", p.deceleration);
+        try_get_json(j, "crouchHeight", p.crouchHeight);
+        try_get_json(j, "crouchVelocity", p.crouchVelocity);
+        try_get_json(j, "walkStairStepUpDistance", p.walkStairStepUpDistance);
 
         if (j.contains("creationSettings")) {
             p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();
             *p.creationSettings = j["creationSettings"];
         }
+    }
+
+    void to_json(json& j, const ConstraintComponent& p) {
+        j = json {
+            {"creationSettings", p.creationSettings},
+            {"connectedEntity", size_t(p.connectedEntity)},
+        };
+    }
+
+    void from_json(const json& j, ConstraintComponent& p) {
+        j.at("creationSettings").get_to(p.creationSettings);
+        size_t connectedEntity;
+        j.at("connectedEntity").get_to(connectedEntity);
+        p.connectedEntity = connectedEntity;
     }
 
     void to_json(json &j, const LuaScriptComponent &p) {

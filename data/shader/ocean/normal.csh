@@ -7,7 +7,6 @@ layout (set = 3, binding = 1, rgba16f) writeonly uniform image2DArray normalMap;
 // layout (set = 3, binding = 2, rgba16f) readonly uniform image2D historyMap;
 
 layout(push_constant) uniform constants {
-    ivec4 L;
     vec4 tilingFactor;
     vec4 spectrumScaling;
     int N;
@@ -17,8 +16,6 @@ layout(push_constant) uniform constants {
 
     float temporalWeight;
     float temporalThreshold;
-
-    float foamOffset;
 } PushConstants;
 
 vec3 AdjustScale(vec3 point) {
@@ -40,11 +37,11 @@ void main() {
     float tileSize = (tilingFactor * PushConstants.tiling) / float(PushConstants.N);
     float invTileSize = 1.0 / tileSize;
     
-    vec3 center = imageLoad(displacementMap, coord).grb;
-    vec3 left = imageLoad(displacementMap, ivec3(mod(fCoord.x - 1.0, fN), coord.y, coord.z)).grb;
-    vec3 right = imageLoad(displacementMap, ivec3(mod(fCoord.x + 1.0, fN), coord.y, coord.z)).grb;
-    vec3 top = imageLoad(displacementMap, ivec3(coord.x, mod(fCoord.y + 1.0, fN), coord.z)).grb;
-    vec3 bottom = imageLoad(displacementMap, ivec3(coord.x, mod(fCoord.y - 1.0, fN), coord.z)).grb;
+    vec3 center = imageLoad(displacementMap, coord).rgb;
+    vec3 left = imageLoad(displacementMap, ivec3(mod(fCoord.x - 1.0, fN), coord.y, coord.z)).rgb;
+    vec3 right = imageLoad(displacementMap, ivec3(mod(fCoord.x + 1.0, fN), coord.y, coord.z)).rgb;
+    vec3 top = imageLoad(displacementMap, ivec3(coord.x, mod(fCoord.y + 1.0, fN), coord.z)).rgb;
+    vec3 bottom = imageLoad(displacementMap, ivec3(coord.x, mod(fCoord.y - 1.0, fN), coord.z)).rgb;
     
     center = AdjustScale(center);
     left = AdjustScale(left);
@@ -54,22 +51,19 @@ void main() {
 
     // float history = imageLoad(historyMap, coord).a;
 
-    // Calculate jacobian
-    vec2 Dx = 2.0 * (right.xz - left.xz);
-    vec2 Dy = 2.0 * (top.xz - bottom.xz);
-    float J = (tileSize + Dx.x) * (tileSize + Dy.y) - Dx.y * Dy.x;
+    // Calculate jacobian, it's 1 for undisturbed water and negative where the waves fold over
+    vec2 Dx = 0.5 * invTileSize * (right.xz - left.xz);
+    vec2 Dy = 0.5 * invTileSize * (top.xz - bottom.xz);
+    float J = (1.0 + Dx.x) * (1.0 + Dy.y) - Dx.y * Dy.x;
 
-    float fold = max(0.0, -clamp(J, -1.0, 1.0) + PushConstants.foamOffset);
-
-    /*
-    float blend = fold > PushConstants.temporalThreshold ? 0.0 : 0.0;
-    fold = mix(fold, history, blend);
-    */   
+    // The cascades are combined into an approximate jacobian of the whole surface when rendering
+    float jacobianDeficit = 1.0 - J;
     
     float width = right.x - center.x;
     float height = top.z - center.z;
     vec2 gradient = vec2(right.y - center.y, top.y - center.y) / max(tileSize + vec2(width, height), tileSize * 0.01);
     
-    imageStore(normalMap, coord, vec4(-gradient, 0.0, fold));
+    // The squared slope is averaged by the mip maps, the rendering derives the roughness from it
+    imageStore(normalMap, coord, vec4(-gradient, dot(gradient, gradient), jacobianDeficit));
 
 }

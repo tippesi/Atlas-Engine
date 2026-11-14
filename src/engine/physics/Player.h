@@ -23,6 +23,9 @@ namespace Atlas::Physics {
         float shapePadding = 0.02f;
         vec3 shapeOffset = vec3(0.0f);
 
+        // Pushes bodies with up to the max strength, otherwise they block the player like static bodies
+        bool canPushBodies = true;
+
 		Ref<Shape> shape;
 	};
 
@@ -54,11 +57,16 @@ namespace Atlas::Physics {
 
 		bool IsOnGround() const;
 
+		// Sets the user data of the character and its inner body, e.g. the owning entity
+		void SetUserData(uint64_t userData);
+
 		void SetUp(vec3 up);
 
 		vec3 GetUp() const;
 
-		void SetShape(const Ref<Shape>& shape);
+		// Fails without changing the shape if the new shape would collide
+		// A shape penetrating more than maxPenetration (the penetration slop by default) is refused
+		bool SetShape(const Ref<Shape>& shape, float maxPenetration = -1.0f);
 
 		virtual void Update(float deltaTime);
 
@@ -70,10 +78,13 @@ namespace Atlas::Physics {
 	protected:
 		void Init(PhysicsWorld* world, vec3 initialPosition, quat initialRotation);
 
-		virtual void OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::BodyID &inBodyID2, const JPH::SubShapeID &inSubShapeID2, 
-			JPH::RVec3Arg inContactPosition, JPH::Vec3Arg inContactNormal, JPH::CharacterContactSettings &ioSettings) override;
+		virtual void OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::CharacterContact &inContact,
+			JPH::CharacterContactSettings &ioSettings) override;
 
 		Ref<JPH::CharacterVirtual> character = nullptr;
+
+		// How far sticking to the floor and walking up stairs moved the character in the last update
+		vec3 stepMovement = vec3(0.0f);
 
 		PhysicsWorld* world = nullptr;
 

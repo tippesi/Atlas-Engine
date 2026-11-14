@@ -72,8 +72,12 @@ namespace Atlas {
             static void SmoothHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
                 float strength, vec2 position);
 
+            // Outside of the brush size the strength fades out smoothly over falloff texels
             static void FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, 
-                vec2 position, float height, bool circularBrush = true);
+                vec2 position, float height, bool circularBrush = true, int32_t falloff = 0);
+
+            // Closes the holes inside of the brush, they get the height of their neighbors outside of the holes
+            static void FillHoles(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, bool circularBrush = true);
 
             static void BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size,
                 bool circularBrush = true);
@@ -81,7 +85,10 @@ namespace Atlas {
             static void BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, int32_t slot,
                 bool circularBrush = true);
 
-            static Texture::Texture2D GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution);
+            // Shore distance (g) and direction (ba) for the shore waves of the ocean, loaded as Terrain::shoreLine.
+            // The ocean height is relative to the terrain translation
+            static Ref<Common::Image<uint8_t>> GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, const std::string& filename,
+                float oceanHeight, int32_t resolution);
 
             static Ref<Common::Image<uint16_t>> GenerateHeightMap(const Ref<Terrain::Terrain>& terrain);
 

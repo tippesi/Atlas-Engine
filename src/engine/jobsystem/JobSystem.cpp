@@ -70,10 +70,12 @@ namespace Atlas {
 
     void JobSystem::ExecuteMultiple(JobGroup& group, int32_t count, std::function<void(JobData&)> func, void* userData) {
 
+        // Every job gets a copy of the function, sharing it keeps large captures from being allocated per job
+        auto sharedFunc = std::make_shared<std::function<void(JobData&)>>(std::move(func));
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
-            .function = std::move(func),
+            .function = [sharedFunc](JobData& data) { (*sharedFunc)(data); },
             .userData = userData,
             .name = group.name
         };
@@ -212,17 +214,25 @@ namespace Atlas {
         if (group.HasFinished())
             return;
 
+        CPUProfiler::Scope waitScope("Wait for jobs");
+        CPUProfiler::Scope groupScope(group.name ? group.name : "Jobs");
+
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
 
         auto& worker = priorityPool.GetNextWorker();
-        priorityPool.Work(worker.workerId);
 
-        while (!group.HasFinished())
+        // New jobs of the group might be queued at this worker, which no sleeping worker would steal
+        while (!group.HasFinished()) {
+            priorityPool.Work(worker.workerId, &group);
             std::this_thread::yield();
+        }
 
     }
 
     void JobSystem::WaitSpin(JobGroup& group) {
+
+        if (group.HasFinished())
+            return;
 
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
 
@@ -234,6 +244,8 @@ namespace Atlas {
             Wait(group);
         }
         else {
+            CPUProfiler::Scope waitScope("Wait for jobs");
+            CPUProfiler::Scope groupScope(group.name ? group.name : "Jobs");
             while (!group.HasFinished());
             priorityPool.spinCounter.fetch_add(1);
         }
@@ -256,6 +268,12 @@ namespace Atlas {
                 priorityPool.Work(worker.workerId);
             }
         }
+
+    }
+
+    int32_t JobSystem::GetPendingJobCount(const JobPriority priority) {
+
+        return priorityPools[static_cast<int>(priority)].pendingJobs.load();
 
     }
 

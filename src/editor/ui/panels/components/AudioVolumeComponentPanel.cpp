@@ -20,19 +20,29 @@ namespace Atlas::Editor::UI {
             audioVolumeComponent.ChangeResource(handle);
         }
 
-        ImGui::Text("AABB");
-        Widgets::DragVec3("Min", audioVolumeComponent.aabb.min, 0.1f, 0.0f, -10000.0f, 10000.0f);
-        Widgets::DragVec3("Max", audioVolumeComponent.aabb.max, 0.1f, 0.0f, -10000.0f, 10000.0f);
+        if (Widgets::BeginProperties("AudioVolume")) {
+            Widgets::PropertyLabel("AABB min");
+            Widgets::DragVec3("##AABB min", audioVolumeComponent.aabb.min, 0.1f, 0.0f, -10000.0f, 10000.0f);
+            Widgets::PropertyLabel("AABB max");
+            Widgets::DragVec3("##AABB max", audioVolumeComponent.aabb.max, 0.1f, 0.0f, -10000.0f, 10000.0f);
 
-        ImGui::DragFloat("Volume", &audioVolumeComponent.volume, 0.005f, 0.0f, 1.0f);
-        ImGui::DragFloat("Cutoff", &audioVolumeComponent.cutoff, 0.001f, 0.0001f, 0.2f);
-        ImGui::DragFloat("Falloff factor", &audioVolumeComponent.falloffFactor, 0.05f, 0.0f, 100.0f);
-        ImGui::DragFloat("Falloff power", &audioVolumeComponent.falloffPower, 1.0f, 0.0f, 100.0f);
+            Widgets::PropertyLabel("Volume");
+            ImGui::DragFloat("##Volume", &audioVolumeComponent.volume, 0.005f, 0.0f, 1.0f);
+            Widgets::PropertyLabel("Cutoff");
+            ImGui::DragFloat("##Cutoff", &audioVolumeComponent.cutoff, 0.001f, 0.0001f, 0.2f);
+            Widgets::PropertyLabel("Falloff factor");
+            ImGui::DragFloat("##Falloff factor", &audioVolumeComponent.falloffFactor, 0.05f, 0.0f, 100.0f);
+            Widgets::PropertyLabel("Falloff power");
+            ImGui::DragFloat("##Falloff power", &audioVolumeComponent.falloffPower, 1.0f, 0.0f, 100.0f);
 
-        ImGui::Checkbox("Play permanently", &audioVolumeComponent.permanentPlay);
+            Widgets::PropertyLabel("Play permanently");
+            ImGui::Checkbox("##Play permanently", &audioVolumeComponent.permanentPlay);
 
-        if (audioVolumeComponent.stream && audioVolumeComponent.stream->IsValid()) {
-            ImGui::Checkbox("Loop stream", &audioVolumeComponent.stream->loop);
+            if (audioVolumeComponent.stream && audioVolumeComponent.stream->IsValid()) {
+                Widgets::PropertyLabel("Loop stream");
+                ImGui::Checkbox("##Loop stream", &audioVolumeComponent.stream->loop);
+            }
+            Widgets::EndProperties();
         }
 
         audioSelectionPanel.Reset();

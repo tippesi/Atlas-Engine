@@ -15,6 +15,20 @@ namespace Atlas {
 
 		}
 
+        int32_t SpacePartitioning::GetSuggestedDepth(vec3 min, vec3 max) {
+
+            auto size = max - min;
+            auto largest = glm::max(size.x, glm::max(size.y, size.z));
+            return glm::max(1, int32_t(glm::ceil(glm::log2(largest / suggestedCellSize))));
+
+        }
+
+        vec3 SpacePartitioning::GetCellSize(vec3 min, vec3 max, int32_t depth) {
+
+            return (max - min) / glm::pow(2.0f, float(depth));
+
+        }
+
         std::vector<Entity> SpacePartitioning::QueryAABB(const Volume::AABB& aabb) {
 
             std::vector<Entity> entities;
@@ -61,8 +75,17 @@ namespace Atlas {
             renderableMovableEntityOctree.QueryFrustum(movableEntities,
                 insideMovableEntities, frustum);
 
-            for (auto entity : staticEntities) {
+            // Shadow passes drop meshes without shadows later on, don't collect them in the first place
+            auto shadowPass = pass->type == RenderList::RenderPassType::Shadow;
+            auto getMeshComponent = [&](Entity entity) -> MeshComponent* {
                 auto meshComp = entityManager->TryGet<MeshComponent>(entity);
+                if (!meshComp || shadowPass && meshComp->mesh.IsLoaded() && !meshComp->mesh->castShadow)
+                    return nullptr;
+                return meshComp;
+            };
+
+            for (auto entity : staticEntities) {
+                auto meshComp = getMeshComponent(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
@@ -70,7 +93,7 @@ namespace Atlas {
             }
 
             for (auto entity : insideStaticEntities) {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
+                auto meshComp = getMeshComponent(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)
@@ -78,7 +101,7 @@ namespace Atlas {
             }
 
             for (auto entity : movableEntities) {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
+                auto meshComp = getMeshComponent(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
@@ -86,7 +109,7 @@ namespace Atlas {
             }
 
             for (auto entity : insideMovableEntities) {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
+                auto meshComp = getMeshComponent(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)

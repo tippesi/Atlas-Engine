@@ -1,7 +1,7 @@
 #include "VegetationHelper.h"
 
 #include "../../pipeline/PipelineManager.h"
-#include "../../graphics/Profiler.h"
+#include "../../profiler/GPUProfiler.h"
 
 namespace Atlas {
 
@@ -40,7 +40,7 @@ namespace Atlas {
                     uint32_t binCount;
                 };
 
-                Graphics::Profiler::BeginQuery("Culling");
+                GPUProfiler::Scope gpuScope("Culling");
 
                 auto meshes = vegetation.GetMeshes();
 
@@ -58,7 +58,7 @@ namespace Atlas {
                 binOffsetBuffer.Bind(commandList, 3, 3);
                 instanceCounterBuffer.Bind(commandList, 3, 4);
 
-                Graphics::Profiler::BeginQuery("Cull and count bins");
+                GPUProfiler::Scope sectionScope("Cull and count bins");
 
                 // Cull unseen vegetation and count bins
                 {
@@ -94,7 +94,7 @@ namespace Atlas {
                     commandList->PipelineBarrier({}, bufferBarriers);
                 }
 
-                Graphics::Profiler::EndAndBeginQuery("Compute bin offsets");
+                sectionScope.Next("Compute bin offsets");
 
                 {
                     auto pipelineConfig = PipelineConfig("vegetation/instanceBinningOffset.csh");
@@ -123,7 +123,7 @@ namespace Atlas {
                     commandList->PipelineBarrier({}, meshBufferBarriers);
                 }
 
-                Graphics::Profiler::EndAndBeginQuery("Sort by bins");
+                sectionScope.Next("Sort by bins");
 
                 // Move culled per instance data into own buffer
                 {
@@ -156,7 +156,7 @@ namespace Atlas {
                     }
                 }
 
-                Graphics::Profiler::EndAndBeginQuery("Command buffer update");
+                sectionScope.Next("Command buffer update");
 
                 // Prepare the command buffer
                 {
@@ -198,9 +198,6 @@ namespace Atlas {
                 }
                 commandList->PipelineBarrier({}, meshBufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
-
-                Graphics::Profiler::EndQuery();
-                Graphics::Profiler::EndQuery();
 
             }
 

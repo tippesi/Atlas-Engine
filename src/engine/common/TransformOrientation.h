@@ -5,8 +5,8 @@
 
 namespace Atlas::Common {
 
-    inline bool HasReversedWinding(const glm::mat4& matrix) {
-        return glm::determinant(glm::mat3(matrix)) < 0.0f;
+    inline bool HasReversedWinding(const mat4& matrix) {
+        return glm::determinant(mat3(matrix)) < 0.0f;
     }
 
     template<class Iterator, class MatrixGetter>

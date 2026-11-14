@@ -9,18 +9,17 @@
 #include "events/EventDelegate.h"
 #include "events/EventManager.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #define AE_WINDOWPOSITION_UNDEFINED SDL_WINDOWPOS_UNDEFINED
 
 #define AE_WINDOW_FULLSCREEN    SDL_WINDOW_FULLSCREEN
-#define AE_WINDOW_SHOWN            SDL_WINDOW_SHOWN
 #define AE_WINDOW_HIDDEN        SDL_WINDOW_HIDDEN
 #define AE_WINDOW_BORDERLESS    SDL_WINDOW_BORDERLESS
 #define AE_WINDOW_RESIZABLE        SDL_WINDOW_RESIZABLE
 #define AE_WINDOW_MINIMIZED        SDL_WINDOW_MINIMIZED
 #define AE_WINDOW_MAXIMIZED        SDL_WINDOW_MAXIMIZED
-#define AE_WINDOW_HIGH_DPI        SDL_WINDOW_ALLOW_HIGHDPI
+#define AE_WINDOW_HIGH_DPI        SDL_WINDOW_HIGH_PIXEL_DENSITY
 
 namespace Atlas {
 
@@ -58,7 +57,7 @@ namespace Atlas {
          * Returns the window flags as a bitfield
          * @return An integer with the corresponding bits set
          */
-        uint32_t GetFlags() const;
+        uint64_t GetFlags() const;
 
         /**
          * Sets the title of the window.
@@ -71,6 +70,13 @@ namespace Atlas {
          * @param icon A pointer to a Texture object
          */
         void SetIcon(Texture::Texture2D *icon);
+
+        /**
+         * Sets the color of the title bar and whether it uses dark or bright text. Only supported on macOS.
+         * @param color The background color of the title bar
+         * @param dark True if the title bar is dark and gets bright text
+         */
+        void SetTitleBarColor(vec3 color, bool dark);
 
         /**
          * Resets the position of the window to the given screen coordinates.
@@ -111,10 +117,23 @@ namespace Atlas {
         ivec2 GetDrawableSize();
 
         /**
+         * Returns the content scale of the display the window is on.
+         * @return The scale the user chose in the system settings, e.g. 1.5 for 150%.
+         */
+        float GetContentScale();
+
+        /**
          * Returns whether the window is currently in focus
          * @return True if focused, false otherwise
          */
         bool IsFocused() const;
+
+        /**
+         * Returns whether the window is hidden, minimized or fully covered by other windows
+         * @return True if nothing of the window is visible, false otherwise
+         * @note Windows doesn't report windows covered by other windows
+         */
+        bool IsOccluded() const;
 
         /**
          * Shows the window if the window was hidden
@@ -185,9 +204,7 @@ namespace Atlas {
 
         SDL_Window* sdlWindow = nullptr;
 
-        int32_t x;
-        int32_t y;
-
+        // Only used without an SDL window, e.g. in headless mode or when the window couldn't be created
         int32_t width;
         int32_t height;
 

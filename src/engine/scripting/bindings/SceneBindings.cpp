@@ -1,10 +1,254 @@
 #include "SceneBindings.h"
 #include "MemberBindings.h"
 
+#include "Log.h"
 #include "scene/Scene.h"
 #include "scene/components/LuaScriptComponent.h"
+#include "volume/Ray.h"
 
 namespace Atlas::Scripting::Bindings {
+
+    struct RayHit {
+        bool valid = false;
+        float hitDistance = 0.0f;
+        vec3 position = vec3(0.0f);
+        vec3 normal = vec3(0.0f);
+        bool frontFace = true;
+        Scene::Entity entity;
+    };
+
+    static bool IsIgnored(Scene::Scene& scene, Scene::Entity entity, Scene::Entity ignored) {
+
+        if (!ignored.IsValid())
+            return false;
+
+        // The ignored entity and all of its children are skipped
+        while (entity.IsValid()) {
+            if (entity.GetID() == ignored.GetID())
+                return true;
+            entity = scene.GetParentEntity(entity);
+        }
+
+        return false;
+
+    }
+
+    // A filter skips entities before their triangles are tested, cheaper than casting again past them
+    static RayHit CastRay(Scene::Scene& scene, const Volume::Ray& inputRay,
+        Scene::SceneQueryComponents components, Scene::Entity ignored, const sol::protected_function* filter = nullptr) {
+
+        RayHit hit;
+
+        if (glm::length(inputRay.direction) == 0.0f)
+            return hit;
+
+        // Normalized such that distances are in world units
+        auto ray = Volume::Ray(inputRay.origin, glm::normalize(inputRay.direction), inputRay.tMin, inputRay.tMax);
+        auto result = scene.CastRay(ray, components, [&](const Scene::Entity& entity) {
+            if (IsIgnored(scene, entity, ignored))
+                return true;
+            if (!filter)
+                return false;
+            // Errors can't be raised in the middle of the query, they are logged
+            sol::protected_function_result skip = (*filter)(entity);
+            if (!skip.valid()) {
+                sol::error error = skip;
+                Log::Error(std::string("Error in the filter of a ray cast: ") + error.what());
+                return false;
+            }
+            return skip.get_type() == sol::type::boolean && skip.get<bool>();
+            });
+
+        if (!result.valid)
+            return hit;
+
+        hit.valid = true;
+        hit.hitDistance = result.hitDistance;
+        hit.position = ray.Get(result.hitDistance);
+        hit.normal = result.normal;
+        hit.frontFace = result.frontFace;
+        hit.entity = result.data;
+
+        return hit;
+
+    }
+
+    // Components move in memory when their pool grows or another component of the type is removed.
+    // Scripts keep components across frames, so they get a reference that looks the component up on
+    // every access and forwards it to the component's bindings.
+    template<class Comp>
+    struct ComponentRef {
+        Scene::Entity entity;
+    };
+
+    // Raises a Lua error, which jumps over the caller: no objects with destructors may be alive at the call
+    template<class Comp>
+    static Comp* ResolveComponent(const ComponentRef<Comp>& ref, lua_State* state) {
+
+        auto component = ref.entity.IsValid() ? ref.entity.template TryGetComponent<Comp>() : nullptr;
+        if (!component)
+            luaL_error(state, "The entity doesn't have the component anymore");
+        return component;
+
+    }
+
+    template<class Comp>
+    static sol::object GetComponentRef(Scene::Entity& entity, sol::this_state state) {
+
+        if (!entity.IsValid() || !entity.HasComponent<Comp>())
+            return sol::lua_nil;
+        return sol::make_object(state, ComponentRef<Comp>{ entity });
+
+    }
+
+    template<class Comp, class... Args>
+    static ComponentRef<Comp> AddComponentRef(Scene::Entity& entity, Args... args) {
+
+        entity.AddComponent<Comp>(std::forward<Args>(args)...);
+        return { entity };
+
+    }
+
+    // Registry keys of the tables each Lua state keeps per component type, their addresses are unique
+    template<class Comp>
+    struct ComponentRefKeys {
+        static inline char methods = 0;
+        static inline char makeForward = 0;
+        static inline char metatable = 0;
+    };
+
+    // The metamethods are only reached through the metatable of the reference, the userdata holds one
+    template<class Comp>
+    static ComponentRef<Comp>& ComponentRefAt(lua_State* state, int index) {
+
+        return **static_cast<ComponentRef<Comp>**>(sol::detail::align_usertype_pointer(lua_touserdata(state, index)));
+
+    }
+
+    // Components are accessed many times per frame, so these use the Lua API directly instead of sol's checked
+    // conversions and references
+    template<class Comp>
+    static int ResolveComponentRef(lua_State* state) {
+
+        auto isRef = lua_getmetatable(state, 1) != 0;
+        if (isRef) {
+            lua_rawgetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::metatable);
+            isRef = lua_rawequal(state, -1, -2) != 0;
+            lua_pop(state, 2);
+        }
+        if (!isRef)
+            return luaL_error(state, "Expected a component reference as self");
+
+        auto component = ResolveComponent(ComponentRefAt<Comp>(state, 1), state);
+        sol::stack::push(state, component);
+        return 1;
+
+    }
+
+    template<class Comp>
+    static int IndexComponentRef(lua_State* state) {
+
+        lua_settop(state, 2);
+        lua_rawgetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::methods);
+        lua_pushvalue(state, 2);
+        lua_rawget(state, 3);
+        if (lua_type(state, 4) == LUA_TFUNCTION)
+            return 1;
+        lua_settop(state, 3);
+
+        auto component = ResolveComponent(ComponentRefAt<Comp>(state, 1), state);
+        sol::stack::push(state, component);
+        lua_pushvalue(state, 2);
+        lua_gettable(state, 4);
+        if (lua_type(state, 5) != LUA_TFUNCTION)
+            return 1;
+
+        // Methods are called with the reference as self and need the component instead
+        lua_rawgetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::makeForward);
+        lua_pushvalue(state, 5);
+        lua_call(state, 1, 1);
+        lua_pushvalue(state, 2);
+        lua_pushvalue(state, 6);
+        lua_rawset(state, 3);
+        return 1;
+
+    }
+
+    template<class Comp>
+    static int NewIndexComponentRef(lua_State* state) {
+
+        lua_settop(state, 3);
+        auto component = ResolveComponent(ComponentRefAt<Comp>(state, 1), state);
+        sol::stack::push(state, component);
+        lua_pushvalue(state, 2);
+        lua_pushvalue(state, 3);
+        lua_settable(state, 4);
+        return 0;
+
+    }
+
+    template<class Comp>
+    static void GenerateComponentRefBindings(sol::table* ns, const std::string& name) {
+
+        auto state = ns->lua_state();
+        sol::state_view lua(state);
+
+        // Forwarding happens in Lua, so errors of the method propagate as they are. Forwarding functions don't
+        // depend on the component, they are created once per method
+        sol::protected_function makeForwardFactory = lua.load(R"(
+            local resolve = ...
+            return function(method)
+                return function(self, ...)
+                    return method(resolve(self), ...)
+                end
+            end
+        )");
+        sol::protected_function makeForward = makeForwardFactory(&ResolveComponentRef<Comp>);
+
+        lua_newtable(state);
+        lua_rawsetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::methods);
+        makeForward.push();
+        lua_rawsetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::makeForward);
+
+        ns->new_usertype<ComponentRef<Comp>>(name + "Ref", sol::no_constructor,
+            sol::meta_function::index, &IndexComponentRef<Comp>,
+            sol::meta_function::new_index, &NewIndexComponentRef<Comp>,
+            sol::meta_function::equal_to, [](const ComponentRef<Comp>& a, const ComponentRef<Comp>& b) {
+                return a.entity == b.entity;
+            }
+        );
+
+        luaL_getmetatable(state, sol::usertype_traits<ComponentRef<Comp>>::metatable().c_str());
+        lua_rawsetp(state, LUA_REGISTRYINDEX, &ComponentRefKeys<Comp>::metatable);
+
+    }
+
+    static RayHit CastShape(Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix,
+        const vec3& direction, float distance, Scene::Entity ignored) {
+
+        RayHit hit;
+
+        if (glm::length(direction) == 0.0f)
+            return hit;
+
+        auto normalizedDirection = glm::normalize(direction);
+        auto result = scene.CastShape(shape, matrix, normalizedDirection, distance, [&](const Scene::Entity& entity) {
+            return IsIgnored(scene, entity, ignored);
+            });
+
+        if (!result.valid)
+            return hit;
+
+        // The position of the shape when it hits
+        hit.valid = true;
+        hit.hitDistance = result.hitDistance;
+        hit.position = vec3(matrix[3]) + normalizedDirection * result.hitDistance;
+        hit.normal = result.normal;
+        hit.entity = result.data;
+
+        return hit;
+
+    }
 
     void GenerateSceneBindings(sol::table* ns) {
 
@@ -14,23 +258,147 @@ namespace Atlas::Scripting::Bindings {
             "noiseMap", &Scene::Wind::noiseMap
             );
 
+        ns->new_enum("SceneQueryComponents",
+            "Mesh", Scene::SceneQueryComponentBits::MeshComponentBit,
+            "RigidBody", Scene::SceneQueryComponentBits::RigidBodyComponentBit,
+            "Text", Scene::SceneQueryComponentBits::TextComponentBit,
+            "Terrain", Scene::SceneQueryComponentBits::TerrainComponentBit,
+            "All", Scene::SceneQueryComponentBits::AllComponentsBit
+            );
+
+        ns->new_usertype<RayHit>("RayHit",
+            "valid", &RayHit::valid,
+            "hitDistance", &RayHit::hitDistance,
+            "position", &RayHit::position,
+            "normal", &RayHit::normal,
+            "frontFace", &RayHit::frontFace,
+            "entity", &RayHit::entity
+            );
+
+        auto castRayOverload = sol::overload(
+            [](Scene::Scene& scene, const Volume::Ray& ray) {
+                return CastRay(scene, ray, Scene::SceneQueryComponentBits::AllComponentsBit, Scene::Entity());
+            },
+            [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components) {
+                return CastRay(scene, ray, components, Scene::Entity());
+            },
+            [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components, Scene::Entity ignored) {
+                return CastRay(scene, ray, components, ignored);
+            },
+            // skip(entity) returns true for entities the ray passes through
+            [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components, Scene::Entity ignored,
+                const sol::protected_function& skip) {
+                return CastRay(scene, ray, components, ignored, &skip);
+            }
+        );
+
+        auto castShapeOverload = sol::overload(
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix, const vec3& direction, float distance) {
+                return CastShape(scene, shape, matrix, direction, distance, Scene::Entity());
+            },
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix, const vec3& direction, float distance,
+                Scene::Entity ignored) {
+                return CastShape(scene, shape, matrix, direction, distance, ignored);
+            }
+        );
+
+        // Entity lists are returned as tables of copies, elements of a bound vector would reference its storage
+        auto collideShapeOverload = sol::overload(
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix) {
+                return sol::as_table(scene.CollideShape(shape, matrix));
+            },
+            [](Scene::Scene& scene, const Ref<Physics::Shape>& shape, const mat4& matrix, Scene::Entity ignored) {
+                return sol::as_table(scene.CollideShape(shape, matrix, [&](const Scene::Entity& entity) {
+                    return IsIgnored(scene, entity, ignored);
+                    }));
+            }
+        );
+
+        ns->new_usertype<Scene::ContactEvent>("ContactEvent",
+            "type", &Scene::ContactEvent::type,
+            "entity", &Scene::ContactEvent::entity,
+            "otherEntity", &Scene::ContactEvent::otherEntity,
+            "position", &Scene::ContactEvent::position,
+            "normal", &Scene::ContactEvent::normal,
+            "impactSpeed", &Scene::ContactEvent::impactSpeed,
+            "isTrigger", &Scene::ContactEvent::isTrigger
+            );
+
+        auto queryAABBOverload = sol::overload(
+            [](Scene::Scene& scene, const Volume::AABB& aabb) {
+                return sol::as_table(scene.QueryAABB(aabb));
+            },
+            [](Scene::Scene& scene, const Volume::AABB& aabb, uint32_t components) {
+                return sol::as_table(scene.QueryAABB(aabb, components));
+            },
+            // Only entities with a name that contains one of the parts, scripts searching for a kind of mesh would
+            // otherwise look at every name in Lua
+            [](Scene::Scene& scene, const Volume::AABB& aabb, uint32_t components, const sol::table& nameTable) {
+                auto nameParts = nameTable.as<std::vector<std::string>>();
+                auto entities = scene.QueryAABB(aabb, components);
+                std::erase_if(entities, [&](Scene::Entity entity) {
+                    auto nameComponent = entity.TryGetComponent<NameComponent>();
+                    return !nameComponent || std::none_of(nameParts.begin(), nameParts.end(), [&](const std::string& part) {
+                        return nameComponent->name.find(part) != std::string::npos;
+                        });
+                    });
+                return sol::as_table(entities);
+            }
+        );
+
         ns->new_usertype<Scene::Scene>("Scene",
+            "CastRay", castRayOverload,
+            "QueryAABB", queryAABBOverload,
+            "CastShape", castShapeOverload,
+            "CollideShape", collideShapeOverload,
+            "GetContactEvents", [](Scene::Scene& scene) {
+                return sol::as_table(scene.GetContactEvents());
+            },
+            // E.g. for scripts that give the nearest lights a shadow
+            "GetLightEntities", [](Scene::Scene& scene) {
+                std::vector<Scene::Entity> entities;
+                for (auto entity : scene.GetSubset<LightComponent>())
+                    entities.push_back(entity);
+                return sol::as_table(entities);
+            },
             "CreateEntity", &Scene::Scene::CreateEntity,
             "DestroyEntity", &Scene::Scene::DestroyEntity,
             "DuplicateEntity", &Scene::Scene::DuplicateEntity,
             "GetEntityByName", &Scene::Scene::GetEntityByName,
             "GetParentEntity", &Scene::Scene::GetParentEntity,
+            "GetRootEntity", &Scene::Scene::GetRootEntity,
+            "GetHierarchyBounds", &Scene::Scene::GetHierarchyBounds,
+            "GetGlobalMatrix", &Scene::Scene::GetGlobalMatrix,
             "GetEntityCount", &Scene::Scene::GetEntityCount,
-            "GetMainCamera", &Scene::Scene::GetMainCamera,
+            "GetMainCamera", [](Scene::Scene& scene, sol::this_state state) -> sol::object {
+                // The main camera is a component as well, scripts get a reference to it
+                auto& mainCamera = scene.GetMainCamera();
+                auto cameraSubset = scene.GetSubset<CameraComponent>();
+                for (auto entity : cameraSubset)
+                    if (&cameraSubset.Get(entity) == &mainCamera)
+                        return sol::make_object(state, ComponentRef<CameraComponent>{ entity });
+                return sol::lua_nil;
+            },
             "HasMainCamera", &Scene::Scene::HasMainCamera,
             "GetMeshes", &Scene::Scene::GetMeshes,
+            "GetTime", &Scene::Scene::GetTime,
+            "GetDeltaTime", &Scene::Scene::GetDeltaTime,
+            "PlayAudio", [](Scene::Scene& scene, ResourceHandle<Audio::AudioData>& data, const vec3& location,
+                sol::optional<float> volume, sol::optional<float> falloffFactor) {
+                return scene.PlayAudio(data, location, volume.value_or(1.0f), falloffFactor.value_or(0.5f));
+            },
+            "paused", &Scene::Scene::paused,
+            "occlusionCulling", &Scene::Scene::occlusionCulling,
             "wind", &Scene::Scene::wind,
             "sky", &Scene::Scene::sky,
             "fog", &Scene::Scene::fog,
+            "ocean", &Scene::Scene::ocean,
+            "navigation", &Scene::Scene::navigation,
             "irradianceVolume", &Scene::Scene::irradianceVolume,
             "reflection", &Scene::Scene::reflection,
             "sss", &Scene::Scene::sss,
             "ssgi", &Scene::Scene::ssgi,
+            "rtgi", &Scene::Scene::rtgi,
             "postProcessing", &Scene::Scene::postProcessing
             );
 
@@ -42,55 +410,149 @@ namespace Atlas::Scripting::Bindings {
             "IsValid", &Scene::Entity::IsValid,
             "GetID", &Scene::Entity::GetID,
             "GetVersion", &Scene::Entity::GetVersion,
+            "SetParent", &Scene::Entity::SetParent,
             // Add components
-            "AddAudioComponent", &Scene::Entity::AddComponent<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
-            "AddAudioVolumeComponent", &Scene::Entity::AddComponent<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
-            "AddCameraComponent", &Scene::Entity::AddComponent<CameraComponent, float, float, float, float, glm::vec3&, glm::vec2&>,
-            "AddHierarchyComponent", &Scene::Entity::AddComponent<HierarchyComponent>,
-            "AddLightComponent", &Scene::Entity::AddComponent<LightComponent>,
-            "AddMeshComponent", &Scene::Entity::AddComponent<MeshComponent, ResourceHandle<Mesh::Mesh>&>,
-            "AddNameComponent", &Scene::Entity::AddComponent<NameComponent, std::string>,
-            "AddPlayerComponent", &Scene::Entity::AddComponent<PlayerComponent>,
-            "AddRigidBodyComponent", &Scene::Entity::AddComponent<RigidBodyComponent, Physics::BodyCreationSettings&>,
-            "AddTextComponent", &Scene::Entity::AddComponent<TextComponent, ResourceHandle<Font>&, std::string>,
-            "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent, glm::mat4&, bool>,
-            "AddLuaScriptComponent", &Scene::Entity::AddComponent<LuaScriptComponent, ResourceHandle<Script>&>,
-            "AddSplineComponent", &Scene::Entity::AddComponent<SplineComponent>,
+            "AddAnimationComponent", &AddComponentRef<AnimationComponent, ResourceHandle<Animation::Animation>&>,
+            "AddAudioComponent", &AddComponentRef<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
+            "AddAudioVolumeComponent", &AddComponentRef<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
+            "AddCameraComponent", &AddComponentRef<CameraComponent, float, float, float, float, vec3&, vec2&>,
+            "AddFogVolumeComponent", &AddComponentRef<FogVolumeComponent>,
+            "AddHierarchyComponent", &AddComponentRef<HierarchyComponent>,
+            "AddLightComponent", &AddComponentRef<LightComponent>,
+            "AddMeshComponent", &AddComponentRef<MeshComponent, ResourceHandle<Mesh::Mesh>&>,
+            "AddNameComponent", &AddComponentRef<NameComponent, std::string>,
+            "AddPlayerComponent", &AddComponentRef<PlayerComponent>,
+            "AddRigidBodyComponent", &AddComponentRef<RigidBodyComponent, Physics::BodyCreationSettings&>,
+            "AddConstraintComponent", sol::overload(
+                &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&>,
+                &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&, Scene::Entity>),
+            "AddTextComponent", &AddComponentRef<TextComponent, ResourceHandle<Font>&, std::string>,
+            "AddTransformComponent", &AddComponentRef<TransformComponent, mat4&, bool>,
+            "AddLuaScriptComponent", &AddComponentRef<LuaScriptComponent, ResourceHandle<Script>&>,
+            "AddSplineComponent", &AddComponentRef<SplineComponent>,
 
             // Remove components
+            "RemoveAnimationComponent", &Scene::Entity::RemoveComponent<AnimationComponent>,
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
             "RemoveAudioVolumeComponent", &Scene::Entity::RemoveComponent<AudioVolumeComponent>,
             "RemoveCameraComponent", &Scene::Entity::RemoveComponent<CameraComponent>,
+            "RemoveFogVolumeComponent", &Scene::Entity::RemoveComponent<FogVolumeComponent>,
             "RemoveHierarchyComponent", &Scene::Entity::RemoveComponent<HierarchyComponent>,
             "RemoveLightComponent", &Scene::Entity::RemoveComponent<LightComponent>,
             "RemoveMeshComponent", &Scene::Entity::RemoveComponent<MeshComponent>,
             "RemoveNameComponent", &Scene::Entity::RemoveComponent<NameComponent>,
             "RemovePlayerComponent", &Scene::Entity::RemoveComponent<PlayerComponent>,
             "RemoveRigidBodyComponent", &Scene::Entity::RemoveComponent<RigidBodyComponent>,
+            "RemoveConstraintComponent", &Scene::Entity::RemoveComponent<ConstraintComponent>,
             "RemoveTextComponent", &Scene::Entity::RemoveComponent<TextComponent>,
             "RemoveTransformComponent", &Scene::Entity::RemoveComponent<TransformComponent>,
             "RemoveLuaScriptComponent", &Scene::Entity::RemoveComponent<LuaScriptComponent>,
             "RemoveSplineComponent", &Scene::Entity::RemoveComponent<SplineComponent>,
 
             // Get components
-            "GetAudioComponent", &Scene::Entity::TryGetComponent<AudioComponent>,
-            "GetAudioVolumeComponent", &Scene::Entity::TryGetComponent<AudioVolumeComponent>,
-            "GetCameraComponent", &Scene::Entity::TryGetComponent<CameraComponent>,
-            "GetHierarchyComponent", &Scene::Entity::TryGetComponent<HierarchyComponent>,
-            "GetLightComponent", &Scene::Entity::TryGetComponent<LightComponent>,
-            "GetMeshComponent", &Scene::Entity::TryGetComponent<MeshComponent>,
-            "GetNameComponent", &Scene::Entity::TryGetComponent<NameComponent>,
-            "GetPlayerComponent", &Scene::Entity::TryGetComponent<PlayerComponent>,
-            "GetRigidBodyComponent", &Scene::Entity::TryGetComponent<RigidBodyComponent>,
-            "GetTextComponent", &Scene::Entity::TryGetComponent<TextComponent>,
-            "GetTransformComponent", &Scene::Entity::TryGetComponent<TransformComponent>,
-            "GetLuaScriptComponent", &Scene::Entity::TryGetComponent<LuaScriptComponent>,
-            "GetSplineComponent", &Scene::Entity::TryGetComponent<SplineComponent>
+            "GetAnimationComponent", &GetComponentRef<AnimationComponent>,
+            "GetAudioComponent", &GetComponentRef<AudioComponent>,
+            "GetAudioVolumeComponent", &GetComponentRef<AudioVolumeComponent>,
+            "GetCameraComponent", &GetComponentRef<CameraComponent>,
+            "GetFogVolumeComponent", &GetComponentRef<FogVolumeComponent>,
+            "GetHierarchyComponent", &GetComponentRef<HierarchyComponent>,
+            "GetLightComponent", &GetComponentRef<LightComponent>,
+            "GetMeshComponent", &GetComponentRef<MeshComponent>,
+            "GetNameComponent", &GetComponentRef<NameComponent>,
+            "GetPlayerComponent", &GetComponentRef<PlayerComponent>,
+            "GetRigidBodyComponent", &GetComponentRef<RigidBodyComponent>,
+            "GetConstraintComponent", &GetComponentRef<ConstraintComponent>,
+            "GetTextComponent", &GetComponentRef<TextComponent>,
+            "GetTransformComponent", &GetComponentRef<TransformComponent>,
+            "GetLuaScriptComponent", &GetComponentRef<LuaScriptComponent>,
+            "GetSplineComponent", &GetComponentRef<SplineComponent>
         );
 
     }
 
     void GenerateComponentBindings(sol::table* ns) {
+
+        auto playOverload = sol::overload(
+            [](AnimationComponent& animationComponent, const ResourceHandle<Animation::Animation>& animation) {
+                animationComponent.Play(animation);
+            },
+            [](AnimationComponent& animationComponent, const ResourceHandle<Animation::Animation>& animation, float blendTime) {
+                animationComponent.Play(animation, blendTime);
+            }
+        );
+
+        ns->new_enum<AnimationBlendMode>("AnimationBlendMode", {
+            { "Override", AnimationBlendMode::Override },
+            { "Additive", AnimationBlendMode::Additive }
+            });
+
+        auto layerPlayOverload = sol::overload(
+            [](AnimationLayer& layer, const ResourceHandle<Animation::Animation>& animation) {
+                layer.Play(animation);
+            },
+            [](AnimationLayer& layer, const ResourceHandle<Animation::Animation>& animation, float blendTime) {
+                layer.Play(animation, blendTime);
+            }
+        );
+
+        auto layerFadeOverload = sol::overload(
+            [](AnimationLayer& layer, float weight) { layer.FadeTo(weight); },
+            [](AnimationLayer& layer, float weight, float fadeTime) { layer.FadeTo(weight, fadeTime); }
+        );
+
+        auto layerMaskOverload = sol::overload(
+            [](AnimationLayer& layer, const std::string& rootJoint) { layer.SetMask(rootJoint); },
+            [](AnimationLayer& layer, const std::string& rootJoint, int32_t blendJoints) { layer.SetMask(rootJoint, blendJoints); }
+        );
+
+        ns->new_usertype<AnimationLayer>("AnimationLayer",
+            "Play", layerPlayOverload,
+            "FadeTo", layerFadeOverload,
+            "SetMask", layerMaskOverload,
+            "GetWeight", &AnimationLayer::GetWeight,
+            "GetTargetWeight", &AnimationLayer::GetTargetWeight,
+            "animation", &AnimationLayer::animation,
+            "mode", &AnimationLayer::mode,
+            "time", &AnimationLayer::time,
+            "speed", &AnimationLayer::speed,
+            "loop", &AnimationLayer::loop,
+            "playing", &AnimationLayer::playing
+        );
+
+        ns->new_usertype<AnimationIKChain>("AnimationIKChain",
+            "SetJoints", &AnimationIKChain::SetJoints,
+            "GetUpperJoint", &AnimationIKChain::GetUpperJoint,
+            "GetMiddleJoint", &AnimationIKChain::GetMiddleJoint,
+            "GetEndJoint", &AnimationIKChain::GetEndJoint,
+            "GetAnimatedEndPosition", &AnimationIKChain::GetAnimatedEndPosition,
+            "GetAnimatedEndLocalPosition", &AnimationIKChain::GetAnimatedEndLocalPosition,
+            "IsValid", &AnimationIKChain::IsValid,
+            "target", &AnimationIKChain::target,
+            "relativeTarget", &AnimationIKChain::relativeTarget,
+            "weight", &AnimationIKChain::weight,
+            "pole", &AnimationIKChain::pole,
+            "normal", &AnimationIKChain::normal,
+            "normalWeight", &AnimationIKChain::normalWeight
+        );
+
+        ns->new_usertype<AnimationComponent>("AnimationComponent",
+            "Play", playOverload,
+            "GetLayer", &AnimationComponent::GetLayer,
+            "GetLayerCount", &AnimationComponent::GetLayerCount,
+            "GetIKChain", &AnimationComponent::GetIKChain,
+            "GetIKChainCount", &AnimationComponent::GetIKChainCount,
+            "SetJointRotationOffset", &AnimationComponent::SetJointRotationOffset,
+            "ClearJointRotationOffsets", &AnimationComponent::ClearJointRotationOffsets,
+            "SetJointTranslationOffset", &AnimationComponent::SetJointTranslationOffset,
+            "ClearJointTranslationOffsets", &AnimationComponent::ClearJointTranslationOffsets,
+            "GetJointMatrix", &AnimationComponent::GetJointMatrix,
+            "animation", &AnimationComponent::animation,
+            "time", &AnimationComponent::time,
+            "speed", &AnimationComponent::speed,
+            "loop", &AnimationComponent::loop,
+            "playing", &AnimationComponent::playing,
+            "aabb", &AnimationComponent::aabb
+        );
 
         ns->new_usertype<AudioComponent>("AudioComponent",
             "falloffFactor", &AudioComponent::falloffFactor,
@@ -98,6 +560,32 @@ namespace Atlas::Scripting::Bindings {
             "cutoff", &AudioComponent::cutoff,
             "volume", &AudioComponent::volume,
             "stream", &AudioComponent::stream
+        );
+
+        ns->new_enum<FogVolumeShape>("FogVolumeShape", {
+            { "Box", FogVolumeShape::Box },
+            { "Ellipsoid", FogVolumeShape::Ellipsoid }
+            });
+
+        ns->new_usertype<FogVolumeComponent>("FogVolumeComponent",
+            "enable", &FogVolumeComponent::enable,
+            "shape", &FogVolumeComponent::shape,
+            "density", &FogVolumeComponent::density,
+            "scatteringColor", &FogVolumeComponent::scatteringColor,
+            "scatteringFactor", &FogVolumeComponent::scatteringFactor,
+            "scatteringAnisotropy", &FogVolumeComponent::scatteringAnisotropy,
+            "emissiveColor", &FogVolumeComponent::emissiveColor,
+            "ambientFactor", &FogVolumeComponent::ambientFactor,
+            "selfShadowing", &FogVolumeComponent::selfShadowing,
+            "edgeFade", &FogVolumeComponent::edgeFade,
+            "heightFalloff", &FogVolumeComponent::heightFalloff,
+            "noiseAmount", &FogVolumeComponent::noiseAmount,
+            "noiseScale", &FogVolumeComponent::noiseScale,
+            "noiseCoverage", &FogVolumeComponent::noiseCoverage,
+            "noiseSharpness", &FogVolumeComponent::noiseSharpness,
+            "noiseOctaves", &FogVolumeComponent::noiseOctaves,
+            "windInfluence", &FogVolumeComponent::windInfluence,
+            "fadeDistance", &FogVolumeComponent::fadeDistance
         );
 
         ns->new_usertype<AudioVolumeComponent>("AudioVolumeComponent",
@@ -110,9 +598,6 @@ namespace Atlas::Scripting::Bindings {
         );
 
         ns->new_usertype<CameraComponent>("CameraComponent",
-            "GetJitter", &CameraComponent::GetJitter,
-            "GetLastJitter", &CameraComponent::GetLastJitter,
-            "GetLastJitteredMatrix", &CameraComponent::GetLastJitteredMatrix,
             "GetLocation", &CameraComponent::GetLocation,
             "GetLastLocation", &CameraComponent::GetLastLocation,
             "GetFrustumCorners", &CameraComponent::GetFrustumCorners,
@@ -145,7 +630,7 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<HierarchyComponent>("HierarchyComponent",
             "AddChild", &HierarchyComponent::AddChild,
             "RemoveChild", &HierarchyComponent::RemoveChild,
-            "GetChildren", &HierarchyComponent::GetChildren,
+            "GetChildren", [](HierarchyComponent& component) { return sol::as_table(component.GetChildren()); },
             "globalMatrix", &HierarchyComponent::globalMatrix,
             "root", &HierarchyComponent::root
         );
@@ -195,16 +680,52 @@ namespace Atlas::Scripting::Bindings {
             "volumetricIntensity", &LightComponent::volumetricIntensity,
             "properties", &LightComponent::properties,
             "transformedProperties", &LightComponent::transformedProperties,
-            "shadow", &LightComponent::shadow,
+            // nil removes the shadow, e.g. to hand it on to another light
+            "shadow", sol::property([](LightComponent& light) { return light.shadow; },
+                [](LightComponent& light, sol::optional<Ref<Lighting::Shadow>> shadow) { light.shadow = shadow.value_or(nullptr); }),
             "isMain", &LightComponent::isMain,
             "volumetric", &LightComponent::volumetric
         );
 
+        ns->new_usertype<Ocean::OceanSurface>("OceanSurface",
+            "position", &Ocean::OceanSurface::position,
+            "normal", &Ocean::OceanSurface::normal
+        );
+
+        ns->new_usertype<Ocean::OceanSurfaceQueries>("OceanSurfaceQueries",
+            "CreateQuery", [](Ocean::OceanSurfaceQueries& queries, sol::as_table_t<std::vector<vec3>> positions) {
+                return queries.CreateQuery(positions.value());
+            },
+            "UpdateQuery", [](Ocean::OceanSurfaceQueries& queries, uint32_t queryId, sol::as_table_t<std::vector<vec3>> positions) {
+                return queries.UpdateQuery(queryId, positions.value());
+            },
+            "IsQueryValid", &Ocean::OceanSurfaceQueries::IsQueryValid,
+            "GetQueryResults", [](Ocean::OceanSurfaceQueries& queries, uint32_t queryId) {
+                return sol::as_table(queries.GetQueryResults(queryId));
+            },
+            "DestroyQuery", &Ocean::OceanSurfaceQueries::DestroyQuery
+        );
+
+        ns->new_usertype<Ocean::Ocean>("Ocean",
+            "surfaceQueries", &Ocean::Ocean::surfaceQueries,
+            "translation", &Ocean::Ocean::translation,
+            "physics", &Ocean::Ocean::physics,
+            "displacementScale", &Ocean::Ocean::displacementScale,
+            "choppynessScale", &Ocean::Ocean::choppynessScale,
+            "shoreWaveAmplitude", &Ocean::Ocean::shoreWaveAmplitude,
+            "shoreWaveSpeed", &Ocean::Ocean::shoreWaveSpeed,
+            "waterBodyColor", &Ocean::Ocean::waterBodyColor,
+            "enable", &Ocean::Ocean::enable
+        );
+
         ns->new_usertype<MeshComponent>("MeshComponent",
             "mesh", &MeshComponent::mesh,
-            "visible", &MeshComponent::visible,
-            "dontCull", &MeshComponent::dontCull,
-            "aabb", &MeshComponent::aabb
+            "visible", sol::property([](MeshComponent& component) { return component.visible; },
+                [](MeshComponent& component, bool visible) { component.SetVisible(visible); }),
+            "dontCull", sol::property([](MeshComponent& component) { return component.dontCull; },
+                [](MeshComponent& component, bool dontCull) { component.SetDontCull(dontCull); }),
+            "aabb", &MeshComponent::aabb,
+            "ChangeResource", &MeshComponent::ChangeResource
         );
 
         ns->new_usertype<NameComponent>("NameComponent",
@@ -216,10 +737,13 @@ namespace Atlas::Scripting::Bindings {
             "Set", &TransformComponent::Set,
             "Decompose", &TransformComponent::Decompose,
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
+            "SetGlobal", &TransformComponent::SetGlobal,
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
+            "GetReconstructedLocalMatrix", &TransformComponent::GetReconstructedLocalMatrix,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix,
-            "isStatic", &TransformComponent::isStatic
+            "isStatic", &TransformComponent::isStatic,
+            "parentJoint", &TransformComponent::parentJoint
         );
 
         ns->new_usertype<RigidBodyComponent>("RigidBodyComponent",
@@ -231,14 +755,39 @@ namespace Atlas::Scripting::Bindings {
             "GetMotionQuality", &RigidBodyComponent::GetMotionQuality,
             "SetLinearVelocity", &RigidBodyComponent::SetLinearVelocity,
             "GetLinearVelocity", &RigidBodyComponent::GetLinearVelocity,
+            "IsActive", &RigidBodyComponent::IsActive,
             "SetAngularVelocity", &RigidBodyComponent::SetAngularVelocity,
             "GetAngularVelocity", &RigidBodyComponent::GetAngularVelocity,
             "SetRestitution", &RigidBodyComponent::SetRestitution,
             "GetRestitution", &RigidBodyComponent::GetRestitution,
             "SetFriction", &RigidBodyComponent::SetFriction,
             "GetFriction", &RigidBodyComponent::GetFriction,
+            "AddForce", sol::overload(
+                [](RigidBodyComponent& rigidBodyComponent, vec3 force) { rigidBodyComponent.AddForce(force); },
+                [](RigidBodyComponent& rigidBodyComponent, vec3 force, vec3 position) {
+                    rigidBodyComponent.AddForce(force, position);
+                }),
+            "AddImpulse", sol::overload(
+                [](RigidBodyComponent& rigidBodyComponent, vec3 impulse) { rigidBodyComponent.AddImpulse(impulse); },
+                [](RigidBodyComponent& rigidBodyComponent, vec3 impulse, vec3 position) {
+                    rigidBodyComponent.AddImpulse(impulse, position);
+                }),
+            "AddTorque", &RigidBodyComponent::AddTorque,
+            "AddAngularImpulse", &RigidBodyComponent::AddAngularImpulse,
             "GetBodyCreationSettings", &RigidBodyComponent::GetBodyCreationSettings,
             "layer", &RigidBodyComponent::layer
+        );
+
+        ns->new_usertype<ConstraintComponent>("ConstraintComponent",
+            "IsValid", &ConstraintComponent::IsValid,
+            "SetEnabled", &ConstraintComponent::SetEnabled,
+            "IsEnabled", &ConstraintComponent::IsEnabled,
+            "GetForce", &ConstraintComponent::GetForce,
+            "SetConnectedEntity", &ConstraintComponent::SetConnectedEntity,
+            "GetConnectedEntity", &ConstraintComponent::GetConnectedEntity,
+            "Reset", &ConstraintComponent::Reset,
+            "creationSettings", &ConstraintComponent::creationSettings,
+            "broken", &ConstraintComponent::broken
         );
 
         ns->new_usertype<PlayerComponent>("PlayerComponent",
@@ -250,9 +799,21 @@ namespace Atlas::Scripting::Bindings {
             "SetLinearVelocity", &PlayerComponent::SetLinearVelocity,
             "GetLinearVelocity", &PlayerComponent::GetLinearVelocity,
             "GetGroundVelocity", &PlayerComponent::GetGroundVelocity,
+            "SetInputVelocity", &PlayerComponent::SetInputVelocity,
             "IsOnGround", &PlayerComponent::IsOnGround,
+            "Crouch", &PlayerComponent::Crouch,
+            "IsCrouching", &PlayerComponent::IsCrouching,
             "stickToGroundDist", &PlayerComponent::stickToGroundDist,
-            "walkStairsStepUpDist", &PlayerComponent::walkStairsStepUpDist
+            "walkStairsStepUpDist", &PlayerComponent::walkStairsStepUpDist,
+            "walkStairStepUpDistance", &PlayerComponent::walkStairStepUpDistance,
+            "slowVelocity", &PlayerComponent::slowVelocity,
+            "fastVelocity", &PlayerComponent::fastVelocity,
+            "jumpVelocity", &PlayerComponent::jumpVelocity,
+            "acceleration", &PlayerComponent::acceleration,
+            "deceleration", &PlayerComponent::deceleration,
+            "crouchHeight", &PlayerComponent::crouchHeight,
+            "crouchVelocity", &PlayerComponent::crouchVelocity,
+            "allowInput", &PlayerComponent::allowInput
         );
 
         ns->new_usertype<TextComponent>("TextComponent",
@@ -304,7 +865,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<SplineControlPoint>("SplineControlPoint",
             sol::call_constructor,
-            sol::constructors<SplineControlPoint(), SplineControlPoint(glm::mat4, float)>(),
+            sol::constructors<SplineControlPoint(), SplineControlPoint(mat4, float)>(),
             "transform", DependentMember<&SplineControlPoint::transform>(),
             "tangent", DependentMember<&SplineControlPoint::tangent>(),
             "time", &SplineControlPoint::time
@@ -328,6 +889,23 @@ namespace Atlas::Scripting::Bindings {
             "type", &SplineComponent::type,
             "bakeMode", &SplineComponent::bakeMode
         );
+
+        GenerateComponentRefBindings<AnimationComponent>(ns, "AnimationComponent");
+        GenerateComponentRefBindings<AudioComponent>(ns, "AudioComponent");
+        GenerateComponentRefBindings<AudioVolumeComponent>(ns, "AudioVolumeComponent");
+        GenerateComponentRefBindings<CameraComponent>(ns, "CameraComponent");
+        GenerateComponentRefBindings<FogVolumeComponent>(ns, "FogVolumeComponent");
+        GenerateComponentRefBindings<HierarchyComponent>(ns, "HierarchyComponent");
+        GenerateComponentRefBindings<LightComponent>(ns, "LightComponent");
+        GenerateComponentRefBindings<MeshComponent>(ns, "MeshComponent");
+        GenerateComponentRefBindings<NameComponent>(ns, "NameComponent");
+        GenerateComponentRefBindings<PlayerComponent>(ns, "PlayerComponent");
+        GenerateComponentRefBindings<RigidBodyComponent>(ns, "RigidBodyComponent");
+        GenerateComponentRefBindings<ConstraintComponent>(ns, "ConstraintComponent");
+        GenerateComponentRefBindings<TextComponent>(ns, "TextComponent");
+        GenerateComponentRefBindings<TransformComponent>(ns, "TransformComponent");
+        GenerateComponentRefBindings<LuaScriptComponent>(ns, "LuaScriptComponent");
+        GenerateComponentRefBindings<SplineComponent>(ns, "SplineComponent");
 
     }
 

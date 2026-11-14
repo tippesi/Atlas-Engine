@@ -8,7 +8,7 @@ namespace Atlas {
 
         Image::Image(GraphicsDevice *device, const ImageDesc &desc) : aspectFlags(desc.aspectFlags),
             width(desc.width), height(desc.height), depth(desc.depth), layers(desc.layers), format(desc.format),
-            domain(desc.domain), type(desc.type), device(device), memoryManager(device->memoryManager) {
+            usageFlags(desc.usageFlags), domain(desc.domain), type(desc.type), id(device->resourceIdCounter++), device(device), memoryManager(device->memoryManager) {
 
             VkExtent3D imageExtent;
             imageExtent.width = desc.width;
@@ -24,7 +24,8 @@ namespace Atlas {
                 imageInfo.mipLevels = mipLevels;
             }
             if (desc.mipMapping && desc.mipLevels) {
-                imageInfo.mipLevels = desc.mipLevels;
+                mipLevels = desc.mipLevels;
+                imageInfo.mipLevels = mipLevels;
             }
             if (desc.type == ImageType::Image1DArray || desc.type == ImageType::Image2DArray ||
                 desc.type == ImageType::ImageCube) {
@@ -125,6 +126,18 @@ namespace Atlas {
 
         }
 
+        void Image::SetData(const void* data, size_t dataSize, const std::vector<VkBufferImageCopy>& copyRegions,
+            MemoryTransferManager* transferManager) {
+
+            if (!transferManager)
+                transferManager = memoryManager->transferManager;
+
+            if (domain == ImageDomain::Device) {
+                transferManager->UploadImageData(data, dataSize, this, copyRegions);
+            }
+
+        }
+
         void Image::GenerateMipMaps(MemoryTransferManager* transferManager) {
 
             if (!transferManager)
@@ -147,6 +160,27 @@ namespace Atlas {
                 case ImageType::Image3D: return VK_IMAGE_TYPE_3D;
                 default: return VK_IMAGE_TYPE_2D;
             }
+
+        }
+
+        size_t Image::GetMemorySize(uint32_t width, uint32_t height, uint32_t mipLevels) const {
+
+            VkImageCreateInfo imageInfo = Initializers::InitImageCreateInfo(format, usageFlags,
+                { width, height, depth }, GetImageType());
+            imageInfo.mipLevels = mipLevels;
+            if (type == ImageType::Image1DArray || type == ImageType::Image2DArray || type == ImageType::ImageCube)
+                imageInfo.arrayLayers = layers;
+            if (type == ImageType::ImageCube)
+                imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+            VkDeviceImageMemoryRequirements requirementsInfo = {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS,
+                .pCreateInfo = &imageInfo
+            };
+            VkMemoryRequirements2 requirements = { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
+            vkGetDeviceImageMemoryRequirements(device->device, &requirementsInfo, &requirements);
+
+            return size_t(requirements.memoryRequirements.size);
 
         }
 

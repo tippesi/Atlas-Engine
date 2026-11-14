@@ -3,7 +3,6 @@
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
 
-#include <fog.hsh>
 #include <volumetric.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
@@ -18,13 +17,9 @@ layout(set = 3, binding = 3) uniform sampler2D lowResVolumetricCloudsTexture;
 #endif
 
 layout(set = 3, binding = 5) uniform  UniformBuffer {
-    Fog fog;
     vec4 planetCenter;
-    vec4 mainLightColor;
-    vec4 mainLightDirection;
     int downsampled2x;
     int cloudsEnabled;
-    int fogEnabled;
     float innerCloudRadius;
     float planetRadius;
     float cloudDistanceLimit;
@@ -162,8 +157,8 @@ void main() {
     if (uniforms.downsampled2x > 0) LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(resolveImage));
@@ -188,28 +183,7 @@ void main() {
 
     vec3 resolve = imageLoad(resolveImage, pixel).rgb;
 
-#ifndef RAYMARCHED_FOG
-    float LdotV = dot(worldDirection, normalize(uniforms.mainLightDirection.xyz));
-    float phaseFunction = ComputeScattering(uniforms.fog.scatteringAnisotropy, LdotV);
-
-    vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
-    volumetricFog.a = ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition);
-
-    vec3 lightPosition = worldPosition - 10000.0 * normalize(uniforms.mainLightDirection.xyz);
-    lightPosition = vec3(globalData.ivMatrix * vec4(lightPosition, 1.0));
-    float extinctionToLight = ComputeVolumetricFog(uniforms.fog, worldPosition, lightPosition);
-
-    vec3 scatteringCoefficient = uniforms.fog.scatteringFactor *
-            uniforms.fog.extinctionCoefficients.rgb;
-
-    vec3 lightScattering = phaseFunction * uniforms.mainLightColor.rgb;
-
-    vec3 scattering = scatteringCoefficient * (lightScattering + vec3(uniforms.fog.ambientFactor));
-
-    volumetricFog.rgb = scattering * clamp(1.0 - volumetricFog.a, 0.0, 1.0);
-#endif
-
-    resolve = ApplyVolumetrics(uniforms.fog, resolve, volumetricFog, volumetricClouds,
+    resolve = ApplyVolumetrics(resolve, volumetricFog, volumetricClouds,
         worldDirection, planetCenter, uniforms.innerCloudRadius);
 
     imageStore(resolveImage, pixel, vec4(resolve, 1.0));

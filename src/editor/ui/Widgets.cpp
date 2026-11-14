@@ -2,6 +2,13 @@
 #include "../Singletons.h"
 #include "../Theme.h"
 
+#include "ImguiExtension/UiElements.h"
+
+#include <imgui_internal.h>
+#include <imgui_stdlib.h>
+#include <algorithm>
+#include <cstring>
+
 namespace Atlas::Editor::UI {
 
     bool Widgets::DragVec3(const char* label, vec3& value, float speed, float resetValue,
@@ -47,8 +54,11 @@ namespace Atlas::Editor::UI {
             ImGui::PopID();
         }
 
-        ImGui::SameLine(0.0f, spacing);
-        ImGui::TextUnformatted(label);
+        // Labels starting with ## are hidden, e.g. in a property table which shows the label in its own column
+        if (std::strncmp(label, "##", 2) != 0) {
+            ImGui::SameLine(0.0f, spacing);
+            ImGui::TextUnformatted(label);
+        }
 
         ImGui::PopID();
 
@@ -100,6 +110,30 @@ namespace Atlas::Editor::UI {
 
     }
 
+    bool Widgets::RemovableSectionHeader(const char* label, ImGuiTreeNodeFlags flags, bool& remove, const char* tooltip) {
+
+        bool open = SectionHeader(label, flags | ImGuiTreeNodeFlags_AllowOverlap);
+
+        auto headerMin = ImGui::GetItemRectMin();
+        auto headerMax = ImGui::GetItemRectMax();
+        auto iconSize = ImGui::GetTextLineHeight();
+        auto buttonExtent = iconSize + 2.0f;
+        auto cursorPos = ImGui::GetCursorPos();
+
+        ImGui::SameLine();
+        ImGui::SetCursorScreenPos(ImVec2(headerMax.x - buttonExtent - ImGui::GetStyle().FramePadding.x,
+            headerMin.y + (headerMax.y - headerMin.y - buttonExtent) * 0.5f));
+
+        auto alpha = ImGui::IsMouseHoveringRect(headerMin, headerMax) ? 1.0f : 0.45f;
+        if (IconButton("Remove", Singletons::icons->Get(IconType::Trash), iconSize, tooltip, alpha))
+            remove = true;
+
+        ImGui::SetCursorPos(cursorPos);
+
+        return open;
+
+    }
+
     bool Widgets::SegmentedControl(const char* label, int32_t& selection, const char* const items[], int32_t itemCount) {
 
         const auto& style = ImGui::GetStyle();
@@ -131,8 +165,11 @@ namespace Atlas::Editor::UI {
                 Theme::PopPrimaryButton();
         }
 
-        ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
-        ImGui::TextUnformatted(label);
+        // Labels starting with ## are hidden, e.g. in a property table which shows the label in its own column
+        if (std::strncmp(label, "##", 2) != 0) {
+            ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
+            ImGui::TextUnformatted(label);
+        }
 
         ImGui::PopID();
 
@@ -174,6 +211,128 @@ namespace Atlas::Editor::UI {
 
     }
 
+    bool Widgets::ToolbarIconButton(const char* id, const Texture::Texture2D& icon, const char* tooltip, bool selected) {
+
+        auto set = Singletons::imguiWrapper->GetTextureId(&icon);
+        auto size = ImGui::GetTextLineHeight();
+
+        if (selected)
+            Theme::PushPrimaryButton();
+        else
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
+        // The default frame padding makes it as high as text buttons and fields next to it
+        bool pressed = ImGui::ImageButton(id, set, ImVec2(size, size), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f));
+
+        ImGui::PopStyleVar();
+        if (selected)
+            Theme::PopPrimaryButton();
+        else
+            ImGui::PopStyleColor();
+
+        if (tooltip)
+            ImGui::SetItemTooltip("%s", tooltip);
+
+        return pressed;
+
+    }
+
+    bool Widgets::DangerButton(const char* label, ImVec2 size) {
+
+        Theme::PushDangerButton();
+        bool pressed = ImGui::Button(label, size);
+        Theme::PopDangerButton();
+        return pressed;
+
+    }
+
+    void Widgets::Heading(const char* text) {
+
+        ImGui::SetWindowFontScale(headingScale);
+        ImGui::TextUnformatted(text);
+        ImGui::SetWindowFontScale(1.0f);
+
+    }
+
+    bool Widgets::TextArea(const char* id, std::string& text, float lines, ImGuiInputTextFlags flags, bool* deactivatedAfterEdit) {
+
+        // The child keeps the height the user dragged it to, the text box fills it
+        auto height = lines * ImGui::GetTextLineHeight() + 2.0f * ImGui::GetStyle().FramePadding.y;
+        ImGui::BeginChild(id, ImVec2(-FLT_MIN, height), ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoScrollbar);
+        auto changed = ImGui::InputTextMultiline("##Text", &text, ImVec2(-FLT_MIN, -FLT_MIN), flags);
+        if (deactivatedAfterEdit)
+            *deactivatedAfterEdit = ImGui::IsItemDeactivatedAfterEdit();
+        ImGui::EndChild();
+
+        return changed;
+
+    }
+
+    void Widgets::EmptyState(const char* text) {
+
+        ImGui::PushTextWrapPos();
+        ImGui::TextColored(Theme::TextMuted(), "%s", text);
+        ImGui::PopTextWrapPos();
+
+    }
+
+    void Widgets::Spinner(float scale) {
+
+        auto size = ImGui::GetTextLineHeight() * scale;
+        auto pos = ImGui::GetCursorScreenPos();
+        ImGui::Dummy(ImVec2(size, size));
+
+        auto drawList = ImGui::GetWindowDrawList();
+        auto center = ImVec2(pos.x + size * 0.5f, pos.y + size * 0.5f);
+        auto radius = size * 0.5f - 2.0f;
+        auto thickness = std::max(2.0f, size * 0.12f);
+
+        // A quarter of the ring turns around a faint full ring
+        auto start = float(ImGui::GetTime()) * 6.0f;
+        drawList->PathArcTo(center, radius, 0.0f, 2.0f * IM_PI, 32);
+        drawList->PathStroke(ImGui::GetColorU32(Theme::TextMuted(0.25f)), ImDrawFlags_None, thickness);
+        drawList->PathArcTo(center, radius, start, start + 0.5f * IM_PI, 12);
+        drawList->PathStroke(ImGui::GetColorU32(Theme::Accent()), ImDrawFlags_None, thickness);
+
+    }
+
+    void Widgets::LoadingState(const char* text) {
+
+        auto region = ImGui::GetContentRegionAvail();
+        auto start = ImGui::GetCursorPos();
+        auto spinnerSize = ImGui::GetTextLineHeight() * 2.0f;
+        auto textSize = ImGui::CalcTextSize(text);
+        auto spacing = ImGui::GetStyle().ItemSpacing.y * 2.0f;
+        auto height = spinnerSize + spacing + textSize.y;
+
+        auto top = start.y + std::max(0.0f, (region.y - height) * 0.5f);
+        ImGui::SetCursorPos(ImVec2(start.x + std::max(0.0f, (region.x - spinnerSize) * 0.5f), top));
+        Spinner(2.0f);
+        ImGui::SetCursorPos(ImVec2(start.x + std::max(0.0f, (region.x - textSize.x) * 0.5f), top + spinnerSize + spacing));
+        ImGui::TextColored(Theme::TextMuted(), "%s", text);
+
+    }
+
+    bool Widgets::BeginProperties(const char* id) {
+
+        // The panels of ImguiExtension draw the same tables, the label color is the muted text of the theme
+        return ImguiExtension::UIElements::BeginProperties(id);
+
+    }
+
+    void Widgets::PropertyLabel(const char* label, const char* tooltip) {
+
+        ImguiExtension::UIElements::PropertyLabel(label, tooltip);
+
+    }
+
+    void Widgets::EndProperties() {
+
+        ImguiExtension::UIElements::EndProperties();
+
+    }
+
     bool Widgets::IconButton(const char* id, const Texture::Texture2D& icon, float size,
         const char* tooltip, float alpha) {
 
@@ -193,6 +352,20 @@ namespace Atlas::Editor::UI {
             ImGui::SetItemTooltip("%s", tooltip);
 
         return pressed;
+
+    }
+
+    bool Widgets::TextEllipsis(const char* text, const char* textEnd, float width) {
+
+        auto textSize = ImGui::CalcTextSize(text, textEnd);
+        auto pos = ImGui::GetCursorScreenPos();
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        ImGui::Dummy(ImVec2(std::min(textSize.x, width), lineHeight));
+        ImGui::RenderTextEllipsis(ImGui::GetWindowDrawList(), pos, ImVec2(pos.x + width, pos.y + lineHeight),
+            pos.x + width, pos.x + width, text, textEnd, &textSize);
+
+        return textSize.x > width;
 
     }
 

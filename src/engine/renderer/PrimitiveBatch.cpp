@@ -1,5 +1,7 @@
 #include "PrimitiveBatch.h"
 
+#include <glm/gtc/constants.hpp>
+
 namespace Atlas {
 
     namespace Renderer {
@@ -23,6 +25,112 @@ namespace Atlas {
             lineColorData.push_back(toColor);
 
             lineDataValid = false;
+
+        }
+
+        void PrimitiveBatch::AddLineAABB(Volume::AABB aabb, vec3 color) {
+
+            auto corners = aabb.GetCorners();
+            for (int32_t i = 0; i < 4; i++) {
+                AddLine(corners[i], corners[(i + 1) % 4], color, color);
+                AddLine(corners[i + 4], corners[(i + 1) % 4 + 4], color, color);
+                AddLine(corners[i], corners[i + 4], color, color);
+            }
+
+        }
+
+        void PrimitiveBatch::AddLineFrustum(const Volume::Frustum& frustum, vec3 color) {
+
+            auto corners = frustum.GetCorners();
+            for (int32_t i = 0; i < 2; i++) {
+                auto offset = i * 4;
+                AddLine(corners[offset], corners[offset + 1], color, color);
+                AddLine(corners[offset + 2], corners[offset + 3], color, color);
+                AddLine(corners[offset], corners[offset + 2], color, color);
+                AddLine(corners[offset + 1], corners[offset + 3], color, color);
+            }
+            for (int32_t i = 0; i < 4; i++)
+                AddLine(corners[i], corners[i + 4], color, color);
+
+        }
+
+        void PrimitiveBatch::AddLineSphere(vec3 center, float radius, vec3 color) {
+
+            const int32_t verticalSubdivs = 20;
+            const int32_t horizontalSubdivs = 20;
+
+            float alpha = 0.0f;
+            for (int32_t i = 0; i < horizontalSubdivs; i++) {
+                float ringRadius = sinf(alpha);
+                float ringHeight = cosf(alpha);
+                float beta = 0.0f;
+
+                vec3 lastPoint;
+                for (int32_t j = 0; j < verticalSubdivs; j++) {
+                    auto point = vec3(sinf(beta) * ringRadius, ringHeight, cosf(beta) * ringRadius) * radius + center;
+                    if (j > 0)
+                        AddLine(point, lastPoint, color, color);
+
+                    beta += 2.0f * glm::pi<float>() / float(verticalSubdivs - 1);
+                    lastPoint = point;
+                }
+
+                alpha += glm::pi<float>() / float(horizontalSubdivs);
+            }
+
+        }
+
+        void PrimitiveBatch::AddLineRectangle(const Volume::Rectangle& rectangle, vec3 color) {
+
+            auto point = rectangle.point;
+            auto right = rectangle.s0;
+            auto down = rectangle.s1;
+
+            AddLine(point, point + right, color, color);
+            AddLine(point, point + down, color, color);
+            AddLine(point + right, point + right + down, color, color);
+            AddLine(point + down, point + right + down, color, color);
+
+        }
+
+        void PrimitiveBatch::AddLineCross(vec3 position, float size, vec3 color) {
+
+            for (int32_t i = 0; i < 3; i++) {
+                vec3 offset(0.0f);
+                offset[i] = size;
+                AddLine(position - offset, position + offset, color, color);
+            }
+
+        }
+
+        void PrimitiveBatch::AddLineCylinder(vec3 base, float height, float radius, vec3 color) {
+
+            const int32_t segments = 12;
+            for (auto y : { 0.0f, height * 0.5f, height }) {
+                for (int32_t i = 0; i < segments; i++) {
+                    auto a0 = float(i) / float(segments) * glm::two_pi<float>();
+                    auto a1 = float(i + 1) / float(segments) * glm::two_pi<float>();
+                    AddLine(base + vec3(std::cos(a0) * radius, y, std::sin(a0) * radius),
+                        base + vec3(std::cos(a1) * radius, y, std::sin(a1) * radius), color, color);
+                }
+            }
+
+            for (int32_t i = 0; i < 4; i++) {
+                auto angle = float(i) * glm::half_pi<float>();
+                auto offset = vec3(std::cos(angle) * radius, 0.0f, std::sin(angle) * radius);
+                AddLine(base + offset, base + offset + vec3(0.0f, height, 0.0f), color, color);
+            }
+
+        }
+
+        void PrimitiveBatch::AddLineAxes(vec3 position, float length) {
+
+            static const vec3 colors[] = { vec3(1.0f, 0.1f, 0.1f), vec3(0.1f, 1.0f, 0.1f), vec3(0.2f, 0.4f, 1.0f) };
+            for (int32_t i = 0; i < 3; i++) {
+                vec3 axis(0.0f);
+                axis[i] = length;
+                AddLine(position, position + axis, colors[i], colors[i]);
+            }
 
         }
 

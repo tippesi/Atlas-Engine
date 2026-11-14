@@ -10,6 +10,7 @@
 #include "panels/RTGIPanel.h"
 #include "panels/MaterialPanel.h"
 #include "panels/MaterialsPanel.h"
-#include "panels/GPUProfilerPanel.h"
+#include "panels/ProfilerPanel.h"
 #include "panels/WindPanel.h"
 #include "panels/SkyPanel.h"
+#include "panels/OceanPanel.h"

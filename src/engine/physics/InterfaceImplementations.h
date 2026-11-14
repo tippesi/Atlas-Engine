@@ -28,12 +28,14 @@ namespace Atlas {
         public:
             virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override {
                 switch (inObject1) {
+                    // Static and kinematic pairs only make contacts when a kinematic body asks for them
+                    // (BodyCreationSettings::kinematicContacts), Jolt skips the others
                     case Layers::Static:
-                        return inObject2 == Layers::Movable; // Non moving only collides with moving
+                        return inObject2 != Layers::Static;
                     case Layers::Movable:
                         return true; // Moving collides with everything
                     case Layers::Kinematic:
-                        return inObject2 == Layers::Movable; // Kinematic bodies are only interesting for simulated bodies
+                        return true;
                     default:
                         JPH_ASSERT(false);
                         return false;
@@ -98,33 +100,11 @@ namespace Atlas {
                     case Layers::Movable:
                         return true;
                     case Layers::Kinematic:
-                        return inLayer2 == BroadPhaseLayers::Movable;
+                        return true;
                     default:
                         JPH_ASSERT(false);
                         return false;
                 }
-            }
-        };
-
-        class ContactListener : public JPH::ContactListener {
-        public:
-            virtual JPH::ValidateResult	OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override {
-                Log::Message("Contact validation");
-
-                // Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
-                return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
-            }
-
-            virtual void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override {
-                Log::Message("Contact added");
-            }
-
-            virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override {
-                Log::Message("Contact persisted");
-            }
-
-            virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override {
-                Log::Message("Contact removed");
             }
         };
 

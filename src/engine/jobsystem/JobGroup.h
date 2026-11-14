@@ -18,7 +18,7 @@ namespace Atlas {
 
         ~JobGroup();
 
-        bool HasFinished();
+        bool HasFinished() const;
 
         const char* name = nullptr;
 

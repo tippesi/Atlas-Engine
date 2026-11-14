@@ -7,7 +7,7 @@
 namespace Atlas {
 
     /**
-     * See https://wiki.libsdl.org/SDL2/SDL_PixelFormatEnum
+     * See https://wiki.libsdl.org/SDL3/SDL_PixelFormat
      */
     struct DisplayPixelFormat {
         uint32_t type = 0;
@@ -22,9 +22,10 @@ namespace Atlas {
 
         int32_t width = 0;
         int32_t height = 0;
-        int32_t refreshRate = 0;
+        float refreshRate = 0.0f;
+        float pixelDensity = 1.0f;
 
-        void* driverData = nullptr;
+        uint32_t displayID = 0;
         uint32_t rawFormat = 0;
     };
 
@@ -33,11 +34,11 @@ namespace Atlas {
     public:
         Display() = default;
 
-        explicit Display(int32_t displayIndex);
+        explicit Display(uint32_t displayID);
 
         std::vector<DisplayMode> GetModes() const;
 
-        int32_t displayIndex = 0;
+        uint32_t displayID = 0;
 
     private:
         std::vector<DisplayMode> modes;

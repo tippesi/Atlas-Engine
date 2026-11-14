@@ -6,8 +6,8 @@ namespace Atlas {
 
     namespace Ocean {
 
-        Ocean::Ocean(int32_t LoDCount, float size, vec3 translation, int32_t N,
-            int32_t L) : size(size), translation(translation), simulation(N, L) {
+        Ocean::Ocean(int32_t LoDCount, float size, vec3 translation, int32_t N)
+            : size(size), translation(translation), simulation(N) {
 
             int32_t imageSize = (int32_t)powf(2, (float)LoDCount - 1.0f);
             LoDImage = Common::Image<uint8_t>(imageSize, imageSize, 1);
@@ -66,6 +66,12 @@ namespace Atlas {
 
             // Sort the list to render from front to back
             SortNodes(renderList, cameraLocation);
+
+        }
+
+        int32_t Ocean::GetLoDCount() const {
+
+            return LoDCount;
 
         }
 

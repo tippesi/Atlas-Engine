@@ -30,8 +30,13 @@ namespace Atlas {
                 int32_t halfRes;
                 ivec2 resolution;
                 uint32_t frameCount;
-                int32_t padding1;
-                Shadow shadow;
+                int32_t hiZLevelCount;
+            };
+
+            struct alignas(16) ResolveConstants {
+                ivec2 resolution;
+                int32_t sampleCount;
+                int32_t lightSampleCount;
             };
 
             struct alignas(16) UpscalingConstants {
@@ -39,17 +44,14 @@ namespace Atlas {
             };
 
             struct alignas(16) TemporalConstants {
-                vec4 cameraLocationLast;
                 float temporalWeight;
                 float historyClipMax;
                 float currentClipFactor;
                 float roughnessCutoff;
                 int32_t resetHistory;
-                uint32_t frameCount;
             };
 
             struct alignas(16) AtrousConstants {
-                int32_t stepSize;
                 float strength;
                 float roughnessCutoff;
             };
@@ -61,12 +63,19 @@ namespace Atlas {
 
             PipelineConfig ssrPipelineConfig;
             PipelineConfig rtrPipelineConfig;
+            PipelineConfig rtrRayTracingPipelineConfig;
+            PipelineConfig rtrShadowPipelineConfig;
+            PipelineConfig rtrResolvePipelineConfig;
             PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;
             PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtrUniformBuffer;
-            Ref<Graphics::Sampler> shadowSampler;
+
+            Buffer::Buffer deferredSampleBuffer;
+            Buffer::Buffer deferredLightBuffer;
+            Buffer::Buffer deferredShadowRayBuffer;
+            Buffer::Buffer deferredShadowRayCountBuffer;
         };
 
     }

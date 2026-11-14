@@ -15,6 +15,7 @@ namespace Atlas::Editor {
         Mesh,
         Play,
         Stop,
+        Pause,
         Scene,
         Terrain,
         Font,
@@ -35,7 +36,30 @@ namespace Atlas::Editor {
         MeshSource,
         EnvironmentImage,
         Trash,
-        Filter
+        Filter,
+        OpenInNew,
+        Reset,
+        MaterialGraph,
+        Ocean,
+        Navigation,
+        IrradianceVolume,
+        GlobalIllumination,
+        Reflection,
+        Shadow,
+        Clouds,
+        Fog,
+        Sky,
+        Wind,
+        PostProcessing,
+        ViewList,
+        ViewGrid,
+        Log,
+        Error,
+        Warning,
+        Notifications,
+        ScaleInverse,
+        Pin,
+        PinFilled
     };
 
     class Icons {
@@ -44,10 +68,14 @@ namespace Atlas::Editor {
 
         Texture::Texture2D& Get(IconType type);
 
+        // White in both modes, such that it can be tinted
+        Texture::Texture2D& GetTintable(IconType type);
+
     private:
         void LoadIcons();
 
         std::map<IconType, Texture::Texture2D> icons;
+        std::map<IconType, Texture::Texture2D> tintableIcons;
 
         bool darkModeIcons = true;
 

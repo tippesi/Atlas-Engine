@@ -25,6 +25,9 @@ namespace Atlas {
 
             void SetActivationButton(uint8_t mouseButton);
 
+            // Discards the movement since the last update, e.g. of drags which didn't belong to a camera
+            void Reset();
+
             void HideMouse();
 
             void ShowMouse();
@@ -37,6 +40,8 @@ namespace Atlas {
 
         private:
             void RegisterEvents();
+
+            void SetRelativeMouseMode(bool enable);
 
             void MouseMotionEventHandler(Events::MouseMotionEvent event);
             void MouseButtonEventHandler(Events::MouseButtonEvent event);

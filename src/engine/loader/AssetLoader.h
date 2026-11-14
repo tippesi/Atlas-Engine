@@ -157,10 +157,6 @@ namespace Atlas {
 
             static std::mutex assetLoaderMutex;
 
-#ifdef AE_OS_ANDROID
-            static AAssetManager* manager;
-#endif
-
             static bool alwaysReload;
             static std::unordered_set<std::string> readFiles;
 

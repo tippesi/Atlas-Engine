@@ -29,7 +29,6 @@ layout(push_constant) uniform constants {
     float historyClipMax;
     float currentClipFactor;
     float maxHistoryLength;
-    float exposure;
     int samplesPerFrame;
     float maxRadiance;
 } pushConstants;
@@ -369,8 +368,8 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(outAccumImage).x ||
-        pixel.y > imageSize(outAccumImage).y)
+    if (pixel.x >= imageSize(outAccumImage).x ||
+        pixel.y >= imageSize(outAccumImage).y)
         return;
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;

@@ -6,6 +6,15 @@
 
 namespace Atlas::Physics {
 
+    bool Shape::PrepareInBackground() {
+
+        if (type != ShapeType::Mesh || IsValid())
+            return true;
+
+        return ShapesManager::PrepareMeshShape(static_cast<MeshShapeSettings*>(settings.get())->mesh);
+
+    }
+
     bool Shape::TryCreate() {
 
         if (type == ShapeType::Mesh) {
@@ -28,6 +37,18 @@ namespace Atlas::Physics {
             auto heightFieldSettings = static_cast<HeightFieldShapeSettings*>(settings.get());
             return ShapesManager::TryCreateShapeFromHeightField(this, *heightFieldSettings);
         }
+        else if (type == ShapeType::ConvexHull) {
+            auto convexHullSettings = static_cast<ConvexHullShapeSettings*>(settings.get());
+            return ShapesManager::TryCreateShapeFromConvexHull(this, *convexHullSettings);
+        }
+        else if (type == ShapeType::Cylinder) {
+            auto cylinderSettings = static_cast<CylinderShapeSettings*>(settings.get());
+            return ShapesManager::TryCreateShapeFromCylinder(this, *cylinderSettings);
+        }
+        else if (type == ShapeType::Compound) {
+            auto compoundSettings = static_cast<CompoundShapeSettings*>(settings.get());
+            return ShapesManager::TryCreateShapeFromCompound(this, *compoundSettings);
+        }
 
         return false;
 
@@ -46,11 +67,8 @@ namespace Atlas::Physics {
             ref = shape->GetInnerShape();
         }
 
-        vec3 correctedScale = scale;
-        if (type == ShapeType::Sphere) {
-            // Assume scalar scale (but make sure it actually is)
-            correctedScale = vec3(scale.x);
-        }
+        // E.g. spheres need a uniform scale, cylinders the same scale on x and z
+        auto correctedScale = JPHVecToVec(ref->MakeScaleValid(VecToJPHVec(scale)));
 
         JPH::ScaledShapeSettings scaledShapeSettings(ref, VecToJPHVec(correctedScale));
         auto result = scaledShapeSettings.Create();
@@ -75,6 +93,15 @@ namespace Atlas::Physics {
             }
             else if (type == ShapeType::HeightField) {
                 static_cast<HeightFieldShapeSettings*>(settings.get())->scale = correctedScale;
+            }
+            else if (type == ShapeType::ConvexHull) {
+                static_cast<ConvexHullShapeSettings*>(settings.get())->scale = correctedScale;
+            }
+            else if (type == ShapeType::Cylinder) {
+                static_cast<CylinderShapeSettings*>(settings.get())->scale = correctedScale;
+            }
+            else if (type == ShapeType::Compound) {
+                static_cast<CompoundShapeSettings*>(settings.get())->scale = correctedScale;
             }
         }
 

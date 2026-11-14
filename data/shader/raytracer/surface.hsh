@@ -1,4 +1,8 @@
 #extension GL_EXT_nonuniform_qualifier : require
+#ifdef AE_HARDWARE_RAYTRACING
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+#endif
 
 #include <common.hsh>
 #include <texture.hsh>
@@ -7,15 +11,78 @@
 
 #include <../brdf/surface.hsh>
 
+#ifdef RAY_TRACING_PIPELINE
+// The hit of the last ray of TraceClosest, hit objects can't be assigned or passed as out parameters
+hitObjectEXT closestHitObject;
+#endif
+
+#if defined(MATERIAL_GRAPH_HITS) && defined(RAY_TRACING_PIPELINE)
+#include <graphHit.hsh>
+
+// The hit groups of material graphs are executed with the hit object of the ray
+layout(location = 1) rayPayloadEXT MaterialGraphHit graphHit;
+#endif
+
 Instance GetInstance(Ray ray) {
 
     return bvhInstances[nonuniformEXT(ray.hitInstanceID)];
 
 }
 
+#ifdef AE_HARDWARE_RAYTRACING
+// Packed normal and tangent per vertex, written by the deformation pass
+layout(buffer_reference, std430, buffer_reference_align = 8) readonly buffer DeformedVertexBuffer {
+    uvec2 data[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer MeshIndexBuffer {
+    uint data[];
+};
+
+uint GetMeshIndex(uvec2 address, uint position) {
+
+    // The lowest bit of the address marks 16 bit indices
+    MeshIndexBuffer indices = MeshIndexBuffer(uvec2(address.x & ~1u, address.y));
+    if ((address.x & 1u) == 0u)
+        return indices.data[position];
+
+    uint word = indices.data[position >> 1u];
+    return (position & 1u) > 0u ? word >> 16u : word & 0xFFFFu;
+
+}
+#endif
+
+// The triangle of the mesh with the normals of a deformed instance, hardware ray tracing gets the hit positions from
+// the acceleration structure
 Triangle GetTriangle(Ray ray, Instance instance) {
 
-    return UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[nonuniformEXT(ray.hitID)]);
+    Triangle tri = UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[nonuniformEXT(ray.hitID)]);
+
+#ifdef AE_HARDWARE_RAYTRACING
+    if (instance.deformedVertices != uvec2(0u)) {
+        DeformedVertexBuffer vertices = DeformedVertexBuffer(instance.deformedVertices);
+        uint firstIndex = uint(ray.hitID) * 3u;
+        uvec2 v0 = vertices.data[GetMeshIndex(instance.meshIndices, firstIndex)];
+        uvec2 v1 = vertices.data[GetMeshIndex(instance.meshIndices, firstIndex + 1u)];
+        uvec2 v2 = vertices.data[GetMeshIndex(instance.meshIndices, firstIndex + 2u)];
+
+        // The bitangent keeps the handedness of the undeformed triangle
+        float handedness = dot(cross(tri.n0 + tri.n1 + tri.n2, tri.t), tri.bt) < 0.0 ? -1.0 : 1.0;
+
+        tri.n0 = unpackUnitVector(int(v0.x)).xyz;
+        tri.n1 = unpackUnitVector(int(v1.x)).xyz;
+        tri.n2 = unpackUnitVector(int(v2.x)).xyz;
+
+        vec3 tangent = unpackUnitVector(int(v0.y)).xyz + unpackUnitVector(int(v1.y)).xyz + unpackUnitVector(int(v2.y)).xyz;
+        // Meshes without tangents have zero tangents, which unpack to almost zero
+        if (dot(tangent, tangent) > 0.01) {
+            tri.t = normalize(tangent);
+            tri.bt = handedness * normalize(cross(tri.n0 + tri.n1 + tri.n2, tri.t));
+        }
+    }
+#endif
+
+    return tri;
 
 }
 
@@ -26,7 +93,7 @@ Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMater
     mat.ID = rayMat.ID;
 
     mat.baseColor = vec3(rayMat.baseR, rayMat.baseG, rayMat.baseB);
-    mat.emissiveColor = vec3(rayMat.emissR, rayMat.emissG, rayMat.emissB);
+    mat.emissiveColor = vec3(rayMat.emissR, rayMat.emissG, rayMat.emissB) * globalData.preExposure;
     mat.transmissiveColor = unpackColorVector(int(rayMat.transmissionColor)).rgb;
     mat.transmissive = any(greaterThan(mat.transmissiveColor, vec3(0.0)));
 
@@ -48,9 +115,11 @@ void TransformTriangle(inout Triangle tri, Instance instance) {
 
     mat4 matrix = inverse(mat4(transpose(instance.inverseMatrix)));
 
+#ifndef AE_HARDWARE_RAYTRACING
     tri.v0 = vec3(matrix * vec4(tri.v0, 1.0));
     tri.v1 = vec3(matrix * vec4(tri.v1, 1.0));
     tri.v2 = vec3(matrix * vec4(tri.v2, 1.0));
+#endif
 
     mat3 normalMatrix = transpose(mat3(transpose(instance.inverseMatrix)));
     tri.n0 = normalize(normalMatrix * tri.n0);
@@ -71,13 +140,17 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     RaytraceMaterial rayMat;
     Material mat = GetTriangleMaterial(tri, instance.materialOffset, rayMat);
 
-    // The ray doesn't provide us with the barrycentric coordinates
-    // so we intersect again.
+#ifdef AE_HARDWARE_RAYTRACING
+    float dist = ray.hitDistance;
+    vec2 barrycentric = ray.hitBarycentrics;
+#else
+    // The software traversal doesn't provide the barycentric coordinates, so we intersect again
     vec3 sol;
     IntersectTriangle(ray, tri.v0, tri.v1, tri.v2, sol);
 
     float dist = sol.x;
     vec2 barrycentric = sol.yz;
+#endif
 
     float s = barrycentric.x;
     float t = barrycentric.y;
@@ -89,12 +162,23 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
     vec4 vertexColor = r * tri.color0 + s * tri.color1 + t * tri.color2;
 
+#ifdef AE_HARDWARE_RAYTRACING
+    // The normal matrix keeps the front face of transforms with reversed winding
+    mat3 normalMatrix = transpose(mat3(transpose(instance.inverseMatrix)));
+#ifdef AE_POSITION_FETCH
+    vec3 triangleNormal = normalize(normalMatrix * ray.hitGeometryNormal);
+#else
+    // The undeformed triangle of the mesh, deformed instances only use it to find the front face
+    vec3 triangleNormal = normalize(normalMatrix * cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
+#endif
+#else
     // Produces some problems in the bottom left corner of the Sponza scene,
     // but fixes the cube. Should work in theory.
     vec3 triangleNormal = normalize(cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
     // Transforms with reversed winding need the same front-face correction as in the rasterizer
     float orientation = determinant(mat3(transpose(instance.inverseMatrix))) < 0.0 ? -1.0 : 1.0;
     triangleNormal *= orientation;
+#endif
     bool flipNormal = dot(triangleNormal, ray.direction) > 0.0;
     bool twoSided = rayMat.twoSided > 0 || mat.transmissive;
     backfaceHit = twoSided || rayMat.cullBackFaces == 0 ? false : flipNormal;
@@ -113,29 +197,56 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     texCoord *= rayMat.tiling;
 
     int level = textureLevel;
-    //mat.opacity *= vertexColor.a;
-    mat.baseColor *= rayMat.useVertexColors > 0 ? vertexColor.rgb : vec3(1.0);
-    mat.baseColor *= SampleBaseColorBilinear(rayMat.baseColorTexture, float(level), texCoord);
-    mat.opacity *= SampleOpacityBilinear(rayMat.opacityTexture, float(level), texCoord);
-
-    mat.roughness *= SampleRoughnessBilinear(rayMat.roughnessTexture, float(level), texCoord);
-    mat.metalness *= SampleMetalnessBilinear(rayMat.metalnessTexture, float(level), texCoord);
-    mat.ao *= SampleAoBilinear(rayMat.aoTexture, float(level), texCoord);
-    // Need to have the texture level to go to near zero, otherwise we will have light leaks
-    mat.emissiveColor *= SampleEmissiveBilinear(rayMat.emissiveTexture, max(0.0, float(level - 3.0)), texCoord);
 
     // Account for changing texture coord direction
     vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;
     mat3 TBN = mat3(tri.t, bitangent, normal);
 
-    // Sample normal map
-    if (rayMat.normalTexture >= 0 && useNormalMaps) {
-        vec3 texNormal = 2.0 * SampleNormalBilinear(rayMat.normalTexture, float(level), texCoord) - 1.0;
-        texNormal = TBN * texNormal;
-        // Make sure we don't divide by zero
-        // The normalize function crashes the program in case of vec3(0.0)
-        texNormal /= max(length(texNormal), 0.00001);
-        normal = mix(normal, texNormal, saturate(mat.normalScale));
+#if defined(MATERIAL_GRAPH_HITS) && defined(RAY_TRACING_PIPELINE)
+    if (rayMat.graphHitGroup > 0u) {
+        graphHit.tangentFrame = TBN;
+        graphHit.color = packUnorm4x8(vertexColor);
+        graphHit.texCoord = texCoord;
+        graphHit.frontFacing = flipNormal ? -1.0 : 1.0;
+        graphHit.textureLevel = float(level);
+        graphHit.parameterOffset = rayMat.graphParameterOffset;
+
+        hitObjectExecuteShaderEXT(closestHitObject, 1);
+
+        // The G-buffer limits these values, an albedo above one would amplify itself in the bounces of the DDGI
+        mat.baseColor = saturate(graphHit.baseColor);
+        mat.roughness = saturate(graphHit.roughness);
+        mat.metalness = saturate(graphHit.metalness);
+        mat.ao = saturate(graphHit.ao);
+        mat.emissiveColor = graphHit.emissive * globalData.preExposure;
+
+        vec3 graphNormal = TBN * graphHit.normal;
+        if (useNormalMaps && dot(graphNormal, graphNormal) > 0.0)
+            normal = normalize(graphNormal);
+    }
+    else
+#endif
+    {
+        //mat.opacity *= vertexColor.a;
+        mat.baseColor *= rayMat.useVertexColors > 0 ? vertexColor.rgb : vec3(1.0);
+        mat.baseColor *= SampleBaseColorBilinear(rayMat.baseColorTexture, float(level), texCoord);
+        mat.opacity *= SampleOpacityBilinear(rayMat.opacityTexture, float(level), texCoord);
+
+        mat.roughness *= SampleRoughnessBilinear(rayMat.roughnessTexture, float(level), texCoord);
+        mat.metalness *= SampleMetalnessBilinear(rayMat.metalnessTexture, float(level), texCoord);
+        mat.ao *= SampleAoBilinear(rayMat.aoTexture, float(level), texCoord);
+        // Need to have the texture level to go to near zero, otherwise we will have light leaks
+        mat.emissiveColor *= SampleEmissiveBilinear(rayMat.emissiveTexture, max(0.0, float(level - 3.0)), texCoord);
+
+        // Sample normal map
+        if (rayMat.normalTexture >= 0 && useNormalMaps) {
+            vec3 texNormal = 2.0 * SampleNormalBilinear(rayMat.normalTexture, float(level), texCoord) - 1.0;
+            texNormal = TBN * texNormal;
+            // Make sure we don't divide by zero
+            // The normalize function crashes the program in case of vec3(0.0)
+            texNormal /= max(length(texNormal), 0.00001);
+            normal = mix(normal, texNormal, saturate(mat.normalScale));
+        }
     }
 
     normal = dot(normal, triangleNormal) < 0.0 && rayMat.twoSided > 0 ? -normal : normal;
@@ -158,6 +269,15 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     UpdateSurface(surface);
 
     return surface;
+
+}
+
+// The surface of the closest hit of a ray
+Surface GetHitSurface(Ray ray, bool useNormalMaps, out bool backfaceHit, int textureLevel) {
+
+    Instance instance = GetInstance(ray);
+    Triangle tri = GetTriangle(ray, instance);
+    return GetSurfaceParameters(instance, tri, ray, useNormalMaps, backfaceHit, textureLevel);
 
 }
 

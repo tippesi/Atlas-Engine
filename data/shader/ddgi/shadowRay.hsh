@@ -1,0 +1,7 @@
+struct PackedShadowRay {
+    // xyz: origin, w: maximum distance
+    vec4 origin;
+    vec4 direction;
+    // rgb: direct light if the light is visible, w: index of the ray hit
+    vec4 radiance;
+};

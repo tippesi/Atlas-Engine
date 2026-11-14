@@ -62,6 +62,9 @@ namespace Atlas {
 
             void Unmap();
 
+            // Makes writes of the GPU visible to the host for memory that isn't coherent
+            void Invalidate();
+
             VkDeviceAddress GetDeviceAddress();
 
             VkBuffer buffer;
@@ -72,6 +75,8 @@ namespace Atlas {
 
             BufferDomain domain;
 
+            const uint64_t id;
+
             const size_t size = 0;
             const size_t alignment = 0;
 
@@ -80,6 +85,8 @@ namespace Atlas {
 
             bool isMapped = false;
             void* mappedData = nullptr;
+            // Host buffers stay mapped for their whole lifetime
+            void* persistentMappedData = nullptr;
 
         public:
             static size_t GetAlignedSize(size_t size);
@@ -98,6 +105,8 @@ namespace Atlas {
             void* Map();
 
             void Unmap();
+
+            void Invalidate();
 
             Buffer* GetCurrent() const;
 

@@ -26,7 +26,16 @@ namespace Atlas::ImguiExtension {
 
         void Render(bool clearSwapChain = false);
 
+        // Copies the draw data after ImGui::Render(), Render() then draws the copy. A render thread can draw it
+        // while the next frame is built, but must not render while it is copied
+        void CopyDrawData();
+
         void RecreateImGuiResources();
+
+        // Scales the whole interface, ImGui works with a smaller display and a larger framebuffer scale
+        void SetScale(float scale);
+
+        float GetScale() const;
 
         ImTextureID GetTextureId(const Atlas::Texture::Texture* texture,
             VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -56,6 +65,7 @@ namespace Atlas::ImguiExtension {
         void UpdateMouseCursor();
 
         SDL_Cursor *mouseCursors[ImGuiMouseCursor_COUNT];
+        char *clipboardText = nullptr;
 
         int32_t windowID = 0;
         int32_t mouseMotionID = 0;
@@ -65,9 +75,15 @@ namespace Atlas::ImguiExtension {
         int32_t textInputID = 0;
 
         Atlas::Window *window = nullptr;
+        float scale = 1.0f;
         Atlas::Ref<Atlas::Graphics::DescriptorPool> pool = nullptr;
 
         std::unordered_map<VkImageView, DescriptorSetHandle> imageViewToDescriptorSetMap;
+
+        ImDrawData drawDataCopy;
+        // Reused by the copies, such that their buffers aren't allocated every frame
+        ImVector<ImDrawList*> drawListCopies;
+        bool hasDrawDataCopy = false;
 
         bool initialized = false;
 

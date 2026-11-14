@@ -1,10 +1,8 @@
 #include "MainRenderer.h"
 #include "helper/GeometryHelper.h"
-#include "helper/HaltonSequence.h"
 
 #include "../common/Packing.h"
 #include "../tools/PerformanceCounter.h"
-#include "../Clock.h"
 
 namespace Atlas {
 
@@ -18,8 +16,6 @@ namespace Atlas {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
-
-			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
 
 			PreintegrateBRDF();
 
@@ -46,6 +42,7 @@ namespace Atlas {
 			impostorShadowRenderer.Init(device);
 			terrainShadowRenderer.Init(device);
 			gBufferRenderer.Init(device);
+			hiZRenderer.Init(device);
 			ddgiRenderer.Init(device);
 			rtgiRenderer.Init(device);
 			ssgiRenderer.Init(device);
@@ -70,41 +67,28 @@ namespace Atlas {
 		void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
 			std::span<Ref<PrimitiveBatch>> primitiveBatches, Texture::Texture2D* texture) {
 
-			if (!device->swapChain->isComplete || !scene->HasMainCamera())
+			if (!device->swapChain->isComplete || !scene->renderState.hasCamera)
 				return;
+
+			CPUProfiler::Scope profilerScope("Render scene");
 
 			if (target->IsUsedForPathTracing())
 				target->UseForPathTracing(false);
 
-			auto& camera = scene->GetMainCamera();
+			auto& camera = scene->renderState.camera;
 			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
 			commandList->BeginCommands();
 
-			auto& taa = scene->postProcessing.taa;
-			if (taa.enable || scene->postProcessing.fsr2) {
-				vec2 jitter = vec2(0.0f);
-				if (scene->postProcessing.fsr2) {
-					jitter = fsr2Renderer.GetJitter(target, frameCount);
-				}
-				else {
-					jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-					jitter.x /= (float)target->GetScaledWidth();
-					jitter.y /= (float)target->GetScaledHeight();
-				}
-
-				camera.Jitter(jitter * taa.jitterRange);
-			}
-			else {
-				// Even if there is no TAA we need to update the jitter for other techniques
-				// E.g. the reflections and ambient occlusion use reprojection
-				camera.Jitter(vec2(0.0f));
-			}
+			auto upscaler = PrepareUpscaler(target, scene, commandList);
+			// Even without an upscaler the jitter is updated, e.g. the reflections and ambient occlusion use reprojection
+			auto jitter = upscaler ? upscaler->GetJitter(target, frameCount) : vec2(0.0f);
+			camera.Jitter(jitter * scene->renderState.postProcessing.taa.jitterRange);
 
 			auto renderState = &scene->renderState;
 
-			Graphics::Profiler::BeginThread("Main renderer", commandList);
-			Graphics::Profiler::BeginQuery("Render scene");
+			GPUProfiler::BeginThread("Main renderer", commandList);
+			GPUProfiler::BeginQuery("Render scene");
 
 			SetUniforms(target, scene, camera);
 
@@ -114,26 +98,35 @@ namespace Atlas {
 			commandList->BindSampler(globalNearestSampler, 1, 16);
 			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
 
-			if (scene->clutter)
-				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
+			if (scene->renderState.clutter)
+				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->renderState.clutter, camera, commandList);
 
-			if (scene->ocean && scene->ocean->enable)
-				scene->ocean->simulation.Compute(commandList);
+			if (scene->renderState.ocean && scene->renderState.ocean->enable) {
+				scene->renderState.ocean->simulation.Compute(commandList);
+				oceanRenderer.ComputeSurfaceQueries(scene, commandList);
+			}
 
-			if (scene->sky.probe) {
-				if (scene->sky.probe->update) {
-					FilterProbe(scene->sky.probe, commandList);
-					//scene->sky.probe->update = false;
+			if (scene->renderState.sky.probe) {
+				auto& probe = scene->renderState.sky.probe;
+				// A static cubemap is only filtered again when the pre-exposure changes
+				if (probe->update && (probe->GetCubemap().image != filteredSkyProbeSource ||
+					probe->filteredDiffuse.image != filteredSkyProbeTarget || renderState->preExposure != filteredSkyProbePreExposure)) {
+					FilterProbe(probe, commandList);
+					filteredSkyProbeSource = probe->GetCubemap().image;
+					filteredSkyProbeTarget = probe->filteredDiffuse.image;
+					filteredSkyProbePreExposure = renderState->preExposure;
 				}
 			}
-			else if (scene->sky.atmosphere) {
-				atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
-				FilterProbe(scene->sky.atmosphere->probe, commandList);
+			else if (scene->renderState.sky.atmosphere) {
+				auto& probe = scene->renderState.sky.atmosphere->probe;
+				if (atmosphereRenderer.Render(probe, scene, commandList) || atmosphereProbeNeedsFilter) {
+					FilterProbe(probe, commandList);
+					atmosphereProbeNeedsFilter = false;
+				}
 			}
 
-			if (scene->irradianceVolume) {
-				commandList->BindBuffer(ddgiUniformBuffer, 2, 27);
-			}
+			// Shaders read whether the volume is enabled from the uniforms
+			commandList->BindBuffer(ddgiUniformBuffer, 2, 27);
 
 			volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
@@ -143,7 +136,6 @@ namespace Atlas {
 
 			// Wait as long as possible for this to finish
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
-			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
 			JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
 			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
 			if (renderState->textures.size())
@@ -163,12 +155,20 @@ namespace Atlas {
 
 			JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
 
+			// The main and directional shadow passes are culled together
+			JobSystem::WaitSpin(renderState->fillGPUShadowRenderPassesJob);
+			JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
+			// Texture streaming targets the output resolution, not the scaled one
+			auto focalLength = float(target->GetHeight()) / (2.0f * glm::tan(0.5f * glm::radians(camera.fieldOfView)));
+			renderState->gpuScene.Cull(renderState->renderList, camera.GetLocation(), focalLength, commandList);
+			renderState->gpuScene.Bind(commandList);
+
 			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
 			// Better orders are: Shadow, DDGI, Main or. DDGI, Shadow, Main or DDGI Main, Shadow
 			{
-				Graphics::Profiler::BeginQuery("Main render pass");
+				GPUProfiler::Scope gpuScope("Main render pass");
 
-				commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
+				commandList->BeginRendering(target->gBufferRendering);
 
 				opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
@@ -180,9 +180,33 @@ namespace Atlas {
 
 				impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
-				commandList->EndRenderPass();
+				commandList->EndRendering();
 
-				Graphics::Profiler::EndQuery();
+				// The instances which weren't visible in the last frame are tested against the depth of the ones which were
+				if (renderState->gpuScene.HasOcclusionDraws()) {
+					auto occlusionData = target->GetData(FULL_RES);
+
+					commandList->MemoryBarrier(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+						VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+					hiZRenderer.Generate(occlusionData, 0.0f, commandList);
+					renderState->gpuScene.CullOcclusion(occlusionData->hiZTexture,
+						ivec2(occlusionData->depthTexture->width, occlusionData->depthTexture->height),
+						occlusionData->hiZLevelCount, commandList);
+
+					commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT,
+						VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+						VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+						VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+
+					commandList->BeginRendering(target->gBufferLoadRendering);
+
+					opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap, true);
+
+					impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap, true);
+
+					commandList->EndRendering();
+				}
 			}
 
 			{
@@ -191,11 +215,11 @@ namespace Atlas {
 				terrainShadowRenderer.Render(target, scene, commandList);
 			}
 
-			if (scene->sky.GetProbe()) {
-				commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-					scene->sky.GetProbe()->filteredSpecular.sampler, 1, 11);
-				commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-					scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
+			if (scene->renderState.sky.GetProbe()) {
+				commandList->BindImage(scene->renderState.sky.GetProbe()->filteredSpecular.image,
+					scene->renderState.sky.GetProbe()->filteredSpecular.sampler, 1, 11);
+				commandList->BindImage(scene->renderState.sky.GetProbe()->filteredDiffuse.image,
+					scene->renderState.sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
 			}
             
             JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
@@ -204,12 +228,15 @@ namespace Atlas {
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
+			// Written separately from the culling, so the main pass doesn't wait for the ray tracing world update
+			if (scene->renderState.rayTracingWorld)
+				renderState->gpuScene.WriteRayTracingInstances(*scene->renderState.rayTracingWorld, scene->renderState.camera.GetLocation(),
+					focalLength, commandList);
+
 			renderState->lightBuffer.Bind(commandList, 1, 18);
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 
 			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
-
-			oceanRenderer.RenderDepthOnly(target, scene, commandList);
 
 			auto targetData = target->GetData(FULL_RES);
 
@@ -222,54 +249,26 @@ namespace Atlas {
 			commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
 
 			if (!target->HasHistory()) {
-				auto rtHalfData = target->GetHistoryData(HALF_RES);
-				auto rtData = target->GetHistoryData(FULL_RES);
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-				Graphics::ImageBarrier imageBarriers[] = {
-					{rtData->baseColorTexture->image, layout, access},
-					{rtData->depthTexture->image, layout, access},
-					{rtData->normalTexture->image, layout, access},
-					{rtData->geometryNormalTexture->image, layout, access},
-					{rtData->roughnessMetallicAoTexture->image, layout, access},
-					{rtData->emissiveTexture->image, layout, access},
-					{rtData->offsetTexture->image, layout, access},
-					{rtData->materialIdxTexture->image, layout, access},
-					{rtData->stencilTexture->image, layout, access},
-					{rtData->velocityTexture->image, layout, access},
-					{rtHalfData->baseColorTexture->image, layout, access},
-					{rtHalfData->depthTexture->image, layout, access},
-					{rtHalfData->normalTexture->image, layout, access},
-					{rtHalfData->geometryNormalTexture->image, layout, access},
-					{rtHalfData->roughnessMetallicAoTexture->image, layout, access},
-					{rtHalfData->emissiveTexture->image, layout, access},
-					{rtHalfData->offsetTexture->image, layout, access},
-					{rtHalfData->materialIdxTexture->image, layout, access},
-					{rtHalfData->stencilTexture->image, layout, access},
-					{rtHalfData->velocityTexture->image, layout, access},
-					{target->exposureTexture.image, layout, access}
-				};
-				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				target->GetHistoryData(FULL_RES)->Transition(commandList, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				target->GetHistoryData(HALF_RES)->Transition(commandList, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				commandList->ImageMemoryBarrier(target->exposureTexture.image, layout, access, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 			}
 
-			{
-				auto rtData = target->GetData(FULL_RES);
+			target->GetData(FULL_RES)->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
+			// The ocean depth pass reads the scene depth
+			oceanRenderer.RenderDepthOnly(target, scene, commandList);
+
+			{
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
 				Graphics::ImageBarrier imageBarriers[] = {
-					{rtData->baseColorTexture->image, layout, access},
-					{rtData->depthTexture->image, layout, access},
-					{rtData->normalTexture->image, layout, access},
-					{rtData->geometryNormalTexture->image, layout, access},
-					{rtData->roughnessMetallicAoTexture->image, layout, access},
-					{rtData->emissiveTexture->image, layout, access},
-					{rtData->offsetTexture->image, layout, access},
-					{rtData->materialIdxTexture->image, layout, access},
-					{rtData->stencilTexture->image, layout, access},
-					{rtData->velocityTexture->image, layout, access},
 					{target->oceanStencilTexture.image, layout, access},
+					{target->oceanNormalTexture.image, layout, access},
 					{target->oceanDepthTexture.image, layout, access}
 				};
 
@@ -277,10 +276,10 @@ namespace Atlas {
 			}
 
 			{
-				if (scene->sky.probe) {
+				if (scene->renderState.sky.probe) {
 					skyboxRenderer.Render(target, scene, commandList);
 				}
-				else if (scene->sky.atmosphere) {
+				else if (scene->renderState.sky.atmosphere) {
 					atmosphereRenderer.Render(target, scene, commandList);
 				}
 			}
@@ -301,7 +300,12 @@ namespace Atlas {
 			commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
 				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-			if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
+			if (!scene->renderState.rtgi || !scene->renderState.rtgi->enable || !scene->IsRtDataValid()) {
+				if (scene->renderState.ssgi && scene->renderState.ssgi->enable) {
+					auto& ssgi = scene->renderState.ssgi;
+					auto resolution = ssgi->halfResolution ? HALF_RES : FULL_RES;
+					hiZRenderer.Generate(target->GetData(resolution), ssgi->thickness, commandList);
+				}
 				ssgiRenderer.Render(target, scene, commandList);
 			}
 
@@ -314,6 +318,22 @@ namespace Atlas {
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 			commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+			auto reflection = scene->renderState.reflection;
+
+			// The reflections start on the ocean surface where it's visible, which isn't part of the G-buffer
+			auto reflectionEnabled = reflection && reflection->enable && (reflection->ssr || scene->IsRtDataValid());
+			auto oceanReflections = reflectionEnabled && scene->renderState.ocean && scene->renderState.ocean->enable;
+			target->SetSeparateReflectionData(oceanReflections);
+			if (oceanReflections) {
+				oceanRenderer.RenderReflectionData(target, scene, commandList);
+			}
+
+			if (reflection && reflection->enable && reflection->ssr) {
+				// Upscaled reflections trace from full resolution, surfaces have no thickness when ray tracing continues the rays
+				auto resolution = !reflection->halfResolution || reflection->upsampleBeforeFiltering ? FULL_RES : HALF_RES;
+				hiZRenderer.Generate(target->GetData(resolution), reflection->rt ? 0.0f : 0.008f, commandList);
+			}
 
 			rtrRenderer.Render(target, scene, commandList);
 
@@ -331,11 +351,11 @@ namespace Atlas {
 			// downscaleRenderer.Downscale(target, commandList);
 
 			{
-				commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+				commandList->BeginRendering(target->afterLightingRendering);
 
 				textRenderer.Render(target, scene, commandList);
 
-				commandList->EndRenderPass();
+				commandList->EndRendering();
 
 				auto rtData = target->GetData(FULL_RES);
 
@@ -361,23 +381,21 @@ namespace Atlas {
 			oceanRenderer.Render(target, scene, commandList);
 
 			for (const auto& primitiveBatch : primitiveBatches)
-				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
+				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->renderState.camera, commandList);
 
-			if (scene->postProcessing.fsr2) {
-				gBufferRenderer.GenerateReactiveMask(target, commandList);
+			if (upscaler) {
+				if (upscaler->UsesReactiveMask())
+					gBufferRenderer.GenerateReactiveMask(target, commandList);
 
-				fsr2Renderer.Render(target, scene, commandList);
-			}
-			else {
-				taaRenderer.Render(target, scene, commandList);
+				upscaler->Render(target, scene, commandList);
 			}
 
 			target->Swap();
 
-			postProcessRenderer.Render(target, scene, commandList, texture);
+			postProcessRenderer.Render(target, scene, commandList, upscaler && upscaler->Sharpens(), texture);
 
-			Graphics::Profiler::EndQuery();
-			Graphics::Profiler::EndThread();
+			GPUProfiler::EndQuery();
+			GPUProfiler::EndThread();
 
 			commandList->EndCommands();
 			device->SubmitCommandList(commandList);
@@ -389,7 +407,7 @@ namespace Atlas {
 		void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
 			Ref<Scene::Scene> scene, Texture::Texture2D* texture, std::span<Ref<PrimitiveBatch>> primitiveBatches) {
 
-			if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
+			if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->renderState.hasCamera)
 				return;
 
 			if (!target->IsUsedForPathTracing())
@@ -397,34 +415,22 @@ namespace Atlas {
 
 			auto renderState = &scene->renderState;
 
-			auto& camera = scene->GetMainCamera();
+			auto& camera = scene->renderState.camera;
 
 			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
-			auto& taa = scene->postProcessing.taa;
-			if (taa.enable || scene->postProcessing.fsr2) {
-				vec2 jitter = vec2(0.0f);
-				if (scene->postProcessing.fsr2) {
-					jitter = fsr2Renderer.GetJitter(target, frameCount);
-				}
-				else {
-					jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-					jitter.x /= (float)target->GetScaledWidth() * 0.75f;
-					jitter.y /= (float)target->GetScaledHeight() * 0.75f;
-				}
-
-				camera.Jitter(jitter * taa.jitterRange);
-			}
-			else {
-				// Even if there is no TAA we need to update the jitter for other techniques
-				// E.g. the reflections and ambient occlusion use reprojection
-				camera.Jitter(vec2(0.0f));
-			}
-
 			commandList->BeginCommands();
 
-			Graphics::Profiler::BeginThread("Path tracing", commandList);
-			Graphics::Profiler::BeginQuery("Buffer operations");
+			auto upscaler = PrepareUpscaler(target, scene, commandList);
+			auto jitter = upscaler ? upscaler->GetJitter(target, frameCount) : vec2(0.0f);
+			// The path traced TAA resolve uses a wider jitter
+			if (upscaler == &taaRenderer)
+				jitter /= 0.75f;
+			camera.Jitter(jitter * scene->renderState.postProcessing.taa.jitterRange);
+
+			CPUProfiler::Scope profilerScope("Path trace scene");
+			GPUProfiler::BeginThread("Path tracing", commandList);
+			GPUProfiler::BeginQuery("Buffer operations");
 
 			auto globalUniforms = GlobalUniforms{
 				.vMatrix = camera.viewMatrix,
@@ -443,29 +449,42 @@ namespace Atlas {
 				.cameraDirection = vec4(camera.direction, 0.0f),
 				.cameraUp = vec4(camera.up, 0.0f),
 				.cameraRight = vec4(camera.right, 0.0f),
-				.planetCenter = vec4(scene->sky.planetCenter, 0.0f),
-				.windDir = glm::normalize(scene->wind.direction),
-				.windSpeed = scene->wind.speed,
-				.planetRadius = scene->sky.planetRadius,
-				.time = Clock::Get(),
-				.deltaTime = Clock::GetDelta(),
+				.planetCenter = vec4(scene->renderState.sky.planetCenter, 0.0f),
+				.windDir = glm::normalize(scene->renderState.wind.direction),
+				.windSpeed = scene->renderState.wind.speed,
+				.planetRadius = scene->renderState.sky.planetRadius,
+				.time = scene->renderState.time,
+				.deltaTime = scene->renderState.deltaTime,
 				.frameCount = frameCount,
 				.mipLodBias = -1.0f / target->GetScalingFactor(),
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
 			};
+			SetPreExposure(globalUniforms, scene);
 
 			pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
-			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
+			JobSystem::WaitSpin(renderState->materialUpdateJob);
 
+			// The deformation of the ray traced instances reads the global data
 			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
 			commandList->BindSampler(globalSampler, 1, 14);
 			commandList->BindSampler(globalNearestSampler, 1, 16);
 			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
+
+			// Writes the hardware ray tracing instances and builds the acceleration structure
+			if (scene->renderState.rayTracingWorld) {
+				JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
+				auto focalLength = float(target->GetHeight()) / (2.0f * glm::tan(0.5f * glm::radians(camera.fieldOfView)));
+				// Nothing else culls here, the streaming still needs the distances
+				renderState->gpuScene.CullForStreaming(camera.GetLocation(), focalLength, commandList);
+				renderState->gpuScene.WriteRayTracingInstances(*scene->renderState.rayTracingWorld, camera.GetLocation(),
+					focalLength, commandList);
+			}
+
 			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
 			if (renderState->textures.size())
 				commandList->BindSampledImages(renderState->textures, 0, 3);
@@ -478,13 +497,14 @@ namespace Atlas {
 				commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
 			}
 
-			Graphics::Profiler::EndQuery();
+			GPUProfiler::EndQuery();
 
 			UpdateShadowImageLayouts(scene, commandList);
 
 			// No probe filtering required
-			if (scene->sky.atmosphere) {
-				atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
+			if (scene->renderState.sky.atmosphere) {
+				if (atmosphereRenderer.Render(scene->renderState.sky.atmosphere->probe, scene, commandList))
+					atmosphereProbeNeedsFilter = true;
 			}
 
 			pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
@@ -494,19 +514,15 @@ namespace Atlas {
 				for (const auto& primitiveBatch : primitiveBatches)
 					RenderPrimitiveBatch(viewport, target, primitiveBatch, camera, commandList);
 
-				if (scene->postProcessing.fsr2) {
-					fsr2Renderer.Render(target, scene, commandList);
-				}
-				else if (scene->postProcessing.taa.enable) {
-					taaRenderer.Render(target, scene, commandList);
-				}
+				if (upscaler)
+					upscaler->Render(target, scene, commandList);
 
 				target->Swap();
 
-				postProcessRenderer.Render(target, scene, commandList, texture);
+				postProcessRenderer.Render(target, scene, commandList, upscaler && upscaler->Sharpens(), texture);
 			}
 			else {
-				Graphics::Profiler::BeginQuery("Post processing");
+				GPUProfiler::Scope gpuScope("Post processing");
 
 				if (device->swapChain->isComplete && !texture) {
 					commandList->BeginRenderPass(device->swapChain, true);
@@ -521,17 +537,17 @@ namespace Atlas {
 				}
 
 				target->Swap();
-
-				Graphics::Profiler::EndQuery();
 			}
 
-			Graphics::Profiler::EndThread();
+			GPUProfiler::EndThread();
 
 			commandList->EndCommands();
 
 			device->SubmitCommandList(commandList);
 
-			renderState->WaitForAsyncWorkCompletion();
+			// Path tracing takes the shadow requests of the frame like rendering does
+			renderState->WaitForJobs();
+			renderState->renderList.Clear();
 
 		}
 
@@ -562,7 +578,7 @@ namespace Atlas {
 			commandList->PipelineBarrier(preImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBufferWithStencil);
+			commandList->BeginRendering(target->afterLightingRendering);
 
 			// A path traced target has no depth attachment. The depth test is then done in the shader
 			// against the depth texture written by the path tracer
@@ -574,7 +590,7 @@ namespace Atlas {
 
 			if (batch->GetLineCount()) {
 
-				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
+				auto pipelineConfig = GetPipelineConfigForPrimitives(Graphics::AttachmentFormats(target->afterLightingRendering),
 					batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, hardwareDepthTest, manualDepthTest);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -590,7 +606,7 @@ namespace Atlas {
 
 			if (batch->GetTriangleCount()) {
 
-				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
+				auto pipelineConfig = GetPipelineConfigForPrimitives(Graphics::AttachmentFormats(target->afterLightingRendering),
 					batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, hardwareDepthTest, manualDepthTest);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -602,7 +618,7 @@ namespace Atlas {
 
 			}
 
-			commandList->EndRenderPass();
+			commandList->EndRendering();
 
 			Graphics::ImageBarrier postImageBarriers[] = {
 				{target->lightingTexture.image, layout, access},
@@ -808,9 +824,9 @@ namespace Atlas {
 
 		void MainRenderer::FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList) {
 
-			Graphics::Profiler::BeginQuery("Filter probe");
+			GPUProfiler::Scope gpuScope("Filter probe");
 
-			Graphics::Profiler::BeginQuery("Filter diffuse probe");
+			GPUProfiler::Scope sectionScope("Filter diffuse probe");
 
 			auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
 			auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -846,7 +862,7 @@ namespace Atlas {
 				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			Graphics::Profiler::EndAndBeginQuery("Filter specular probe");
+			sectionScope.Next("Filter specular probe");
 
 			pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
 			pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -867,7 +883,7 @@ namespace Atlas {
 			int32_t height = int32_t(probe->filteredSpecular.height);
 
 			for (uint32_t i = 0; i < probe->filteredSpecular.image->mipLevels; i++) {
-				Graphics::Profiler::BeginQuery("Mip level " + std::to_string(i));
+				GPUProfiler::BeginQuery("Mip level " + std::to_string(i));
 
 				ivec2 mipResolution = ivec2(width, height);
 
@@ -889,7 +905,7 @@ namespace Atlas {
 				width /= 2;
 				height /= 2;
 
-				Graphics::Profiler::EndQuery();
+				GPUProfiler::EndQuery();
 
 			}
 
@@ -898,25 +914,62 @@ namespace Atlas {
 				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			Graphics::Profiler::EndQuery();
-
-			Graphics::Profiler::EndQuery();
-
 		}
 
 		void MainRenderer::Update() {
 
 			textRenderer.Update();
 
-			haltonIndex = (haltonIndex + 1) % haltonSequence.size();
 			frameCount++;
 
 		}
 
-		void MainRenderer::CreateGlobalDescriptorSetLayout() {
+		bool MainRenderer::IsUpscalerSupported(PostProcessing::Upscaler upscaler) {
 
-			if (!device->support.bindless)
-				return;
+			auto renderer = GetUpscalingRenderer(upscaler);
+			return upscaler == PostProcessing::Upscaler::None || (renderer && renderer->IsSupported());
+
+		}
+
+		UpscalingRenderer* MainRenderer::PrepareUpscaler(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
+			Graphics::CommandList* commandList) {
+
+			// Upscalers of vendor SDKs fall back to FSR2 when they aren't built in or not supported by the GPU
+			auto selected = scene->renderState.postProcessing.upscaler;
+			auto upscaler = IsUpscalerSupported(selected) ? GetUpscalingRenderer(selected) : &fsr2Renderer;
+			if (upscaler && !upscaler->Prepare(target, commandList))
+				upscaler = &fsr2Renderer;
+
+			if (upscaler != activeUpscaler) {
+				if (activeUpscaler)
+					activeUpscaler->Release();
+				activeUpscaler = upscaler;
+			}
+
+			return upscaler;
+
+		}
+
+		UpscalingRenderer* MainRenderer::GetUpscalingRenderer(PostProcessing::Upscaler upscaler) {
+
+			switch (upscaler) {
+			case PostProcessing::Upscaler::TAA: return &taaRenderer;
+			case PostProcessing::Upscaler::FSR2: return &fsr2Renderer;
+			// The vendor upscalers are only created once they are used or asked for, every viewport has its own renderer
+			case PostProcessing::Upscaler::FSR4:
+				if (!fsr4Renderer)
+					fsr4Renderer = UpscalerAddons::Create(upscaler, device);
+				return fsr4Renderer.get();
+			case PostProcessing::Upscaler::DLSS:
+				if (!dlssRenderer)
+					dlssRenderer = UpscalerAddons::Create(upscaler, device);
+				return dlssRenderer.get();
+			default: return nullptr;
+			}
+
+		}
+
+		void MainRenderer::CreateGlobalDescriptorSetLayout() {
 
 			auto samplerDesc = Graphics::SamplerDesc{
 				.filter = VK_FILTER_LINEAR,
@@ -951,19 +1004,19 @@ namespace Atlas {
 				.bindings = {
 					{
 						.bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						.descriptorCount = 8192, .bindless = true
+						.descriptorCount = BINDLESS_BUFFER_COUNT, .bindless = true
 					},
 					{
 						.bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-						.descriptorCount = 16384, .bindless = true
+						.descriptorCount = BINDLESS_TEXTURE_COUNT, .bindless = true
 					}
 				},
 				.bindingCount = 4
@@ -974,9 +1027,19 @@ namespace Atlas {
 
 		}
 
+		void MainRenderer::SetPreExposure(GlobalUniforms& uniforms, const Ref<Scene::Scene>& scene) {
+
+			auto preExposure = scene->renderState.preExposure;
+			uniforms.preExposure = preExposure;
+			uniforms.lastPreExposure = lastPreExposure > 0.0f ? lastPreExposure : preExposure;
+			uniforms.skyCubemapExposure = scene->renderState.sky.probe ? preExposure : 1.0f;
+			lastPreExposure = preExposure;
+
+		}
+
 		void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
-			bool mipBias = scene->postProcessing.fsr2 || scene->postProcessing.taa.enable;
+			bool mipBias = scene->renderState.postProcessing.upscaler != PostProcessing::Upscaler::None;
 
 			auto globalUniforms = GlobalUniforms{
 				.vMatrix = camera.viewMatrix,
@@ -995,25 +1058,26 @@ namespace Atlas {
 				.cameraDirection = vec4(camera.direction, 0.0f),
 				.cameraUp = vec4(camera.up, 0.0f),
 				.cameraRight = vec4(camera.right, 0.0f),
-				.planetCenter = vec4(scene->sky.planetCenter, 0.0f),
-				.windDir = glm::normalize(scene->wind.direction),
-				.windSpeed = scene->wind.speed,
-				.planetRadius = scene->sky.planetRadius,
-				.time = Clock::Get(),
-				.deltaTime = Clock::GetDelta(),
+				.planetCenter = vec4(scene->renderState.sky.planetCenter, 0.0f),
+				.windDir = glm::normalize(scene->renderState.wind.direction),
+				.windSpeed = scene->renderState.wind.speed,
+				.planetRadius = scene->renderState.sky.planetRadius,
+				.time = scene->renderState.time,
+				.deltaTime = scene->renderState.deltaTime,
 				.frameCount = frameCount,
 				.mipLodBias = mipBias ? log2f(target->GetScalingFactor()) - 1.0f : 0.0f,
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
 			};
+			SetPreExposure(globalUniforms, scene);
 
 			auto frustumPlanes = camera.frustum.GetPlanes();
 			std::copy(frustumPlanes.begin(), frustumPlanes.end(), &globalUniforms.frustumPlanes[0]);
 
 			globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
-			if (scene->irradianceVolume) {
-				auto volume = scene->irradianceVolume;
+			if (scene->renderState.irradianceVolume) {
+				auto volume = scene->renderState.irradianceVolume;
 
 				if (volume->scroll) {
 					auto pos = camera.GetLocation();
@@ -1022,6 +1086,12 @@ namespace Atlas {
 					auto volumeAABB = Volume::AABB(-volumeSize / 2.0f + pos, volumeSize / 2.0f + pos);
 					volume->SetAABB(volumeAABB);
 				}
+
+				// Only an update of the probes in DDGIRenderer brings them to the current pre-exposure
+				auto preExposure = scene->renderState.preExposure;
+				auto historyPreExposure = volume->internal.preExposure;
+				if (volume->update && scene->IsRtDataValid())
+					volume->internal.preExposure = preExposure;
 
 				auto probeCountPerCascade = volume->probeCount.x * volume->probeCount.y *
 					volume->probeCount.z;
@@ -1040,8 +1110,10 @@ namespace Atlas {
 					.volumeStrength = volume->strength,
 					.depthSharpness = volume->sharpness,
 					.optimizeProbes = volume->optimizeProbes ? 1 : 0,
-					.volumeEnabled = volume->enable ? 1 : 0,
-					.volumeStorageScale = volume->storageScale
+					.volumeEnabled = 1,
+					.volumeStorageScale = volume->storageScale,
+					.historyExposureScale = glm::pow(preExposure / historyPreExposure, 1.0f / volume->gamma),
+					.volumeExposureScale = preExposure / volume->internal.preExposure
 				};
 
 				for (int32_t i = 0; i < volume->cascadeCount; i++) {
@@ -1071,9 +1143,9 @@ namespace Atlas {
 				ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
 			}
 
-			auto clouds = scene->sky.clouds;
-			if (clouds && clouds->enable && clouds->castShadow && scene->HasMainLight()) {
-				const auto& light = scene->GetMainLight();
+			auto clouds = scene->renderState.sky.clouds;
+			if (clouds && clouds->enable && clouds->castShadow && scene->renderState.HasMainLight()) {
+				const auto& light = *scene->renderState.mainLight;
 
 				CloudShadow cloudShadowUniform;
 				clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
@@ -1087,9 +1159,8 @@ namespace Atlas {
 				cloudShadowUniformBuffer->SetData(&cloudShadowUniform, 0, sizeof(CloudShadow));
 			}
 
-			auto meshes = scene->GetMeshes();
-			for (auto& mesh : meshes) {
-				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated) continue;
+			for (auto& mesh : scene->renderState.meshes) {
+				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated || !mesh->impostor->IsResident()) continue;
 
 				auto& impostor = mesh->impostor;
 				Mesh::Impostor::ImpostorInfo impostorInfo = {
@@ -1145,16 +1216,13 @@ namespace Atlas {
 			VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-			auto lightSubset = scene->GetSubset<LightComponent>();
 			shadowImageBarriers.clear();
 
-			for (auto& lightEntity : lightSubset) {
-				auto& light = lightEntity.GetComponent<LightComponent>();
-				if (!light.shadow || !light.shadow->update)
+			for (const auto& [lightEntity, light, updateShadow] : scene->renderState.allLights) {
+				if (!updateShadow)
 					continue;
 
 				auto shadow = light.shadow;
-				shadow->update = false;
 				shadowImageBarriers.push_back({ shadow->useCubemap ?
 					shadow->cubemap->image : shadow->maps->image, layout, access });
 			}
@@ -1163,7 +1231,7 @@ namespace Atlas {
 
 		}
 
-		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
+		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(const Graphics::AttachmentFormats& attachmentFormats,
 			Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth, bool manualDepthTest) {
 
 			const auto shaderConfig = ShaderConfig{
@@ -1172,7 +1240,7 @@ namespace Atlas {
 			};
 
 			auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-				.frameBuffer = frameBuffer,
+				.attachmentFormats = attachmentFormats,
 				.vertexInputInfo = vertexArray.GetVertexInputState(),
 			};
 

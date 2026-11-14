@@ -2,7 +2,8 @@
 
 #include "Common.h"
 #include "Shader.h"
-#include "Framebuffer.h"
+#include "Rendering.h"
+#include "Buffer.h"
 
 #include "../common/Ref.h"
 
@@ -14,10 +15,9 @@ namespace Atlas {
         class SwapChain;
 
         struct GraphicsPipelineDesc {
-            // These need to be set
-            // If renderPass isn't set, we need the swap chain
+            // These need to be set, the attachment formats are only used without a swap chain
             SwapChain* swapChain = nullptr;
-            Ref<FrameBuffer> frameBuffer = nullptr;
+            AttachmentFormats attachmentFormats;
             Ref<ShaderVariant> shader = nullptr;
 
                 // These have a valid default state
@@ -45,11 +45,29 @@ namespace Atlas {
             uint32_t requiredSubgroupSize = 0;
         };
 
+        // One ray generation stage and optional miss, any hit, closest hit and callable stages. The first hit group
+        // only has the first any hit stage, closest hit stage i gets a group with any hit stage i + 1 after that one
+        struct RayTracingPipelineDesc {
+            Ref<ShaderVariant> shader = nullptr;
+        };
+
+        class CommandList;
+
+        struct ShaderBindingTable {
+            Ref<Buffer> buffer;
+            VkStridedDeviceAddressRegionKHR rayGenRegion = {};
+            VkStridedDeviceAddressRegionKHR missRegion = {};
+            VkStridedDeviceAddressRegionKHR hitRegion = {};
+            VkStridedDeviceAddressRegionKHR callableRegion = {};
+        };
+
         class Pipeline {
         public:
             Pipeline(GraphicsDevice* device, const GraphicsPipelineDesc& desc);
 
             Pipeline(GraphicsDevice* device, const ComputePipelineDesc& desc);
+
+            Pipeline(GraphicsDevice* device, const RayTracingPipelineDesc& desc);
 
             ~Pipeline();
 
@@ -58,21 +76,30 @@ namespace Atlas {
             VkPipelineBindPoint bindPoint;
 
             Ref<ShaderVariant> shader = nullptr;
-            Ref<FrameBuffer> frameBuffer = nullptr;
 
             bool isComplete = false;
             bool isCompute = false;
 
+            // A hit record per entry with the hit group of that index, missing groups get the first one. The table is
+            // copied in the command list
+            ShaderBindingTable CreateShaderBindingTable(const std::vector<uint32_t>& hitRecords,
+                CommandList* commandList) const;
+
         private:
             void GeneratePipelineLayoutFromShader();
+
+            std::vector<uint8_t> groupHandles;
+            uint32_t missGroupCount = 0;
+            uint32_t hitGroupCount = 0;
+            uint32_t callableGroupCount = 0;
 
             VkPipelineVertexInputStateCreateInfo GenerateVertexInputStateInfoFromShader(
                 VkPipelineVertexInputStateCreateInfo descVertexInputState,
                 std::vector<VkVertexInputBindingDescription>& bindingDescriptions,
                 std::vector<VkVertexInputAttributeDescription>& attributeDescriptions);
 
-            std::vector<VkPipelineColorBlendAttachmentState> GenerateBlendAttachmentStateFromFrameBuffer(
-                VkPipelineColorBlendAttachmentState blendAttachmentState);
+            std::vector<VkPipelineColorBlendAttachmentState> GenerateBlendAttachmentStates(
+                const AttachmentFormats& attachmentFormats, VkPipelineColorBlendAttachmentState blendAttachmentState);
 
             GraphicsDevice* device;
 
