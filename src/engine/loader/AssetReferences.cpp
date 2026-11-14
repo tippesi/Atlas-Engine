@@ -25,10 +25,13 @@ namespace Atlas {
             "/text/resourcePath",
             "/script/resourcePath",
             "/audio/stream/resourcePath",
-            "/audioVolume/stream/resourcePath",
-            "/rigidBody/creationSettings/shape/meshSettings/resourcePath",
-            // Prefabs store the body creation settings of the root entity separately
-            "/body/shape/meshSettings/resourcePath"
+            "/audioVolume/stream/resourcePath"
+        };
+
+        // Shapes of bodies, relative to the creation settings. Compound shapes contain further shapes
+        static const std::vector<std::string> shapeReferences = {
+            "/meshSettings/resourcePath",
+            "/convexHullSettings/resourcePath"
         };
 
         static const std::vector<std::string> meshReferences = {
@@ -80,9 +83,30 @@ namespace Atlas {
         }
 
         template<class Func>
+        static void TransformShape(json& j, Func& func) {
+
+            TransformPaths(j, shapeReferences, func);
+
+            auto childrenPointer = json::json_pointer("/compoundSettings/children");
+            if (j.contains(childrenPointer)) {
+                for (auto& child : j[childrenPointer])
+                    if (child.contains("shape"))
+                        TransformShape(child["shape"], func);
+            }
+
+        }
+
+        template<class Func>
         static void TransformEntity(json& j, Func& func) {
 
             TransformPaths(j, entityReferences, func);
+
+            // Prefabs store the body creation settings of the root entity separately
+            for (const auto& pointer : { "/rigidBody/creationSettings/shape", "/player/creationSettings/shape", "/body/shape" }) {
+                auto shapePointer = json::json_pointer(pointer);
+                if (j.contains(shapePointer))
+                    TransformShape(j[shapePointer], func);
+            }
 
             // The layers of an animation component are a list of objects with a path each
             auto layersPointer = json::json_pointer("/animation/layers");
