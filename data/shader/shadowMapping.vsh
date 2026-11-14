@@ -18,6 +18,9 @@ layout(location=2) in vec2 vTexCoord;
 layout(location=5) in uvec4 vJoints;
 layout(location=6) in vec4 vWeights;
 #endif
+#if defined(MATERIAL_GRAPH) && defined(TEX_COORDS_1)
+layout(location=7) in vec2 vTexCoord1;
+#endif
 
 #if defined(OPACITY_MAP) || defined(MATERIAL_GRAPH_SURFACE)
 layout(location=0) out vec2 texCoordVS;
@@ -94,6 +97,7 @@ void main() {
 #ifdef MATERIAL_GRAPH
     vec3 graphNormal = vNormal.xyz;
     vec2 graphTexCoord = vec2(0.0);
+    vec2 graphTexCoord1 = vec2(0.0);
     vec3 graphTangent = vec3(1.0, 0.0, 0.0);
     vec4 graphColor = vec4(1.0);
 #ifdef SKINNED
@@ -102,6 +106,9 @@ void main() {
 #ifdef TEX_COORDS
     graphTexCoord = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 #endif
+#ifdef TEX_COORDS_1
+    graphTexCoord1 = PushConstants.invertUVs > 0 ? vec2(vTexCoord1.x, 1.0 - vTexCoord1.y) : vTexCoord1;
+#endif
 #ifdef TANGENTS
     graphTangent = vTangent.xyz;
 #endif
@@ -109,8 +116,8 @@ void main() {
     graphColor = vVertexColors;
 #endif
 
-    MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, graphNormal, graphTangent, graphTexCoord, graphColor,
-        mMatrix, globalData.time, PushConstants.materialGraphOffset);
+    MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, graphNormal, graphTangent, graphTexCoord, graphTexCoord1,
+        graphColor, mMatrix, globalData.time, PushConstants.materialGraphOffset);
 
 #ifdef MATERIAL_GRAPH_VERTEX_OPACITY
     if (EvaluateMaterialOpacity(graphInput) < 0.2) {

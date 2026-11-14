@@ -132,6 +132,8 @@ namespace Atlas::MaterialGraph {
 
         input("Time", "Time of the scene in seconds, stands still while the scene is paused", F, "$IN.time");
         input("Texture coordinates", "Texture coordinates of the mesh", V2, "$IN.texCoord");
+        input("Texture coordinates 2", "Second texture coordinate set of the mesh, zero without one, in the vertex stage",
+            V2, "$IN.texCoord1", VertexStage);
         input("Object position", "Position in the space of the mesh, without the displacement of the graph", V3, "$IN.position");
         input("World position", "Position in world space", V3, "$IN.worldPosition");
         input("View position", "Position relative to the camera", V3, "$IN.viewPosition", SurfaceStage);
@@ -267,6 +269,12 @@ namespace Atlas::MaterialGraph {
         definitions.back().stages = VertexStage;
         math("World to object direction", "Transforms a direction or offset from world space into the space of the mesh, in the vertex stage",
             { { "Direction", V3 } }, V3, "inverse(mat3($IN.modelMatrix)) * $0", "Transform");
+        definitions.back().stages = VertexStage;
+        math("Object to world position", "Transforms a position into world space with the rotation and scale of the instance, in the vertex stage",
+            { { "Position", V3 } }, V3, "($IN.modelMatrix * vec4($0, 1.0)).xyz", "Transform");
+        definitions.back().stages = VertexStage;
+        math("World to object position", "Transforms a world space position into the space of the mesh, in the vertex stage",
+            { { "Position", V3 } }, V3, "(inverse($IN.modelMatrix) * vec4($0, 1.0)).xyz", "Transform");
         definitions.back().stages = VertexStage;
         math("World to tangent normal", "Turns a world space normal into the tangent space of the surface output",
             { { "Normal", V3, vec4(0.0f, 1.0f, 0.0f, 0.0f) } }, V3,

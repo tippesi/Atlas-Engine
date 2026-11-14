@@ -293,6 +293,9 @@ namespace Atlas {
             if (mesh->data.colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
             }
+            if (graph && mesh->data.texCoords1.ContainsData()) {
+                macros.push_back("TEX_COORDS_1");
+            }
             if (mesh->data.IsSkinned()) {
                 macros.push_back("SKINNED");
             }

@@ -21,8 +21,8 @@ struct DeformVertex {
     uint weights;
     uint joints01;
     uint joints23;
+    uint texCoord1;
     uint padding0;
-    uint padding1;
 };
 
 // One deformed vertex range of an instance, has to match GPUDeformJob in RTStructures.h
@@ -42,8 +42,8 @@ struct DeformJob {
     uint invertUVs;
     float uvTiling;
     vec2 uvAnimation;
+    uint hasTexCoords1;
     uint padding0;
-    uint padding1;
 };
 
 layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer DeformVertexBuffer {
@@ -123,8 +123,12 @@ void main() {
     // Meshes without tangents use the same default as the rasterizer
     vec3 graphTangent = dot(tangent.xyz, tangent.xyz) > 0.01 ? tangent.xyz : vec3(1.0, 0.0, 0.0);
 
+    // Zero without a second set, like the rasterizer
+    vec2 texCoord1 = unpackHalf2x16(vertex.texCoord1);
+    texCoord1 = job.invertUVs > 0u && job.hasTexCoords1 > 0u ? vec2(texCoord1.x, 1.0 - texCoord1.y) : texCoord1;
+
     MaterialVertexInput graphInput = CreateMaterialVertexInput(vertex.position.xyz, position, normal, graphTangent,
-        texCoord, unpackUnorm4x8(vertex.color), mMatrix, globalData.time, job.materialGraphOffset);
+        texCoord, texCoord1, unpackUnorm4x8(vertex.color), mMatrix, globalData.time, job.materialGraphOffset);
     normal = EvaluateMaterialVertexNormal(graphInput);
     position += EvaluateMaterialVertexOffset(graphInput);
 #endif

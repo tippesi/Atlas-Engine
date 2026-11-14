@@ -115,6 +115,8 @@ namespace Atlas::Mesh {
         to_json(j["normals"], p.normals, binary);
         to_json(j["tangents"], p.tangents, binary);
         to_json(j["colors"], p.colors, binary);
+        if (p.texCoords1.GetElementCount() > 0)
+            to_json(j["texCoords1"], p.texCoords1, binary);
 
         if (p.IsSkinned()) {
             j["skeleton"] = p.skeleton;
@@ -158,6 +160,8 @@ namespace Atlas::Mesh {
         from_json(j["normals"], p.normals, binary);
         from_json(j["tangents"], p.tangents, binary);
         from_json(j["colors"], p.colors, binary);
+        if (j.contains("texCoords1"))
+            from_json(j["texCoords1"], p.texCoords1, binary);
 
         if (j.contains("skeleton")) {
             j.at("skeleton").get_to(p.skeleton);

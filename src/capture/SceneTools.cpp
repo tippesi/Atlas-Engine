@@ -931,13 +931,16 @@ namespace Atlas::Capture {
         for (int32_t texCoords = 0; texCoords < 2; texCoords++) {
             for (int32_t tangents = 0; tangents < 2; tangents++) {
                 for (int32_t colors = 0; colors < 2; colors++) {
-                    for (int32_t skinned = 0; skinned < 2; skinned++) {
-                        std::vector<std::string> macros;
-                        if (texCoords) macros.push_back("TEX_COORDS");
-                        if (tangents) macros.push_back("TANGENTS");
-                        if (colors) macros.push_back("VERTEX_COLORS");
-                        macros.push_back(skinned ? "SKINNED" : "INSTANCE_BUFFER");
-                        meshMacros.push_back(macros);
+                    for (int32_t texCoords1 = 0; texCoords1 < 2; texCoords1++) {
+                        for (int32_t skinned = 0; skinned < 2; skinned++) {
+                            std::vector<std::string> macros;
+                            if (texCoords) macros.push_back("TEX_COORDS");
+                            if (tangents) macros.push_back("TANGENTS");
+                            if (colors) macros.push_back("VERTEX_COLORS");
+                            if (texCoords1) macros.push_back("TEX_COORDS_1");
+                            macros.push_back(skinned ? "SKINNED" : "INSTANCE_BUFFER");
+                            meshMacros.push_back(macros);
+                        }
                     }
                 }
             }

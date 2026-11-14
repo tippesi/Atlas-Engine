@@ -177,10 +177,14 @@ tool isn't listed here, or a listed file doesn't exist.
   `materialgraph/` (`.aematgraph`, `Compiler`, `NodeLibrary`, `Baker`), editor `MaterialGraphPanel`, see
   `wiki/MaterialGraphs.md`. Capture `materialGraph` (create and change graphs: nodes, links, parameters),
   `assignMaterialGraph` (graph and parameter values of materials), `bakeMaterial`, query `materialGraphShaders`,
-  `inspect` of graphs and `inspect nodes` (node library with pins).
+  `inspect` of graphs and `inspect nodes` (node library with pins). Object/world space in the vertex stage:
+  `Object to world position`/`World to object position` (instance rotation and scale) and the `direction` nodes.
+  `Texture coordinates 2` reads the second UV set of a mesh in the vertex stage (`MeshData::texCoords1`, imported
+  from the second UV channel, e.g. Pivot Painter data).
 - **Code node in material graphs** (custom GLSL, custom expression, shader snippet): node type `Code` with the body of
   a GLSL function, own inputs and result type (`Node::code`, `NodeLibrary::UpdateCodeDefinition`), edited in the
-  inspector of `MaterialGraphPanel`, capture `materialGraph` node keys `code`, `codeInputs`, `codeOutputType`.
+  inspector of `MaterialGraphPanel`, capture `materialGraph` node keys `code`, `codeInputs` (`[name, type]` pairs),
+  `codeOutputType` (types `float`, `vec2`, `vec3`, `vec4`).
 - **Impostors** (billboards, far LOD): `mesh/Impostor`, baked by `tools/ImpostorTool` with
   `renderer/ImpostorRenderer` (material graph surfaces through `materialgraph/Evaluator`), loaded by
   `loader/ImpostorLoader`, streamed by `streaming/`.

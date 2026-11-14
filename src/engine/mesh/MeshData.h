@@ -126,6 +126,8 @@ namespace Atlas {
 
             DataComponent<vec3> vertices;
             DataComponent<vec2> texCoords;
+            // Optional second set, e.g. the element indices of Pivot Painter
+            DataComponent<vec2> texCoords1;
             DataComponent<vec4> normals;
             DataComponent<vec4> tangents;
             DataComponent<vec4> colors;

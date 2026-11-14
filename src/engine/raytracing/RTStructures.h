@@ -52,8 +52,8 @@ namespace Atlas {
         uint32_t weights = 0;
         uint32_t joints01 = 0;
         uint32_t joints23 = 0;
+        uint32_t texCoord1 = 0;
         uint32_t padding0 = 0;
-        uint32_t padding1 = 0;
     };
 
     // One deformed vertex range of an instance, the buffers are accessed through their device addresses
@@ -73,8 +73,8 @@ namespace Atlas {
         uint32_t invertUVs = 0;
         float uvTiling = 1.0f;
         vec2 uvAnimation = vec2(0.0f);
+        uint32_t hasTexCoords1 = 0;
         uint32_t padding0 = 0;
-        uint32_t padding1 = 0;
     };
 
     struct GPUBVHTriangle {

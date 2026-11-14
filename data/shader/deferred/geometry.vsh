@@ -30,6 +30,10 @@ layout(location=5) in uvec4 vJoints;
 layout(location=6) in vec4 vWeights;
 #endif
 
+#ifdef TEX_COORDS_1
+layout(location=7) in vec2 vTexCoord1;
+#endif
+
 #ifdef INSTANCE_BUFFER
 #include <../culling/instances.hsh>
 #else
@@ -158,10 +162,14 @@ void main() {
 
 #ifdef MATERIAL_GRAPH
     vec2 graphTexCoord = vec2(0.0);
+    vec2 graphTexCoord1 = vec2(0.0);
     vec3 graphTangent = vec3(1.0, 0.0, 0.0);
     vec4 graphColor = vec4(1.0);
 #ifdef TEX_COORDS
     graphTexCoord = texCoordVS;
+#endif
+#ifdef TEX_COORDS_1
+    graphTexCoord1 = PushConstants.invertUVs > 0 ? vec2(vTexCoord1.x, 1.0 - vTexCoord1.y) : vTexCoord1;
 #endif
 #ifdef TANGENTS
     graphTangent = vTangent.xyz;
@@ -170,8 +178,8 @@ void main() {
     graphColor = vVertexColors;
 #endif
 
-    MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, normal, graphTangent, graphTexCoord, graphColor,
-        mMatrix, globalData.time, PushConstants.materialGraphOffset);
+    MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, normal, graphTangent, graphTexCoord, graphTexCoord1,
+        graphColor, mMatrix, globalData.time, PushConstants.materialGraphOffset);
 
 #ifdef MATERIAL_GRAPH_VERTEX_OPACITY
     // The opacity is the same for the whole draw, moving all vertices outside the view keeps fragments free of discards
@@ -193,8 +201,8 @@ void main() {
     normal = EvaluateMaterialVertexNormal(graphInput);
     position += EvaluateMaterialVertexOffset(graphInput);
 
-    graphInput = CreateMaterialVertexInput(vPosition, lastPosition, graphInput.normal, graphTangent, graphTexCoord, graphColor,
-        mMatrixLast, globalData.time - globalData.deltaTime, PushConstants.materialGraphOffset);
+    graphInput = CreateMaterialVertexInput(vPosition, lastPosition, graphInput.normal, graphTangent, graphTexCoord, graphTexCoord1,
+        graphColor, mMatrixLast, globalData.time - globalData.deltaTime, PushConstants.materialGraphOffset);
     lastPosition += EvaluateMaterialVertexOffset(graphInput);
 #endif
 

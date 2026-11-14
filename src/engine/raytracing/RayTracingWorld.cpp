@@ -1432,7 +1432,8 @@ namespace Atlas {
                         .materialGraphOffset = deformation.materialGraphOffset,
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
                         .uvTiling = subData.material->tiling,
-                        .uvAnimation = subData.material->uvAnimation
+                        .uvAnimation = subData.material->uvAnimation,
+                        .hasTexCoords1 = mesh->data.texCoords1.ContainsData() ? 1u : 0u
                     });
                     variantConfigs.try_emplace(deformation.key, deformation.config);
                 }
@@ -1691,6 +1692,7 @@ namespace Atlas {
             if (deformMeshItem == deformMeshes.end() || deformMeshItem->second.meshBlas != mesh->blas) {
                 auto hasTangents = data.tangents.ContainsData();
                 auto hasTexCoords = data.texCoords.ContainsData();
+                auto hasTexCoords1 = data.texCoords1.ContainsData();
                 auto hasColors = data.colors.ContainsData();
                 auto isSkinned = data.IsSkinned();
 
@@ -1703,6 +1705,8 @@ namespace Atlas {
                         vertex.tangent = uint32_t(Common::Packing::PackSignedVector3x10_1x2(data.tangents[i]));
                     if (hasTexCoords)
                         vertex.texCoord = glm::packHalf2x16(data.texCoords[i]);
+                    if (hasTexCoords1)
+                        vertex.texCoord1 = glm::packHalf2x16(data.texCoords1[i]);
                     // The rasterizer uses white without vertex colors
                     vertex.color = hasColors ? glm::packUnorm4x8(data.colors[i]) : 0xFFFFFFFFu;
                     if (isSkinned) {

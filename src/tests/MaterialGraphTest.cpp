@@ -136,6 +136,25 @@ TEST(MaterialGraphCompiler, VertexOnly) {
 
 }
 
+TEST(MaterialGraphCompiler, SecondTexCoordsReachEveryVertexPass) {
+
+    // Pivot Painter reads the element of a vertex from the second set, rasterizer, shadows and ray tracing have to agree
+    TestGraph test;
+    auto texCoords = test.Add("Texture coordinates 2");
+    auto split = test.Add("Split vector");
+    test.Link(texCoords, "Value", split, "Vector");
+    auto combine = test.Add("Combine vector 3");
+    test.Link(split, "X", combine, "X");
+    test.LinkOffset(combine, "Result");
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid);
+    EXPECT_TRUE(Contains(compiled->mainVertexCode, "vertexIn.texCoord1"));
+    EXPECT_TRUE(Contains(compiled->shadowVertexCode, "vertexIn.texCoord1"));
+    EXPECT_TRUE(Contains(compiled->deformCode, "vertexIn.texCoord1"));
+
+}
+
 TEST(MaterialGraphCompiler, FragmentOnly) {
 
     TestGraph test;

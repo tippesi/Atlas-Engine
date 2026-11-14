@@ -68,6 +68,10 @@ namespace Atlas {
                 texCoordBuffer = Buffer::VertexBuffer(data.texCoords.GetFormat(), data.GetVertexCount(),
                     data.texCoords.GetConvertedVoid(), hostAccessible);
             }
+            if (data.texCoords1.ContainsData()) {
+                texCoord1Buffer = Buffer::VertexBuffer(data.texCoords1.GetFormat(), data.GetVertexCount(),
+                    data.texCoords1.GetConvertedVoid(), hostAccessible);
+            }
             if (data.tangents.ContainsData()) {
                 tangentBuffer = Buffer::VertexBuffer(data.tangents.GetFormat(), data.GetVertexCount(),
                     data.tangents.GetConvertedVoid(), hostAccessible);
@@ -130,6 +134,8 @@ namespace Atlas {
                 vertexArray.AddComponent(5, jointBuffer);
                 vertexArray.AddComponent(6, weightBuffer);
             }
+            if (data.texCoords1.ContainsData())
+                vertexArray.AddComponent(7, texCoord1Buffer);
 
         }
 
@@ -239,6 +245,7 @@ namespace Atlas {
             vertexBuffer = {};
             normalBuffer = {};
             texCoordBuffer = {};
+            texCoord1Buffer = {};
             tangentBuffer = {};
             colorBuffer = {};
             jointBuffer = {};
@@ -268,6 +275,7 @@ namespace Atlas {
             addSize(vertexBuffer.buffer);
             addSize(normalBuffer.buffer);
             addSize(texCoordBuffer.buffer);
+            addSize(texCoord1Buffer.buffer);
             addSize(tangentBuffer.buffer);
             addSize(colorBuffer.buffer);
 

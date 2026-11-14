@@ -26,6 +26,8 @@ struct MaterialVertexInput {
     vec3 instancePosition;
     vec3 viewDirection;
     vec2 texCoord;
+    // Second texture coordinate set, zero for meshes without one
+    vec2 texCoord1;
     vec4 color;
     float time;
     uint parameterOffset;
@@ -44,6 +46,8 @@ struct MaterialSurfaceInput {
     // Tangent to view space
     mat3 tangentFrame;
     vec2 texCoord;
+    // Only the vertex stage has the second set, evaluations and ray hits read zero
+    vec2 texCoord1;
     vec2 screenCoord;
     vec4 color;
     float time;
@@ -84,8 +88,8 @@ MaterialSurfaceOutput CreateMaterialSurfaceOutput() {
 }
 
 // The object position is the one of the mesh file, on skinned meshes it stays the same while they are animated
-MaterialVertexInput CreateMaterialVertexInput(vec3 objectPosition, vec3 position, vec3 normal, vec3 tangent, vec2 texCoord, vec4 color,
-    mat4 modelMatrix, float time, uint parameterOffset) {
+MaterialVertexInput CreateMaterialVertexInput(vec3 objectPosition, vec3 position, vec3 normal, vec3 tangent, vec2 texCoord, vec2 texCoord1,
+    vec4 color, mat4 modelMatrix, float time, uint parameterOffset) {
 
     MaterialVertexInput vertexIn;
 
@@ -97,6 +101,7 @@ MaterialVertexInput CreateMaterialVertexInput(vec3 objectPosition, vec3 position
     vertexIn.instancePosition = vec3(modelMatrix[3]);
     vertexIn.viewDirection = normalize(globalData.cameraLocation.xyz - vertexIn.worldPosition);
     vertexIn.texCoord = texCoord;
+    vertexIn.texCoord1 = texCoord1;
     vertexIn.color = color;
     vertexIn.time = time;
     vertexIn.parameterOffset = parameterOffset;
@@ -133,6 +138,7 @@ MaterialSurfaceInput CreateMaterialSurfaceInput(vec3 position, vec3 normal, vec3
     surfaceIn.viewDirection = normalize(globalData.cameraLocation.xyz - worldPosition);
     surfaceIn.tangentFrame = tangentFrame;
     surfaceIn.texCoord = texCoord;
+    surfaceIn.texCoord1 = vec2(0.0);
     surfaceIn.screenCoord = screenCoord;
     surfaceIn.color = color;
     surfaceIn.time = globalData.time;

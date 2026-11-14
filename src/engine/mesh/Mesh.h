@@ -114,6 +114,7 @@ namespace Atlas {
             Buffer::VertexBuffer vertexBuffer;
             Buffer::VertexBuffer normalBuffer;
             Buffer::VertexBuffer texCoordBuffer;
+            Buffer::VertexBuffer texCoord1Buffer;
             Buffer::VertexBuffer tangentBuffer;
             Buffer::VertexBuffer colorBuffer;
             Buffer::VertexBuffer jointBuffer;

@@ -59,6 +59,7 @@ namespace Atlas {
 
             bool hasTangents = false;
             bool hasTexCoords = false;
+            bool hasTexCoords1 = false;
             bool hasVertexColors = false;
 
             struct AssimpMesh {
@@ -83,6 +84,7 @@ namespace Atlas {
                     bonesCount += mesh->mNumBones;
 
                     hasTexCoords |= mesh->mNumUVComponents[0] > 0;
+                    hasTexCoords1 |= mesh->mNumUVComponents[1] > 0;
                     hasVertexColors |= mesh->HasVertexColors(0);
                 }
 
@@ -114,6 +116,7 @@ namespace Atlas {
             meshData.vertices.SetType(Mesh::ComponentFormat::Float);
             meshData.normals.SetType(Mesh::ComponentFormat::PackedNormal);
             meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
+            meshData.texCoords1.SetType(Mesh::ComponentFormat::HalfFloat);
             meshData.tangents.SetType(Mesh::ComponentFormat::PackedNormal);
             meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
 
@@ -147,6 +150,7 @@ namespace Atlas {
 
             auto& vertices = meshData.vertices;
             auto& texCoords = meshData.texCoords;
+            auto& texCoords1 = meshData.texCoords1;
             auto& normals = meshData.normals;
             auto& tangents = meshData.tangents;
             auto& colors = meshData.colors;
@@ -155,6 +159,7 @@ namespace Atlas {
 
             vertices.SetElementCount(vertexCount);
             texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
+            texCoords1.SetElementCount(hasTexCoords1 ? vertexCount : 0);
             normals.SetElementCount(vertexCount);
             tangents.SetElementCount(hasTangents ? vertexCount : 0);
             colors.SetElementCount(hasVertexColors ? vertexCount : 0);
@@ -237,6 +242,11 @@ namespace Atlas {
                         if (hasTexCoords && mesh->mTextureCoords[0] != nullptr) {
                             texCoords[usedVertices] = vec2(mesh->mTextureCoords[0][j].x,
                                                            mesh->mTextureCoords[0][j].y);
+                        }
+
+                        if (hasTexCoords1 && mesh->mTextureCoords[1] != nullptr) {
+                            texCoords1[usedVertices] = vec2(mesh->mTextureCoords[1][j].x,
+                                mesh->mTextureCoords[1][j].y);
                         }
 
                         if (hasVertexColors && mesh->mColors[0] != nullptr) {
@@ -506,6 +516,9 @@ namespace Atlas {
                 bool hasTangents = false;
                 bool hasVertexColors = false;
                 bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
+                // The second set is the first channel the material doesn't use
+                uint32_t uvChannel1 = material->uvChannel == 0 ? 1 : 0;
+                bool hasTexCoords1 = assimpMesh->HasTextureCoords(uvChannel1);
 
                 auto mesh = CreateRef<Mesh::Mesh>();
                 auto& meshData = mesh->data;
@@ -545,6 +558,7 @@ namespace Atlas {
 
                 auto& vertices = meshData.vertices;
                 auto& texCoords = meshData.texCoords;
+                auto& texCoords1 = meshData.texCoords1;
                 auto& normals = meshData.normals;
                 auto& tangents = meshData.tangents;
                 auto& colors = meshData.colors;
@@ -553,6 +567,7 @@ namespace Atlas {
 
                 vertices.SetElementCount(vertexCount);
                 texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
+                texCoords1.SetElementCount(hasTexCoords1 ? vertexCount : 0);
                 normals.SetElementCount(vertexCount);
                 tangents.SetElementCount(hasTangents ? vertexCount : 0);
                 colors.SetElementCount(hasVertexColors ? vertexCount : 0);
@@ -603,6 +618,11 @@ namespace Atlas {
                     if (hasTexCoords && assimpMesh->mTextureCoords[uvChannel] != nullptr) {
                         texCoords[j] = vec2(assimpMesh->mTextureCoords[uvChannel][j].x,
                             assimpMesh->mTextureCoords[uvChannel][j].y);
+                    }
+
+                    if (hasTexCoords1) {
+                        texCoords1[j] = vec2(assimpMesh->mTextureCoords[uvChannel1][j].x,
+                            assimpMesh->mTextureCoords[uvChannel1][j].y);
                     }
 
                     if (hasVertexColors && assimpMesh->mColors[0] != nullptr) {
