@@ -532,7 +532,16 @@ namespace Atlas::Scripting::Bindings {
             "weight", &AnimationIKChain::weight,
             "pole", &AnimationIKChain::pole,
             "normal", &AnimationIKChain::normal,
-            "normalWeight", &AnimationIKChain::normalWeight
+            "normalWeight", &AnimationIKChain::normalWeight,
+            "footLock", &AnimationIKChain::footLock,
+            "lockSpeed", &AnimationIKChain::lockSpeed,
+            "unlockSpeed", &AnimationIKChain::unlockSpeed,
+            "lockSpeedRatio", &AnimationIKChain::lockSpeedRatio,
+            "lockHeight", &AnimationIKChain::lockHeight,
+            "lockReach", &AnimationIKChain::lockReach,
+            "lockReleaseTime", &AnimationIKChain::lockReleaseTime,
+            "IsLocked", &AnimationIKChain::IsLocked,
+            "GetLockPosition", &AnimationIKChain::GetLockPosition
         );
 
         ns->new_usertype<AnimationComponent>("AnimationComponent",

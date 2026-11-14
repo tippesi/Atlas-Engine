@@ -162,6 +162,27 @@ namespace Atlas {
                 vec3 normal = vec3(0.0f, 1.0f, 0.0f);
                 float normalWeight = 0.0f;
 
+                // Foot locking: an end joint the animation sets down keeps its place over the ground until the animation
+                // lifts it again, so feet don't slide. Detected from the animated pose, distances are in chain lengths
+                bool footLock = false;
+                // Speed in chain lengths per second below which a lowered end joint is planted and above which it lifts
+                float lockSpeed = 1.0f;
+                float unlockSpeed = 2.5f;
+                // Fraction of the speed of the entity a moving foot may still have and count as planted, a running
+                // clip rarely keeps the standing foot perfectly still. It lifts above twice this fraction
+                float lockSpeedRatio = 0.4f;
+                // Height over the lowest point of the recent steps up to which the end joint is planted
+                float lockHeight = 0.1f;
+                // Horizontal distance from the animated end joint at which a planted end joint lets go
+                float lockReach = 0.4f;
+                // Seconds the end joint takes to return to the animation after it let go
+                float lockReleaseTime = 0.15f;
+
+                bool IsLocked() const { return locked; }
+
+                // World position the planted end joint keeps, its height follows the target
+                vec3 GetLockPosition() const { return lockPosition; }
+
             private:
                 std::string upperJoint;
                 std::string middleJoint;
@@ -177,6 +198,14 @@ namespace Atlas {
                 vec3 animatedEndLocalPosition = vec3(0.0f);
                 // A separate end joint in the space of the middle joint, before the joint offsets moved them apart
                 vec3 tip = vec3(0.0f);
+
+                bool locked = false;
+                bool hasLastEnd = false;
+                vec3 lastEnd = vec3(0.0f);
+                vec3 lastRoot = vec3(0.0f);
+                vec3 lockPosition = vec3(0.0f);
+                float lockBlend = 0.0f;
+                float lowestEndHeight = 0.0f;
 
                 friend AnimationComponent;
 
@@ -267,7 +296,10 @@ namespace Atlas {
                 void PrepareIKChain(AnimationIKChain& chain, const Mesh::Skeleton& skeleton) const;
 
                 void SolveIKChain(AnimationIKChain& chain, const Mesh::Skeleton& skeleton, const mat4& globalMatrix,
-                    const mat4& inverseGlobalMatrix);
+                    const mat4& inverseGlobalMatrix, float deltaTime);
+
+                void LockIKChain(AnimationIKChain& chain, vec3 a, vec3 b, vec3 c, vec3& target, const mat4& globalMatrix,
+                    const mat4& inverseGlobalMatrix, float deltaTime);
 
                 quat GetJointRotation(int32_t jointIdx) const;
 

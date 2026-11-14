@@ -209,6 +209,26 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
+        if (Widgets::BeginProperties("Foot lock")) {
+            Widgets::PropertyLabel("Foot lock", "A foot the animation sets down keeps its place until the animation lifts it");
+            ImGui::Checkbox("##Foot lock", &chain.footLock);
+            Widgets::PropertyLabel("Lock speed", "Speed in chain lengths per second below which a lowered foot is planted");
+            ImGui::DragFloat("##Lock speed", &chain.lockSpeed, 0.05f, 0.0f, 10.0f);
+            Widgets::PropertyLabel("Unlock speed", "Speed in chain lengths per second above which a planted foot lifts");
+            ImGui::DragFloat("##Unlock speed", &chain.unlockSpeed, 0.05f, 0.0f, 20.0f);
+            Widgets::PropertyLabel("Speed ratio", "Fraction of the speed of the entity a foot may move and still count as planted");
+            ImGui::DragFloat("##Speed ratio", &chain.lockSpeedRatio, 0.01f, 0.0f, 1.0f);
+            Widgets::PropertyLabel("Lock height", "Height in chain lengths over the lowest point of the steps");
+            ImGui::DragFloat("##Lock height", &chain.lockHeight, 0.01f, 0.0f, 1.0f);
+            Widgets::PropertyLabel("Lock reach", "Distance in chain lengths from the animated foot at which a planted foot lets go");
+            ImGui::DragFloat("##Lock reach", &chain.lockReach, 0.01f, 0.0f, 2.0f);
+            Widgets::PropertyLabel("Release time", "Seconds the foot takes to return to the animation");
+            ImGui::DragFloat("##Release time", &chain.lockReleaseTime, 0.01f, 0.0f, 1.0f);
+            Widgets::EndProperties();
+            if (chain.footLock)
+                ImGui::TextDisabled(chain.IsLocked() ? "Planted" : "Free");
+        }
+
         if (ImGui::Button("Target from animation"))
             chain.target = chain.relativeTarget ? vec3(0.0f) : chain.GetAnimatedEndPosition();
 

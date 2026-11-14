@@ -240,7 +240,7 @@ namespace Atlas {
                 if (!ikChains.empty()) {
                     auto inverseGlobalMatrix = glm::inverse(globalMatrix);
                     for (auto& chain : ikChains)
-                        SolveIKChain(chain, skeleton, globalMatrix, inverseGlobalMatrix);
+                        SolveIKChain(chain, skeleton, globalMatrix, inverseGlobalMatrix, deltaTime);
                 }
 
                 auto hasHistory = jointMatrices.size() == skeleton.joints.size();
@@ -423,7 +423,7 @@ namespace Atlas {
             }
 
             void AnimationComponent::SolveIKChain(AnimationIKChain& chain, const Mesh::Skeleton& skeleton,
-                const mat4& globalMatrix, const mat4& inverseGlobalMatrix) {
+                const mat4& globalMatrix, const mat4& inverseGlobalMatrix, float deltaTime) {
 
                 if (!chain.IsValid())
                     return;
@@ -435,6 +435,12 @@ namespace Atlas {
                 chain.animatedEndLocalPosition = vec3(globalMatrices[chain.endIdx][3]);
                 chain.animatedEndPosition = vec3(globalMatrix * vec4(chain.animatedEndLocalPosition, 1.0f));
 
+                if (chain.weight <= 0.0f || !chain.footLock) {
+                    chain.locked = false;
+                    chain.hasLastEnd = false;
+                    chain.lockBlend = 0.0f;
+                }
+
                 if (chain.weight <= 0.0f)
                     return;
 
@@ -445,6 +451,8 @@ namespace Atlas {
 
                 auto target = chain.relativeTarget ? c + mat3(inverseGlobalMatrix) * chain.target :
                     vec3(inverseGlobalMatrix * vec4(chain.target, 1.0f));
+                if (chain.footLock)
+                    LockIKChain(chain, a, b, c, target, globalMatrix, inverseGlobalMatrix, deltaTime);
                 target = glm::mix(c, target, glm::min(chain.weight, 1.0f));
                 auto lengthAT = glm::clamp(glm::distance(a, target), 1e-5f, (lengthAB + lengthBC) * 0.9999f);
 
@@ -502,6 +510,69 @@ namespace Atlas {
                     auto turn = glm::rotation(vec3(0.0f, 1.0f, 0.0f), normal);
                     RotateJoint(chain.endIdx, glm::slerp(quat(1.0f, 0.0f, 0.0f, 0.0f), turn, glm::min(chain.normalWeight, 1.0f)), skeleton);
                 }
+
+            }
+
+            void AnimationComponent::LockIKChain(AnimationIKChain& chain, vec3 a, vec3 b, vec3 c, vec3& target,
+                const mat4& globalMatrix, const mat4& inverseGlobalMatrix, float deltaTime) {
+
+                auto worldA = vec3(globalMatrix * vec4(a, 1.0f));
+                auto worldB = vec3(globalMatrix * vec4(b, 1.0f));
+                auto worldC = vec3(globalMatrix * vec4(c, 1.0f));
+                auto meshLength = glm::distance(a, b) + glm::distance(b, c);
+                auto worldLength = glm::distance(worldA, worldB) + glm::distance(worldB, worldC);
+                if (meshLength <= 0.0f || worldLength <= 0.0f)
+                    return;
+
+                auto worldTarget = vec3(globalMatrix * vec4(target, 1.0f));
+
+                // Without passing time (e.g. a paused scene) the lock state stays as it is and is only applied
+                if (deltaTime > 0.0f) {
+                    // The lowest point of the recent steps rises slowly, so a crouch or another clip moves it along
+                    chain.lowestEndHeight = chain.hasLastEnd ?
+                        glm::min(chain.lowestEndHeight + 0.25f * meshLength * deltaTime, c.y) : c.y;
+                    auto height = (c.y - chain.lowestEndHeight) / meshLength;
+                    auto root = vec3(globalMatrix[3]);
+                    auto speed = chain.hasLastEnd ? glm::distance(worldC, chain.lastEnd) / (deltaTime * worldLength) : 0.0f;
+                    auto entitySpeed = chain.hasLastEnd ? glm::distance(root, chain.lastRoot) / (deltaTime * worldLength) : 0.0f;
+                    auto hadLastEnd = chain.hasLastEnd;
+                    chain.lastEnd = worldC;
+                    chain.lastRoot = root;
+                    auto plantSpeed = glm::max(chain.lockSpeed, chain.lockSpeedRatio * entitySpeed);
+                    auto liftSpeed = glm::max(chain.unlockSpeed, 2.0f * chain.lockSpeedRatio * entitySpeed);
+                    chain.hasLastEnd = true;
+
+                    // A jump of the entity, e.g. a teleport, lets go at once
+                    if (entitySpeed > 20.0f) {
+                        chain.locked = false;
+                        chain.lockBlend = 0.0f;
+                    }
+                    else {
+                        if (chain.locked) {
+                            auto planted = vec3(chain.lockPosition.x, worldTarget.y, chain.lockPosition.z);
+                            auto offset = glm::distance(vec2(worldTarget.x, worldTarget.z), vec2(planted.x, planted.z));
+                            if (speed > liftSpeed || height > chain.lockHeight * 1.5f || offset > chain.lockReach * worldLength ||
+                                glm::distance(worldA, planted) > 0.98f * worldLength)
+                                chain.locked = false;
+                        }
+                        else if (hadLastEnd && chain.lockBlend <= 0.0f && speed < plantSpeed && height < chain.lockHeight) {
+                            chain.locked = true;
+                            chain.lockPosition = worldTarget;
+                        }
+
+                        chain.lockBlend = chain.locked ? 1.0f :
+                            glm::max(chain.lockBlend - deltaTime / glm::max(chain.lockReleaseTime, 1e-3f), 0.0f);
+                    }
+                }
+
+                if (chain.lockBlend <= 0.0f)
+                    return;
+
+                // The planted end joint keeps its place over the ground, its height still follows the target
+                auto blend = glm::smoothstep(0.0f, 1.0f, chain.lockBlend);
+                worldTarget.x = glm::mix(worldTarget.x, chain.lockPosition.x, blend);
+                worldTarget.z = glm::mix(worldTarget.z, chain.lockPosition.z, blend);
+                target = vec3(inverseGlobalMatrix * vec4(worldTarget, 1.0f));
 
             }
 

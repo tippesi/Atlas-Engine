@@ -192,8 +192,9 @@ tool isn't listed here, or a listed file doesn't exist.
 ## Animation
 
 - **Skeletal animation** (clips, blending, layers, IK, animation LOD): `AnimationComponent` (Lua) with
-  `AnimationLayer` (override or additive, masks), `AnimationIKChain` (two bone IK), `AnimationBlendMode`; `animation/`
-  (`Animation`, `AnimationChannel`, `.aeanimation` files). Editor `AnimationTimelinePanel`, capture `animation` event.
+  `AnimationLayer` (override or additive, masks), `AnimationIKChain` (two bone IK, foot locking),
+  `AnimationBlendMode`; `animation/` (`Animation` with `MeasureStride` for the ground a cycle covers,
+  `AnimationChannel`, `.aeanimation` files). Editor `AnimationTimelinePanel`, capture `animation` event.
 
 ## Audio
 

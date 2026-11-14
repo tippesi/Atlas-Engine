@@ -1,6 +1,7 @@
 #include "Animation.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace Atlas {
 
@@ -82,6 +83,49 @@ namespace Atlas {
                 pose[jointIdx].rotation = channel.SampleRotation(time, joint.rotation);
                 pose[jointIdx].scale = channel.SampleScale(time, joint.scale);
             }
+
+        }
+
+        float Animation::MeasureStride(const Mesh::Skeleton& skeleton, const std::string& joint) const {
+
+            auto jointIdx = skeleton.GetJointIndex(joint);
+            if (jointIdx < 0 || duration <= 0.0f)
+                return 0.0f;
+
+            std::vector<int32_t> channelToJoint;
+            MapChannels(skeleton, channelToJoint);
+
+            const int32_t samples = 128;
+            std::vector<Mesh::JointPose> pose;
+            std::vector<mat4> globalMatrices;
+            std::vector<vec3> positions(samples);
+            auto lowest = std::numeric_limits<float>::max();
+            auto highest = -std::numeric_limits<float>::max();
+            for (int32_t i = 0; i < samples; i++) {
+                Sample(duration * float(i) / float(samples), skeleton, channelToJoint, pose);
+                skeleton.GetGlobalMatrices(pose, globalMatrices);
+                positions[i] = vec3(globalMatrices[jointIdx][3]);
+                lowest = glm::min(lowest, positions[i].y);
+                highest = glm::max(highest, positions[i].y);
+            }
+
+            // The foot stands while it is in the lowest part of its lift
+            auto standing = lowest + 0.15f * (highest - lowest);
+            auto distance = 0.0f;
+            auto count = 0;
+            for (int32_t i = 0; i < samples; i++) {
+                const auto& p0 = positions[i];
+                const auto& p1 = positions[(i + 1) % samples];
+                if (p0.y > standing || p1.y > standing)
+                    continue;
+                distance += glm::length(vec2(p1.x - p0.x, p1.z - p0.z));
+                count++;
+            }
+            if (!count)
+                return 0.0f;
+
+            auto speed = distance / (float(count) * duration / float(samples));
+            return speed * duration;
 
         }
 

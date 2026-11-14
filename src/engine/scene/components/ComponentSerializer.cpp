@@ -55,6 +55,13 @@ namespace Atlas::Scene::Components {
                 {"pole", chain.pole},
                 {"normal", chain.normal},
                 {"normalWeight", chain.normalWeight},
+                {"footLock", chain.footLock},
+                {"lockSpeed", chain.lockSpeed},
+                {"unlockSpeed", chain.unlockSpeed},
+                {"lockSpeedRatio", chain.lockSpeedRatio},
+                {"lockHeight", chain.lockHeight},
+                {"lockReach", chain.lockReach},
+                {"lockReleaseTime", chain.lockReleaseTime},
             });
         }
         if (!ikChains.empty())
@@ -122,6 +129,13 @@ namespace Atlas::Scene::Components {
                 try_get_json(chainJson, "pole", chain.pole);
                 try_get_json(chainJson, "normal", chain.normal);
                 try_get_json(chainJson, "normalWeight", chain.normalWeight);
+                try_get_json(chainJson, "footLock", chain.footLock);
+                try_get_json(chainJson, "lockSpeed", chain.lockSpeed);
+                try_get_json(chainJson, "unlockSpeed", chain.unlockSpeed);
+                try_get_json(chainJson, "lockSpeedRatio", chain.lockSpeedRatio);
+                try_get_json(chainJson, "lockHeight", chain.lockHeight);
+                try_get_json(chainJson, "lockReach", chain.lockReach);
+                try_get_json(chainJson, "lockReleaseTime", chain.lockReleaseTime);
             }
         }
     }

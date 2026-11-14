@@ -22,7 +22,8 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<Animation::Animation>("Animation",
             "name", &Animation::Animation::name,
             "duration", &Animation::Animation::duration,
-            "channels", &Animation::Animation::channels
+            "channels", &Animation::Animation::channels,
+            "MeasureStride", &Animation::Animation::MeasureStride
             );
 
     }

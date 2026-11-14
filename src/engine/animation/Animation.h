@@ -57,6 +57,16 @@ namespace Atlas {
              */
             void MapChannels(const Mesh::Skeleton& skeleton, std::vector<int32_t>& channelToJoint) const;
 
+            /**
+             * Measures the ground a cycle played in place covers: the speed at which a foot moves back while it is at
+             * its lowest, times the duration. Playing the cycle at the speed of the figure over the ground divided by
+             * this stride keeps the standing foot still
+             * @param skeleton The skeleton to sample the animation for
+             * @param joint The name of a foot joint, e.g. the end joint of a leg
+             * @return The stride in the space of the mesh, zero if the joint isn't found or doesn't move
+             */
+            float MeasureStride(const Mesh::Skeleton& skeleton, const std::string& joint) const;
+
             std::string name;
 
             float duration = 0.0f;
