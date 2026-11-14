@@ -1089,6 +1089,7 @@ namespace Atlas {
                 auto transformComponent = transformComponentPool.TryGet(entity);
 
                 if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
+                    !meshComponent->mesh->IsGeometryResident() ||
                     !meshComponent->mesh->rayTrace || !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
                     continue;
 
@@ -1452,6 +1453,7 @@ namespace Atlas {
                 auto transformComponent = transformComponentPool.TryGet(entity);
 
                 if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
+                    !meshComponent->mesh->IsGeometryResident() ||
                     !meshComponent->mesh->rayTrace || !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
                     continue;
 
@@ -1539,6 +1541,7 @@ namespace Atlas {
                 auto meshComponent = meshComponentPool.TryGet(entity);
                 auto transformComponent = transformComponentPool.TryGet(entity);
                 if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
+                    !meshComponent->mesh->IsGeometryResident() ||
                     !deformedMeshes.contains(meshComponent->mesh.GetID()))
                     continue;
 
