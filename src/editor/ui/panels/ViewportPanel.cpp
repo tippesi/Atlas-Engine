@@ -97,9 +97,14 @@ namespace Atlas::Editor::UI {
 
         // The scene is rendered in window units as before, the interface scale doesn't lower its resolution
         auto renderSize = ivec2(vec2(size) * Singletons::imguiWrapper->GetScale());
-        if ((viewportTexture.width != renderSize.x ||
-            viewportTexture.height != renderSize.y) && validSize) {
+        if (validSize && (viewport->x != pos.x || viewport->y != pos.y || viewport->width != size.x || viewport->height != size.y))
             viewport->Set(pos.x, pos.y, size.x, size.y);
+
+        // While a splitter or the window is dragged, the last image is stretched and the textures are only resized
+        // once the resize is done. The camera already uses the new aspect ratio, so the stretched image isn't distorted
+        auto resizing = ImGui::IsMouseDown(ImGuiMouseButton_Left) && viewportTexture.width > 1;
+        if ((viewportTexture.width != renderSize.x ||
+            viewportTexture.height != renderSize.y) && validSize && !resizing) {
             renderViewport->Set(0, 0, renderSize.x, renderSize.y);
             viewportTexture.Resize(renderSize.x, renderSize.y);
             CreateRendering();
