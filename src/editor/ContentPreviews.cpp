@@ -14,6 +14,7 @@
 #include "loader/MaterialGraphLoader.h"
 #include "loader/MaterialLoader.h"
 #include "physics/PhysicsWorld.h"
+#include "profiler/CPUProfiler.h"
 #include "scene/components/AnimationComponent.h"
 #include "scene/components/AudioComponent.h"
 #include "scene/components/AudioVolumeComponent.h"
@@ -398,13 +399,6 @@ namespace Atlas::Editor {
         if (renderJob && now - lastRequestTime > hiddenTime)
             CancelRender();
 
-        if (renderer && !renderJob && now - lastRenderTime > rendererIdleTime) {
-            renderer.reset();
-            renderTarget.reset();
-            renderViewport.reset();
-            renderTexture.Reset();
-        }
-
     }
 
     void ContentPreviews::Init() {
@@ -654,13 +648,11 @@ namespace Atlas::Editor {
             renderJob->type = entry.type;
 
             if (!StartRender(*renderJob))
-                FinishRender(true, Image());
+                FinishRender(true);
         }
 
         if (!renderJob)
             return;
-
-        lastRenderTime = Clock::Get();
 
         // Waiting for the editor doesn't count towards the timeout
         if (Singletons::blockingOperation->block)
@@ -669,10 +661,13 @@ namespace Atlas::Editor {
         auto& job = *renderJob;
         job.activeTime += Clock::GetDelta();
 
-        // The frames were submitted at the end of the last frame
-        if (job.waitForCapture) {
-            auto image = Capture();
-            FinishRender(image.data.empty(), std::move(image));
+        // The copy of the last frame is read once the device finished that frame, nothing waits for it
+        if (job.readbackFrame >= 0) {
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            if (device->GetFrameIndex() - job.readbackFrame > FRAME_DATA_COUNT) {
+                CPUProfiler::Scope scope("Read preview");
+                FinishRender(false);
+            }
             return;
         }
 
@@ -682,29 +677,32 @@ namespace Atlas::Editor {
             };
 
         if (failedToLoad(job.mesh) || failedToLoad(job.material) || failedToLoad(job.graph)) {
-            FinishRender(true, Image());
+            FinishRender(true);
             return;
         }
 
-        if (!job.scene) {
+        if (!job.root.IsValid()) {
             auto isLoaded = [](const auto& handle) {
                 return !handle.IsValid() || handle.IsLoaded();
                 };
             if (!isLoaded(job.mesh) || !isLoaded(job.material) || !isLoaded(job.graph)) {
                 if (timedOut)
-                    FinishRender(true, Image());
+                    FinishRender(true);
                 return;
             }
 
-            CreateRenderScene(job);
-            if (!job.scene) {
-                FinishRender(true, Image());
+            CPUProfiler::Scope scope("Add preview content");
+            if (!renderer)
+                InitRendering();
+            AddContent(job);
+            if (!job.root.IsValid()) {
+                FinishRender(true);
                 return;
             }
         }
 
         // Textures of the materials are loaded in the background
-        if (!job.scene->IsFullyLoaded()) {
+        if (!renderScene->IsFullyLoaded()) {
             if (!timedOut)
                 return;
             job.complete = false;
@@ -737,19 +735,53 @@ namespace Atlas::Editor {
 
     }
 
-    void ContentPreviews::CreateRenderScene(RenderJob& job) {
+    void ContentPreviews::InitRendering() {
 
-        auto scene = CreateRef<Scene::Scene>("Content preview");
+        auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+        auto renderSize = slotSize * renderScale;
+        renderer = CreateRef<Renderer::MainRenderer>();
+        renderer->Init(device);
+        renderTarget = CreateRef<Renderer::RenderTarget>(renderSize, renderSize);
+        renderViewport = CreateRef<Viewport>(0, 0, renderSize, renderSize);
+        renderTexture = Texture::Texture2D(renderSize, renderSize, VK_FORMAT_R16G16B16A16_SFLOAT);
+
+        auto readbackDesc = Graphics::BufferDesc{
+            .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .domain = Graphics::BufferDomain::Host,
+            .hostAccess = Graphics::BufferHostAccess::Random,
+            .size = size_t(renderSize) * size_t(renderSize) * sizeof(float16) * 4
+        };
+        colorReadback = device->CreateBuffer(readbackDesc);
+
+        // The depth has the scaled resolution of the render target
+        auto depthTexture = renderTarget->GetData(Renderer::FULL_RES)->depthTexture;
+        depthSize = ivec2(depthTexture->width, depthTexture->height);
+        readbackDesc.size = size_t(depthSize.x) * size_t(depthSize.y) * sizeof(float);
+        depthReadback = device->CreateBuffer(readbackDesc);
+
+        renderScene = CreateRef<Scene::Scene>("Content preview");
         // Like the scenes of the editor, prefabs with rigid bodies or scripts expect one. It never runs
-        scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
-        scene->physicsWorld->pauseSimulation = true;
+        renderScene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
+        renderScene->physicsWorld->pauseSimulation = true;
 
-        auto rootGroup = scene->CreatePrefab<Scene::Prefabs::Group>("Root");
+        auto rootGroup = renderScene->CreatePrefab<Scene::Prefabs::Group>("Root");
         rootGroup.GetComponent<HierarchyComponent>().root = true;
+
+        renderCamera = renderScene->CreateEntity();
+        auto& camera = renderCamera.AddComponent<CameraComponent>(40.0f, 1.0f, 0.01f, 100.0f,
+            vec3(0.0f), vec2(glm::pi<float>() + 0.6f, -0.55f));
+        camera.isMain = true;
+
+        renderLight = renderScene->CreateEntity();
+
+    }
+
+    void ContentPreviews::AddContent(RenderJob& job) {
 
         Scene::Entity entity;
         if (job.type == ContentType::Mesh) {
-            entity = scene->CreatePrefab<Scene::Prefabs::MeshInstance>(job.mesh, false);
+            entity = renderScene->CreatePrefab<Scene::Prefabs::MeshInstance>(job.mesh, false);
             // Skinned meshes need an animation component to be shown
             if (job.mesh->data.IsSkinned())
                 entity.AddComponent<AnimationComponent>();
@@ -763,11 +795,11 @@ namespace Atlas::Editor {
             // Fewer vertices than the sphere of the material editor, a small preview doesn't show displacement in detail
             auto sphere = ResourceHandle<Mesh::Mesh>(DataCreator::CreateSphere(job.material, 64, 96));
             job.mesh = sphere;
-            entity = scene->CreatePrefab<Scene::Prefabs::MeshInstance>(sphere, false);
+            entity = renderScene->CreatePrefab<Scene::Prefabs::MeshInstance>(sphere, false);
         }
         else if (job.type == ContentType::Prefab) {
             try {
-                entity = Serializer::DeserializePrefab(scene, job.assetPath);
+                entity = Serializer::DeserializePrefab(renderScene, job.assetPath);
             }
             catch (const std::exception&) {
                 entity = Scene::Entity();
@@ -778,10 +810,10 @@ namespace Atlas::Editor {
             // A preview only shows the prefab, scripts aren't executed and sounds aren't played
             auto removeAll = [&]<class Comp>() {
                 std::vector<ECS::Entity> entities;
-                for (auto componentEntity : scene->entityManager.GetSubset<Comp>())
+                for (auto componentEntity : renderScene->entityManager.GetSubset<Comp>())
                     entities.push_back(componentEntity);
                 for (auto componentEntity : entities)
-                    scene->entityManager.Erase<Comp>(componentEntity);
+                    renderScene->entityManager.Erase<Comp>(componentEntity);
                 };
             removeAll.template operator()<LuaScriptComponent>();
             removeAll.template operator()<AudioComponent>();
@@ -790,12 +822,13 @@ namespace Atlas::Editor {
 
         job.root = entity;
 
-        job.camera = scene->CreateEntity();
-        auto& camera = job.camera.AddComponent<CameraComponent>(40.0f, 1.0f, 0.01f, 100.0f,
-            vec3(0.0f), vec2(glm::pi<float>() + 0.6f, -0.55f));
-        camera.isMain = true;
+    }
 
-        job.scene = scene;
+    void ContentPreviews::RemoveContent(RenderJob& job) {
+
+        if (job.root.IsValid())
+            renderScene->DestroyEntity(job.root, true);
+        job.root = Scene::Entity();
 
     }
 
@@ -806,25 +839,16 @@ namespace Atlas::Editor {
         if (!device->swapChain->isComplete)
             return;
 
-        auto renderSize = slotSize * renderScale;
-        if (!renderer) {
-            renderer = CreateRef<Renderer::MainRenderer>();
-            renderer->Init(device);
-            renderTarget = CreateRef<Renderer::RenderTarget>(renderSize, renderSize);
-            renderViewport = CreateRef<Viewport>(0, 0, renderSize, renderSize);
-            renderTexture = Texture::Texture2D(renderSize, renderSize, VK_FORMAT_R16G16B16A16_SFLOAT);
-        }
-
         const float deltaTime = 1.0f / 60.0f;
-        auto& scene = job.scene;
 
+        CPUProfiler::Scope scope("Update preview scene");
         if (job.renderedFrames == 0) {
             // The camera direction and the bounds of prefabs are known after an update
-            scene->Update(deltaTime, job.camera);
+            renderScene->Update(deltaTime, renderCamera);
 
             Volume::AABB bounds(vec3(-1.0f), vec3(1.0f));
             if (job.type == ContentType::Prefab)
-                bounds = scene->GetHierarchyBounds(job.root).value_or(bounds);
+                bounds = renderScene->GetHierarchyBounds(job.root).value_or(bounds);
             else if (job.mesh.IsLoaded())
                 bounds = job.mesh->data.aabb;
 
@@ -834,38 +858,43 @@ namespace Atlas::Editor {
             if (job.type == ContentType::Material || job.type == ContentType::MaterialGraph)
                 radius = 1.05f;
 
-            auto& camera = job.camera.GetComponent<CameraComponent>();
+            auto& camera = renderCamera.GetComponent<CameraComponent>();
             auto distance = radius / std::sin(glm::radians(camera.fieldOfView) * 0.5f);
             camera.location = center - camera.direction * distance;
             camera.nearPlane = 0.01f * distance;
             camera.farPlane = 4.0f * (distance + radius);
 
-            // Prefabs might bring their own light
-            auto hasLight = false;
-            for (auto lightEntity : scene->GetSubset<LightComponent>()) {
-                hasLight = true;
-                break;
+            // Prefabs might bring their own light, the light of the preview is only there without one
+            auto hasOwnLight = false;
+            for (auto lightEntity : renderScene->GetSubset<LightComponent>())
+                hasOwnLight |= lightEntity != renderLight;
+
+            auto hasLight = renderLight.HasComponent<LightComponent>();
+            if (hasOwnLight && hasLight) {
+                renderLight.RemoveComponent<LightComponent>();
             }
-            if (!hasLight) {
-                auto lightEntity = scene->CreateEntity();
-                auto& light = lightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
+            else if (!hasOwnLight && !hasLight) {
+                auto& light = renderLight.AddComponent<LightComponent>(LightType::DirectionalLight);
                 light.properties.directional.direction = vec3(-0.5f, -1.0f, -1.0f);
                 light.color = vec3(255, 236, 209) / 255.0f;
                 light.intensity = 10.0f;
                 light.AddDirectionalShadow(distance + 2.0f * radius, 3.0f, 1024, 0.05f, 1, 0.9f);
                 light.isMain = true;
             }
+            if (!hasOwnLight)
+                renderLight.GetComponent<LightComponent>().shadow->distance = distance + 2.0f * radius;
         }
 
-        scene->Update(deltaTime, job.camera);
+        renderScene->Update(deltaTime, renderCamera);
 
+        scope.Next("Render preview scene");
         renderer->Update();
-        renderer->RenderScene(renderViewport, renderTarget, scene, {}, &renderTexture);
+        renderer->RenderScene(renderViewport, renderTarget, renderScene, {}, &renderTexture);
         job.renderedFrames++;
 
         // Graphs compile their pipelines in the background, the frames only count once they are used
         auto graphPending = false;
-        for (const auto& mesh : scene->GetMeshes()) {
+        for (const auto& mesh : renderScene->GetMeshes()) {
             if (!mesh.IsLoaded())
                 continue;
             for (const auto& subData : mesh->data.subData)
@@ -878,44 +907,67 @@ namespace Atlas::Editor {
                 job.complete = false;
         }
 
-        if (job.renderedFrames >= renderFrames)
-            job.waitForCapture = true;
+        if (job.renderedFrames >= renderFrames) {
+            scope.Next("Copy preview");
+            CopyForReadback();
+            job.readbackFrame = device->GetFrameIndex();
+        }
 
     }
 
-    ContentPreviews::Image ContentPreviews::Capture() {
+    void ContentPreviews::CopyForReadback() {
+
+        auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+        // The swap of the render target moved the depth of the last frame into the history
+        auto depthImage = renderTarget->GetHistoryData(Renderer::FULL_RES)->depthTexture->image;
+        auto colorImage = renderTexture.image;
+
+        auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
+        commandList->BeginCommands();
+
+        auto colorLayout = colorImage->layout;
+        auto colorAccess = colorImage->accessMask;
+        auto depthLayout = depthImage->layout;
+        auto depthAccess = depthImage->accessMask;
+
+        Graphics::ImageBarrier transferBarriers[] = {
+            { colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT },
+            { depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT },
+        };
+        commandList->PipelineBarrier(transferBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+        commandList->CopyImageToBuffer(colorImage, colorReadback);
+        commandList->CopyImageToBuffer(depthImage, depthReadback);
+
+        Graphics::ImageBarrier restoreBarriers[] = {
+            { colorImage, colorLayout, colorAccess },
+            { depthImage, depthLayout, depthAccess },
+        };
+        commandList->PipelineBarrier(restoreBarriers, {}, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+
+        commandList->EndCommands();
+        device->SubmitCommandList(commandList);
+
+    }
+
+    ContentPreviews::Image ContentPreviews::ProcessCapture(const std::vector<float16>& colors, const std::vector<float>& depth,
+        ivec2 depthSize) {
 
         Image image;
 
-        // The swap of the render target moved the depth of the last frame into the history
-        auto depthTexture = renderTarget->GetHistoryData(Renderer::FULL_RES)->depthTexture;
-        if (!depthTexture || renderTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED)
-            return image;
-
-        // Only the first read waits for the device, the second one reads from the same finished frame
-        auto colorImage = renderTexture.GetImage<float>();
-        std::vector<float> depth(size_t(depthTexture->width) * size_t(depthTexture->height));
-        auto transferManager = Graphics::GraphicsDevice::DefaultDevice->memoryManager->transferManager;
-        transferManager->RetrieveImageData(depth.data(), depthTexture->image.get(), VkOffset3D{ 0, 0, 0 },
-            VkExtent3D{ uint32_t(depthTexture->width), uint32_t(depthTexture->height), 1 }, 0, 1, false);
-
-        const auto& colors = colorImage->GetData();
-        auto width = renderTexture.width;
-        auto height = renderTexture.height;
-        if (colors.size() < size_t(width) * size_t(height) * 4 || depth.empty())
-            return image;
-
+        auto width = slotSize * renderScale;
         auto getDepth = [&](int32_t x, int32_t y) {
-            auto depthX = x * depthTexture->width / width;
-            auto depthY = y * depthTexture->height / height;
-            return depth[size_t(depthY) * depthTexture->width + depthX];
+            return depth[size_t(y * depthSize.y / width) * depthSize.x + size_t(x * depthSize.x / width)];
             };
 
         // The content fits into the view, so a corner shows the background
         auto background = getDepth(0, 0);
 
         // The post processing already encoded the colors for the display, they are averaged as linear colors
-        auto size = ivec2(width, height) / renderScale;
+        auto size = ivec2(slotSize);
         std::vector<vec4> pixels(size_t(size.x) * size_t(size.y), vec4(0.0f));
         for (int32_t y = 0; y < size.y; y++) {
             for (int32_t x = 0; x < size.x; x++) {
@@ -926,8 +978,11 @@ namespace Atlas::Editor {
                         auto pixelY = y * renderScale + sampleY;
                         if (getDepth(pixelX, pixelY) == background)
                             continue;
-                        auto idx = (size_t(pixelY) * width + pixelX) * 4;
-                        sum += vec4(SrgbToLinear(colors[idx]), SrgbToLinear(colors[idx + 1]), SrgbToLinear(colors[idx + 2]), 1.0f);
+                        auto pixel = size_t(pixelY) * width + size_t(pixelX);
+                        auto color = [&](size_t channel) {
+                            return SrgbToLinear(glm::detail::toFloat32(colors[pixel * 4 + channel]));
+                            };
+                        sum += vec4(color(0), color(1), color(2), 1.0f);
                     }
                 }
                 pixels[size_t(y) * size.x + x] = sum / float(renderScale * renderScale);
@@ -947,7 +1002,7 @@ namespace Atlas::Editor {
 
     }
 
-    void ContentPreviews::FinishRender(bool failed, Image image) {
+    void ContentPreviews::FinishRender(bool failed) {
 
         auto& job = *renderJob;
 
@@ -959,20 +1014,34 @@ namespace Atlas::Editor {
                 iter->second.retryTime = Clock::Get() + retryDelay;
             }
             else {
+                std::vector<float16> colors(colorReadback->size / sizeof(float16));
+                std::vector<float> depth(depthReadback->size / sizeof(float));
+                colorReadback->Invalidate();
+                std::memcpy(colors.data(), colorReadback->Map(), colorReadback->size);
+                colorReadback->Unmap();
+                depthReadback->Invalidate();
+                std::memcpy(depth.data(), depthReadback->Map(), depthReadback->size);
+                depthReadback->Unmap();
+
                 // Incomplete previews are shown, but not cached
-                auto dependencies = job.complete ? GetDependencies(job) : std::vector<std::string>();
+                auto dependencies = job.complete ? GetDependencies() : std::vector<std::string>();
                 JobSystem::Execute(jobGroup, [this, assetPath = job.assetPath, version = job.version, complete = job.complete,
-                    dependencies, image = std::move(image)](JobData&) {
-                    if (complete)
-                        WriteCache(version, image, dependencies);
-                    auto result = Result{ .assetPath = assetPath, .version = version, .image = image };
-                    result.slotLevels = BuildSlotLevels(image);
+                    dependencies, colors = std::move(colors), depth = std::move(depth), depthSize = depthSize](JobData&) {
+                    auto image = ProcessCapture(colors, depth, depthSize);
+                    auto result = Result{ .assetPath = assetPath, .version = version, .failed = image.data.empty() };
+                    if (!result.failed) {
+                        if (complete)
+                            WriteCache(version, image, dependencies);
+                        result.slotLevels = BuildSlotLevels(image);
+                        result.image = std::move(image);
+                    }
                     std::scoped_lock lock(resultMutex);
                     results.push_back(std::move(result));
                     });
             }
         }
 
+        RemoveContent(job);
         renderJob.reset();
 
     }
@@ -983,11 +1052,12 @@ namespace Atlas::Editor {
         if (iter != entries.end() && iter->second.version == renderJob->version)
             iter->second.state = State::Queued;
 
+        RemoveContent(*renderJob);
         renderJob.reset();
 
     }
 
-    std::vector<std::string> ContentPreviews::GetDependencies(RenderJob& job) {
+    std::vector<std::string> ContentPreviews::GetDependencies() {
 
         std::set<std::string> paths;
         auto add = [&](const auto& handle) {
@@ -995,10 +1065,10 @@ namespace Atlas::Editor {
                 paths.insert(handle.GetResource()->path);
             };
 
-        for (const auto& mesh : job.scene->GetMeshes())
+        for (const auto& mesh : renderScene->GetMeshes())
             add(mesh);
 
-        for (const auto& material : job.scene->GetMaterials()) {
+        for (const auto& material : renderScene->GetMaterials()) {
             add(material);
             add(material->graph);
             for (const auto& map : material->GetMaps())
@@ -1008,7 +1078,7 @@ namespace Atlas::Editor {
         }
 
         // The file of the preview itself is part of the version
-        paths.erase(job.assetPath);
+        paths.erase(renderJob->assetPath);
 
         return std::vector<std::string>(paths.begin(), paths.end());
 

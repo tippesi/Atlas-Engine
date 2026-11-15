@@ -1000,7 +1000,10 @@ namespace Atlas {
 			};
 			globalNearestSampler = device->CreateSampler(samplerDesc);
 
-			
+			// Another layout would recreate all pipelines, e.g. those of the other viewports, so renderers share it
+			globalDescriptorSetLayout = PipelineManager::GetDescriptorSetLayoutOverride(0);
+			if (globalDescriptorSetLayout)
+				return;
 
 			auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
 				.bindings = {

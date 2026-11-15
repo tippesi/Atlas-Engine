@@ -1,5 +1,6 @@
 #include "CommandList.h"
 #include "GraphicsDevice.h"
+#include "Format.h"
 #include "../profiler/CPUProfiler.h"
 
 #include <cassert>
@@ -933,6 +934,21 @@ namespace Atlas {
 
             vkCmdCopyImage(commandBuffer, srcImage->image, srcImage->layout,
                 dstImage->image, dstImage->layout, 1, &copy);
+
+        }
+
+        void CommandList::CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<Buffer>& dstBuffer) {
+
+            auto size = size_t(srcImage->width) * srcImage->height * GetFormatSize(srcImage->format);
+            AE_ASSERT(dstBuffer->size >= size && "The buffer is too small for the image");
+            if (dstBuffer->size < size) return;
+
+            VkBufferImageCopy copy = {};
+            copy.imageSubresource.aspectMask = srcImage->aspectFlags;
+            copy.imageSubresource.layerCount = 1;
+            copy.imageExtent = { srcImage->width, srcImage->height, 1 };
+
+            vkCmdCopyImageToBuffer(commandBuffer, srcImage->image, srcImage->layout, dstBuffer->buffer, 1, &copy);
 
         }
 

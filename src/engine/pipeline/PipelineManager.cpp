@@ -150,6 +150,15 @@ namespace Atlas {
 
     }
 
+    Ref<Graphics::DescriptorSetLayout> PipelineManager::GetDescriptorSetLayoutOverride(uint32_t set) {
+
+        AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
+
+        std::scoped_lock lock(globalLayoutOverridesMutex);
+        return globalDescriptorSetLayoutOverrides[set];
+
+    }
+
     Ref<Graphics::Pipeline> PipelineManager::GetOrCreatePipeline(PipelineConfig& config) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;

@@ -71,7 +71,7 @@ namespace Atlas::Editor {
         // Generates, uploads and evicts previews, called once per frame after the previews were requested
         void Update();
 
-        // Stops rendering and releases the renderer once no previews were requested for a while
+        // Stops rendering once no previews were requested for a moment, e.g. after the content browser was closed
         void ReleaseUnused();
 
         static constexpr int32_t slotSize = 160;
@@ -138,15 +138,14 @@ namespace Atlas::Editor {
             ResourceHandle<Material> material;
             ResourceHandle<MaterialGraph::Graph> graph;
 
-            Ref<Scene::Scene> scene;
+            // The content in the preview scene
             Scene::Entity root;
-            Scene::Entity camera;
 
             int32_t renderedFrames = 0;
             // Rendered after a timeout, e.g. with textures which didn't load. Such previews aren't cached
             bool complete = true;
-            // The frames are submitted at the end of the frame, the result is read in the next one
-            bool waitForCapture = false;
+            // Frame of the device in which the last frame was copied, it's read once the device finished it
+            int32_t readbackFrame = -1;
         };
 
         void Init();
@@ -163,13 +162,17 @@ namespace Atlas::Editor {
 
         bool StartRender(RenderJob& job);
 
-        void CreateRenderScene(RenderJob& job);
+        void InitRendering();
+
+        void AddContent(RenderJob& job);
+
+        void RemoveContent(RenderJob& job);
 
         void RenderFrame(RenderJob& job);
 
-        Image Capture();
+        void CopyForReadback();
 
-        void FinishRender(bool failed, Image image);
+        void FinishRender(bool failed);
 
         void CancelRender();
 
@@ -182,8 +185,10 @@ namespace Atlas::Editor {
         // Mip levels of the whole slot with the image in its corner, the rest of the slot is transparent
         static std::vector<uint8_t> BuildSlotLevels(const Image& image);
 
-        // Files a rendered preview depends on, e.g. the textures of a material
-        static std::vector<std::string> GetDependencies(RenderJob& job);
+        // Files the rendered preview depends on, e.g. the textures of a material
+        std::vector<std::string> GetDependencies();
+
+        static Image ProcessCapture(const std::vector<float16>& colors, const std::vector<float>& depth, ivec2 depthSize);
 
         static std::string GetCachePath(Hash version);
 
@@ -220,11 +225,17 @@ namespace Atlas::Editor {
         std::vector<std::string> renderQueue;
         Scope<RenderJob> renderJob;
 
+        // Created once and kept, all rendered previews share the renderer and the scene, only the content changes
         Ref<Renderer::MainRenderer> renderer;
         Ref<Renderer::RenderTarget> renderTarget;
         Ref<Viewport> renderViewport;
         Texture::Texture2D renderTexture;
-        float lastRenderTime = 0.0f;
+        Ref<Scene::Scene> renderScene;
+        Scene::Entity renderCamera;
+        Scene::Entity renderLight;
+        Ref<Graphics::Buffer> colorReadback;
+        Ref<Graphics::Buffer> depthReadback;
+        ivec2 depthSize = ivec2(0);
 
         static constexpr int32_t slotsPerRow = 24;
         static constexpr uint32_t mipLevels = 6;
@@ -235,9 +246,6 @@ namespace Atlas::Editor {
         static constexpr int32_t renderFrames = 16;
         static constexpr float renderTimeout = 20.0f;
         static constexpr float retryDelay = 30.0f;
-        // The renderer is released after a while without anything to render, rendering stops once no previews
-        // were requested for a moment, e.g. after the content browser was closed
-        static constexpr float rendererIdleTime = 30.0f;
         static constexpr float hiddenTime = 1.0f;
         static constexpr float fadeTime = 0.15f;
 

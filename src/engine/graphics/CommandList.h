@@ -187,6 +187,9 @@ namespace Atlas {
 
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageCopy copy);
 
+            // Copies the first mip level of the first layer, the image has to be in the transfer source layout
+            void CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<Buffer>& dstBuffer);
+
             void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
 
             void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageBlit blit);

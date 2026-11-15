@@ -34,7 +34,10 @@ namespace Atlas {
 
         static void AddPipeline(PipelineConfig& config);
 
+        // Recreates all pipelines which use a compatible layout for the set
         static void OverrideDescriptorSetLayout(Ref<Graphics::DescriptorSetLayout> layout, uint32_t set);
+
+        static Ref<Graphics::DescriptorSetLayout> GetDescriptorSetLayoutOverride(uint32_t set);
 
     private:
         struct PipelineVariants {
