@@ -44,6 +44,7 @@ namespace Atlas::Editor::UI {
             {"shadowDistanceCulling", mesh->shadowDistanceCulling},
             {"rayTraceDistanceCulling", mesh->rayTraceDistanceCulling},
             {"minScreenSize", mesh->minScreenSize},
+            {"lodPixelError", mesh->lodPixelError},
             {"animationLodDistance", mesh->animationLodDistance},
             {"animationMaxInterval", mesh->animationMaxInterval},
             {"impostorDistance", mesh->impostorDistance},
@@ -85,6 +86,7 @@ namespace Atlas::Editor::UI {
         j.at("shadowDistanceCulling").get_to(mesh->shadowDistanceCulling);
         j.at("rayTraceDistanceCulling").get_to(mesh->rayTraceDistanceCulling);
         j.at("minScreenSize").get_to(mesh->minScreenSize);
+        j.at("lodPixelError").get_to(mesh->lodPixelError);
         j.at("animationLodDistance").get_to(mesh->animationLodDistance);
         j.at("animationMaxInterval").get_to(mesh->animationMaxInterval);
         j.at("impostorDistance").get_to(mesh->impostorDistance);
@@ -282,6 +284,8 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Show skeleton", &showSkeleton);
         ImGui::EndDisabled();
 
+        RenderLods();
+
     }
 
     void MeshEditorWindow::AcceptViewportDrop() {
@@ -289,6 +293,41 @@ namespace Atlas::Editor::UI {
         auto animation = ResourcePayloadHelper::AcceptDropResource<Animation::Animation>();
         if (animation.IsValid() && !Play(animation))
             Notifications::Push({ .message = "The mesh has no skeleton to play the animation on", .type = NotificationType::Error });
+
+    }
+
+    void MeshEditorWindow::RenderLods() {
+
+        ImGui::SeparatorText("Levels of detail");
+
+        const auto& data = mesh->data;
+        auto lodCount = data.GetLodCount();
+        auto& forcedLod = scene->forcedMeshLod;
+        forcedLod = std::min(forcedLod, lodCount - 1);
+        if (lodCount < 2) {
+            ImGui::TextColored(Theme::TextMuted(), "None, generated in the mesh settings");
+            return;
+        }
+
+        auto getLabel = [&](int32_t lod) {
+            if (lod < 0)
+                return std::string("Automatic");
+            size_t indexCount = 0;
+            for (const auto& subData : data.subData)
+                indexCount += subData.GetLod(lod).indicesCount;
+            return "LOD " + std::to_string(lod) + " (" + std::to_string(indexCount / 3) + " triangles)";
+            };
+
+        if (ImGui::BeginCombo("Shown level", getLabel(forcedLod).c_str())) {
+            for (int32_t lod = -1; lod < lodCount; lod++) {
+                if (ImGui::Selectable(getLabel(lod).c_str(), lod == forcedLod))
+                    forcedLod = lod;
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::SetItemTooltip("Automatic chooses the level by the distance to the camera");
+        ImGui::Checkbox("Color by level", &scene->debugMeshLods);
+        ImGui::SetItemTooltip("White, green, blue, yellow and red from the full detail on");
 
     }
 

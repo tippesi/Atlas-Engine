@@ -78,6 +78,41 @@ namespace Atlas::Editor::UI {
                 }
             }
 
+            {
+                ImGui::SeparatorText("Levels of detail");
+                if (Widgets::BeginProperties("MeshLods")) {
+                    Widgets::PropertyLabel("Pixel error", "Instances use the coarsest level whose error stays below this many pixels");
+                    ImGui::DragFloat("##Pixel error", &mesh->lodPixelError, 0.05f, 0.0f, 32.0f);
+                    for (int32_t lod = 0; lod < mesh->data.GetLodCount(); lod++) {
+                        size_t indexCount = 0;
+                        for (const auto& subData : mesh->data.subData)
+                            indexCount += subData.GetLod(lod).indicesCount;
+                        auto label = "LOD " + std::to_string(lod);
+                        Widgets::PropertyLabel(label.c_str());
+                        if (lod == 0)
+                            ImGui::Text("%zu triangles", indexCount / 3);
+                        else
+                            ImGui::Text("%zu triangles, error %.4f", indexCount / 3, mesh->data.lodErrors[lod - 1]);
+                    }
+                    Widgets::PropertyLabel("Maximum levels", "Including the full detail level");
+                    ImGui::DragInt("##Maximum levels", &lodSettings.maxLodCount, 0.05f, 2, Mesh::MeshData::maxLodCount, "%d",
+                        ImGuiSliderFlags_AlwaysClamp);
+                    Widgets::PropertyLabel("Reduction", "Triangles of a level relative to the one before");
+                    ImGui::DragFloat("##Reduction", &lodSettings.reduction, 0.01f, 0.1f, 0.9f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+                    Widgets::EndProperties();
+                }
+
+                if (mesh->IsGeneratingLods()) {
+                    ImGui::TextColored(Theme::TextMuted(), "Generating levels of detail...");
+                }
+                else {
+                    if (ImGui::Button("Generate levels of detail", ImVec2(-FLT_MIN, 0.0f)))
+                        mesh->GenerateLods(lodSettings);
+                    if (mesh->data.GetLodCount() > 1 && Widgets::DangerButton("Remove levels of detail"))
+                        mesh->ClearLods();
+                }
+            }
+
             if (mesh->data.IsSkinned()) {
                 ImGui::SeparatorText("Animation updates");
                 if (Widgets::BeginProperties("MeshAnimation")) {

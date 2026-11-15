@@ -524,6 +524,21 @@ namespace Atlas::Editor::UI {
                 ImguiExtension::PostProcessingPanel::RenderUpscalerSelection(scene->postProcessing.upscaler,
                     [&](PostProcessing::Upscaler upscaler) { return viewportPanel.mainRenderer->IsUpscalerSupported(upscaler); }, false);
 
+                ImGui::SeparatorText("Levels of detail");
+                ImGui::DragFloat("Error scale##Mesh LODs", &scene->meshLodErrorScale, 0.05f, 0.0f, 16.0f);
+                ImGui::SetItemTooltip("Larger values switch meshes to coarser levels of detail earlier");
+                auto getLodLabel = [](int32_t lod) { return lod < 0 ? std::string("Automatic") : "LOD " + std::to_string(lod); };
+                if (ImGui::BeginCombo("Shown level##Mesh LODs", getLodLabel(scene->forcedMeshLod).c_str())) {
+                    for (int32_t lod = -1; lod < Mesh::MeshData::maxLodCount; lod++) {
+                        if (ImGui::Selectable(getLodLabel(lod).c_str(), lod == scene->forcedMeshLod))
+                            scene->forcedMeshLod = lod;
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::SetItemTooltip("Shows all meshes in this level or their coarsest one");
+                ImGui::Checkbox("Color by level##Mesh LODs", &scene->debugMeshLods);
+                ImGui::SetItemTooltip("White, green, blue, yellow and red from the full detail on");
+
                 ImGui::SeparatorText("Path tracer samples");
                 // ImGui::Checkbox("Realtime", &viewportPanel.mainRenderer->pathTracingRenderer.realTime);
                 ImGui::DragInt("Sample count", &viewportPanel.mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);

@@ -64,6 +64,9 @@ namespace Atlas::Editor::UI {
     private:
         void RenderSkeleton();
 
+        // Viewport settings to show a chosen level of detail instead of the one for the camera distance
+        void RenderLods();
+
         // Bodies belong to entities, the preview entity gets one to try shapes for the mesh
         void RenderPhysics();
 
