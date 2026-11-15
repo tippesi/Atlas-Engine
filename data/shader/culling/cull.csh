@@ -185,6 +185,8 @@ void main() {
     vec3 cameraLocation = PushConstants.cameraLocation.xyz;
     float centerDistanceSqr = DistanceSqr(center, cameraLocation);
     float positionDistanceSqr = DistanceSqr(GetInstancePosition(matrix), cameraLocation);
+    float boundsDistance = length(max(abs(cameraLocation - center) - extent, vec3(0.0)));
+    float maxScale = GetMaxScale(matrix);
 
     bool geometry = (mesh.flags & MESH_GEOMETRY) != 0u;
 
@@ -193,14 +195,7 @@ void main() {
     float minScreenSizeSqr = mesh.minScreenSize * mesh.minScreenSize * centerDistanceSqr;
     bool largeEnough = dontCull || screenSizeSqr >= minScreenSizeSqr;
 
-#ifdef RAY_TRACING_INSTANCES
-    if ((mesh.flags & MESH_DRAWABLE) == 0u || !largeEnough)
-        return;
-
-    if ((instance.flags & INSTANCE_VISIBLE) != 0u)
-        WriteRayTracingInstance(instance, positionDistanceSqr, PushConstants.maxRayTracingInstanceCount,
-            PushConstants.includeObjectHistory > 0u);
-#else
+#ifndef RAY_TRACING_INSTANCES
 #ifndef OCCLUSION
     // The streaming hears of instances from half the minimum screen size on, so their meshes are resident once they
     // get big enough
@@ -216,16 +211,25 @@ void main() {
     // Instances drawn as impostors or culled by distance don't need the textures of the mesh
     bool impostorOnly = (mesh.flags & MESH_IMPOSTOR) != 0u &&
         (!geometry || positionDistanceSqr >= mesh.impostorDistance * mesh.impostorDistance);
-    if (geometry && largeEnough && !impostorOnly && withinCullingDistance) {
-        float scale = max(length(vec3(matrix[0].x, matrix[1].x, matrix[2].x)),
-            max(length(vec3(matrix[0].y, matrix[1].y, matrix[2].y)), length(vec3(matrix[0].z, matrix[1].z, matrix[2].z))));
-        WriteMeshDistance(2u * instance.meshIdx, length(max(abs(cameraLocation - center) - extent, vec3(0.0))) / scale);
-    }
+    if (geometry && largeEnough && !impostorOnly && withinCullingDistance)
+        WriteMeshDistance(2u * instance.meshIdx, boundsDistance / maxScale);
+#endif
 #endif
 
     if ((mesh.flags & MESH_DRAWABLE) == 0u || !largeEnough)
         return;
+
+    // All views and the ray traced instance use the same level of detail, shadows of another level would fall onto it
+    uint lod = mesh.lodCount > 1u ? SelectLod(mesh, boundsDistance, maxScale, PushConstants.focalLength) : 0u;
+
+#ifdef RAY_TRACING_INSTANCES
+    if ((instance.flags & INSTANCE_VISIBLE) != 0u)
+        WriteRayTracingInstance(instance, lod, positionDistanceSqr, PushConstants.maxRayTracingInstanceCount,
+            PushConstants.includeObjectHistory > 0u);
+    return;
 #endif
+
+    uint lodRegionOffset = mesh.regionOffset + lod * mesh.regionCapacity;
 
     bool visibleLastFrame = instance.visibleLastFrame > 0u;
     bool drawnEarly = (mesh.flags & MESH_DRAW_EARLY) != 0u && (visibleLastFrame || dontCull);
@@ -269,21 +273,21 @@ void main() {
         bool impostor = (mesh.flags & MESH_IMPOSTOR) != 0u &&
             (!geometry || positionDistanceSqr >= impostorDistance * impostorDistance);
 
-        uint counterIdx = view.counterOffset + instance.meshIdx * DRAW_TYPE_COUNT;
+        uint counterIdx = view.counterOffset + instance.meshIdx * MESH_COUNTER_COUNT;
         if (impostor) {
-            uint slot = atomicAdd(counters[counterIdx + DRAW_IMPOSTOR], 1u);
+            uint slot = atomicAdd(counters[counterIdx + IMPOSTOR_COUNTER], 1u);
             if (slot < mesh.regionCapacity)
                 impostorIndices[view.impostorIndexOffset + mesh.impostorRegionOffset + slot] = idx;
         }
         else if ((instance.flags & INSTANCE_REVERSED_WINDING) != 0u) {
-            uint slot = atomicAdd(counters[counterIdx + DRAW_REVERSED_WINDING], 1u);
+            uint slot = atomicAdd(counters[counterIdx + 2u * lod + DRAW_REVERSED_WINDING], 1u);
             if (slot < mesh.regionCapacity)
-                indices[view.indexOffset + mesh.regionOffset + mesh.regionCapacity - 1u - slot] = idx;
+                indices[view.indexOffset + lodRegionOffset + mesh.regionCapacity - 1u - slot] = idx;
         }
         else {
-            uint slot = atomicAdd(counters[counterIdx + DRAW_DEFAULT_WINDING], 1u);
+            uint slot = atomicAdd(counters[counterIdx + 2u * lod + DRAW_DEFAULT_WINDING], 1u);
             if (slot < mesh.regionCapacity)
-                indices[view.indexOffset + mesh.regionOffset + slot] = idx;
+                indices[view.indexOffset + lodRegionOffset + slot] = idx;
         }
     }
 

@@ -170,6 +170,16 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Meshes** (models, geometry, LOD, mobility, culling distance, screen size): `mesh/Mesh`, `MeshData`, `MeshComponent`
   (Lua `Mesh`, `MeshData`, `MeshComponent`, `MeshMobility`, `MeshUsageBits`), `.aemesh` files, editor
   `MeshEditorWindow`.
+- **Mesh levels of detail** (LOD, simplification, decimation, meshoptimizer, detail levels): `MeshData::GenerateLods` with
+  `MeshLodSettings` (`lodIndices` follow level 0 in the index buffer, each level has fetch-ordered copies of its
+  vertices behind the ones of level 0), generated on import (`ModelImporter::lodSettings`) and in a job by
+  `Mesh::GenerateLods`/`ClearLods` (editor mesh panel, Lua, capture `meshSettings` `lods`), which the scene update takes
+  over (`Mesh::ApplyGeneratedLods`). The GPU culling picks a level per instance by `Mesh::lodPixelError` times
+  `Scene::meshLodErrorScale` (one multi draw per submesh), host culled passes with `Mesh::SelectLod`
+  (`RenderList::GetLod`); ray tracing traces the same level (`Mesh::lodBlases`), meshes whose LOD BLASes got no bindless
+  slot are drawn only with the levels the ray tracing has. Meshes store their `MeshData::lodSettings`.
+  `Scene::debugMeshLods` colors the levels, `Scene::forcedMeshLod` shows one level everywhere (viewport settings of
+  the scene and mesh editors), capture `inspect` lists their triangles.
 - **Skeletons** (bones, rig, joints): `Skeleton`, `Joint` (Lua).
 - **Materials** (PBR, textures, emission, transmission): `Material` (Lua), `.aematerial` files, editor
   `MaterialEditorWindow`, ImGui `MaterialPanel`, `MaterialsPanel`. Capture `material`, `materialCopy`, `meshMaterials`.

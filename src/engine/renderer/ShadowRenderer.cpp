@@ -231,19 +231,16 @@ namespace Atlas {
                     continue;
                 }
 
-                const auto defaultWindingCount = instances.count - instances.reversedWindingCount;
-                if (defaultWindingCount) {
-                    commandList->DrawIndexed(subData->indicesCount, defaultWindingCount, subData->indicesOffset,
-                        0, instances.offset);
-                }
+                // Shadows don't color the levels of detail
+                auto noLodPush = [](uint32_t) {};
+                RenderList::DrawInstances(commandList, *subData, instances, false, noLodPush);
                 if (instances.reversedWindingCount) {
                     auto& reversedWindingConfig = subData->shadowReversedWindingConfig;
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
                     commandList->BindPipeline(currentPipeline);
                     constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
                     commandList->PushConstants(constantsRange, &pushConstants);
-                    commandList->DrawIndexed(subData->indicesCount, instances.reversedWindingCount, subData->indicesOffset,
-                        0, instances.reversedWindingOffset);
+                    RenderList::DrawInstances(commandList, *subData, instances, true, noLodPush);
                     prevHash = reversedWindingConfig.variantHash;
                 }
 

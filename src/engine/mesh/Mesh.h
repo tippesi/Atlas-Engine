@@ -11,6 +11,9 @@
 
 #include "../graphics/Buffer.h"
 #include "../graphics/BLAS.h"
+#include "../jobsystem/JobGroup.h"
+
+#include <mutex>
 
 namespace Atlas {
 
@@ -49,6 +52,8 @@ namespace Atlas {
 
             explicit Mesh(MeshMobility mobility, MeshUsage usage = 0);
 
+            ~Mesh();
+
             /**
              * Fully updates the buffer data with data available through the MeshData member
              */
@@ -78,6 +83,31 @@ namespace Atlas {
             void InvertNormals();
 
             /**
+             * Generates the levels of detail of the data in a job, ApplyGeneratedLods takes them over
+             */
+            void GenerateLods(const MeshLodSettings& settings = {});
+
+            /**
+             * Removes the levels of detail like GenerateLods, ApplyGeneratedLods takes the change over
+             */
+            void ClearLods();
+
+            bool IsGeneratingLods() const;
+
+            /**
+             * Waits until the levels of detail of this mesh are generated, ApplyGeneratedLods still takes them over
+             */
+            void WaitForLods();
+
+            /**
+             * Takes over the levels of detail which are generated and updates the buffers. Has to be called while nothing
+             * renders or reads meshes, the scene update does it after the streaming
+             * @param wait Waits for builds of buffers or acceleration structures of a mesh instead of taking its levels
+             * over in a later call
+             */
+            static void ApplyGeneratedLods(bool wait = false);
+
+            /**
              * Builds up BVH and fills raytracing related buffers
              */
             void BuildBVH(bool parallelBuild = true);
@@ -102,6 +132,18 @@ namespace Atlas {
             // Bytes of the vertex and index buffers
             size_t GetGeometrySize() const;
 
+            /**
+             * The level of detail of an instance, like the GPU culling chooses it
+             * @param globalMatrix The matrix of the instance
+             * @param bounds The bounds of the instance
+             * @param cameraLocation Location of the main camera
+             * @param focalLength Viewport height in pixels divided by 2 * tan(fov / 2)
+             * @param errorScale Scales the pixel error, see Scene::meshLodErrorScale
+             * @param forcedLod Used instead if it isn't negative, see Scene::forcedMeshLod
+             */
+            int32_t SelectLod(const mat4& globalMatrix, const Volume::AABB& bounds, vec3 cameraLocation,
+                float focalLength, float errorScale, int32_t forcedLod) const;
+
             std::string name = "";
 
             MeshData data;
@@ -123,6 +165,8 @@ namespace Atlas {
             Buffer::VertexBuffer restVertexBuffer;
 
             Ref<RayTracing::BLAS> blas = nullptr;
+            // The levels of detail from 1 on, replaced together with the BLAS of level 0
+            std::vector<Ref<RayTracing::BLAS>> lodBlases;
             ResourceHandle<Impostor> impostor;
 
             bool cullBackFaces = true;
@@ -146,6 +190,9 @@ namespace Atlas {
             // Instances with a smaller bounding sphere in pixels of the output are culled, the streaming unloads meshes
             // without bigger instances. Zero disables it
             float minScreenSize = 8.0f;
+            // Instances use the coarsest level of detail whose geometric error stays below this many pixels of the
+            // output, scaled by Scene::meshLodErrorScale
+            float lodPixelError = 2.0f;
             // How far graphs of the materials can move vertices. The GPU scene reads it for every mesh in
             // every frame, like the culling values above
             float renderBoundsPadding = 0.0f;
@@ -162,6 +209,17 @@ namespace Atlas {
             bool isLoaded = false;
             std::atomic_bool blasCreated = false;
             std::atomic_bool geometryResident = true;
+
+            // Guards the data against taking over levels of detail while buffers or acceleration structures are built
+            std::mutex dataMutex;
+
+            JobGroup lodJob{ "Mesh levels of detail" };
+            Ref<MeshData> generatedLods;
+            std::atomic_bool generatingLods = false;
+
+            // Meshes whose levels of detail are generated, until they are taken over
+            static std::mutex generatingMutex;
+            static std::vector<Mesh*> generatingMeshes;
 
         };
 

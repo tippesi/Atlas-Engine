@@ -36,6 +36,8 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     float lastPreExposure;
     // A loaded sky cubemap doesn't carry the pre-exposure, a generated one does
     float skyCubemapExposure;
+    // Colors meshes by their level of detail
+    uint debugMeshLods;
 } globalData;
 
 layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];

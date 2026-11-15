@@ -29,8 +29,8 @@ namespace Atlas::MaterialGraph {
 
         // The largest number of values handed from the vertex to the surface stage
         static constexpr int32_t maxVaryings = 4;
-        // Location of the first value handed from the vertex to the surface stage
-        static constexpr int32_t varyingLocation = 13;
+        // Location of the first value handed from the vertex to the surface stage, after lodVS of the geometry shaders
+        static constexpr int32_t varyingLocation = 14;
 
     private:
         // A generated function, nodes are emitted once and in the order of their dependencies

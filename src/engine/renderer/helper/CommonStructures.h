@@ -167,6 +167,7 @@ namespace Atlas {
             float preExposure;
             float lastPreExposure;
             float skyCubemapExposure;
+            uint32_t debugMeshLods;
         };
 
         struct alignas(16) DDGICascade {

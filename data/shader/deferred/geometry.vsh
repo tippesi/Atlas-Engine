@@ -80,6 +80,8 @@ layout(location=11) out vec3 instancePositionVS;
 layout(location=12) out vec3 objectNormalVS;
 #endif
 
+layout(location=13) flat out uint lodVS;
+
 layout(set = 3, binding = 8) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
@@ -107,6 +109,8 @@ layout(push_constant) uniform constants {
     uint jointOffset;
     uint jointCount;
     uint instanceOffset;
+    // Level of detail of host culled draws, the GPU culled ones draw a level per draw index
+    uint lod;
 #ifdef MATERIAL_GRAPH
     uint materialGraphOffset;
 #endif
@@ -114,6 +118,8 @@ layout(push_constant) uniform constants {
 
 // Functions
 void main() {
+
+    lodVS = PushConstants.lod + uint(gl_DrawID);
 
 #ifdef INSTANCE_BUFFER
     uint instanceIdx = instanceIndices[gl_InstanceIndex];

@@ -1207,6 +1207,7 @@ namespace Atlas {
             features11.storagePushConstant16 = availableFeatures11.storagePushConstant16;
             features11.storageInputOutput16 = availableFeatures11.storageInputOutput16;
             features11.uniformAndStorageBuffer16BitAccess = availableFeatures11.uniformAndStorageBuffer16BitAccess;
+            features11.shaderDrawParameters = availableFeatures11.shaderDrawParameters;
 
             features12.descriptorIndexing = availableFeatures12.descriptorIndexing;
             features12.shaderUniformBufferArrayNonUniformIndexing = availableFeatures12.shaderUniformBufferArrayNonUniformIndexing;
@@ -1353,9 +1354,11 @@ namespace Atlas {
                 availableFeatures12.descriptorBindingSampledImageUpdateAfterBind &&
                 availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind &&
                 availableFeatures12.shaderSampledImageArrayNonUniformIndexing && bindlessLimitsSupported;
-            // The draws of the GPU culling select their instances with the first instance
+            // The draws of the GPU culling select their instances with the first instance, the levels of detail of a
+            // draw are one multi draw and the geometry shaders read the level from the draw index
             AE_ASSERT(bindlessSupported && availableFeatures.features.drawIndirectFirstInstance &&
-                "The device doesn't support bindless resources or indirect draws with a first instance");
+                availableFeatures.features.multiDrawIndirect && availableFeatures11.shaderDrawParameters &&
+                "The device doesn't support bindless resources or multiple indirect draws with a first instance");
 
             features12.descriptorBindingPartiallyBound = VK_TRUE;
             features12.runtimeDescriptorArray = VK_TRUE;

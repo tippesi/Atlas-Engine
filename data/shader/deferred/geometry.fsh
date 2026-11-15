@@ -34,6 +34,8 @@ layout(location=11) in vec3 instancePositionVS;
 layout(location=12) in vec3 objectNormalVS;
 #endif
 
+layout(location=13) flat in uint lodVS;
+
 layout(push_constant) uniform constants {
     uint vegetation;
     uint invertUVs;
@@ -59,6 +61,7 @@ layout(push_constant) uniform constants {
     uint jointOffset;
     uint jointCount;
     uint instanceOffset;
+    uint lod;
 #ifdef MATERIAL_GRAPH
     uint materialGraphOffset;
 #endif
@@ -245,5 +248,11 @@ void main() {
     velocityFS = (ndcL - ndcC) * 0.5;
 
     materialIdxFS = PushConstants.materialIdx;
-    
+
+    if (globalData.debugMeshLods > 0u) {
+        const vec3 lodColors[5] = vec3[](vec3(1.0), vec3(0.1, 0.9, 0.1), vec3(0.1, 0.4, 1.0), vec3(1.0, 0.8, 0.1),
+            vec3(1.0, 0.1, 0.1));
+        baseColorFS = lodColors[min(lodVS, 4u)] * (0.5 + 0.5 * dot(baseColorFS, vec3(0.333)));
+    }
+
 }

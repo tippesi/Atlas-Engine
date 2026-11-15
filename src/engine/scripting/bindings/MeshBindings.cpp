@@ -36,8 +36,17 @@ namespace Atlas::Scripting::Bindings {
             "restAABB", &Mesh::Skeleton::restAABB
             );
 
+        ns->new_usertype<Mesh::MeshLodSettings>("MeshLodSettings",
+            sol::constructors<Mesh::MeshLodSettings()>(),
+            "maxLodCount", &Mesh::MeshLodSettings::maxLodCount,
+            "reduction", &Mesh::MeshLodSettings::reduction,
+            "minReduction", &Mesh::MeshLodSettings::minReduction
+            );
+
         ns->new_usertype<Mesh::MeshData>("MeshData",
             "IsSkinned", &Mesh::MeshData::IsSkinned,
+            "lodErrors", sol::readonly(&Mesh::MeshData::lodErrors),
+            "lodSettings", sol::readonly(&Mesh::MeshData::lodSettings),
             "filename", &Mesh::MeshData::name,
             "materials", &Mesh::MeshData::materials,
             "animations", &Mesh::MeshData::animations,
@@ -51,6 +60,11 @@ namespace Atlas::Scripting::Bindings {
             "UpdateData", &Mesh::Mesh::UpdateData,
             "UpdatePipelines", &Mesh::Mesh::UpdatePipelines,
             "UpdateVertexArray", &Mesh::Mesh::UpdateVertexArray,
+            "GenerateLods", [](Mesh::Mesh& mesh, sol::optional<Mesh::MeshLodSettings> settings) {
+                mesh.GenerateLods(settings.value_or(Mesh::MeshLodSettings()));
+            },
+            "ClearLods", &Mesh::Mesh::ClearLods,
+            "IsGeneratingLods", &Mesh::Mesh::IsGeneratingLods,
             "name", &Mesh::Mesh::name,
             "data", &Mesh::Mesh::data,
             "mobility", &Mesh::Mesh::mobility,
@@ -58,6 +72,7 @@ namespace Atlas::Scripting::Bindings {
             "cullBackFaces", &Mesh::Mesh::cullBackFaces,
             "depthTest", &Mesh::Mesh::depthTest,
             "castShadow", &Mesh::Mesh::castShadow,
+            "rayTrace", &Mesh::Mesh::rayTrace,
             "vegetation", &Mesh::Mesh::vegetation,
             "windNoiseTextureLod", &Mesh::Mesh::windNoiseTextureLod,
             "windBendScale", &Mesh::Mesh::windBendScale,
@@ -65,9 +80,11 @@ namespace Atlas::Scripting::Bindings {
             "allowedShadowCascades", &Mesh::Mesh::allowedShadowCascades,
             "distanceCulling", &Mesh::Mesh::distanceCulling,
             "shadowDistanceCulling", &Mesh::Mesh::shadowDistanceCulling,
+            "rayTraceDistanceCulling", &Mesh::Mesh::rayTraceDistanceCulling,
             "impostorDistance", &Mesh::Mesh::impostorDistance,
             "impostorShadowDistance", &Mesh::Mesh::impostorShadowDistance,
             "minScreenSize", &Mesh::Mesh::minScreenSize,
+            "lodPixelError", &Mesh::Mesh::lodPixelError,
             "animationLodDistance", &Mesh::Mesh::animationLodDistance,
             "animationMaxInterval", &Mesh::Mesh::animationMaxInterval,
             "invertUVs", &Mesh::Mesh::invertUVs

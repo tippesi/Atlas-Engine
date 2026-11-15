@@ -294,6 +294,7 @@ namespace Atlas {
             mesh->name = meshData.name;
             // Assimp puts the texture coordinate origin at the bottom left
             mesh->invertUVs = true;
+            meshData.GenerateLods(lodSettings);
             mesh->UpdateData();
 
             if (isSkinned) {
@@ -314,6 +315,7 @@ namespace Atlas {
         }
 
         JobGroup ModelImporter::backgroundImports{ "Scene import", JobPriority::Medium };
+        Mesh::MeshLodSettings ModelImporter::lodSettings;
         std::mutex ModelImporter::completedImportsMutex;
         std::vector<ModelImporter::SceneImportResult> ModelImporter::completedImports;
 
@@ -670,6 +672,7 @@ namespace Atlas {
                 meshData.name = std::string(assimpMesh->mName.C_Str());
                 mesh->name = meshData.name;
                 mesh->invertUVs = invertUVs;
+                meshData.GenerateLods(lodSettings);
                 mesh->UpdateData();
 
                 // The entities use the handle since the start of the import, existing resources stay as they are

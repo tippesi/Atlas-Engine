@@ -40,6 +40,18 @@ namespace Atlas {
             auto id = mesh.GetID();
             meshIdToMeshMap[id] = mesh;
         }
+
+        // Like the GPU culling, which knows the focal length of the last frame
+        lodFocalLength = scene->renderState.gpuScene.GetFocalLength();
+        lodErrorScale = scene->meshLodErrorScale;
+        forcedLod = scene->forcedMeshLod;
+    }
+
+    uint32_t RenderList::GetLod(const Mesh::Mesh& mesh, const mat4& globalMatrix, const Volume::AABB& bounds,
+        vec3 cameraLocation) {
+
+        return uint32_t(mesh.SelectLod(globalMatrix, bounds, cameraLocation, lodFocalLength, lodErrorScale, forcedLod));
+
     }
 
     Ref<RenderList::Pass> RenderList::NewMainPass() {
@@ -131,7 +143,7 @@ namespace Atlas {
 
         auto offset = draw.command * gpuDrawCommandSize;
         if (draw.type != GPUDrawType::Impostor)
-            commandList->DrawIndexedIndirect(gpuCommandBuffer, offset, 1, gpuDrawCommandSize);
+            commandList->DrawIndexedIndirect(gpuCommandBuffer, offset, draw.lodCount, gpuDrawCommandSize);
         else
             commandList->DrawIndirect(gpuCommandBuffer, offset, 1, gpuDrawCommandSize);
 
@@ -257,10 +269,12 @@ namespace Atlas {
 
     }
 
-    void RenderList::Pass::Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap) {
+    void RenderList::Pass::Update(vec3 cameraLocation, RenderList& renderList) {
 
         auto& transformPool = scene->entityManager.GetPool<TransformComponent>();
         auto& animationPool = scene->entityManager.GetPool<AnimationComponent>();
+        auto& meshPool = scene->entityManager.GetPool<MeshComponent>();
+        const auto& meshIdToMeshMap = renderList.meshIdToMeshMap;
         for (auto& [meshId, batch] : meshToEntityMap) {
             auto item = meshIdToMeshMap.find(meshId);
             // This happens when meshes are loaded async
@@ -295,6 +309,24 @@ namespace Atlas {
                 });
             const auto defaultWindingEntityCount = size_t(reversedWindingBegin - batch.entities.begin());
 
+            // All passes use the level of detail of the main camera, like the GPU culling
+            auto selectLods = mesh->data.GetLodCount() > 1;
+            if (selectLods) {
+                entityLods.resize(batch.count);
+                for (size_t i = 0; i < batch.count; i++) {
+                    auto entity = batch.entities[i];
+                    auto lod = renderList.GetLod(*mesh.Get(), transformPool.Get(entity).globalMatrix,
+                        meshPool.Get(entity).aabb, cameraLocation);
+                    entityLods[i] = { lod, entity };
+                }
+
+                auto byLod = [](const auto& entity0, const auto& entity1) { return entity0.first < entity1.first; };
+                std::stable_sort(entityLods.begin(), entityLods.begin() + defaultWindingEntityCount, byLod);
+                std::stable_sort(entityLods.begin() + defaultWindingEntityCount, entityLods.end(), byLod);
+                for (size_t i = 0; i < batch.count; i++)
+                    batch.entities[i] = entityLods[i].second;
+            }
+
             for (size_t i = 0; i < batch.count; i++) {
                 if (i == defaultWindingEntityCount)
                     instances.reversedWindingOffset = instanceCount();
@@ -308,6 +340,12 @@ namespace Atlas {
                         impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     continue;
                 }
+                auto lod = selectLods ? entityLods[i].first : 0u;
+                if (i < defaultWindingEntityCount)
+                    instances.lodCounts[lod]++;
+                else
+                    instances.reversedWindingLodCounts[lod]++;
+
                 if (useIndices) {
                     instanceIndices.push_back(ECS::EntityToIdx(batch.entities[i]));
                     continue;

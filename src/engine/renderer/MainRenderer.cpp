@@ -459,6 +459,7 @@ namespace Atlas {
 				.mipLodBias = -1.0f / target->GetScalingFactor(),
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
+				.debugMeshLods = scene->renderState.debugMeshLods ? 1u : 0u,
 			};
 			SetPreExposure(globalUniforms, scene);
 
@@ -1073,6 +1074,7 @@ namespace Atlas {
 				.mipLodBias = mipBias ? log2f(target->GetScalingFactor()) - 1.0f : 0.0f,
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
+				.debugMeshLods = scene->renderState.debugMeshLods ? 1u : 0u,
 			};
 			SetPreExposure(globalUniforms, scene);
 

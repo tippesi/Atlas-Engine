@@ -34,12 +34,14 @@ namespace Atlas::RayTracing {
 
             blas = device->CreateBLAS(blasDesc);
 
+            // The triangles of the geometries follow each other, the regions of levels of detail start behind level 0
             std::vector<uint32_t> triangleOffsets;
             triangleOffsets.reserve(geometryRegions.size());
 
+            uint32_t triangleOffset = 0;
             for (const auto& region : geometryRegions) {
-                auto triangleOffset = uint32_t(region.indexOffset) / 3;
                 triangleOffsets.push_back(triangleOffset);
+                triangleOffset += uint32_t(region.indexCount) / 3;
             }
 
             triangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));

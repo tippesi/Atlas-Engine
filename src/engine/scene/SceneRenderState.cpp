@@ -364,22 +364,31 @@ namespace Atlas::Scene {
 
             blasToBindlessIdx.clear();
 
+            // The bindless arrays have a fixed size, the levels of detail only get the slots left by everything else.
+            // Ray traced instances of a level without a slot use the finest level which has one
             uint32_t bufferIdx = 0;
+            auto addBlas = [&](const Ref<RayTracing::BLAS>& blas) {
+                AE_ASSERT(bufferIdx < BINDLESS_BUFFER_COUNT && "Too many BLASes for the bindless buffer arrays");
+                if (bufferIdx >= BINDLESS_BUFFER_COUNT)
+                    return;
+                blasToBindlessIdx[blas] = bufferIdx++;
+            };
+
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
                 // Not all meshes might have a bvh and not all blases will be built in frame, so skip them if they are not ready
-                if (!mesh->IsBVHBuilt() || mesh->IsBVHBuilt() && mesh->blas->blas && 
+                if (!mesh->IsBVHBuilt() || mesh->IsBVHBuilt() && mesh->blas->blas &&
                     !mesh->blas->blas->isDynamic && !mesh->blas->blas->isBuilt)
                     continue;
 
-                blasToBindlessIdx[mesh->blas] = bufferIdx++;
+                addBlas(mesh->blas);
             }
 
             if (scene->rayTracingWorld) {
                 for (const auto& [entity, skinnedBlas] : scene->rayTracingWorld->skinnedBlases) {
                     if (skinnedBlas.blas->IsBuilt())
-                        blasToBindlessIdx[skinnedBlas.blas] = bufferIdx++;
+                        addBlas(skinnedBlas.blas);
                 }
             }
 
@@ -388,7 +397,20 @@ namespace Atlas::Scene {
                 if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
                     continue;
 
-                blasToBindlessIdx[leafCell->blas] = bufferIdx++;
+                addBlas(leafCell->blas);
+            }
+
+            for (const auto& mesh : meshes) {
+                if (!mesh.IsLoaded() || !blasToBindlessIdx.contains(mesh->blas))
+                    continue;
+
+                for (const auto& lodBlas : mesh->lodBlases) {
+                    if (lodBlas->blas && !lodBlas->blas->isDynamic && !lodBlas->blas->isBuilt)
+                        continue;
+                    if (bufferIdx >= BINDLESS_BUFFER_COUNT)
+                        break;
+                    addBlas(lodBlas);
+                }
             }
             };
 
@@ -741,7 +763,7 @@ namespace Atlas::Scene {
             JobSystem::Wait(gpuSceneUpdateJob);
             gpuScene.FillPass(camera.frustum, camera.GetLocation(), mainPass);
             renderList.AddGPUCulledPass(mainPass);
-            mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
+            mainPass->Update(camera.GetLocation(), renderList);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass, RenderList::RenderPassType::Main);
         });
@@ -799,7 +821,7 @@ namespace Atlas::Scene {
                         scene->GetRenderList(frustum, shadowPass);
                     }
                     profilerScope.Next("Shadow pass update");
-                    shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
+                    shadowPass->Update(camera.GetLocation(), renderList);
                     profilerScope.Next("Shadow pass buffers");
                     shadowPass->FillBuffers();
                     renderList.FinishPass(shadowPass, RenderList::RenderPassType::Shadow);
@@ -1058,6 +1080,7 @@ namespace Atlas::Scene {
 
         time = scene->GetTime();
         deltaTime = scene->GetDeltaTime();
+        debugMeshLods = scene->debugMeshLods;
 
         fogVolumes.clear();
         if (hasCamera) {

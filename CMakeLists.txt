@@ -105,6 +105,7 @@ find_package(Jolt CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_package(Ktx CONFIG REQUIRED)
 find_package(recastnavigation CONFIG REQUIRED)
+find_package(meshoptimizer CONFIG REQUIRED)
 
 if (ATLAS_TESTS)
 find_package(GTest CONFIG REQUIRED)

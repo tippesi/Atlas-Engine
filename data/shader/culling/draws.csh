@@ -10,7 +10,7 @@ struct DrawRequest {
     uint type;
     uint indexCount;
     uint firstIndex;
-    uint padding0;
+    uint lod;
     uint padding1;
     uint padding2;
 };
@@ -50,13 +50,14 @@ void main() {
     CullMesh mesh = meshes[request.meshIdx];
     CullView view = views[request.view];
 
-    uint counterIdx = view.counterOffset + request.meshIdx * DRAW_TYPE_COUNT;
-    uint reversedCount = min(counters[counterIdx + DRAW_REVERSED_WINDING], mesh.regionCapacity);
-    uint defaultCount = min(counters[counterIdx + DRAW_DEFAULT_WINDING], mesh.regionCapacity - reversedCount);
-    uint impostorCount = min(counters[counterIdx + DRAW_IMPOSTOR], mesh.regionCapacity);
+    uint counterIdx = view.counterOffset + request.meshIdx * MESH_COUNTER_COUNT;
+    uint lodCounterIdx = counterIdx + 2u * request.lod;
+    uint reversedCount = min(counters[lodCounterIdx + DRAW_REVERSED_WINDING], mesh.regionCapacity);
+    uint defaultCount = min(counters[lodCounterIdx + DRAW_DEFAULT_WINDING], mesh.regionCapacity - reversedCount);
+    uint impostorCount = min(counters[counterIdx + IMPOSTOR_COUNTER], mesh.regionCapacity);
 
     uint instanceCount = defaultCount;
-    uint firstInstance = view.indexOffset + mesh.regionOffset;
+    uint firstInstance = view.indexOffset + mesh.regionOffset + request.lod * mesh.regionCapacity;
     if (request.type == DRAW_REVERSED_WINDING) {
         instanceCount = reversedCount;
         firstInstance += mesh.regionCapacity - reversedCount;

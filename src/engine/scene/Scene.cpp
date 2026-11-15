@@ -166,6 +166,7 @@ namespace Atlas {
             sectionScope.Next("Streaming");
             renderState.RequestStreamedResources();
             Streaming::StreamingManager::Update();
+            Mesh::Mesh::ApplyGeneratedLods();
 
             sectionScope.Next("Cleanup and transform history");
 

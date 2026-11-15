@@ -33,6 +33,7 @@ namespace Atlas::Mesh {
             {"impostorDistance", p.impostorDistance},
             {"impostorShadowDistance", p.impostorShadowDistance},
             {"minScreenSize", p.minScreenSize},
+            {"lodPixelError", p.lodPixelError},
             {"animationLodDistance", p.animationLodDistance},
             {"animationMaxInterval", p.animationMaxInterval},
             {"invertUVs", p.invertUVs},
@@ -71,6 +72,7 @@ namespace Atlas::Mesh {
         try_get_json(j, "rayTrace", p.rayTrace);
         try_get_json(j, "rayTraceDistanceCulling", p.rayTraceDistanceCulling);
         try_get_json(j, "minScreenSize", p.minScreenSize);
+        try_get_json(j, "lodPixelError", p.lodPixelError);
         try_get_json(j, "animationLodDistance", p.animationLodDistance);
         try_get_json(j, "animationMaxInterval", p.animationMaxInterval);
 
@@ -117,6 +119,16 @@ namespace Atlas::Mesh {
         to_json(j["colors"], p.colors, binary);
         if (p.texCoords1.GetElementCount() > 0)
             to_json(j["texCoords1"], p.texCoords1, binary);
+        if (!p.lodErrors.empty()) {
+            to_json(j["lodIndices"], p.lodIndices, binary);
+            j["lodErrors"] = p.lodErrors;
+            j["lodVertexCount"] = p.lodVertexCount;
+            j["lodSettings"] = {
+                {"maxLodCount", p.lodSettings.maxLodCount},
+                {"reduction", p.lodSettings.reduction},
+                {"minReduction", p.lodSettings.minReduction}
+            };
+        }
 
         if (p.IsSkinned()) {
             j["skeleton"] = p.skeleton;
@@ -162,6 +174,17 @@ namespace Atlas::Mesh {
         from_json(j["colors"], p.colors, binary);
         if (j.contains("texCoords1"))
             from_json(j["texCoords1"], p.texCoords1, binary);
+        if (j.contains("lodIndices")) {
+            from_json(j["lodIndices"], p.lodIndices, binary);
+            j.at("lodErrors").get_to(p.lodErrors);
+            try_get_json(j, "lodVertexCount", p.lodVertexCount);
+            if (j.contains("lodSettings")) {
+                const auto& settings = j["lodSettings"];
+                try_get_json(settings, "maxLodCount", p.lodSettings.maxLodCount);
+                try_get_json(settings, "reduction", p.lodSettings.reduction);
+                try_get_json(settings, "minReduction", p.lodSettings.minReduction);
+            }
+        }
 
         if (j.contains("skeleton")) {
             j.at("skeleton").get_to(p.skeleton);
@@ -202,6 +225,9 @@ namespace Atlas::Mesh {
             {"aabb", p.aabb},
         };
 
+        for (const auto& lod : p.lods)
+            j["lods"].push_back(json::array({ lod.indicesOffset, lod.indicesCount }));
+
     }
 
     void from_json(const json& j, MeshSubData& p) {
@@ -211,6 +237,12 @@ namespace Atlas::Mesh {
         j.at("indicesCount").get_to(p.indicesCount);
         j.at("materialIdx").get_to(p.materialIdx);
         j.at("aabb").get_to(p.aabb);
+
+        p.lods.clear();
+        if (j.contains("lods")) {
+            for (const auto& lod : j["lods"])
+                p.lods.push_back({ .indicesOffset = lod[0].get<uint32_t>(), .indicesCount = lod[1].get<uint32_t>() });
+        }
 
     }
 

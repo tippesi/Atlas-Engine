@@ -228,6 +228,13 @@ namespace Atlas {
             // Tests the instances of the main pass against the depth of the ones visible in the last frame
             bool occlusionCulling = true;
 
+            // Scales the pixel error of the mesh levels of detail, larger values switch to coarser levels earlier
+            float meshLodErrorScale = 1.0f;
+            // Colors the meshes of the main pass by their level of detail, from white over green, blue and yellow to red
+            bool debugMeshLods = false;
+            // Draws all meshes in this level of detail or their coarsest one, negative values choose it by the distance
+            int32_t forcedMeshLod = -1;
+
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;

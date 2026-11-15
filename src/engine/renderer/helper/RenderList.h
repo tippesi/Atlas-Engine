@@ -6,8 +6,10 @@
 #include "scene/components/MeshComponent.h"
 
 #include "graphics/Buffer.h"
+#include "graphics/CommandList.h"
 #include "volume/Frustum.h"
 
+#include <array>
 #include <unordered_map>
 #include <vector>
 #include <atomic>
@@ -36,6 +38,10 @@ namespace Atlas {
 
             // Skinned meshes have the joint matrices of each instance one after another
             size_t jointOffset = 0;
+
+            // The instances of both windings are ordered by their level of detail
+            std::array<uint32_t, Mesh::MeshData::maxLodCount> lodCounts = {};
+            std::array<uint32_t, Mesh::MeshData::maxLodCount> reversedWindingLodCounts = {};
         };
 
         enum class RenderPassType {
@@ -77,7 +83,9 @@ namespace Atlas {
             Hash meshId = 0;
             uint32_t slot = 0;
             GPUDrawType type = GPUDrawType::DefaultWinding;
+            // The first of the commands, there is one per level of detail
             uint32_t command = 0;
+            uint32_t lodCount = 1;
         };
 
         struct Pass {
@@ -120,6 +128,9 @@ namespace Atlas {
 
             RenderPassThreadContext contexts[8];
 
+            // The levels of detail of the entities of a batch while it is updated
+            std::vector<std::pair<uint32_t, ECS::Entity>> entityLods;
+
             void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
                 const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
 
@@ -129,7 +140,7 @@ namespace Atlas {
 
             void Finalize();
 
-            void Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
+            void Update(vec3 cameraLocation, RenderList& renderList);
 
             void FillBuffers();
 
@@ -158,6 +169,30 @@ namespace Atlas {
         // Draws with the command written by the GPU culling, empty draws are skipped on the GPU
         void DrawGPUCulled(Graphics::CommandList* commandList, const GPUDraw& draw) const;
 
+        // Draws the instances of one winding of a host culled mesh, a draw per level of detail, beforeDraw(lod) is
+        // called before each draw
+        template<class BeforeDraw>
+        static void DrawInstances(Graphics::CommandList* commandList, const Mesh::MeshSubData& subData,
+            const MeshInstances& instances, bool reversedWinding, const BeforeDraw& beforeDraw) {
+
+            const auto& lodCounts = reversedWinding ? instances.reversedWindingLodCounts : instances.lodCounts;
+            auto firstInstance = uint32_t(reversedWinding ? instances.reversedWindingOffset : instances.offset);
+            for (int32_t lod = 0; lod <= int32_t(subData.lods.size()); lod++) {
+                if (!lodCounts[lod])
+                    continue;
+
+                beforeDraw(uint32_t(lod));
+                auto range = subData.GetLod(lod);
+                commandList->DrawIndexed(range.indicesCount, lodCounts[lod], range.indicesOffset, 0, firstInstance);
+                firstInstance += lodCounts[lod];
+            }
+
+        }
+
+        // The level of detail of an instance in the host culled passes, with the settings of the frame like the GPU
+        // culling chooses it
+        uint32_t GetLod(const Mesh::Mesh& mesh, const mat4& globalMatrix, const Volume::AABB& bounds, vec3 cameraLocation);
+
         Ref<Pass> PopPassFromQueue(RenderPassType type);
 
         void Clear();
@@ -179,6 +214,11 @@ namespace Atlas {
         std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
 
         JobGroup clearJob { "Clear render list", JobPriority::High };
+
+    private:
+        float lodFocalLength = 0.0f;
+        float lodErrorScale = 1.0f;
+        int32_t forcedLod = -1;
     };
 
 }

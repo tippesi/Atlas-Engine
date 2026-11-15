@@ -16,9 +16,10 @@ struct RTMesh {
     uvec2 blasAddress;
     // First record of the mesh in the hit region of ray tracing pipelines
     uint hitRecordOffset;
+    // The levels of detail from 1 on follow each other from this mesh on, lodCount includes level 0
+    uint lodOffset;
+    uint lodCount;
     uint padding0;
-    uint padding1;
-    uint padding2;
 };
 
 struct TLASInstance {
@@ -66,11 +67,16 @@ layout(std430, set = 3, binding = 11) writeonly buffer LastMatrices {
 const uint cullDisableFlag = 1u;
 const uint forceOpaqueFlag = 4u;
 
-void WriteRayTracingInstance(Instance instance, float distanceSqr, uint maxInstanceCount, bool includeObjectHistory) {
+void WriteRayTracingInstance(Instance instance, uint lod, float distanceSqr, uint maxInstanceCount, bool includeObjectHistory) {
 
     RTMesh mesh = rtMeshes[instance.meshIdx];
     if ((mesh.flags & RT_MESH_USABLE) == 0u || distanceSqr > mesh.cullingDistanceSqr || distanceSqr < mesh.deformDistanceSqr)
         return;
+
+    // Levels whose BLAS isn't built yet fall back to the coarsest one that is
+    lod = min(lod, mesh.lodCount - 1u);
+    if (lod > 0u)
+        mesh = rtMeshes[mesh.lodOffset + lod - 1u];
 
     uint instanceIdx = atomicAdd(rtInstanceCounter, 1u);
     if (instanceIdx >= maxInstanceCount)

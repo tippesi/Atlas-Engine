@@ -91,13 +91,20 @@ namespace Atlas::RayTracing {
         Graphics::ASBuilder asBuilder;
 
         // Only static meshes, this runs every frame for all meshes and usually finds none
-        std::vector<Mesh::Mesh*> builtMeshes;
+        std::vector<BLAS*> builtBlases;
         for (auto& mesh : meshes) {
-            if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || !mesh->blas->needsBvhRefresh || mesh->blas->blas->isDynamic)
+            if (!mesh.IsLoaded() || !mesh->IsBVHBuilt())
                 continue;
 
-            blases.push_back(mesh->blas->blas);
-            builtMeshes.push_back(mesh.Get().get());
+            auto addBlas = [&](const Ref<BLAS>& blas) {
+                if (!blas->needsBvhRefresh || blas->blas->isDynamic)
+                    return;
+                blases.push_back(blas->blas);
+                builtBlases.push_back(blas.get());
+            };
+            addBlas(mesh->blas);
+            for (const auto& lodBlas : mesh->lodBlases)
+                addBlas(lodBlas);
         }
 
         size_t blasBuiltCount = 0;
@@ -107,8 +114,8 @@ namespace Atlas::RayTracing {
 
         // Copy the non-compacted versions over
         for (size_t i = 0; i < blasBuiltCount; i++) {
-            builtMeshes[i]->blas->blas = blases[i];
-            builtMeshes[i]->blas->needsBvhRefresh = false;
+            builtBlases[i]->blas = blases[i];
+            builtBlases[i]->needsBvhRefresh = false;
         }
 
         blases.clear();

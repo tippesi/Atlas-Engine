@@ -250,10 +250,11 @@ namespace Atlas::Scene {
 
             auto occluded = !shadow && scene->occlusionCulling;
             auto addDraw = [&](Mesh::MeshSubData* subData, RenderList::GPUDrawType type) {
+                auto lodCount = subData ? slot.lodCount : 1u;
                 if (occluded)
-                    pass->gpuLateDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type });
+                    pass->gpuLateDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
                 if (!occluded || slot.drawEarly || slot.dontCullCount)
-                    pass->gpuDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type });
+                    pass->gpuDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
             };
 
             // Meshes without resident geometry are drawn as impostors only
@@ -289,6 +290,22 @@ namespace Atlas::Scene {
         std::vector<GPUCullView> views;
         std::vector<GPUDrawRequest> requests;
         const auto& passes = renderList.gpuCulledPasses;
+
+        // The commands of the levels of detail of a draw follow each other, they are drawn as one multi draw
+        auto addRequests = [&](RenderList::GPUDraw& draw, uint32_t viewIdx) {
+            draw.command = uint32_t(requests.size());
+            for (uint32_t lod = 0; lod < draw.lodCount; lod++) {
+                auto range = draw.subData ? draw.subData->GetLod(int32_t(lod)) : Mesh::MeshSubDataLod{ 0, 0 };
+                requests.push_back(GPUDrawRequest {
+                    .meshIdx = draw.slot,
+                    .view = viewIdx,
+                    .type = uint32_t(draw.type),
+                    .indexCount = range.indicesCount,
+                    .firstIndex = range.indicesOffset,
+                    .lod = lod
+                    });
+            }
+        };
         auto occlusionView = 0xFFFFFFFFu;
         lateRequestCount = 0;
         for (size_t i = 0; i < passes.size(); i++) {
@@ -299,22 +316,14 @@ namespace Atlas::Scene {
                 .shadow = pass->type == RenderList::RenderPassType::Shadow ? 1u : 0u,
                 .indexOffset = viewIdx * totalCapacity,
                 .impostorIndexOffset = viewIdx * impostorCapacity,
-                .counterOffset = viewIdx * slotCount * drawTypeCount
+                .counterOffset = viewIdx * slotCount * meshCounterCount
             };
             auto planes = pass->frustum.GetPlanes();
             std::copy(planes.begin(), planes.end(), view.planes);
             views.push_back(view);
 
-            for (auto& draw : pass->gpuDraws) {
-                draw.command = uint32_t(requests.size());
-                requests.push_back(GPUDrawRequest {
-                    .meshIdx = draw.slot,
-                    .view = viewIdx,
-                    .type = uint32_t(draw.type),
-                    .indexCount = draw.subData ? draw.subData->indicesCount : 0,
-                    .firstIndex = draw.subData ? draw.subData->indicesOffset : 0
-                    });
-            }
+            for (auto& draw : pass->gpuDraws)
+                addRequests(draw, viewIdx);
 
             if (!pass->gpuLateDraws.empty())
                 occlusionView = viewIdx;
@@ -323,26 +332,18 @@ namespace Atlas::Scene {
         // The draws after the occlusion test have a view of their own
         auto cullViewCount = uint32_t(views.size());
         occlusionViewOffset = occlusionView != 0xFFFFFFFFu ?
-            VkDeviceSize(sizeof(uint32_t) * occlusionView * slotCount * drawTypeCount) : 0;
+            VkDeviceSize(sizeof(uint32_t) * occlusionView * slotCount * meshCounterCount) : 0;
         lateFirstRequest = uint32_t(requests.size());
         if (occlusionView != 0xFFFFFFFFu) {
             lateView = cullViewCount;
             GPUCullView view = views[occlusionView];
             view.indexOffset = lateView * totalCapacity;
             view.impostorIndexOffset = lateView * impostorCapacity;
-            view.counterOffset = lateView * slotCount * drawTypeCount;
+            view.counterOffset = lateView * slotCount * meshCounterCount;
             views.push_back(view);
 
-            for (auto& draw : passes[occlusionView]->gpuLateDraws) {
-                draw.command = uint32_t(requests.size());
-                requests.push_back(GPUDrawRequest {
-                    .meshIdx = draw.slot,
-                    .view = lateView,
-                    .type = uint32_t(draw.type),
-                    .indexCount = draw.subData ? draw.subData->indicesCount : 0,
-                    .firstIndex = draw.subData ? draw.subData->indicesOffset : 0
-                    });
-            }
+            for (auto& draw : passes[occlusionView]->gpuLateDraws)
+                addRequests(draw, lateView);
             lateRequestCount = uint32_t(requests.size()) - lateFirstRequest;
         }
 
@@ -378,7 +379,7 @@ namespace Atlas::Scene {
                 auto counters = static_cast<uint32_t*>(visibilityReadbackBuffer->Map());
 
                 // The counters of each slot of the first and the late draws
-                auto slotCounters = size_t(drawTypeCount);
+                auto slotCounters = size_t(meshCounterCount);
                 auto copiedSlots = frameVisibilityIds.size();
                 std::scoped_lock lock(meshDistancesMutex);
                 visibleMeshes.resize(copiedSlots);
@@ -394,7 +395,7 @@ namespace Atlas::Scene {
             }
             frameVisibilityIds.clear();
 
-            auto visibilitySize = 2 * sizeof(uint32_t) * drawTypeCount * std::max(size_t(slotCount), size_t(1));
+            auto visibilitySize = 2 * sizeof(uint32_t) * meshCounterCount * std::max(size_t(slotCount), size_t(1));
             if (!visibilityReadbackBuffer || visibilityReadbackBuffer->size < visibilitySize) {
                 Graphics::BufferDesc desc = {
                     .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -555,7 +556,7 @@ namespace Atlas::Scene {
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             auto slotCount = uint32_t(cullMeshes.size());
-            auto viewSize = VkDeviceSize(sizeof(uint32_t) * drawTypeCount * slotCount);
+            auto viewSize = VkDeviceSize(sizeof(uint32_t) * meshCounterCount * slotCount);
             commandList->CopyBuffer(counterBuffer, visibilityReadbackBuffer,
                 VkBufferCopy{ .srcOffset = occlusionViewOffset, .dstOffset = 0, .size = viewSize });
             commandList->CopyBuffer(counterBuffer, visibilityReadbackBuffer,
@@ -724,6 +725,12 @@ namespace Atlas::Scene {
         totalCapacity = 0;
         impostorCapacity = 0;
 
+        // Levels of detail whose BLAS got no bindless slot aren't drawn either, the ray traced shadows would fall onto
+        // another level otherwise
+        JobSystem::Wait(scene->renderState.bindlessBlasMapUpdateJob);
+        const auto& blasSlots = scene->renderState.blasToBindlessIdx;
+        auto blasSlotsFull = blasSlots.size() >= BINDLESS_BUFFER_COUNT;
+
         for (size_t slotIdx = 0; slotIdx < slots.size(); slotIdx++) {
             auto& slot = slots[slotIdx];
 
@@ -731,6 +738,7 @@ namespace Atlas::Scene {
             slot.skinned = false;
             slot.impostor = false;
             slot.geometry = false;
+            slot.lodCount = 1;
 
             auto loaded = slotIdx > 0 && !slot.entities.empty() && slot.mesh.IsLoaded();
             if (loaded) {
@@ -754,9 +762,31 @@ namespace Atlas::Scene {
                 const auto& mesh = slot.mesh;
                 auto count = slot.drawable ? uint32_t(slot.entities.size()) : 0u;
 
+                // Levels of detail are left out without a pixel error, they would never be used. A forced level
+                // gets errors which the culling always accepts up to it and never beyond
+                auto pixelError = mesh->lodPixelError * scene->meshLodErrorScale;
+                auto forcedLod = scene->forcedMeshLod;
+                auto lodErrors = vec4(0.0f);
+                if (slot.geometry && (pixelError > 0.0f || forcedLod >= 0)) {
+                    slot.lodCount = uint32_t(mesh->data.GetLodCount());
+                    if (blasSlotsFull && mesh->rayTrace && blasSlots.contains(mesh->blas)) {
+                        uint32_t rayTracedLodCount = 1;
+                        while (rayTracedLodCount < slot.lodCount && rayTracedLodCount <= mesh->lodBlases.size() &&
+                            blasSlots.contains(mesh->lodBlases[rayTracedLodCount - 1]))
+                            rayTracedLodCount++;
+                        slot.lodCount = rayTracedLodCount;
+                    }
+                    for (int32_t lod = 1; lod < int32_t(slot.lodCount); lod++) {
+                        if (forcedLod >= 0)
+                            lodErrors[lod - 1] = lod <= forcedLod ? 0.0f : std::numeric_limits<float>::max();
+                        else
+                            lodErrors[lod - 1] = mesh->data.lodErrors[lod - 1] / pixelError;
+                    }
+                }
+
                 slot.regionOffset = totalCapacity;
                 slot.impostorRegionOffset = impostorCapacity;
-                totalCapacity += count;
+                totalCapacity += count * slot.lodCount;
                 impostorCapacity += slot.impostor ? count : 0;
 
                 auto renderBounds = mesh->GetRenderBounds();
@@ -772,7 +802,9 @@ namespace Atlas::Scene {
                     .minScreenSize = mesh->minScreenSize,
                     .regionOffset = slot.regionOffset,
                     .regionCapacity = count,
-                    .impostorRegionOffset = slot.impostorRegionOffset
+                    .impostorRegionOffset = slot.impostorRegionOffset,
+                    .lodCount = slot.lodCount,
+                    .lodErrors = lodErrors
                 };
             }
 
@@ -787,7 +819,7 @@ namespace Atlas::Scene {
         auto usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         viewCount = std::max(viewCount, size_t(1));
         auto slotCount = cullMeshes.size();
-        EnsureBuffer(counterBuffer, sizeof(uint32_t) * drawTypeCount * viewCount * slotCount,
+        EnsureBuffer(counterBuffer, sizeof(uint32_t) * meshCounterCount * viewCount * slotCount,
             usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         EnsureBuffer(indexBuffer, sizeof(uint32_t) * std::max(viewCount * totalCapacity, size_t(1)), usage);
         EnsureBuffer(impostorIndexBuffer, sizeof(uint32_t) * std::max(viewCount * impostorCapacity, size_t(1)), usage);

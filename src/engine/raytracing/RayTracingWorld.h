@@ -167,6 +167,8 @@ namespace Atlas {
                 Ref<BLAS> meshBlas;
                 Ref<Graphics::BLAS> blas;
                 Buffer::Buffer normalBuffer;
+                // The BLAS reads the indices of the mesh, buffers created again (e.g. for levels of detail) invalidate it
+                Ref<Graphics::Buffer> indexBuffer;
 
                 // A static mesh of the GPU scene, deformed by wind or a material graph
                 bool deformedStatic = false;
@@ -189,6 +191,8 @@ namespace Atlas {
             // Undeformed vertices of a mesh and the vertices of each sub mesh as first vertex and count
             struct DeformMesh {
                 Ref<BLAS> meshBlas;
+                // The vertices are copied from the data, they change with the buffers of the mesh
+                Ref<Graphics::Buffer> meshVertexBuffer;
                 std::vector<SubDataDeformation> deformations;
                 Buffer::Buffer vertexBuffer;
                 std::vector<std::pair<uint32_t, uint32_t>> subDataVertexRanges;
@@ -240,9 +244,10 @@ namespace Atlas {
                 float deformDistanceSqr = 0.0f;
                 VkDeviceAddress blasAddress = 0;
                 uint32_t hitRecordOffset = 0;
+                // The levels of detail from 1 on follow each other from this mesh on, lodCount includes level 0
+                uint32_t lodOffset = 0;
+                uint32_t lodCount = 1;
                 uint32_t padding0 = 0;
-                uint32_t padding1 = 0;
-                uint32_t padding2 = 0;
             };
 
             struct JobContext {

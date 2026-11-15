@@ -51,8 +51,9 @@ namespace Atlas::Scene {
 
         static constexpr uint32_t invalidHistoryIdx = 0xFFFFFFFF;
 
-        // Each view has a counter per draw type of a mesh, has to match culling/common.hsh
-        static constexpr uint32_t drawTypeCount = 3;
+        // Each view has a counter per winding and level of detail of a mesh and one for its impostors, has to match
+        // culling/common.hsh
+        static constexpr uint32_t meshCounterCount = 2 * uint32_t(Mesh::MeshData::maxLodCount) + 1;
 
         // Has to match the structures in culling/common.hsh, GPUDrawRequest the one in culling/draws.csh
         struct alignas(16) GPUInstance {
@@ -76,10 +77,13 @@ namespace Atlas::Scene {
             float impostorShadowDistance;
             uint32_t flags;
             float minScreenSize;
+            // Each level of detail has a region of this capacity
             uint32_t regionOffset;
             uint32_t regionCapacity;
             uint32_t impostorRegionOffset;
-            uint32_t padding1;
+            uint32_t lodCount;
+            // Errors of the levels from 1 on divided by their pixel error
+            vec4 lodErrors;
         };
 
         struct alignas(16) GPUCullView {
@@ -96,7 +100,7 @@ namespace Atlas::Scene {
             uint32_t type;
             uint32_t indexCount;
             uint32_t firstIndex;
-            uint32_t padding0;
+            uint32_t lod;
             uint32_t padding1;
             uint32_t padding2;
         };
@@ -124,6 +128,8 @@ namespace Atlas::Scene {
             bool geometry = false;
             uint32_t regionOffset = 0;
             uint32_t impostorRegionOffset = 0;
+            // The levels of detail the culling chooses from, each draw has a command for every one of them
+            uint32_t lodCount = 1;
         };
 
         explicit GPUScene(Scene* scene);

@@ -57,6 +57,8 @@ namespace Atlas {
                 uint32_t jointOffset;
                 uint32_t jointCount;
                 uint32_t instanceOffset;
+                // Level of detail of host culled draws, the GPU culled ones add their draw index
+                uint32_t lod;
                 // Only part of the push constants of graphs, the others don't push it
                 uint32_t materialGraphOffset;
             };

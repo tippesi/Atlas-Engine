@@ -20,13 +20,30 @@ namespace Atlas {
 
     namespace Mesh {
 
+        struct MeshSubDataLod {
+            uint32_t indicesOffset;
+            uint32_t indicesCount;
+        };
+
+        struct MeshLodSettings {
+            // Including the full detail level, at most MeshData::maxLodCount
+            int32_t maxLodCount = 5;
+            // Index count of a level relative to the one before
+            float reduction = 0.5f;
+            // Levels which keep more of the indices of the level before are dropped and end the chain
+            float minReduction = 0.8f;
+        };
+
         struct MeshSubData {
 
             std::string name;
 
             uint32_t indicesOffset;
             uint32_t indicesCount;
-            
+
+            // Levels of detail from 1 on, their indices follow the ones of level 0 in the index buffer
+            std::vector<MeshSubDataLod> lods;
+
             ResourceHandle<Material> material;
             int32_t materialIdx;
 
@@ -50,6 +67,9 @@ namespace Atlas {
             PipelineConfig shadowReversedWindingConfig;
 
             void ResetPipelines();
+
+            // The indices of a level of detail, level 0 is the sub data itself
+            MeshSubDataLod GetLod(int32_t lod) const;
         
         };
 
@@ -59,6 +79,9 @@ namespace Atlas {
             friend class RayTracing::RayTracingWorld;
 
         public:
+            // Has to match MAX_LOD_COUNT in culling/common.hsh
+            static constexpr int32_t maxLodCount = 5;
+
             /**
              *
              */
@@ -102,8 +125,9 @@ namespace Atlas {
 
             /**
              * Builds a blas from the data
+             * @param lod The level of detail whose triangles are used
              */
-            void BuildBVHData(std::vector<RayTracing::BLAS::Triangle>& triangles);
+            void BuildBVHData(std::vector<RayTracing::BLAS::Triangle>& triangles, int32_t lod = 0);
 
             bool IsSkinned() const;
 
@@ -119,6 +143,36 @@ namespace Atlas {
              * @return The sub data or nullptr for invalid indices
              */
             const MeshSubData* GetSubDataOfTriangle(int32_t triangleIndex) const;
+
+            /**
+             * Simplifies the sub data into levels of detail with their own copies of the vertices, replaces existing levels
+             */
+            void GenerateLods(const MeshLodSettings& settings = {});
+
+            void ClearLods();
+
+            /**
+             * Replaces the levels of detail with the ones of generated data, a copy of this data with other levels
+             */
+            void TakeLods(MeshData& generated);
+
+            /**
+             * Updates the texture coordinate scales of the sub data
+             */
+            void UpdateUVScales();
+
+            // Including level 0
+            int32_t GetLodCount() const;
+
+            // Indices of the levels from 1 on, everything else only uses the indices of level 0
+            DataComponent<uint32_t> lodIndices;
+            // Geometric error of the levels from 1 on in mesh units
+            std::vector<float> lodErrors;
+            // The levels from 1 on have copies of their vertices at the end of the vertex data, in the order they are
+            // fetched
+            int32_t lodVertexCount = 0;
+            // The settings the levels of detail were generated with
+            MeshLodSettings lodSettings;
 
             std::string name;
 

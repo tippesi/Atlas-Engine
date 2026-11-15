@@ -102,6 +102,24 @@ namespace Atlas {
 
                     blasInfo.idx = meshCount++;
                 }
+
+                // The levels of detail have the materials of the mesh, but no triangle lights
+                for (const auto& lodBlas : mesh->lodBlases) {
+                    auto lodBindlessIdx = renderState->blasToBindlessIdx.find(lodBlas);
+                    if (lodBindlessIdx == renderState->blasToBindlessIdx.end())
+                        continue;
+
+                    auto [lodInfoIt, lodInserted] = blasInfos.try_emplace(lodBlas);
+                    auto& lodInfo = lodInfoIt->second;
+                    lodInfo.mesh = mesh;
+                    blasInfosChanged |= lodInserted;
+
+                    lodInfo.update = blasInfoUpdate;
+                    lodInfo.offset = int32_t(lodBindlessIdx->second);
+                    lodInfo.cullingDistanceSqr = blasInfo.cullingDistanceSqr;
+                    if (hardwareRayTracing)
+                        lodInfo.idx = meshCount++;
+                }
             }
 
             for (const auto node : renderState->terrainLeafNodes) {
@@ -570,6 +588,7 @@ namespace Atlas {
         void RayTracingWorld::UpdateForSoftwareRayTracing(vec3 cameraLocation, bool hasCamera) {
 
             auto renderState = &scene->renderState;
+            auto focalLength = renderState->gpuScene.GetFocalLength();
 
             auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
             auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
@@ -608,6 +627,20 @@ namespace Atlas {
                     auto transformComponent = transformComponentPool.TryGet(entity);
                     if (!transformComponent)
                         return;
+
+                    // The level of detail which is rasterized, as far as its BLAS is ready
+                    const auto& lodBlases = meshComponent.mesh->lodBlases;
+                    if (blas == meshComponent.mesh->blas && !lodBlases.empty()) {
+                        auto lod = std::min(size_t(meshComponent.mesh->SelectLod(transformComponent->globalMatrix,
+                            meshComponent.aabb, cameraLocation, focalLength, scene->meshLodErrorScale, scene->forcedMeshLod)), lodBlases.size());
+                        for (; lod > 0; lod--) {
+                            const auto& lodBlas = lodBlases[lod - 1];
+                            if (renderState->blasToBindlessIdx.contains(lodBlas) && !lodBlas->needsBvhRefresh) {
+                                blas = lodBlas;
+                                break;
+                            }
+                        }
+                    }
 
                     auto& blasInfo = blasInfos[blas];
                     auto distSqd = glm::distance2(
@@ -714,17 +747,15 @@ namespace Atlas {
                 return uint32_t(InstanceCullMasks::MaskAll) | (castShadow ? uint32_t(InstanceCullMasks::MaskShadow) : 0u);
             };
 
-            // The instances of the GPU scene reference their mesh by slot
+            // The instances of the GPU scene reference their mesh by slot, the levels of detail come after the slots
             size_t gpuInstanceCount = 0;
             rtMeshes.resize(gpuScene.slots.size());
             for (size_t i = 0; i < gpuScene.slots.size(); i++) {
                 const auto& slot = gpuScene.slots[i];
 
-                GPURTMesh rtMesh;
-                if (slot.geometry && slot.mesh->rayTrace && isUsable(slot.mesh->blas)) {
-                    const auto& blas = slot.mesh->blas;
+                auto getRTMesh = [&](const Ref<BLAS>& blas) {
                     const auto& blasInfo = blasInfos[blas];
-                    rtMesh = GPURTMesh {
+                    return GPURTMesh {
                         .blasOffset = uint32_t(blasInfo.offset),
                         .materialOffset = blasInfo.materialOffset,
                         .mask = getMask(slot.mesh->castShadow),
@@ -735,6 +766,18 @@ namespace Atlas {
                         .blasAddress = blas->blas->deviceAddress,
                         .hitRecordOffset = blasInfo.hitRecordOffset
                     };
+                };
+
+                GPURTMesh rtMesh;
+                if (slot.geometry && slot.mesh->rayTrace && isUsable(slot.mesh->blas)) {
+                    rtMesh = getRTMesh(slot.mesh->blas);
+                    rtMesh.lodOffset = uint32_t(rtMeshes.size());
+                    // The culling chooses from the levels of the slot, the ones from the first unusable BLAS on are left out
+                    const auto& lodBlases = slot.mesh->lodBlases;
+                    for (size_t lod = 1; lod < slot.lodCount && lod <= lodBlases.size() && isUsable(lodBlases[lod - 1]); lod++) {
+                        rtMeshes.push_back(getRTMesh(lodBlases[lod - 1]));
+                        rtMesh.lodCount++;
+                    }
                     gpuInstanceCount += slot.entities.size();
                 }
                 rtMeshes[i] = rtMesh;
@@ -1256,7 +1299,8 @@ namespace Atlas {
         RayTracingWorld::SkinnedBlas RayTracingWorld::CreateSkinnedBlas(const ResourceHandle<Mesh::Mesh>& mesh) {
 
             auto& data = mesh->data;
-            auto vertexCount = size_t(data.GetVertexCount());
+            // Only level 0 is deformed, the vertices of the other levels of detail follow its vertices
+            auto vertexCount = size_t(data.GetVertexCount() - data.lodVertexCount);
 
             if (!skinVertexBuffers.contains(mesh.GetID())) {
                 std::vector<GPUSkinVertex> skinVertices(vertexCount);
@@ -1410,7 +1454,7 @@ namespace Atlas {
                 const auto& deformations = getDeformations(mesh);
 
                 auto positionOffset = positionCount * sizeof(vec3);
-                positionCount += VkDeviceAddress(mesh->data.GetVertexCount());
+                positionCount += VkDeviceAddress(mesh->data.GetVertexCount() - mesh->data.lodVertexCount);
 
                 for (size_t i = 0; i < mesh->data.subData.size(); i++) {
                     const auto& subData = mesh->data.subData[i];
@@ -1468,7 +1512,8 @@ namespace Atlas {
                 const auto& mesh = meshComponent->mesh;
                 // The BLAS needs to be created again when switching between refits and builds
                 auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
-                    item->second.meshBlas != mesh->blas || item->second.blas->allowUpdate != refitSkinnedBlases;
+                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer ||
+                    item->second.blas->allowUpdate != refitSkinnedBlases;
                 if (created)
                     item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
 
@@ -1558,7 +1603,7 @@ namespace Atlas {
 
                 const auto& mesh = meshComponent->mesh;
                 auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
-                    item->second.meshBlas != mesh->blas;
+                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer;
                 if (created)
                     item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
 
@@ -1687,10 +1732,12 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             auto& data = mesh->data;
-            auto vertexCount = size_t(data.GetVertexCount());
+            // Only level 0 is deformed, the vertices of the other levels of detail follow its vertices
+            auto vertexCount = size_t(data.GetVertexCount() - data.lodVertexCount);
 
             auto deformMeshItem = deformMeshes.find(mesh.GetID());
-            if (deformMeshItem == deformMeshes.end() || deformMeshItem->second.meshBlas != mesh->blas) {
+            if (deformMeshItem == deformMeshes.end() || deformMeshItem->second.meshBlas != mesh->blas ||
+                deformMeshItem->second.meshVertexBuffer != mesh->vertexBuffer.buffer) {
                 auto hasTangents = data.tangents.ContainsData();
                 auto hasTexCoords = data.texCoords.ContainsData();
                 auto hasTexCoords1 = data.texCoords1.ContainsData();
@@ -1720,6 +1767,7 @@ namespace Atlas {
 
                 auto& deformMesh = deformMeshes[mesh.GetID()];
                 deformMesh.meshBlas = mesh->blas;
+                deformMesh.meshVertexBuffer = mesh->vertexBuffer.buffer;
                 deformMesh.deformations.clear();
                 deformMesh.subDataVertexRanges.clear();
                 deformMesh.vertexBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
@@ -1761,7 +1809,8 @@ namespace Atlas {
                 .meshBlas = mesh->blas,
                 .blas = device->CreateBLAS(blasDesc),
                 .normalBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit,
-                    2 * sizeof(uint32_t), vertexCount)
+                    2 * sizeof(uint32_t), vertexCount),
+                .indexBuffer = mesh->indexBuffer.buffer
             };
 
         }

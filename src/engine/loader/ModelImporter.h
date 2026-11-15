@@ -56,6 +56,9 @@ namespace Atlas {
 
             static std::string GetAnimationFilename(const std::string& filename, const std::string& animationName);
 
+            // Levels of detail of imported meshes, a max LOD count of 1 imports meshes without levels of detail
+            static Mesh::MeshLodSettings lodSettings;
+
         private:
             struct Paths {
                 std::string filename;

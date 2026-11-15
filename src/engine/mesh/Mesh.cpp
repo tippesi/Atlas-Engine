@@ -5,10 +5,14 @@
 #include "../renderer/ShadowRenderer.h"
 
 #include "../graphics/ASBuilder.h"
+#include "../jobsystem/JobSystem.h"
 
 namespace Atlas {
 
     namespace Mesh {
+
+        std::mutex Mesh::generatingMutex;
+        std::vector<Mesh*> Mesh::generatingMeshes;
 
         Mesh::Mesh(MeshData& meshData, MeshMobility mobility, MeshUsage usage)
             : data(meshData), mobility(mobility), usage(usage) {
@@ -23,24 +27,18 @@ namespace Atlas {
 
         }
 
+        Mesh::~Mesh() {
+
+            JobSystem::Wait(lodJob);
+
+            std::scoped_lock lock(generatingMutex);
+            std::erase(generatingMeshes, this);
+
+        }
+
         void Mesh::UpdateData() {
 
-            if (data.indices.ContainsData() && data.vertices.ContainsData() && data.texCoords.ContainsData()) {
-                const auto& indices = data.indices.Get();
-                const auto& vertices = data.vertices.Get();
-                const auto& texCoords = data.texCoords.Get();
-
-                for (auto& subData : data.subData) {
-                    float area = 0.0f, uvArea = 0.0f;
-                    for (uint32_t i = subData.indicesOffset; i + 2 < subData.indicesOffset + subData.indicesCount; i += 3) {
-                        auto i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
-                        area += glm::length(glm::cross(vertices[i1] - vertices[i0], vertices[i2] - vertices[i0]));
-                        auto uv1 = texCoords[i1] - texCoords[i0], uv2 = texCoords[i2] - texCoords[i0];
-                        uvArea += glm::abs(uv1.x * uv2.y - uv1.y * uv2.x);
-                    }
-                    subData.uvScale = uvArea > 0.0f ? glm::sqrt(area / uvArea) : 0.0f;
-                }
-            }
+            data.UpdateUVScales();
 
             CreateBuffers();
             geometryResident = true;
@@ -49,12 +47,27 @@ namespace Atlas {
 
         void Mesh::CreateBuffers() {
 
+            // The streaming creates the buffers in jobs, while the levels of detail might be generated
+            std::scoped_lock lock(dataMutex);
+
             bool hostAccessible = usage & MeshUsageBits::HostAccessBit;
 
             if (data.indices.ContainsData()) {
                 auto type = data.indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-                indexBuffer = Buffer::IndexBuffer(type, data.GetIndexCount(),
-                    data.indices.GetConvertedVoid(), hostAccessible);
+                if (data.lodIndices.ContainsData()) {
+                    // The levels of detail are drawn from the same buffer behind level 0
+                    DataComponent<uint32_t> allIndices(data.indices.format);
+                    allIndices.data.reserve(size_t(data.GetIndexCount()) + data.lodIndices.GetElementCount());
+                    allIndices.data.insert(allIndices.data.end(), data.indices.begin(),
+                        data.indices.begin() + data.GetIndexCount());
+                    allIndices.data.insert(allIndices.data.end(), data.lodIndices.begin(), data.lodIndices.end());
+                    indexBuffer = Buffer::IndexBuffer(type, allIndices.GetElementCount(),
+                        allIndices.GetConvertedVoid(), hostAccessible);
+                }
+                else {
+                    indexBuffer = Buffer::IndexBuffer(type, data.GetIndexCount(),
+                        data.indices.GetConvertedVoid(), hostAccessible);
+                }
             }
             if (data.vertices.ContainsData()) {
                 vertexBuffer = Buffer::VertexBuffer(data.vertices.GetFormat(), data.GetVertexCount(),
@@ -154,6 +167,80 @@ namespace Atlas {
 
         }
 
+        void Mesh::GenerateLods(const MeshLodSettings& settings) {
+
+            // Renderers read the data and the buffers of the current levels until the result is taken over
+            JobSystem::Wait(lodJob);
+            {
+                std::scoped_lock lock(generatingMutex);
+                if (!generatingLods)
+                    generatingMeshes.push_back(this);
+                generatingLods = true;
+            }
+
+            JobSystem::Execute(lodJob, [this, settings](JobData&) {
+                Ref<MeshData> generated;
+                {
+                    std::scoped_lock lock(dataMutex);
+                    generated = CreateRef<MeshData>(data);
+                }
+                generated->GenerateLods(settings);
+                generatedLods = generated;
+                });
+
+        }
+
+        void Mesh::ClearLods() {
+
+            GenerateLods({ .maxLodCount = 1 });
+
+        }
+
+        bool Mesh::IsGeneratingLods() const {
+
+            return generatingLods;
+
+        }
+
+        void Mesh::WaitForLods() {
+
+            JobSystem::Wait(lodJob);
+
+        }
+
+        void Mesh::ApplyGeneratedLods(bool wait) {
+
+            // No job waits under the lock, a waiting thread runs other jobs which might destroy meshes
+            std::scoped_lock lock(generatingMutex);
+            std::erase_if(generatingMeshes, [wait](Mesh* mesh) {
+                if (!mesh->lodJob.HasFinished())
+                    return false;
+
+                {
+                    // BVH builds hold the data for a while, the next scene update tries again
+                    std::unique_lock dataLock(mesh->dataMutex, std::defer_lock);
+                    if (wait)
+                        dataLock.lock();
+                    else if (!dataLock.try_lock())
+                        return false;
+
+                    mesh->data.TakeLods(*mesh->generatedLods);
+                    mesh->generatedLods = nullptr;
+                }
+                mesh->generatingLods = false;
+
+                // Buffers which a streaming job created before have the old levels, even if the mesh isn't resident yet
+                if (mesh->indexBuffer.buffer)
+                    mesh->CreateBuffers();
+
+                // The levels of detail need their own acceleration structures
+                if (mesh->blas)
+                    mesh->blas->isBvhBuilt = false;
+                return true;
+                });
+
+        }
+
         void Mesh::BuildBVH(bool parallelBuild) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
@@ -161,40 +248,55 @@ namespace Atlas {
 
             AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
+            std::scoped_lock lock(dataMutex);
+
             if (data.indexCount == 0 || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
 
-            std::vector<RayTracing::BLAS::Triangle> triangles;
-            data.BuildBVHData(triangles);
+            if (hardwareRayTracing && data.IsSkinned()) {
+                std::vector<vec3> restVertices;
+                std::vector<vec4> restNormals;
+                data.GetRestPoseVertices(restVertices, restNormals);
+                restVertexBuffer = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, restVertices.size(), restVertices.data());
+            }
 
-            blas = CreateRef<RayTracing::BLAS>();
+            auto buildLod = [&](int32_t lod) {
+                std::vector<RayTracing::BLAS::Triangle> triangles;
+                data.BuildBVHData(triangles, lod);
+
+                auto lodBlas = CreateRef<RayTracing::BLAS>();
+                if (hardwareRayTracing) {
+                    std::vector<Graphics::ASGeometryRegion> geometryRegions;
+                    geometryRegions.reserve(data.subData.size());
+
+                    for (auto& subData : data.subData) {
+                        auto range = subData.GetLod(lod);
+                        geometryRegions.emplace_back(Graphics::ASGeometryRegion{
+                            .indexCount = range.indicesCount,
+                            .indexOffset = range.indicesOffset,
+                            .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f &&
+                                !subData.material->HasGraph()
+                            });
+                    }
+
+                    lodBlas->Build(triangles, data.materials, data.IsSkinned() ? restVertexBuffer : vertexBuffer,
+                        indexBuffer, geometryRegions);
+                }
+                else {
+                    lodBlas->Build(triangles, data.materials);
+                }
+                return lodBlas;
+            };
+
+            // Skinned meshes are traced in their rest pose or deformed near the camera, both with level 0
+            std::vector<Ref<RayTracing::BLAS>> newLodBlases;
+            if (!data.IsSkinned()) {
+                for (int32_t lod = 1; lod < data.GetLodCount(); lod++)
+                    newLodBlases.push_back(buildLod(lod));
+            }
+
+            lodBlases = std::move(newLodBlases);
+            blas = buildLod(0);
             blasCreated = true;
-
-            if (hardwareRayTracing) {
-                std::vector<Graphics::ASGeometryRegion> geometryRegions;
-                geometryRegions.reserve(data.subData.size());
-
-                for (auto& subData : data.subData) {
-                    geometryRegions.emplace_back(Graphics::ASGeometryRegion{
-                        .indexCount = subData.indicesCount,
-                        .indexOffset = subData.indicesOffset,
-                        .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f &&
-                            !subData.material->HasGraph()
-                        });
-                }
-
-                if (data.IsSkinned()) {
-                    std::vector<vec3> restVertices;
-                    std::vector<vec4> restNormals;
-                    data.GetRestPoseVertices(restVertices, restNormals);
-                    restVertexBuffer = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, restVertices.size(), restVertices.data());
-                }
-
-                blas->Build(triangles, data.materials, data.IsSkinned() ? restVertexBuffer : vertexBuffer,
-                    indexBuffer, geometryRegions);
-            }
-            else {
-                blas->Build(triangles, data.materials);
-            }
 
         }
 
@@ -254,6 +356,7 @@ namespace Atlas {
 
             blasCreated = false;
             blas = nullptr;
+            lodBlases.clear();
 
         }
 
@@ -280,6 +383,31 @@ namespace Atlas {
             addSize(colorBuffer.buffer);
 
             return size;
+
+        }
+
+        int32_t Mesh::SelectLod(const mat4& globalMatrix, const Volume::AABB& bounds, vec3 cameraLocation,
+            float focalLength, float errorScale, int32_t forcedLod) const {
+
+            if (forcedLod >= 0)
+                return std::min(forcedLod, data.GetLodCount() - 1);
+
+            auto pixelError = lodPixelError * errorScale;
+            if (data.lodErrors.empty() || pixelError <= 0.0f || focalLength <= 0.0f)
+                return 0;
+
+            // Like culling/cull.csh: the distance to the bounds and the largest scale of the instance
+            auto distance = glm::distance(glm::clamp(cameraLocation, bounds.min, bounds.max), cameraLocation);
+            auto scale = glm::max(glm::length(vec3(globalMatrix[0])),
+                glm::max(glm::length(vec3(globalMatrix[1])), glm::length(vec3(globalMatrix[2]))));
+
+            int32_t lod = 0;
+            for (size_t i = 0; i < data.lodErrors.size(); i++) {
+                if (data.lodErrors[i] * scale * focalLength > pixelError * distance)
+                    break;
+                lod = int32_t(i) + 1;
+            }
+            return lod;
 
         }
 

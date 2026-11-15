@@ -277,6 +277,7 @@ namespace Atlas::Scene {
         j["postProcessing"] = scene->postProcessing;
         j["wind"] = scene->wind;
         j["occlusionCulling"] = scene->occlusionCulling;
+        j["meshLodErrorScale"] = scene->meshLodErrorScale;
 
         if (scene->fog)
             j["fog"] = *scene->fog;
@@ -327,6 +328,7 @@ namespace Atlas::Scene {
         readSettings("postProcessing", scene->postProcessing);
         readSettings("wind", scene->wind);
         readSettings("occlusionCulling", scene->occlusionCulling);
+        readSettings("meshLodErrorScale", scene->meshLodErrorScale);
 
         readFeature("fog", scene->fog);
         readFeature("irradianceVolume", scene->irradianceVolume);
