@@ -80,7 +80,7 @@ tool isn't listed here, or a listed file doesn't exist.
   Editor `TerrainPanel`, capture `terrain`, `terrainCreate`, `terrainCopy`, `detachTerrain` (dry runs only).
 - **Terrain generation** (procedural landscape, biomes, noise terrain): editor `TerrainGenerator` (elevation biomes),
   `NoiseGenerator`.
-- **Shore** (coast, beach waves): `Terrain::shoreLine`, capture `shoreLine` bakes it for the ocean shore waves.
+- **Shore** (coast, beach waves): `Terrain::shoreLine`, capture `shoreLine` bakes it for the ocean shore waves, `calm` areas keep harbor basins free of them.
 
 ## Vegetation, scatter and clutter
 

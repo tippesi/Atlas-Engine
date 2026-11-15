@@ -120,6 +120,18 @@ namespace Atlas::Capture {
 
     }
 
+    // The global matrix from the local ones up the hierarchy: the cached global matrices of entities nested in
+    // groups aren't updated between the operations of an edit
+    static mat4 HierarchyMatrix(Scene::Scene& scene, Scene::Entity entity) {
+
+        mat4 matrix(1.0f);
+        for (auto current = entity; current.IsValid(); current = scene.GetParentEntity(current))
+            if (auto transform = current.TryGetComponent<TransformComponent>())
+                matrix = transform->matrix * matrix;
+        return matrix;
+
+    }
+
     static void Place(Scene::Entity entity, Scene::Entity parent, const mat4& global) {
 
         GetTransform(entity).SetGlobal(global, parent);
@@ -983,9 +995,33 @@ namespace Atlas::Capture {
         auto& scene = context.scene;
         json affected = json::array();
 
-        // Removes the descendants of the selected entities (e.g. a grass group) inside a scatter area
+        // Removes the descendants of the selected entities (e.g. a grass group) inside a scatter area. With "under" only
+        // those that stand inside the footprint (x/z bounds plus "margin") of a mesh of those entities, e.g. the plants
+        // under a place that was put into the scene after its nature was scattered
         auto areaTest = MakeAreaTest(operation.at("area"));
-        auto inside = [&](vec3 position) { return areaTest(vec2(position.x, position.z)); };
+        std::vector<Volume::AABB> footprints;
+        if (operation.contains("under")) {
+            auto margin = vec3(operation.value("margin", 0.0f), 0.0f, operation.value("margin", 0.0f));
+            for (auto owner : FindEntities(scene, operation.at("under").get<std::vector<std::string>>())) {
+                EntitySet members;
+                CollectHierarchy(owner, members);
+                for (auto member : members) {
+                    Scene::Entity entity = { member, &scene.entityManager };
+                    if (!entity.HasComponent<MeshComponent>() || !entity.GetComponent<MeshComponent>().mesh.IsLoaded())
+                        continue;
+                    auto aabb = entity.GetComponent<MeshComponent>().mesh->data.aabb.Transform(HierarchyMatrix(scene, entity));
+                    footprints.push_back(Volume::AABB(aabb.min - margin, aabb.max + margin));
+                }
+            }
+        }
+        auto inside = [&](vec3 position) {
+            if (!areaTest(vec2(position.x, position.z)))
+                return false;
+            if (!operation.contains("under"))
+                return true;
+            return std::any_of(footprints.begin(), footprints.end(), [&](const Volume::AABB& box) {
+                return position.x >= box.min.x && position.x <= box.max.x && position.z >= box.min.z && position.z <= box.max.z; });
+        };
 
         std::vector<Scene::Entity> removed;
         for (auto group : FindEntities(scene, operation.at("entities").get<std::vector<std::string>>())) {
@@ -999,7 +1035,7 @@ namespace Atlas::Capture {
         }
         for (auto entity : removed)
             scene.DestroyEntity(entity);
-        affected.push_back({ { "removed", removed.size() } });
+        affected.push_back({ { "removed", removed.size() }, { "footprints", footprints.size() } });
 
         return affected;
 
@@ -1822,7 +1858,7 @@ namespace Atlas::Capture {
         EntitySet removed;
         for (size_t index = 0; index < replaced.size(); index++) {
             auto original = replaced[index];
-            auto global = GetTransform(original).globalMatrix;
+            auto global = HierarchyMatrix(scene, original);
             auto parent = scene.GetParentEntity(original);
             if (!parent.IsValid())
                 parent = scene.GetRootEntity();
@@ -1836,11 +1872,12 @@ namespace Atlas::Capture {
             if (prefabBottom == std::numeric_limits<float>::max())
                 throw std::runtime_error("replaceWithPrefab: " + prefabPath + " has no loaded mesh to place its bottom");
             global = global * glm::translate(vec3(0.0f, meshBottom - prefabBottom, 0.0f));
-            Place(entity, parent, global);
+            GetTransform(entity).Set(glm::inverse(HierarchyMatrix(scene, parent)) * global);
+            entity.SetParent(parent);
 
             auto position = vec3(global[3]);
             for (auto other : nearby) {
-                if (!removed.contains(other) && glm::distance(vec3(GetTransform(other).globalMatrix[3]), position) < 1.5f)
+                if (!removed.contains(other) && glm::distance(vec3(HierarchyMatrix(scene, other)[3]), position) < 1.5f)
                     removed.insert(other);
             }
             removed.insert(original);

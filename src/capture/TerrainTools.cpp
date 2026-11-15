@@ -1179,6 +1179,31 @@ namespace Atlas::Capture {
 
         // The map compares the water level with the terrain heights, which start at the terrain translation
         auto image = Tools::TerrainTool::GenerateTerrainOceanMap(terrain, terrainPath, oceanHeight - terrain->translation.y, resolution);
+        // Calm water (harbor basins): the shore waves fade out over "falloff" m towards the inside of each area, the
+        // shore distance reads as open water there
+        auto& data = image->GetData();
+        for (const auto& calm : spec.value("calm", json::array())) {
+            auto center = vec2(calm["center"][0].get<float>(), calm["center"][1].get<float>());
+            auto radius = calm.value("radius", 50.0f);
+            auto falloff = calm.value("falloff", 20.0f);
+
+            // Only the pixels within the radius
+            auto origin = vec2(terrain->translation.x, terrain->translation.z);
+            auto size = ivec2(image->width, image->height);
+            auto pixelsPerUnit = vec2(size) / terrain->sideLength;
+            auto minPixel = glm::clamp(ivec2(glm::floor((center - radius - origin) * pixelsPerUnit)), ivec2(0), size);
+            auto maxPixel = glm::clamp(ivec2(glm::ceil((center + radius - origin) * pixelsPerUnit)), ivec2(0), size);
+            for (int32_t y = minPixel.y; y < maxPixel.y; y++) {
+                for (int32_t x = minPixel.x; x < maxPixel.x; x++) {
+                    auto world = origin + (vec2(x, y) + 0.5f) / pixelsPerUnit;
+                    auto calmness = Helper::Math::Saturate((radius - glm::distance(world, center)) / falloff);
+                    if (calmness <= 0.0f)
+                        continue;
+                    auto& distance = data[(y * image->width + x) * image->channels + 1];
+                    distance = uint8_t(glm::mix(float(distance), 255.0f, calmness));
+                }
+            }
+        }
         Loader::ImageLoader::SaveImage(image, path);
 
         terrain->shoreLinePath = path;

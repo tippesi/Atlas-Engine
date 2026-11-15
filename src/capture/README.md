@@ -250,6 +250,7 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
 { "op": "replaceMesh", "meshes": ["*Tree_01*.aemesh"], "with": ["Tree_03.gltf"], "matchHeight": true, "seed": 0, "within": {...} }
 { "op": "replaceWithPrefab", "meshes": "*Brazier*.aemesh", "exclude": [], "removeNear": [], "prefab": "...", "name": "Fire Bowl" }
 { "op": "scatter", ... }   { "op": "clearArea", "entities": ["Grass*"], "area": { "center": [x, z], "radius": 20 } }
+{ "op": "clearArea", "entities": ["Nature"], "area": {...}, "under": ["Tannery"], "margin": 0.5 }  // only under its meshes
 { "op": "meshBodies", "meshes": [...], "replace": true, "remove": false, "motion": "dynamic", "shape": "box|convex|boxes",
   "density": 500, "buoyancy": 1, "inOcean": false, "supported": false }
 { "op": "constraint", "meshes": [...], "type": "point|hinge|cone|distance|slider|fixed", "anchor": "top", "connect": "...",
@@ -269,7 +270,7 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
              { "node": "#12", "remove": true } ] }
 { "op": "assignMaterialGraph", "materials": "x/materials/M_Fire_*.aematerial", "graph": "x/graphs/fire.aematgraph",
   "values": { "Glow": 8, "Tint": [1, 0.4, 0.4] }, "textures": { "Albedo": "x/t.png" }, "reset": ["Bend"] }
-{ "op": "terrainCopy", "path": "terrains/x/x.aeterrain" }   { "op": "shoreLine", "oceanHeight": 0, "resolution": 2048 }
+{ "op": "terrainCopy", "path": "terrains/x/x.aeterrain" }   { "op": "shoreLine", "oceanHeight": 0, "resolution": 2048, "calm": [ { "center": [x, z], "radius": 60, "falloff": 20 } ] }
 { "op": "terrainCreate", "path": "...", "heightMap": "h.png", "splatMap": "s.png", "materials": [...], "LoDCount": 6,
   "patchSize": 16, "resolution": 1, "height": 300, "translation": [...] }
 { "op": "terrain", "brushes": [ { "type": "flatten|raise|smooth|hole|fill|material|path", "position": [x, z], "radius": 12, ... } ] }
