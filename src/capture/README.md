@@ -47,7 +47,8 @@ the job file, they override it): `--out`, `--name`, `--resolution WxH`, `--rende
 `--hidden` (no window, as fast as possible; runs stay visible by default), `--fast` (shown, as fast as
 possible), `--no-shots`, `--overlay`, `--play <s>`, `--set path=value` (settings), `--profile <frames>`, `--pause`
 (pause at the start of playing), `--hitches [ms]`, `--inspect [file]`, `--sound`, `--no-wait-gpu`,
-`--gpu-wait-timeout <s>`, and before the engine starts: `--validation`, `--streaming`, `--shader-dir <dir>` (relative
+`--gpu-wait-timeout <s>`, and before the engine starts: `--validation`, `--streaming` (on for a `--pipeline` with
+`--no-shots`, which takes no pictures and so keeps the GPU memory of a world build small), `--shader-dir <dir>` (relative
 to `data/`), `--verbose` (the whole engine log, otherwise only its errors). Shot options:
 `--focus <pattern>`, `--views front,low`, `--camera x,y,z`, `--look-at x,y,z`, `--yaw`, `--pitch`, `--fov`,
 `--distance`, `--overview`, `--passes albedo,normal`, `--shot <name>`. Outputs: `bin/capture/<job name>/` or `--out`.

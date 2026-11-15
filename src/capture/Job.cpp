@@ -860,7 +860,7 @@ Options:
   --overlay               Draw debug lines: players, tracked paths and query hits
   --validation            Enable all Vulkan validation layer features and write validation.json (slow)
   --hitches [ms]          Write the frames over the time (default 40) with their CPU profile to hitches.json
-  --streaming             Keep texture, impostor and mesh streaming enabled (disabled by default)
+  --streaming             Keep texture, impostor and mesh streaming enabled (disabled by default, enabled by --pipeline with --no-shots)
   --sound                 Play the sound of the scene (muted by default)
   --inspect [file]        Write a scene summary (default scene.json)
   --play <seconds>        Play the scene for the given time

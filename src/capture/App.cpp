@@ -78,8 +78,16 @@ namespace Atlas::Capture {
         // Pictures never show the fallback of a material graph
         MaterialGraph::PipelineCache::asynchronous = false;
 
-        // Jobs edit, save and bake resources and take pictures right away, --streaming measures the streaming instead
-        if (std::find(args.begin(), args.end(), "--streaming") == args.end()) {
+        // Jobs edit, save and bake resources and take pictures right away, --streaming measures the streaming instead.
+        // A pipeline without shots never takes pictures: it streams, so a world build doesn't fill the GPU memory
+        auto hasArg = [&](const char* arg) { return std::find(args.begin(), args.end(), arg) != args.end(); };
+        if (hasArg("--pipeline") && hasArg("--no-shots")) {
+            // Edits need little of the GPU: what the pipeline window shows stays small, impostors are baked at full size
+            Streaming::StreamingManager::settings.textures.budget = 512;
+            Streaming::StreamingManager::settings.impostors.budget = 512;
+            Streaming::StreamingManager::settings.meshes.budget = 1024;
+        }
+        else if (!hasArg("--streaming")) {
             Streaming::StreamingManager::settings.textures.enable = false;
             Streaming::StreamingManager::settings.impostors.enable = false;
             Streaming::StreamingManager::settings.meshes.enable = false;
