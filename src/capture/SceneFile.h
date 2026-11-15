@@ -35,6 +35,8 @@ namespace Atlas::Capture {
         std::vector<std::string> materials;
         // Submeshes with their material index
         std::vector<std::pair<std::string, int32_t>> subData;
+        // Triangles of the levels of detail from 1 on
+        std::vector<int64_t> lodTriangles;
         std::string impostor;
         json settings = json::object();
 

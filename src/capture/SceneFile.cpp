@@ -268,8 +268,13 @@ namespace Atlas::Capture {
         info.indexCount = data.value("indexCount", int64_t(0));
         for (const auto& material : data.value("materials", json::array()))
             info.materials.push_back(material.is_string() ? material.get<std::string>() : material.dump());
-        for (const auto& sub : data.value("subData", json::array()))
+        for (const auto& sub : data.value("subData", json::array())) {
             info.subData.emplace_back(sub.value("name", std::string()), sub.value("materialIdx", 0));
+            const auto& lods = sub.value("lods", json::array());
+            info.lodTriangles.resize(std::max(info.lodTriangles.size(), lods.size()));
+            for (size_t i = 0; i < lods.size(); i++)
+                info.lodTriangles[i] += lods[i][1].get<int64_t>() / 3;
+        }
 
         for (const auto& [key, value] : j.items())
             if (key != "data" && key != "impostor" && key != "name" && !value.is_object() && !value.is_array())

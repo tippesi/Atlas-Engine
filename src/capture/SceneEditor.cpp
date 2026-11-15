@@ -269,6 +269,42 @@ namespace Atlas::Capture {
 
     }
 
+    // "lods": a level count or { "count", "reduction", "regenerate" }
+    static Mesh::MeshLodSettings GetLodSettings(const json& lods) {
+
+        Mesh::MeshLodSettings settings;
+        if (!lods.is_object()) {
+            settings.maxLodCount = lods.get<int32_t>();
+            return settings;
+        }
+        settings.maxLodCount = lods.value("count", settings.maxLodCount);
+        settings.reduction = lods.value("reduction", settings.reduction);
+        return settings;
+
+    }
+
+    // Levels of detail generated with the same settings stay, "regenerate" in an object replaces them anyway
+    static bool HasRequestedLods(const Mesh::Mesh& mesh, const json& lods) {
+
+        auto settings = GetLodSettings(lods);
+        if (settings.maxLodCount <= 1)
+            return mesh.data.GetLodCount() == 1;
+
+        const auto& generated = mesh.data.lodSettings;
+        return mesh.data.GetLodCount() > 1 && generated.maxLodCount == settings.maxLodCount &&
+            generated.reduction == settings.reduction && !(lods.is_object() && lods.value("regenerate", false));
+
+    }
+
+    // Waits for the levels of detail which ApplyMeshSettings started, edits save the meshes right away
+    static void TakeGeneratedLods(const std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
+
+        for (const auto& mesh : meshes)
+            mesh->WaitForLods();
+        Mesh::Mesh::ApplyGeneratedLods(true);
+
+    }
+
     // Settings of the meshCopy and meshSettings operations
     static void ApplyMeshSettings(Mesh::Mesh& mesh, const json& settings) {
 
@@ -278,6 +314,10 @@ namespace Atlas::Capture {
         mesh.castShadow = settings.value("castShadow", mesh.castShadow);
         mesh.rayTrace = settings.value("rayTrace", mesh.rayTrace);
         mesh.minScreenSize = settings.value("minScreenSize", mesh.minScreenSize);
+        mesh.lodPixelError = settings.value("lodPixelError", mesh.lodPixelError);
+        // Generated in the background, TakeGeneratedLods waits for them
+        if (settings.contains("lods") && !HasRequestedLods(mesh, settings["lods"]))
+            mesh.GenerateLods(GetLodSettings(settings["lods"]));
         mesh.animationLodDistance = settings.value("animationLodDistance", mesh.animationLodDistance);
         mesh.animationMaxInterval = settings.value("animationMaxInterval", mesh.animationMaxInterval);
         if (settings.contains("animations")) {
@@ -976,7 +1016,13 @@ namespace Atlas::Capture {
         if (!fs::is_directory(directory))
             throw std::runtime_error("meshSettings: no directory " + directory.string());
 
-        json changed = json::array();
+        struct ChangedMesh {
+            std::string path;
+            fs::path file;
+            ResourceHandle<Mesh::Mesh> mesh;
+            bool bake;
+        };
+        std::vector<ChangedMesh> changedMeshes;
         for (const auto& file : fs::directory_iterator(directory)) {
             auto path = (fs::path(pattern).parent_path() / file.path().filename()).generic_string();
             if (!file.is_regular_file() || file.path().extension() != ".aemesh" || !Helper::String::MatchWildcard(pattern, path))
@@ -995,6 +1041,8 @@ namespace Atlas::Capture {
                 settings.value("castShadow", mesh->castShadow) == mesh->castShadow &&
                 settings.value("rayTrace", mesh->rayTrace) == mesh->rayTrace &&
                 settings.value("minScreenSize", mesh->minScreenSize) == mesh->minScreenSize &&
+                settings.value("lodPixelError", mesh->lodPixelError) == mesh->lodPixelError &&
+                (!settings.contains("lods") || HasRequestedLods(*mesh.Get(), settings["lods"])) &&
                 settings.value("animationLodDistance", mesh->animationLodDistance) == mesh->animationLodDistance &&
                 settings.value("animationMaxInterval", mesh->animationMaxInterval) == mesh->animationMaxInterval &&
                 (!settings.contains("animations") || FindAssetFiles(settings["animations"], ".aeanimation") == GetAnimationFiles(*mesh.Get())) &&
@@ -1003,10 +1051,31 @@ namespace Atlas::Capture {
             if (unchanged && !bake)
                 continue;
 
+            // The levels of detail of all meshes are generated at the same time
             ApplyMeshSettings(*mesh.Get(), settings);
+            changedMeshes.push_back({ path, file.path(), mesh, bake });
+        }
+
+        std::vector<ResourceHandle<Mesh::Mesh>> meshes;
+        for (const auto& changedMesh : changedMeshes)
+            meshes.push_back(changedMesh.mesh);
+        TakeGeneratedLods(meshes);
+
+        json changed = json::array();
+        for (auto& [path, file, mesh, bake] : changedMeshes) {
             changed.push_back(path);
             if (!bake) {
+                // Levels of detail and other settings that don't change the look keep an impostor current
+                const std::string_view keepLook[] = { "lods", "lodPixelError", "minScreenSize", "rayTrace", "castShadow", "movable",
+                    "animationLodDistance", "animationMaxInterval" };
+                auto lookUnchanged = std::ranges::all_of(settings.items(), [&](const auto& item) {
+                    return std::ranges::find(keepLook, std::string_view(item.key())) != std::end(keepLook);
+                });
+                auto impostorFile = fs::path(file).concat(".aeimpostor");
+                auto current = lookUnchanged && fs::exists(impostorFile) && fs::last_write_time(impostorFile) >= fs::last_write_time(file);
                 Loader::MeshLoader::SaveMesh(mesh.Get(), path, true);
+                if (current)
+                    fs::last_write_time(impostorFile, fs::file_time_type::clock::now());
                 continue;
             }
 
@@ -1609,8 +1678,10 @@ namespace Atlas::Capture {
             mesh->UpdateData();
         }
         // Mesh settings, e.g. to configure foliage like the other meshes of its asset pack
-        if (operation.contains("set"))
+        if (operation.contains("set")) {
             ApplyMeshSettings(*mesh.Get(), operation["set"]);
+            TakeGeneratedLods({ mesh });
+        }
         Loader::MeshLoader::SaveMesh(mesh.Get(), outputPath, true);
 
         int32_t assigned = 0;

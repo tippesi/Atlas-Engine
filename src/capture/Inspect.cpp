@@ -78,13 +78,20 @@ namespace Atlas::Capture {
         json result = {
             { "name", info.name }, { "bounds", { { "min", FromVec3(info.bounds.min) }, { "max", FromVec3(info.bounds.max) } } },
             { "origin", DescribeOrigin(info.bounds) }, { "vertices", info.vertexCount }, { "triangles", info.indexCount / 3 },
-            { "materials", info.materials }, { "impostor", info.impostor }, { "settings", info.settings }
+            { "materials", info.materials }, { "impostor", info.impostor }, { "settings", info.settings },
+            { "lodTriangles", info.lodTriangles }
         };
 
         Print(info.name + ": " + FormatSize(info.bounds) + " m, origin " + DescribeOrigin(info.bounds) + ", bounds " +
             FormatVec3(info.bounds.min, 2) + " to " + FormatVec3(info.bounds.max, 2));
         Print("  " + std::to_string(info.vertexCount) + " vertices, " + std::to_string(info.indexCount / 3) + " triangles, " +
             std::to_string(info.subData.size()) + " submeshes" + (info.impostor.empty() ? ", no impostor" : ", impostor " + info.impostor));
+        if (!info.lodTriangles.empty()) {
+            std::string lods;
+            for (auto triangles : info.lodTriangles)
+                lods += (lods.empty() ? "" : ", ") + std::to_string(triangles);
+            Print("  levels of detail: " + lods + " triangles");
+        }
         for (size_t i = 0; i < info.materials.size(); i++) {
             std::string submeshes;
             for (const auto& [name, index] : info.subData)
@@ -94,7 +101,7 @@ namespace Atlas::Capture {
         }
         std::string settings;
         for (const auto& key : { "mobility", "castShadow", "rayTrace", "cullBackFaces", "vegetation", "distanceCulling",
-            "impostorDistance", "minScreenSize", "invertUVs" })
+            "impostorDistance", "minScreenSize", "lodPixelError", "invertUVs" })
             if (info.settings.contains(key))
                 settings += std::string(settings.empty() ? "" : ", ") + key + " " + info.settings[key].dump();
         Print("  " + settings);

@@ -258,7 +258,8 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
 { "op": "materialCopy", "material": "a", "output": "b", "set": {}, "remove": [] }   { "op": "meshMaterials", "meshes": [...], "replace": { "a": "b" } }
 { "op": "meshCopy", "mesh": "a.aemesh", "output": "b.aemesh", "invertNormals": true, "set": {}, "assign": ["Grass*"] }
 { "op": "meshSettings", "meshes": "x/*.aemesh", "set": { "cullBackFaces": false, "movable": true, "animations": "...",
-  "impostor": { "views": 12, "resolution": 256, "distance": 150, "textureFormat": "ktx2" } } }
+  "lods": { "count": 5, "reduction": 0.5, "regenerate": false }, "lodPixelError": 2,
+  "impostor": { "views": 12, "resolution": 256, "distance": 150, "shadowDistance": 100, "textureFormat": "ktx2" } } }
 { "op": "compressTextures", "directories": ["ancient"] }   { "op": "bakeMaterial", "material": "...", "mode": "textures|average" }
 { "op": "materialGraph", "graph": "x/graphs/fire.aematgraph", "create": true, "from": "y.aematgraph", "name": "Fire", "maxDisplacement": 0.3,
   "nodes": [ { "key": "noise", "type": "Fractal noise", "inputs": { "Position": "Object position", "Scale": 5.5 } },
