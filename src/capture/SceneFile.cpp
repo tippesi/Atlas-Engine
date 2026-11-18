@@ -1,6 +1,8 @@
 #include "SceneFile.h"
 #include "Process.h"
 
+#include "Log.h"
+
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -31,10 +33,34 @@ namespace Atlas::Capture {
 
         bool null() override { return true; }
         bool boolean(bool) override { return true; }
-        bool number_integer(number_integer_t value) override { return Number(float(value)); }
-        bool number_unsigned(number_unsigned_t value) override { return Number(float(value)); }
+        bool number_integer(number_integer_t value) override { return Integer(int64_t(value)); }
+        bool number_unsigned(number_unsigned_t value) override { return Integer(int64_t(value)); }
         bool number_float(number_float_t value, const string_t&) override { return Number(float(value)); }
-        bool binary(binary_t&) override { return true; }
+
+        bool binary(binary_t& value) override {
+
+            // Binary scenes store matrices as raw floats
+            const auto& frame = frames.back();
+            if (frame.role == Role::Transform && frame.key == "matrix" && value.size() == sizeof(mat4)) {
+                auto& values = matrices[frame.entity];
+                values.resize(16);
+                std::memcpy(values.data(), value.data(), sizeof(mat4));
+            }
+            // Scenes with binary columns store the index lists and the columns as raw values
+            else if (frame.role == Role::EntityTable && frame.key == "parent") {
+                parents = Decode<int32_t>(value);
+            }
+            else if (frame.role == Role::Section && frame.key == "entity") {
+                for (auto entity : Decode<uint32_t>(value))
+                    AddSectionEntity(entity);
+            }
+            else if (frame.role == Role::Columns) {
+                // The columns come before the entities of their section
+                columns[frame.key] = std::move(static_cast<std::vector<uint8_t>&>(value));
+            }
+            return true;
+
+        }
 
         bool string(string_t& value) override {
 
@@ -43,6 +69,8 @@ namespace Atlas::Capture {
                 entities[frame.entity].name = value;
             else if (frame.role == Role::Mesh && frame.key == "resourcePath")
                 entities[frame.entity].mesh = value;
+            else if (frame.role == Role::Resources)
+                resources.push_back(value);
             return true;
 
         }
@@ -73,6 +101,32 @@ namespace Atlas::Capture {
                 // Older files store a matrix as one object per column
                 role = Role::Matrix;
             }
+            else if (parent.role == Role::Root && parent.key == "entities") {
+                role = Role::EntityTable;
+            }
+            else if (parent.role == Role::Root && parent.key == "components") {
+                role = Role::Components;
+            }
+            else if (parent.role == Role::Components) {
+                role = Role::Section;
+                section = parent.key;
+                sectionEntities.clear();
+                sectionValue = 0;
+                columns.clear();
+            }
+            else if (parent.role == Role::Section && parent.key == "columns") {
+                role = Role::Columns;
+            }
+            else if (parent.role == Role::SectionValues) {
+                // The entities of a section come before its values
+                entity = int32_t(sectionEntities.at(sectionValue++));
+                if (section == "name")
+                    role = Role::Name;
+                else if (section == "transform" && !namesOnly)
+                    role = Role::Transform;
+                else if (section == "mesh" && !namesOnly)
+                    role = Role::Mesh;
+            }
             frames.push_back({ role, {}, entity });
             return true;
 
@@ -91,6 +145,8 @@ namespace Atlas::Capture {
 
         bool end_object() override {
 
+            if (frames.back().role == Role::Section && !columns.empty())
+                ApplyColumns();
             frames.pop_back();
             return true;
 
@@ -109,6 +165,14 @@ namespace Atlas::Capture {
                 role = Role::Entities;
             else if ((parent.role == Role::Transform && parent.key == "matrix") || parent.role == Role::Matrix)
                 role = Role::Matrix;
+            else if (parent.role == Role::Root && parent.key == "resources")
+                role = Role::Resources;
+            else if (parent.role == Role::EntityTable && parent.key == "parent")
+                role = Role::Parents;
+            else if (parent.role == Role::Section && parent.key == "entity")
+                role = Role::SectionEntities;
+            else if (parent.role == Role::Section && parent.key == "values")
+                role = Role::SectionValues;
             frames.push_back({ role, {}, parent.entity });
             return true;
 
@@ -129,6 +193,13 @@ namespace Atlas::Capture {
 
         std::vector<std::vector<float>> matrices;
 
+        // Binary scenes reference meshes by their index in the resource table
+        std::vector<std::string> resources;
+        std::unordered_map<int32_t, size_t> meshIndices;
+
+        // Scenes store the parents in their entity table, the components in a section per component type
+        std::vector<int32_t> parents;
+
     private:
         enum class Role {
             Root,
@@ -138,6 +209,14 @@ namespace Atlas::Capture {
             Transform,
             Matrix,
             Mesh,
+            Resources,
+            EntityTable,
+            Parents,
+            Components,
+            Section,
+            SectionEntities,
+            SectionValues,
+            Columns,
             Ignored
         };
 
@@ -167,10 +246,89 @@ namespace Atlas::Capture {
 
         }
 
+        bool Integer(int64_t value) {
+
+            const auto& frame = frames.back();
+            if (frame.role == Role::Mesh && frame.key == "resourcePath")
+                meshIndices[frame.entity] = size_t(value);
+            else if (frame.role == Role::Parents)
+                parents.push_back(int32_t(value));
+            else if (frame.role == Role::SectionEntities)
+                AddSectionEntity(size_t(value));
+            return Number(float(value));
+
+        }
+
+        template<class T>
+        static std::vector<T> Decode(const std::vector<uint8_t>& data) {
+
+            std::vector<T> values(data.size() / sizeof(T));
+            std::memcpy(values.data(), data.data(), values.size() * sizeof(T));
+            return values;
+
+        }
+
+        void ApplyColumns() {
+
+            // Files that don't match their entity list are reported, they would otherwise be read out of bounds
+            auto count = sectionEntities.size();
+            auto hasCount = [&](const char* name, size_t elementSize, size_t expected) {
+                if (columns[name].size() == expected * elementSize)
+                    return true;
+                Log::Error("Scene column " + section + "." + name + " doesn't match its entities");
+                return false;
+            };
+
+            if (section == "name" && hasCount("offset", sizeof(uint32_t), count + 1)) {
+                auto offsets = Decode<uint32_t>(columns["offset"]);
+                const auto& text = columns["text"];
+                if (offsets.back() > text.size() || !std::is_sorted(offsets.begin(), offsets.end())) {
+                    Log::Error("Scene name column has invalid offsets");
+                    columns.clear();
+                    return;
+                }
+                for (size_t i = 0; i < sectionEntities.size(); i++)
+                    entities[sectionEntities[i]].name.assign(reinterpret_cast<const char*>(text.data()) + offsets[i],
+                        offsets[i + 1] - offsets[i]);
+            }
+            else if (section == "transform" && !namesOnly && hasCount("matrix", sizeof(mat4), count)) {
+                auto values = Decode<float>(columns["matrix"]);
+                for (size_t i = 0; i < sectionEntities.size(); i++)
+                    matrices[sectionEntities[i]].assign(values.begin() + i * 16, values.begin() + (i + 1) * 16);
+            }
+            else if (section == "mesh" && !namesOnly && hasCount("resource", sizeof(uint32_t), count)) {
+                auto indices = Decode<uint32_t>(columns["resource"]);
+                for (size_t i = 0; i < sectionEntities.size(); i++)
+                    if (indices[i] != UINT32_MAX)
+                        meshIndices[int32_t(sectionEntities[i])] = indices[i];
+            }
+            columns.clear();
+
+        }
+
+        void AddSectionEntity(size_t entity) {
+
+            // Sections can come before the entity table
+            if (entity >= entities.size()) {
+                entities.resize(entity + 1);
+                if (!namesOnly)
+                    matrices.resize(entity + 1);
+            }
+            sectionEntities.push_back(entity);
+            if (!namesOnly && section != "name" && section != "transform" && section != "hierarchy")
+                entities[entity].components.push_back(section);
+
+        }
+
         std::vector<FileEntity>& entities;
         std::vector<Frame> frames;
         bool rootIsEntity;
         bool namesOnly;
+
+        std::string section;
+        std::vector<size_t> sectionEntities;
+        size_t sectionValue = 0;
+        std::unordered_map<std::string, std::vector<uint8_t>> columns;
 
     };
 
@@ -183,6 +341,17 @@ namespace Atlas::Capture {
             json::sax_parse(bytes.begin(), bytes.end(), &reader, json::input_format_t::json, true, true);
         else
             json::sax_parse(bytes.begin(), bytes.end(), &reader, json::input_format_t::msgpack);
+
+        for (const auto& [entity, index] : reader.meshIndices)
+            entities[entity].mesh = reader.resources.at(index);
+
+        // Parents come before their children in the entity table
+        if (entities.size() < reader.parents.size()) {
+            entities.resize(reader.parents.size());
+            reader.matrices.resize(namesOnly ? 0 : entities.size());
+        }
+        for (size_t i = 0; i < reader.parents.size(); i++)
+            entities[i].parent = reader.parents[i];
 
         if (namesOnly)
             return entities;

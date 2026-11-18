@@ -18,8 +18,8 @@ namespace Atlas::Loader {
             throw ResourceLoadException(filename, "Couldn't open material graph file stream");
         }
 
-        std::string serialized((std::istreambuf_iterator<char>(fileStream)), std::istreambuf_iterator<char>());
-        auto j = json::parse(serialized);
+        auto data = Loader::AssetLoader::GetFileContent(fileStream);
+        auto j = json::parse(data);
 
         fileStream.close();
 

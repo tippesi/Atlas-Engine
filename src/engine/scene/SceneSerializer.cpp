@@ -8,60 +8,97 @@
 #include "navigation/NavigationSerializer.h"
 
 #include "loader/TerrainLoader.h"
+#include "common/SerializationContext.h"
+#include "Serializer.h"
+#include "Log.h"
+
+#include <algorithm>
+#include <functional>
+#include <optional>
+#include <tuple>
 
 namespace Atlas::Scene {
 
-    void ComponentsToJson(json& j, const Entity& p, Scene* scene) {
+    template<class T>
+    struct ComponentSection {
+        using Type = T;
+        const char* key;
+    };
 
-        if (p.HasComponent<NameComponent>()) {
-            j["name"] = p.GetComponent<NameComponent>();
-        }
-        if (p.HasComponent<TransformComponent>()) {
+    // All serialized components with their key, entities and sections read them in this order
+    static constexpr auto componentSections = std::make_tuple(
+        ComponentSection<NameComponent>{ "name" },
+        ComponentSection<TransformComponent>{ "transform" },
+        ComponentSection<MeshComponent>{ "mesh" },
+        ComponentSection<LightComponent>{ "light" },
+        ComponentSection<CameraComponent>{ "camera" },
+        ComponentSection<AudioComponent>{ "audio" },
+        ComponentSection<AudioVolumeComponent>{ "audioVolume" },
+        ComponentSection<FogVolumeComponent>{ "fogVolume" },
+        ComponentSection<RigidBodyComponent>{ "rigidBody" },
+        ComponentSection<PlayerComponent>{ "player" },
+        ComponentSection<ConstraintComponent>{ "constraint" },
+        ComponentSection<TextComponent>{ "text" },
+        ComponentSection<LuaScriptComponent>{ "script" },
+        ComponentSection<SplineComponent>{ "spline" },
+        ComponentSection<AnimationComponent>{ "animation" }
+    );
+
+    template<class Func>
+    static void ForEachComponentSection(Func&& func) {
+
+        std::apply([&](const auto&... sections) { (func(sections), ...); }, componentSections);
+
+    }
+
+    template<class T>
+    static T ComponentValue(const Entity& p, Scene* scene) {
+
+        if constexpr (std::is_same_v<T, TransformComponent>) {
             // Create a copy and update local matrix (physics always just update global matrices)
             auto transformComponent = p.GetComponent<TransformComponent>();
-            auto parentEntity = scene->GetParentEntity(p);
-            transformComponent.ReconstructLocalMatrix(parentEntity);
-            j["transform"] = transformComponent;
+            transformComponent.ReconstructLocalMatrix(scene->GetParentEntity(p));
+            return transformComponent;
         }
-        if (p.HasComponent<MeshComponent>()) {
-            j["mesh"] = p.GetComponent<MeshComponent>();
+        else {
+            return p.GetComponent<T>();
         }
-        if (p.HasComponent<LightComponent>()) {
-            j["light"] = p.GetComponent<LightComponent>();
+
+    }
+
+    template<class T>
+    static json ComponentToJson(const Entity& p, Scene* scene) {
+
+        if constexpr (std::is_same_v<T, TransformComponent>)
+            return ComponentValue<T>(p, scene);
+        else
+            return p.GetComponent<T>();
+
+    }
+
+    // Index lists are arrays in readable scenes and raw values in binary ones
+    template<class T>
+    static std::vector<T> ReadIndices(const json& j) {
+
+        std::vector<T> values;
+        if (j.is_binary()) {
+            const auto& data = j.get_binary();
+            values.resize(data.size() / sizeof(T));
+            std::memcpy(values.data(), data.data(), values.size() * sizeof(T));
         }
-        if (p.HasComponent<CameraComponent>()) {
-            j["camera"] = p.GetComponent<CameraComponent>();
+        else {
+            j.get_to(values);
         }
-        if (p.HasComponent<AudioComponent>()) {
-            j["audio"] = p.GetComponent<AudioComponent>();
-        }
-        if (p.HasComponent<AudioVolumeComponent>()) {
-            j["audioVolume"] = p.GetComponent<AudioVolumeComponent>();
-        }
-        if (p.HasComponent<FogVolumeComponent>()) {
-            j["fogVolume"] = p.GetComponent<FogVolumeComponent>();
-        }
-        if (p.HasComponent<RigidBodyComponent>()) {
-            j["rigidBody"] = p.GetComponent<RigidBodyComponent>();
-        }
-        if (p.HasComponent<PlayerComponent>()) {
-            j["player"] = p.GetComponent<PlayerComponent>();
-        }
-        if (p.HasComponent<ConstraintComponent>()) {
-            j["constraint"] = p.GetComponent<ConstraintComponent>();
-        }
-        if (p.HasComponent<TextComponent>()) {
-            j["text"] = p.GetComponent<TextComponent>();
-        }
-        if (p.HasComponent<LuaScriptComponent>()) {
-            j["script"] = p.GetComponent<LuaScriptComponent>();
-        }
-        if (p.HasComponent<SplineComponent>()) {
-            j["spline"] = p.GetComponent<SplineComponent>();
-        }
-        if (p.HasComponent<AnimationComponent>()) {
-            j["animation"] = p.GetComponent<AnimationComponent>();
-        }
+        return values;
+
+    }
+
+    void ComponentsToJson(json& j, const Entity& p, Scene* scene) {
+
+        ForEachComponentSection([&]<class T>(const ComponentSection<T>& section) {
+            if (p.HasComponent<T>())
+                j[section.key] = ComponentToJson<T>(p, scene);
+        });
 
     }
 
@@ -95,73 +132,22 @@ namespace Atlas::Scene {
     }
 
     void EntityFromJson(const json& j, Entity& p, Scene* scene, bool containsEntityManager) {
-        if (j.contains("name")) {
-            NameComponent comp = j["name"];
-            p.AddComponent<NameComponent>(comp);
-        }
-        if (j.contains("transform")) {
-            TransformComponent comp = j["transform"];
-            p.AddComponent<TransformComponent>(comp);
-        }
-        if (j.contains("mesh")) {
-            MeshComponent comp = j["mesh"];
-            p.AddComponent<MeshComponent>(std::move(comp));
-        }
-        if (j.contains("light")) {
-            LightComponent comp = j["light"];
-            p.AddComponent<LightComponent>(comp);
-        }
-        if (j.contains("camera")) {
-            CameraComponent comp = j["camera"];
-            p.AddComponent<CameraComponent>(comp);
-        }
-        if (j.contains("audio")) {
-            AudioComponent comp = j["audio"];
-            p.AddComponent<AudioComponent>(comp);
-        }
-        if (j.contains("audioVolume")) {
-            AudioVolumeComponent comp = j["audioVolume"];
-            p.AddComponent<AudioVolumeComponent>(comp);
-        }
-        if (j.contains("fogVolume")) {
-            FogVolumeComponent comp = j["fogVolume"];
-            p.AddComponent<FogVolumeComponent>(comp);
-        }
-        if (j.contains("rigidBody")) {
-            RigidBodyComponent comp = j["rigidBody"];
-            p.AddComponent<RigidBodyComponent>(comp);
-        }
-        if (j.contains("player")) {
-            PlayerComponent comp = j["player"];
-            p.AddComponent<PlayerComponent>(comp);
-        }
-        if (j.contains("constraint")) {
-            ConstraintComponent comp = j["constraint"];
-            p.AddComponent<ConstraintComponent>(comp);
-        }
-        if (j.contains("text")) {
-            TextComponent comp = j["text"];
-            p.AddComponent<TextComponent>(comp);
-        }
-        if (j.contains("script")) {
-            LuaScriptComponent comp = j["script"];
-            p.AddComponent<LuaScriptComponent>(comp);
-        }
-        if (j.contains("spline")) {
-            SplineComponent comp = j["spline"];
-            p.AddComponent<SplineComponent>(comp);
-        }
-        if (j.contains("animation")) {
-            AnimationComponent comp = j["animation"];
-            p.AddComponent<AnimationComponent>(comp);
-        }
-        if (j.contains("entities")) {
+
+        ForEachComponentSection([&]<class T>(const ComponentSection<T>& section) {
+            auto it = j.find(section.key);
+            if (it == j.end())
+                return;
+            T comp = *it;
+            p.AddComponent<T>(std::move(comp));
+        });
+
+        if (auto children = j.find("entities"); children != j.end()) {
             // We need to first push back to a temporary vector to not invalidate
             // component references (i.e. when directly getting the hierarchy component).
             // That way all children will have components created before the parent creates its own
             std::vector<Entity> entities;
-            entities.reserve(j["entities"].size());
-            for (const auto& jEntity : j["entities"]) {
+            entities.reserve(children->size());
+            for (const auto& jEntity : *children) {
                 Entity entity;
                 if (containsEntityManager)
                     entity = Entity(jEntity["id"], &scene->entityManager);
@@ -179,12 +165,63 @@ namespace Atlas::Scene {
         }
     }
 
-    void SceneToJson(json& j, Scene* scene) {
+    // Binary files of scenes with binary columns store the index lists and the components with columns as raw values
+    static bool WritesBinaryColumns(const Scene* scene) {
 
-        std::set<ECS::Entity> insertedEntities;
+        return SerializationContext::IsWriting() && scene->binaryColumns;
 
-        j["entities"] = json::array();
-        auto& entities = j["entities"];
+    }
+
+    // Sections are checked once, invalid files would otherwise access entities outside of the table
+    static bool IsValidSection(const std::string& key, const std::vector<uint32_t>& indices, size_t valueCount, size_t entityCount) {
+
+        auto valid = indices.size() == valueCount &&
+            std::all_of(indices.begin(), indices.end(), [&](uint32_t index) { return index < entityCount; });
+        if (!valid)
+            Log::Error("Invalid scene component section " + key);
+        return valid;
+
+    }
+
+    static bool IsValidEntityTable(const std::vector<uint64_t>& ids, const std::vector<int32_t>& parents) {
+
+        if (ids.size() == parents.size())
+            return true;
+
+        Log::Error("Scene entity table has a different number of ids and parents");
+        return false;
+
+    }
+
+    static void EntitiesToSections(json& j, Scene* scene) {
+
+        // Parents come before their children, siblings keep their order
+        std::vector<Entity> entities;
+        std::vector<int32_t> parents;
+        // Table index per entity slot, UINT32_MAX for entities that aren't in the table
+        std::vector<uint32_t> tableIndices;
+        auto tableIndex = [&](const Entity& entity) -> uint32_t& {
+            auto slot = ECS::EntityToIdx(entity);
+            if (slot >= tableIndices.size())
+                tableIndices.resize(slot + 1, UINT32_MAX);
+            return tableIndices[slot];
+        };
+
+        std::function<void(const Entity&, int32_t)> insert = [&](const Entity& entity, int32_t parent) {
+            if (!entity.IsValid())
+                return;
+
+            AE_ASSERT(tableIndex(entity) == UINT32_MAX && "Entity should only be present once in the hierarchy");
+
+            auto index = int32_t(entities.size());
+            tableIndex(entity) = uint32_t(index);
+            entities.push_back(entity);
+            parents.push_back(parent);
+
+            if (auto hierarchy = entity.TryGetComponent<HierarchyComponent>())
+                for (auto child : hierarchy->GetChildren())
+                    insert(child, index);
+        };
 
         auto hierarchySubset = scene->GetSubset<HierarchyComponent>();
         for (auto entity : hierarchySubset) {
@@ -192,24 +229,168 @@ namespace Atlas::Scene {
             // Serialize from root recursively. Also means free floating hierarchies without a
             // root will be ignored.
             if (!hierarchy.root) continue;
-            entities.emplace_back();
-            EntityToJson(entities.back(), entity, scene, insertedEntities);
+            insert(entity, -1);
         }
 
         for (auto entity : *scene) {
-            // No need here, since it was already inserted through the hierarchy
-            if (insertedEntities.contains(entity))
-                continue;
             if (!entity.IsValid())
+                continue;
+            // No need here, since it was already inserted through the hierarchy
+            if (tableIndex(entity) != UINT32_MAX)
                 continue;
             // Children are written by their parent. Reused entity slots can come before the slot of their parent,
             // they would otherwise be written twice and loaded as two entities
             if (scene->GetParentEntity(entity).IsValid())
                 continue;
 
-            entities.emplace_back();
-            EntityToJson(entities.back(), entity, scene, insertedEntities);
+            insert(entity, -1);
         }
+
+        auto binary = WritesBinaryColumns(scene);
+
+        std::vector<uint64_t> ids;
+        ids.reserve(entities.size());
+        for (const auto& entity : entities)
+            ids.push_back(uint64_t(entity));
+
+        auto& table = j["entities"];
+        if (binary) {
+            set_binary_json(table, "id", ids);
+            set_binary_json(table, "parent", parents);
+        }
+        else {
+            table["id"] = ids;
+            table["parent"] = parents;
+        }
+
+        auto writeSection = [&]<class T>(const char* key, auto&& toJson) {
+            // Only the entities with the component are visited, they are usually in table order already
+            std::vector<uint32_t> indices;
+            for (auto entity : scene->GetSubset<T>()) {
+                auto slot = ECS::EntityToIdx(entity);
+                if (slot < tableIndices.size() && tableIndices[slot] != UINT32_MAX)
+                    indices.push_back(tableIndices[slot]);
+            }
+            if (indices.empty())
+                return;
+            if (!std::is_sorted(indices.begin(), indices.end()))
+                std::sort(indices.begin(), indices.end());
+
+            auto& section = j["components"][key];
+            if (binary)
+                set_binary_json(section, "entity", indices);
+            else
+                section["entity"] = indices;
+
+            if constexpr (ComponentColumns<T>::available) {
+                if (binary) {
+                    T value;
+                    ComponentColumns<T>::Write(section["columns"], indices.size(), [&](size_t i) -> const T& {
+                        const auto& entity = entities[indices[i]];
+                        if constexpr (std::is_same_v<T, TransformComponent>) {
+                            value = ComponentValue<T>(entity, scene);
+                            return value;
+                        }
+                        else {
+                            return entity.GetComponent<T>();
+                        }
+                    });
+                    return;
+                }
+            }
+
+            json values = json::array();
+            values.get_ref<json::array_t&>().reserve(indices.size());
+            for (auto index : indices)
+                values.push_back(toJson(entities[index]));
+            section["values"] = std::move(values);
+        };
+
+        ForEachComponentSection([&]<class T>(const ComponentSection<T>& section) {
+            writeSection.template operator()<T>(section.key, [&](const Entity& entity) { return ComponentToJson<T>(entity, scene); });
+        });
+        // The children are known from the parents of the entities
+        writeSection.template operator()<HierarchyComponent>("hierarchy", [](const Entity& entity) {
+            return json(entity.GetComponent<HierarchyComponent>().root);
+        });
+
+    }
+
+    static void EntitiesFromSections(const json& j, Scene* scene, bool containsEntityManager) {
+
+        const auto& table = j.at("entities");
+        auto ids = ReadIndices<uint64_t>(table.at("id"));
+        auto parents = ReadIndices<int32_t>(table.at("parent"));
+        if (!IsValidEntityTable(ids, parents))
+            return;
+
+        std::vector<Entity> entities;
+        entities.reserve(ids.size());
+        for (auto id : ids)
+            entities.push_back(containsEntityManager ? Entity(ECS::Entity(id), &scene->entityManager) : scene->CreateEntity());
+
+        auto components = j.find("components");
+        if (components == j.end())
+            return;
+
+        ForEachComponentSection([&]<class T>(const ComponentSection<T>& section) {
+            auto it = components->find(section.key);
+            if (it == components->end())
+                return;
+
+            auto indices = ReadIndices<uint32_t>(it->at("entity"));
+            if constexpr (ComponentColumns<T>::available) {
+                if (auto columns = it->find("columns"); columns != it->end()) {
+                    std::vector<T> values;
+                    if (!ComponentColumns<T>::Read(*columns, values) ||
+                        !IsValidSection(section.key, indices, values.size(), entities.size()))
+                        return;
+                    for (size_t i = 0; i < indices.size(); i++)
+                        entities[indices[i]].AddComponent<T>(std::move(values[i]));
+                    return;
+                }
+            }
+
+            const auto& values = it->at("values");
+            if (!IsValidSection(section.key, indices, values.size(), entities.size()))
+                return;
+            for (size_t i = 0; i < indices.size(); i++) {
+                T comp = values[i];
+                entities[indices[i]].AddComponent<T>(std::move(comp));
+            }
+        });
+
+        // All hierarchies exist before children are added, adding components could move them in memory
+        auto hierarchies = components->find("hierarchy");
+        if (hierarchies == components->end())
+            return;
+
+        auto indices = ReadIndices<uint32_t>(hierarchies->at("entity"));
+        const auto& values = hierarchies->at("values");
+        if (!IsValidSection("hierarchy", indices, values.size(), entities.size()))
+            return;
+        for (size_t i = 0; i < indices.size(); i++)
+            entities[indices[i]].AddComponent<HierarchyComponent>().root = values[i].get<bool>();
+
+        for (size_t i = 0; i < entities.size(); i++) {
+            auto parent = parents[i];
+            if (parent < 0)
+                continue;
+
+            // Parents come before their children in the table
+            auto hierarchy = parent < int32_t(i) ? entities[parent].TryGetComponent<HierarchyComponent>() : nullptr;
+            if (!hierarchy) {
+                Log::Error("Scene entity " + std::to_string(i) + " has an invalid parent");
+                continue;
+            }
+            hierarchy->AddChild(entities[i]);
+        }
+
+    }
+
+    void SceneToJson(json& j, Scene* scene) {
+
+        EntitiesToSections(j, scene);
 
         EntityManagerToJson(j["entityManager"], scene->entityManager);
 
@@ -226,11 +407,15 @@ namespace Atlas::Scene {
 
         if (scene->physicsWorld)
             Physics::SerializePhysicsWorld(j["physicsWorld"], scene->physicsWorld);
-       
+
 
     }
 
     void SceneFromJson(const json& j, Ref<Scene>& scene) {
+
+        std::optional<SerializationContext> context;
+        if (j.contains("resources"))
+            context.emplace(j["resources"]);
 
         Volume::AABB aabb = j["aabb"];
         scene = CreateRef<Scene>(j["name"], aabb.min, aabb.max, j["depth"]);
@@ -253,14 +438,20 @@ namespace Atlas::Scene {
                 j["terrain"], Loader::TerrainLoader::LoadTerrain, false);
         }
 
-        for (const auto& jEntity : j["entities"]) {
-            Entity entity;
-            if (containsEntityManager)
-                entity = Entity(jEntity["id"], &scene->entityManager);
-            else                
-                entity = scene->CreateEntity();
+        // Older scenes nest the entities like prefabs
+        if (j["entities"].is_object()) {
+            EntitiesFromSections(j, scene.get(), containsEntityManager);
+        }
+        else {
+            for (const auto& jEntity : j["entities"]) {
+                Entity entity;
+                if (containsEntityManager)
+                    entity = Entity(jEntity["id"], &scene->entityManager);
+                else
+                    entity = scene->CreateEntity();
 
-            EntityFromJson(jEntity, entity, scene.get(), containsEntityManager);
+                EntityFromJson(jEntity, entity, scene.get(), containsEntityManager);
+            }
         }
 
         SceneSettingsFromJson(j, scene.get());
@@ -278,6 +469,7 @@ namespace Atlas::Scene {
         j["wind"] = scene->wind;
         j["occlusionCulling"] = scene->occlusionCulling;
         j["meshLodErrorScale"] = scene->meshLodErrorScale;
+        j["binaryColumns"] = scene->binaryColumns;
 
         if (scene->fog)
             j["fog"] = *scene->fog;
@@ -329,6 +521,7 @@ namespace Atlas::Scene {
         readSettings("wind", scene->wind);
         readSettings("occlusionCulling", scene->occlusionCulling);
         readSettings("meshLodErrorScale", scene->meshLodErrorScale);
+        readSettings("binaryColumns", scene->binaryColumns);
 
         readFeature("fog", scene->fog);
         readFeature("irradianceVolume", scene->irradianceVolume);
@@ -382,6 +575,76 @@ namespace Atlas::Scene {
 
         try_get_json(j, "direction", p.direction);
         try_get_json(j, "speed", p.speed);
+
+    }
+
+}
+
+namespace Atlas {
+
+    void Serializer::NestSceneEntities(json& j) {
+
+        auto table = j.find("entities");
+        if (table == j.end() || !table->is_object())
+            return;
+
+        auto ids = Scene::ReadIndices<uint64_t>(table->at("id"));
+        auto parents = Scene::ReadIndices<int32_t>(table->at("parent"));
+        if (!Scene::IsValidEntityTable(ids, parents))
+            return;
+
+        std::vector<json> entities(ids.size());
+        for (size_t i = 0; i < entities.size(); i++)
+            entities[i]["id"] = ids[i];
+
+        if (auto components = j.find("components"); components != j.end()) {
+            for (auto& [key, section] : components->items()) {
+                // Columns become the json objects of a binary scene without columns
+                if (auto columns = section.find("columns"); columns != section.end()) {
+                    Scene::ForEachComponentSection([&]<class T>(const Scene::ComponentSection<T>& componentSection) {
+                        if constexpr (Scene::Components::ComponentColumns<T>::available) {
+                            if (key == componentSection.key)
+                                section["values"] = Scene::Components::ComponentColumns<T>::ToValues(*columns);
+                        }
+                    });
+                }
+
+                auto values = section.find("values");
+                auto indices = Scene::ReadIndices<uint32_t>(section.at("entity"));
+                if (values == section.end() || !Scene::IsValidSection(key, indices, values->size(), entities.size()))
+                    continue;
+
+                for (size_t i = 0; i < indices.size(); i++) {
+                    auto& entity = entities[indices[i]];
+                    if (key == "hierarchy") {
+                        entity["root"] = (*values)[i];
+                        entity["entities"] = json::array();
+                    }
+                    else {
+                        entity[key] = std::move((*values)[i]);
+                    }
+                }
+            }
+            j.erase(components);
+        }
+
+        // Children come after their parents: going backwards, every entity is complete before it moves into its parent
+        json roots = json::array();
+        for (size_t i = entities.size(); i-- > 0;) {
+            auto& entity = entities[i];
+            if (auto children = entity.find("entities"); children != entity.end())
+                std::reverse(children->begin(), children->end());
+
+            auto parent = parents[i];
+            auto hasParent = parent >= 0 && parent < int32_t(i) && entities[parent].contains("entities");
+            if (parent >= 0 && !hasParent)
+                Log::Error("Scene entity " + std::to_string(i) + " has an invalid parent");
+
+            auto& siblings = hasParent ? entities[parent]["entities"] : roots;
+            siblings.push_back(std::move(entity));
+        }
+        std::reverse(roots.begin(), roots.end());
+        j["entities"] = std::move(roots);
 
     }
 

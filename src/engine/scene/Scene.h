@@ -235,6 +235,10 @@ namespace Atlas {
             // Draws all meshes in this level of detail or their coarsest one, negative values choose it by the distance
             int32_t forcedMeshLod = -1;
 
+            // Binary scene files store the common components and the entity indices as columns of raw values, which
+            // load about twice as fast. Readable json scene files always store a json object per component
+            bool binaryColumns = false;
+
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;

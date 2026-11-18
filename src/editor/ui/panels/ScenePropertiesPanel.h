@@ -120,6 +120,12 @@ namespace Atlas::Editor::UI {
                     ImGui::Checkbox("##Occlusion culling", &t->occlusionCulling);
                     Widgets::EndProperties();
                 }
+                if (Widgets::BeginProperties("Scene file")) {
+                    Widgets::PropertyLabel("Binary columns", "Stores the common components as raw values in the binary scene file, "
+                        "it loads about twice as fast. Takes effect when the scene is saved");
+                    ImGui::Checkbox("##Binary columns", &t->binaryColumns);
+                    Widgets::EndProperties();
+                }
                 sceneStatisticsPanel.Render(t);
             }
 

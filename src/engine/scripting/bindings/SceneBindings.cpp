@@ -390,6 +390,7 @@ namespace Atlas::Scripting::Bindings {
             "paused", &Scene::Scene::paused,
             "occlusionCulling", &Scene::Scene::occlusionCulling,
             "meshLodErrorScale", &Scene::Scene::meshLodErrorScale,
+            "binaryColumns", &Scene::Scene::binaryColumns,
             "debugMeshLods", &Scene::Scene::debugMeshLods,
             "forcedMeshLod", &Scene::Scene::forcedMeshLod,
             "wind", &Scene::Scene::wind,

@@ -2,6 +2,7 @@
 #include "AssetLoader.h"
 
 #include <filesystem>
+#include <unordered_map>
 #include <vector>
 
 namespace Atlas {
@@ -10,37 +11,50 @@ namespace Atlas {
 
         const std::string AssetReferences::packageFilename = "package.aepackage";
 
+        // Json pointers are parsed once, a scene of a million entities would otherwise parse them for every entity
+        static std::vector<json::json_pointer> MakePointers(std::initializer_list<const char*> pointers) {
+
+            std::vector<json::json_pointer> jsonPointers;
+            for (auto pointer : pointers)
+                jsonPointers.emplace_back(pointer);
+            return jsonPointers;
+
+        }
+
         // Json pointers to all resource paths of an asset type. New resource fields need to be added here.
-        static const std::vector<std::string> sceneReferences = {
+        static const auto sceneReferences = MakePointers({
             "/terrain",
             "/sky/probe/cubemapPath",
             "/postProcessing/bloom/dirtMap",
             "/ocean/rippleTexture",
-            "/ocean/foamTexture"
-        };
+            "/ocean/foamTexture",
+            // Resource table of binary scenes, their entities only contain indices into it
+            "/resources"
+        });
 
-        static const std::vector<std::string> entityReferences = {
-            "/mesh/resourcePath",
-            "/animation/resourcePath",
-            "/text/resourcePath",
-            "/script/resourcePath",
-            "/audio/stream/resourcePath",
-            "/audioVolume/stream/resourcePath"
+        // Relative to the component, by the key of the component in an entity or the scene sections
+        static const std::unordered_map<std::string, std::vector<json::json_pointer>> componentReferences = {
+            { "mesh", MakePointers({ "/resourcePath" }) },
+            { "animation", MakePointers({ "/resourcePath" }) },
+            { "text", MakePointers({ "/resourcePath" }) },
+            { "script", MakePointers({ "/resourcePath" }) },
+            { "audio", MakePointers({ "/stream/resourcePath" }) },
+            { "audioVolume", MakePointers({ "/stream/resourcePath" }) }
         };
 
         // Shapes of bodies, relative to the creation settings. Compound shapes contain further shapes
-        static const std::vector<std::string> shapeReferences = {
+        static const auto shapeReferences = MakePointers({
             "/meshSettings/resourcePath",
             "/convexHullSettings/resourcePath"
-        };
+        });
 
-        static const std::vector<std::string> meshReferences = {
+        static const auto meshReferences = MakePointers({
             "/impostor",
             "/data/materials",
             "/data/animations"
-        };
+        });
 
-        static const std::vector<std::string> materialReferences = {
+        static const auto materialReferences = MakePointers({
             "/baseColorMapPath",
             "/opacityMapPath",
             "/normalMapPath",
@@ -58,25 +72,29 @@ namespace Atlas {
             "/graphBake/unbaked/maps/ao",
             "/graphBake/unbaked/maps/emissive",
             "/graphBake/unbaked/maps/opacity"
-        };
+        });
 
+        static const auto creationShapeReference = json::json_pointer("/creationSettings/shape");
+        static const auto compoundChildrenReference = json::json_pointer("/compoundSettings/children");
+        static const auto layerReferences = MakePointers({ "/resourcePath" });
+        static const auto graphNodeReferences = MakePointers({ "/texturePath" });
+
+        // Calls func with every value that references a resource
         template<class Func>
-        static void TransformPaths(json& j, const std::vector<std::string>& pointers, Func& func) {
+        static void TransformPaths(json& j, const std::vector<json::json_pointer>& pointers, Func& func) {
 
             for (const auto& pointer : pointers) {
-                auto jsonPointer = json::json_pointer(pointer);
-                if (!j.contains(jsonPointer))
+                if (!j.contains(pointer))
                     continue;
 
                 // Arrays are used for lists of resources, e.g. the materials of a mesh
-                auto& value = j[jsonPointer];
-                if (value.is_string()) {
-                    value = func(value.get<std::string>());
-                }
-                else if (value.is_array()) {
+                auto& value = j[pointer];
+                if (value.is_array()) {
                     for (auto& element : value)
-                        if (element.is_string())
-                            element = func(element.get<std::string>());
+                        func(element);
+                }
+                else {
+                    func(value);
                 }
             }
 
@@ -87,11 +105,35 @@ namespace Atlas {
 
             TransformPaths(j, shapeReferences, func);
 
-            auto childrenPointer = json::json_pointer("/compoundSettings/children");
-            if (j.contains(childrenPointer)) {
-                for (auto& child : j[childrenPointer])
+            if (j.contains(compoundChildrenReference)) {
+                for (auto& child : j[compoundChildrenReference])
                     if (child.contains("shape"))
                         TransformShape(child["shape"], func);
+            }
+
+        }
+
+        static const std::vector<json::json_pointer>* GetComponentReferences(const std::string& key) {
+
+            auto references = componentReferences.find(key);
+            return references != componentReferences.end() ? &references->second : nullptr;
+
+        }
+
+        template<class Func>
+        static void TransformComponent(const std::string& key, const std::vector<json::json_pointer>* references,
+            json& j, Func& func) {
+
+            if (references)
+                TransformPaths(j, *references, func);
+
+            if ((key == "rigidBody" || key == "player") && j.contains(creationShapeReference))
+                TransformShape(j[creationShapeReference], func);
+
+            // The layers of an animation component are a list of objects with a path each
+            if (key == "animation" && j.contains("layers")) {
+                for (auto& layer : j["layers"])
+                    TransformPaths(layer, layerReferences, func);
             }
 
         }
@@ -99,25 +141,40 @@ namespace Atlas {
         template<class Func>
         static void TransformEntity(json& j, Func& func) {
 
-            TransformPaths(j, entityReferences, func);
+            for (auto& [key, component] : j.items())
+                TransformComponent(key, GetComponentReferences(key), component, func);
 
             // Prefabs store the body creation settings of the root entity separately
-            for (const auto& pointer : { "/rigidBody/creationSettings/shape", "/player/creationSettings/shape", "/body/shape" }) {
-                auto shapePointer = json::json_pointer(pointer);
-                if (j.contains(shapePointer))
-                    TransformShape(j[shapePointer], func);
-            }
-
-            // The layers of an animation component are a list of objects with a path each
-            auto layersPointer = json::json_pointer("/animation/layers");
-            if (j.contains(layersPointer)) {
-                for (auto& layer : j[layersPointer])
-                    TransformPaths(layer, { "/resourcePath" }, func);
-            }
+            if (j.contains("body") && j["body"].contains("shape"))
+                TransformShape(j["body"]["shape"], func);
 
             if (j.contains("entities")) {
                 for (auto& child : j["entities"])
                     TransformEntity(child, func);
+            }
+
+        }
+
+        // Scenes store their entities as a table and each component type in a section, older scenes nest them
+        template<class Func>
+        static void TransformSceneEntities(json& j, Func& func) {
+
+            if (auto components = j.find("components"); components != j.end()) {
+                for (auto& [key, section] : components->items()) {
+                    // Sections with binary columns only contain indices into the resource table
+                    auto values = section.find("values");
+                    if (values == section.end())
+                        continue;
+
+                    auto references = GetComponentReferences(key);
+                    for (auto& component : *values)
+                        TransformComponent(key, references, component, func);
+                }
+            }
+
+            if (j.contains("entities") && j["entities"].is_array()) {
+                for (auto& entity : j["entities"])
+                    TransformEntity(entity, func);
             }
 
         }
@@ -128,10 +185,9 @@ namespace Atlas {
             switch (type) {
             case AssetReferences::Type::Scene:
                 TransformPaths(j, sceneReferences, func);
-                if (j.contains("entities")) {
-                    for (auto& entity : j["entities"])
-                        TransformEntity(entity, func);
-                }
+                // The components of binary scenes only contain indices into the resource table
+                if (!j.contains("resources"))
+                    TransformSceneEntities(j, func);
                 break;
             case AssetReferences::Type::Entity: TransformEntity(j, func); break;
             case AssetReferences::Type::Mesh: TransformPaths(j, meshReferences, func); break;
@@ -140,13 +196,13 @@ namespace Atlas {
                 // The textures of graph parameters are stored by the name of their parameter
                 if (j.contains("graphTextures")) {
                     for (auto& [_, texture] : j["graphTextures"].items())
-                        texture = func(texture.template get<std::string>());
+                        func(texture);
                 }
                 break;
             case AssetReferences::Type::MaterialGraph:
                 if (j.contains("nodes")) {
                     for (auto& node : j["nodes"])
-                        TransformPaths(node, { "/texturePath" }, func);
+                        TransformPaths(node, graphNodeReferences, func);
                 }
                 break;
             }
@@ -203,8 +259,9 @@ namespace Atlas {
                 return;
 
             auto ownerDirectory = GetNormalizedFullPath(ownerFile).parent_path();
-            auto func = [&](const std::string& resourcePath) {
-                return MakeReferenceInPackage(ownerDirectory, packageRoot, resourcePath);
+            auto func = [&](json& value) {
+                if (value.is_string())
+                    value = MakeReferenceInPackage(ownerDirectory, packageRoot, value.get<std::string>());
             };
             Transform(j, type, func);
 
@@ -212,10 +269,31 @@ namespace Atlas {
 
         void AssetReferences::ResolveReferences(json& j, Type type, const std::string& ownerFile) {
 
-            auto func = [&](const std::string& reference) {
-                return ResolveReference(ownerFile, reference);
+            auto func = [&](json& value) {
+                if (value.is_string())
+                    value = ResolveReference(ownerFile, value.get<std::string>());
             };
             Transform(j, type, func);
+
+        }
+
+        void AssetReferences::InlineResourceTable(json& j) {
+
+            if (!j.contains("resources"))
+                return;
+
+            if (auto components = j.find("components"); components != j.end()) {
+                for (const auto& section : *components)
+                    AE_ASSERT(!section.contains("columns") && "Columns keep their indices, nest the scene entities first");
+            }
+
+            auto paths = j["resources"].get<std::vector<std::string>>();
+            auto func = [&](json& value) {
+                if (value.is_number_integer())
+                    value = paths.at(value.get<size_t>());
+            };
+            TransformSceneEntities(j, func);
+            j.erase("resources");
 
         }
 

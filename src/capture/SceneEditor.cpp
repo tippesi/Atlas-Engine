@@ -439,6 +439,7 @@ namespace Atlas::Capture {
             if (!importedScene)
                 throw std::runtime_error("makePrefab: couldn't import " + scenePath);
             Scene::SceneToJson(imported, importedScene.get());
+            Serializer::NestSceneEntities(imported);
             source = &imported;
         }
         else {
@@ -452,6 +453,21 @@ namespace Atlas::Capture {
                 // Scenes are stored as MessagePack or as plain JSON
                 auto j = !data.empty() && data[0] == '{' ? json::parse(data) : json::from_msgpack(data);
                 Loader::AssetReferences::ResolveReferences(j, Loader::AssetReferences::Type::Scene, scenePath);
+
+                // Prefabs nest their entities and are readable json, binary scenes reference resources by index
+                // and store raw matrices. Nesting first turns binary columns into json values
+                Serializer::NestSceneEntities(j);
+                Loader::AssetReferences::InlineResourceTable(j);
+                std::function<void(json&)> makeReadable = [&](json& entity) {
+                    if (entity.contains("transform") && entity["transform"]["matrix"].is_binary())
+                        entity["transform"]["matrix"] = entity["transform"]["matrix"].get<mat4>();
+                    if (entity.contains("entities"))
+                        for (auto& child : entity["entities"])
+                            makeReadable(child);
+                };
+                for (auto& entity : j["entities"])
+                    makeReadable(entity);
+
                 cached = std::move(j);
             }
             source = &cached;

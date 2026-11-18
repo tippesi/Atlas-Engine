@@ -270,7 +270,13 @@ Search here before writing math or utility code (`common/`):
 - **Colors** (sRGB, linear, gamma): `ColorConverter`.
 - **Packing** (normals, 10-10-10-2): `Packing`.
 - **Serialization** (JSON, optional fields, backwards compatible loading): `SerializationHelper` (`try_get_json`),
-  `*Serializer` files next to each feature.
+  `*Serializer` files next to each feature. Scenes store an entity table (ids, parents) and a section per component
+  type, prefabs nest their entities (`Serializer::NestSceneEntities` converts scenes for tools). Scene setting `binaryColumns`
+  (editor scene properties, Lua `scene.binaryColumns`): binary columns of raw values for the common components
+  (`ComponentColumns`), about twice as fast to load. Binary scenes (MessagePack,
+  resource table, matrices as raw floats, fast loading) and readable JSON scenes: `SerializationContext`
+  (`WritePath`, `ReadHandle`, `WriteMatrix`), `AssetReferences::InlineResourceTable` for tools that copy entities out
+  of a binary scene.
 - **Shared pointers**: `Ref` (`Ref<T>`, `CreateRef`).
 - **Filters** (Gaussian, box blur kernels): `Filter`.
 

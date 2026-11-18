@@ -25,10 +25,9 @@ namespace Atlas::Loader {
             j = json::from_msgpack(data);
         }
         else {
-            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                std::istreambuf_iterator<char>());
+            auto data = Loader::AssetLoader::GetFileContent(fileStream);
             fileStream.close();
-            j = json::parse(serialized);
+            j = json::parse(data);
         }
 
         auto animation = CreateRef<Animation::Animation>();

@@ -16,8 +16,10 @@ namespace Atlas::Scene {
     void EntityFromJson(const json& j, Entity& p, Scene* scene, 
         bool containsEntityMananger);
 
+    // Scenes store their entities as a table of ids and parents and each component type in its own section
     void SceneToJson(json& j, Scene* scene);
 
+    // Reads the sections and the nested entities of older scenes
     void SceneFromJson(const json& j, Ref<Scene>& scene);
 
     // Scene wide feature settings (sky, post processing, wind and the optional lighting features)

@@ -1,4 +1,5 @@
 #include "SerializationHelper.h"
+#include "../Log.h"
 
 namespace glm {
 
@@ -98,6 +99,17 @@ namespace glm {
     }
 
     static bool MatrixFromJson(const json& j, float* values, int32_t count) {
+
+        // Binary scenes store raw floats, see SerializationContext
+        if (j.is_binary()) {
+            const auto& data = j.get_binary();
+            if (data.size() != count * sizeof(float)) {
+                Atlas::Log::Error("Binary matrix has the wrong size");
+                return true;
+            }
+            std::memcpy(values, data.data(), count * sizeof(float));
+            return true;
+        }
 
         if (!j.is_array())
             return false;

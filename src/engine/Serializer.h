@@ -1,6 +1,7 @@
 #pragma once
 
 #include "scene/Scene.h"
+#include "common/SerializationHelper.h"
 
 namespace Atlas {
 
@@ -15,6 +16,12 @@ namespace Atlas {
         static void SerializePrefab(Ref<Scene::Scene> scene, Scene::Entity entity, const std::string& filename, bool formatJson = false);
 
         static Scene::Entity DeserializePrefab(Ref<Scene::Scene> scene, const std::string& filename);
+
+        /**
+         * Converts the entity table and component sections of a scene json into nested entities like in prefabs,
+         * e.g. for tools that copy entities out of a scene. Scenes with nested entities stay unchanged.
+         */
+        static void NestSceneEntities(json& j);
 
     private:
         static void SaveDependencies(Ref<Scene::Scene> scene, bool multithreaded = true);

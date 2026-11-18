@@ -44,6 +44,13 @@ namespace Atlas {
             static void ResolveReferences(json& j, Type type, const std::string& ownerFile);
 
             /**
+             * Replaces the resource indices of the entities of a binary scene json with the paths of its
+             * resource table, e.g. before entities are copied into other files. Binary columns keep their
+             * indices, Serializer::NestSceneEntities converts them into json values first.
+             */
+            static void InlineResourceTable(json& j);
+
+            /**
              * Converts a single resource path into a reference from the owner file.
              */
             static std::string MakeReference(const std::string& ownerFile, const std::string& resourcePath);

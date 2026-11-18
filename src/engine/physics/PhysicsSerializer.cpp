@@ -1,5 +1,6 @@
 #include "PhysicsSerializer.h"
 #include "loader/MeshLoader.h"
+#include "common/SerializationContext.h"
 
 #include <Jolt/Physics/PhysicsScene.h>
 #include <Jolt/ObjectStream/ObjectStreamTextIn.h>
@@ -9,31 +10,31 @@
 
 namespace Atlas::Physics {
 
+    static ResourceHandle<Mesh::Mesh> LoadShapeMesh(const std::string& path) {
+
+        // Mesh components load the same mesh file, both have to use the same loader
+        if (path.ends_with(".aemesh"))
+            return ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(path,
+                ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
+        return ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(path,
+            ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
+
+    }
+
     void to_json(json& j, const MeshShapeSettings& p) {
         j = json {
             {"scale", p.scale},
         };
 
         if (p.mesh.IsValid() && !p.mesh.IsGenerated()) {
-            j["resourcePath"] = p.mesh.GetResource()->path;
+            SerializationContext::WritePath(j, "resourcePath", p.mesh.GetResource()->path);
         }
     }
 
     void from_json(const json& j, MeshShapeSettings& p) {
         j.at("scale").get_to(p.scale);
 
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
-            // Mesh components load the same mesh file, both have to use the same loader
-            if (resourcePath.ends_with(".aemesh"))
-                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                    ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
-            else
-                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                    ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
-        }
+        SerializationContext::ReadHandle(j, "resourcePath", p.mesh, LoadShapeMesh);
     }
 
     void to_json(json& j, const SphereShapeSettings& p) {
@@ -81,35 +82,26 @@ namespace Atlas::Physics {
     }
 
     void to_json(json& j, const HeightFieldShapeSettings& p) {
-        // Raw json floating point could get too memory expensive
-        std::vector<uint8_t> binaryData(p.heightData.size() * sizeof(float));
-
-        if (!p.heightData.empty())
-            std::memcpy(binaryData.data(), p.heightData.data(), binaryData.size());
-
         j = json {
-            {"heightData", json::binary(binaryData)},
             {"translation", p.translation},
             {"scale", p.scale},
         };
+
+        // Raw json floating point could get too memory expensive
+        set_binary_json(j, "heightData", p.heightData);
     }
 
-    void from_json(const json& j, HeightFieldShapeSettings& p) {        
+    void from_json(const json& j, HeightFieldShapeSettings& p) {
 
         j.at("translation").get_to(p.translation);
         j.at("scale").get_to(p.scale);
 
-        // Raw json floating point could get too memory expensive
-        std::vector<uint8_t> binaryData;
-        if (j["heightData"].is_binary())
-            binaryData = j["heightData"].get_binary();
+        // Text files store the binary value as an object with its bytes
+        const auto& heightData = j.at("heightData");
+        if (heightData.is_binary())
+            try_get_binary_json(j, "heightData", p.heightData);
         else
-            j.at("heightData").at("bytes").get_to(binaryData);
-        
-        if (!binaryData.empty()) {
-            p.heightData.resize(binaryData.size() / sizeof(float));
-            std::memcpy(p.heightData.data(), binaryData.data(), binaryData.size());
-        }
+            try_get_binary_json(heightData, "bytes", p.heightData, false);
     }
 
     void to_json(json& j, const ConvexHullShapeSettings& p) {
@@ -119,7 +111,7 @@ namespace Atlas::Physics {
         };
 
         if (p.mesh.IsValid() && !p.mesh.IsGenerated()) {
-            j["resourcePath"] = p.mesh.GetResource()->path;
+            SerializationContext::WritePath(j, "resourcePath", p.mesh.GetResource()->path);
         }
     }
 
@@ -127,18 +119,7 @@ namespace Atlas::Physics {
         j.at("density").get_to(p.density);
         j.at("scale").get_to(p.scale);
 
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
-            // Mesh components load the same mesh file, both have to use the same loader
-            if (resourcePath.ends_with(".aemesh"))
-                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                    ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
-            else
-                p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                    ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
-        }
+        SerializationContext::ReadHandle(j, "resourcePath", p.mesh, LoadShapeMesh);
     }
 
     void to_json(json& j, const CylinderShapeSettings& p) {

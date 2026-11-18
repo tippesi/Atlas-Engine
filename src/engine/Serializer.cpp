@@ -12,8 +12,10 @@
 #include "loader/MaterialLoader.h"
 
 #include "tools/TerrainTool.h"
+#include "common/SerializationContext.h"
 
 #include <map>
+#include <optional>
 
 namespace Atlas {
 
@@ -35,7 +37,14 @@ namespace Atlas {
             }
 
             json j;
-            Scene::SceneToJson(j, scene.get());
+            {
+                std::optional<SerializationContext> context;
+                if (binaryJson)
+                    context.emplace();
+                Scene::SceneToJson(j, scene.get());
+                if (context)
+                    j["resources"] = std::move(context->paths);
+            }
             Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Scene, filename);
 
             if (binaryJson) {
@@ -75,18 +84,12 @@ namespace Atlas {
                 throw ResourceLoadException(filename, "Couldn't open scene file stream");
             }
 
-            json j;
-            if (binaryJson) {
-                auto data = Loader::AssetLoader::GetFileContent(fileStream);
-                j = std::move(json::from_msgpack(data));
-            }
-            else {
-                std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                    std::istreambuf_iterator<char>());
-                j = std::move(json::parse(serialized));
-            }
-            
+            auto data = Loader::AssetLoader::GetFileContent(fileStream);
             fileStream.close();
+
+            auto j = binaryJson ? json::from_msgpack(data) : json::parse(data);
+            // The file content isn't needed anymore, large scenes would otherwise keep it while being created
+            data = std::vector<char>();
 
             Loader::AssetReferences::ResolveReferences(j, Loader::AssetReferences::Type::Scene, filename);
 
@@ -137,12 +140,11 @@ namespace Atlas {
                 throw ResourceLoadException(filename, "Couldn't open entity file stream");
             }
 
-            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                std::istreambuf_iterator<char>());
+            auto data = Loader::AssetLoader::GetFileContent(fileStream);
 
             fileStream.close();
 
-            json j = json::parse(serialized);
+            json j = json::parse(data);
             Loader::AssetReferences::ResolveReferences(j, Loader::AssetReferences::Type::Entity, filename);
 
             auto entity = scene->CreateEntity();

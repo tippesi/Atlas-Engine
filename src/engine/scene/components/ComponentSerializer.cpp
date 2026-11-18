@@ -8,8 +8,59 @@
 #include "audio/AudioManager.h"
 #include "loader/MeshLoader.h"
 #include "loader/AnimationLoader.h"
+#include "common/SerializationContext.h"
 
 namespace Atlas::Scene::Components {
+
+    static ResourceHandle<Animation::Animation> LoadAnimation(const std::string& path) {
+
+        return ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(path,
+            ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
+
+    }
+
+    static ResourceHandle<Mesh::Mesh> LoadMesh(const std::string& path) {
+
+        return ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(path,
+            ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
+
+    }
+
+    // Number of values of a column, the first column of a component defines the count
+    static size_t ColumnCount(const json& j, const char* name, size_t elementSize) {
+
+        auto it = j.find(name);
+        if (it == j.end() || !it->is_binary())
+            return 0;
+        return it->get_binary().size() / elementSize;
+
+    }
+
+    // Raw values of a column, nullptr for columns older files don't have yet
+    static const uint8_t* ColumnData(const json& j, const char* name, size_t elementSize, size_t count, bool& valid) {
+
+        auto it = j.find(name);
+        if (it == j.end())
+            return nullptr;
+        if (it->is_binary() && it->get_binary().size() == count * elementSize)
+            return it->get_binary().data();
+
+        Log::Error(std::string("Scene column ") + name + " has the wrong size");
+        valid = false;
+        return nullptr;
+
+    }
+
+    template<class T>
+    static T ColumnValue(const uint8_t* data, size_t index, T defaultValue) {
+
+        if (!data)
+            return defaultValue;
+        T value;
+        std::memcpy(&value, data + index * sizeof(T), sizeof(T));
+        return value;
+
+    }
 
     void to_json(json& j, const AnimationComponent& p) {
         j = json {
@@ -20,7 +71,7 @@ namespace Atlas::Scene::Components {
         };
 
         if (p.animation.IsValid() && !p.animation.IsGenerated())
-            j["resourcePath"] = p.animation.GetResource()->path;
+            SerializationContext::WritePath(j, "resourcePath", p.animation.GetResource()->path);
 
         auto layers = json::array();
         for (const auto& layer : p.layers) {
@@ -36,7 +87,7 @@ namespace Atlas::Scene::Components {
             };
 
             if (layer.animation.IsValid() && !layer.animation.IsGenerated())
-                layerJson["resourcePath"] = layer.animation.GetResource()->path;
+                SerializationContext::WritePath(layerJson, "resourcePath", layer.animation.GetResource()->path);
 
             layers.push_back(layerJson);
         }
@@ -74,13 +125,7 @@ namespace Atlas::Scene::Components {
         j.at("loop").get_to(p.loop);
         j.at("playing").get_to(p.playing);
 
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
-            p.animation = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
-        }
+        SerializationContext::ReadHandle(j, "resourcePath", p.animation, LoadAnimation);
 
         if (j.contains("layers")) {
             for (const auto& layerJson : j["layers"]) {
@@ -103,13 +148,7 @@ namespace Atlas::Scene::Components {
                 layer.FadeTo(weight);
                 layer.SetMask(maskRoot, maskBlendJoints);
 
-                if (layerJson.contains("resourcePath")) {
-                    std::string resourcePath;
-                    layerJson.at("resourcePath").get_to(resourcePath);
-
-                    layer.animation = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                        ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
-                }
+                SerializationContext::ReadHandle(layerJson, "resourcePath", layer.animation, LoadAnimation);
             }
         }
 
@@ -370,21 +409,66 @@ namespace Atlas::Scene::Components {
         };
 
         if (p.mesh.IsValid() && !p.mesh.IsGenerated())
-            j["resourcePath"] = p.mesh.GetResource()->path;
+            SerializationContext::WritePath(j, "resourcePath", p.mesh.GetResource()->path);
     }
 
     void from_json(const json& j, MeshComponent& p) {
         j.at("visible").get_to(p.visible);
         j.at("dontCull").get_to(p.dontCull);
 
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
+        SerializationContext::ReadHandle(j, "resourcePath", p.mesh, LoadMesh);
 
-            p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
+    }
+
+    void ComponentColumns<MeshComponent>::Write(json& j, size_t count, const std::function<const MeshComponent&(size_t)>& get) {
+        std::vector<uint8_t> resources(count * sizeof(uint32_t));
+        std::vector<uint8_t> flags(count);
+        for (size_t i = 0; i < count; i++) {
+            const auto& p = get(i);
+            auto hasResource = p.mesh.IsValid() && !p.mesh.IsGenerated();
+            auto resource = hasResource ? SerializationContext::WriteIndex(p.mesh.GetResource()->path) : UINT32_MAX;
+            std::memcpy(resources.data() + i * sizeof(uint32_t), &resource, sizeof(uint32_t));
+            flags[i] = uint8_t(p.visible ? 1 : 0) | uint8_t(p.dontCull ? 2 : 0);
         }
+        j["resource"] = json::binary_t(std::move(resources));
+        j["flags"] = json::binary_t(std::move(flags));
+    }
 
+    template<class Func>
+    static bool ReadMeshColumns(const json& j, Func&& func) {
+        auto count = ColumnCount(j, "resource", sizeof(uint32_t));
+        auto valid = true;
+        auto resources = ColumnData(j, "resource", sizeof(uint32_t), count, valid);
+        auto flags = ColumnData(j, "flags", sizeof(uint8_t), count, valid);
+        if (!valid)
+            return false;
+        for (size_t i = 0; i < count; i++) {
+            auto flag = ColumnValue<uint8_t>(flags, i, 1);
+            func(ColumnValue<uint32_t>(resources, i, UINT32_MAX), (flag & 1) != 0, (flag & 2) != 0);
+        }
+        return true;
+    }
+
+    bool ComponentColumns<MeshComponent>::Read(const json& j, std::vector<MeshComponent>& components) {
+        return ReadMeshColumns(j, [&](uint32_t resource, bool visible, bool dontCull) {
+            auto& p = components.emplace_back();
+            p.visible = visible;
+            p.dontCull = dontCull;
+            if (resource != UINT32_MAX)
+                SerializationContext::ReadHandle(resource, p.mesh, LoadMesh);
+        });
+    }
+
+    json ComponentColumns<MeshComponent>::ToValues(const json& j) {
+        // Without loading the meshes: the values keep the index into the resource table
+        json values = json::array();
+        ReadMeshColumns(j, [&](uint32_t resource, bool visible, bool dontCull) {
+            json value = { {"visible", visible}, {"dontCull", dontCull} };
+            if (resource != UINT32_MAX)
+                value["resourcePath"] = resource;
+            values.push_back(std::move(value));
+        });
+        return values;
     }
 
     void to_json(json& j, const NameComponent& p) {
@@ -397,12 +481,60 @@ namespace Atlas::Scene::Components {
         j.at("name").get_to(p.name);
     }
 
+    void ComponentColumns<NameComponent>::Write(json& j, size_t count, const std::function<const NameComponent&(size_t)>& get) {
+        // All names in one buffer, the offsets mark where each one starts
+        std::vector<uint8_t> text;
+        std::vector<uint8_t> offsets((count + 1) * sizeof(uint32_t));
+        for (size_t i = 0; i < count; i++) {
+            const auto& name = get(i).name;
+            text.insert(text.end(), name.begin(), name.end());
+            auto offset = uint32_t(text.size());
+            std::memcpy(offsets.data() + (i + 1) * sizeof(uint32_t), &offset, sizeof(uint32_t));
+        }
+        j["text"] = json::binary_t(std::move(text));
+        j["offset"] = json::binary_t(std::move(offsets));
+    }
+
+    bool ComponentColumns<NameComponent>::Read(const json& j, std::vector<NameComponent>& components) {
+        std::vector<uint32_t> offsets;
+        try_get_binary_json(j, "offset", offsets);
+        if (offsets.empty())
+            return true;
+
+        auto textIt = j.find("text");
+        if (textIt == j.end() || !textIt->is_binary()) {
+            Log::Error("Scene name column without text");
+            return false;
+        }
+        const auto& text = textIt->get_binary();
+        for (size_t i = 0; i + 1 < offsets.size(); i++) {
+            if (offsets[i] > offsets[i + 1] || offsets[i + 1] > text.size()) {
+                Log::Error("Scene name column has invalid offsets");
+                return false;
+            }
+        }
+
+        components.resize(offsets.size() - 1);
+        for (size_t i = 0; i < components.size(); i++)
+            components[i].name.assign(reinterpret_cast<const char*>(text.data()) + offsets[i], offsets[i + 1] - offsets[i]);
+        return true;
+    }
+
+    json ComponentColumns<NameComponent>::ToValues(const json& j) {
+        std::vector<NameComponent> components;
+        Read(j, components);
+        json values = json::array();
+        for (const auto& p : components)
+            values.push_back(p);
+        return values;
+    }
+
     void to_json(json& j, const TransformComponent& p) {
         j = json {
-            {"matrix", p.matrix},
             {"isStatic", p.isStatic},
             {"parentJoint", p.parentJoint},
         };
+        SerializationContext::WriteMatrix(j, "matrix", p.matrix);
     }
 
     void from_json(const json& j, TransformComponent& p) {
@@ -411,10 +543,56 @@ namespace Atlas::Scene::Components {
         try_get_json(j, "parentJoint", p.parentJoint);
 
         // Reconstruct some immediate values, don't need to be true.
-        // Just that a call to p.ReconstructLocalMatrix() before a scene updates 
+        // Just that a call to p.ReconstructLocalMatrix() before a scene updates
         // leaves p.matrix in the same state.
         p.globalMatrix = p.matrix;
         p.lastGlobalMatrix = p.matrix;
+    }
+
+    void ComponentColumns<TransformComponent>::Write(json& j, size_t count, const std::function<const TransformComponent&(size_t)>& get) {
+        std::vector<uint8_t> matrices(count * sizeof(mat4));
+        std::vector<uint8_t> isStatic(count);
+        std::vector<uint8_t> parentJoints(count * sizeof(int32_t));
+        for (size_t i = 0; i < count; i++) {
+            const auto& p = get(i);
+            std::memcpy(matrices.data() + i * sizeof(mat4), &p.matrix[0][0], sizeof(mat4));
+            isStatic[i] = p.isStatic ? 1 : 0;
+            std::memcpy(parentJoints.data() + i * sizeof(int32_t), &p.parentJoint, sizeof(int32_t));
+        }
+        j["matrix"] = json::binary_t(std::move(matrices));
+        j["isStatic"] = json::binary_t(std::move(isStatic));
+        j["parentJoint"] = json::binary_t(std::move(parentJoints));
+    }
+
+    bool ComponentColumns<TransformComponent>::Read(const json& j, std::vector<TransformComponent>& components) {
+        auto count = ColumnCount(j, "matrix", sizeof(mat4));
+        auto valid = true;
+        auto matrices = ColumnData(j, "matrix", sizeof(mat4), count, valid);
+        auto isStatic = ColumnData(j, "isStatic", sizeof(uint8_t), count, valid);
+        auto parentJoints = ColumnData(j, "parentJoint", sizeof(int32_t), count, valid);
+        if (!valid)
+            return false;
+
+        components.resize(count);
+        for (size_t i = 0; i < count; i++) {
+            auto& p = components[i];
+            std::memcpy(&p.matrix[0][0], matrices + i * sizeof(mat4), sizeof(mat4));
+            p.isStatic = ColumnValue<uint8_t>(isStatic, i, 1) != 0;
+            p.parentJoint = ColumnValue<int32_t>(parentJoints, i, -1);
+            // Like from_json
+            p.globalMatrix = p.matrix;
+            p.lastGlobalMatrix = p.matrix;
+        }
+        return true;
+    }
+
+    json ComponentColumns<TransformComponent>::ToValues(const json& j) {
+        std::vector<TransformComponent> components;
+        Read(j, components);
+        json values = json::array();
+        for (const auto& p : components)
+            values.push_back(p);
+        return values;
     }
 
     void to_json(json& j, const TextComponent& p) {
@@ -430,7 +608,7 @@ namespace Atlas::Scene::Components {
         };
 
         if (p.font.IsValid() && !p.font.IsGenerated())
-            j["resourcePath"] = p.font.GetResource()->path;
+            SerializationContext::WritePath(j, "resourcePath", p.font.GetResource()->path);
     }
 
     void from_json(const json& j, TextComponent& p) {
@@ -443,10 +621,8 @@ namespace Atlas::Scene::Components {
         j.at("outlineFactor").get_to(p.outlineFactor);
         j.at("textScale").get_to(p.textScale);
 
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
+        std::string resourcePath;
+        if (SerializationContext::ReadPath(j, "resourcePath", resourcePath)) {
             p.font = ResourceManager<Font>::GetOrLoadResourceAsync(resourcePath,
                 ResourceOrigin::User, 32.0f, 7.0f, 127);
         }
@@ -536,7 +712,7 @@ namespace Atlas::Scene::Components {
         j = json{};
 
         if (p.script.IsValid() && !p.script.IsGenerated())
-            j["resourcePath"] = p.script.GetResource()->path;
+            SerializationContext::WritePath(j, "resourcePath", p.script.GetResource()->path);
 
         j["permanentExecution"] = p.permanentExecution;
 
@@ -578,10 +754,8 @@ namespace Atlas::Scene::Components {
 
     void from_json(const json &j, LuaScriptComponent &p) {
 
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
+        std::string resourcePath;
+        if (SerializationContext::ReadPath(j, "resourcePath", resourcePath)) {
             try_get_json(j, "permanentExecution", p.permanentExecution);
 
             p.script = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(

@@ -46,18 +46,7 @@ namespace Atlas::Mesh {
             {"format", format},
         };
 
-        std::vector<uint8_t> binaryData;
-        if (!p.data.empty()) {
-            binaryData.resize(p.data.size() * sizeof(T));
-            std::memcpy(binaryData.data(), p.data.data(), binaryData.size());
-        }
-
-        if (binary) {            
-            j["data"] = json::binary_t(binaryData);
-        }
-        else {
-            j["data"] = binaryData;
-        }
+        set_binary_json(j, "data", p.data, binary);
 
     }
 
@@ -69,15 +58,7 @@ namespace Atlas::Mesh {
         j.at("format").get_to(format);
         p.format = static_cast<ComponentFormat>(format);
 
-        std::vector<uint8_t> binaryData;
-        if (binary)
-            binaryData = j["data"].get_binary();
-        else
-            j.at("data").get_to(binaryData);
-        if (!binaryData.empty()) {
-            p.data.resize(binaryData.size() / sizeof(T));
-            std::memcpy(p.data.data(), binaryData.data(), binaryData.size());
-        }  
+        try_get_binary_json(j, "data", p.data, binary);
 
     }
 
