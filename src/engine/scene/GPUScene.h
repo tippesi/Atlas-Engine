@@ -108,33 +108,36 @@ namespace Atlas::Scene {
         // The instances of a mesh, slot 0 is invalid
         struct MeshSlot {
             ResourceHandle<Mesh::Mesh> mesh;
-            std::vector<ECS::Entity> entities;
-
-            uint32_t reversedWindingCount = 0;
-            uint32_t dontCullCount = 0;
-
-            // Grows with the instances, it only shrinks once all instances are gone
-            Volume::AABB bounds;
-            bool hasBounds = false;
-
-            // Meshes without visible instances are left out of the first draws of an occluded pass
-            bool drawEarly = true;
-
             // Entities with a simulated soft body have their own slot of the mesh, the other instances keep their levels
             // of detail and impostors
             bool softBody = false;
 
-            // State of the current frame
-            bool drawable = false;
+            // Kept up to date by the refreshed instances
+            std::vector<ECS::Entity> entities;
+            uint32_t reversedWindingCount = 0;
+            uint32_t dontCullCount = 0;
+            // Grows with the instances, it only shrinks once all instances are gone
+            Volume::AABB bounds;
+            bool hasBounds = false;
+
+            // Meshes without visible instances are left out of the first draws of an occluded pass, read back from the
+            // occlusion test
+            bool drawEarly = true;
+
+            // Derived from the mesh in every update, its geometry and impostor can be streamed
             // Skinned meshes and simulated soft bodies, drawn by the host passes
             bool instanceVertices = false;
-            bool impostor = false;
+            // Loaded meshes without instance vertices, also the ones which aren't drawable: the streaming needs their
+            // distances from the culling
+            bool culled = false;
             // The geometry of a streamed mesh can be unloaded, its instances are drawn as impostors then
             bool geometry = false;
-            uint32_t regionOffset = 0;
-            uint32_t impostorRegionOffset = 0;
+            bool impostor = false;
+            bool drawable = false;
             // The levels of detail the culling chooses from, each draw has a command for every one of them
             uint32_t lodCount = 1;
+            uint32_t regionOffset = 0;
+            uint32_t impostorRegionOffset = 0;
         };
 
         explicit GPUScene(Scene* scene);
@@ -220,13 +223,46 @@ namespace Atlas::Scene {
             bool dontCull = false;
         };
 
+        // The slots of the meshes take over which of their instances were visible in the last occlusion test
+        void TakeVisibility();
+
+        // The entities whose instances are written again, all of them after an invalidation
+        void CollectRefreshEntities(const std::vector<ECS::Entity>& dirtyEntities,
+            const std::vector<ECS::Entity>& lastDirtyEntities);
+
+        void RefreshInstance(ECS::Entity entity);
+
         uint32_t GetSlot(const ResourceHandle<Mesh::Mesh>& mesh, bool softBody);
 
-        void RemoveFromSlot(uint32_t entityIdx, EntityState& state);
+        void AddToSlot(ECS::Entity entity, EntityState& state, uint32_t slotIdx, bool reversedWinding, bool dontCull,
+            const mat4& globalMatrix);
+
+        // An entity which stays in its slot keeps its position, otherwise it leaves and empty slots are freed
+        void RemoveFromSlot(uint32_t entityIdx, EntityState& state, bool keepPosition);
 
         void GrowBounds(MeshSlot& slot, const mat4& globalMatrix);
 
         void UpdateMeshes();
+
+        GPUCullMesh CreateCullMesh(MeshSlot& slot);
+
+        // Sets the levels of detail of the slot and returns their errors for the culling
+        vec4 SelectLods(MeshSlot& slot);
+
+        // Instances which aren't culled on the GPU are culled here and drawn by the host pass
+        void AddHostCulledInstances(const MeshSlot& slot, const Volume::Frustum& frustum, vec3 cameraLocation,
+            RenderList::Pass& pass);
+
+        void AddGPUDraws(uint32_t slotIdx, const Volume::Frustum& frustum, vec3 cameraLocation, RenderList::Pass& pass);
+
+        // The readback of a frame copy was written FRAME_DATA_COUNT frames ago
+        void ReadVisibility(int32_t frameIndex, uint32_t slotCount);
+
+        void ReadMeshDistances(int32_t frameIndex, uint32_t slotCount);
+
+        // A new buffer drops the copies that are still in flight
+        void EnsureReadbackBuffer(Ref<Graphics::MultiBuffer>& buffer, size_t size,
+            std::vector<size_t> (&frameMeshIds)[FRAME_DATA_COUNT]);
 
         void EnsureBuffer(Ref<Graphics::Buffer>& buffer, size_t size, VkBufferUsageFlags usage);
 

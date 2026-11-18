@@ -23,122 +23,17 @@ namespace Atlas::Scene {
 
     void GPUScene::Update(const std::vector<ECS::Entity>& dirtyEntities, const std::vector<ECS::Entity>& lastDirtyEntities) {
 
-        auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
-        auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
-        auto& softBodyComponentPool = scene->entityManager.GetPool<SoftBodyComponent>();
-
         updates.clear();
         updateIndices.clear();
         history.clear();
-        refreshEntities.clear();
 
-        {
-            std::scoped_lock lock(meshDistancesMutex);
-            for (size_t i = 0; i < std::min(visibleMeshIds.size(), slots.size()); i++) {
-                if (slots[i].mesh.IsValid() && slots[i].mesh.GetID() == visibleMeshIds[i])
-                    slots[i].drawEarly = visibleMeshes[i] > 0;
-            }
-            visibleMeshIds.clear();
-        }
-
-        if (!valid) {
-            meshSlots.clear();
-            softBodyMeshSlots.clear();
-            freeSlots.clear();
-            slots = std::vector<MeshSlot>(1);
-            entityStates.clear();
-
-            for (size_t i = 0; i < meshComponentPool.GetCount(); i++)
-                refreshEntities.push_back(meshComponentPool[i]);
-
-            // Instances of entities which are gone are only removed by clearing all of them
-            clearInstances = true;
-            valid = true;
-        }
-        else {
-            // The matrix of the last frame changes one frame after the transform
-            refreshEntities.insert(refreshEntities.end(), dirtyEntities.begin(), dirtyEntities.end());
-            refreshEntities.insert(refreshEntities.end(), lastDirtyEntities.begin(), lastDirtyEntities.end());
-        }
-
-        // Components are looked up by entity index, the version doesn't matter
-        std::sort(refreshEntities.begin(), refreshEntities.end(), [](ECS::Entity entity0, ECS::Entity entity1) {
-            return ECS::EntityToIdx(entity0) < ECS::EntityToIdx(entity1);
-            });
-        auto last = std::unique(refreshEntities.begin(), refreshEntities.end(), [](ECS::Entity entity0, ECS::Entity entity1) {
-            return ECS::EntityToIdx(entity0) == ECS::EntityToIdx(entity1);
-            });
-        refreshEntities.erase(last, refreshEntities.end());
-
-        for (auto entity : refreshEntities) {
-            auto entityIdx = ECS::EntityToIdx(entity);
-            if (entityIdx >= entityStates.size())
-                entityStates.resize(entityIdx + 1);
-
-            auto meshComponent = meshComponentPool.TryGet(entity);
-            auto transformComponent = transformComponentPool.TryGet(entity);
-
-            uint32_t slotIdx = 0;
-            if (meshComponent && transformComponent && meshComponent->mesh.IsValid()) {
-                // Soft bodies mark their entity when they are created or removed
-                auto softBodyComponent = softBodyComponentPool.TryGet(entity);
-                slotIdx = GetSlot(meshComponent->mesh, softBodyComponent && softBodyComponent->IsValid());
-            }
-
-            auto& state = entityStates[entityIdx];
-            auto reversedWinding = slotIdx && Common::HasReversedWinding(transformComponent->globalMatrix);
-            auto dontCull = slotIdx && meshComponent->dontCull;
-
-            if (state.slot) {
-                auto& oldSlot = slots[state.slot];
-                oldSlot.reversedWindingCount -= state.reversedWinding ? 1 : 0;
-                oldSlot.dontCullCount -= state.dontCull ? 1 : 0;
-                if (state.slot != slotIdx)
-                    RemoveFromSlot(entityIdx, state);
-            }
-
-            GPUInstance instance;
-            if (slotIdx) {
-                auto& slot = slots[slotIdx];
-                if (state.slot != slotIdx) {
-                    state.slot = slotIdx;
-                    state.slotPosition = uint32_t(slot.entities.size());
-                    slot.entities.push_back(entity);
-                }
-                else {
-                    slot.entities[state.slotPosition] = entity;
-                    instance.visibleLastFrame = keepVisibleLastFrame;
-                }
-
-                slot.reversedWindingCount += reversedWinding ? 1 : 0;
-                slot.dontCullCount += dontCull ? 1 : 0;
-
-                const auto& globalMatrix = transformComponent->globalMatrix;
-                if (slot.hasBounds)
-                    GrowBounds(slot, globalMatrix);
-
-                instance.matrix = mat3x4(glm::transpose(globalMatrix));
-                instance.meshIdx = slotIdx;
-                instance.flags = (meshComponent->visible ? InstanceVisible : 0) |
-                    (dontCull ? InstanceDontCull : 0) | (reversedWinding ? InstanceReversedWinding : 0);
-
-                if (transformComponent->lastGlobalMatrix != globalMatrix) {
-                    instance.historyIdx = uint32_t(history.size());
-                    history.push_back(mat3x4(glm::transpose(transformComponent->lastGlobalMatrix)));
-                }
-            }
-
-            state.reversedWinding = reversedWinding;
-            state.dontCull = dontCull;
-
-            updates.push_back(instance);
-            updateIndices.push_back(entityIdx);
-        }
-
+        TakeVisibility();
+        CollectRefreshEntities(dirtyEntities, lastDirtyEntities);
+        for (auto entity : refreshEntities)
+            RefreshInstance(entity);
         instanceCount = uint32_t(entityStates.size());
 
         UpdateMeshes();
-
         meshBuffer = uploadBufferPool.Upload(cullMeshes.data(), cullMeshes.size() * sizeof(GPUCullMesh));
 
     }
@@ -207,7 +102,6 @@ namespace Atlas::Scene {
 
     void GPUScene::FillPass(const Volume::Frustum& frustum, vec3 cameraLocation, const Ref<RenderList::Pass>& pass) {
 
-        auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
         auto shadow = pass->type == RenderList::RenderPassType::Shadow;
 
         pass->frustum = frustum;
@@ -216,71 +110,13 @@ namespace Atlas::Scene {
 
         for (uint32_t slotIdx = 1; slotIdx < uint32_t(slots.size()); slotIdx++) {
             const auto& slot = slots[slotIdx];
-            if (!slot.drawable && !slot.instanceVertices)
+            if ((!slot.drawable && !slot.instanceVertices) || (shadow && !slot.mesh->castShadow))
                 continue;
 
-            const auto& mesh = slot.mesh;
-            if (shadow && !mesh->castShadow)
-                continue;
-
-            auto cullingDistance = shadow ? mesh->shadowDistanceCulling : mesh->distanceCulling;
-            auto cullingDistanceSqr = cullingDistance * cullingDistance;
-
-            if (slot.instanceVertices) {
-                for (auto entity : slot.entities) {
-                    const auto& meshComponent = meshComponentPool.Get(entity);
-                    auto distanceSqr = glm::distance2(meshComponent.aabb.GetCenter(), cameraLocation);
-                    if (meshComponent.dontCull || (meshComponent.visible && distanceSqr <= cullingDistanceSqr &&
-                        frustum.Intersects(meshComponent.aabb)))
-                        pass->Add(entity, meshComponent);
-                }
-                continue;
-            }
-
-            auto closestPoint = glm::clamp(cameraLocation, slot.bounds.min, slot.bounds.max);
-            auto minDistanceSqr = glm::distance2(closestPoint, cameraLocation);
-            if (!slot.dontCullCount && (!frustum.Intersects(slot.bounds) || minDistanceSqr > cullingDistanceSqr))
-                continue;
-
-            // Only draw what the instances can turn into at their distances
-            auto hasMeshes = true, hasImpostors = false;
-            if (slot.impostor) {
-                auto farthestPoint = glm::max(glm::abs(cameraLocation - slot.bounds.min),
-                    glm::abs(cameraLocation - slot.bounds.max));
-                auto maxDistanceSqr = glm::length2(farthestPoint);
-                auto impostorDistance = shadow ? mesh->impostorShadowDistance : mesh->impostorDistance;
-                hasMeshes = minDistanceSqr < impostorDistance * impostorDistance;
-                hasImpostors = maxDistanceSqr >= impostorDistance * impostorDistance;
-            }
-
-            auto occluded = !shadow && scene->occlusionCulling;
-            auto addDraw = [&](Mesh::MeshSubData* subData, RenderList::GPUDrawType type) {
-                auto lodCount = subData ? slot.lodCount : 1u;
-                if (occluded)
-                    pass->gpuLateDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
-                if (!occluded || slot.drawEarly || slot.dontCullCount)
-                    pass->gpuDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
-            };
-
-            // Meshes without resident geometry are drawn as impostors only
-            if (!slot.geometry) {
-                hasMeshes = false;
-                hasImpostors = true;
-            }
-
-            if (hasMeshes) {
-                for (auto& subData : mesh->data.subData) {
-                    if (!subData.material.IsLoaded())
-                        continue;
-
-                    addDraw(&subData, RenderList::GPUDrawType::DefaultWinding);
-                    if (slot.reversedWindingCount)
-                        addDraw(&subData, RenderList::GPUDrawType::ReversedWinding);
-                }
-            }
-
-            if (hasImpostors)
-                addDraw(nullptr, RenderList::GPUDrawType::Impostor);
+            if (slot.instanceVertices)
+                AddHostCulledInstances(slot, frustum, cameraLocation, *pass);
+            else
+                AddGPUDraws(slotIdx, frustum, cameraLocation, *pass);
         }
 
     }
@@ -377,78 +213,8 @@ namespace Atlas::Scene {
         readbackVisibility = readbackDistances && lateRequestCount > 0;
         if (readbackDistances) {
             distanceFrameIndex = frameIndex;
-
-            auto& frameVisibilityIds = visibilityMeshIds[frameIndex % FRAME_DATA_COUNT];
-            if (!frameVisibilityIds.empty()) {
-                visibilityReadbackBuffer->Invalidate();
-                auto counters = static_cast<uint32_t*>(visibilityReadbackBuffer->Map());
-
-                // The counters of each slot of the first and the late draws
-                auto slotCounters = size_t(meshCounterCount);
-                auto copiedSlots = frameVisibilityIds.size();
-                std::scoped_lock lock(meshDistancesMutex);
-                visibleMeshes.resize(copiedSlots);
-                for (size_t i = 0; i < copiedSlots; i++) {
-                    uint32_t count = 0;
-                    for (size_t j = 0; j < slotCounters; j++)
-                        count += counters[i * slotCounters + j] + counters[(copiedSlots + i) * slotCounters + j];
-                    visibleMeshes[i] = count > 0 ? 1 : 0;
-                }
-                visibleMeshIds = std::move(frameVisibilityIds);
-
-                visibilityReadbackBuffer->Unmap();
-            }
-            frameVisibilityIds.clear();
-
-            auto visibilitySize = 2 * sizeof(uint32_t) * meshCounterCount * std::max(size_t(slotCount), size_t(1));
-            if (!visibilityReadbackBuffer || visibilityReadbackBuffer->size < visibilitySize) {
-                Graphics::BufferDesc desc = {
-                    .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                    .domain = Graphics::BufferDomain::Host,
-                    .hostAccess = Graphics::BufferHostAccess::Random,
-                    .size = visibilitySize * 2
-                };
-                visibilityReadbackBuffer = device->CreateMultiBuffer(desc);
-
-                // Copies that are still in flight went into the old buffer
-                for (auto& meshIds : visibilityMeshIds)
-                    meshIds.clear();
-            }
-
-            auto& frameMeshIds = distanceMeshIds[frameIndex % FRAME_DATA_COUNT];
-            if (!frameMeshIds.empty()) {
-                meshDistanceReadbackBuffer->Invalidate();
-                auto distances = static_cast<float*>(meshDistanceReadbackBuffer->Map());
-
-                // Two distances per slot, see culling/cull.csh
-                std::scoped_lock lock(meshDistancesMutex);
-                meshDistances.distances.resize(frameMeshIds.size());
-                meshDistances.positionDistances.resize(frameMeshIds.size());
-                for (size_t i = 0; i < frameMeshIds.size(); i++) {
-                    meshDistances.distances[i] = distances[2 * i];
-                    meshDistances.positionDistances[i] = distances[2 * i + 1];
-                }
-                meshDistances.meshIds = std::move(frameMeshIds);
-                hasMeshDistances = true;
-
-                meshDistanceReadbackBuffer->Unmap();
-            }
-            frameMeshIds.clear();
-
-            auto readbackSize = 2 * sizeof(uint32_t) * std::max(size_t(slotCount), size_t(1));
-            if (!meshDistanceReadbackBuffer || meshDistanceReadbackBuffer->size < readbackSize) {
-                Graphics::BufferDesc desc = {
-                    .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                    .domain = Graphics::BufferDomain::Host,
-                    .hostAccess = Graphics::BufferHostAccess::Random,
-                    .size = readbackSize * 2
-                };
-                meshDistanceReadbackBuffer = device->CreateMultiBuffer(desc);
-
-                // Copies that are still in flight went into the old buffer
-                for (auto& meshIds : distanceMeshIds)
-                    meshIds.clear();
-            }
+            ReadVisibility(frameIndex, slotCount);
+            ReadMeshDistances(frameIndex, slotCount);
         }
 
         // The previous frame might still draw with the commands and indices
@@ -668,6 +434,101 @@ namespace Atlas::Scene {
 
     }
 
+    void GPUScene::TakeVisibility() {
+
+        std::scoped_lock lock(meshDistancesMutex);
+        for (size_t i = 0; i < std::min(visibleMeshIds.size(), slots.size()); i++) {
+            if (slots[i].mesh.IsValid() && slots[i].mesh.GetID() == visibleMeshIds[i])
+                slots[i].drawEarly = visibleMeshes[i] > 0;
+        }
+        visibleMeshIds.clear();
+
+    }
+
+    void GPUScene::CollectRefreshEntities(const std::vector<ECS::Entity>& dirtyEntities,
+        const std::vector<ECS::Entity>& lastDirtyEntities) {
+
+        refreshEntities.clear();
+
+        if (!valid) {
+            meshSlots.clear();
+            softBodyMeshSlots.clear();
+            freeSlots.clear();
+            slots = std::vector<MeshSlot>(1);
+            entityStates.clear();
+
+            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
+            for (size_t i = 0; i < meshComponentPool.GetCount(); i++)
+                refreshEntities.push_back(meshComponentPool[i]);
+
+            // Instances of entities which are gone are only removed by clearing all of them
+            clearInstances = true;
+            valid = true;
+        }
+        else {
+            // The matrix of the last frame changes one frame after the transform
+            refreshEntities.insert(refreshEntities.end(), dirtyEntities.begin(), dirtyEntities.end());
+            refreshEntities.insert(refreshEntities.end(), lastDirtyEntities.begin(), lastDirtyEntities.end());
+        }
+
+        // Components are looked up by entity index, the version doesn't matter
+        std::sort(refreshEntities.begin(), refreshEntities.end(), [](ECS::Entity entity0, ECS::Entity entity1) {
+            return ECS::EntityToIdx(entity0) < ECS::EntityToIdx(entity1);
+            });
+        auto last = std::unique(refreshEntities.begin(), refreshEntities.end(), [](ECS::Entity entity0, ECS::Entity entity1) {
+            return ECS::EntityToIdx(entity0) == ECS::EntityToIdx(entity1);
+            });
+        refreshEntities.erase(last, refreshEntities.end());
+
+    }
+
+    void GPUScene::RefreshInstance(ECS::Entity entity) {
+
+        auto entityIdx = ECS::EntityToIdx(entity);
+        if (entityIdx >= entityStates.size())
+            entityStates.resize(entityIdx + 1);
+
+        auto meshComponent = scene->entityManager.TryGet<MeshComponent>(entity);
+        auto transformComponent = scene->entityManager.TryGet<TransformComponent>(entity);
+
+        uint32_t slotIdx = 0;
+        if (meshComponent && transformComponent && meshComponent->mesh.IsValid()) {
+            // Soft bodies mark their entity when they are created or removed
+            auto softBodyComponent = scene->entityManager.TryGet<SoftBodyComponent>(entity);
+            slotIdx = GetSlot(meshComponent->mesh, softBodyComponent && softBodyComponent->IsValid());
+        }
+
+        auto& state = entityStates[entityIdx];
+        auto keepsSlot = slotIdx && state.slot == slotIdx;
+        if (state.slot)
+            RemoveFromSlot(entityIdx, state, keepsSlot);
+
+        // Entities without a slot are culled
+        GPUInstance instance;
+        if (slotIdx) {
+            const auto& globalMatrix = transformComponent->globalMatrix;
+            auto reversedWinding = Common::HasReversedWinding(globalMatrix);
+            auto dontCull = meshComponent->dontCull;
+            AddToSlot(entity, state, slotIdx, reversedWinding, dontCull, globalMatrix);
+
+            instance.matrix = mat3x4(glm::transpose(globalMatrix));
+            instance.meshIdx = slotIdx;
+            instance.flags = (meshComponent->visible ? InstanceVisible : 0) |
+                (dontCull ? InstanceDontCull : 0) | (reversedWinding ? InstanceReversedWinding : 0);
+            if (keepsSlot)
+                instance.visibleLastFrame = keepVisibleLastFrame;
+
+            if (transformComponent->lastGlobalMatrix != globalMatrix) {
+                instance.historyIdx = uint32_t(history.size());
+                history.push_back(mat3x4(glm::transpose(transformComponent->lastGlobalMatrix)));
+            }
+        }
+
+        updates.push_back(instance);
+        updateIndices.push_back(entityIdx);
+
+    }
+
     uint32_t GPUScene::GetSlot(const ResourceHandle<Mesh::Mesh>& mesh, bool softBody) {
 
         auto& slotMap = softBody ? softBodyMeshSlots : meshSlots;
@@ -693,10 +554,41 @@ namespace Atlas::Scene {
 
     }
 
-    void GPUScene::RemoveFromSlot(uint32_t entityIdx, EntityState& state) {
+    void GPUScene::AddToSlot(ECS::Entity entity, EntityState& state, uint32_t slotIdx, bool reversedWinding, bool dontCull,
+        const mat4& globalMatrix) {
+
+        auto& slot = slots[slotIdx];
+        if (state.slot != slotIdx) {
+            state.slot = slotIdx;
+            state.slotPosition = uint32_t(slot.entities.size());
+            slot.entities.push_back(entity);
+        }
+        else {
+            // The version of the entity might have changed
+            slot.entities[state.slotPosition] = entity;
+        }
+
+        state.reversedWinding = reversedWinding;
+        state.dontCull = dontCull;
+        slot.reversedWindingCount += reversedWinding ? 1 : 0;
+        slot.dontCullCount += dontCull ? 1 : 0;
+
+        if (slot.hasBounds)
+            GrowBounds(slot, globalMatrix);
+
+    }
+
+    void GPUScene::RemoveFromSlot(uint32_t entityIdx, EntityState& state, bool keepPosition) {
 
         auto slotIdx = state.slot;
         auto& slot = slots[slotIdx];
+
+        slot.reversedWindingCount -= state.reversedWinding ? 1 : 0;
+        slot.dontCullCount -= state.dontCull ? 1 : 0;
+        state.reversedWinding = false;
+        state.dontCull = false;
+        if (keepPosition)
+            return;
 
         auto lastEntity = slot.entities.back();
         slot.entities[state.slotPosition] = lastEntity;
@@ -735,91 +627,234 @@ namespace Atlas::Scene {
         totalCapacity = 0;
         impostorCapacity = 0;
 
-        // Levels of detail whose BLAS got no bindless slot aren't drawn either, the ray traced shadows would fall onto
-        // another level otherwise. The slots are ready before the update starts, see SceneRenderState::UpdateGPUScene
-        const auto& blasSlots = scene->renderState.blasToBindlessIdx;
-        auto blasSlotsFull = blasSlots.size() >= BINDLESS_BUFFER_COUNT;
-
         for (size_t slotIdx = 0; slotIdx < slots.size(); slotIdx++) {
             auto& slot = slots[slotIdx];
 
-            slot.drawable = false;
-            slot.instanceVertices = false;
-            slot.impostor = false;
-            slot.geometry = false;
+            auto loaded = slotIdx > 0 && !slot.entities.empty() && slot.mesh.IsLoaded();
+            slot.instanceVertices = loaded && (slot.softBody || slot.mesh->data.IsSkinned());
+            slot.culled = loaded && !slot.instanceVertices;
+            slot.geometry = slot.culled && slot.mesh->IsGeometryResident();
+            slot.impostor = slot.culled && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated &&
+                slot.mesh->impostor->IsResident();
+            // Without resident geometry the instances are drawn as impostors
+            slot.drawable = slot.geometry || slot.impostor;
             slot.lodCount = 1;
 
-            auto loaded = slotIdx > 0 && !slot.entities.empty() && slot.mesh.IsLoaded();
-            if (loaded) {
-                slot.instanceVertices = slot.softBody || slot.mesh->data.IsSkinned();
-                slot.geometry = !slot.instanceVertices && slot.mesh->IsGeometryResident();
-                slot.impostor = !slot.instanceVertices && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated &&
-                    slot.mesh->impostor->IsResident();
-                // Without resident geometry the instances are drawn as impostors
-                slot.drawable = slot.geometry || slot.impostor;
-            }
-
             // The mesh might have been loaded after its instances were added
-            if (loaded && !slot.instanceVertices && !slot.hasBounds) {
+            if (slot.culled && !slot.hasBounds) {
                 for (auto entity : slot.entities)
                     GrowBounds(slot, transformComponentPool.Get(entity).globalMatrix);
             }
 
-            // Meshes which aren't drawable are culled as well, the streaming needs their distances
-            GPUCullMesh cullMesh = {};
-            if (loaded && !slot.instanceVertices) {
-                const auto& mesh = slot.mesh;
-                auto count = slot.drawable ? uint32_t(slot.entities.size()) : 0u;
-
-                // Levels of detail are left out without a pixel error, they would never be used. A forced level
-                // gets errors which the culling always accepts up to it and never beyond
-                auto pixelError = mesh->lodPixelError * scene->meshLodErrorScale;
-                auto forcedLod = scene->forcedMeshLod;
-                auto lodErrors = vec4(0.0f);
-                if (slot.geometry && (pixelError > 0.0f || forcedLod >= 0)) {
-                    slot.lodCount = uint32_t(mesh->data.GetLodCount());
-                    if (blasSlotsFull && mesh->rayTrace && blasSlots.contains(mesh->blas)) {
-                        uint32_t rayTracedLodCount = 1;
-                        while (rayTracedLodCount < slot.lodCount && rayTracedLodCount <= mesh->lodBlases.size() &&
-                            blasSlots.contains(mesh->lodBlases[rayTracedLodCount - 1]))
-                            rayTracedLodCount++;
-                        slot.lodCount = rayTracedLodCount;
-                    }
-                    for (int32_t lod = 1; lod < int32_t(slot.lodCount); lod++) {
-                        if (forcedLod >= 0)
-                            lodErrors[lod - 1] = lod <= forcedLod ? 0.0f : std::numeric_limits<float>::max();
-                        else
-                            lodErrors[lod - 1] = mesh->data.lodErrors[lod - 1] / pixelError;
-                    }
-                }
-
-                slot.regionOffset = totalCapacity;
-                slot.impostorRegionOffset = impostorCapacity;
-                totalCapacity += count * slot.lodCount;
-                impostorCapacity += slot.impostor ? count : 0;
-
-                auto renderBounds = mesh->GetRenderBounds();
-
-                cullMesh = GPUCullMesh {
-                    .aabbMin = vec4(renderBounds.min, mesh->distanceCulling),
-                    .aabbMax = vec4(renderBounds.max, mesh->shadowDistanceCulling),
-                    .impostorDistance = mesh->impostorDistance,
-                    .impostorShadowDistance = mesh->impostorShadowDistance,
-                    .flags = (slot.drawable ? MeshDrawable : 0u) | (mesh->castShadow ? MeshCastShadow : 0u) |
-                        (slot.impostor ? MeshImpostor : 0u) | (slot.geometry ? MeshGeometry : 0u) |
-                        (slot.drawEarly || slot.dontCullCount ? MeshDrawEarly : 0u),
-                    .minScreenSize = mesh->minScreenSize,
-                    .regionOffset = slot.regionOffset,
-                    .regionCapacity = count,
-                    .impostorRegionOffset = slot.impostorRegionOffset,
-                    .lodCount = slot.lodCount,
-                    .lodErrors = lodErrors
-                };
-            }
-
-            cullMeshes[slotIdx] = cullMesh;
-            cullMeshIds[slotIdx] = loaded && !slot.instanceVertices ? slot.mesh.GetID() : 0;
+            cullMeshes[slotIdx] = slot.culled ? CreateCullMesh(slot) : GPUCullMesh{};
+            cullMeshIds[slotIdx] = slot.culled ? slot.mesh.GetID() : 0;
         }
+
+    }
+
+    GPUScene::GPUCullMesh GPUScene::CreateCullMesh(MeshSlot& slot) {
+
+        const auto& mesh = slot.mesh;
+        auto count = slot.drawable ? uint32_t(slot.entities.size()) : 0u;
+        auto lodErrors = SelectLods(slot);
+
+        slot.regionOffset = totalCapacity;
+        slot.impostorRegionOffset = impostorCapacity;
+        totalCapacity += count * slot.lodCount;
+        impostorCapacity += slot.impostor ? count : 0;
+
+        auto renderBounds = mesh->GetRenderBounds();
+        return GPUCullMesh {
+            .aabbMin = vec4(renderBounds.min, mesh->distanceCulling),
+            .aabbMax = vec4(renderBounds.max, mesh->shadowDistanceCulling),
+            .impostorDistance = mesh->impostorDistance,
+            .impostorShadowDistance = mesh->impostorShadowDistance,
+            .flags = (slot.drawable ? MeshDrawable : 0u) | (mesh->castShadow ? MeshCastShadow : 0u) |
+                (slot.impostor ? MeshImpostor : 0u) | (slot.geometry ? MeshGeometry : 0u) |
+                (slot.drawEarly || slot.dontCullCount ? MeshDrawEarly : 0u),
+            .minScreenSize = mesh->minScreenSize,
+            .regionOffset = slot.regionOffset,
+            .regionCapacity = count,
+            .impostorRegionOffset = slot.impostorRegionOffset,
+            .lodCount = slot.lodCount,
+            .lodErrors = lodErrors
+        };
+
+    }
+
+    vec4 GPUScene::SelectLods(MeshSlot& slot) {
+
+        // Levels of detail are left out without a pixel error, they would never be used. A forced level gets errors
+        // which the culling always accepts up to it and never beyond
+        const auto& mesh = slot.mesh;
+        auto pixelError = mesh->lodPixelError * scene->meshLodErrorScale;
+        auto forcedLod = scene->forcedMeshLod;
+        auto lodErrors = vec4(0.0f);
+        if (!slot.geometry || (pixelError <= 0.0f && forcedLod < 0))
+            return lodErrors;
+
+        // Levels of detail whose BLAS got no bindless slot aren't drawn either, the ray traced shadows would fall onto
+        // another level otherwise. The slots are ready before the update starts, see SceneRenderState::UpdateGPUScene
+        const auto& blasSlots = scene->renderState.blasToBindlessIdx;
+        slot.lodCount = uint32_t(mesh->data.GetLodCount());
+        if (blasSlots.size() >= BINDLESS_BUFFER_COUNT && mesh->rayTrace && blasSlots.contains(mesh->blas)) {
+            uint32_t rayTracedLodCount = 1;
+            while (rayTracedLodCount < slot.lodCount && rayTracedLodCount <= mesh->lodBlases.size() &&
+                blasSlots.contains(mesh->lodBlases[rayTracedLodCount - 1]))
+                rayTracedLodCount++;
+            slot.lodCount = rayTracedLodCount;
+        }
+
+        for (int32_t lod = 1; lod < int32_t(slot.lodCount); lod++) {
+            if (forcedLod >= 0)
+                lodErrors[lod - 1] = lod <= forcedLod ? 0.0f : std::numeric_limits<float>::max();
+            else
+                lodErrors[lod - 1] = mesh->data.lodErrors[lod - 1] / pixelError;
+        }
+        return lodErrors;
+
+    }
+
+    void GPUScene::AddHostCulledInstances(const MeshSlot& slot, const Volume::Frustum& frustum, vec3 cameraLocation,
+        RenderList::Pass& pass) {
+
+        auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
+        auto shadow = pass.type == RenderList::RenderPassType::Shadow;
+        auto cullingDistance = shadow ? slot.mesh->shadowDistanceCulling : slot.mesh->distanceCulling;
+        auto cullingDistanceSqr = cullingDistance * cullingDistance;
+
+        for (auto entity : slot.entities) {
+            const auto& meshComponent = meshComponentPool.Get(entity);
+            auto distanceSqr = glm::distance2(meshComponent.aabb.GetCenter(), cameraLocation);
+            if (meshComponent.dontCull || (meshComponent.visible && distanceSqr <= cullingDistanceSqr &&
+                frustum.Intersects(meshComponent.aabb)))
+                pass.Add(entity, meshComponent);
+        }
+
+    }
+
+    void GPUScene::AddGPUDraws(uint32_t slotIdx, const Volume::Frustum& frustum, vec3 cameraLocation, RenderList::Pass& pass) {
+
+        const auto& slot = slots[slotIdx];
+        const auto& mesh = slot.mesh;
+        auto shadow = pass.type == RenderList::RenderPassType::Shadow;
+        auto cullingDistance = shadow ? mesh->shadowDistanceCulling : mesh->distanceCulling;
+
+        auto closestPoint = glm::clamp(cameraLocation, slot.bounds.min, slot.bounds.max);
+        auto minDistanceSqr = glm::distance2(closestPoint, cameraLocation);
+        if (!slot.dontCullCount && (!frustum.Intersects(slot.bounds) || minDistanceSqr > cullingDistance * cullingDistance))
+            return;
+
+        // Only draw what the instances can turn into at their distances, meshes without resident geometry are drawn as
+        // impostors only
+        auto hasMeshes = slot.geometry, hasImpostors = !slot.geometry;
+        if (slot.geometry && slot.impostor) {
+            auto farthestPoint = glm::max(glm::abs(cameraLocation - slot.bounds.min),
+                glm::abs(cameraLocation - slot.bounds.max));
+            auto maxDistanceSqr = glm::length2(farthestPoint);
+            auto impostorDistance = shadow ? mesh->impostorShadowDistance : mesh->impostorDistance;
+            hasMeshes = minDistanceSqr < impostorDistance * impostorDistance;
+            hasImpostors = maxDistanceSqr >= impostorDistance * impostorDistance;
+        }
+
+        auto occluded = !shadow && scene->occlusionCulling;
+        auto addDraw = [&](Mesh::MeshSubData* subData, RenderList::GPUDrawType type) {
+            auto lodCount = subData ? slot.lodCount : 1u;
+            if (occluded)
+                pass.gpuLateDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
+            if (!occluded || slot.drawEarly || slot.dontCullCount)
+                pass.gpuDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
+        };
+
+        if (hasMeshes) {
+            for (auto& subData : mesh->data.subData) {
+                if (!subData.material.IsLoaded())
+                    continue;
+
+                addDraw(&subData, RenderList::GPUDrawType::DefaultWinding);
+                if (slot.reversedWindingCount)
+                    addDraw(&subData, RenderList::GPUDrawType::ReversedWinding);
+            }
+        }
+
+        if (hasImpostors)
+            addDraw(nullptr, RenderList::GPUDrawType::Impostor);
+
+    }
+
+    void GPUScene::ReadVisibility(int32_t frameIndex, uint32_t slotCount) {
+
+        auto& frameMeshIds = visibilityMeshIds[frameIndex % FRAME_DATA_COUNT];
+        if (!frameMeshIds.empty()) {
+            visibilityReadbackBuffer->Invalidate();
+            auto counters = static_cast<uint32_t*>(visibilityReadbackBuffer->Map());
+
+            // The counters of each slot of the first and the late draws
+            auto slotCounters = size_t(meshCounterCount);
+            auto copiedSlots = frameMeshIds.size();
+            std::scoped_lock lock(meshDistancesMutex);
+            visibleMeshes.resize(copiedSlots);
+            for (size_t i = 0; i < copiedSlots; i++) {
+                uint32_t count = 0;
+                for (size_t j = 0; j < slotCounters; j++)
+                    count += counters[i * slotCounters + j] + counters[(copiedSlots + i) * slotCounters + j];
+                visibleMeshes[i] = count > 0 ? 1 : 0;
+            }
+            visibleMeshIds = std::move(frameMeshIds);
+
+            visibilityReadbackBuffer->Unmap();
+        }
+        frameMeshIds.clear();
+
+        auto size = 2 * sizeof(uint32_t) * meshCounterCount * std::max(size_t(slotCount), size_t(1));
+        EnsureReadbackBuffer(visibilityReadbackBuffer, size, visibilityMeshIds);
+
+    }
+
+    void GPUScene::ReadMeshDistances(int32_t frameIndex, uint32_t slotCount) {
+
+        auto& frameMeshIds = distanceMeshIds[frameIndex % FRAME_DATA_COUNT];
+        if (!frameMeshIds.empty()) {
+            meshDistanceReadbackBuffer->Invalidate();
+            auto distances = static_cast<float*>(meshDistanceReadbackBuffer->Map());
+
+            // Two distances per slot, see culling/cull.csh
+            std::scoped_lock lock(meshDistancesMutex);
+            meshDistances.distances.resize(frameMeshIds.size());
+            meshDistances.positionDistances.resize(frameMeshIds.size());
+            for (size_t i = 0; i < frameMeshIds.size(); i++) {
+                meshDistances.distances[i] = distances[2 * i];
+                meshDistances.positionDistances[i] = distances[2 * i + 1];
+            }
+            meshDistances.meshIds = std::move(frameMeshIds);
+            hasMeshDistances = true;
+
+            meshDistanceReadbackBuffer->Unmap();
+        }
+        frameMeshIds.clear();
+
+        auto size = 2 * sizeof(uint32_t) * std::max(size_t(slotCount), size_t(1));
+        EnsureReadbackBuffer(meshDistanceReadbackBuffer, size, distanceMeshIds);
+
+    }
+
+    void GPUScene::EnsureReadbackBuffer(Ref<Graphics::MultiBuffer>& buffer, size_t size,
+        std::vector<size_t> (&frameMeshIds)[FRAME_DATA_COUNT]) {
+
+        if (buffer && buffer->size >= size)
+            return;
+
+        Graphics::BufferDesc desc = {
+            .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .domain = Graphics::BufferDomain::Host,
+            .hostAccess = Graphics::BufferHostAccess::Random,
+            .size = size * 2
+        };
+        buffer = Graphics::GraphicsDevice::DefaultDevice->CreateMultiBuffer(desc);
+
+        // Copies that are still in flight went into the old buffer
+        for (auto& meshIds : frameMeshIds)
+            meshIds.clear();
 
     }
 
