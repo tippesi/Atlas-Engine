@@ -20,7 +20,12 @@ namespace Atlas {
             Movable = 1,
             // Bodies moved by the application (scripts, animations), pushing movable bodies but never pushed back
             Kinematic = 2,
-            NumLayers = 3
+            // Soft body cloth: hangs on the static world and kinematic bodies, passes simulated bodies (props, the
+            // inner body of the player, which a cape on the back would sit on) and other cloth
+            Cloth = 3,
+            // Kinematic bodies only cloth collides with: the body of a figure under its cape
+            ClothCollider = 4,
+            NumLayers = 5
         };
 
         // Class that determines if two object layers can collide
@@ -31,11 +36,15 @@ namespace Atlas {
                     // Static and kinematic pairs only make contacts when a kinematic body asks for them
                     // (BodyCreationSettings::kinematicContacts), Jolt skips the others
                     case Layers::Static:
-                        return inObject2 != Layers::Static;
+                        return inObject2 != Layers::Static && inObject2 != Layers::ClothCollider;
                     case Layers::Movable:
-                        return true; // Moving collides with everything
+                        return inObject2 != Layers::Cloth && inObject2 != Layers::ClothCollider;
                     case Layers::Kinematic:
-                        return true;
+                        return inObject2 != Layers::ClothCollider;
+                    case Layers::Cloth:
+                        return inObject2 == Layers::Static || inObject2 == Layers::Kinematic || inObject2 == Layers::ClothCollider;
+                    case Layers::ClothCollider:
+                        return inObject2 == Layers::Cloth;
                     default:
                         JPH_ASSERT(false);
                         return false;
@@ -64,6 +73,8 @@ namespace Atlas {
                 mObjectToBroadPhase[Layers::Movable] = BroadPhaseLayers::Movable;
                 // Kinematic bodies move every frame, so keep them out of the static tree
                 mObjectToBroadPhase[Layers::Kinematic] = BroadPhaseLayers::Movable;
+                mObjectToBroadPhase[Layers::Cloth] = BroadPhaseLayers::Movable;
+                mObjectToBroadPhase[Layers::ClothCollider] = BroadPhaseLayers::Movable;
             }
 
             virtual uint32_t GetNumBroadPhaseLayers() const override {
@@ -101,6 +112,10 @@ namespace Atlas {
                         return true;
                     case Layers::Kinematic:
                         return true;
+                    case Layers::Cloth:
+                        return true;
+                    case Layers::ClothCollider:
+                        return inLayer2 == BroadPhaseLayers::Movable;
                     default:
                         JPH_ASSERT(false);
                         return false;

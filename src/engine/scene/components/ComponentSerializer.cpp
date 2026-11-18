@@ -660,6 +660,58 @@ namespace Atlas::Scene::Components {
         p.bodyId = Physics::BodyID(bodyIndex);
     }
 
+    void to_json(json& j, const SoftBodyComponent& p) {
+        const auto& settings = p.settings;
+        j = json {
+            {"mass", settings.mass},
+            {"edgeCompliance", settings.edgeCompliance},
+            {"shearCompliance", settings.shearCompliance},
+            {"bendCompliance", settings.bendCompliance},
+            {"bendType", settings.bendType},
+            {"pressure", settings.pressure},
+            {"iterations", settings.iterations},
+            {"linearDamping", settings.linearDamping},
+            {"friction", settings.friction},
+            {"restitution", settings.restitution},
+            {"gravityFactor", settings.gravityFactor},
+            {"vertexRadius", settings.vertexRadius},
+            {"doubleSided", settings.doubleSided},
+            {"allowSleeping", settings.allowSleeping},
+            {"objectLayer", settings.objectLayer},
+            {"pinned", settings.pinned},
+            {"pinBounds", settings.pinBounds},
+            {"windFactor", settings.windFactor},
+            {"simulationDistance", settings.simulationDistance},
+        };
+    }
+
+    void from_json(const json& j, SoftBodyComponent& p) {
+        auto& settings = p.settings;
+        try_get_json(j, "mass", settings.mass);
+        try_get_json(j, "edgeCompliance", settings.edgeCompliance);
+        try_get_json(j, "shearCompliance", settings.shearCompliance);
+        try_get_json(j, "bendCompliance", settings.bendCompliance);
+        try_get_json(j, "bendType", settings.bendType);
+        try_get_json(j, "pressure", settings.pressure);
+        try_get_json(j, "iterations", settings.iterations);
+        try_get_json(j, "linearDamping", settings.linearDamping);
+        try_get_json(j, "friction", settings.friction);
+        try_get_json(j, "restitution", settings.restitution);
+        try_get_json(j, "gravityFactor", settings.gravityFactor);
+        try_get_json(j, "vertexRadius", settings.vertexRadius);
+        try_get_json(j, "doubleSided", settings.doubleSided);
+        try_get_json(j, "allowSleeping", settings.allowSleeping);
+        try_get_json(j, "objectLayer", settings.objectLayer);
+        try_get_json(j, "pinned", settings.pinned);
+        // Older scenes have a single pin bounds
+        if (j.contains("pinBounds") && j["pinBounds"].is_object())
+            settings.pinBounds = { j["pinBounds"].get<Volume::AABB>() };
+        else
+            try_get_json(j, "pinBounds", settings.pinBounds);
+        try_get_json(j, "windFactor", settings.windFactor);
+        try_get_json(j, "simulationDistance", settings.simulationDistance);
+    }
+
     void to_json(json& j, const PlayerComponent& p) {
         j = json {
             {"slowVelocity", p.slowVelocity},

@@ -25,6 +25,7 @@ namespace Atlas::Scene {
 
         auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
         auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
+        auto& softBodyComponentPool = scene->entityManager.GetPool<SoftBodyComponent>();
 
         updates.clear();
         updateIndices.clear();
@@ -42,6 +43,7 @@ namespace Atlas::Scene {
 
         if (!valid) {
             meshSlots.clear();
+            softBodyMeshSlots.clear();
             freeSlots.clear();
             slots = std::vector<MeshSlot>(1);
             entityStates.clear();
@@ -77,8 +79,11 @@ namespace Atlas::Scene {
             auto transformComponent = transformComponentPool.TryGet(entity);
 
             uint32_t slotIdx = 0;
-            if (meshComponent && transformComponent && meshComponent->mesh.IsValid())
-                slotIdx = GetSlot(meshComponent->mesh);
+            if (meshComponent && transformComponent && meshComponent->mesh.IsValid()) {
+                // Soft bodies mark their entity when they are created or removed
+                auto softBodyComponent = softBodyComponentPool.TryGet(entity);
+                slotIdx = GetSlot(meshComponent->mesh, softBodyComponent && softBodyComponent->IsValid());
+            }
 
             auto& state = entityStates[entityIdx];
             auto reversedWinding = slotIdx && Common::HasReversedWinding(transformComponent->globalMatrix);
@@ -211,7 +216,7 @@ namespace Atlas::Scene {
 
         for (uint32_t slotIdx = 1; slotIdx < uint32_t(slots.size()); slotIdx++) {
             const auto& slot = slots[slotIdx];
-            if (!slot.drawable && !slot.skinned)
+            if (!slot.drawable && !slot.instanceVertices)
                 continue;
 
             const auto& mesh = slot.mesh;
@@ -221,7 +226,7 @@ namespace Atlas::Scene {
             auto cullingDistance = shadow ? mesh->shadowDistanceCulling : mesh->distanceCulling;
             auto cullingDistanceSqr = cullingDistance * cullingDistance;
 
-            if (slot.skinned) {
+            if (slot.instanceVertices) {
                 for (auto entity : slot.entities) {
                     const auto& meshComponent = meshComponentPool.Get(entity);
                     auto distanceSqr = glm::distance2(meshComponent.aabb.GetCenter(), cameraLocation);
@@ -604,6 +609,9 @@ namespace Atlas::Scene {
     void GPUScene::WriteRayTracingInstances(RayTracing::RayTracingWorld& rayTracingWorld, vec3 cameraLocation,
         float focalLength, Graphics::CommandList* commandList) {
 
+        // Software ray tracing only deforms here, its instances were uploaded by the update
+        rayTracingWorld.RecordDeformation(commandList);
+
         auto pendingInstances = rayTracingWorld.GetPendingInstances();
         if (!pendingInstances)
             return;
@@ -660,10 +668,11 @@ namespace Atlas::Scene {
 
     }
 
-    uint32_t GPUScene::GetSlot(const ResourceHandle<Mesh::Mesh>& mesh) {
+    uint32_t GPUScene::GetSlot(const ResourceHandle<Mesh::Mesh>& mesh, bool softBody) {
 
-        auto it = meshSlots.find(mesh.GetID());
-        if (it != meshSlots.end())
+        auto& slotMap = softBody ? softBodyMeshSlots : meshSlots;
+        auto it = slotMap.find(mesh.GetID());
+        if (it != slotMap.end())
             return it->second;
 
         uint32_t slotIdx;
@@ -677,7 +686,8 @@ namespace Atlas::Scene {
         }
 
         slots[slotIdx].mesh = mesh;
-        meshSlots[mesh.GetID()] = slotIdx;
+        slots[slotIdx].softBody = softBody;
+        slotMap[mesh.GetID()] = slotIdx;
 
         return slotIdx;
 
@@ -696,7 +706,7 @@ namespace Atlas::Scene {
         state.slot = 0;
 
         if (slot.entities.empty()) {
-            meshSlots.erase(slot.mesh.GetID());
+            (slot.softBody ? softBodyMeshSlots : meshSlots).erase(slot.mesh.GetID());
             slot = MeshSlot();
             freeSlots.push_back(slotIdx);
         }
@@ -726,8 +736,7 @@ namespace Atlas::Scene {
         impostorCapacity = 0;
 
         // Levels of detail whose BLAS got no bindless slot aren't drawn either, the ray traced shadows would fall onto
-        // another level otherwise
-        JobSystem::Wait(scene->renderState.bindlessBlasMapUpdateJob);
+        // another level otherwise. The slots are ready before the update starts, see SceneRenderState::UpdateGPUScene
         const auto& blasSlots = scene->renderState.blasToBindlessIdx;
         auto blasSlotsFull = blasSlots.size() >= BINDLESS_BUFFER_COUNT;
 
@@ -735,30 +744,30 @@ namespace Atlas::Scene {
             auto& slot = slots[slotIdx];
 
             slot.drawable = false;
-            slot.skinned = false;
+            slot.instanceVertices = false;
             slot.impostor = false;
             slot.geometry = false;
             slot.lodCount = 1;
 
             auto loaded = slotIdx > 0 && !slot.entities.empty() && slot.mesh.IsLoaded();
             if (loaded) {
-                slot.skinned = slot.mesh->data.IsSkinned();
-                slot.geometry = !slot.skinned && slot.mesh->IsGeometryResident();
-                slot.impostor = !slot.skinned && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated &&
+                slot.instanceVertices = slot.softBody || slot.mesh->data.IsSkinned();
+                slot.geometry = !slot.instanceVertices && slot.mesh->IsGeometryResident();
+                slot.impostor = !slot.instanceVertices && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated &&
                     slot.mesh->impostor->IsResident();
                 // Without resident geometry the instances are drawn as impostors
                 slot.drawable = slot.geometry || slot.impostor;
             }
 
             // The mesh might have been loaded after its instances were added
-            if (loaded && !slot.skinned && !slot.hasBounds) {
+            if (loaded && !slot.instanceVertices && !slot.hasBounds) {
                 for (auto entity : slot.entities)
                     GrowBounds(slot, transformComponentPool.Get(entity).globalMatrix);
             }
 
             // Meshes which aren't drawable are culled as well, the streaming needs their distances
             GPUCullMesh cullMesh = {};
-            if (loaded && !slot.skinned) {
+            if (loaded && !slot.instanceVertices) {
                 const auto& mesh = slot.mesh;
                 auto count = slot.drawable ? uint32_t(slot.entities.size()) : 0u;
 
@@ -809,7 +818,7 @@ namespace Atlas::Scene {
             }
 
             cullMeshes[slotIdx] = cullMesh;
-            cullMeshIds[slotIdx] = loaded && !slot.skinned ? slot.mesh.GetID() : 0;
+            cullMeshIds[slotIdx] = loaded && !slot.instanceVertices ? slot.mesh.GetID() : 0;
         }
 
     }

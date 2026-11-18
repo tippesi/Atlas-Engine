@@ -1,0 +1,11 @@
+// Rotates v like the rotation which turns the unit vector from into the unit vector to
+vec3 RotateLike(vec3 v, vec3 from, vec3 to) {
+
+    vec3 axis = cross(from, to);
+    float cosine = dot(from, to);
+    // Opposite vectors have no shortest rotation, the mirror image works for vectors orthogonal to them
+    if (cosine < -0.999)
+        return v - 2.0 * dot(v, from) * from;
+    return v * cosine + cross(axis, v) + axis * (dot(axis, v) / (1.0 + cosine));
+
+}

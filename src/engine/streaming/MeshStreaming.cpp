@@ -36,6 +36,9 @@ namespace Atlas::Streaming {
                 needed = distance < cullingDistance + settings.distanceMargin;
             if (distance < std::numeric_limits<float>::max())
                 priority = geometryDistance > 0.0f ? -distance / geometryDistance : -distance;
+            // Simulated soft bodies need the geometry, the GPU culling which requests meshes leaves them out
+            if (resident->HasSoftBodies())
+                budgetLevel = desiredLevel = 0;
 
             distance = std::numeric_limits<float>::max();
             rayTracing = false;

@@ -13,6 +13,7 @@
 #include "components/FogVolumeComponentPanel.h"
 #include "components/LuaScriptComponentPanel.h"
 #include "components/RigidBodyComponentPanel.h"
+#include "components/SoftBodyComponentPanel.h"
 #include "components/PlayerComponentPanel.h"
 #include "components/CameraComponentPanel.h"
 #include "components/TextComponentPanel.h"
@@ -57,6 +58,7 @@ namespace Atlas::Editor::UI {
         FogVolumeComponentPanel fogVolumeComponentPanel;
         LuaScriptComponentPanel luaScriptComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
+        SoftBodyComponentPanel softBodyComponentPanel;
         PlayerComponentPanel playerComponentPanel;
         CameraComponentPanel cameraComponentPanel;
         TextComponentPanel textComponentPanel;

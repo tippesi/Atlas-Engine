@@ -1,4 +1,5 @@
 #include "ShapesManager.h"
+#include "SoftBody.h"
 #include "MathConversion.h"
 #include "../Log.h"
 
@@ -29,6 +30,9 @@ namespace Atlas {
 
         std::unordered_map<Hash, ShapesManager::CacheItem<Mesh::Mesh>> ShapesManager::convexHullShapeCache;
         std::mutex ShapesManager::convexHullShapeCacheMutex;
+
+        std::unordered_map<Hash, Ref<ShapesManager::SoftBodySettingsItem>> ShapesManager::softBodySettingsCache;
+        std::mutex ShapesManager::softBodySettingsCacheMutex;
 
         const float ShapesManager::epsilon = 0.00001f;
 
@@ -374,6 +378,91 @@ namespace Atlas {
 
         }
 
+        JPH::Ref<JPH::SoftBodySharedSettings> ShapesManager::GetSoftBodySharedSettings(const SoftBodySettings& settings,
+            const SoftBodyGeometry& geometry) {
+
+            auto hashData = [](const auto& data) {
+                return std::hash<std::string_view>()(std::string_view(reinterpret_cast<const char*>(data.data()),
+                    data.size() * sizeof(data[0])));
+                };
+            Hash hash = hashData(geometry.vertices);
+            HashCombine(hash, hashData(geometry.inverseMasses));
+            HashCombine(hash, hashData(geometry.indices));
+            HashCombine(hash, settings.mass);
+            HashCombine(hash, settings.edgeCompliance);
+            HashCombine(hash, settings.shearCompliance);
+            HashCombine(hash, settings.bendCompliance);
+            HashCombine(hash, int32_t(settings.bendType));
+
+            Ref<SoftBodySettingsItem> item;
+            {
+                std::scoped_lock lock(softBodySettingsCacheMutex);
+                auto& cacheItem = softBodySettingsCache[hash];
+                if (!cacheItem) {
+                    cacheItem = CreateRef<SoftBodySettingsItem>();
+                    cacheItem->vertexCount = geometry.vertices.size();
+                    cacheItem->indexCount = geometry.indices.size();
+                }
+                item = cacheItem;
+            }
+
+            if (item->vertexCount != geometry.vertices.size() || item->indexCount != geometry.indices.size())
+                return CreateSoftBodySharedSettings(settings, geometry);
+
+            // Bodies which are prepared at the same time wait for the first one
+            std::call_once(item->built, [&]() {
+                item->settings = CreateSoftBodySharedSettings(settings, geometry);
+                item->isBuilt = true;
+                });
+            return item->settings;
+
+        }
+
+        JPH::Ref<JPH::SoftBodySharedSettings> ShapesManager::CreateSoftBodySharedSettings(const SoftBodySettings& settings,
+            const SoftBodyGeometry& geometry) {
+
+            JPH::Ref<JPH::SoftBodySharedSettings> sharedSettings = new JPH::SoftBodySharedSettings();
+
+            ptrdiff_t freeVertexCount = 0;
+            float freeMass = 0.0f;
+            for (auto inverseMass : geometry.inverseMasses) {
+                if (inverseMass <= 0.0f)
+                    continue;
+                freeVertexCount++;
+                freeMass += 1.0f / inverseMass;
+            }
+            // Scales the relative masses of the free vertices to the mass of the body, one per vertex without it
+            auto totalMass = settings.mass > 0.0f ? settings.mass : float(freeVertexCount);
+            auto inverseMass = totalMass > 0.0f ? freeMass / totalMass : 1.0f;
+
+            sharedSettings->mVertices.reserve(geometry.vertices.size());
+            for (size_t i = 0; i < geometry.vertices.size(); i++) {
+                const auto& vertex = geometry.vertices[i];
+                sharedSettings->mVertices.emplace_back(JPH::Float3(vertex.x, vertex.y, vertex.z), JPH::Float3(0.0f, 0.0f, 0.0f),
+                    geometry.inverseMasses[i] * inverseMass);
+            }
+
+            for (size_t i = 0; i + 2 < geometry.indices.size(); i += 3) {
+                JPH::SoftBodySharedSettings::Face face(geometry.indices[i], geometry.indices[i + 1], geometry.indices[i + 2]);
+                if (!face.IsDegenerate())
+                    sharedSettings->AddFace(face);
+            }
+
+            auto bendType = JPH::SoftBodySharedSettings::EBendType::None;
+            if (settings.bendType == SoftBodyBendType::Distance)
+                bendType = JPH::SoftBodySharedSettings::EBendType::Distance;
+            else if (settings.bendType == SoftBodyBendType::Dihedral)
+                bendType = JPH::SoftBodySharedSettings::EBendType::Dihedral;
+
+            JPH::SoftBodySharedSettings::VertexAttributes attributes(settings.edgeCompliance, settings.shearCompliance,
+                settings.bendCompliance);
+            sharedSettings->CreateConstraints(&attributes, 1, bendType);
+            sharedSettings->Optimize();
+
+            return sharedSettings;
+
+        }
+
         void ShapesManager::Update() {
 
             {
@@ -384,6 +473,14 @@ namespace Atlas {
             {
                 std::scoped_lock lock(convexHullShapeCacheMutex);
                 std::erase_if(convexHullShapeCache, [](auto& item) { return item.second.resource.expired(); } );
+            }
+
+            {
+                std::scoped_lock lock(softBodySettingsCacheMutex);
+                // Soft bodies keep their settings while they rest
+                std::erase_if(softBodySettingsCache, [](auto& item) {
+                    return item.second->isBuilt && item.second->settings->GetRefCount() == 1;
+                    });
             }
 
             // Height fields aren't owned by a resource, they are unused when only the cache references them

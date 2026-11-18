@@ -298,6 +298,10 @@ namespace Atlas::Editor::UI {
             RenderEntityBoundingVolumes(selectedEntity);
         }
 
+        if (scene.IsLoaded() && sceneHierarchyPanel.selectedEntity.IsValid())
+            scenePropertiesPanel.entityPropertiesPanel.softBodyComponentPanel.RenderOverlay(scene.Get(),
+                sceneHierarchyPanel.selectedEntity, viewportPanel.primitiveBatchWrapper);
+
         if (showGrid && !isPlaying && scene.IsLoaded() && cameraEntity.IsValid())
             viewportPanel.RenderGrid(cameraEntity.GetComponent<CameraComponent>());
 
@@ -628,7 +632,14 @@ namespace Atlas::Editor::UI {
 
                 auto globalMatrix = scene->GetGlobalMatrix(selectedEntity);
 
-                if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
+                // The selected pin bounds of a soft body take the place of the entity gizmo
+                auto pinGizmo = selectedEntity.IsValid() && selectionType == EntitySelectionType::Entity &&
+                    entityPropPanel.softBodyComponentPanel.RenderPinGizmo(scene.Get(), selectedEntity, viewport, camera);
+
+                if (pinGizmo) {
+                    renderGuizmo = false;
+                }
+                else if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
                     auto mesh = selectedEntity.TryGetComponent<MeshComponent>();
 
@@ -681,7 +692,7 @@ namespace Atlas::Editor::UI {
                 if (ImGuizmo::IsUsing())
                     hasUnsavedChanges = true;
 
-                if (ImGuizmo::IsUsing() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
+                if (ImGuizmo::IsUsing() && !pinGizmo && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
                     // Update both the local and global matrix, since e.g. the transform component
                     // panel recovers the local matrix from the global one (needs to do this after

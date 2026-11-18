@@ -6,6 +6,7 @@
 #include "../panels/components/MeshComponentPanel.h"
 #include "../panels/components/AnimationComponentPanel.h"
 #include "../panels/components/RigidBodyComponentPanel.h"
+#include "../panels/components/SoftBodyComponentPanel.h"
 
 #include "resource/Resource.h"
 
@@ -70,6 +71,9 @@ namespace Atlas::Editor::UI {
         // Bodies belong to entities, the preview entity gets one to try shapes for the mesh
         void RenderPhysics();
 
+        // The resolution of the simulation mesh soft bodies of the mesh use, the preview entity can simulate one
+        void RenderSoftBody();
+
         // A row of a table with two columns of muted labels and values
         static void StatisticsRow(const char* label, const char* format, ...);
 
@@ -81,6 +85,10 @@ namespace Atlas::Editor::UI {
         MeshComponentPanel meshComponentPanel;
         AnimationComponentPanel animationComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
+        SoftBodyComponentPanel softBodyComponentPanel;
+
+        // The simulation mesh is created again once an edit of its settings is finished
+        bool pendingSimulationMeshReset = false;
 
         Physics::DebugDrawSettings physicsDebugDrawSettings;
 

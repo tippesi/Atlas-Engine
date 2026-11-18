@@ -11,6 +11,7 @@
 #include "TransformComponent.h"
 #include "ObjectComponent.h"
 #include "RigidBodyComponent.h"
+#include "SoftBodyComponent.h"
 #include "PlayerComponent.h"
 #include "ConstraintComponent.h"
 #include "TextComponent.h"

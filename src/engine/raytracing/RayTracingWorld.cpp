@@ -35,11 +35,8 @@ namespace Atlas {
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
             tlasNodeBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHNode));
             lastMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4x3));
-            jointMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat3x4));
-            skinJobBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUSkinJob));
-            skinGroupJobBuffer = Buffer::Buffer(bufferUsage, sizeof(uint32_t));
 
-            skinTrianglesPipelineConfig = PipelineConfig("raytracer/skinTriangles.csh");
+            deformTrianglesPipelineConfig = PipelineConfig("raytracer/deformTriangles.csh");
             refitBVHPipelineConfig = PipelineConfig("raytracer/refitBVH.csh");
 
             // The hardware instances are written on the GPU
@@ -143,10 +140,7 @@ namespace Atlas {
             profilerScope.Next("Skinned blases");
             // The deformation reads the material graph map, which the material update rebuilds
             JobSystem::Wait(renderState->materialUpdateJob);
-            if (hardwareRayTracing)
-                UpdateDeformedInstances(dirtyEntities);
-            else
-                UpdateSkinnedBlases();
+            UpdateDeformedInstances(dirtyEntities);
 
             std::erase_if(blasInfos, [&](auto& entry) {
                 if (entry.second.update == blasInfoUpdate)
@@ -156,21 +150,15 @@ namespace Atlas {
                 return true;
                 });
 
-            // Skinning has to be done before the dynamic BLASes are built
-            // The deformation of hardware ray tracing is recorded with the instances, see RecordDeformation
-            if (hardwareRayTracing ? !buildBlases.empty() : !jointMatrices.empty()) {
+            // The deformation is recorded while rendering, see RecordDeformation
+            if (hardwareRayTracing && !buildBlases.empty()) {
                 auto commandList = device->GetCommandList();
                 commandList->BeginCommands();
-                if (hardwareRayTracing) {
-                    GPUProfiler::BeginThread("Dynamic BLASes", commandList);
-                    GPUProfiler::BeginQuery("Build BLASes");
-                    blasBuilder.BuildBLAS(buildBlases, commandList);
-                    GPUProfiler::EndQuery();
-                    GPUProfiler::EndThread();
-                }
-                else {
-                    SkinBlases(commandList);
-                }
+                GPUProfiler::BeginThread("Dynamic BLASes", commandList);
+                GPUProfiler::BeginQuery("Build BLASes");
+                blasBuilder.BuildBLAS(buildBlases, commandList);
+                GPUProfiler::EndQuery();
+                GPUProfiler::EndThread();
                 commandList->EndCommands();
                 device->SubmitCommandList(commandList);
             }
@@ -459,11 +447,10 @@ namespace Atlas {
         void RayTracingWorld::Clear() {
 
             blasInfos.clear();
-            skinnedBlases.clear();
-            skinVertexBuffers.clear();
             deformedInstances.clear();
             deformMeshes.clear();
             pendingInstances.reset();
+            pendingDeformation = PendingDeformation();
 
             hitRecords.clear();
             freeHitRecords.clear();
@@ -617,9 +604,10 @@ namespace Atlas {
                         return;
 
                     auto blas = meshComponent.mesh->blas;
-                    auto skinnedBlas = skinnedBlases.find(entity);
-                    if (skinnedBlas != skinnedBlases.end() && renderState->blasToBindlessIdx.contains(skinnedBlas->second.blas))
-                        blas = skinnedBlas->second.blas;
+                    auto deformed = deformedInstances.find(entity);
+                    if (deformed != deformedInstances.end() && deformed->second.active &&
+                        renderState->blasToBindlessIdx.contains(deformed->second.softwareBlas))
+                        blas = deformed->second.softwareBlas;
 
                     if (!renderState->blasToBindlessIdx.contains(blas) || blas->needsBvhRefresh)
                         return;
@@ -831,7 +819,7 @@ namespace Atlas {
             }
 
             for (const auto& slot : gpuScene.slots) {
-                if (!slot.skinned || !slot.mesh->rayTrace)
+                if (!slot.instanceVertices || !slot.mesh->rayTrace)
                     continue;
 
                 for (auto entity : slot.entities) {
@@ -959,11 +947,6 @@ namespace Atlas {
                 .includeObjectHistory = includeObjectHistory,
                 .frameIndex = device->GetFrameIndex(),
                 .tlas = device->CreateTLAS(tlasDesc),
-                .deformDispatches = deformDispatches,
-                .deformBlases = deformBlases,
-                .deformJobBuffer = deformJobUpload,
-                .deformGroupJobBuffer = deformGroupJobUpload,
-                .jointMatrixBuffer = jointMatrixUpload,
                 .hitRecords = hitRecordsSnapshot,
                 .materialGraphHitGroups = materialGraphHitGroups
             };
@@ -993,8 +976,6 @@ namespace Atlas {
                 renderMaterialGraphHitGroups = pending.materialGraphHitGroups;
                 materialGraphPipelineConfigs.clear();
             }
-
-            RecordDeformation(commandList);
 
             // The previous frame might still read the instances
             commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
@@ -1110,264 +1091,6 @@ namespace Atlas {
 
         }
 
-        void RayTracingWorld::UpdateSkinnedBlases() {
-
-            auto renderState = &scene->renderState;
-
-            auto& animationComponentPool = scene->entityManager.GetPool<AnimationComponent>();
-            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
-
-            for (auto& [entity, skinnedBlas] : skinnedBlases)
-                skinnedBlas.used = false;
-
-            jointMatrices.clear();
-
-            auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
-            auto hasCamera = scene->HasMainCamera();
-            auto cameraLocation = hasCamera ? scene->GetMainCamera().GetLocation() : vec3(0.0f);
-
-            for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
-                auto entity = animationComponentPool[i];
-                const auto& animationComponent = animationComponentPool.GetByIndex(i);
-                auto meshComponent = meshComponentPool.TryGet(entity);
-                auto transformComponent = transformComponentPool.TryGet(entity);
-
-                if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
-                    !meshComponent->mesh->IsGeometryResident() ||
-                    !meshComponent->mesh->rayTrace || !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
-                    continue;
-
-                auto item = skinnedBlases.find(entity);
-                // Entities which already have a BLAS keep it a little further out, so it isn't recreated at the border
-                auto distance = item != skinnedBlases.end() ? skinnedBlasDistance * 1.25f : skinnedBlasDistance;
-                if (hasCamera && glm::distance2(vec3(transformComponent->globalMatrix[3]), cameraLocation) > distance * distance)
-                    continue;
-
-                const auto& mesh = meshComponent->mesh;
-                auto created = item == skinnedBlases.end() || item->second.mesh.GetID() != mesh.GetID();
-                if (created)
-                    item = skinnedBlases.insert_or_assign(entity, CreateSkinnedBlas(mesh)).first;
-
-                auto& skinnedBlas = item->second;
-                skinnedBlas.used = true;
-                skinnedBlas.skin = created || animationComponent.IsPoseUpdated();
-                if (skinnedBlas.skin) {
-                    skinnedBlas.jointOffset = uint32_t(jointMatrices.size());
-                    jointMatrices.insert(jointMatrices.end(), animationComponent.jointMatrices.begin(),
-                        animationComponent.jointMatrices.end());
-                }
-
-                // The BLAS is used once the bindless buffers are updated in the next frame
-                auto bindlessIdx = renderState->blasToBindlessIdx.find(skinnedBlas.blas);
-                if (bindlessIdx == renderState->blasToBindlessIdx.end())
-                    continue;
-
-                auto [blasInfoIt, inserted] = blasInfos.try_emplace(skinnedBlas.blas);
-                auto& blasInfo = blasInfoIt->second;
-                if (inserted) {
-                    blasInfo.mesh = mesh;
-                    blasInfosChanged = true;
-                }
-                blasInfo.update = blasInfoUpdate;
-                blasInfo.offset = int32_t(bindlessIdx->second);
-                blasInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
-            }
-
-            std::erase_if(skinnedBlases, [](const auto& item) { return !item.second.used; });
-            std::erase_if(skinVertexBuffers, [&](const auto& item) {
-                return std::none_of(skinnedBlases.begin(), skinnedBlases.end(),
-                    [&](const auto& skinnedBlas) { return skinnedBlas.second.mesh.GetID() == item.first; });
-                });
-
-            if (jointMatrices.empty())
-                return;
-
-            if (jointMatricesBuffer.GetElementCount() < jointMatrices.size())
-                jointMatricesBuffer.SetSize(jointMatrices.size());
-            jointMatricesBuffer.SetData(jointMatrices.data(), 0, jointMatrices.size());
-
-        }
-
-        void RayTracingWorld::SkinBlases(Graphics::CommandList* commandList) {
-
-            // Only the skinned BLASes with a changed pose have joint matrices
-            if (jointMatrices.empty())
-                return;
-
-            GPUProfiler::BeginThread("Skinning", commandList);
-            GPUProfiler::BeginQuery("Skin BLASes");
-
-            // The buffers might still be read by the previous frame
-            commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT,
-                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-            // Every work group of a pass looks up its BLAS in the group table, so each pass is a single dispatch
-            const uint32_t skinGroupSize = 64;
-            skinJobs.clear();
-            skinGroupJobs.clear();
-
-            for (auto& [entity, skinnedBlas] : skinnedBlases) {
-                if (!skinnedBlas.skin)
-                    continue;
-
-                auto& blas = skinnedBlas.blas;
-                auto job = GPUSkinJob {
-                    .skinVertices = skinVertexBuffers[skinnedBlas.mesh.GetID()].Get()->GetDeviceAddress(),
-                    .triangleVertices = skinnedBlas.triangleVertexBuffer.Get()->GetDeviceAddress(),
-                    .target = blas->triangleBuffer.Get()->GetDeviceAddress(),
-                    .bvhTriangles = blas->bvhTriangleBuffer.Get()->GetDeviceAddress(),
-                    .firstGroup = uint32_t(skinGroupJobs.size()),
-                    .elementCount = uint32_t(blas->triangleIndices.size()),
-                    .jointOffset = skinnedBlas.jointOffset
-                };
-
-                auto groupCount = (job.elementCount + skinGroupSize - 1) / skinGroupSize;
-                skinGroupJobs.insert(skinGroupJobs.end(), groupCount, uint32_t(skinJobs.size()));
-                skinJobs.push_back(job);
-            }
-
-            auto triangleConstants = SkinPushConstants {
-                .groupOffset = 0,
-                .groupCount = uint32_t(skinGroupJobs.size())
-            };
-
-            if (skinJobBuffer.GetElementCount() < skinJobs.size())
-                skinJobBuffer.SetSize(skinJobs.size());
-            skinJobBuffer.SetData(skinJobs.data(), 0, skinJobs.size());
-            if (skinGroupJobBuffer.GetElementCount() < skinGroupJobs.size())
-                skinGroupJobBuffer.SetSize(skinGroupJobs.size());
-            skinGroupJobBuffer.SetData(skinGroupJobs.data(), 0, skinGroupJobs.size());
-
-            skinJobBuffer.Bind(commandList, 3, 0);
-            jointMatricesBuffer.Bind(commandList, 3, 1);
-            skinGroupJobBuffer.Bind(commandList, 3, 2);
-
-            // The group count can exceed the limit of one dimension
-            auto dispatchGroups = [&](uint32_t groupCount) {
-                const uint32_t maxGroupsX = 32768;
-                commandList->Dispatch(std::min(groupCount, maxGroupsX), (groupCount + maxGroupsX - 1) / maxGroupsX, 1);
-            };
-
-            auto pipeline = PipelineManager::GetPipeline(skinTrianglesPipelineConfig);
-            commandList->BindPipeline(pipeline);
-            commandList->PushConstants("constants", &triangleConstants);
-            dispatchGroups(triangleConstants.groupCount);
-
-            commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-
-            pipeline = PipelineManager::GetPipeline(refitBVHPipelineConfig);
-            commandList->BindPipeline(pipeline);
-
-            size_t levelCount = 0;
-            for (const auto& [entity, skinnedBlas] : skinnedBlases)
-                if (skinnedBlas.skin)
-                    levelCount = std::max(levelCount, skinnedBlas.levelOffsets.size() - 1);
-
-            // The levels of all BLASes are updated together, starting with the deepest one
-            for (int32_t level = int32_t(levelCount) - 1; level >= 0; level--) {
-                for (auto& [entity, skinnedBlas] : skinnedBlases) {
-                    const auto& levelOffsets = skinnedBlas.levelOffsets;
-                    if (!skinnedBlas.skin || level + 1 >= int32_t(levelOffsets.size()))
-                        continue;
-
-                    auto& blas = skinnedBlas.blas;
-                    blas->blasNodeBuffer.Bind(commandList, 3, 0);
-                    blas->bvhTriangleBuffer.Bind(commandList, 3, 1);
-                    skinnedBlas.levelNodeBuffer.Bind(commandList, 3, 2);
-                    skinnedBlas.nodeBoundsBuffer.Bind(commandList, 3, 3);
-
-                    auto constants = RefitPushConstants {
-                        .nodeOffset = levelOffsets[level],
-                        .nodeCount = levelOffsets[level + 1] - levelOffsets[level]
-                    };
-                    commandList->PushConstants("constants", &constants);
-
-                    commandList->Dispatch((constants.nodeCount + 63) / 64, 1, 1);
-                }
-
-                commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-            }
-
-            commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-            GPUProfiler::EndQuery();
-            GPUProfiler::EndThread();
-
-        }
-
-        RayTracingWorld::SkinnedBlas RayTracingWorld::CreateSkinnedBlas(const ResourceHandle<Mesh::Mesh>& mesh) {
-
-            auto& data = mesh->data;
-            // Only level 0 is deformed, the vertices of the other levels of detail follow its vertices
-            auto vertexCount = size_t(data.GetVertexCount() - data.lodVertexCount);
-
-            if (!skinVertexBuffers.contains(mesh.GetID())) {
-                std::vector<GPUSkinVertex> skinVertices(vertexCount);
-                for (size_t i = 0; i < vertexCount; i++) {
-                    auto packedNormal = Common::Packing::PackSignedVector3x10_1x2(vec4(vec3(data.normals[i]), 0.0f));
-                    auto joints = glm::uvec4(data.joints[i]);
-
-                    skinVertices[i].position = vec4(data.vertices[i], reinterpret_cast<float&>(packedNormal));
-                    skinVertices[i].joints01 = joints.x | (joints.y << 16);
-                    skinVertices[i].joints23 = joints.z | (joints.w << 16);
-                    skinVertices[i].weights = glm::packUnorm4x8(data.weights[i]);
-                }
-
-                skinVertexBuffers[mesh.GetID()] = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
-                    Buffer::BufferUsageBits::DeviceAddressBit, sizeof(GPUSkinVertex), skinVertices.size(), skinVertices.data());
-            }
-
-            SkinnedBlas skinnedBlas = {
-                .mesh = mesh,
-                .blas = CreateRef<BLAS>()
-            };
-
-            std::vector<BLAS::Triangle> triangles;
-            data.BuildBVHData(triangles);
-
-            skinnedBlas.blas->Build(triangles, data.materials);
-
-            // Parents always come before their children
-            const auto& nodeParents = skinnedBlas.blas->nodeParents;
-            std::vector<int32_t> nodeLevels(nodeParents.size(), 0);
-            std::vector<std::vector<int32_t>> levels;
-            for (size_t i = 0; i < nodeParents.size(); i++) {
-                auto parent = nodeParents[i];
-                nodeLevels[i] = parent >= 0 ? nodeLevels[parent >> 1] + 1 : 0;
-                if (nodeLevels[i] >= int32_t(levels.size()))
-                    levels.resize(nodeLevels[i] + 1);
-                levels[nodeLevels[i]].push_back(int32_t(i));
-            }
-
-            std::vector<int32_t> levelNodes;
-            for (const auto& level : levels) {
-                skinnedBlas.levelOffsets.push_back(uint32_t(levelNodes.size()));
-                levelNodes.insert(levelNodes.end(), level.begin(), level.end());
-            }
-            skinnedBlas.levelOffsets.push_back(uint32_t(levelNodes.size()));
-
-            if (!levelNodes.empty()) {
-                skinnedBlas.levelNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
-                    sizeof(int32_t), levelNodes.size(), levelNodes.data());
-                skinnedBlas.nodeBoundsBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
-                    2 * sizeof(vec4), levelNodes.size());
-            }
-
-            const auto& triangleIndices = skinnedBlas.blas->triangleIndices;
-            std::vector<ivec4> triangleVertices(triangleIndices.size());
-            for (size_t i = 0; i < triangleIndices.size(); i++) {
-                auto idx = size_t(triangleIndices[i]) * 3;
-                triangleVertices[i] = ivec4(data.indices[idx], data.indices[idx + 1], data.indices[idx + 2], 0);
-            }
-
-            skinnedBlas.triangleVertexBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
-                Buffer::BufferUsageBits::DeviceAddressBit, sizeof(ivec4), triangleVertices.size(), triangleVertices.data());
-
-            return skinnedBlas;
-
-        }
-
         void RayTracingWorld::UpdateDeformedInstances(const std::vector<ECS::Entity>& dirtyEntities) {
 
             auto renderState = &scene->renderState;
@@ -1382,18 +1105,23 @@ namespace Atlas {
                 instance.active = false;
             }
 
-            deformDispatches.clear();
-            deformBlases.clear();
+            PendingDeformation frameDeformation;
             jointMatrices.clear();
+            softBodyVertices.clear();
+
+            auto isBuilt = [&](const DeformedInstance& instance) {
+                return hardwareRayTracing ? bool(instance.blas->isBuilt) : instance.softwareBlas->IsBuilt();
+            };
 
             auto hasCamera = scene->HasMainCamera();
             auto cameraLocation = hasCamera ? scene->GetMainCamera().GetLocation() : vec3(0.0f);
 
             // The configs are kept in the deform mesh, the graph parameters can move with every update
-            std::unordered_set<size_t> updatedMeshDeformations;
-            auto getDeformations = [&](const ResourceHandle<Mesh::Mesh>& mesh) -> const std::vector<SubDataDeformation>& {
-                auto& deformations = deformMeshes[mesh.GetID()].deformations;
-                if (!updatedMeshDeformations.insert(mesh.GetID()).second)
+            std::set<std::pair<size_t, bool>> updatedMeshDeformations;
+            auto getDeformations = [&](const ResourceHandle<Mesh::Mesh>& mesh, bool softBody) -> const std::vector<SubDataDeformation>& {
+                auto& deformMesh = deformMeshes[mesh.GetID()];
+                auto& deformations = softBody ? deformMesh.softBodyDeformations : deformMesh.deformations;
+                if (!updatedMeshDeformations.insert({ mesh.GetID(), softBody }).second)
                     return deformations;
 
                 const auto& subDatas = mesh->data.subData;
@@ -1411,6 +1139,8 @@ namespace Atlas {
                         std::vector<std::string> macros;
                         if (mesh->data.IsSkinned())
                             macros.push_back("SKINNED");
+                        else if (softBody)
+                            macros.push_back("SOFT_BODY");
                         if (mesh->vegetation)
                             macros.push_back("WIND");
 
@@ -1445,15 +1175,21 @@ namespace Atlas {
 
             std::unordered_map<Hash, std::vector<GPUDeformJob>> variantJobs;
             std::unordered_map<Hash, PipelineConfig> variantConfigs;
-            // Positions are offsets into the position buffer until it is allocated
+            std::vector<GPUDeformTriangleJob> triangleJobs;
+            // Positions and software normals are offsets into the vertex buffer until it is allocated
             VkDeviceAddress positionCount = 0;
 
-            auto addJobs = [&](DeformedInstance& instance, const mat4& globalMatrix, uint32_t jointOffset, bool created) {
+            // The joint matrices of skinned meshes or the vertices of soft bodies start at the source offset
+            auto addJobs = [&](DeformedInstance& instance, const mat4& globalMatrix, uint32_t sourceOffset, bool created,
+                bool softBody) {
                 const auto& mesh = instance.mesh;
                 const auto& deformMesh = deformMeshes[mesh.GetID()];
-                const auto& deformations = getDeformations(mesh);
+                const auto& deformations = getDeformations(mesh, softBody);
 
                 auto positionOffset = positionCount * sizeof(vec3);
+                // Software ray tracing reads the normals only while gathering the triangles
+                auto normals = hardwareRayTracing ? instance.normalBuffer.Get()->GetDeviceAddress() :
+                    positionCount * sizeof(glm::uvec2);
                 positionCount += VkDeviceAddress(mesh->data.GetVertexCount() - mesh->data.lodVertexCount);
 
                 for (size_t i = 0; i < mesh->data.subData.size(); i++) {
@@ -1467,10 +1203,10 @@ namespace Atlas {
                         .matrix = mat3x4(glm::transpose(globalMatrix)),
                         .sourceVertices = deformMesh.vertexBuffer.Get()->GetDeviceAddress(),
                         .positions = positionOffset,
-                        .normals = instance.normalBuffer.Get()->GetDeviceAddress(),
+                        .normals = normals,
                         .vertexOffset = firstVertex,
                         .vertexCount = vertexCount,
-                        .jointOffset = jointOffset,
+                        .jointOffset = sourceOffset,
                         .windBendScale = mesh->windBendScale,
                         .windWiggleScale = mesh->windWiggleScale,
                         .windTextureLod = mesh->windNoiseTextureLod,
@@ -1483,11 +1219,32 @@ namespace Atlas {
                     variantConfigs.try_emplace(deformation.key, deformation.config);
                 }
 
-                // A BLAS which was never built can't be refit, recording checks that again
-                deformBlases.push_back(DeformBlas {
-                    .blas = instance.blas,
-                    .vertexAddress = positionOffset,
-                    .refit = !created && instance.blas->allowUpdate
+                if (hardwareRayTracing) {
+                    // A BLAS which was never built can't be refit, recording checks that again
+                    frameDeformation.blases.push_back(DeformBlas {
+                        .blas = instance.blas,
+                        .vertexAddress = positionOffset,
+                        .refit = !created && instance.blas->allowUpdate
+                    });
+                    return;
+                }
+
+                const auto& softwareBlas = instance.softwareBlas;
+                triangleJobs.push_back(GPUDeformTriangleJob {
+                    .triangleVertices = deformMesh.triangleVertexBuffer.Get()->GetDeviceAddress(),
+                    .positions = positionOffset,
+                    .normals = normals,
+                    .triangles = softwareBlas->triangleBuffer.Get()->GetDeviceAddress(),
+                    .bvhTriangles = softwareBlas->bvhTriangleBuffer.Get()->GetDeviceAddress(),
+                    .triangleCount = uint32_t(softwareBlas->triangleBuffer.GetElementCount())
+                });
+                // Copied until a deformation was recorded, the update of a frame that isn't rendered is dropped
+                frameDeformation.softwareBlases.push_back(SoftwareDeformBlas {
+                    .blas = softwareBlas,
+                    .levelNodeBuffer = deformMesh.levelNodeBuffer,
+                    .nodeBoundsBuffer = instance.nodeBoundsBuffer,
+                    .levelOffsets = deformMesh.levelOffsets,
+                    .copySource = softwareBlas->IsBuilt() ? nullptr : instance.meshBlas
                 });
             };
 
@@ -1499,7 +1256,7 @@ namespace Atlas {
                 auto transformComponent = transformComponentPool.TryGet(entity);
 
                 if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
-                    !meshComponent->mesh->IsGeometryResident() ||
+                    !meshComponent->mesh->IsGeometryResident() || !meshComponent->mesh->IsBVHBuilt() ||
                     !meshComponent->mesh->rayTrace || !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
                     continue;
 
@@ -1513,7 +1270,7 @@ namespace Atlas {
                 // The BLAS needs to be created again when switching between refits and builds
                 auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
                     item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer ||
-                    item->second.blas->allowUpdate != refitSkinnedBlases;
+                    hardwareRayTracing && item->second.blas->allowUpdate != refitSkinnedBlases;
                 if (created)
                     item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
 
@@ -1522,13 +1279,55 @@ namespace Atlas {
                 instance.active = true;
                 instance.deformedStatic = false;
                 // Poses that didn't change keep their BLAS and normals
-                if (!created && instance.blas->isBuilt && !animationComponent.IsPoseUpdated())
+                if (!created && isBuilt(instance) && !animationComponent.IsPoseUpdated())
                     continue;
 
                 auto jointOffset = uint32_t(jointMatrices.size());
                 jointMatrices.insert(jointMatrices.end(), animationComponent.jointMatrices.begin(),
                     animationComponent.jointMatrices.end());
-                addJobs(instance, transformComponent->globalMatrix, jointOffset, created);
+                addJobs(instance, transformComponent->globalMatrix, jointOffset, created, false);
+            }
+
+            profilerScope.Next("Soft body instances");
+            auto& softBodyComponentPool = scene->entityManager.GetPool<SoftBodyComponent>();
+            for (size_t i = 0; i < softBodyComponentPool.GetCount(); i++) {
+                auto entity = softBodyComponentPool[i];
+                const auto& softBodyComponent = softBodyComponentPool.GetByIndex(i);
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                auto transformComponent = transformComponentPool.TryGet(entity);
+
+                if (!softBodyComponent.IsValid() || !meshComponent || !transformComponent || !meshComponent->visible ||
+                    !meshComponent->mesh.IsLoaded() || !meshComponent->mesh->IsGeometryResident() || !meshComponent->mesh->IsBVHBuilt() ||
+                    !meshComponent->mesh->rayTrace || meshComponent->mesh->data.IsSkinned())
+                    continue;
+
+                const auto& mesh = meshComponent->mesh;
+                auto vertexCount = size_t(mesh->data.GetVertexCount() - mesh->data.lodVertexCount);
+                if (softBodyComponent.vertices.size() != vertexCount)
+                    continue;
+
+                auto item = deformedInstances.find(entity);
+                auto distance = item != deformedInstances.end() ? skinnedBlasDistance * 1.25f : skinnedBlasDistance;
+                if (hasCamera && glm::distance2(vec3(transformComponent->globalMatrix[3]), cameraLocation) > distance * distance)
+                    continue;
+
+                auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
+                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer ||
+                    hardwareRayTracing && item->second.blas->allowUpdate != refitSkinnedBlases;
+                if (created)
+                    item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
+
+                auto& instance = item->second;
+                instance.used = true;
+                instance.active = true;
+                instance.deformedStatic = false;
+                // Asleep bodies keep their BLAS and normals
+                if (!created && isBuilt(instance) && !softBodyComponent.HasMoved())
+                    continue;
+
+                auto softBodyOffset = uint32_t(softBodyVertices.size());
+                softBodyVertices.insert(softBodyVertices.end(), softBodyComponent.vertices.begin(), softBodyComponent.vertices.end());
+                addJobs(instance, transformComponent->globalMatrix, softBodyOffset, created, true);
             }
 
             profilerScope.Next("Deformed instances");
@@ -1540,10 +1339,11 @@ namespace Atlas {
             auto candidateMargin = 0.1f * deformedBlasDistance;
             if (deformCandidateFrames++ >= 60 || deformCandidateSlotCount != gpuScene.slots.size() ||
                 glm::distance2(cameraLocation, deformCandidateLocation) > candidateMargin * candidateMargin) {
-                // Static meshes are only deformed near the camera, the GPU scene writes all instances without one
+                // Static meshes are only deformed near the camera with hardware ray tracing (software ray tracing would
+                // copy the BVH per instance), the GPU scene writes all instances without one
                 deformedMeshes.clear();
                 for (const auto& slot : gpuScene.slots) {
-                    if (hasCamera && !slot.skinned && slot.mesh.IsLoaded() && slot.mesh->rayTrace &&
+                    if (hardwareRayTracing && hasCamera && !slot.instanceVertices && slot.mesh.IsLoaded() && slot.mesh->rayTrace &&
                         (slot.mesh->vegetation || IsDeformedByMaterial(slot.mesh)))
                         deformedMeshes.insert(slot.mesh.GetID());
                 }
@@ -1588,15 +1388,16 @@ namespace Atlas {
                 auto meshComponent = meshComponentPool.TryGet(entity);
                 auto transformComponent = transformComponentPool.TryGet(entity);
                 if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
-                    !meshComponent->mesh->IsGeometryResident() ||
+                    !meshComponent->mesh->IsGeometryResident() || !meshComponent->mesh->IsBVHBuilt() ||
                     !deformedMeshes.contains(meshComponent->mesh.GetID()))
                     continue;
 
                 // Has to be the same distance as the one of the GPU scene, which leaves these instances out
                 auto distanceSqr = glm::distance2(vec3(transformComponent->globalMatrix[3]), cameraLocation);
                 auto item = deformedInstances.find(entity);
-                // Skinned instances were deformed above
-                if (item != deformedInstances.end() && item->second.used)
+                // Skinned instances and soft bodies were deformed above, simulated ones further away trace the mesh BLAS
+                auto softBodyComponent = softBodyComponentPool.TryGet(entity);
+                if ((item != deformedInstances.end() && item->second.used) || (softBodyComponent && softBodyComponent->IsValid()))
                     continue;
                 if (distanceSqr > (item != deformedInstances.end() ? keepDistance * keepDistance : activeDistanceSqr))
                     continue;
@@ -1612,7 +1413,7 @@ namespace Atlas {
                 instance.deformedStatic = true;
                 instance.active = distanceSqr < activeDistanceSqr;
                 if (instance.active)
-                    addJobs(instance, transformComponent->globalMatrix, 0, created);
+                    addJobs(instance, transformComponent->globalMatrix, 0, created, false);
             }
 
             profilerScope.Next("Deformation jobs");
@@ -1622,84 +1423,210 @@ namespace Atlas {
                 usedDeformMeshes.insert(instance.mesh.GetID());
             std::erase_if(deformMeshes, [&](const auto& item) { return !usedDeformMeshes.contains(item.first); });
 
-            if (positionCount == 0)
-                return;
+            // The software BLASes are bound like the ones of the meshes once they were deformed
+            if (!hardwareRayTracing) {
+                for (const auto& [entity, instance] : deformedInstances) {
+                    auto bindlessIdx = renderState->blasToBindlessIdx.find(instance.softwareBlas);
+                    if (bindlessIdx == renderState->blasToBindlessIdx.end())
+                        continue;
 
-            // The positions are only read while the BLASes are built in this frame
-            auto positionSize = size_t(positionCount) * sizeof(vec3);
-            if (!deformPositionBuffer || deformPositionBuffer->size < positionSize) {
-                Graphics::BufferDesc desc = {
-                    .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    .domain = Graphics::BufferDomain::Device,
-                    .size = positionSize + positionSize / 4
-                };
-                deformPositionBuffer = Graphics::GraphicsDevice::DefaultDevice->CreateBuffer(desc);
+                    auto [blasInfoIt, inserted] = blasInfos.try_emplace(instance.softwareBlas);
+                    auto& blasInfo = blasInfoIt->second;
+                    if (inserted) {
+                        blasInfo.mesh = instance.mesh;
+                        blasInfosChanged = true;
+                    }
+                    blasInfo.update = blasInfoUpdate;
+                    blasInfo.offset = int32_t(bindlessIdx->second);
+                    blasInfo.cullingDistanceSqr = instance.mesh->rayTraceDistanceCulling * instance.mesh->rayTraceDistanceCulling;
+                }
             }
 
-            auto positionAddress = deformPositionBuffer->GetDeviceAddress();
-            for (auto& deformBlas : deformBlases)
+            if (positionCount == 0) {
+                pendingDeformation = PendingDeformation();
+                return;
+            }
+
+            auto positionSize = size_t(positionCount) * sizeof(vec3);
+            auto normalOffset = hardwareRayTracing ? size_t(0) : (positionSize + 15) & ~size_t(15);
+            auto vertexSize = hardwareRayTracing ? positionSize : normalOffset + size_t(positionCount) * sizeof(glm::uvec2);
+            if (!deformVertexBuffer || deformVertexBuffer->size < vertexSize) {
+                VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+                if (hardwareRayTracing)
+                    usageFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                Graphics::BufferDesc desc = {
+                    .usageFlags = usageFlags,
+                    .domain = Graphics::BufferDomain::Device,
+                    .size = vertexSize + vertexSize / 4
+                };
+                deformVertexBuffer = Graphics::GraphicsDevice::DefaultDevice->CreateBuffer(desc);
+            }
+
+            auto positionAddress = deformVertexBuffer->GetDeviceAddress();
+            auto normalAddress = positionAddress + normalOffset;
+            for (auto& deformBlas : frameDeformation.blases)
                 deformBlas.vertexAddress += positionAddress;
 
             // Every work group looks up its job in the group table, so each pipeline is a single dispatch
-            const uint32_t deformGroupSize = 64;
+            const uint32_t jobGroupSize = 64;
             std::vector<GPUDeformJob> jobs;
             std::vector<uint32_t> groupJobs;
             for (auto& [key, variant] : variantJobs) {
                 auto groupOffset = uint32_t(groupJobs.size());
                 for (auto& job : variant) {
                     job.positions += positionAddress;
+                    if (!hardwareRayTracing)
+                        job.normals += normalAddress;
                     job.firstGroup = uint32_t(groupJobs.size()) - groupOffset;
-                    auto groupCount = (job.vertexCount + deformGroupSize - 1) / deformGroupSize;
+                    auto groupCount = (job.vertexCount + jobGroupSize - 1) / jobGroupSize;
                     groupJobs.insert(groupJobs.end(), groupCount, uint32_t(jobs.size()));
                     jobs.push_back(job);
                 }
-                deformDispatches.push_back(DeformDispatch {
+                frameDeformation.dispatches.push_back(DeformDispatch {
                     .config = variantConfigs[key],
                     .groupOffset = groupOffset,
                     .groupCount = uint32_t(groupJobs.size()) - groupOffset
                 });
             }
 
-            deformJobUpload = uploadBufferPool.Upload(jobs.data(), jobs.size() * sizeof(GPUDeformJob));
-            deformGroupJobUpload = uploadBufferPool.Upload(groupJobs.data(), groupJobs.size() * sizeof(uint32_t));
-            jointMatrixUpload = jointMatrices.empty() ? nullptr :
+            std::vector<uint32_t> triangleGroupJobs;
+            for (auto& job : triangleJobs) {
+                job.positions += positionAddress;
+                job.normals += normalAddress;
+                job.firstGroup = uint32_t(triangleGroupJobs.size());
+                auto groupCount = (job.triangleCount + jobGroupSize - 1) / jobGroupSize;
+                triangleGroupJobs.insert(triangleGroupJobs.end(), groupCount, uint32_t(&job - triangleJobs.data()));
+            }
+
+            frameDeformation.jobBuffer = uploadBufferPool.Upload(jobs.data(), jobs.size() * sizeof(GPUDeformJob));
+            frameDeformation.groupJobBuffer = uploadBufferPool.Upload(groupJobs.data(), groupJobs.size() * sizeof(uint32_t));
+            frameDeformation.jointMatrixBuffer = jointMatrices.empty() ? nullptr :
                 uploadBufferPool.Upload(jointMatrices.data(), jointMatrices.size() * sizeof(mat3x4));
+            frameDeformation.softBodyVertexBuffer = softBodyVertices.empty() ? nullptr :
+                uploadBufferPool.Upload(softBodyVertices.data(), softBodyVertices.size() * sizeof(vec4));
+            if (!triangleJobs.empty()) {
+                frameDeformation.triangleJobBuffer = uploadBufferPool.Upload(triangleJobs.data(),
+                    triangleJobs.size() * sizeof(GPUDeformTriangleJob));
+                frameDeformation.triangleGroupJobBuffer = uploadBufferPool.Upload(triangleGroupJobs.data(),
+                    triangleGroupJobs.size() * sizeof(uint32_t));
+                frameDeformation.triangleGroupCount = uint32_t(triangleGroupJobs.size());
+            }
+            frameDeformation.frameIndex = Graphics::GraphicsDevice::DefaultDevice->GetFrameIndex();
+
+            pendingDeformation = std::move(frameDeformation);
 
         }
 
         void RayTracingWorld::RecordDeformation(Graphics::CommandList* commandList) {
 
-            auto& pending = *pendingInstances;
-            if (pending.deformDispatches.empty())
+            auto& pending = pendingDeformation;
+            if (pending.dispatches.empty() || pending.frameIndex != Graphics::GraphicsDevice::DefaultDevice->GetFrameIndex())
                 return;
 
             GPUProfiler::BeginQuery("Deform instances");
 
             // The buffers might still be read by the previous frame
             commandList->MemoryBarrier(VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
-                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-            commandList->BindBuffer(pending.deformJobBuffer, 3, 0);
+            // New software BLASes start with the triangles, materials and nodes of the mesh
+            bool copied = false;
+            for (const auto& softwareBlas : pending.softwareBlases) {
+                if (!softwareBlas.copySource)
+                    continue;
+                const auto& source = softwareBlas.copySource;
+                commandList->CopyBuffer(source->triangleBuffer.Get(), softwareBlas.blas->triangleBuffer.Get());
+                commandList->CopyBuffer(source->bvhTriangleBuffer.Get(), softwareBlas.blas->bvhTriangleBuffer.Get());
+                commandList->CopyBuffer(source->blasNodeBuffer.Get(), softwareBlas.blas->blasNodeBuffer.Get());
+                copied = true;
+            }
+            if (copied)
+                commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            commandList->BindBuffer(pending.jobBuffer, 3, 0);
             // Without skinned instances any buffer works
-            commandList->BindBuffer(pending.jointMatrixBuffer ? pending.jointMatrixBuffer : pending.deformJobBuffer, 3, 1);
-            commandList->BindBuffer(pending.deformGroupJobBuffer, 3, 2);
+            commandList->BindBuffer(pending.jointMatrixBuffer ? pending.jointMatrixBuffer : pending.jobBuffer, 3, 1);
+            commandList->BindBuffer(pending.groupJobBuffer, 3, 2);
+            if (pending.softBodyVertexBuffer)
+                commandList->BindBuffer(pending.softBodyVertexBuffer, 3, 4);
             scene->renderState.wind.noiseMap.Bind(commandList, 3, 3);
             scene->renderState.materialGraphBuffer.Bind(commandList, 3, 9);
 
-            for (auto& dispatch : pending.deformDispatches) {
+            // The group count can exceed the limit of one dimension
+            auto dispatchGroups = [&](uint32_t groupCount) {
+                const uint32_t maxGroupsX = 32768;
+                commandList->Dispatch(std::min(groupCount, maxGroupsX), (groupCount + maxGroupsX - 1) / maxGroupsX, 1);
+            };
+
+            for (auto& dispatch : pending.dispatches) {
                 auto pipeline = PipelineManager::GetPipeline(dispatch.config);
                 commandList->BindPipeline(pipeline);
 
-                auto constants = SkinPushConstants {
+                auto constants = JobPushConstants {
                     .groupOffset = dispatch.groupOffset,
                     .groupCount = dispatch.groupCount
                 };
                 commandList->PushConstants("constants", &constants);
+                dispatchGroups(dispatch.groupCount);
+            }
 
-                // The group count can exceed the limit of one dimension
-                const uint32_t maxGroupsX = 32768;
-                commandList->Dispatch(std::min(dispatch.groupCount, maxGroupsX), (dispatch.groupCount + maxGroupsX - 1) / maxGroupsX, 1);
+            if (!hardwareRayTracing) {
+                commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                GPUProfiler::EndAndBeginQuery("Deform triangles");
+                commandList->BindBuffer(pending.triangleJobBuffer, 3, 0);
+                commandList->BindBuffer(pending.triangleGroupJobBuffer, 3, 2);
+                commandList->BindPipeline(PipelineManager::GetPipeline(deformTrianglesPipelineConfig));
+                auto triangleConstants = JobPushConstants {
+                    .groupOffset = 0,
+                    .groupCount = pending.triangleGroupCount
+                };
+                commandList->PushConstants("constants", &triangleConstants);
+                dispatchGroups(pending.triangleGroupCount);
+
+                commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                GPUProfiler::EndAndBeginQuery("Refit deformed BLASes");
+                commandList->BindPipeline(PipelineManager::GetPipeline(refitBVHPipelineConfig));
+
+                size_t levelCount = 0;
+                for (const auto& softwareBlas : pending.softwareBlases)
+                    levelCount = std::max(levelCount, softwareBlas.levelOffsets.size() - 1);
+
+                // The levels of all BLASes are updated together, starting with the deepest one
+                for (int32_t level = int32_t(levelCount) - 1; level >= 0; level--) {
+                    for (const auto& softwareBlas : pending.softwareBlases) {
+                        const auto& levelOffsets = softwareBlas.levelOffsets;
+                        if (level + 1 >= int32_t(levelOffsets.size()))
+                            continue;
+
+                        softwareBlas.blas->blasNodeBuffer.Bind(commandList, 3, 0);
+                        softwareBlas.blas->bvhTriangleBuffer.Bind(commandList, 3, 1);
+                        softwareBlas.levelNodeBuffer.Bind(commandList, 3, 2);
+                        softwareBlas.nodeBoundsBuffer.Bind(commandList, 3, 3);
+
+                        auto constants = RefitPushConstants {
+                            .nodeOffset = levelOffsets[level],
+                            .nodeCount = levelOffsets[level + 1] - levelOffsets[level]
+                        };
+                        commandList->PushConstants("constants", &constants);
+                        commandList->Dispatch((constants.nodeCount + 63) / 64, 1, 1);
+                    }
+
+                    commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                }
+
+                commandList->MemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+                GPUProfiler::EndQuery();
+
+                // Bound from the next update on, see SceneRenderState
+                for (const auto& softwareBlas : pending.softwareBlases)
+                    softwareBlas.blas->isBvhBuilt = true;
+                pending = PendingDeformation();
+                return;
             }
 
             // The positions are read by the BLAS builds, the normals by the hits
@@ -1707,7 +1634,7 @@ namespace Atlas {
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
             std::vector<Ref<Graphics::BLAS>> buildBlases, refitBlases;
-            for (const auto& deformBlas : pending.deformBlases) {
+            for (const auto& deformBlas : pending.blases) {
                 deformBlas.blas->SetVertexData(deformBlas.vertexAddress, sizeof(vec3));
                 if (deformBlas.refit && deformBlas.blas->isBuilt)
                     refitBlases.push_back(deformBlas.blas);
@@ -1725,6 +1652,8 @@ namespace Atlas {
 
             commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
                 VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+            pending = PendingDeformation();
 
         }
 
@@ -1784,6 +1713,33 @@ namespace Atlas {
                     deformMesh.subDataVertexRanges.emplace_back(subData.indicesCount ? firstVertex : 0u,
                         subData.indicesCount ? lastVertex - firstVertex + 1 : 0u);
                 }
+
+                if (!hardwareRayTracing)
+                    CreateSoftwareTopology(deformMesh, mesh);
+            }
+
+            if (!hardwareRayTracing) {
+                const auto& meshBlas = mesh->blas;
+                auto softwareBlas = CreateRef<BLAS>();
+                softwareBlas->materials = meshBlas->materials;
+                // Written by a copy of the mesh BLAS before the first deformation
+                auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit;
+                softwareBlas->triangleBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUTriangle),
+                    meshBlas->triangleBuffer.GetElementCount());
+                softwareBlas->bvhTriangleBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHTriangle),
+                    meshBlas->bvhTriangleBuffer.GetElementCount());
+                softwareBlas->blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode),
+                    meshBlas->blasNodeBuffer.GetElementCount());
+
+                const auto& levelOffsets = deformMeshes[mesh.GetID()].levelOffsets;
+                return DeformedInstance {
+                    .mesh = mesh,
+                    .meshBlas = meshBlas,
+                    .indexBuffer = mesh->indexBuffer.buffer,
+                    .softwareBlas = softwareBlas,
+                    .nodeBoundsBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4),
+                        std::max(size_t(levelOffsets.back()), size_t(1)))
+                };
             }
 
             std::vector<Graphics::ASGeometryRegion> geometryRegions;
@@ -1812,6 +1768,54 @@ namespace Atlas {
                     2 * sizeof(uint32_t), vertexCount),
                 .indexBuffer = mesh->indexBuffer.buffer
             };
+
+        }
+
+        void RayTracingWorld::CreateSoftwareTopology(DeformMesh& deformMesh, const ResourceHandle<Mesh::Mesh>& mesh) {
+
+            const auto& data = mesh->data;
+            const auto& meshBlas = mesh->blas;
+
+            // Parents always come before their children
+            const auto& nodeParents = meshBlas->nodeParents;
+            std::vector<int32_t> nodeLevels(nodeParents.size(), 0);
+            std::vector<std::vector<int32_t>> levels;
+            for (size_t i = 0; i < nodeParents.size(); i++) {
+                auto parent = nodeParents[i];
+                nodeLevels[i] = parent >= 0 ? nodeLevels[parent >> 1] + 1 : 0;
+                if (nodeLevels[i] >= int32_t(levels.size()))
+                    levels.resize(nodeLevels[i] + 1);
+                levels[nodeLevels[i]].push_back(int32_t(i));
+            }
+
+            std::vector<int32_t> levelNodes;
+            deformMesh.levelOffsets.clear();
+            for (const auto& level : levels) {
+                deformMesh.levelOffsets.push_back(uint32_t(levelNodes.size()));
+                levelNodes.insert(levelNodes.end(), level.begin(), level.end());
+            }
+            deformMesh.levelOffsets.push_back(uint32_t(levelNodes.size()));
+
+            deformMesh.levelNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(int32_t),
+                std::max(levelNodes.size(), size_t(1)), levelNodes.empty() ? nullptr : levelNodes.data());
+
+            // The source triangles of the BLAS are the ones of level 0 sub mesh by sub mesh, see MeshData::BuildBVHData
+            std::vector<uint32_t> triangleIndexOffsets;
+            for (const auto& subData : data.subData) {
+                auto range = subData.GetLod(0);
+                for (uint32_t i = 0; i < range.indicesCount / 3; i++)
+                    triangleIndexOffsets.push_back(range.indicesOffset + i * 3);
+            }
+
+            const auto& triangleIndices = meshBlas->triangleIndices;
+            std::vector<glm::uvec4> triangleVertices(triangleIndices.size());
+            for (size_t i = 0; i < triangleIndices.size(); i++) {
+                auto idx = triangleIndexOffsets[triangleIndices[i]];
+                triangleVertices[i] = glm::uvec4(data.indices[idx], data.indices[idx + 1], data.indices[idx + 2], 0u);
+            }
+
+            deformMesh.triangleVertexBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
+                Buffer::BufferUsageBits::DeviceAddressBit, sizeof(glm::uvec4), triangleVertices.size(), triangleVertices.data());
 
         }
 

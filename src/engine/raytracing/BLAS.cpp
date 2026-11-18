@@ -188,13 +188,16 @@ namespace Atlas::RayTracing {
 
         }
 
-        triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit,
-            sizeof(GPUTriangle));
+        // Software ray tracing copies the buffers into the BLASes of deformed instances
+        auto copyUsage = hardwareRayTracing ? 0u : uint32_t(Buffer::BufferUsageBits::MemoryTransfersBit);
+
+        triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit |
+            copyUsage, sizeof(GPUTriangle));
         triangleBuffer.SetSize(gpuTriangles.size(), gpuTriangles.data());
 
         if (!hardwareRayTracing) {
-            bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit,
-                sizeof(GPUBVHTriangle));
+            bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit |
+                copyUsage, sizeof(GPUBVHTriangle));
             bvhTriangleBuffer.SetSize(gpuBvhTriangles.size(), gpuBvhTriangles.data());
 
             gpuBvhTriangles.clear();
@@ -222,7 +225,7 @@ namespace Atlas::RayTracing {
                     nodeParents[gpuBvhNodes[i].rightPtr] = int32_t(i) * 2 + 1;
             }
 
-            blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
+            blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | copyUsage, sizeof(GPUBVHNode));
             blasNodeBuffer.SetSize(gpuBvhNodes.size(), gpuBvhNodes.data());            
         }
 

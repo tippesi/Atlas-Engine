@@ -6,6 +6,7 @@
 #include <../globals.hsh>
 #include <../wind.hsh>
 #include <../common/packing.hsh>
+#include <../common/rotation.hsh>
 
 // Has to match the group size of the deformation pass in RayTracingWorld
 layout (local_size_x = 64) in;
@@ -74,6 +75,13 @@ layout(std430, set = 3, binding = 2) readonly buffer GroupJobs {
 layout(set = 3, binding = 3) uniform sampler2D windNoiseMap;
 #endif
 
+#ifdef SOFT_BODY
+// Positions with the packed normal in w
+layout(std430, set = 3, binding = 4) readonly buffer SoftBodyVertices {
+    vec4 softBodyVertices[];
+};
+#endif
+
 layout(push_constant) uniform constants {
     uint groupOffset;
     uint groupCount;
@@ -112,6 +120,15 @@ void main() {
     position = vec4(position, 1.0) * skinMatrix;
     normal = vec4(normal, 0.0) * skinMatrix;
     tangent.xyz = vec4(tangent.xyz, 0.0) * skinMatrix;
+#endif
+
+#ifdef SOFT_BODY
+    // The vertices of the body start at the joint offset
+    vec4 softBodyVertex = softBodyVertices[job.jointOffset + vertexIdx];
+    vec3 restNormal = normal;
+    position = softBodyVertex.xyz;
+    normal = unpackUnitVector(floatBitsToInt(softBodyVertex.w)).xyz;
+    tangent.xyz = RotateLike(tangent.xyz, normalize(restNormal), normal);
 #endif
 
 #ifdef MATERIAL_GRAPH_VERTEX_OFFSET

@@ -1,5 +1,6 @@
 #include "PhysicsWorld.h"
 #include "PhysicsManager.h"
+#include "ShapesManager.h"
 #include "../profiler/CPUProfiler.h"
 #include "../Log.h"
 #include "MathConversion.h"
@@ -24,20 +25,26 @@
 #include <Jolt/Physics/Constraints/SliderConstraint.h>
 #include <Jolt/Physics/Constraints/DistanceConstraint.h>
 #include <Jolt/Physics/Constraints/ConeConstraint.h>
+#include <Jolt/Physics/SoftBody/SoftBodyCreationSettings.h>
+#include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
 
 namespace Atlas {
 
     namespace Physics {
 
         // Ignored bodies are filtered in the queries. Continuing a query behind them would start inside of convex
-        // shapes, which count as solid and are hit again right away
+        // shapes, which count as solid and are hit again right away. Sensors and cloth aren't solid: feet, cameras and
+        // ground probes pass through them
         class QueryBodyFilter : public JPH::BodyFilter {
         public:
             QueryBodyFilter(PhysicsWorld* world, const std::function<bool(const Body&)>& ignore) : world(world), ignore(ignore) {}
 
             bool ShouldCollide(const JPH::BodyID& bodyId) const override { return !ignore || !ignore(Body(bodyId, world)); }
 
-            bool ShouldCollideLocked(const JPH::Body& body) const override { return !body.IsSensor(); }
+            bool ShouldCollideLocked(const JPH::Body& body) const override {
+                auto layer = body.GetObjectLayer();
+                return !body.IsSensor() && layer != Layers::Cloth && layer != Layers::ClothCollider;
+            }
 
         private:
             PhysicsWorld* world;
@@ -104,10 +111,14 @@ namespace Atlas {
 
             CPUProfiler::Scope profilerScope("Physics simulation");
 
-            // A long frame (the first one after loading, a hitch) doesn't take giant steps, which throw floating
-            // bodies out of the water: the simulation falls behind instead
-            const int32_t maxCollisionSteps = 8;
-            deltaTime = std::min(deltaTime, float(maxCollisionSteps) / float(simulationStepsPerSecond));
+            auto updateDeltaTime = GetUpdateDeltaTime(deltaTime);
+            if (updateDeltaTime == 0.0f) {
+                pendingDeltaTime += deltaTime;
+                return;
+            }
+            pendingDeltaTime = 0.0f;
+            deltaTime = updateDeltaTime;
+
             auto collisionSteps = std::min(std::max(int32_t(float(simulationStepsPerSecond) * deltaTime), 1), maxCollisionSteps);
             stepDeltaTime = deltaTime / float(collisionSteps);
 
@@ -201,6 +212,151 @@ namespace Atlas {
 
         }
 
+        float PhysicsWorld::GetUpdateDeltaTime(float deltaTime) const {
+
+            if (pauseSimulation)
+                return 0.0f;
+
+            // Very short updates (e.g. frames which only render) join the next one, soft bodies would turn the remaining
+            // constraint error into velocities divided by the tiny step and explode
+            deltaTime += pendingDeltaTime;
+            if (deltaTime < 0.25f / float(simulationStepsPerSecond))
+                return 0.0f;
+
+            // A long frame (the first one after loading, a hitch) doesn't take giant steps, which throw floating
+            // bodies out of the water: the simulation falls behind instead
+            return std::min(deltaTime, float(maxCollisionSteps) / float(simulationStepsPerSecond));
+
+        }
+
+        Body PhysicsWorld::CreateSoftBody(const SoftBodySettings& settings, const JPH::Ref<JPH::SoftBodySharedSettings>& sharedSettings,
+            vec3 position, quat rotation, uint64_t userData) {
+
+            const auto& sharedVertices = sharedSettings->mVertices;
+            auto freeVertexCount = std::ranges::count_if(sharedVertices, [](const auto& vertex) { return vertex.mInvMass > 0.0f; });
+
+            JPH::SoftBodyCreationSettings creationSettings(sharedSettings, VecToJPHVec(position),
+                JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), settings.objectLayer);
+            creationSettings.mUserData = userData;
+            creationSettings.mNumIterations = uint32_t(settings.iterations);
+            creationSettings.mLinearDamping = settings.linearDamping;
+            creationSettings.mFriction = settings.friction;
+            creationSettings.mRestitution = settings.restitution;
+            creationSettings.mPressure = settings.pressure;
+            creationSettings.mGravityFactor = settings.gravityFactor;
+            creationSettings.mVertexRadius = settings.vertexRadius;
+            creationSettings.mAllowSleeping = settings.allowSleeping;
+            creationSettings.mFacesDoubleSided = settings.doubleSided;
+            // Bodies attached through pinned vertices keep their position, as Jolt recommends for attached soft bodies
+            creationSettings.mUpdatePosition = freeVertexCount == ptrdiff_t(sharedVertices.size());
+
+            auto& bodyInterface = system->GetBodyInterface();
+            auto bodyId = bodyInterface.CreateAndAddSoftBody(creationSettings, JPH::EActivation::Activate);
+            if (bodyId.IsInvalid())
+                Log::Error("Physics: soft body not created, the world holds " + std::to_string(system->GetMaxBodies()) + " bodies at most");
+
+            return { bodyId, this };
+
+        }
+
+        void PhysicsWorld::ApplySoftBodyWind(BodyID bodyId, vec3 wind, float factor, float time, float deltaTime) {
+
+            if (deltaTime <= 0.0f || factor <= 0.0f)
+                return;
+
+            {
+                JPH::BodyLockWrite lock(system->GetBodyLockInterface(), bodyId);
+                if (!lock.Succeeded())
+                    return;
+
+                auto& body = lock.GetBody();
+                if (!body.IsSoftBody())
+                    return;
+
+                // The velocities of the vertices are in the space of the body
+                auto rotation = body.GetRotation();
+                auto inverseRotation = rotation.Conjugated();
+                auto motionProperties = static_cast<JPH::SoftBodyMotionProperties*>(body.GetMotionProperties());
+                auto& vertices = motionProperties->GetVertices();
+                auto blend = std::min(factor * deltaTime, 1.0f);
+                auto velocity = inverseRotation * VecToJPHVec(wind);
+                for (size_t i = 0; i < vertices.size(); i++) {
+                    auto& vertex = vertices[i];
+                    if (vertex.mInvMass <= 0.0f)
+                        continue;
+                    // Gusts run through the cloth, only the horizontal velocity is dragged so gravity keeps it hanging
+                    auto flutter = 1.0f + 0.4f * std::sin(time * 3.7f + float(i) * 0.61f);
+                    auto drag = rotation * ((velocity * flutter - vertex.mVelocity) * blend);
+                    vertex.mVelocity += inverseRotation * JPH::Vec3(drag.GetX(), 0.0f, drag.GetZ());
+                }
+            }
+
+            system->GetBodyInterface().ActivateBody(bodyId);
+
+        }
+
+        bool PhysicsWorld::GetSoftBodyVertices(BodyID bodyId, std::vector<vec3>& positions) const {
+
+            JPH::BodyLockRead lock(system->GetBodyLockInterface(), bodyId);
+            if (!lock.Succeeded())
+                return false;
+
+            const auto& body = lock.GetBody();
+            if (!body.IsSoftBody() || !body.IsActive())
+                return false;
+
+            auto transform = body.GetCenterOfMassTransform();
+            auto motionProperties = static_cast<const JPH::SoftBodyMotionProperties*>(body.GetMotionProperties());
+            const auto& vertices = motionProperties->GetVertices();
+
+            positions.resize(vertices.size());
+            for (size_t i = 0; i < vertices.size(); i++)
+                positions[i] = JPHVecToVec(transform * vertices[i].mPosition);
+
+            return true;
+
+        }
+
+        void PhysicsWorld::MoveSoftBodyVertices(BodyID bodyId, const std::vector<uint32_t>& vertices,
+            const std::vector<vec3>& positions, float deltaTime) {
+
+            AE_ASSERT(vertices.size() == positions.size() && "Every moved vertex needs a position");
+
+            bool moved = false;
+            {
+                JPH::BodyLockWrite lock(system->GetBodyLockInterface(), bodyId);
+                if (!lock.Succeeded())
+                    return;
+
+                auto& body = lock.GetBody();
+                if (!body.IsSoftBody())
+                    return;
+
+                auto inverseTransform = body.GetInverseCenterOfMassTransform();
+                auto motionProperties = static_cast<JPH::SoftBodyMotionProperties*>(body.GetMotionProperties());
+                auto& simulatedVertices = motionProperties->GetVertices();
+
+                // Pinned vertices move with their velocity, such that the cloth is dragged along instead of teleported
+                for (size_t i = 0; i < vertices.size(); i++) {
+                    auto& vertex = simulatedVertices[vertices[i]];
+                    auto target = inverseTransform * VecToJPHVec(positions[i]);
+                    auto offset = target - vertex.mPosition;
+                    if (deltaTime > 0.0f) {
+                        vertex.mVelocity = offset / deltaTime;
+                    }
+                    else {
+                        vertex.mPosition = target;
+                        vertex.mVelocity = JPH::Vec3::sZero();
+                    }
+                    moved |= offset.LengthSq() > 0.0f;
+                }
+            }
+
+            if (moved)
+                system->GetBodyInterface().ActivateBody(bodyId);
+
+        }
+
         bool PhysicsWorld::ContainsBody(Body body) const {
 
             if (body.bodyId.IsInvalid())
@@ -246,9 +402,9 @@ namespace Atlas {
 
         }
 
-        mat4 PhysicsWorld::GetBodyMatrix(BodyID bodyId) {
+        mat4 PhysicsWorld::GetBodyMatrix(BodyID bodyId, bool lock) {
 
-            auto& bodyInterface = system->GetBodyInterface();
+            auto& bodyInterface = lock ? system->GetBodyInterface() : system->GetBodyInterfaceNoLock();
 
             auto transform = bodyInterface.GetWorldTransform(bodyId);
 

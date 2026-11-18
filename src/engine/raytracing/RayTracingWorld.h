@@ -58,6 +58,32 @@ namespace Atlas {
                 bool refit = false;
             };
 
+            // The deformed triangles of a software BLAS are refit level by level
+            struct SoftwareDeformBlas {
+                Ref<BLAS> blas;
+                Buffer::Buffer levelNodeBuffer;
+                Buffer::Buffer nodeBoundsBuffer;
+                std::vector<uint32_t> levelOffsets;
+                // A new BLAS starts as a copy of the mesh BLAS, the deformation keeps its topology
+                Ref<BLAS> copySource;
+            };
+
+            // The deformation of the last update, recorded while rendering since it needs the global descriptor sets
+            struct PendingDeformation {
+                std::vector<DeformDispatch> dispatches;
+                std::vector<DeformBlas> blases;
+                std::vector<SoftwareDeformBlas> softwareBlases;
+                Ref<Graphics::Buffer> jobBuffer;
+                Ref<Graphics::Buffer> groupJobBuffer;
+                Ref<Graphics::Buffer> jointMatrixBuffer;
+                Ref<Graphics::Buffer> softBodyVertexBuffer;
+                Ref<Graphics::Buffer> triangleJobBuffer;
+                Ref<Graphics::Buffer> triangleGroupJobBuffer;
+                uint32_t triangleGroupCount = 0;
+                // Dropped if the frame of the update isn't rendered
+                int32_t frameIndex = -1;
+            };
+
             struct MaterialGraphHitGroup {
                 std::string closestHitFile;
                 std::string anyHitFile;
@@ -80,13 +106,6 @@ namespace Atlas {
                 // Replaces the TLAS of the world once it is built, an update that isn't rendered keeps the last one
                 Ref<Graphics::TLAS> tlas;
 
-                // The deformation of this frame is recorded with the instances, it needs the global descriptor sets
-                std::vector<DeformDispatch> deformDispatches;
-                std::vector<DeformBlas> deformBlases;
-                Ref<Graphics::Buffer> deformJobBuffer;
-                Ref<Graphics::Buffer> deformGroupJobBuffer;
-                Ref<Graphics::Buffer> jointMatrixBuffer;
-
                 // The hit records and graph hit groups the instances were written with
                 Ref<const std::vector<uint32_t>> hitRecords;
                 Ref<const std::vector<MaterialGraphHitGroup>> materialGraphHitGroups;
@@ -103,6 +122,9 @@ namespace Atlas {
             // The GPU scene writes its hardware ray tracing instances next to the ones prepared by the update and builds
             // the acceleration structure with the methods below. Returns nullptr if the current frame has no update.
             const PendingInstances* GetPendingInstances() const;
+
+            // Deforms the instances of the last update into their BLASes, has to be recorded before any tracing
+            void RecordDeformation(Graphics::CommandList* commandList);
 
             void PrepareInstances(Graphics::CommandList* commandList);
 
@@ -159,8 +181,8 @@ namespace Atlas {
                 std::vector<GPULight> triangleLights;
             };
 
-            // With hardware ray tracing the vertices of nearby animated meshes are deformed into a BLAS of the entity,
-            // the positions only exist while it is built and hits read everything but the normals from the mesh
+            // Nearby animated meshes are deformed into a BLAS of the entity, hardware ray tracing hits read everything
+            // but the normals from the mesh, software ray tracing refits a copy of the mesh BLAS
             struct DeformedInstance {
                 ResourceHandle<Mesh::Mesh> mesh;
                 // Mesh::BuildBVH creates a new BLAS for changed data, which invalidates the deformed one
@@ -170,6 +192,9 @@ namespace Atlas {
                 // The BLAS reads the indices of the mesh, buffers created again (e.g. for levels of detail) invalidate it
                 Ref<Graphics::Buffer> indexBuffer;
 
+                Ref<BLAS> softwareBlas;
+                Buffer::Buffer nodeBoundsBuffer;
+
                 // A static mesh of the GPU scene, deformed by wind or a material graph
                 bool deformedStatic = false;
                 // Further away the data is kept for a while, but the mesh BLAS is traced
@@ -177,7 +202,8 @@ namespace Atlas {
                 bool used = false;
             };
 
-            // The pipeline and graph parameters of a sub mesh, the same for all instances of a mesh
+            // The pipeline and graph parameters of a sub mesh, the same for all instances of a mesh (or all simulated
+            // soft bodies of it)
             struct SubDataDeformation {
                 PipelineConfig config;
                 Hash key = 0;
@@ -194,29 +220,18 @@ namespace Atlas {
                 // The vertices are copied from the data, they change with the buffers of the mesh
                 Ref<Graphics::Buffer> meshVertexBuffer;
                 std::vector<SubDataDeformation> deformations;
+                std::vector<SubDataDeformation> softBodyDeformations;
                 Buffer::Buffer vertexBuffer;
                 std::vector<std::pair<uint32_t, uint32_t>> subDataVertexRanges;
-            };
 
-            // Animated meshes have a BLAS per entity which is skinned on the GPU (software ray tracing)
-            struct SkinnedBlas {
-                ResourceHandle<Mesh::Mesh> mesh;
-                Ref<BLAS> blas;
-
+                // Software ray tracing: the vertex indices of the triangles in the order of the mesh BLAS and its
+                // nodes by tree level, level i are levelOffsets[i] to levelOffsets[i + 1] in the level node buffer
                 Buffer::Buffer triangleVertexBuffer;
                 Buffer::Buffer levelNodeBuffer;
-                Buffer::Buffer nodeBoundsBuffer;
-
-                // The nodes of each tree level are levelOffsets[i] to levelOffsets[i + 1] in the level node buffer
                 std::vector<uint32_t> levelOffsets;
-
-                uint32_t jointOffset = 0;
-                bool used = false;
-                // Poses that didn't change keep their skinned triangles
-                bool skin = false;
             };
 
-            struct alignas(16) SkinPushConstants {
+            struct alignas(16) JobPushConstants {
                 uint32_t groupOffset;
                 uint32_t groupCount;
             };
@@ -269,19 +284,13 @@ namespace Atlas {
             void BuildSoftwareTLAS(std::vector<GPUBVHInstance>& gpuBvhInstances,
                 std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& instanceAABBs);
 
-            void UpdateSkinnedBlases();
-
-            void SkinBlases(Graphics::CommandList* commandList);
-
             void UpdateDeformedInstances(const std::vector<ECS::Entity>& dirtyEntities);
-
-            void RecordDeformation(Graphics::CommandList* commandList);
 
             DeformedInstance CreateDeformedInstance(const ResourceHandle<Mesh::Mesh>& mesh);
 
-            bool IsDeformedByMaterial(const ResourceHandle<Mesh::Mesh>& mesh) const;
+            void CreateSoftwareTopology(DeformMesh& deformMesh, const ResourceHandle<Mesh::Mesh>& mesh);
 
-            SkinnedBlas CreateSkinnedBlas(const ResourceHandle<Mesh::Mesh>& mesh);
+            bool IsDeformedByMaterial(const ResourceHandle<Mesh::Mesh>& mesh) const;
 
             void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
 
@@ -307,11 +316,8 @@ namespace Atlas {
 
             std::vector<GPULight> triangleLights;
 
-            std::unordered_map<ECS::Entity, SkinnedBlas> skinnedBlases;
-            std::unordered_map<size_t, Buffer::Buffer> skinVertexBuffers;
-
             std::vector<mat3x4> jointMatrices;
-            Buffer::Buffer jointMatricesBuffer;
+            std::vector<vec4> softBodyVertices;
 
             std::unordered_map<ECS::Entity, DeformedInstance> deformedInstances;
             std::unordered_map<size_t, DeformMesh> deformMeshes;
@@ -322,22 +328,13 @@ namespace Atlas {
             vec3 deformCandidateLocation = vec3(0.0f);
             size_t deformCandidateSlotCount = 0;
             int32_t deformCandidateFrames = 0;
-            Ref<Graphics::Buffer> deformPositionBuffer;
-            // The deformation of the last update, handed to the pending instances
-            std::vector<DeformDispatch> deformDispatches;
-            std::vector<DeformBlas> deformBlases;
-            Ref<Graphics::Buffer> deformJobUpload;
-            Ref<Graphics::Buffer> deformGroupJobUpload;
-            Ref<Graphics::Buffer> jointMatrixUpload;
+            // Positions and with software ray tracing also normals, only read while the BLASes are built or refit
+            Ref<Graphics::Buffer> deformVertexBuffer;
+            PendingDeformation pendingDeformation;
             // Builds while rendering, separate from the scratch memory of the update
             Graphics::ASBuilder deformBlasBuilder;
 
-            std::vector<GPUSkinJob> skinJobs;
-            std::vector<uint32_t> skinGroupJobs;
-            Buffer::Buffer skinJobBuffer;
-            Buffer::Buffer skinGroupJobBuffer;
-
-            PipelineConfig skinTrianglesPipelineConfig;
+            PipelineConfig deformTrianglesPipelineConfig;
             PipelineConfig refitBVHPipelineConfig;
 
             // Hardware instances are written on the GPU, the ones of the host first

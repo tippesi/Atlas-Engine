@@ -11,6 +11,7 @@
 #include "physics/ShapesManager.h"
 
 #include <imgui_stdlib.h>
+#include <ImGuizmo.h>
 
 namespace Atlas::Editor::UI {
 
@@ -52,6 +53,7 @@ namespace Atlas::Editor::UI {
             {"windNoiseTextureLod", mesh->windNoiseTextureLod},
             {"windBendScale", mesh->windBendScale},
             {"windWiggleScale", mesh->windWiggleScale},
+            {"softBody", mesh->softBody},
         };
 
         auto materials = json::array();
@@ -94,6 +96,9 @@ namespace Atlas::Editor::UI {
         j.at("windNoiseTextureLod").get_to(mesh->windNoiseTextureLod);
         j.at("windBendScale").get_to(mesh->windBendScale);
         j.at("windWiggleScale").get_to(mesh->windWiggleScale);
+
+        j.at("softBody").get_to(mesh->softBody);
+        mesh->ResetSoftBodySimulationMesh();
 
         const auto& materials = j["materials"];
         for (size_t i = 0; i < std::min(materials.size(), mesh->data.materials.size()); i++) {
@@ -233,6 +238,9 @@ namespace Atlas::Editor::UI {
         if (Widgets::SectionHeader("Physics"))
             RenderPhysics();
 
+        if (Widgets::SectionHeader("Soft body"))
+            RenderSoftBody();
+
     }
 
     void MeshEditorWindow::RenderPanels() {
@@ -280,6 +288,8 @@ namespace Atlas::Editor::UI {
     void MeshEditorWindow::RenderViewportSettings() {
 
         ImGui::Checkbox("Show physics", &showPhysics);
+        ImGui::Checkbox("Show simulation mesh", &softBodyComponentPanel.showSimulationMesh);
+        ImGui::SetItemTooltip("The mesh soft bodies simulate, with a simulating preview its pinned vertices and pin bounds");
         ImGui::BeginDisabled(!IsSkinned());
         ImGui::Checkbox("Show skeleton", &showSkeleton);
         ImGui::EndDisabled();
@@ -454,6 +464,18 @@ namespace Atlas::Editor::UI {
             scene->physicsWorld->DebugDraw(wrapper.GetBatch(false).get(), physicsDebugDrawSettings);
         }
 
+        // Bodies are created again from the new simulation mesh once an edit of its settings is finished
+        if (pendingSimulationMeshReset && !ImGui::IsAnyItemActive() && !ImGuizmo::IsUsing()) {
+            mesh->ResetSoftBodySimulationMesh();
+            pendingSimulationMeshReset = false;
+        }
+
+        softBodyComponentPanel.RenderOverlay(scene, entity, wrapper);
+        viewportPanel.DrawOverlay([this]() {
+            if (cameraEntity.IsValid())
+                softBodyComponentPanel.RenderPinGizmo(scene, entity, viewportPanel.viewport, cameraEntity.GetComponent<CameraComponent>());
+            });
+
         if (!showSkeleton || !IsSkinned())
             return;
 
@@ -485,6 +507,46 @@ namespace Atlas::Editor::UI {
             if (selected)
                 wrapper.GetBatch(false)->AddLineSphere(position, 0.02f * extent, color);
         }
+
+    }
+
+    void MeshEditorWindow::RenderSoftBody() {
+
+        auto& settings = mesh->softBody;
+        auto changed = false;
+
+        if (Widgets::BeginProperties("Soft body mesh")) {
+            Widgets::PropertyLabel("Max simulated vertices", "The simulation mesh is simplified to about this many "
+                "vertices, zero simulates all vertices of level 0 (welded by position)");
+            changed |= ImGui::DragInt("##Max simulated vertices", &settings.maxSimulatedVertices, 1.0f, 0, 1000000);
+            Widgets::PropertyLabel("Keep borders", "Keeps every vertex on open edges, e.g. the outline of a banner. "
+                "Otherwise they only slide along the edges");
+            changed |= ImGui::Checkbox("##Keep borders", &settings.keepBorders);
+            Widgets::EndProperties();
+        }
+
+        auto simulationMesh = mesh->GetSoftBodySimulationMesh();
+        if (ImGui::BeginTable("Soft body statistics", 2, ImGuiTableFlags_SizingStretchProp)) {
+            StatisticsRow("Simulated vertices", "%d", int32_t(simulationMesh->positions.size()));
+            StatisticsRow("Simulated triangles", "%d", int32_t(simulationMesh->indices.size() / 3));
+            ImGui::EndTable();
+        }
+        ImGui::TextColored(Theme::TextMuted(), "Pins are set per soft body component, the preview can try them");
+
+        ImGui::SeparatorText("Preview");
+        auto simulating = entity.HasComponent<SoftBodyComponent>();
+        if (ImGui::Checkbox("Simulate", &simulating)) {
+            if (simulating)
+                entity.AddComponent<SoftBodyComponent>();
+            else
+                entity.RemoveComponent<SoftBodyComponent>();
+            scene->physicsWorld->pauseSimulation = !simulating;
+        }
+        ImGui::SetItemTooltip("The preview gets a soft body, its settings are part of the entity and not saved");
+        if (auto softBodyComponent = entity.TryGetComponent<SoftBodyComponent>())
+            softBodyComponentPanel.Render(scene, entity, *softBodyComponent);
+
+        pendingSimulationMeshReset |= changed;
 
     }
 

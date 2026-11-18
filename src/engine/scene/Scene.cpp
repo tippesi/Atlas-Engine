@@ -7,6 +7,7 @@
 #include "raytracing/RayTracingManager.h"
 #include "../audio/AudioManager.h"
 #include "../streaming/StreamingManager.h"
+#include "../common/MathHelper.h"
 
 namespace Atlas {
 
@@ -369,6 +370,8 @@ namespace Atlas {
             if (physicsWorld != nullptr) {
 
                 auto simulate = !physicsWorld->pauseSimulation && !paused;
+                // Bodies moved to a target need the time the next step simulates, short updates join the next one
+                auto physicsDeltaTime = simulate ? physicsWorld->GetUpdateDeltaTime(deltaTime) : 0.0f;
 
                 CPUProfiler::Scope physicsScope("Sync bodies");
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
@@ -376,13 +379,13 @@ namespace Atlas {
                 auto syncBody = [&](RigidBodyComponent& rigidBodyComponent, const TransformComponent& transformComponent) {
                     // Kinematic bodies follow their transform through velocities, such that simulated bodies
                     // are pushed instead of penetrated. A teleport is still needed if no simulation step follows.
-                    auto moveKinematic = rigidBodyComponent.layer == Physics::Layers::Kinematic &&
-                        simulate && deltaTime > 0.0f;
+                    auto moveKinematic = (rigidBodyComponent.layer == Physics::Layers::Kinematic ||
+                        rigidBodyComponent.layer == Physics::Layers::ClothCollider) && physicsDeltaTime > 0.0f;
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
                     if (transformComponent.changed) {
                         if (moveKinematic)
-                            rigidBodyComponent.MoveKinematic(transformComponent.globalMatrix, deltaTime);
+                            rigidBodyComponent.MoveKinematic(transformComponent.globalMatrix, physicsDeltaTime);
                         else
                             rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
                     }
@@ -542,6 +545,66 @@ namespace Atlas {
                 }
                 oceanSurfaceQueries.swap(surfaceQueries);
 
+                // Soft bodies are prepared in jobs once their mesh is loaded, pinned vertices follow the transform. Beyond
+                // their simulation distance from the main camera they rest (hysteresis of a tenth of the distance)
+                auto softBodyCamera = HasMainCamera() ? GetMainCamera().GetLocation() : vec3(0.0f);
+                auto windVelocity = Helper::Math::NormalizeOrZero(vec3(wind.direction.x, 0.0f, wind.direction.y)) * wind.speed;
+                auto softBodySubset = entityManager.GetSubset<SoftBodyComponent, MeshComponent, TransformComponent>();
+                for (auto entity : softBodySubset) {
+                    const auto& [softBodyComponent, meshComponent, transformComponent] = softBodySubset.Get(entity);
+
+                    const auto& settings = softBodyComponent.settings;
+                    if (settings.simulationDistance > 0.0f && HasMainCamera()) {
+                        auto distance = glm::distance(vec3(transformComponent.globalMatrix[3]), softBodyCamera);
+                        auto limit = softBodyComponent.IsValid() ? settings.simulationDistance * 1.1f : settings.simulationDistance;
+                        if (distance > limit) {
+                            if (softBodyComponent.IsValid()) {
+                                softBodyComponent.Rest();
+                                if (meshComponent.inserted) {
+                                    SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
+                                    meshComponent.aabb = meshComponent.mesh->GetRenderBounds().Transform(transformComponent.globalMatrix);
+                                    SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
+                                }
+                            }
+                            continue;
+                        }
+                    }
+
+                    // The soft body settings of the mesh changed
+                    if (softBodyComponent.IsValid() && softBodyComponent.IsOutdated(meshComponent))
+                        softBodyComponent.Reset();
+
+                    auto inserted = false;
+                    if (!softBodyComponent.IsValid()) {
+                        if (!softBodyComponent.InsertIntoPhysicsWorld(meshComponent, transformComponent, physicsWorld.get()))
+                            continue;
+                        inserted = true;
+                    }
+
+                    if (physicsDeltaTime > 0.0f) {
+                        softBodyComponent.MovePinnedVertices(transformComponent, physicsDeltaTime);
+                        // Without wind the drag would only keep the bodies awake
+                        if (settings.windFactor > 0.0f && windVelocity != vec3(0.0f))
+                            physicsWorld->ApplySoftBodyWind(softBodyComponent.bodyId, windVelocity, settings.windFactor,
+                                GetTime(), physicsDeltaTime);
+                    }
+                    else if (!simulate) {
+                        // A new body is ray traced once in its rest pose
+                        softBodyComponent.moved = inserted;
+                        softBodyComponent.SettleHistory();
+                    }
+                }
+
+                // The GPU scene draws simulated bodies apart from the other instances of their mesh
+                for (auto entity : softBodySubset) {
+                    auto& softBodyComponent = softBodySubset.Get<SoftBodyComponent>(entity);
+                    if (softBodyComponent.drawnSimulated == softBodyComponent.IsValid())
+                        continue;
+                    softBodyComponent.drawnSimulated = softBodyComponent.IsValid();
+                    MarkEntityDirty(ToSceneEntity(entity));
+                }
+
+
                 // This part only needs to be executed if the simulation is running
                 if (simulate) {
 
@@ -560,31 +623,44 @@ namespace Atlas {
                         constraintComponent.broken = true;
                     }
 
-                    // Only the active bodies move, the ones that fell asleep since the last update catch up once
+                    // Only the active bodies move, the ones that fell asleep since the last update catch up once.
+                    // Each body writes only its own transform, so they are read in parallel without body locks.
+                    // Updates without a step (see GetUpdateDeltaTime) don't move anything
+                    auto stepped = physicsDeltaTime > 0.0f;
                     auto previouslyMoved = std::move(movedBodyEntities);
                     movedBodyEntities.clear();
-                    for (auto bodyId : physicsWorld->GetActiveBodies()) {
+                    auto activeBodies = stepped ? physicsWorld->GetActiveBodies() : std::vector<Physics::BodyID>();
+                    auto activeBodyCount = int32_t(activeBodies.size());
+                    auto& rigidBodyComponentPool = entityManager.GetPool<RigidBodyComponent>();
+                    std::vector<ECS::Entity> activeBodyEntities(activeBodyCount);
+                    // 1 = moved, 2 = moved and dirty
+                    std::vector<uint8_t> activeBodyStates(activeBodyCount, 0);
+                    JobGroup rigidBodyJobGroup{ "Read rigid bodies", JobPriority::High };
+                    JobSystem::ParallelFor(rigidBodyJobGroup, activeBodyCount, 2 * JobSystem::GetWorkerCount(JobPriority::High),
+                        [&](JobData&, int32_t idx) {
+                        auto bodyId = activeBodies[idx];
                         ECS::Entity entity = physicsWorld->GetUserData(bodyId);
-                        auto rigidBodyComponentPtr = entityManager.Valid(entity) ? entityManager.TryGet<RigidBodyComponent>(entity) : nullptr;
-                        auto transformComponentPtr = rigidBodyComponentPtr ? entityManager.TryGet<TransformComponent>(entity) : nullptr;
+                        auto rigidBodyComponentPtr = entityManager.Valid(entity) ? rigidBodyComponentPool.TryGet(entity) : nullptr;
+                        auto transformComponentPtr = rigidBodyComponentPtr ? transformComponentPool.TryGet(entity) : nullptr;
                         if (!transformComponentPtr || !rigidBodyComponentPtr->IsValid() || rigidBodyComponentPtr->bodyId != bodyId)
-                            continue;
+                            return;
 
                         auto& rigidBodyComponent = *rigidBodyComponentPtr;
                         auto& transformComponent = *transformComponentPtr;
 
                         // The transform drives kinematic bodies, reading them back would only drop the scale
                         if (transformComponent.isStatic || rigidBodyComponent.layer == Physics::Layers::Static ||
-                            rigidBodyComponent.layer == Physics::Layers::Kinematic)
-                            continue;
+                            rigidBodyComponent.layer == Physics::Layers::Kinematic || rigidBodyComponent.layer == Physics::Layers::ClothCollider)
+                            return;
 
-                        movedBodyEntities.push_back(entity);
+                        activeBodyEntities[idx] = entity;
+                        activeBodyStates[idx] = 1;
 
                         // This happens if no change was triggered by the user, then we still need
                         // to update the last global matrix, since it might have changed due to physics simulation
                         if (!transformComponent.changed) {
                             transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
-                            MarkEntityDirty(ToSceneEntity(entity));
+                            activeBodyStates[idx] = 2;
                         }
 
                         // Need to set changed to true such that the space partitioning is updated
@@ -592,8 +668,20 @@ namespace Atlas {
                         transformComponent.updated = true;
 
                         // Physics are updated in global space, so we don't need the parent transform
-                        transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
+                        transformComponent.globalMatrix = physicsWorld->GetBodyMatrix(bodyId, false);
                         transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                        });
+                    JobSystem::Wait(rigidBodyJobGroup);
+
+                    {
+                        std::scoped_lock lock(dirtyEntitiesMutex);
+                        for (int32_t idx = 0; idx < activeBodyCount; idx++) {
+                            if (!activeBodyStates[idx])
+                                continue;
+                            movedBodyEntities.push_back(activeBodyEntities[idx]);
+                            if (activeBodyStates[idx] == 2)
+                                dirtyEntities.push_back(ToSceneEntity(activeBodyEntities[idx]));
+                        }
                     }
 
                     // Asleep bodies don't move, their last matrix catches up once for the motion vectors
@@ -609,6 +697,25 @@ namespace Atlas {
                             MarkEntityDirty(ToSceneEntity(entity));
                         }
                     }
+
+                    // The vertices are read in parallel, the bounds follow after the transforms like the ones of
+                    // animated meshes
+                    auto& softBodyPool = entityManager.GetPool<SoftBodyComponent>();
+                    JobGroup softBodyJobGroup{ "Read soft bodies", JobPriority::High };
+                    JobSystem::ParallelFor(softBodyJobGroup, int32_t(softBodyPool.GetCount()),
+                        2 * JobSystem::GetWorkerCount(JobPriority::High), [&](JobData&, int32_t idx) {
+                        auto& softBodyComponent = softBodyPool.GetByIndex(idx);
+                        auto transformComponent = transformComponentPool.TryGet(softBodyPool[idx]);
+                        if (!softBodyComponent.IsValid() || !transformComponent)
+                            return;
+                        if (stepped) {
+                            softBodyComponent.ReadVertices(*transformComponent);
+                            return;
+                        }
+                        softBodyComponent.moved = false;
+                        softBodyComponent.SettleHistory();
+                        });
+                    JobSystem::Wait(softBodyJobGroup);
 
                     // Player update needs to be performed after normal rigid bodies, such that
                     // player can override rigid body behaviour
@@ -748,6 +855,26 @@ namespace Atlas {
 
                 // Idle or paused figures keep their bounds, the octree stays as it is
                 auto aabb = animationComponent.aabb.Transform(transformComponent->globalMatrix);
+                if (aabb.min == meshComponent->aabb.min && aabb.max == meshComponent->aabb.max)
+                    continue;
+
+                SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), *meshComponent);
+                meshComponent->aabb = aabb;
+                SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), *meshComponent);
+            }
+
+            // So do simulated soft bodies, the loop above gave moved ones the bounds of the rest pose
+            auto& softBodyComponentPool = entityManager.GetPool<SoftBodyComponent>();
+            for (size_t i = 0; i < softBodyComponentPool.GetCount(); i++) {
+                auto entity = softBodyComponentPool[i];
+                const auto& softBodyComponent = softBodyComponentPool.GetByIndex(i);
+                auto meshComponent = meshComponentPool.TryGet(entity);
+                auto transformComponent = transformComponentPool.TryGet(entity);
+
+                if (!meshComponent || !transformComponent || !meshComponent->inserted || !softBodyComponent.IsValid())
+                    continue;
+
+                auto aabb = softBodyComponent.bounds.Transform(transformComponent->globalMatrix);
                 if (aabb.min == meshComponent->aabb.min && aabb.max == meshComponent->aabb.max)
                     continue;
 
@@ -1398,6 +1525,12 @@ namespace Atlas {
         void Scene::Clear() {
 
             ClearRTStructures();
+
+            // Meshes count their soft bodies, the pool is cleared without erase events
+            auto& softBodyPool = entityManager.GetPool<SoftBodyComponent>();
+            for (size_t i = 0; i < softBodyPool.GetCount(); i++)
+                softBodyPool.GetByIndex(i).RemoveFromPhysicsWorld();
+
             entityManager.Clear();
 
             dirtyEntities.clear();
@@ -1482,6 +1615,15 @@ namespace Atlas {
                 [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent) {
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.RemoveFromPhysicsWorld();
+                });
+
+            entityManager.SubscribeToTopic<SoftBodyComponent>(ECS::Topic::ComponentErase,
+                [this](const ECS::Entity entity, SoftBodyComponent& softBodyComponent) {
+                    if (physicsWorld != nullptr)
+                        softBodyComponent.RemoveFromPhysicsWorld();
+                    // The GPU scene draws the entity like the other instances of its mesh again
+                    if (softBodyComponent.drawnSimulated)
+                        MarkEntityDirty(ToSceneEntity(entity));
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentEmplace,
@@ -1604,6 +1746,9 @@ namespace Atlas {
                 creationSettings.shape = CreateRef<Physics::Shape>();
                 *creationSettings.shape = *otherShape;
                 dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
+            }
+            if (srcEntity.HasComponent<SoftBodyComponent>()) {
+                dstEntity.AddComponent<SoftBodyComponent>(srcEntity.GetComponent<SoftBodyComponent>().settings);
             }
             if (srcEntity.HasComponent<PlayerComponent>()) {
                 auto otherComp = srcEntity.GetComponent<PlayerComponent>();

@@ -386,9 +386,9 @@ namespace Atlas::Scene {
             }
 
             if (scene->rayTracingWorld) {
-                for (const auto& [entity, skinnedBlas] : scene->rayTracingWorld->skinnedBlases) {
-                    if (skinnedBlas.blas->IsBuilt())
-                        addBlas(skinnedBlas.blas);
+                for (const auto& [entity, instance] : scene->rayTracingWorld->deformedInstances) {
+                    if (instance.softwareBlas && instance.softwareBlas->IsBuilt())
+                        addBlas(instance.softwareBlas);
                 }
             }
 
@@ -630,7 +630,7 @@ namespace Atlas::Scene {
             auto cameraLocation = scene->GetMainCamera().GetLocation();
             auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
             for (const auto& slot : slots) {
-                if (!slot.skinned || !slot.mesh.IsLoaded())
+                if (!slot.instanceVertices || !slot.mesh.IsLoaded())
                     continue;
 
                 auto minDistance = std::numeric_limits<float>::max();
@@ -717,6 +717,10 @@ namespace Atlas::Scene {
     void SceneRenderState::UpdateGPUScene(const std::vector<ECS::Entity>& dirtyEntities,
         const std::vector<ECS::Entity>& lastDirtyEntities) {
 
+        // The meshes read the bindless BLAS slots. Waiting inside the job could run a job which waits for the GPU scene,
+        // the slots are usually done long before, so spinning here costs nothing
+        JobSystem::WaitSpin(bindlessBlasMapUpdateJob);
+
         // The buffers are updated in the same job, everything which binds them waits for it
         JobSystem::Execute(gpuSceneUpdateJob, [&](JobData&) {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
@@ -747,6 +751,9 @@ namespace Atlas::Scene {
 
         if (!scene->HasMainCamera())
             return;
+
+        // The shadow passes are filled after the main pass
+        renderList.UpdateSoftBodyVertices(scene);
 
         JobSystem::Execute(fillMainRenderPassJob, [&](JobData&) {
             JobSystem::Wait(newFrameRenderListJob);

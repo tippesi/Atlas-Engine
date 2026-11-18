@@ -20,25 +20,15 @@ namespace Atlas {
         vec4 d2;
     };
 
-    // One skinned BLAS in a skinning pass, the buffers are accessed through their device addresses
-    struct GPUSkinJob {
-        VkDeviceAddress skinVertices = 0;
+    // The triangles of one software BLAS gathered from its deformed vertices, has to match raytracer/deformTriangles.csh
+    struct GPUDeformTriangleJob {
         VkDeviceAddress triangleVertices = 0;
-        VkDeviceAddress target = 0;
+        VkDeviceAddress positions = 0;
+        VkDeviceAddress normals = 0;
+        VkDeviceAddress triangles = 0;
         VkDeviceAddress bvhTriangles = 0;
         uint32_t firstGroup = 0;
-        uint32_t elementCount = 0;
-        uint32_t jointOffset = 0;
-        uint32_t padding0 = 0;
-    };
-
-    struct GPUSkinVertex {
-        // The packed normal is stored in w
-        vec4 position;
-        uint32_t joints01 = 0;
-        uint32_t joints23 = 0;
-        uint32_t weights = 0;
-        uint32_t padding = 0;
+        uint32_t triangleCount = 0;
     };
 
     // Undeformed vertex of a mesh for the deformation pass, has to match raytracer/deform.csh

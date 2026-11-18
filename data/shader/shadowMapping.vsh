@@ -1,5 +1,6 @@
 #include <globals.hsh>
 #include <wind.hsh>
+#include <common/packing.hsh>
 
 layout(location=0) in vec3 vPosition;
 #ifdef MATERIAL_GRAPH
@@ -49,6 +50,17 @@ layout(std430, set = 1, binding = 4) readonly buffer JointMatrices {
 };
 #endif
 
+#ifdef SOFT_BODY
+// Positions with the packed normal in w, each instance has the offset of its vertices
+layout(std430, set = 1, binding = 24) readonly buffer SoftBodyVertices {
+    vec4 softBodyVertices[];
+};
+
+layout(std430, set = 1, binding = 26) readonly buffer SoftBodyVertexOffsets {
+    uint softBodyVertexOffsets[];
+};
+#endif
+
 layout(set = 3, binding = 0) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
@@ -94,6 +106,12 @@ void main() {
     position = vec4(vPosition, 1.0) * skinMatrix;
 #endif
 
+#ifdef SOFT_BODY
+    vec4 softBodyVertex = softBodyVertices[softBodyVertexOffsets[PushConstants.jointOffset + gl_InstanceIndex -
+        PushConstants.instanceOffset] + gl_VertexIndex];
+    position = softBodyVertex.xyz;
+#endif
+
 #ifdef MATERIAL_GRAPH
     vec3 graphNormal = vNormal.xyz;
     vec2 graphTexCoord = vec2(0.0);
@@ -102,6 +120,9 @@ void main() {
     vec4 graphColor = vec4(1.0);
 #ifdef SKINNED
     graphNormal = vec4(graphNormal, 0.0) * skinMatrix;
+#endif
+#ifdef SOFT_BODY
+    graphNormal = unpackUnitVector(floatBitsToInt(softBodyVertex.w)).xyz;
 #endif
 #ifdef TEX_COORDS
     graphTexCoord = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;

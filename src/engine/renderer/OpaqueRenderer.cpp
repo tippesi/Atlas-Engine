@@ -33,6 +33,11 @@ namespace Atlas {
             commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
             commandList->BindBuffer(mainPass->currentJointMatricesBuffer, 1, 4);
             commandList->BindBuffer(mainPass->lastJointMatricesBuffer, 1, 5);
+            if (mainPass->softBodyVertexOffsetsBuffer) {
+                commandList->BindBuffer(renderList->currentSoftBodyVerticesBuffer, 1, 24);
+                commandList->BindBuffer(renderList->lastSoftBodyVerticesBuffer, 1, 25);
+                commandList->BindBuffer(mainPass->softBodyVertexOffsetsBuffer, 1, 26);
+            }
 
             // Bind wind map
             scene->renderState.wind.noiseMap.Bind(commandList, 3, 8);
@@ -42,52 +47,70 @@ namespace Atlas {
 
             int32_t subDataCount = 0;
             // Retrieve all possible materials;
-            for (const auto& [meshId, instances] : mainPass->meshToInstancesMap) {
-                if (!instances.count || lateDraws) continue;
+            auto addSubDatas = [&](const std::unordered_map<size_t, RenderList::MeshInstances>& meshToInstances, bool softBody) {
+                for (const auto& [meshId, instances] : meshToInstances) {
+                    if (!instances.count || lateDraws) continue;
 
-                auto& mesh = renderList->meshIdToMeshMap[meshId];
-                for (auto& subData : mesh->data.subData) {
-                    if (!subData.material.IsLoaded())
-                        continue;
+                    auto& mesh = renderList->meshIdToMeshMap[meshId];
+                    for (auto& subData : mesh->data.subData) {
+                        if (!subData.material.IsLoaded())
+                            continue;
 
-                    if (subDataCount < subDatas.size())
-                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get(), nullptr };
-                    else
-                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get(), nullptr });
-                    subDataCount++;
+                        if (subDataCount < subDatas.size())
+                            subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get(), nullptr, softBody };
+                        else
+                            subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get(), nullptr, softBody });
+                        subDataCount++;
+                    }
                 }
-            }
+            };
+            addSubDatas(mainPass->meshToInstancesMap, false);
+            addSubDatas(mainPass->meshToSoftBodyInstancesMap, true);
 
             for (const auto& draw : lateDraws ? mainPass->gpuLateDraws : mainPass->gpuDraws) {
                 if (!draw.subData)
                     continue;
 
                 if (subDataCount < subDatas.size())
-                    subDatas[subDataCount] = { draw.subData, draw.meshId, draw.mesh, &draw };
+                    subDatas[subDataCount] = { draw.subData, draw.meshId, draw.mesh, &draw, false };
                 else
-                    subDatas.push_back({ draw.subData, draw.meshId, draw.mesh, &draw });
+                    subDatas.push_back({ draw.subData, draw.meshId, draw.mesh, &draw, false });
                 subDataCount++;
             }
 
+            // Simulated soft bodies read their vertices instead of the instance buffer
+            auto getSoftBodyVariant = [](PipelineConfig config) {
+                config.RemoveMacro("INSTANCE_BUFFER");
+                config.AddMacro("SOFT_BODY");
+                return config;
+            };
+
             // Check whether materials have pipeline configs
             for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, _, mesh, gpuDraw] = subDatas[i];
+                auto& [subData, _, mesh, gpuDraw, softBody] = subDatas[i];
                 const auto& material = subData->material;
                 if (subData->mainGraphPending)
                     UpdateGraphPipelines(subData, mesh, target);
-                if (subData->mainConfig.IsValid()) continue;
+                if (!subData->mainConfig.IsValid()) {
+                    subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
+                    subData->mainReversedWindingConfig = subData->mainConfig.GetReversedWindingVariant();
 
-                subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
-                subData->mainReversedWindingConfig = subData->mainConfig.GetReversedWindingVariant();
+                    if (material->HasGraph()) {
+                        subData->mainGraphPending = true;
+                        UpdateGraphPipelines(subData, mesh, target);
+                    }
+                }
 
-                if (material->HasGraph()) {
-                    subData->mainGraphPending = true;
-                    UpdateGraphPipelines(subData, mesh, target);
+                if (softBody && !subData->mainSoftBodyConfig.IsValid()) {
+                    subData->mainSoftBodyConfig = getSoftBodyVariant(subData->mainConfig);
+                    subData->mainSoftBodyReversedWindingConfig = getSoftBodyVariant(subData->mainReversedWindingConfig);
                 }
             }
 
             auto getConfig = [](const auto& entry) -> PipelineConfig& {
-                const auto& [subData, meshID, mesh, gpuDraw] = entry;
+                const auto& [subData, meshID, mesh, gpuDraw, softBody] = entry;
+                if (softBody)
+                    return subData->mainSoftBodyConfig;
                 return gpuDraw && gpuDraw->type == RenderList::GPUDrawType::ReversedWinding ?
                     subData->mainReversedWindingConfig : subData->mainConfig;
             };
@@ -103,8 +126,9 @@ namespace Atlas {
             Ref<Graphics::Pipeline> currentPipeline;
             const Graphics::PushConstantRange* constantsRange = nullptr;
             for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, meshID, mesh, gpuDraw] = subDatas[i];
-                auto instances = gpuDraw ? RenderList::MeshInstances{} : mainPass->meshToInstancesMap[meshID];
+                auto& [subData, meshID, mesh, gpuDraw, softBody] = subDatas[i];
+                auto instances = gpuDraw ? RenderList::MeshInstances{} : softBody ?
+                    mainPass->meshToSoftBodyInstancesMap[meshID] : mainPass->meshToInstancesMap[meshID];
 
                 const auto& material = subData->material;
 
@@ -185,7 +209,8 @@ namespace Atlas {
 
                 RenderList::DrawInstances(commandList, *subData, instances, false, setLod);
                 if (instances.reversedWindingCount) {
-                    auto& reversedWindingConfig = subData->mainReversedWindingConfig;
+                    auto& reversedWindingConfig = softBody ? subData->mainSoftBodyReversedWindingConfig :
+                        subData->mainReversedWindingConfig;
                     currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
                     commandList->BindPipeline(currentPipeline);
                     constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
@@ -224,6 +249,8 @@ namespace Atlas {
 
             subData->mainConfig = config;
             subData->mainReversedWindingConfig = reversedWindingConfig;
+            subData->mainSoftBodyConfig = PipelineConfig();
+            subData->mainSoftBodyReversedWindingConfig = PipelineConfig();
 
             subData->mainUsesGraph = true;
 

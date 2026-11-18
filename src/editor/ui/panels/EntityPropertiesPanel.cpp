@@ -104,6 +104,11 @@ namespace Atlas::Editor::UI {
                 }
             }
 
+            if (entity.HasComponent<SoftBodyComponent>()) {
+                RenderComponentPanel("Soft body", scene,
+                    entity, softBodyComponentPanel, entity.GetComponent<SoftBodyComponent>());
+            }
+
             if (entity.HasComponent<PlayerComponent>()) {
                 auto comp = entity.GetComponent<PlayerComponent>();
                 RenderComponentPanel("Player", scene,
@@ -223,6 +228,11 @@ namespace Atlas::Editor::UI {
                     !entity.HasComponent<ConstraintComponent>() && matches("Constraint") && ImGui::MenuItem("Constraint"))
                     entity.AddComponent<ConstraintComponent>();
 
+                // Soft bodies simulate the mesh of the entity
+                if (entity.HasComponent<MeshComponent>() && entity.HasComponent<TransformComponent>() &&
+                    !entity.HasComponent<SoftBodyComponent>() && matches("Soft body") && ImGui::MenuItem("Soft body"))
+                    entity.AddComponent<SoftBodyComponent>();
+
                 ImGui::EndPopup();
             }
         }
@@ -243,6 +253,7 @@ namespace Atlas::Editor::UI {
                 else if (HandleComponentPaste<SplineComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<PlayerComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<RigidBodyComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<SoftBodyComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<ConstraintComponent>(scene, entity)) {}
                 else {
                     Notifications::Push({"Invalid type to paste as a component."});

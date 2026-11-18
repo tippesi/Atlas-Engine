@@ -17,6 +17,7 @@
 #include "jobsystem/JobSystem.h"
 #include "loader/ModelImporter.h"
 #include "mesh/MeshSerializer.h"
+#include "mesh/MeshSimplifier.h"
 #include "physics/ShapesManager.h"
 #include "resource/ResourceManager.h"
 #include "scene/SceneSerializer.h"
@@ -30,6 +31,7 @@
 
 #include <fstream>
 #include <functional>
+#include <numeric>
 #include <map>
 #include <stdexcept>
 
@@ -338,6 +340,13 @@ namespace Atlas::Capture {
             mesh.GenerateLods(GetLodSettings(settings["lods"]));
         mesh.animationLodDistance = settings.value("animationLodDistance", mesh.animationLodDistance);
         mesh.animationMaxInterval = settings.value("animationMaxInterval", mesh.animationMaxInterval);
+        // Fields of the soft body settings, e.g. { "maxSimulatedVertices": 300 }
+        if (settings.contains("softBody")) {
+            json softBody = mesh.softBody;
+            softBody.merge_patch(settings["softBody"]);
+            softBody.get_to(mesh.softBody);
+            mesh.ResetSoftBodySimulationMesh();
+        }
         if (settings.contains("animations")) {
             mesh.data.animations.clear();
             for (const auto& path : FindAssetFiles(settings["animations"], ".aeanimation")) {
@@ -1127,6 +1136,11 @@ namespace Atlas::Capture {
                 (!settings.contains("lods") || HasRequestedLods(*mesh.Get(), settings["lods"])) &&
                 settings.value("animationLodDistance", mesh->animationLodDistance) == mesh->animationLodDistance &&
                 settings.value("animationMaxInterval", mesh->animationMaxInterval) == mesh->animationMaxInterval &&
+                (!settings.contains("softBody") || [&]() {
+                    json softBody = mesh->softBody, patched = softBody;
+                    patched.merge_patch(settings["softBody"]);
+                    return patched == softBody;
+                }()) &&
                 (!settings.contains("animations") || FindAssetFiles(settings["animations"], ".aeanimation") == GetAnimationFiles(*mesh.Get())) &&
                 settings.value("movable", mesh->mobility == Mesh::MeshMobility::Movable) == (mesh->mobility == Mesh::MeshMobility::Movable);
             auto bake = settings.contains("impostor") && (!unchanged || !IsImpostorCurrent(mesh, file.path(), settings["impostor"]));
@@ -1194,6 +1208,101 @@ namespace Atlas::Capture {
             if (entity.HasComponent<MeshComponent>())
                 instances.push_back(entity);
         return instances;
+
+    }
+
+    static json EditSoftBodies(EditContext& context, const json& operation) {
+
+        auto& scene = context.scene;
+
+        // Cloth for every instance of the matching meshes ("meshes", "exclude"): the soft body settings come from "set"
+        // (the fields of the component). Pins are found per connected part of the mesh: "pin": "top" pins the highest
+        // pinShare of each part's height, e.g. a banner on its beam or each sail on its yard, "topBottom" also the
+        // lowest (sails tied to the yard below), "none" leaves it free, "set" keeps the pinBounds of "set". Parts smaller
+        // than fixedSize (rings, hooks) are pinned completely. With "remove" the instances lose their soft bodies
+        auto remove = operation.value("remove", false);
+        auto pin = operation.value("pin", std::string("top"));
+        auto pinShare = operation.value("pinShare", 0.06f);
+        auto fixedSize = operation.value("fixedSize", 0.3f);
+        if (pin != "top" && pin != "topBottom" && pin != "none" && pin != "set")
+            throw std::runtime_error("softBodies: pin has to be top, topBottom, none or set");
+
+        // Bounds of the connected parts of the first LOD, render vertices at the same position are joined
+        auto partBounds = [](const Mesh::MeshData& data) {
+            auto vertexCount = size_t(data.GetVertexCount() - data.lodVertexCount);
+            std::span<const vec3> vertices(data.vertices.data.data(), vertexCount);
+            auto welded = Mesh::MeshSimplifier::GeneratePositionRemap(vertices);
+
+            std::vector<uint32_t> parents(vertexCount);
+            std::iota(parents.begin(), parents.end(), 0u);
+            auto find = [&](uint32_t i) {
+                while (parents[i] != i)
+                    i = parents[i] = parents[parents[i]];
+                return i;
+            };
+            for (const auto& subData : data.subData) {
+                auto range = subData.GetLod(0);
+                for (uint32_t i = 0; i + 2 < range.indicesCount; i += 3) {
+                    auto offset = range.indicesOffset + i;
+                    auto root = find(welded[data.indices[offset]]);
+                    parents[find(welded[data.indices[offset + 1]])] = root;
+                    parents[find(welded[data.indices[offset + 2]])] = root;
+                }
+            }
+
+            std::unordered_map<uint32_t, Volume::AABB> parts;
+            for (size_t i = 0; i < vertexCount; i++) {
+                auto [item, inserted] = parts.try_emplace(find(welded[i]), data.vertices[i], data.vertices[i]);
+                if (!inserted)
+                    item->second.Grow(data.vertices[i]);
+            }
+            return parts;
+        };
+
+        SoftBodyComponent defaults;
+        if (operation.contains("set"))
+            from_json(operation["set"], defaults);
+
+        size_t count = 0;
+        for (auto entity : FindMeshInstances(scene, ToAssetPatterns(operation.at("meshes")), ToAssetPatterns(operation.value("exclude", json::array())))) {
+            if (entity.HasComponent<SoftBodyComponent>())
+                entity.RemoveComponent<SoftBodyComponent>();
+            if (remove) {
+                count++;
+                continue;
+            }
+
+            auto& mesh = entity.GetComponent<MeshComponent>().mesh;
+            mesh.WaitForLoad();
+            if (!mesh.IsLoaded())
+                continue;
+
+            // The cloth would collide with a rigid body of its own mesh
+            if (entity.HasComponent<RigidBodyComponent>())
+                entity.RemoveComponent<RigidBodyComponent>();
+
+            auto settings = defaults.settings;
+            settings.pinned = pin != "none";
+            if (pin != "set")
+                settings.pinBounds.clear();
+            if (settings.pinned && pin != "set") {
+                const auto margin = vec3(0.01f);
+                for (const auto& [root, part] : partBounds(mesh->data)) {
+                    auto size = part.max - part.min;
+                    if (glm::max(size.x, glm::max(size.y, size.z)) < fixedSize) {
+                        settings.pinBounds.emplace_back(part.min - margin, part.max + margin);
+                        continue;
+                    }
+                    settings.pinBounds.emplace_back(vec3(part.min.x, part.max.y - pinShare * size.y, part.min.z) - margin, part.max + margin);
+                    if (pin == "topBottom")
+                        settings.pinBounds.emplace_back(part.min - margin, vec3(part.max.x, part.min.y + pinShare * size.y, part.max.z) + margin);
+                }
+            }
+            entity.AddComponent<SoftBodyComponent>(settings);
+            count++;
+        }
+
+        return json::array({ { { "softBodies", count }, { "removed", remove } } });
 
     }
 
@@ -1960,6 +2069,7 @@ namespace Atlas::Capture {
         { "clearArea", EditClearArea },
         { "meshSettings", EditMeshSettings },
         { "meshBodies", EditMeshBodies },
+        { "softBodies", EditSoftBodies },
         { "trigger", EditTrigger },
         { "constraint", EditConstraint },
         { "materialCopy", EditMaterialCopy },

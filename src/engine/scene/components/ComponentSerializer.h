@@ -87,6 +87,10 @@ namespace Atlas::Scene::Components {
 
     void from_json(const json& j, RigidBodyComponent& p);
 
+    void to_json(json& j, const SoftBodyComponent& p);
+
+    void from_json(const json& j, SoftBodyComponent& p);
+
     void to_json(json& j, const PlayerComponent& p);
 
     void from_json(const json& j, PlayerComponent& p);

@@ -253,6 +253,8 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
 { "op": "clearArea", "entities": ["Nature"], "area": {...}, "under": ["Tannery"], "margin": 0.5 }  // only under its meshes
 { "op": "meshBodies", "meshes": [...], "replace": true, "remove": false, "motion": "dynamic", "shape": "box|convex|boxes",
   "density": 500, "buoyancy": 1, "inOcean": false, "supported": false }
+{ "op": "softBodies", "meshes": [...], "exclude": [...], "set": { /* SoftBodyComponent */ }, "pin": "top|topBottom|none|set",
+  "pinShare": 0.06, "fixedSize": 0.3, "remove": false }   // cloth, pinned per part
 { "op": "constraint", "meshes": [...], "type": "point|hinge|cone|distance|slider|fixed", "anchor": "top", "connect": "...",
   "axis": [...], "limits": [0, 4], "worldPoint": [...], "worldOffset": [...], "breakForce": 0 }
 { "op": "trigger", "name": "Zone", "shape": "sphere|box|cylinder", "radius": 3, "halfSize": [...], "position": [...] }

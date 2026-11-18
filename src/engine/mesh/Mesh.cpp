@@ -39,6 +39,7 @@ namespace Atlas {
         void Mesh::UpdateData() {
 
             data.UpdateUVScales();
+            ResetSoftBodySimulationMesh();
 
             CreateBuffers();
             geometryResident = true;
@@ -363,6 +364,36 @@ namespace Atlas {
         bool Mesh::IsGeometryResident() const {
 
             return geometryResident;
+
+        }
+
+        void Mesh::ChangeSoftBodyCount(int32_t change) {
+
+            softBodyCount += change;
+            AE_ASSERT(softBodyCount >= 0 && "More soft bodies were removed than created");
+
+        }
+
+        Ref<SoftBodySimulationMesh> Mesh::GetSoftBodySimulationMesh() {
+
+            std::scoped_lock lock(softBodySimulationMeshMutex);
+            if (!softBodySimulationMesh)
+                softBodySimulationMesh = CreateRef<SoftBodySimulationMesh>(data, softBody);
+            return softBodySimulationMesh;
+
+        }
+
+        bool Mesh::IsSoftBodySimulationMesh(const Ref<SoftBodySimulationMesh>& simulationMesh) {
+
+            std::scoped_lock lock(softBodySimulationMeshMutex);
+            return softBodySimulationMesh == simulationMesh;
+
+        }
+
+        void Mesh::ResetSoftBodySimulationMesh() {
+
+            std::scoped_lock lock(softBodySimulationMeshMutex);
+            softBodySimulationMesh = nullptr;
 
         }
 

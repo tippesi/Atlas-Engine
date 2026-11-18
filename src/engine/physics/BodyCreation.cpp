@@ -35,6 +35,7 @@ namespace Atlas::Physics {
             case Layers::Static: motionType = JPH::EMotionType::Static; break;
             case Layers::Movable: motionType = JPH::EMotionType::Dynamic; break;
             case Layers::Kinematic: motionType = JPH::EMotionType::Kinematic; break;
+            case Layers::ClothCollider: motionType = JPH::EMotionType::Kinematic; break;
             default: motionType = JPH::EMotionType::Static; break;
         }
 

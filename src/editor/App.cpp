@@ -183,7 +183,7 @@ namespace Atlas::Editor {
         // Drags outside of viewports, e.g. on a slider, must not turn the next camera that gets the focus
         auto mouseMovedCamera = false;
         for (const auto& assetEditorWindow : assetEditorWindows) {
-            if (!assetEditorWindow->viewportPanel.isFocused || !assetEditorWindow->cameraEntity.IsValid())
+            if (!assetEditorWindow->viewportPanel.isFocused || !assetEditorWindow->cameraEntity.IsValid() || ImGuizmo::IsUsing())
                 continue;
             auto& camera = assetEditorWindow->cameraEntity.GetComponent<CameraComponent>();
             keyboardHandler.speed = assetEditorWindow->cameraMovementSpeed;
@@ -233,6 +233,7 @@ namespace Atlas::Editor {
         if (sceneWindows.empty()) {
             if (!mouseMovedCamera)
                 mouseHandler.Reset();
+            ImGuizmo::Enable(true);
             return;
         }
 
@@ -323,7 +324,8 @@ namespace Atlas::Editor {
             sceneWindow->Update(deltaTime);
         }
 
-        ImGuizmo::Enable(activeSceneWindow->guizmo.needEnabled);
+        // Asset editors have their own gizmos, e.g. for the pins of soft bodies
+        ImGuizmo::Enable(activeAssetEditorWindow || activeSceneWindow->guizmo.needEnabled);
 
     }
 

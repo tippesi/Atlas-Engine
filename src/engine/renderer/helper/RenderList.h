@@ -7,6 +7,7 @@
 
 #include "graphics/Buffer.h"
 #include "graphics/CommandList.h"
+#include "graphics/UploadBufferPool.h"
 #include "volume/Frustum.h"
 
 #include <array>
@@ -36,7 +37,8 @@ namespace Atlas {
             size_t impostorOffset;
             size_t impostorCount;
 
-            // Skinned meshes have the joint matrices of each instance one after another
+            // Skinned meshes have the joint matrices of each instance one after another, soft body meshes the
+            // offsets of the vertices of each instance
             size_t jointOffset = 0;
 
             // The instances of both windings are ordered by their level of detail
@@ -98,6 +100,8 @@ namespace Atlas {
 
             std::unordered_map<size_t, EntityBatch> meshToEntityMap;
             std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
+            // The instances of the batches which have a simulated soft body, drawn from their vertices
+            std::unordered_map<size_t, MeshInstances> meshToSoftBodyInstancesMap;
 
             bool wasUsed = false;
 
@@ -106,6 +110,7 @@ namespace Atlas {
             std::vector<mat3x4> impostorMatrices;
             std::vector<mat3x4> currentJointMatrices;
             std::vector<mat3x4> lastJointMatrices;
+            std::vector<uint32_t> softBodyVertexOffsets;
 
             // With the instance buffer entities which aren't skinned are referenced by their index
             std::vector<uint32_t> instanceIndices;
@@ -123,6 +128,8 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
             Ref<Graphics::MultiBuffer> currentJointMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastJointMatricesBuffer;
+            Ref<Graphics::Buffer> softBodyVertexOffsetsBuffer;
+            Ref<Graphics::UploadBufferPool> uploadPool = CreateRef<Graphics::UploadBufferPool>();
             Ref<Graphics::MultiBuffer> instanceIndicesBuffer;
             Ref<Graphics::MultiBuffer> impostorInstanceIndicesBuffer;
 
@@ -152,6 +159,9 @@ namespace Atlas {
         ~RenderList();
 
         void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
+
+        // Needs the simulated vertices of the frame, before the passes are filled
+        void UpdateSoftBodyVertices(Scene::Scene* scene);
 
         // Note: The expected behaviour is to first create and process all shadow passes and then finally do the main pass last
         Ref<Pass> NewMainPass();
@@ -207,6 +217,15 @@ namespace Atlas {
         // Passes of the current frame which are culled on the GPU and the buffer with their draw commands
         std::vector<Ref<Pass>> gpuCulledPasses;
         Ref<Graphics::Buffer> gpuCommandBuffer;
+
+        // Vertices of the simulated soft bodies (position with the packed normal in w) of the frame for all passes
+        std::vector<vec4> currentSoftBodyVertices;
+        std::vector<vec4> lastSoftBodyVertices;
+        std::unordered_map<ECS::Entity, uint32_t> entityToSoftBodyVertices;
+        Ref<Graphics::Buffer> currentSoftBodyVerticesBuffer;
+        Ref<Graphics::Buffer> lastSoftBodyVerticesBuffer;
+        // Each upload gets its own buffer, the passes bind exactly the buffers of their frame
+        Graphics::UploadBufferPool uploadPool;
 
         std::mutex mutex;
         std::atomic_bool wasCleared = false;

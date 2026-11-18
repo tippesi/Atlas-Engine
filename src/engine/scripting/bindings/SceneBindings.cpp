@@ -427,6 +427,7 @@ namespace Atlas::Scripting::Bindings {
             "AddNameComponent", &AddComponentRef<NameComponent, std::string>,
             "AddPlayerComponent", &AddComponentRef<PlayerComponent>,
             "AddRigidBodyComponent", &AddComponentRef<RigidBodyComponent, Physics::BodyCreationSettings&>,
+            "AddSoftBodyComponent", &AddComponentRef<SoftBodyComponent, Physics::SoftBodySettings&>,
             "AddConstraintComponent", sol::overload(
                 &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&>,
                 &AddComponentRef<ConstraintComponent, Physics::ConstraintCreationSettings&, Scene::Entity>),
@@ -447,6 +448,7 @@ namespace Atlas::Scripting::Bindings {
             "RemoveNameComponent", &Scene::Entity::RemoveComponent<NameComponent>,
             "RemovePlayerComponent", &Scene::Entity::RemoveComponent<PlayerComponent>,
             "RemoveRigidBodyComponent", &Scene::Entity::RemoveComponent<RigidBodyComponent>,
+            "RemoveSoftBodyComponent", &Scene::Entity::RemoveComponent<SoftBodyComponent>,
             "RemoveConstraintComponent", &Scene::Entity::RemoveComponent<ConstraintComponent>,
             "RemoveTextComponent", &Scene::Entity::RemoveComponent<TextComponent>,
             "RemoveTransformComponent", &Scene::Entity::RemoveComponent<TransformComponent>,
@@ -465,6 +467,7 @@ namespace Atlas::Scripting::Bindings {
             "GetNameComponent", &GetComponentRef<NameComponent>,
             "GetPlayerComponent", &GetComponentRef<PlayerComponent>,
             "GetRigidBodyComponent", &GetComponentRef<RigidBodyComponent>,
+            "GetSoftBodyComponent", &GetComponentRef<SoftBodyComponent>,
             "GetConstraintComponent", &GetComponentRef<ConstraintComponent>,
             "GetTextComponent", &GetComponentRef<TextComponent>,
             "GetTransformComponent", &GetComponentRef<TransformComponent>,
@@ -792,6 +795,19 @@ namespace Atlas::Scripting::Bindings {
             "layer", &RigidBodyComponent::layer
         );
 
+        ns->new_usertype<SoftBodyComponent>("SoftBodyComponent",
+            "IsValid", &SoftBodyComponent::IsValid,
+            "IsActive", &SoftBodyComponent::IsActive,
+            "HasMoved", &SoftBodyComponent::HasMoved,
+            "Reset", &SoftBodyComponent::Reset,
+            "GetSimulatedVertexCount", &SoftBodyComponent::GetSimulatedVertexCount,
+            "SetLinearVelocity", &SoftBodyComponent::SetLinearVelocity,
+            "GetLinearVelocity", &SoftBodyComponent::GetLinearVelocity,
+            "AddForce", [](SoftBodyComponent& softBodyComponent, vec3 force) { softBodyComponent.AddForce(force); },
+            "AddImpulse", [](SoftBodyComponent& softBodyComponent, vec3 impulse) { softBodyComponent.AddImpulse(impulse); },
+            "settings", &SoftBodyComponent::settings
+        );
+
         ns->new_usertype<ConstraintComponent>("ConstraintComponent",
             "IsValid", &ConstraintComponent::IsValid,
             "SetEnabled", &ConstraintComponent::SetEnabled,
@@ -915,6 +931,7 @@ namespace Atlas::Scripting::Bindings {
         GenerateComponentRefBindings<NameComponent>(ns, "NameComponent");
         GenerateComponentRefBindings<PlayerComponent>(ns, "PlayerComponent");
         GenerateComponentRefBindings<RigidBodyComponent>(ns, "RigidBodyComponent");
+        GenerateComponentRefBindings<SoftBodyComponent>(ns, "SoftBodyComponent");
         GenerateComponentRefBindings<ConstraintComponent>(ns, "ConstraintComponent");
         GenerateComponentRefBindings<TextComponent>(ns, "TextComponent");
         GenerateComponentRefBindings<TransformComponent>(ns, "TransformComponent");

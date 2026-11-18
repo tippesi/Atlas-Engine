@@ -1,5 +1,7 @@
 #include <../wind.hsh>
 #include <../globals.hsh>
+#include <../common/packing.hsh>
+#include <../common/rotation.hsh>
 
 // New naming convention:
 // Vertex attributes v[Name]
@@ -53,6 +55,21 @@ layout(std430, set = 1, binding = 4) readonly buffer CurrentJointMatrices {
 
 layout(std430, set = 1, binding = 5) readonly buffer LastJointMatrices {
     mat3x4 lastJointMatrices[];
+};
+#endif
+
+#ifdef SOFT_BODY
+// Positions with the packed normal in w, each instance has the offset of its vertices
+layout(std430, set = 1, binding = 24) readonly buffer CurrentSoftBodyVertices {
+    vec4 currentSoftBodyVertices[];
+};
+
+layout(std430, set = 1, binding = 25) readonly buffer LastSoftBodyVertices {
+    vec4 lastSoftBodyVertices[];
+};
+
+layout(std430, set = 1, binding = 26) readonly buffer SoftBodyVertexOffsets {
+    uint softBodyVertexOffsets[];
 };
 #endif
 
@@ -163,6 +180,19 @@ void main() {
     normal = vec4(normal, 0.0) * skinMatrix;
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     tangent = vec4(tangent, 0.0) * skinMatrix;
+#endif
+#endif
+
+#ifdef SOFT_BODY
+    uint softBodyVertex = softBodyVertexOffsets[PushConstants.jointOffset + gl_InstanceIndex -
+        PushConstants.instanceOffset] + gl_VertexIndex;
+    vec4 softBodyCurrent = currentSoftBodyVertices[softBodyVertex];
+    position = softBodyCurrent.xyz;
+    lastPosition = lastSoftBodyVertices[softBodyVertex].xyz;
+    normal = unpackUnitVector(floatBitsToInt(softBodyCurrent.w)).xyz;
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+    // Turned like the normal, so it stays along the surface while the cloth turns
+    tangent = RotateLike(tangent, normalize(vNormal.xyz), normal);
 #endif
 #endif
 

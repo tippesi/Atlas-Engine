@@ -8,6 +8,7 @@
 
 #include "MeshData.h"
 #include "Impostor.h"
+#include "SoftBodySimulationMesh.h"
 
 #include "../graphics/Buffer.h"
 #include "../graphics/BLAS.h"
@@ -129,6 +130,22 @@ namespace Atlas {
 
             bool IsGeometryResident() const;
 
+            // Simulated soft bodies draw level 0 of the mesh, which stays resident while there are any
+            bool HasSoftBodies() const { return softBodyCount > 0; }
+
+            // Called by soft bodies when they are created or removed
+            void ChangeSoftBodyCount(int32_t change);
+
+            // The mesh soft bodies simulate, created from level 0 and the soft body settings on first use. Thread safe,
+            // soft bodies create it in a job
+            Ref<SoftBodySimulationMesh> GetSoftBodySimulationMesh();
+
+            // Whether the simulation mesh is the current one, doesn't create it
+            bool IsSoftBodySimulationMesh(const Ref<SoftBodySimulationMesh>& simulationMesh);
+
+            // Creates the simulation mesh again on its next use, bodies with the old one are created again
+            void ResetSoftBodySimulationMesh();
+
             // Bytes of the vertex and index buffers
             size_t GetGeometrySize() const;
 
@@ -205,10 +222,15 @@ namespace Atlas {
 
             bool invertUVs = false;
 
+            SoftBodyMeshSettings softBody;
+
         private:
             bool isLoaded = false;
             std::atomic_bool blasCreated = false;
             std::atomic_bool geometryResident = true;
+            std::atomic_int32_t softBodyCount = 0;
+            Ref<SoftBodySimulationMesh> softBodySimulationMesh;
+            std::mutex softBodySimulationMeshMutex;
 
             // Guards the data against taking over levels of detail while buffers or acceleration structures are built
             std::mutex dataMutex;

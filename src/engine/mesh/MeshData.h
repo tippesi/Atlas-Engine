@@ -65,6 +65,11 @@ namespace Atlas {
             // Used for instances with reversed winding
             PipelineConfig mainReversedWindingConfig;
             PipelineConfig shadowReversedWindingConfig;
+            // Variants of the configs above for simulated soft bodies, created on their first draw
+            PipelineConfig mainSoftBodyConfig;
+            PipelineConfig shadowSoftBodyConfig;
+            PipelineConfig mainSoftBodyReversedWindingConfig;
+            PipelineConfig shadowSoftBodyReversedWindingConfig;
 
             void ResetPipelines();
 

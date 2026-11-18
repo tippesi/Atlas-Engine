@@ -11,6 +11,8 @@ namespace Atlas::Scripting::Bindings {
             { "Static", Physics::Layers::Static },
             { "Movable", Physics::Layers::Movable },
             { "Kinematic", Physics::Layers::Kinematic },
+            { "Cloth", Physics::Layers::Cloth },
+            { "ClothCollider", Physics::Layers::ClothCollider },
             { "NumLayers", Physics::Layers::NumLayers }
             });
 
@@ -133,6 +135,36 @@ namespace Atlas::Scripting::Bindings {
             "CreateConvexHullShape", &Physics::ShapesManager::CreateShape<Physics::ConvexHullShapeSettings>,
             "CreateCylinderShape", &Physics::ShapesManager::CreateShape<Physics::CylinderShapeSettings>,
             "CreateCompoundShape", &Physics::ShapesManager::CreateShape<Physics::CompoundShapeSettings>
+            );
+
+        ns->new_enum<Physics::SoftBodyBendType>("SoftBodyBendType", {
+            { "None", Physics::SoftBodyBendType::None },
+            { "Distance", Physics::SoftBodyBendType::Distance },
+            { "Dihedral", Physics::SoftBodyBendType::Dihedral }
+            });
+
+        ns->new_usertype<Physics::SoftBodySettings>("SoftBodySettings",
+            sol::call_constructor,
+            sol::constructors<Physics::SoftBodySettings()>(),
+            "mass", &Physics::SoftBodySettings::mass,
+            "edgeCompliance", &Physics::SoftBodySettings::edgeCompliance,
+            "shearCompliance", &Physics::SoftBodySettings::shearCompliance,
+            "bendCompliance", &Physics::SoftBodySettings::bendCompliance,
+            "bendType", &Physics::SoftBodySettings::bendType,
+            "pressure", &Physics::SoftBodySettings::pressure,
+            "iterations", &Physics::SoftBodySettings::iterations,
+            "linearDamping", &Physics::SoftBodySettings::linearDamping,
+            "friction", &Physics::SoftBodySettings::friction,
+            "restitution", &Physics::SoftBodySettings::restitution,
+            "gravityFactor", &Physics::SoftBodySettings::gravityFactor,
+            "vertexRadius", &Physics::SoftBodySettings::vertexRadius,
+            "doubleSided", &Physics::SoftBodySettings::doubleSided,
+            "allowSleeping", &Physics::SoftBodySettings::allowSleeping,
+            "objectLayer", &Physics::SoftBodySettings::objectLayer,
+            "windFactor", &Physics::SoftBodySettings::windFactor,
+            "simulationDistance", &Physics::SoftBodySettings::simulationDistance,
+            "pinned", &Physics::SoftBodySettings::pinned,
+            "pinBounds", DependentMember<&Physics::SoftBodySettings::pinBounds>()
             );
 
         ns->new_usertype<Physics::BodyCreationSettings>("RigidBodyCreationSettings",

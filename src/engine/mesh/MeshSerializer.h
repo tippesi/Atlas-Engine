@@ -37,6 +37,10 @@ namespace Atlas::Mesh {
 
     void from_json(const json& j, Impostor& p);
 
+    void to_json(json& j, const SoftBodyMeshSettings& p);
+
+    void from_json(const json& j, SoftBodyMeshSettings& p);
+
     template<class T>
     void to_json(json& j, const DataComponent<T>& p, bool binary) {
 

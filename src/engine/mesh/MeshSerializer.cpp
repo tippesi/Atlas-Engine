@@ -37,6 +37,7 @@ namespace Atlas::Mesh {
             {"animationLodDistance", p.animationLodDistance},
             {"animationMaxInterval", p.animationMaxInterval},
             {"invertUVs", p.invertUVs},
+            {"softBody", p.softBody},
             {"data", p.data},
         };
 
@@ -75,6 +76,7 @@ namespace Atlas::Mesh {
         try_get_json(j, "lodPixelError", p.lodPixelError);
         try_get_json(j, "animationLodDistance", p.animationLodDistance);
         try_get_json(j, "animationMaxInterval", p.animationMaxInterval);
+        try_get_json(j, "softBody", p.softBody);
 
         p.impostor = ResourceHandle<Impostor>();
         if (j.contains("impostor")) {
@@ -339,6 +341,22 @@ namespace Atlas::Mesh {
         try_get_json(j, "compressTextures", p.compressTextures);
         j.at("approxTransmissiveColor").get_to(p.approxTransmissiveColor);
         j.at("approxReflectance").get_to(p.approxReflectance);
+
+    }
+
+    void to_json(json& j, const SoftBodyMeshSettings& p) {
+
+        j = json {
+            {"maxSimulatedVertices", p.maxSimulatedVertices},
+            {"keepBorders", p.keepBorders}
+        };
+
+    }
+
+    void from_json(const json& j, SoftBodyMeshSettings& p) {
+
+        try_get_json(j, "maxSimulatedVertices", p.maxSimulatedVertices);
+        try_get_json(j, "keepBorders", p.keepBorders);
 
     }
 

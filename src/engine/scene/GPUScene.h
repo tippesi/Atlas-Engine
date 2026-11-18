@@ -120,9 +120,14 @@ namespace Atlas::Scene {
             // Meshes without visible instances are left out of the first draws of an occluded pass
             bool drawEarly = true;
 
+            // Entities with a simulated soft body have their own slot of the mesh, the other instances keep their levels
+            // of detail and impostors
+            bool softBody = false;
+
             // State of the current frame
             bool drawable = false;
-            bool skinned = false;
+            // Skinned meshes and simulated soft bodies, drawn by the host passes
+            bool instanceVertices = false;
             bool impostor = false;
             // The geometry of a streamed mesh can be unloaded, its instances are drawn as impostors then
             bool geometry = false;
@@ -139,7 +144,7 @@ namespace Atlas::Scene {
         // Needs to be recorded before any other GPU work of the frame which reads the instances
         void UpdateBuffers(Graphics::CommandList* commandList);
 
-        // Prepares the draws of a pass which is culled on the GPU, the skinned meshes are culled here
+        // Prepares the draws of a pass which is culled on the GPU, the skinned and soft body meshes are culled here
         void FillPass(const Volume::Frustum& frustum, vec3 cameraLocation, const Ref<RenderList::Pass>& pass);
 
         // Closest distances of the instances of each mesh slot, computed by the culling. NaN without such an instance
@@ -215,7 +220,7 @@ namespace Atlas::Scene {
             bool dontCull = false;
         };
 
-        uint32_t GetSlot(const ResourceHandle<Mesh::Mesh>& mesh);
+        uint32_t GetSlot(const ResourceHandle<Mesh::Mesh>& mesh, bool softBody);
 
         void RemoveFromSlot(uint32_t entityIdx, EntityState& state);
 
@@ -236,6 +241,7 @@ namespace Atlas::Scene {
         Graphics::UploadBufferPool uploadBufferPool;
 
         std::unordered_map<Hash, uint32_t> meshSlots;
+        std::unordered_map<Hash, uint32_t> softBodyMeshSlots;
         std::vector<uint32_t> freeSlots;
         std::vector<EntityState> entityStates;
 

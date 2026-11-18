@@ -10,6 +10,7 @@
 #include "Player.h"
 #include "Constraint.h"
 #include "ContactListener.h"
+#include "SoftBody.h"
 
 #include "InterfaceImplementations.h"
 #include <Jolt/Physics/StateRecorderImpl.h>
@@ -86,9 +87,29 @@ namespace Atlas {
 
             void Update(float deltaTime);
 
+            // Time the next update with this delta time simulates, zero if it joins the following one. Velocities that
+            // move bodies to a target (kinematic bodies, pinned vertices) are based on it
+            float GetUpdateDeltaTime(float deltaTime) const;
+
             Body CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix, uint64_t userData = 0);
 
             void DestroyBody(Body body);
+
+            // The shared settings come from ShapesManager::GetSoftBodySharedSettings, their vertices are in the space of
+            // the body at the position and rotation
+            Body CreateSoftBody(const SoftBodySettings& settings, const JPH::Ref<JPH::SoftBodySharedSettings>& sharedSettings,
+                vec3 position, quat rotation, uint64_t userData = 0);
+
+            // World space positions of the simulated vertices, false while the body sleeps
+            bool GetSoftBodyVertices(BodyID bodyId, std::vector<vec3>& positions) const;
+
+            // Moves pinned vertices to world space positions, called before the simulation step
+            void MoveSoftBodyVertices(BodyID bodyId, const std::vector<uint32_t>& vertices,
+                const std::vector<vec3>& positions, float deltaTime);
+
+            // Drags the free vertices towards the wind velocity, each a little out of step with the others, and wakes
+            // the body up
+            void ApplySoftBodyWind(BodyID bodyId, vec3 wind, float factor, float time, float deltaTime);
 
             bool ContainsBody(Body body) const;
 
@@ -98,7 +119,8 @@ namespace Atlas {
 
             void StopKinematicBody(BodyID bodyId);
 
-            mat4 GetBodyMatrix(BodyID bodyId);
+            // Without lock only while no body is added, removed or changed, e.g. reading back bodies after the update
+            mat4 GetBodyMatrix(BodyID bodyId, bool lock = true);
 
             void SetMotionQuality(BodyID bodyId, MotionQuality quality);
 
@@ -262,6 +284,9 @@ namespace Atlas {
 
             // Time step of a collision step in the last update
             float stepDeltaTime = 0.0f;
+            // Time of updates too short for a step, simulated with the next one
+            float pendingDeltaTime = 0.0f;
+            static constexpr int32_t maxCollisionSteps = 8;
             float updateTime = 0.0f;
 
             friend class Scene::Scene;

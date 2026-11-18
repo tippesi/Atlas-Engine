@@ -29,8 +29,8 @@ namespace Atlas {
             // Switches to the pipelines of the graph once they are created
             void UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const Ref<RenderTarget>& target);
 
-            // Draws culled on the GPU have a draw command
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*>> subDatas;
+            // Draws culled on the GPU have a draw command, simulated soft bodies are drawn apart from the other instances
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*, bool>> subDatas;
 
             struct alignas(16) PushConstants {
                 uint32_t vegetation;

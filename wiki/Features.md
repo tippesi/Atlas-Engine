@@ -51,10 +51,25 @@ tool isn't listed here, or a listed file doesn't exist.
 
 - **Rigid bodies** (collision, colliders, dynamics, kinematic, static): `RigidBodyComponent`, created from
   `RigidBodyCreationSettings`; `physics/PhysicsWorld` (Jolt), `physics/Body`, `MotionQuality`, collision `Layers`
-  (persisted, append new ones). Kinematic bodies follow their transform.
+  (persisted, append new ones; `Cloth` for soft bodies: static, kinematic and `ClothCollider` bodies only, not the player; `ClothCollider` kinematic capsules on bones that only cloth touches; scene queries pass both). Kinematic bodies follow their transform.
 - **Shapes** (mesh collider, convex hull, box, capsule, height field): `Shape`, `ShapesManager`, `MeshShapeSettings`,
   `ConvexHullShapeSettings`, `BoundingBoxShapeSettings`, `SphereShapeSettings`, `CapsuleShapeSettings`,
   `CylinderShapeSettings`, `HeightFieldShapeSettings`, `CompoundShapeSettings`, `CompoundShapeChild`, `ShapeType`.
+- **Soft bodies** (cloth, flags, curtains, sails, deformable bodies, balloons, Jolt soft body): `SoftBodyComponent` with
+  `Physics::SoftBodySettings` (compliance, `SoftBodyBendType`, pressure, object layer `Cloth`, pin bounds in mesh space,
+  bounds without a vertex pin the closest one). The `Mesh::SoftBodySimulationMesh` is created once per mesh at runtime:
+  level 0 welded by position, doubled back faces dropped, simplified to `SoftBodyMeshSettings::maxSimulatedVertices`
+  (proxy/cage mesh, regularized even triangles, optionally `keepBorders`), every render vertex bound to a simulated
+  triangle, vertex masses by area. It and the Jolt settings are prepared in jobs; bodies with the same geometry and
+  constraint settings share the Jolt settings (`ShapesManager`, rotation goes to the body, scale into the vertices). Only
+  entities with a simulated body are drawn from their vertices (`SOFT_BODY` pipeline variants, own GPU scene slot,
+  `raytracer/deform.csh`), the other instances of the mesh keep levels of detail and impostors. The mesh editor sets the
+  resolution and simulates a preview; the soft body component panel edits the pins with a box gizmo and shows the
+  simulation mesh in the scene and the mesh editor. Lua `AddSoftBodyComponent(SoftBodySettings())`, mesh
+  `SoftBodyMeshSettings`. `windFactor` drags the free vertices towards the scene wind with a flutter,
+  `simulationDistance` simulates only near the main camera (farther the mesh rests in its rest pose). Capture edit op
+  `softBodies` (meshes, set, pin `top`/`topBottom` per connected part, small parts fixed, `set` for the pinBounds of
+  "set"), `meshSettings` `softBody`.
 - **Constraints** (joints, ropes, hinges, chains, anchors): `ConstraintComponent`, `ConstraintCreationSettings`,
   `ConstraintType`. Capture `constraint`.
 - **Triggers and contacts** (sensors, overlap events, collision callbacks): sensor bodies, `Scene::GetContactEvents`,
@@ -170,6 +185,10 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Meshes** (models, geometry, LOD, mobility, culling distance, screen size): `mesh/Mesh`, `MeshData`, `MeshComponent`
   (Lua `Mesh`, `MeshData`, `MeshComponent`, `MeshMobility`, `MeshUsageBits`), `.aemesh` files, editor
   `MeshEditorWindow`.
+- **Mesh simplification** (decimation, meshoptimizer, weld, remap, vertex cache): `mesh/MeshSimplifier` with
+  `SimplifyOptions` (target ratio or count, max error, locked borders, regularization for even triangles, attributes, per vertex locks), welding by position
+  and the remap/optimization steps around it. The engine uses it instead of meshoptimizer directly (levels of detail,
+  soft body simulation meshes, capture `softBodies`).
 - **Mesh levels of detail** (LOD, simplification, decimation, meshoptimizer, detail levels): `MeshData::GenerateLods` with
   `MeshLodSettings` (`lodIndices` follow level 0 in the index buffer, each level has fetch-ordered copies of its
   vertices behind the ones of level 0), generated on import (`ModelImporter::lodSettings`) and in a job by

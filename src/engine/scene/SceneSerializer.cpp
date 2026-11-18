@@ -36,6 +36,7 @@ namespace Atlas::Scene {
         ComponentSection<AudioVolumeComponent>{ "audioVolume" },
         ComponentSection<FogVolumeComponent>{ "fogVolume" },
         ComponentSection<RigidBodyComponent>{ "rigidBody" },
+        ComponentSection<SoftBodyComponent>{ "softBody" },
         ComponentSection<PlayerComponent>{ "player" },
         ComponentSection<ConstraintComponent>{ "constraint" },
         ComponentSection<TextComponent>{ "text" },

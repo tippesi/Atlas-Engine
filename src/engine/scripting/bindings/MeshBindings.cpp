@@ -43,6 +43,12 @@ namespace Atlas::Scripting::Bindings {
             "minReduction", &Mesh::MeshLodSettings::minReduction
             );
 
+        ns->new_usertype<Mesh::SoftBodyMeshSettings>("SoftBodyMeshSettings",
+            sol::constructors<Mesh::SoftBodyMeshSettings()>(),
+            "maxSimulatedVertices", &Mesh::SoftBodyMeshSettings::maxSimulatedVertices,
+            "keepBorders", &Mesh::SoftBodyMeshSettings::keepBorders
+            );
+
         ns->new_usertype<Mesh::MeshData>("MeshData",
             "IsSkinned", &Mesh::MeshData::IsSkinned,
             "lodErrors", sol::readonly(&Mesh::MeshData::lodErrors),
@@ -64,6 +70,7 @@ namespace Atlas::Scripting::Bindings {
                 mesh.GenerateLods(settings.value_or(Mesh::MeshLodSettings()));
             },
             "ClearLods", &Mesh::Mesh::ClearLods,
+            "ResetSoftBodySimulationMesh", &Mesh::Mesh::ResetSoftBodySimulationMesh,
             "IsGeneratingLods", &Mesh::Mesh::IsGeneratingLods,
             "name", &Mesh::Mesh::name,
             "data", &Mesh::Mesh::data,
@@ -87,7 +94,8 @@ namespace Atlas::Scripting::Bindings {
             "lodPixelError", &Mesh::Mesh::lodPixelError,
             "animationLodDistance", &Mesh::Mesh::animationLodDistance,
             "animationMaxInterval", &Mesh::Mesh::animationMaxInterval,
-            "invertUVs", &Mesh::Mesh::invertUVs
+            "invertUVs", &Mesh::Mesh::invertUVs,
+            "softBody", &Mesh::Mesh::softBody
             );
 
     }

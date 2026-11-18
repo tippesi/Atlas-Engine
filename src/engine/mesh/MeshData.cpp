@@ -3,8 +3,8 @@
 #include "../volume/BVH.h"
 #include "../common/MathHelper.h"
 #include "../Log.h"
+#include "MeshSimplifier.h"
 
-#include <meshoptimizer.h>
 #include <algorithm>
 #include <limits>
 
@@ -18,6 +18,10 @@ namespace Atlas {
             shadowConfig = PipelineConfig();
             mainReversedWindingConfig = PipelineConfig();
             shadowReversedWindingConfig = PipelineConfig();
+            mainSoftBodyConfig = PipelineConfig();
+            shadowSoftBodyConfig = PipelineConfig();
+            mainSoftBodyReversedWindingConfig = PipelineConfig();
+            shadowSoftBodyReversedWindingConfig = PipelineConfig();
 
             mainGraphPending = false;
             shadowGraphPending = false;
@@ -218,9 +222,8 @@ namespace Atlas {
             if (lodCount < 2 || primitiveType != 0 || !indices.ContainsData() || !vertices.ContainsData())
                 return;
 
-            const auto& vertexData = vertices.Get();
-            auto positions = reinterpret_cast<const float*>(vertexData.data());
-            auto vertexCount = vertexData.size();
+            std::span<const vec3> positions = vertices.Get();
+            auto vertexCount = positions.size();
 
             // All sub data are simplified together, the seams between them stay closed. Every simplified triangle
             // belongs to the sub data of its first vertex, which needs separate vertices per sub data like imports have
@@ -241,14 +244,13 @@ namespace Atlas {
 
             // Seams of the texture coordinates and between sub data are kept. Normal seams may collapse, flat shaded
             // meshes have them at every vertex
-            std::vector<uint32_t> positionRemap(vertexCount);
-            meshopt_generatePositionRemap(positionRemap.data(), positions, vertexCount, sizeof(vec3));
-            std::vector<unsigned char> vertexLock(vertexCount, 0);
+            auto positionRemap = MeshSimplifier::GeneratePositionRemap(positions);
+            std::vector<SimplifyVertexLock> vertexLock(vertexCount, SimplifyVertexLock::None);
             for (size_t i = 0; i < vertexCount; i++) {
                 auto first = positionRemap[i];
                 if (vertexSubData[i] != vertexSubData[first] ||
                     (texCoords.GetElementCount() == vertexCount && texCoords[i] != texCoords[first]))
-                    vertexLock[first] = meshopt_SimplifyVertex_Protect;
+                    vertexLock[first] = SimplifyVertexLock::Protect;
             }
             for (size_t i = 0; i < vertexCount; i++)
                 vertexLock[i] = vertexLock[positionRemap[i]];
@@ -277,9 +279,17 @@ namespace Atlas {
                 }
             }
             // The weights are relative to the extent of the mesh
-            auto scale = meshopt_simplifyScale(positions, vertexCount, sizeof(vec3));
+            auto scale = MeshSimplifier::GetScale(positions);
             auto uvWeight = scale > 0.0f ? uvScale / scale : 0.0f;
             const float attributeWeights[attributeCount] = { 0.1f, 0.1f, 0.1f, uvWeight, uvWeight };
+            SimplifyOptions simplifyOptions = {
+                .absoluteError = true,
+                .permissive = true,
+                .attributes = attributes,
+                .attributeWeights = attributeWeights,
+                .attributeCount = attributeCount,
+                .vertexLocks = vertexLock
+            };
 
             // The levels get normals of their simplified surfaces, with the smallest angle level 0 has a hard edge at.
             // Vertices whose normals level 0 doesn't derive from its surfaces, e.g. of leaf cards, keep theirs
@@ -300,49 +310,42 @@ namespace Atlas {
                     creaseAngle = 0.9f * splitAngles[splitAngles.size() / 20];
                 }
 
-                std::vector<float> cornerNormals(allIndices.size() * 3);
-                meshopt_generateNormals(cornerNormals.data(), allIndices.data(), allIndices.size(), positions,
-                    vertexCount, sizeof(vec3), creaseAngle, 0.0f);
+                auto cornerNormals = MeshSimplifier::GenerateCornerNormals(allIndices, positions, creaseAngle);
                 surfaceNormals.assign(vertexCount, true);
                 for (size_t i = 0; i < allIndices.size(); i++) {
                     auto vertex = allIndices[i];
-                    auto cornerNormal = vec3(cornerNormals[i * 3], cornerNormals[i * 3 + 1], cornerNormals[i * 3 + 2]);
-                    if (glm::dot(Helper::Math::NormalizeOrZero(vec3(normals[vertex])), cornerNormal) < glm::cos(glm::radians(15.0f)))
+                    if (glm::dot(Helper::Math::NormalizeOrZero(vec3(normals[vertex])), cornerNormals[i]) < glm::cos(glm::radians(15.0f)))
                         surfaceNormals[vertex] = false;
                 }
             }
 
-            std::vector<uint32_t> simplified(allIndices.size());
             std::vector<std::vector<uint32_t>> subDataIndices(subData.size());
             // Each level gets copies of the vertices it uses in the order they are fetched, which is faster to draw
             // than indices spread over all vertices of level 0
             std::vector<uint32_t> levelIndices, cornerVertices, remap;
             std::vector<uint32_t> cornerSources;
-            std::vector<float> levelNormals;
+            std::vector<vec3> levelNormals;
             std::vector<uint32_t> appendedVertices;
             // Zero keeps the normal of the source vertex
             std::vector<vec3> appendedNormals;
             auto previousCount = allIndices.size();
             // Each level is simplified from level 0, so its error is the one to the full detail
             for (int32_t lod = 1; lod < lodCount; lod++) {
-                auto targetCount = size_t(float(previousCount) * settings.reduction) / 3 * 3;
-                float error = 0.0f;
-                auto count = meshopt_simplifyWithAttributes(simplified.data(), allIndices.data(), allIndices.size(),
-                    positions, vertexCount, sizeof(vec3), attributes.data(), attributeCount * sizeof(float),
-                    attributeWeights, attributeCount, vertexLock.data(), targetCount, std::numeric_limits<float>::max(),
-                    meshopt_SimplifyErrorAbsolute | meshopt_SimplifyPermissive, &error);
+                simplifyOptions.targetIndexCount = size_t(float(previousCount) * settings.reduction);
+                auto simplified = MeshSimplifier::Simplify(allIndices, positions, simplifyOptions);
+                auto count = simplified.indices.size();
                 if (count == 0 || float(count) > float(previousCount) * settings.minReduction)
                     break;
 
                 for (auto& triangles : subDataIndices)
                     triangles.clear();
                 for (size_t i = 0; i < count; i += 3) {
-                    auto& triangles = subDataIndices[vertexSubData[simplified[i]]];
-                    triangles.insert(triangles.end(), simplified.begin() + i, simplified.begin() + i + 3);
+                    auto& triangles = subDataIndices[vertexSubData[simplified.indices[i]]];
+                    triangles.insert(triangles.end(), simplified.indices.begin() + i, simplified.indices.begin() + i + 3);
                 }
 
                 for (auto& triangles : subDataIndices)
-                    meshopt_optimizeVertexCache(triangles.data(), triangles.data(), triangles.size(), vertexCount);
+                    MeshSimplifier::OptimizeVertexCache(triangles, vertexCount);
 
                 levelIndices.clear();
                 for (const auto& triangles : subDataIndices)
@@ -351,28 +354,18 @@ namespace Atlas {
                 size_t cornerVertexCount = vertexCount;
                 cornerVertices = levelIndices;
                 if (hasNormals) {
-                    levelNormals.resize(levelIndices.size() * 3);
-                    meshopt_generateNormals(levelNormals.data(), levelIndices.data(), levelIndices.size(), positions,
-                        vertexCount, sizeof(vec3), creaseAngle, 0.0f);
+                    levelNormals = MeshSimplifier::GenerateCornerNormals(levelIndices, positions, creaseAngle);
                     for (size_t i = 0; i < levelIndices.size(); i++) {
                         if (!surfaceNormals[levelIndices[i]])
-                            std::fill_n(levelNormals.begin() + i * 3, 3, 0.0f);
+                            levelNormals[i] = vec3(0.0f);
                     }
-
-                    const meshopt_Stream streams[] = {
-                        { levelIndices.data(), sizeof(uint32_t), sizeof(uint32_t) },
-                        { levelNormals.data(), 3 * sizeof(float), 3 * sizeof(float) }
-                    };
-                    cornerVertexCount = meshopt_generateVertexRemapMulti(cornerVertices.data(), nullptr,
-                        levelIndices.size(), levelIndices.size(), streams, 2);
+                    cornerVertexCount = MeshSimplifier::GenerateCornerVertices(levelIndices, levelNormals, cornerVertices);
                 }
                 cornerSources.resize(cornerVertexCount);
                 for (size_t i = 0; i < levelIndices.size(); i++)
                     cornerSources[cornerVertices[i]] = uint32_t(i);
 
-                remap.resize(cornerVertexCount);
-                auto uniqueCount = meshopt_optimizeVertexFetchRemap(remap.data(), cornerVertices.data(),
-                    cornerVertices.size(), cornerVertexCount);
+                auto uniqueCount = MeshSimplifier::OptimizeVertexFetchRemap(cornerVertices, cornerVertexCount, remap);
 
                 auto firstVertex = uint32_t(vertexCount + appendedVertices.size());
                 appendedVertices.resize(appendedVertices.size() + uniqueCount);
@@ -384,8 +377,7 @@ namespace Atlas {
                     auto appendedIdx = firstVertex - vertexCount + remap[i];
                     appendedVertices[appendedIdx] = levelIndices[corner];
                     if (hasNormals)
-                        appendedNormals[appendedIdx] = vec3(levelNormals[corner * 3], levelNormals[corner * 3 + 1],
-                            levelNormals[corner * 3 + 2]);
+                        appendedNormals[appendedIdx] = levelNormals[corner];
                 }
                 size_t corner = 0;
                 for (auto& triangles : subDataIndices) {
@@ -403,7 +395,7 @@ namespace Atlas {
                     lodIndices.data.insert(lodIndices.data.end(), triangles.begin(), triangles.end());
                 }
 
-                lodErrors.push_back(error);
+                lodErrors.push_back(simplified.error);
                 previousCount = count;
             }
 

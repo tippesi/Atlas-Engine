@@ -9,8 +9,14 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+#include <atomic>
+
+#include <Jolt/Physics/SoftBody/SoftBodySharedSettings.h>
 
 namespace Atlas::Physics {
+
+    struct SoftBodySettings;
+    struct SoftBodyGeometry;
 
     class ShapesManager {
 
@@ -26,12 +32,29 @@ namespace Atlas::Physics {
         // Builds the shape of the mesh in a job, returns true once shapes of the mesh can be created without building it
         static bool PrepareMeshShape(const ResourceHandle<Mesh::Mesh>& mesh);
 
+        // Like a shape for rigid bodies, soft bodies with the same geometry and constraint settings share them. Thread
+        // safe, the same settings are only built once at a time
+        static JPH::Ref<JPH::SoftBodySharedSettings> GetSoftBodySharedSettings(const SoftBodySettings& settings,
+            const SoftBodyGeometry& geometry);
+
     private:
         template<class T>
         struct CacheItem {
             Weak<T> resource;
             ShapeRef ref;
         };
+
+        struct SoftBodySettingsItem {
+            // Distinguishes geometries with the same hash
+            size_t vertexCount = 0;
+            size_t indexCount = 0;
+            std::once_flag built;
+            std::atomic_bool isBuilt = false;
+            JPH::Ref<JPH::SoftBodySharedSettings> settings;
+        };
+
+        static JPH::Ref<JPH::SoftBodySharedSettings> CreateSoftBodySharedSettings(const SoftBodySettings& settings,
+            const SoftBodyGeometry& geometry);
 
         static bool TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings);
         static bool TryCreateShapeFromAABB(Shape* shape, const BoundingBoxShapeSettings& settings);
@@ -52,6 +75,9 @@ namespace Atlas::Physics {
 
         static std::unordered_map<Hash, CacheItem<Mesh::Mesh>> convexHullShapeCache;
         static std::mutex convexHullShapeCacheMutex;
+
+        static std::unordered_map<Hash, Ref<SoftBodySettingsItem>> softBodySettingsCache;
+        static std::mutex softBodySettingsCacheMutex;
 
         static const float epsilon;
 

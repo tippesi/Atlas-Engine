@@ -220,7 +220,8 @@ namespace Atlas::Editor::UI {
         Physics::BodyCreationSettings &settings) {
 
         // Mesh shapes can't be simulated, but they can be moved kinematically
-        std::vector<Physics::ObjectLayer> layers = { Physics::Layers::Static, Physics::Layers::Kinematic };
+        std::vector<Physics::ObjectLayer> layers = { Physics::Layers::Static, Physics::Layers::Kinematic,
+            Physics::Layers::ClothCollider };
         if (settings.shape->type != ShapeType::Mesh)
             layers.insert(layers.begin() + 1, Physics::Layers::Movable);
 
@@ -228,6 +229,7 @@ namespace Atlas::Editor::UI {
             switch (layer) {
                 case Physics::Layers::Movable: return "Movable";
                 case Physics::Layers::Kinematic: return "Kinematic";
+                case Physics::Layers::ClothCollider: return "Cloth collider";
                 default: return "Static";
             }
         };
