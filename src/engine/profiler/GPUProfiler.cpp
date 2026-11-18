@@ -1,7 +1,9 @@
 #include "GPUProfiler.h"
+#include "HitchRecorder.h"
 #include "../graphics/GraphicsDevice.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace Atlas {
 
@@ -12,6 +14,7 @@ namespace Atlas {
     std::deque<GPUProfiler::ThreadContext> GPUProfiler::unevaluatedThreadContexts;
 
     std::unordered_map<std::string, GPUProfiler::ThreadHistory> GPUProfiler::queryHistory;
+    std::vector<GPUProfiler::HitchFrame> GPUProfiler::hitchFrames;
     std::atomic_size_t GPUProfiler::frameIdx = size_t(-1);
 
     bool GPUProfiler::supportsDebugMarkers = false;
@@ -42,6 +45,12 @@ namespace Atlas {
         // Each frame we replace the query history by a new history
         // This is to make sure old thread names are thrown out the window
         std::unordered_map<std::string, ThreadHistory> newHistory;
+
+        // The frames read back here are checked for hitches once their history is in place
+        size_t hitchFrameCount = 0;
+        auto hitchSettings = HitchRecorder::GetSettings();
+        auto checkHitches = hitchSettings.enable && hitchSettings.gpu.enable;
+
         while(unevaluatedThreadContexts.size() && unevaluatedThreadContexts.front().frameIdx + FRAME_DATA_COUNT <= frameIdx) {
             auto& context = unevaluatedThreadContexts.front();
             // The history gets moved, copying all queries of all frames each frame is expensive. Several
@@ -63,6 +72,37 @@ namespace Atlas {
             for (const auto& query : context.queries)
                 AddMerged(queries, EvaluateQuery(query, timeData));
 
+            if (checkHitches && !queries.empty()) {
+                if (hitchFrameCount == 0 || hitchFrames[hitchFrameCount - 1].frameIdx != context.frameIdx) {
+                    if (hitchFrameCount == hitchFrames.size())
+                        hitchFrames.emplace_back();
+                    auto& frame = hitchFrames[hitchFrameCount];
+                    frame.frameIdx = context.frameIdx;
+                    frame.start = std::numeric_limits<uint64_t>::max();
+                    frame.end = 0;
+                    frame.busyTimes.clear();
+                    frame.historySlots.clear();
+                    hitchFrameCount++;
+                }
+
+                auto& frame = hitchFrames[hitchFrameCount - 1];
+                uint64_t busyTime = 0;
+                for (const auto& query : queries) {
+                    frame.start = std::min(frame.start, query.startTime);
+                    frame.end = std::max(frame.end, query.startTime + query.elapsedTime);
+                    busyTime += query.elapsedTime;
+                }
+
+                // Several contexts of a thread add up
+                auto busyIter = std::find_if(frame.busyTimes.begin(), frame.busyTimes.end(),
+                    [&](const auto& busy) { return busy.first == context.name; });
+                if (busyIter == frame.busyTimes.end())
+                    frame.busyTimes.emplace_back(context.name, busyTime);
+                else
+                    busyIter->second += busyTime;
+                frame.historySlots.emplace_back(context.name, history.historyIdx);
+            }
+
             history.history[history.historyIdx] = std::move(queries);
 
             history.historyIdx = (history.historyIdx + 1) % historyLength;
@@ -74,6 +114,31 @@ namespace Atlas {
         // The queries of the last frames aren't necessarily ready yet, which is no reason to forget the older ones
         if (!newHistory.empty())
             queryHistory = std::move(newHistory);
+
+        for (size_t i = 0; i < hitchFrameCount; i++) {
+            const auto& frame = hitchFrames[i];
+            uint64_t busyTime = 0;
+            for (const auto& [name, time] : frame.busyTimes)
+                busyTime = std::max(busyTime, time);
+
+            HitchRecorder::UpdateGPU(float(double(busyTime) / 1000000.0), float(double(frame.end - frame.start) / 1000000.0),
+                [&]() {
+                    std::vector<ThreadData> threadData;
+                    for (const auto& [name, slot] : frame.historySlots) {
+                        auto iter = std::find_if(threadData.begin(), threadData.end(),
+                            [&](const ThreadData& data) { return data.name == name; });
+                        if (iter == threadData.end()) {
+                            threadData.push_back({ .name = name });
+                            iter = std::prev(threadData.end());
+                        }
+                        for (const auto& query : queryHistory[name].history[slot])
+                            AddMerged(iter->queries, query);
+                    }
+                    for (auto& data : threadData)
+                        OrderQueries(data.queries, OrderBy::MAX_TIME);
+                    return threadData;
+                });
+        }
 
         supportsDebugMarkers = Graphics::GraphicsDevice::DefaultDevice->support.debugMarker;
 

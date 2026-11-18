@@ -41,15 +41,6 @@ namespace Atlas::Editor {
         Streaming::StreamingManager::settings.impostors.enable = false;
         Streaming::StreamingManager::settings.meshes.enable = false;
 
-        // --log-hitches [ms] logs frames that take much longer than the ones before with their CPU profile
-        for (size_t i = 0; i < args.size(); i++) {
-            if (args[i] != "--log-hitches")
-                continue;
-            HitchRecorder::log = true;
-            if (i + 1 < args.size() && std::isdigit(static_cast<unsigned char>(args[i + 1][0])))
-                HitchRecorder::minimumFrameTime = std::stof(args[i + 1]);
-        }
-
         ContentDiscovery::Update();
 
         ImGui::CreateContext();
@@ -69,6 +60,22 @@ namespace Atlas::Editor {
         Singletons::config = CreateRef<Config>();
 
         Serialization::DeserializeConfig();
+
+        // --log-hitches [ms] logs frames that take much longer than the ones before with their CPU profile, it
+        // overrides the hitch settings of the config for this run
+        for (size_t i = 0; i < args.size(); i++) {
+            if (args[i] != "--log-hitches")
+                continue;
+            auto hitchSettings = HitchRecorder::GetSettings();
+            configHitchSettings = hitchSettings;
+            hitchSettings.enable = true;
+            hitchSettings.cpu.enable = true;
+            hitchSettings.log = true;
+            if (i + 1 < args.size() && std::isdigit(static_cast<unsigned char>(args[i + 1][0])))
+                hitchSettings.cpu.minimumTime = std::stof(args[i + 1]);
+            HitchRecorder::SetSettings(hitchSettings);
+        }
+
         Serialization::DeserializeContentBrowserWindow(contentBrowserWindow);
 
         Serialization::DeserializeDrawerWindow(logWindow);
@@ -120,6 +127,8 @@ namespace Atlas::Editor {
         Serialization::SerializeContentBrowserWindow(contentBrowserWindow);
         Serialization::SerializeDrawerWindow(logWindow);
         Serialization::SerializeDrawerWindow(profilerWindow);
+        if (configHitchSettings)
+            HitchRecorder::SetSettings(*configHitchSettings);
         Serialization::SerializeConfig();
         ContentDiscovery::Shutdown();
 

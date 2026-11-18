@@ -9,6 +9,7 @@
 #include "physics/PhysicsSerializer.h"
 
 #include "Log.h"
+#include "profiler/HitchRecorder.h"
 
 #include <algorithm>
 #include <cctype>
@@ -28,6 +29,24 @@ namespace Atlas::Editor {
         for (const auto& scene : config->openedScenes)
             scenePaths.push_back(scene.GetResource()->path);
 
+        auto detectorToJson = [](const HitchRecorder::Detector& detector) {
+            return json {
+                { "enable", detector.enable },
+                { "metric", static_cast<int32_t>(detector.metric) },
+                { "trigger", static_cast<int32_t>(detector.trigger) },
+                { "minimumTime", detector.minimumTime },
+                { "relativeThreshold", detector.relativeThreshold }
+            };
+            };
+
+        auto hitchSettings = HitchRecorder::GetSettings();
+        json hitches = {
+            { "enable", hitchSettings.enable },
+            { "cpu", detectorToJson(hitchSettings.cpu) },
+            { "gpu", detectorToJson(hitchSettings.gpu) },
+            { "maxHitches", hitchSettings.maxHitches }
+        };
+
         json j = {
             { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
@@ -35,7 +54,8 @@ namespace Atlas::Editor {
             { "uiScale", config->uiScale },
             { "scenes", scenePaths },
             { "recentScenes", config->recentScenes },
-            { "statusBarDrawers", config->statusBarDrawers }
+            { "statusBarDrawers", config->statusBarDrawers },
+            { "hitches", hitches }
         };
 
         TryWriteToFile(configFilename, to_string(j));
@@ -69,6 +89,30 @@ namespace Atlas::Editor {
             j.at("recentScenes").get_to(config->recentScenes);
         if (j.contains("statusBarDrawers"))
             j.at("statusBarDrawers").get_to(config->statusBarDrawers);
+
+        if (j.contains("hitches")) {
+            auto detectorFromJson = [](const json& j, HitchRecorder::Detector& detector) {
+                int32_t metric = static_cast<int32_t>(detector.metric);
+                int32_t trigger = static_cast<int32_t>(detector.trigger);
+                try_get_json(j, "enable", detector.enable);
+                try_get_json(j, "metric", metric);
+                try_get_json(j, "trigger", trigger);
+                try_get_json(j, "minimumTime", detector.minimumTime);
+                try_get_json(j, "relativeThreshold", detector.relativeThreshold);
+                detector.metric = static_cast<HitchRecorder::Metric>(metric);
+                detector.trigger = static_cast<HitchRecorder::Trigger>(trigger);
+                };
+
+            const auto& hitches = j["hitches"];
+            auto hitchSettings = HitchRecorder::GetSettings();
+            try_get_json(hitches, "enable", hitchSettings.enable);
+            try_get_json(hitches, "maxHitches", hitchSettings.maxHitches);
+            if (hitches.contains("cpu"))
+                detectorFromJson(hitches["cpu"], hitchSettings.cpu);
+            if (hitches.contains("gpu"))
+                detectorFromJson(hitches["gpu"], hitchSettings.gpu);
+            HitchRecorder::SetSettings(hitchSettings);
+        }
 
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)

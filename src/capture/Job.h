@@ -259,6 +259,8 @@ namespace Atlas::Capture {
 
         float minimumFrameTime = 40.0f;
         float relativeThreshold = 2.0f;
+        // Also records GPU hitches by the busiest GPU queue, enables the GPU profiler
+        bool gpu = false;
 
     };
 

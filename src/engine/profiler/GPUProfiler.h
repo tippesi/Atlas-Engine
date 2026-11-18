@@ -120,6 +120,16 @@ namespace Atlas {
             std::vector<std::vector<Query>> history;
         };
 
+        // A frame read back in BeginFrame, which is checked for hitches
+        struct HitchFrame {
+            size_t frameIdx = 0;
+            uint64_t start = 0;
+            uint64_t end = 0;
+            // Per thread
+            std::vector<std::pair<std::string, uint64_t>> busyTimes;
+            std::vector<std::pair<std::string, size_t>> historySlots;
+        };
+
         static constexpr uint32_t historyLength = 64;
 
         static Query EvaluateQuery(const TimestampQuery& query, const std::vector<uint64_t>& timeData);
@@ -137,6 +147,8 @@ namespace Atlas {
         static std::deque<ThreadContext> unevaluatedThreadContexts;
 
         static std::unordered_map<std::string, ThreadHistory> queryHistory;
+        // Reused in every frame, guarded by the mutex of the unevaluated contexts
+        static std::vector<HitchFrame> hitchFrames;
         static std::atomic_size_t frameIdx;
 
         // Contexts of threads which never ended their recording are dropped after this many frames

@@ -247,6 +247,10 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Profiling** (timings, CPU and GPU profiler, hitches, frame time, stutter): `profiler/` (`CPUProfiler`,
   `GPUProfiler`, `HitchRecorder`), `PerformanceCounter`, editor `ProfilerWindow`, ImGui `ProfilerPanel`,
   `PerformanceGraphPanel`.
+- **Hitch recording** (spikes, stutter, slow frames, frame time outliers, causes): `HitchRecorder` detects CPU hitches
+  (frame time, main or render thread) and GPU hitches (busiest queue, frame span) by a minimum time and/or a factor of
+  the running average, keeps their profile and the queries that took longer than on average, `Evaluate` merges those
+  causes; "Hitches" tab of the `ProfilerPanel` (settings saved in the editor config), `--log-hitches`, capture `hitches`.
 - **Logging**: `Log` (C++ and Lua, `Log::printToConsole` switches the console output), editor `LogWindow`.
 - **Running engine applications** (who uses the GPU, process list, busy, wait for the GPU): capture `InstanceRegistry`,
   the capture tool and games linking the capture library register themselves with what they do (not the editor and

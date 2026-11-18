@@ -336,8 +336,10 @@ e.g. the start of the game up to the first seconds of playing.
 ## Measuring
 
 - `profile` averages the GPU passes and the CPU profiler over the last frames (`profile.json`, at most 64 frames in a
-  job, `--profile` for more), `hitches` records slow frames with their CPU profile (`hitches.json`), `--validation`
-  writes the Vulkan validation messages by id (`validation.json`), `report.json` lists the GPU memory (`gpuMemory`).
+  job, `--profile` for more), `hitches` records slow frames with their CPU profile (`hitches.json`; per hitch `source`
+  `cpu`/`gpu`, `metric` such as `frameTime` or `gpuBusy`, `frameMs`, `averageMs`, `causes` with the queries that took
+  much longer than on average, `threads`; `"gpu": true` also records GPU hitches), `--validation` writes the Vulkan
+  validation messages by id (`validation.json`), `report.json` lists the GPU memory (`gpuMemory`).
 - `bench <bench.json>` follows the performance rules of `AGENTS.md`: builds (`"builds": { "base": "x_base.exe", "change":
   "x.exe" }`) or shader directories (`"shaders": { "base": "<dir>", "change": "shader" }`, the differing files are touched
   before each run so the SPIR-V cache doesn't serve the other one) run interleaved in alternating order at 1920x1080,

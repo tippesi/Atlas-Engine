@@ -8,6 +8,7 @@
 #include <input/Touch.h>
 #include <loader/ModelImporter.h>
 #include <ImguiExtension/ImguiWrapper.h>
+#include <profiler/HitchRecorder.h>
 
 #include <renderer/PathTracingRenderer.h>
 
@@ -20,6 +21,8 @@
 #include "ui/windows/SettingsWindow.h"
 #include "ui/windows/GeometryBrushWindow.h"
 #include "ui/popups/CommandPalette.h"
+
+#include <optional>
 
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
@@ -172,6 +175,9 @@ namespace Atlas::Editor {
         bool dockLoadingScenes = false;
         bool restoringScenes = true;
         bool playingMaximized = false;
+
+        // Hitch settings of the config while --log-hitches overrides them, these are saved instead
+        std::optional<HitchRecorder::Settings> configHitchSettings;
 
     };
 

@@ -102,6 +102,11 @@ namespace Atlas {
          */
         static std::vector<ThreadData> GetQueriesAverage(uint32_t frameCount = 32, OrderBy order = OrderBy::CHRONO);
 
+        /**
+         * Gets the milliseconds of the root queries of a thread in the last frame, without copying the queries
+         */
+        static float GetThreadTime(const std::string& name);
+
         static std::atomic_bool enable;
 
     private:

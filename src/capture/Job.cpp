@@ -541,10 +541,11 @@ namespace Atlas::Capture {
         if (j.contains("hitches")) {
             auto& hitches = j["hitches"];
             if (hitches.is_object()) {
-                CheckKeys(hitches, { "minimumMs", "relativeThreshold" }, "hitches");
+                CheckKeys(hitches, { "minimumMs", "relativeThreshold", "gpu" }, "hitches");
                 job.hitches = HitchesSpec {
                     .minimumFrameTime = hitches.value("minimumMs", 40.0f),
-                    .relativeThreshold = hitches.value("relativeThreshold", 2.0f)
+                    .relativeThreshold = hitches.value("relativeThreshold", 2.0f),
+                    .gpu = hitches.value("gpu", false)
                 };
             }
             else if (hitches.get<bool>()) {

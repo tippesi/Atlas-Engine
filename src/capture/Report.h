@@ -67,7 +67,7 @@ namespace Atlas::Capture {
         void WriteProfile(int32_t frames);
 
         // Writes the hitches of the job with their CPU profile to hitches.json and prints them
-        void WriteHitches(const std::vector<HitchRecorder::Hitch>& hitches);
+        void WriteHitches(const std::vector<Ref<const HitchRecorder::Hitch>>& hitches);
 
         // Writes the validation messages grouped by their id to validation.json
         void WriteValidation();

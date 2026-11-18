@@ -240,10 +240,13 @@ namespace Atlas::Capture {
 
         // The profilers are disabled by default in release builds, hitches need the CPU profile
         CPUProfiler::enable = job.profileFrames > 0 || job.hitches.has_value();
-        GPUProfiler::enable = job.profileFrames > 0;
+        GPUProfiler::enable = job.profileFrames > 0 || (job.hitches && job.hitches->gpu);
         if (job.hitches) {
-            HitchRecorder::minimumFrameTime = job.hitches->minimumFrameTime;
-            HitchRecorder::relativeThreshold = job.hitches->relativeThreshold;
+            auto hitchSettings = HitchRecorder::GetSettings();
+            hitchSettings.cpu.minimumTime = job.hitches->minimumFrameTime;
+            hitchSettings.cpu.relativeThreshold = job.hitches->relativeThreshold;
+            hitchSettings.gpu.enable = job.hitches->gpu;
+            HitchRecorder::SetSettings(hitchSettings);
         }
 
         if (job.sound)
@@ -1261,7 +1264,7 @@ namespace Atlas::Capture {
         if (job.hitches) {
             // A hitch is recorded at the end of its frame
             auto hitches = HitchRecorder::GetHitches();
-            std::erase_if(hitches, [&](const auto& hitch) { return hitch.time - hitch.frameTime / 1000.0f < hitchesStartTime; });
+            std::erase_if(hitches, [&](const auto& hitch) { return hitch->time - hitch->frameTime / 1000.0f < hitchesStartTime; });
             report.WriteHitches(hitches);
         }
 

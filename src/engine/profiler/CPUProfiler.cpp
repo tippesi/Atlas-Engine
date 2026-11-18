@@ -92,6 +92,23 @@ namespace Atlas {
 
     }
 
+    float CPUProfiler::GetThreadTime(const std::string& name) {
+
+        std::scoped_lock lock(historyMutex);
+
+        auto iter = history.find(name);
+        if (iter == history.end())
+            return 0.0f;
+
+        const auto& threadHistory = iter->second;
+        uint64_t elapsedTime = 0;
+        for (const auto& node : threadHistory.frames[(threadHistory.index + historyLength - 1) % historyLength])
+            elapsedTime += node.elapsedTime;
+
+        return float(double(elapsedTime) / 1000000.0);
+
+    }
+
     CPUProfiler::ThreadBuffer* CPUProfiler::RegisterThread() {
 
         if (threadEnded)

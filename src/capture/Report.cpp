@@ -492,10 +492,11 @@ namespace Atlas::Capture {
 
     }
 
-    void Report::WriteHitches(const std::vector<HitchRecorder::Hitch>& hitches) {
+    void Report::WriteHitches(const std::vector<Ref<const HitchRecorder::Hitch>>& hitches) {
 
         json hitchesJson = json::array();
-        for (const auto& hitch : hitches) {
+        for (const auto& hitchRef : hitches) {
+            const auto& hitch = *hitchRef;
             // Only the scopes that took a noticeable part of the frame
             auto minimumMilliseconds = double(hitch.frameTime) * 0.05;
 
@@ -515,8 +516,15 @@ namespace Atlas::Capture {
                                 query["query"].get<std::string>();
             }
 
-            hitchesJson.push_back({ { "time", Round(hitch.time, 3) }, { "frameMs", Round(hitch.frameTime, 2) },
-                { "averageMs", Round(hitch.averageFrameTime, 2) }, { "threads", threads } });
+            json causes = json::array();
+            for (const auto& cause : hitch.causes)
+                causes.push_back({ { "thread", cause.thread }, { "query", cause.path }, { "ms", Round(cause.time, 2) },
+                    { "averageMs", Round(cause.averageTime, 2) } });
+
+            hitchesJson.push_back({ { "time", Round(hitch.time, 3) },
+                { "source", hitch.source == HitchRecorder::Source::GPU ? "gpu" : "cpu" },
+                { "metric", HitchRecorder::GetMetricId(hitch.metric) }, { "frameMs", Round(hitch.frameTime, 2) },
+                { "averageMs", Round(hitch.averageFrameTime, 2) }, { "causes", causes }, { "threads", threads } });
             Print("  Hitch " + FormatFloat(hitch.frameTime, 1) + " ms (average " + FormatFloat(hitch.averageFrameTime, 1) +
                 " ms) at " + FormatFloat(hitch.time, 1) + " s" + summary);
         }
