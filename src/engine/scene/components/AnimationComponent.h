@@ -26,6 +26,30 @@ namespace Atlas {
 
             class AnimationComponent;
 
+            // A pose that is faded out keeps moving the way it moved before and slows down, so a change of the
+            // animation doesn't freeze the motion of the last one
+            class AnimationPoseFade {
+
+            public:
+                // Takes the pose and its velocity from the pose of the update before, which took poseDeltaTime
+                void Start(const std::vector<Mesh::JointPose>& pose, const std::vector<Mesh::JointPose>& lastPose,
+                    float poseDeltaTime);
+
+                // The pose time seconds after the start
+                const std::vector<Mesh::JointPose>& Get(float time);
+
+                // The weight of the new pose time seconds into a fade of fadeTime seconds, eased in and out
+                static float Weight(float time, float fadeTime);
+
+            private:
+                std::vector<Mesh::JointPose> pose;
+                std::vector<Mesh::JointPose> movedPose;
+                std::vector<vec3> linearVelocities;
+                std::vector<vec3> angularVelocities;
+                bool moving = false;
+
+            };
+
             // An animation with its playback state and the pose sampled from it
             class AnimationClipPlayer {
 
@@ -45,6 +69,9 @@ namespace Atlas {
                 // Fades out the blend pose, ends the blend once it is gone
                 void UpdateBlend(float deltaTime);
 
+                // Fades out the pose shown, which keeps its motion
+                void BlendFromPose(const std::vector<Mesh::JointPose>& shownPose);
+
                 static float AdvanceTime(const Animation::Animation& animation, float time, float deltaTime,
                     float speed, bool loop);
 
@@ -60,6 +87,12 @@ namespace Atlas {
                 float blendTime = 0.0f;
                 float blendProgress = 0.0f;
                 bool blending = false;
+
+                // The pose of the update before and the time between them
+                std::vector<Mesh::JointPose> lastPose;
+                float poseDeltaTime = 0.0f;
+                AnimationPoseFade blendFade;
+                bool blendFromFade = false;
 
                 friend AnimationComponent;
 
@@ -228,6 +261,14 @@ namespace Atlas {
                 void Play(const ResourceHandle<Animation::Animation>& animation, float blendTime = 0.0f);
 
                 /**
+                 * Fades from the pose shown now to the pose of the animation and its layers, e.g. when a character
+                 * changes from running to a roll. The shown pose keeps its motion while it fades out, the animations
+                 * and the layers can change at once, without a blend of their own
+                 * @param fadeTime The time in seconds of the fade
+                 */
+                void Transition(float fadeTime);
+
+                /**
                  * Returns a layer which blends over the animation of the component, layers are applied in the order
                  * of their index. Missing layers up to the index are created, references to layers stay valid
                  */
@@ -309,6 +350,15 @@ namespace Atlas {
                 // Mesh space rotations of the layer and of the blended pose while an override layer is applied
                 std::vector<quat> layerRotations;
                 std::vector<quat> blendedRotations;
+
+                // The pose of the animation and its layers before the joint offsets and the inverse kinematics
+                std::vector<Mesh::JointPose> animatedPose;
+
+                // The pose shown when a transition started, faded out after the layers
+                AnimationPoseFade transitionFade;
+                float transitionTime = 0.0f;
+                float transitionProgress = 0.0f;
+                bool transitioning = false;
 
                 // The previous animation or, when a blend is interrupted, its last pose is faded out
                 ResourceHandle<Animation::Animation> blendAnimation;

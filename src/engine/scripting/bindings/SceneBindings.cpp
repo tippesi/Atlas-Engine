@@ -550,6 +550,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<AnimationComponent>("AnimationComponent",
             "Play", playOverload,
+            "Transition", &AnimationComponent::Transition,
             "GetLayer", &AnimationComponent::GetLayer,
             "GetLayerCount", &AnimationComponent::GetLayerCount,
             "GetIKChain", &AnimationComponent::GetIKChain,

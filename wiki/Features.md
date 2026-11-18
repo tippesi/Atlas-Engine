@@ -205,6 +205,9 @@ tool isn't listed here, or a listed file doesn't exist.
   `AnimationLayer` (override or additive, masks), `AnimationIKChain` (two bone IK, foot locking),
   `AnimationBlendMode`; `animation/` (`Animation` with `MeasureStride` for the ground a cycle covers,
   `AnimationChannel`, `.aeanimation` files). Editor `AnimationTimelinePanel`, capture `animation` event.
+- **Animation transitions** (inertialization, dead blending, smooth clip changes, crossfade from the shown pose):
+  `AnimationComponent::Transition` (Lua `Transition`) fades the pose shown after all layers into whatever plays next,
+  the faded pose keeps its motion and slows down (`AnimationPoseFade`); blends of `Play` work alike and ease in and out.
 
 ## Audio
 

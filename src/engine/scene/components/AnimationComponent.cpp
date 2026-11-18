@@ -12,9 +12,68 @@ namespace Atlas {
 
         namespace Components {
 
+            void AnimationPoseFade::Start(const std::vector<Mesh::JointPose>& pose, const std::vector<Mesh::JointPose>& lastPose,
+                float poseDeltaTime) {
+
+                this->pose = pose;
+                moving = lastPose.size() == pose.size() && poseDeltaTime > 0.0f;
+                if (!moving)
+                    return;
+
+                // Joints spinning faster than this are clamped, e.g. a pose that jumped in the last update
+                const float maxAngularVelocity = 4.0f * glm::pi<float>();
+
+                linearVelocities.resize(pose.size());
+                angularVelocities.resize(pose.size());
+                for (size_t i = 0; i < pose.size(); i++) {
+                    linearVelocities[i] = (pose[i].position - lastPose[i].position) / poseDeltaTime;
+
+                    auto delta = pose[i].rotation * glm::inverse(lastPose[i].rotation);
+                    if (delta.w < 0.0f)
+                        delta = -delta;
+                    auto axis = vec3(delta.x, delta.y, delta.z);
+                    auto sine = glm::length(axis);
+                    angularVelocities[i] = vec3(0.0f);
+                    if (sine > 1e-6f) {
+                        auto angle = 2.0f * glm::atan(sine, delta.w);
+                        angularVelocities[i] = axis / sine * glm::min(angle / poseDeltaTime, maxAngularVelocity);
+                    }
+                }
+
+            }
+
+            const std::vector<Mesh::JointPose>& AnimationPoseFade::Get(float time) {
+
+                if (!moving)
+                    return pose;
+
+                // The offset of a velocity that decays exponentially approaches velocity / decay
+                const float decay = 12.0f;
+                auto offset = (1.0f - glm::exp(-decay * time)) / decay;
+                movedPose = pose;
+                for (size_t i = 0; i < movedPose.size(); i++) {
+                    movedPose[i].position += linearVelocities[i] * offset;
+                    auto turn = angularVelocities[i] * offset;
+                    auto angle = glm::length(turn);
+                    if (angle > 1e-6f)
+                        movedPose[i].rotation = glm::normalize(glm::angleAxis(angle, turn / angle) * movedPose[i].rotation);
+                }
+                return movedPose;
+
+            }
+
+            float AnimationPoseFade::Weight(float time, float fadeTime) {
+
+                // Eased in and out, the motion doesn't change abruptly where the fade starts and ends
+                auto progress = fadeTime > 0.0f ? Helper::Math::Saturate(time / fadeTime) : 1.0f;
+                return progress * progress * (3.0f - 2.0f * progress);
+
+            }
+
             void AnimationClipPlayer::StartClip(const ResourceHandle<Animation::Animation>& animation, float blendTime, bool blend) {
 
                 blending = blend;
+                blendFromFade = false;
                 this->blendTime = blendTime;
                 blendProgress = 0.0f;
 
@@ -34,19 +93,29 @@ namespace Atlas {
 
                 // The blend also progresses while the animations are stopped, e.g. to preview a change
                 blendProgress += deltaTime;
-                auto weight = blendPose.size() == pose.size() ? Helper::Math::Saturate(blendProgress / blendTime) : 1.0f;
-                BlendPoses(pose, blendPose, weight);
+                const auto& from = blendFromFade ? blendFade.Get(blendProgress) : blendPose;
+                auto weight = from.size() == pose.size() ? AnimationPoseFade::Weight(blendProgress, blendTime) : 1.0f;
+                BlendPoses(pose, from, weight);
                 blending = weight < 1.0f;
+
+            }
+
+            void AnimationClipPlayer::BlendFromPose(const std::vector<Mesh::JointPose>& shownPose) {
+
+                if (!blending)
+                    return;
+
+                blendFade.Start(shownPose, lastPose, poseDeltaTime);
+                blendFromFade = true;
 
             }
 
             void AnimationLayer::Play(const ResourceHandle<Animation::Animation>& animation, float blendTime) {
 
                 auto canBlend = blendTime > 0.0f && !pose.empty() && weight > 0.0f;
-                if (canBlend)
-                    blendPose = pose;
 
                 StartClip(animation, blendTime, canBlend);
+                BlendFromPose(pose);
 
             }
 
@@ -80,7 +149,8 @@ namespace Atlas {
             void AnimationComponent::Play(const ResourceHandle<Animation::Animation>& animation, float blendTime) {
 
                 auto canBlend = blendTime > 0.0f && !pose.empty();
-                auto blendCurrentAnimation = canBlend && !blending && this->animation.IsLoaded() &&
+                // An animation played by setting its time would stand still, its last pose fades out instead
+                auto blendCurrentAnimation = canBlend && !blending && playing && this->animation.IsLoaded() &&
                     mappedAnimation == this->animation.Get().get();
 
                 if (blendCurrentAnimation) {
@@ -89,12 +159,26 @@ namespace Atlas {
                     blendAnimationTime = time;
                 }
                 else {
-                    // Fades out the last pose, e.g. the one of an interrupted blend
-                    blendPose = pose;
                     blendAnimation.Reset();
                 }
 
                 StartClip(animation, blendTime, canBlend);
+                // Fades out the last pose, e.g. the one of an interrupted blend
+                if (!blendCurrentAnimation)
+                    BlendFromPose(animatedPose);
+
+            }
+
+            void AnimationComponent::Transition(float fadeTime) {
+
+                if (animatedPose.empty() || fadeTime <= 0.0f)
+                    return;
+
+                // A transition during a transition starts from the pose shown, which already contains the last one
+                transitionFade.Start(animatedPose, lastPose, poseDeltaTime);
+                transitionTime = fadeTime;
+                transitionProgress = 0.0f;
+                transitioning = true;
 
             }
 
@@ -196,6 +280,9 @@ namespace Atlas {
                 deltaTime += skippedDeltaTime;
                 skippedDeltaTime = 0.0f;
 
+                lastPose = animatedPose;
+                poseDeltaTime = deltaTime;
+
                 if (animation.IsLoaded()) {
                     AdvanceClip(deltaTime);
 
@@ -228,6 +315,15 @@ namespace Atlas {
 
                 for (auto& layer : layers)
                     UpdateLayer(layer, skeleton, deltaTime);
+
+                if (transitioning) {
+                    transitionProgress += deltaTime;
+                    const auto& from = transitionFade.Get(transitionProgress);
+                    auto weight = from.size() == pose.size() ? AnimationPoseFade::Weight(transitionProgress, transitionTime) : 1.0f;
+                    BlendPoses(pose, from, weight);
+                    transitioning = weight < 1.0f;
+                }
+                animatedPose = pose;
 
                 skeleton.GetGlobalMatrices(pose, globalMatrices);
 
@@ -328,6 +424,8 @@ namespace Atlas {
                     layer.maskChanged = false;
                 }
 
+                layer.lastPose = layer.pose;
+                layer.poseDeltaTime = deltaTime;
                 animation.Sample(layer.time, skeleton, layer.channelToJoint, layer.pose);
 
                 if (layer.blending)
