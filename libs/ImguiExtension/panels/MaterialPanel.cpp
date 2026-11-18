@@ -26,13 +26,13 @@ namespace Atlas::ImguiExtension {
             ImGui::PopID();
         };
         
-        ImGui::SeparatorText("Base color");
+        UIElements::PropertySection("Base color");
         renderWithImagePreview(material->baseColorMap, "MaterialBaseColor", [&]() {
             UIElements::PropertyLabel("Base color");
             ImGui::ColorEdit3("##Base color", glm::value_ptr(material->baseColor));
         });
         
-        ImGui::SeparatorText("Emission");
+        UIElements::PropertySection("Emission");
         renderWithImagePreview(material->emissiveMap, "MaterialEmission", [&]() {
             UIElements::PropertyLabel("Emissive color");
             ImGui::ColorEdit3("##Emissive color", glm::value_ptr(material->emissiveColor));
@@ -40,43 +40,43 @@ namespace Atlas::ImguiExtension {
             ImGui::DragFloat("##Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
             });
 
-        ImGui::SeparatorText("Opacity");
+        UIElements::PropertySection("Opacity");
         renderWithImagePreview(material->opacityMap, "MaterialOpacity", [&]() {
             UIElements::PropertyLabel("Opacity factor");
             ImGui::SliderFloat("##Opacity factor", &material->opacity, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
         });
 
-        ImGui::SeparatorText("Normals");
+        UIElements::PropertySection("Normals");
         renderWithImagePreview(material->normalMap, "MaterialNormals", [&]() {
             UIElements::PropertyLabel("Normal factor");
             ImGui::SliderFloat("##Normal factor", &material->normalScale, 0.0f, 1.0f);
         });
 
-        ImGui::SeparatorText("Roughness");
+        UIElements::PropertySection("Roughness");
         renderWithImagePreview(material->roughnessMap, "MaterialRoughness", [&]() {
             UIElements::PropertyLabel("Roughness factor");
             ImGui::SliderFloat("##Roughness factor", &material->roughness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
         });
 
-        ImGui::SeparatorText("Metallic");
+        UIElements::PropertySection("Metallic");
         renderWithImagePreview(material->metalnessMap, "MaterialMetallic", [&]() {
             UIElements::PropertyLabel("Metallic factor");
             ImGui::SliderFloat("##Metallic factor", &material->metalness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
         });
 
-        ImGui::SeparatorText("Ambient occlusion");
+        UIElements::PropertySection("Ambient occlusion");
         renderWithImagePreview(material->aoMap, "MaterialAmbientOcclusion", [&]() {
             UIElements::PropertyLabel("Ao factor");
             ImGui::SliderFloat("##Ao factor", &material->ao, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
         });
 
-        ImGui::SeparatorText("Displacement");
+        UIElements::PropertySection("Displacement");
         renderWithImagePreview(material->displacementMap, "MaterialDisplacement", [&]() {
             UIElements::PropertyLabel("Displacement scale");
             ImGui::SliderFloat("##Displacement scale", &material->displacementScale, 0.0f, 1.0f);
             });
 
-        ImGui::SeparatorText("Surface");
+        UIElements::PropertySection("Surface");
         if (UIElements::BeginProperties("MaterialSurface")) {
             UIElements::PropertyLabel("Reflectance");
             ImGui::SliderFloat("##Reflectance", &material->reflectance, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
@@ -89,7 +89,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("UV");
+        UIElements::PropertySection("UV");
         if (UIElements::BeginProperties("MaterialUV")) {
             UIElements::PropertyLabel("UV animation");
             ImGui::DragFloat2("##UV animation", glm::value_ptr(material->uvAnimation), 0.01f, -1.0f, 1.0f);

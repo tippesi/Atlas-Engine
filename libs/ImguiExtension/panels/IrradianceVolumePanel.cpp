@@ -21,7 +21,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("General");
+        UIElements::PropertySection("General");
         if (UIElements::BeginProperties("IrradianceVolumeGeneral")) {
             UIElements::PropertyLabel("Enable volume");
             ImGui::Checkbox("##Enable volume", &volume->enable);
@@ -32,7 +32,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Sampling");
+        UIElements::PropertySection("Sampling");
         if (UIElements::BeginProperties("IrradianceVolumeSampling")) {
             UIElements::PropertyLabel("Sample emissives");
             ImGui::Checkbox("##Sample emissives", &volume->sampleEmissives);
@@ -69,7 +69,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Probe grid");
+        UIElements::PropertySection("Probe grid");
         if (UIElements::BeginProperties("IrradianceVolumeProbeGrid")) {
             auto prevCascadeCount = volume->cascadeCount;
             UIElements::PropertyLabel("Cascades count");
@@ -132,7 +132,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Volume bounds");
+        UIElements::PropertySection("Volume bounds");
         if (UIElements::BeginProperties("IrradianceVolumeBounds")) {
             UIElements::PropertyLabel("Scrolling");
             ImGui::Checkbox("##Scrolling", &volume->scroll);
@@ -163,7 +163,7 @@ namespace Atlas::ImguiExtension {
         }
         volume->SetAABB(volume->aabb);
 
-        ImGui::SeparatorText("Filtering");
+        UIElements::PropertySection("Filtering");
         if (UIElements::BeginProperties("IrradianceVolumeFiltering")) {
             UIElements::PropertyLabel("Hysteresis");
             ImGui::SliderFloat("##Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f");
@@ -180,7 +180,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Probe optimization");
+        UIElements::PropertySection("Probe optimization");
         if (UIElements::BeginProperties("IrradianceVolumeProbeOptimization")) {
             UIElements::PropertyLabel("Optimize probes");
             ImGui::Checkbox("##Optimize probes", &volume->optimizeProbes);

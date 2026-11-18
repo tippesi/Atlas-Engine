@@ -20,7 +20,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Shape");
+        UIElements::PropertySection("Shape");
         if (UIElements::BeginProperties("CloudsShape")) {
             UIElements::PropertyLabel("Coverage");
             ImGui::SliderFloat("##Coverage", &clouds->coverage, 0.0f, 1.0f);
@@ -37,7 +37,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Layer");
+        UIElements::PropertySection("Layer");
         if (UIElements::BeginProperties("CloudsLayer")) {
             UIElements::PropertyLabel("Base altitude");
             ImGui::DragFloat("##Base altitude", &clouds->baseAltitude, 10.0f, 0.0f, 20000.0f, "%.0f m");
@@ -51,7 +51,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Scattering");
+        UIElements::PropertySection("Scattering");
         auto& scattering = clouds->scattering;
         if (UIElements::BeginProperties("CloudsScattering")) {
             UIElements::PropertyLabel("Extinction", "How much light the cloud medium absorbs and scatters per density, higher values make clouds more opaque");
@@ -69,7 +69,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Quality");
+        UIElements::PropertySection("Quality");
         if (UIElements::BeginProperties("CloudsQuality")) {
             UIElements::PropertyLabel("Quality", "Controls ray samples, lighting samples and volumetric resolution (shared with fog)");
             ImGui::Combo("##Quality", &clouds->quality, "Low\0Medium\0High\0Ultra\0");

@@ -118,6 +118,11 @@ namespace Atlas::Editor::UI {
         if (inFocus && !isPlaying && scene.IsLoaded())
             requestedHistorySteps += history.history.GetShortcutDirection();
         
+        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_F, false) && sceneHierarchyPanel.selectedEntity.IsValid()) {
+            scenePropertiesPanel.entityPropertiesPanel.focusSearch = true;
+            ImGui::SetWindowFocus(scenePropertiesPanel.GetNameID());
+        }
+
         if (controlDown && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
         }   

@@ -13,7 +13,7 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("Transform");
+        Widgets::PropertySection("Transform");
 
         if (Widgets::BeginProperties("CameraTransform")) {
             Widgets::PropertyLabel("Position");
@@ -32,7 +32,7 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("Third person");
+        Widgets::PropertySection("Third person");
 
         if (Widgets::BeginProperties("CameraThirdPerson")) {
             Widgets::PropertyLabel("Enabled");
@@ -44,7 +44,7 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("Lens");
+        Widgets::PropertySection("Lens");
 
         if (Widgets::BeginProperties("CameraLens")) {
             Widgets::PropertyLabel("Field of view");

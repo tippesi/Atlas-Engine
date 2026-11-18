@@ -49,7 +49,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Denoiser");
+        UIElements::PropertySection("Denoiser");
         if (UIElements::BeginProperties("RTGIDenoiser")) {
             UIElements::PropertyLabel("Spatial filter strength");
             ImGui::SliderFloat("##Spatial filter strength", &rtgi->spatialFilterStrength, 0.0f, 10.0f);

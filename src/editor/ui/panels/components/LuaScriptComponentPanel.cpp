@@ -46,7 +46,7 @@ namespace Atlas::Editor::UI
             ImGui::TreePop();
         }
 
-        ImGui::SeparatorText("Properties");
+        Widgets::PropertySection("Properties");
         if (luaScriptComponent.properties.empty())
             Widgets::EmptyState("No properties defined");
         else if (Widgets::BeginProperties("LuaScriptProperties")) {

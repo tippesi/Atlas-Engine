@@ -20,7 +20,7 @@ namespace Atlas::Editor::UI {
             audioComponent.ChangeResource(handle);
         }
 
-        ImGui::SeparatorText("Playback");
+        Widgets::PropertySection("Playback");
 
         if (Widgets::BeginProperties("AudioPlayback")) {
             Widgets::PropertyLabel("Volume");
@@ -35,7 +35,7 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("Attenuation");
+        Widgets::PropertySection("Attenuation");
 
         if (Widgets::BeginProperties("AudioAttenuation")) {
             Widgets::PropertyLabel("Cutoff");

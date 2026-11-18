@@ -287,6 +287,12 @@ tracing surfaces in `raytracer/`, wind in `wind.hsh`.
 - **UI building blocks**: `ui/Widgets` (`DragVec3`, `Callout`, `IconButton`, ...), `Theme` colors, commands in
   `App::RegisterCommands`, undo in `SceneHistory`. Engine-aware ImGui panels in `libs/ImguiExtension` (`Panel` base,
   `StringHelper`), which games can use for debug UI.
+- **Property search** (filter, find setting, search components, property table): `ImguiExtension::UIElements`
+  `BeginPropertySearch`/`EndPropertySearch` show the rows of `BeginProperties` tables whose label, tooltip,
+  `PropertySection` or nested `BeginPropertyGroup`s (components, list elements, materials) contain every search word.
+  In the `BeginPropertyContent` of a group everything else (buttons, lists) is hidden unless it's a matching
+  `BeginPropertyBlock`, groups without matches are hidden. `PropertySearchBar` is the input, `MatchesSearch` the shared
+  case-insensitive matcher. The entity properties panel searches all components (Ctrl+F in the scene window).
 
 ## Capture tool (`src/capture`)
 

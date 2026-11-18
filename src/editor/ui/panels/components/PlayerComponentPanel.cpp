@@ -14,11 +14,11 @@ namespace Atlas::Editor::UI {
 		if (!entity.HasComponent<TransformComponent>())
             Widgets::Callout("Player component needs a transform component to work properly", Theme::Warning());
 
-		ImGui::SeparatorText("Shape");
+		Widgets::PropertySection("Shape");
 
 		RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);
 
-		ImGui::SeparatorText("Player");
+		Widgets::PropertySection("Player");
 
 		RenderPlayerSettings(entity, playerComponent);
 
@@ -76,7 +76,7 @@ namespace Atlas::Editor::UI {
 			Widgets::EndProperties();
 		}
 
-		ImGui::SeparatorText("Movement");
+		Widgets::PropertySection("Movement");
 
 		if (Widgets::BeginProperties("PlayerMovement")) {
 			Widgets::PropertyLabel("Slow movement velocity");

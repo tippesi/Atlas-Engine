@@ -7,7 +7,7 @@ namespace Atlas::ImguiExtension {
         ImGui::PushID(GetNameID());
 
         // Settings of disabled effects are shown, but greyed out
-        ImGui::SeparatorText("Anti-aliasing and upscaling");
+        UIElements::PropertySection("Anti-aliasing and upscaling");
         if (UIElements::BeginProperties("PostProcessingUpscaling")) {
             RenderUpscalerSelection(postProcessing.upscaler, isUpscalerSupported, true);
             ImGui::BeginDisabled(postProcessing.upscaler == PostProcessing::Upscaler::None);
@@ -17,7 +17,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Sharpen filter");
+        UIElements::PropertySection("Sharpen filter");
         if (UIElements::BeginProperties("PostProcessingSharpen")) {
             UIElements::PropertyLabel("Enable");
             ImGui::Checkbox("##Enable", &postProcessing.sharpen.enable);
@@ -28,7 +28,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Image effects");
+        UIElements::PropertySection("Image effects");
         if (UIElements::BeginProperties("PostProcessingImageEffects")) {
             UIElements::PropertyLabel("Exposure compensation (EV)");
             ImGui::SliderFloat("##Exposure compensation (EV)", &postProcessing.exposureCompensation, -10.0f, 10.0f);
@@ -47,7 +47,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Chromatic aberration");
+        UIElements::PropertySection("Chromatic aberration");
         if (UIElements::BeginProperties("PostProcessingChromaticAberration")) {
             UIElements::PropertyLabel("Enable");
             ImGui::Checkbox("##Enable", &postProcessing.chromaticAberration.enable);
@@ -60,7 +60,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Film grain");
+        UIElements::PropertySection("Film grain");
         if (UIElements::BeginProperties("PostProcessingFilmGrain")) {
             UIElements::PropertyLabel("Enable");
             ImGui::Checkbox("##Enable", &postProcessing.filmGrain.enable);
@@ -71,7 +71,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Vignette");
+        UIElements::PropertySection("Vignette");
         if (UIElements::BeginProperties("PostProcessingVignette")) {
             UIElements::PropertyLabel("Enable");
             ImGui::Checkbox("##Enable", &postProcessing.vignette.enable);
@@ -88,7 +88,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Bloom");
+        UIElements::PropertySection("Bloom");
         if (UIElements::BeginProperties("PostProcessingBloomEnable")) {
             UIElements::PropertyLabel("Enable");
             ImGui::Checkbox("##Enable", &postProcessing.bloom.enable);
@@ -114,7 +114,7 @@ namespace Atlas::ImguiExtension {
         }
         ImGui::EndDisabled();
 
-        ImGui::SeparatorText("Auto-exposure");
+        UIElements::PropertySection("Auto-exposure");
         if (UIElements::BeginProperties("PostProcessingAutoExposure")) {
             UIElements::PropertyLabel("Enable");
             ImGui::Checkbox("##Enable", &postProcessing.autoExposure.enable);

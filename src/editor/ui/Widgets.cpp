@@ -14,6 +14,10 @@ namespace Atlas::Editor::UI {
     bool Widgets::DragVec3(const char* label, vec3& value, float speed, float resetValue,
         float min, float max, const char* format) {
 
+        // Widgets drawing directly into the draw list return early like ImGui widgets, e.g. in rows hidden by a search
+        if (ImGui::GetCurrentWindow()->SkipItems)
+            return false;
+
         const auto& style = ImGui::GetStyle();
         const float stripeWidth = 3.0f;
 
@@ -67,6 +71,9 @@ namespace Atlas::Editor::UI {
     }
 
     void Widgets::Callout(const char* text, ImVec4 color) {
+
+        if (ImGui::GetCurrentWindow()->SkipItems)
+            return;
 
         const auto& style = ImGui::GetStyle();
         const float padding = 8.0f;
@@ -199,6 +206,9 @@ namespace Atlas::Editor::UI {
 
     void Widgets::ActiveIndicator() {
 
+        if (ImGui::GetCurrentWindow()->SkipItems)
+            return;
+
         auto rectMin = ImGui::GetItemRectMin();
         auto rectMax = ImGui::GetItemRectMax();
         auto radius = std::max(2.5f, (rectMax.y - rectMin.y) * 0.12f);
@@ -257,6 +267,10 @@ namespace Atlas::Editor::UI {
 
     bool Widgets::TextArea(const char* id, std::string& text, float lines, ImGuiInputTextFlags flags, bool* deactivatedAfterEdit) {
 
+        // Child windows are created even when the parent skips its items
+        if (ImGui::GetCurrentWindow()->SkipItems)
+            return false;
+
         // The child keeps the height the user dragged it to, the text box fills it
         auto height = lines * ImGui::GetTextLineHeight() + 2.0f * ImGui::GetStyle().FramePadding.y;
         ImGui::BeginChild(id, ImVec2(-FLT_MIN, height), ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoScrollbar);
@@ -278,6 +292,9 @@ namespace Atlas::Editor::UI {
     }
 
     void Widgets::Spinner(float scale) {
+
+        if (ImGui::GetCurrentWindow()->SkipItems)
+            return;
 
         auto size = ImGui::GetTextLineHeight() * scale;
         auto pos = ImGui::GetCursorScreenPos();
@@ -333,6 +350,54 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void Widgets::PropertySection(const char* label) {
+
+        ImguiExtension::UIElements::PropertySection(label);
+
+    }
+
+    bool Widgets::BeginPropertyGroup(const char* name) {
+
+        return ImguiExtension::UIElements::BeginPropertyGroup(name);
+
+    }
+
+    void Widgets::EndPropertyGroup() {
+
+        ImguiExtension::UIElements::EndPropertyGroup();
+
+    }
+
+    ImGuiTreeNodeFlags Widgets::PropertyGroupHeaderFlags() {
+
+        return ImguiExtension::UIElements::PropertyGroupHeaderFlags();
+
+    }
+
+    void Widgets::BeginPropertyContent() {
+
+        ImguiExtension::UIElements::BeginPropertyContent();
+
+    }
+
+    void Widgets::EndPropertyContent() {
+
+        ImguiExtension::UIElements::EndPropertyContent();
+
+    }
+
+    bool Widgets::BeginPropertyBlock(const char* label) {
+
+        return ImguiExtension::UIElements::BeginPropertyBlock(label);
+
+    }
+
+    void Widgets::EndPropertyBlock() {
+
+        ImguiExtension::UIElements::EndPropertyBlock();
+
+    }
+
     bool Widgets::IconButton(const char* id, const Texture::Texture2D& icon, float size,
         const char* tooltip, float alpha) {
 
@@ -356,6 +421,9 @@ namespace Atlas::Editor::UI {
     }
 
     bool Widgets::TextEllipsis(const char* text, const char* textEnd, float width) {
+
+        if (ImGui::GetCurrentWindow()->SkipItems)
+            return false;
 
         auto textSize = ImGui::CalcTextSize(text, textEnd);
         auto pos = ImGui::GetCursorScreenPos();

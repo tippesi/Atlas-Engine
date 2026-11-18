@@ -25,7 +25,7 @@ namespace Atlas::Editor::UI {
         // The properties of the selected type of light
         const char* typeSection = lightComponent.type == LightType::DirectionalLight ? "Directional" :
             lightComponent.type == LightType::PointLight ? "Point" : "Spot";
-        ImGui::SeparatorText(typeSection);
+        Widgets::PropertySection(typeSection);
 
         if (Widgets::BeginProperties("LightType")) {
             if (lightComponent.type == LightType::DirectionalLight) {
@@ -58,7 +58,7 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("General");
+        Widgets::PropertySection("General");
 
         bool castShadow = lightComponent.shadow != nullptr;
         if (Widgets::BeginProperties("LightGeneral")) {
@@ -92,7 +92,7 @@ namespace Atlas::Editor::UI {
 
             auto& shadow = lightComponent.shadow;
 
-            ImGui::SeparatorText("Shadow");
+            Widgets::PropertySection("Shadow");
 
             const char* shadowResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
             int shadowResItem = 0;
@@ -126,7 +126,7 @@ namespace Atlas::Editor::UI {
             }
 
             if (lightComponent.type == LightType::DirectionalLight) {
-                ImGui::SeparatorText("Cascades");
+                Widgets::PropertySection("Cascades");
 
                 // The split correction and the long range distance are read every frame, a different number of cascades
                 // needs new maps. Long range takes one of the views

@@ -23,7 +23,7 @@ namespace Atlas::ImguiExtension {
         }
 
         // Changing these recreates the ocean, the other settings are kept
-        ImGui::SeparatorText("Resolution");
+        UIElements::PropertySection("Resolution");
         int32_t LoDCount = ocean->GetLoDCount();
         float size = ocean->sideLength;
         int32_t N = simulation.N;
@@ -52,7 +52,7 @@ namespace Atlas::ImguiExtension {
             ocean = CreateRef<Ocean::Ocean>(j.get<Ocean::Ocean>());
         }
 
-        ImGui::SeparatorText("Waves");
+        UIElements::PropertySection("Waves");
         if (UIElements::BeginProperties("OceanWaves")) {
             bool spectrumChanged = false;
             UIElements::PropertyLabel("Wave amplitude");
@@ -86,7 +86,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Spectrum cascades");
+        UIElements::PropertySection("Spectrum cascades");
         if (UIElements::BeginProperties("OceanSpectrumCascades")) {
             UIElements::PropertyLabel("Tiling factors");
             ImGui::DragFloat4("##Tiling factors", glm::value_ptr(simulation.spectrumTilingFactors), 0.1f, 0.1f, 100.0f);
@@ -99,13 +99,13 @@ namespace Atlas::ImguiExtension {
         }
 
         if (textureSelector.has_value()) {
-            ImGui::SeparatorText("Ripple normal map");
+            UIElements::PropertySection("Ripple normal map");
             ImGui::PushID("Ripple");
             ocean->rippleTexture = textureSelector.value()(ocean->rippleTexture);
             ImGui::PopID();
         }
 
-        ImGui::SeparatorText("Foam");
+        UIElements::PropertySection("Foam");
         if (textureSelector.has_value()) {
             ImGui::PushID("Foam");
             ocean->foamTexture = textureSelector.value()(ocean->foamTexture);
@@ -121,7 +121,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Water color");
+        UIElements::PropertySection("Water color");
         if (UIElements::BeginProperties("OceanWaterColor")) {
             UIElements::PropertyLabel("Water body color");
             ImGui::ColorEdit3("##Water body color", glm::value_ptr(ocean->waterBodyColor));
@@ -132,7 +132,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Shore waves");
+        UIElements::PropertySection("Shore waves");
         if (UIElements::BeginProperties("OceanShoreWaves")) {
             UIElements::PropertyLabel("Distance offset");
             ImGui::DragFloat("##Distance offset", &ocean->shoreWaveDistanceOffset, 0.5f, 0.0f, 1000.0f);
@@ -151,7 +151,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Physics");
+        UIElements::PropertySection("Physics");
         if (UIElements::BeginProperties("OceanPhysics")) {
             UIElements::PropertyLabel("Enable physics", "Bodies with buoyancy float on the waves and scripts can query the surface");
             ImGui::Checkbox("##Enable physics", &ocean->physics);

@@ -19,7 +19,7 @@ namespace Atlas::Editor::UI {
         if (!skinned)
             ImGui::TextDisabled("The entity needs a skinned mesh");
 
-        ImGui::SeparatorText("Playback");
+        Widgets::PropertySection("Playback");
 
         if (Widgets::BeginProperties("Playback")) {
             Widgets::PropertyLabel("Playing");
@@ -37,16 +37,23 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("Layers");
+        Widgets::PropertySection("Layers");
 
         const Mesh::Skeleton* skeleton = skinned ? &meshComponent->mesh->data.skeleton : nullptr;
         int32_t removedLayer = -1;
         for (int32_t i = 0; i < animationComponent.GetLayerCount(); i++) {
             ImGui::PushID(i);
             bool remove = false;
-            if (Widgets::RemovableSectionHeader(("Layer " + std::to_string(i)).c_str(), ImGuiTreeNodeFlags_DefaultOpen,
-                remove, "Remove layer"))
-                resourceChanged |= RenderLayer(animationComponent.GetLayer(i), skeleton);
+            auto name = "Layer " + std::to_string(i);
+            if (Widgets::BeginPropertyGroup(name.c_str())) {
+                if (Widgets::RemovableSectionHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | Widgets::PropertyGroupHeaderFlags(),
+                    remove, "Remove layer")) {
+                    Widgets::BeginPropertyContent();
+                    resourceChanged |= RenderLayer(animationComponent.GetLayer(i), skeleton);
+                    Widgets::EndPropertyContent();
+                }
+                Widgets::EndPropertyGroup();
+            }
             if (remove)
                 removedLayer = i;
             ImGui::PopID();
@@ -60,15 +67,22 @@ namespace Atlas::Editor::UI {
             animationComponent.GetLayer(animationComponent.GetLayerCount());
         Theme::PopPrimaryButton();
 
-        ImGui::SeparatorText("Inverse kinematics");
+        Widgets::PropertySection("Inverse kinematics");
 
         int32_t removedChain = -1;
         for (int32_t i = 0; i < animationComponent.GetIKChainCount(); i++) {
             ImGui::PushID(1000 + i);
             bool remove = false;
-            if (Widgets::RemovableSectionHeader(("Chain " + std::to_string(i)).c_str(), ImGuiTreeNodeFlags_DefaultOpen,
-                remove, "Remove chain"))
-                RenderIKChain(animationComponent.GetIKChain(i), skeleton);
+            auto name = "Chain " + std::to_string(i);
+            if (Widgets::BeginPropertyGroup(name.c_str())) {
+                if (Widgets::RemovableSectionHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | Widgets::PropertyGroupHeaderFlags(),
+                    remove, "Remove chain")) {
+                    Widgets::BeginPropertyContent();
+                    RenderIKChain(animationComponent.GetIKChain(i), skeleton);
+                    Widgets::EndPropertyContent();
+                }
+                Widgets::EndPropertyGroup();
+            }
             if (remove)
                 removedChain = i;
             ImGui::PopID();

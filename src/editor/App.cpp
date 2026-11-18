@@ -909,6 +909,13 @@ namespace Atlas::Editor {
             .action = [this]() { GetActiveSceneWindow()->FocusSelection(); }, .isEnabled = canEdit });
         commandPalette.Register({ .category = "Viewport", .name = "Drop selection to ground", .shortcut = "End",
             .action = [this]() { GetActiveSceneWindow()->DropSelectionToGround(); }, .isEnabled = canEdit });
+        commandPalette.Register({ .category = "Properties", .name = "Search entity properties", .shortcut = "Ctrl+F",
+            .action = [this]() {
+                auto& panel = GetActiveSceneWindow()->scenePropertiesPanel;
+                panel.entityPropertiesPanel.focusSearch = true;
+                ImGui::SetWindowFocus(panel.GetNameID());
+                },
+            .isEnabled = [this, hasScene]() { return hasScene() && GetActiveSceneWindow()->sceneHierarchyPanel.selectedEntity.IsValid(); } });
         auto isViewingCamera = [this, canEdit]() {
             return canEdit() && GetActiveSceneWindow()->viewedCameraEntity.IsValid();
             };

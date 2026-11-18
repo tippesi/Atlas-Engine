@@ -6,7 +6,7 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::SeparatorText("Noise texture");
+        UIElements::PropertySection("Noise texture");
 
         UIElements::TextureView(wrapper, &wind.noiseMap, 255.0f);
 

@@ -18,11 +18,11 @@ namespace Atlas::Editor::UI {
             return false;
         }
 
-        ImGui::SeparatorText("Shape");
+        Widgets::PropertySection("Shape");
 
         RenderShapeSettings(entity, creationSettings);
 
-        ImGui::SeparatorText("Body");
+        Widgets::PropertySection("Body");
 
         RenderBodySettings(entity, creationSettings);
 
@@ -312,8 +312,10 @@ namespace Atlas::Editor::UI {
             ImGui::PushID(int32_t(i));
 
             bool remove = false;
-            if (Widgets::RemovableSectionHeader(("Child " + std::to_string(i)).c_str(), ImGuiTreeNodeFlags_DefaultOpen,
-                remove, "Remove child") && Widgets::BeginProperties("Child")) {
+            auto name = "Child " + std::to_string(i);
+            auto groupShown = Widgets::BeginPropertyGroup(name.c_str());
+            if (groupShown && Widgets::RemovableSectionHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen |
+                Widgets::PropertyGroupHeaderFlags(), remove, "Remove child") && Widgets::BeginProperties("Child")) {
                 auto previousType = child.shape->type;
                 Widgets::PropertyLabel("Shape type");
                 if (ImGui::BeginCombo("##Shape type", GetShapeTypeName(child.shape->type))) {
@@ -383,6 +385,8 @@ namespace Atlas::Editor::UI {
 
                 Widgets::EndProperties();
             }
+            if (groupShown)
+                Widgets::EndPropertyGroup();
             if (remove)
                 removeIdx = int32_t(i);
 

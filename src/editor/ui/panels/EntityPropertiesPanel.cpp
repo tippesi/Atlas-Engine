@@ -3,6 +3,7 @@
 #include "Notifications.h"
 #include "Theme.h"
 
+#include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <algorithm>
 
@@ -26,6 +27,14 @@ namespace Atlas::Editor::UI {
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
         bool rootNode = nodeName == "Root";
+
+        ImguiExtension::UIElements::PropertySearchBar("##Property search", propertySearch, focusSearch);
+        // A hidden panel is shown in one of the next frames, the search bar gets the focus then
+        if (!ImGui::GetCurrentWindow()->SkipItems)
+            focusSearch = false;
+        ImGui::Spacing();
+
+        ImguiExtension::UIElements::BeginPropertySearch(propertySearch, uint32_t(entity));
 
         // General components
         {
@@ -130,6 +139,9 @@ namespace Atlas::Editor::UI {
             }
         }
 
+        if (!ImguiExtension::UIElements::EndPropertySearch())
+            Widgets::EmptyState("No properties match the search");
+
         // Add components
         {
             ImGui::Spacing();
@@ -152,10 +164,7 @@ namespace Atlas::Editor::UI {
                 ImGui::Separator();
 
                 auto matches = [&](const char* name) {
-                    std::string lowerName = name, lowerSearch = componentSearch;
-                    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
-                    std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
-                    return lowerName.find(lowerSearch) != std::string::npos;
+                    return ImguiExtension::UIElements::MatchesSearch(name, componentSearch);
                     };
                 if (!entity.HasComponent<NameComponent>() && !rootNode && matches("Name") && ImGui::MenuItem("Name"))
                     entity.AddComponent<NameComponent>("Entity " + std::to_string(entity));

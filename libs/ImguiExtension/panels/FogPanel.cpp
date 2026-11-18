@@ -32,7 +32,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Volumetric");
+        UIElements::PropertySection("Volumetric");
         if (UIElements::BeginProperties("FogVolumetric")) {
             UIElements::PropertyLabel("Local lights");
             ImGui::Checkbox("##Local lights", &fog->localLights);

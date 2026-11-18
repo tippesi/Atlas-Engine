@@ -23,7 +23,7 @@ namespace Atlas::Editor::UI {
 
         Widgets::TextArea("Text", textComponent.text, 7.0f);
 
-        ImGui::SeparatorText("Layout");
+        Widgets::PropertySection("Layout");
 
         if (Widgets::BeginProperties("TextLayout")) {
             Widgets::PropertyLabel("Position");
@@ -33,7 +33,7 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("Style");
+        Widgets::PropertySection("Style");
 
         if (Widgets::BeginProperties("TextStyle")) {
             Widgets::PropertyLabel("Scale");

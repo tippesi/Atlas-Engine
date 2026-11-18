@@ -43,6 +43,10 @@ namespace Atlas::Editor::UI {
 
         void Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties);
 
+        // Searches the properties of all components
+        std::string propertySearch;
+        bool focusSearch = false;
+
         NameComponentPanel nameComponentPanel;
         TransformComponentPanel transformComponentPanel;
         MeshComponentPanel meshComponentPanel;
@@ -75,9 +79,12 @@ namespace Atlas::Editor::UI {
             Scene::Entity entity, S& panel, T& component) {
             bool resourceChanged = false;
 
+            if (!Widgets::BeginPropertyGroup(name.c_str()))
+                return false;
+
             ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
                 ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed |
-                ImGuiTreeNodeFlags_AllowOverlap;
+                ImGuiTreeNodeFlags_AllowOverlap | Widgets::PropertyGroupHeaderFlags();
 
             // Component headers are neutral, the accent is reserved for selection
             ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_Button));
@@ -142,12 +149,16 @@ namespace Atlas::Editor::UI {
                 pendingRemoval = [entity]() mutable { entity.RemoveComponent<T>(); };
 
             if (open) {
+                Widgets::BeginPropertyContent();
                 resourceChanged = panel.Render(scene, entity, component);
+                Widgets::EndPropertyContent();
 
                 ImGui::TreePop();
             }
 
             ImGui::Spacing();
+
+            Widgets::EndPropertyGroup();
 
             return resourceChanged;
         }

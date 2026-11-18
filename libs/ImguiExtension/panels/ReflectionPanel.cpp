@@ -55,7 +55,7 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        ImGui::SeparatorText("Denoiser");
+        UIElements::PropertySection("Denoiser");
         if (UIElements::BeginProperties("ReflectionDenoiser")) {
             UIElements::PropertyLabel("Spatial filter strength");
             ImGui::SliderFloat("##Spatial filter strength", &reflection->spatialFilterStrength, 0.0f, 10.0f);

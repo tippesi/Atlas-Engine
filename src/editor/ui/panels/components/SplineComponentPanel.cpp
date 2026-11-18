@@ -30,7 +30,7 @@ namespace Atlas::Editor::UI {
 
         auto& controlPoints = splineComponent.controlPoints;
 
-        ImGui::SeparatorText("Control points");
+        Widgets::PropertySection("Control points");
         if (controlPoints.empty())
             Widgets::EmptyState("No control points yet");
 
@@ -39,7 +39,12 @@ namespace Atlas::Editor::UI {
         ControlPointAction action = ControlPointAction::None;
         for (auto& controlPoint : controlPoints) {
             ControlPointAction currentAction = ControlPointAction::None;
-            RenderControlPoint(controlPoint, counter++, controlPoints.size(), currentAction);
+            auto name = "Control point " + std::to_string(counter);
+            if (Widgets::BeginPropertyGroup(name.c_str())) {
+                RenderControlPoint(controlPoint, name, counter, controlPoints.size(), currentAction);
+                Widgets::EndPropertyGroup();
+            }
+            counter++;
 
             if (currentAction != ControlPointAction::None) {
                 action = currentAction;
@@ -81,10 +86,11 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SplineComponentPanel::RenderControlPoint(SplineControlPoint& point, size_t idx, size_t count, ControlPointAction& action) {
+    void SplineComponentPanel::RenderControlPoint(SplineControlPoint& point, const std::string& name, size_t idx, size_t count,
+        ControlPointAction& action) {
 
         ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
-            | ImGuiTreeNodeFlags_AllowOverlap;
+            | ImGuiTreeNodeFlags_AllowOverlap | Widgets::PropertyGroupHeaderFlags();
         // The point picked in the viewport is highlighted
         if (selectControlPointIdx == int32_t(idx))
             nodeFlags |= ImGuiTreeNodeFlags_Selected;
@@ -94,7 +100,7 @@ namespace Atlas::Editor::UI {
         auto buttonExtent = iconSize + 2.0f;
         auto buttonsMinX = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x - 3.0f * buttonExtent;
 
-        bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(idx), nodeFlags, "Control point %d", int32_t(idx));
+        bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(idx), nodeFlags, "%s", name.c_str());
         auto rowMin = ImGui::GetItemRectMin();
         auto rowMax = ImGui::GetItemRectMax();
 

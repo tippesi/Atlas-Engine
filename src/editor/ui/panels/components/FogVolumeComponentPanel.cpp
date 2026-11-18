@@ -48,7 +48,7 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
-        ImGui::SeparatorText("Noise");
+        Widgets::PropertySection("Noise");
         if (Widgets::BeginProperties("Fog volume noise")) {
             Widgets::PropertyLabel("Amount");
             ImGui::DragFloat("##Amount", &fogVolumeComponent.noiseAmount, 0.005f, 0.0f, 1.0f);

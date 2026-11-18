@@ -10,7 +10,7 @@ namespace Atlas::ImguiExtension {
         if (sky.probe)
             cubemap = sky.probe->cubemap;
 
-        ImGui::SeparatorText("Environment map");
+        UIElements::PropertySection("Environment map");
         if (cubemapSelector.has_value()) {
             cubemap = cubemapSelector.value()(cubemap);
         }
@@ -26,7 +26,7 @@ namespace Atlas::ImguiExtension {
             atmosphere->rayleighScatteringCoeff *= 1e6f;
             atmosphere->mieScatteringCoeff *= 1e6f;
 
-            ImGui::SeparatorText("Atmosphere");
+            UIElements::PropertySection("Atmosphere");
             if (UIElements::BeginProperties("SkyAtmosphere")) {
                 bool atmosphereChanged = false;
                 UIElements::PropertyLabel("Rayleigh scattering coefficient");

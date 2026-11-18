@@ -34,7 +34,7 @@ namespace Atlas::Editor::UI {
             auto& mesh = meshComponent.mesh;
 
             {
-                ImGui::SeparatorText("Rendering");
+                Widgets::PropertySection("Rendering");
 
                 if (Widgets::BeginProperties("MeshRendering")) {
                     const char* mobilityItems[] = { "Stationary", "Movable" };
@@ -59,12 +59,15 @@ namespace Atlas::Editor::UI {
                     Widgets::EndProperties();
                 }
 
-                if (ImGui::Button("Invert normals", ImVec2(-FLT_MIN, 0.0f)))
-                    mesh->InvertNormals();
+                if (Widgets::BeginPropertyBlock("Invert normals")) {
+                    if (ImGui::Button("Invert normals", ImVec2(-FLT_MIN, 0.0f)))
+                        mesh->InvertNormals();
+                    Widgets::EndPropertyBlock();
+                }
             }
 
             {
-                ImGui::SeparatorText("Culling");
+                Widgets::PropertySection("Culling");
                 if (Widgets::BeginProperties("MeshCulling")) {
                     Widgets::PropertyLabel("Distance culling");
                     ImGui::DragFloat("##Distance culling", &mesh->distanceCulling, 1.0f);
@@ -79,7 +82,7 @@ namespace Atlas::Editor::UI {
             }
 
             {
-                ImGui::SeparatorText("Levels of detail");
+                Widgets::PropertySection("Levels of detail");
                 if (Widgets::BeginProperties("MeshLods")) {
                     Widgets::PropertyLabel("Pixel error", "Instances use the coarsest level whose error stays below this many pixels");
                     ImGui::DragFloat("##Pixel error", &mesh->lodPixelError, 0.05f, 0.0f, 32.0f);
@@ -105,16 +108,17 @@ namespace Atlas::Editor::UI {
                 if (mesh->IsGeneratingLods()) {
                     ImGui::TextColored(Theme::TextMuted(), "Generating levels of detail...");
                 }
-                else {
+                else if (Widgets::BeginPropertyBlock("Generate or remove levels of detail")) {
                     if (ImGui::Button("Generate levels of detail", ImVec2(-FLT_MIN, 0.0f)))
                         mesh->GenerateLods(lodSettings);
                     if (mesh->data.GetLodCount() > 1 && Widgets::DangerButton("Remove levels of detail"))
                         mesh->ClearLods();
+                    Widgets::EndPropertyBlock();
                 }
             }
 
             if (mesh->data.IsSkinned()) {
-                ImGui::SeparatorText("Animation updates");
+                Widgets::PropertySection("Animation updates");
                 if (Widgets::BeginProperties("MeshAnimation")) {
                     Widgets::PropertyLabel("Level of detail distance", "Beyond this distance the skeleton is updated less often");
                     ImGui::DragFloat("##Level of detail distance", &mesh->animationLodDistance, 1.0f, 0.0f, 500.0f);
@@ -125,7 +129,7 @@ namespace Atlas::Editor::UI {
             }
 
             {
-                ImGui::SeparatorText("Impostor");
+                Widgets::PropertySection("Impostor");
 
                 if (Widgets::BeginProperties("MeshImpostor")) {
                     auto impostorFilename = mesh.GetResource()->path + ".aeimpostor";
@@ -185,7 +189,7 @@ namespace Atlas::Editor::UI {
             }
 
             {
-                ImGui::SeparatorText("Wind");
+                Widgets::PropertySection("Wind");
                 if (Widgets::BeginProperties("MeshWind")) {
                     Widgets::PropertyLabel("Noise lod");
                     ImGui::DragFloat("##Noise lod", &mesh->windNoiseTextureLod, 1.0f, 0.0f, 6.0f);
@@ -197,7 +201,7 @@ namespace Atlas::Editor::UI {
                 }
             }
 
-            ImGui::SeparatorText("Materials");
+            Widgets::PropertySection("Materials");
             materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials, 
                 [&](ResourceHandle<Material> material) {
                     auto selected = materialSelectionPanel.Render(material);

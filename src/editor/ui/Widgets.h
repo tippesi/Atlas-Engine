@@ -78,6 +78,23 @@ namespace Atlas::Editor::UI {
 
         static void EndProperties();
 
+        // Searchable parts of the properties, see the property search of ImguiExtension::UIElements
+        static void PropertySection(const char* label);
+
+        static bool BeginPropertyGroup(const char* name);
+
+        static void EndPropertyGroup();
+
+        static ImGuiTreeNodeFlags PropertyGroupHeaderFlags();
+
+        static void BeginPropertyContent();
+
+        static void EndPropertyContent();
+
+        static bool BeginPropertyBlock(const char* label);
+
+        static void EndPropertyBlock();
+
     };
 
 }

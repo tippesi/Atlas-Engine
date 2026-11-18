@@ -17,11 +17,11 @@ namespace Atlas::Editor::UI {
         if (constraintComponent.broken)
             Widgets::Callout("The constraint broke, changing it creates it again", Theme::Warning());
 
-        ImGui::SeparatorText("Connected entity");
+        Widgets::PropertySection("Connected entity");
 
         bool changed = RenderConnectedEntity(entity, constraintComponent);
 
-        ImGui::SeparatorText("Constraint");
+        Widgets::PropertySection("Constraint");
 
         changed |= RenderConstraintSettings(constraintComponent.creationSettings);
 
