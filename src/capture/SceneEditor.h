@@ -26,10 +26,17 @@ namespace Atlas::Capture {
         bool dryRun = false;
         // Format of the textures of imported models
         Loader::ImportTextureFormat textureFormat = Loader::ImportTextureFormat::Original;
+        // Meshes added or moved by the operations so far: the scene puts them into its ray cast structures only in its
+        // next update, a scatter casts against them itself (e.g. goods on a quay added in the same edit)
+        EntitySet unindexedMeshes;
 
     };
 
     json ApplyEditOperations(const Ref<Scene::Scene>& scene, const json& operations, EditState& state);
+
+    // The global matrix from the local ones up the hierarchy: the cached global matrices of entities nested in
+    // groups aren't updated between the operations of an edit
+    mat4 HierarchyMatrix(Scene::Scene& scene, Scene::Entity entity);
 
     // Model files (glTF, FBX, ...) are imported next to the source into meshes/ and materials/ first,
     // scenes can only reference .aemesh files

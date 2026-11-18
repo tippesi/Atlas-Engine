@@ -120,9 +120,7 @@ namespace Atlas::Capture {
 
     }
 
-    // The global matrix from the local ones up the hierarchy: the cached global matrices of entities nested in
-    // groups aren't updated between the operations of an edit
-    static mat4 HierarchyMatrix(Scene::Scene& scene, Scene::Entity entity) {
+    mat4 HierarchyMatrix(Scene::Scene& scene, Scene::Entity entity) {
 
         mat4 matrix(1.0f);
         for (auto current = entity; current.IsValid(); current = scene.GetParentEntity(current))
@@ -147,12 +145,11 @@ namespace Atlas::Capture {
 
     }
 
-    // A simulated body around a mesh instance: its bounding box or convex hull at the scale of the instance
-    static void AddMovableBody(Scene::Entity entity, const json& operation, bool inOcean) {
+    // The bounding box, convex hull or boxes of a mesh instance at its scale
+    static Ref<Physics::Shape> CreateBodyShape(Scene::Entity entity, const json& operation) {
 
         auto& mesh = entity.GetComponent<MeshComponent>().mesh;
-        auto& transform = GetTransform(entity);
-        auto scale = transform.DecomposeGlobal().scale;
+        auto scale = GetTransform(entity).DecomposeGlobal().scale;
         auto density = operation.value("density", 500.0f);
 
         Ref<Physics::Shape> shape;
@@ -179,6 +176,14 @@ namespace Atlas::Capture {
             throw std::runtime_error("meshBodies: shape has to be box, convex or boxes");
         }
 
+        return shape;
+
+    }
+
+    // A simulated body around a mesh instance
+    static void AddMovableBody(Scene::Entity entity, const json& operation, bool inOcean) {
+
+        auto shape = CreateBodyShape(entity, operation);
         entity.AddComponent<RigidBodyComponent>(Physics::BodyCreationSettings {
             .objectLayer = Physics::Layers::Movable,
             .friction = operation.value("friction", 0.8f),
@@ -188,7 +193,7 @@ namespace Atlas::Capture {
             .fluidAngularDrag = operation.value("fluidAngularDrag", 0.01f),
             .startAsleep = operation.value("asleep", true),
             .shape = shape });
-        transform.isStatic = false;
+        GetTransform(entity).isStatic = false;
 
     }
 
@@ -326,6 +331,7 @@ namespace Atlas::Capture {
         mesh.castShadow = settings.value("castShadow", mesh.castShadow);
         mesh.rayTrace = settings.value("rayTrace", mesh.rayTrace);
         mesh.minScreenSize = settings.value("minScreenSize", mesh.minScreenSize);
+        mesh.distanceCulling = settings.value("distanceCulling", mesh.distanceCulling);
         mesh.lodPixelError = settings.value("lodPixelError", mesh.lodPixelError);
         // Generated in the background, TakeGeneratedLods waits for them
         if (settings.contains("lods") && !HasRequestedLods(mesh, settings["lods"]))
@@ -636,6 +642,16 @@ namespace Atlas::Capture {
 
     };
 
+    static void MarkUnindexed(EditContext& context, Scene::Entity entity) {
+
+        EntitySet members;
+        CollectHierarchy(entity, members);
+        for (auto member : members)
+            if (context.scene.entityManager.TryGet<MeshComponent>(member))
+                context.state.unindexedMeshes.insert(member);
+
+    }
+
     static json EditSetTransform(EditContext& context, const json& operation) {
 
         auto& scene = context.scene;
@@ -659,6 +675,7 @@ namespace Atlas::Capture {
             if (operation.contains("position"))
                 global[3] = vec4(ToVec3(operation["position"]), 1.0f);
             transform.SetGlobal(global, parent);
+            MarkUnindexed(context, entity);
 
             affected.push_back(GetEntityLabel(entity));
         }
@@ -685,6 +702,7 @@ namespace Atlas::Capture {
             else {
                 throw std::runtime_error("translate.space must be world or local");
             }
+            MarkUnindexed(context, entity);
             affected.push_back(GetEntityLabel(entity));
         }
 
@@ -704,6 +722,7 @@ namespace Atlas::Capture {
             auto origin = vec3(transform.globalMatrix[3]);
             auto rotation = glm::translate(origin) * glm::rotate(yaw, vec3(0.0f, 1.0f, 0.0f)) * glm::translate(-origin);
             transform.SetGlobal(rotation * transform.globalMatrix, scene.GetParentEntity(entity));
+            MarkUnindexed(context, entity);
             affected.push_back(GetEntityLabel(entity));
         }
 
@@ -724,6 +743,7 @@ namespace Atlas::Capture {
 
             auto delta = ground.position.y + offset - bounds.min.y;
             TranslateWorld(entity, vec3(0.0f, delta, 0.0f));
+            MarkUnindexed(context, entity);
             affected.push_back({ { "entity", GetEntityLabel(entity) }, { "deltaY", delta }, { "ground", GetHitLabel(ground) } });
         }
 
@@ -786,6 +806,7 @@ namespace Atlas::Capture {
                 global[3] = vec4(ToVec3(operation["position"]), 1.0f);
                 GetTransform(copy).SetGlobal(global, parent);
             }
+            MarkUnindexed(context, copy);
 
             affected.push_back(GetEntityLabel(copy));
         }
@@ -828,6 +849,10 @@ namespace Atlas::Capture {
 
         for (auto entity : SelectEntities(scene, operation)) {
             affected.push_back(GetEntityLabel(entity));
+            EntitySet members;
+            CollectHierarchy(entity, members);
+            for (auto member : members)
+                context.state.unindexedMeshes.erase(member);
             scene.DestroyEntity(entity);
         }
 
@@ -919,6 +944,7 @@ namespace Atlas::Capture {
             added["script"] = scriptPath;
         }
 
+        MarkUnindexed(context, entity);
         affected.push_back(added);
 
         return affected;
@@ -986,7 +1012,7 @@ namespace Atlas::Capture {
 
         auto& scene = context.scene;
 
-        return json::array({ Scatter(scene, operation) });
+        return json::array({ Scatter(scene, operation, &context.state.unindexedMeshes) });
 
     }
 
@@ -1063,6 +1089,7 @@ namespace Atlas::Capture {
 
         // Changes mesh files matching a pattern, e.g. "dungeon/meshes/*.aemesh", after backing them up once
         auto pattern = ToAssetPath(operation.at("meshes").get<std::string>());
+        auto excluded = operation.value("exclude", std::vector<std::string>());
         const auto& settings = operation.at("set");
         auto directory = GetAssetDirectory() / fs::path(pattern).parent_path();
         if (!fs::is_directory(directory))
@@ -1079,6 +1106,8 @@ namespace Atlas::Capture {
             auto path = (fs::path(pattern).parent_path() / file.path().filename()).generic_string();
             if (!file.is_regular_file() || file.path().extension() != ".aemesh" || !Helper::String::MatchWildcard(pattern, path))
                 continue;
+            if (std::ranges::any_of(excluded, [&](const auto& exclude) { return Helper::String::MatchWildcard(exclude, path); }))
+                continue;
 
             auto backup = file.path();
             backup += ".backup";
@@ -1093,6 +1122,7 @@ namespace Atlas::Capture {
                 settings.value("castShadow", mesh->castShadow) == mesh->castShadow &&
                 settings.value("rayTrace", mesh->rayTrace) == mesh->rayTrace &&
                 settings.value("minScreenSize", mesh->minScreenSize) == mesh->minScreenSize &&
+                settings.value("distanceCulling", mesh->distanceCulling) == mesh->distanceCulling &&
                 settings.value("lodPixelError", mesh->lodPixelError) == mesh->lodPixelError &&
                 (!settings.contains("lods") || HasRequestedLods(*mesh.Get(), settings["lods"])) &&
                 settings.value("animationLodDistance", mesh->animationLodDistance) == mesh->animationLodDistance &&
@@ -1118,8 +1148,8 @@ namespace Atlas::Capture {
             changed.push_back(path);
             if (!bake) {
                 // Levels of detail and other settings that don't change the look keep an impostor current
-                const std::string_view keepLook[] = { "lods", "lodPixelError", "minScreenSize", "rayTrace", "castShadow", "movable",
-                    "animationLodDistance", "animationMaxInterval" };
+                const std::string_view keepLook[] = { "lods", "lodPixelError", "minScreenSize", "distanceCulling", "rayTrace", "castShadow", "movable",
+                    "animationLodDistance", "animationMaxInterval", "softBody" };
                 auto lookUnchanged = std::ranges::all_of(settings.items(), [&](const auto& item) {
                     return std::ranges::find(keepLook, std::string_view(item.key())) != std::end(keepLook);
                 });
@@ -1172,9 +1202,9 @@ namespace Atlas::Capture {
         auto& scene = context.scene;
         json affected = json::array();
 
-        // Static mesh shapes for every instance of the matching meshes, e.g. trees of prefabs and scatter groups.
-        // With remove the instances lose their bodies instead, e.g. grass the player walks through. "motion":
-        // "dynamic" makes them simulated bodies (shape box or convex, density, friction, restitution, asleep, buoyancy),
+        // Static mesh shapes for every instance of the matching meshes, e.g. trees of prefabs and scatter groups,
+        // or with "shape" box, convex or boxes simpler static shapes. With remove the instances lose their bodies
+        // instead, e.g. grass the player walks through. "motion": "dynamic" makes them simulated bodies (shape box or convex, density, friction, restitution, asleep, buoyancy),
         // with "supported": true only those resting on a body, the terrain or the ocean, the others stay as they are
         auto replace = operation.value("replace", false);
         auto remove = operation.value("remove", false);
@@ -1227,8 +1257,11 @@ namespace Atlas::Capture {
                 continue;
             if (motion == "dynamic")
                 AddMovableBody(entity, operation, isInOcean(entity));
-            else
+            else if (operation.value("shape", std::string("mesh")) == "mesh")
                 AddMeshBody(entity, entity.GetComponent<MeshComponent>().mesh, GetTransform(entity).DecomposeGlobal().scale);
+            else
+                entity.AddComponent<RigidBodyComponent>(Physics::BodyCreationSettings {
+                    .objectLayer = Physics::Layers::Static, .shape = CreateBodyShape(entity, operation) });
         }
         affected.push_back({ { remove ? "removed" : "bodies", matches.size() } });
         if (unsupported)
@@ -1781,6 +1814,7 @@ namespace Atlas::Capture {
 
         EntitySet members;
         CollectHierarchy(entity, members);
+        MarkUnindexed(context, entity);
         affected.push_back({ { "entity", GetEntityLabel(entity) }, { "prefab", prefabPath }, { "entities", members.size() } });
 
         return affected;

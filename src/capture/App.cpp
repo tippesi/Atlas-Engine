@@ -783,6 +783,9 @@ namespace Atlas::Capture {
             report.data["edit"]["seconds"]["operations"] = SecondsSince(operationsStart);
             report.Print("Applied " + std::to_string(job.edit->operations.size()) + " edit operations in " +
                 FormatFloat(report.data["edit"]["seconds"]["operations"].get<float>(), 1) + "s");
+            // Waiting cleared the render list of this frame's update, rendering it would draw host culled shadow
+            // instances without their meshes
+            sceneUpdated = false;
             phase = Phase::EditSave;
             return;
         }

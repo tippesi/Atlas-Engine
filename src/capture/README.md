@@ -259,7 +259,7 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
 { "op": "material", "material": "x.aematerial", "set": { "metalness": 0, "roughnessMapPath": null } }
 { "op": "materialCopy", "material": "a", "output": "b", "set": {}, "remove": [] }   { "op": "meshMaterials", "meshes": [...], "replace": { "a": "b" } }
 { "op": "meshCopy", "mesh": "a.aemesh", "output": "b.aemesh", "invertNormals": true, "set": {}, "assign": ["Grass*"] }
-{ "op": "meshSettings", "meshes": "x/*.aemesh", "set": { "cullBackFaces": false, "movable": true, "animations": "...",
+{ "op": "meshSettings", "meshes": "x/*.aemesh", "exclude": ["*Ivy*"], "set": { "cullBackFaces": false, "movable": true, "animations": "...",
   "lods": { "count": 5, "reduction": 0.5, "regenerate": false }, "lodPixelError": 2,
   "impostor": { "views": 12, "resolution": 256, "distance": 150, "shadowDistance": 100, "textureFormat": "ktx2" } } }
 { "op": "compressTextures", "directories": ["ancient"] }   { "op": "bakeMaterial", "material": "...", "mode": "textures|average" }
