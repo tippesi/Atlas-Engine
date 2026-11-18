@@ -1,6 +1,7 @@
 #include "PhysicsWorld.h"
 #include "PhysicsManager.h"
 #include "../profiler/CPUProfiler.h"
+#include "../Log.h"
 #include "MathConversion.h"
 #include "../renderer/PrimitiveBatch.h"
 #include "../tools/PerformanceCounter.h"
@@ -149,6 +150,8 @@ namespace Atlas {
 
             auto activation = bodyCreationSettings.startAsleep ? JPH::EActivation::DontActivate : JPH::EActivation::Activate;
             auto bodyId = bodyInterface.CreateAndAddBody(settings, activation);
+            if (bodyId.IsInvalid())
+                Log::Error("Physics: body not created, the world holds " + std::to_string(system->GetMaxBodies()) + " bodies at most");
             bodyToShapeMap[bodyId] = bodyCreationSettings.shape;
             RecordStaticChange(bodyId);
 

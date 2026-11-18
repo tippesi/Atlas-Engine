@@ -77,7 +77,7 @@ namespace Atlas {
         class PhysicsWorld {
 
         public:
-            PhysicsWorld(uint32_t maxBodyCount = 65536, uint32_t bodyMutexesCount = 0, uint32_t maxBodyPairCount= 65536,
+            PhysicsWorld(uint32_t maxBodyCount = 262144, uint32_t bodyMutexesCount = 0, uint32_t maxBodyPairCount= 65536,
                 uint32_t maxContactConstraintCount = 65536, Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr,
                 Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr,
                 Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr);

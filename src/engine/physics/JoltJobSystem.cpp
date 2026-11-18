@@ -14,9 +14,8 @@ namespace Atlas::Physics {
 
     int JoltJobSystem::GetMaxConcurrency() const {
 
-        // The thread waiting for the physics update executes jobs as well. Jolt splits its work by this number,
-        // more than Jolt's own pool used (13) only adds synchronization
-        return std::min(Atlas::JobSystem::GetWorkerCount(JobPriority::High) + 1, 13);
+        // The thread waiting for the physics update executes jobs as well. Jolt splits its work by this number
+        return Atlas::JobSystem::GetWorkerCount(JobPriority::High) + 1;
 
     }
 
