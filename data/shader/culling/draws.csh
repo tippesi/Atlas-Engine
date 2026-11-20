@@ -35,6 +35,11 @@ layout(std430, set = 3, binding = 4) writeonly buffer Commands {
     uint commands[];
 };
 
+// The end of the indices of each draw
+layout(std430, set = 3, binding = 5) readonly buffer Offsets {
+    uint offsets[];
+};
+
 layout(push_constant) uniform constants {
     uint firstRequest;
     uint requestCount;
@@ -50,22 +55,14 @@ void main() {
     CullMesh mesh = meshes[request.meshIdx];
     CullView view = views[request.view];
 
-    uint counterIdx = view.counterOffset + request.meshIdx * MESH_COUNTER_COUNT;
-    uint lodCounterIdx = counterIdx + 2u * request.lod;
-    uint reversedCount = min(counters[lodCounterIdx + DRAW_REVERSED_WINDING], mesh.regionCapacity);
-    uint defaultCount = min(counters[lodCounterIdx + DRAW_DEFAULT_WINDING], mesh.regionCapacity - reversedCount);
-    uint impostorCount = min(counters[counterIdx + IMPOSTOR_COUNTER], mesh.regionCapacity);
+    uint counterIdx = view.counterOffset + request.meshIdx * MESH_COUNTER_COUNT +
+        GetDrawCounter(request.type == DRAW_IMPOSTOR, request.lod, request.type == DRAW_REVERSED_WINDING);
+    uint instanceCount = counters[counterIdx];
+    uint firstInstance = offsets[counterIdx] - instanceCount;
 
-    uint instanceCount = defaultCount;
-    uint firstInstance = view.indexOffset + mesh.regionOffset + request.lod * mesh.regionCapacity;
-    if (request.type == DRAW_REVERSED_WINDING) {
-        instanceCount = reversedCount;
-        firstInstance += mesh.regionCapacity - reversedCount;
-    }
-    else if (request.type == DRAW_IMPOSTOR) {
-        instanceCount = impostorCount;
-        firstInstance = view.impostorIndexOffset + mesh.impostorRegionOffset;
-    }
+    // Indices beyond the region weren't written
+    uint regionEnd = view.indexOffset + mesh.regionOffset + mesh.regionCapacity;
+    instanceCount = min(instanceCount, regionEnd - min(firstInstance, regionEnd));
 
     uint offset = idx * 5u;
     if (request.type == DRAW_IMPOSTOR) {

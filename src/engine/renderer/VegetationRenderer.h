@@ -22,9 +22,6 @@ namespace Atlas {
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target);
 
-            void DepthPrepass(Scene::Clutter& vegetation, std::vector<Mesh::Mesh*>& meshes,
-                const CameraComponent& camera, float time, float deltaTime);
-
         };
 
     }

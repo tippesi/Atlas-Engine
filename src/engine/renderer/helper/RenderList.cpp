@@ -229,10 +229,6 @@ namespace Atlas {
         lastEntityMatrices.clear();
         if (lastSize) lastEntityMatrices.reserve(lastSize);
 
-        lastSize = impostorMatrices.size();
-        impostorMatrices.clear();
-        if (lastSize) impostorMatrices.reserve(lastSize);
-
         lastSize = currentJointMatrices.size();
         currentJointMatrices.clear();
         if (lastSize) currentJointMatrices.reserve(lastSize);
@@ -347,8 +343,8 @@ namespace Atlas {
 
                 MeshInstances instances{};
                 instances.offset = instanceCount();
-                instances.impostorOffset = useIndices ? impostorInstanceIndices.size() : impostorMatrices.size();
-                instances.jointOffset = isSoftBody ? softBodyVertexOffsets.size() : currentJointMatrices.size();
+                instances.impostorOffset = impostorInstanceIndices.size();
+                instances.deformOffset = isSoftBody ? softBodyVertexOffsets.size() : currentJointMatrices.size();
 
                 auto reversedWindingBegin = Common::PartitionByWinding(entities.begin(), entities.end(),
                     [&](ECS::Entity entity) -> const mat4& {
@@ -380,11 +376,9 @@ namespace Atlas {
                     auto& transformComponent = transformPool.Get(entities[i]);
                     const auto distance = hasImpostor ? glm::distance2(
                         vec3(transformComponent.globalMatrix[3]), cameraLocation) : 0.0f;
+                    // Only meshes which use the instance indices have impostors
                     if (hasImpostor && distance >= sqdDistance) {
-                        if (useIndices)
-                            impostorInstanceIndices.push_back(ECS::EntityToIdx(entities[i]));
-                        else
-                            impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        impostorInstanceIndices.push_back(ECS::EntityToIdx(entities[i]));
                         continue;
                     }
                     auto lod = selectLods ? entityLods[i].first : 0u;
@@ -434,8 +428,7 @@ namespace Atlas {
                 instances.reversedWindingCount = instanceCount() - instances.reversedWindingOffset;
 
                 instances.count = instanceCount() - instances.offset;
-                instances.impostorCount = (useIndices ? impostorInstanceIndices.size() : impostorMatrices.size())
-                    - instances.impostorOffset;
+                instances.impostorCount = impostorInstanceIndices.size() - instances.impostorOffset;
                 return instances;
             };
 
@@ -463,18 +456,6 @@ namespace Atlas {
             if (newSize > 0) currentMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
             // Only main pass needs the history
             if (newSize > 0 && type != RenderPassType::Shadow) lastMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
-        }
-
-        if (!impostorMatricesBuffer || impostorMatricesBuffer->size < sizeof(mat3x4) * impostorMatrices.size()) {
-            auto newSize = impostorMatricesBuffer != nullptr ? impostorMatricesBuffer->size * 2 :
-                           sizeof(mat3x4) * impostorMatrices.size();
-            newSize = std::max(std::max(newSize, size_t(1)), sizeof(mat3x4) * impostorMatrices.size());
-            auto bufferDesc = Graphics::BufferDesc {
-                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                .domain = Graphics::BufferDomain::Host,
-                .size = newSize
-            };
-            if (newSize > 0) impostorMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
         }
 
         if (!currentJointMatricesBuffer || currentJointMatricesBuffer->size < sizeof(mat3x4) * currentJointMatrices.size()) {
@@ -521,8 +502,6 @@ namespace Atlas {
             currentMatricesBuffer->SetData(currentEntityMatrices.data(), 0, currentEntityMatrices.size() * sizeof(mat3x4));
         if (lastEntityMatrices.size() > 0)
             lastMatricesBuffer->SetData(lastEntityMatrices.data(), 0, lastEntityMatrices.size() * sizeof(mat3x4));
-        if (impostorMatrices.size() > 0)
-            impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat3x4));
         if (currentJointMatrices.size() > 0)
             currentJointMatricesBuffer->SetData(currentJointMatrices.data(), 0, currentJointMatrices.size() * sizeof(mat3x4));
         if (lastJointMatrices.size() > 0)

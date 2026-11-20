@@ -30,7 +30,6 @@ namespace Atlas {
 
             commandList->BindBuffer(mainPass->currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(mainPass->lastMatricesBuffer, 1, 2);
-            commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
             commandList->BindBuffer(mainPass->currentJointMatricesBuffer, 1, 4);
             commandList->BindBuffer(mainPass->lastJointMatricesBuffer, 1, 5);
             if (mainPass->softBodyVertexOffsetsBuffer) {
@@ -45,119 +44,25 @@ namespace Atlas {
             if (!sceneState->materialGraphParameters.empty())
                 sceneState->materialGraphBuffer.Bind(commandList, 3, 9);
 
-            int32_t subDataCount = 0;
-            // Retrieve all possible materials;
-            auto addSubDatas = [&](const std::unordered_map<size_t, RenderList::MeshInstances>& meshToInstances, bool softBody) {
-                for (const auto& [meshId, instances] : meshToInstances) {
-                    if (!instances.count || lateDraws) continue;
-
-                    auto& mesh = renderList->meshIdToMeshMap[meshId];
-                    for (auto& subData : mesh->data.subData) {
-                        if (!subData.material.IsLoaded())
-                            continue;
-
-                        if (subDataCount < subDatas.size())
-                            subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get(), nullptr, softBody };
-                        else
-                            subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get(), nullptr, softBody });
-                        subDataCount++;
-                    }
-                }
+            auto createConfig = [&](Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const MaterialGraph::CompiledGraph* graph) {
+                return GetPipelineConfigForSubData(subData, mesh, target, graph);
             };
-            addSubDatas(mainPass->meshToInstancesMap, false);
-            addSubDatas(mainPass->meshToSoftBodyInstancesMap, true);
+            auto hasGraphPipeline = [](const MaterialGraph::CompiledGraph& graph) { return !graph.mainVertexFile.empty(); };
+            drawer.Prepare(renderList, *mainPass, lateDraws ? mainPass->gpuLateDraws : mainPass->gpuDraws, !lateDraws,
+                &Mesh::MeshSubData::mainPipelines, createConfig, hasGraphPipeline);
 
-            for (const auto& draw : lateDraws ? mainPass->gpuLateDraws : mainPass->gpuDraws) {
-                if (!draw.subData)
-                    continue;
-
-                if (subDataCount < subDatas.size())
-                    subDatas[subDataCount] = { draw.subData, draw.meshId, draw.mesh, &draw, false };
-                else
-                    subDatas.push_back({ draw.subData, draw.meshId, draw.mesh, &draw, false });
-                subDataCount++;
-            }
-
-            // Simulated soft bodies read their vertices instead of the instance buffer
-            auto getSoftBodyVariant = [](PipelineConfig config) {
-                config.RemoveMacro("INSTANCE_BUFFER");
-                config.AddMacro("SOFT_BODY");
-                return config;
-            };
-
-            // Check whether materials have pipeline configs
-            for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, _, mesh, gpuDraw, softBody] = subDatas[i];
-                const auto& material = subData->material;
-                if (subData->mainGraphPending)
-                    UpdateGraphPipelines(subData, mesh, target);
-                if (!subData->mainConfig.IsValid()) {
-                    subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
-                    subData->mainReversedWindingConfig = subData->mainConfig.GetReversedWindingVariant();
-
-                    if (material->HasGraph()) {
-                        subData->mainGraphPending = true;
-                        UpdateGraphPipelines(subData, mesh, target);
-                    }
-                }
-
-                if (softBody && !subData->mainSoftBodyConfig.IsValid()) {
-                    subData->mainSoftBodyConfig = getSoftBodyVariant(subData->mainConfig);
-                    subData->mainSoftBodyReversedWindingConfig = getSoftBodyVariant(subData->mainReversedWindingConfig);
-                }
-            }
-
-            auto getConfig = [](const auto& entry) -> PipelineConfig& {
-                const auto& [subData, meshID, mesh, gpuDraw, softBody] = entry;
-                if (softBody)
-                    return subData->mainSoftBodyConfig;
-                return gpuDraw && gpuDraw->type == RenderList::GPUDrawType::ReversedWinding ?
-                    subData->mainReversedWindingConfig : subData->mainConfig;
-            };
-
-            // Sort materials by hash
-            std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
-                [&](auto& subData0, auto& subData1) {
-                    return getConfig(subData0).variantHash < getConfig(subData1).variantHash;
-                });
-
-            Hash prevMesh = 0;
-            Hash prevHash = 0;
-            Ref<Graphics::Pipeline> currentPipeline;
-            const Graphics::PushConstantRange* constantsRange = nullptr;
-            for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, meshID, mesh, gpuDraw, softBody] = subDatas[i];
-                auto instances = gpuDraw ? RenderList::MeshInstances{} : softBody ?
-                    mainPass->meshToSoftBodyInstancesMap[meshID] : mainPass->meshToInstancesMap[meshID];
-
-                const auto& material = subData->material;
-
-                auto& config = getConfig(subDatas[i]);
-
-                if (config.variantHash != prevHash) {
-                    currentPipeline = PipelineManager::GetPipeline(config);
-                    if (currentPipeline->isComplete) {
-                        commandList->BindPipeline(currentPipeline);
-                        constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
-                    }
-                    prevHash = config.variantHash;
-                }
-
-                // Variants whose shader the driver couldn't compile aren't drawn instead of binding an invalid pipeline
-                if (!currentPipeline->isComplete)
-                    continue;
-
-                if (meshID != prevMesh) {
-                    mesh->vertexArray.Bind(commandList);
-                    prevMesh = meshID;
-                }
+            PushConstants pushConstants;
+            auto fillPushConstants = [&](const Helper::SubDataDrawer::Entry& entry, const RenderList::MeshInstances& instances,
+                bool usesGraph) -> PushConstants& {
+                const auto& mesh = entry.mesh;
+                const auto& material = entry.subData->material;
 
                 auto materialIt = materialMap.find(material.Get().get());
                 auto materialIdx = materialIt != materialMap.end() ? uint32_t(materialIt->second) : 0u;
                 auto textureIndices = materialIdx < sceneState->materialTextureIndices.size() ?
                     sceneState->materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
 
-                auto pushConstants = PushConstants {
+                pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
                     .twoSided = material->twoSided ? 1u : 0u,
@@ -179,80 +84,30 @@ namespace Atlas {
                     .aoTextureIdx = textureIndices.ao,
                     .heightTextureIdx = textureIndices.height,
                     .emissiveTextureIdx = textureIndices.emissive,
-                    .jointOffset = uint32_t(instances.jointOffset),
+                    .deformOffset = uint32_t(instances.deformOffset),
                     .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
                     .instanceOffset = uint32_t(instances.offset),
                 };
 
-                if (subData->mainUsesGraph) {
+                if (usesGraph) {
                     auto graphData = sceneState->materialGraphMap.find(material.Get().get());
                     if (graphData != sceneState->materialGraphMap.end()) {
                         pushConstants.materialIdx = graphData->second.materialIdx;
                         pushConstants.materialGraphOffset = graphData->second.parameterOffset;
                     }
                 }
+                return pushConstants;
+            };
 
-                commandList->PushConstants(constantsRange, &pushConstants);
+            // The level of detail is only read to color the levels
+            auto setLod = [&](uint32_t lod) {
+                if (pushConstants.lod == lod)
+                    return false;
+                pushConstants.lod = lod;
+                return true;
+            };
 
-                if (gpuDraw) {
-                    renderList->DrawGPUCulled(commandList, *gpuDraw);
-                    continue;
-                }
-
-                // The level of detail is only read to color the levels
-                auto setLod = [&](uint32_t lod) {
-                    if (pushConstants.lod == lod)
-                        return;
-                    pushConstants.lod = lod;
-                    commandList->PushConstants(constantsRange, &pushConstants);
-                };
-
-                RenderList::DrawInstances(commandList, *subData, instances, false, setLod);
-                if (instances.reversedWindingCount) {
-                    auto& reversedWindingConfig = softBody ? subData->mainSoftBodyReversedWindingConfig :
-                        subData->mainReversedWindingConfig;
-                    currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
-                    commandList->BindPipeline(currentPipeline);
-                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
-                    commandList->PushConstants(constantsRange, &pushConstants);
-                    RenderList::DrawInstances(commandList, *subData, instances, true, setLod);
-                    prevHash = reversedWindingConfig.variantHash;
-                }
-
-            }
-
-        }
-
-        void OpaqueRenderer::UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const Ref<RenderTarget>& target) {
-
-            using PipelineState = MaterialGraph::PipelineCache::State;
-
-            const auto& graph = subData->material->graph;
-            auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
-            if (!compiled || !compiled->valid || compiled->mainVertexFile.empty()) {
-                subData->mainGraphPending = false;
-                return;
-            }
-
-            auto config = GetPipelineConfigForSubData(subData, mesh, target, compiled.get());
-            auto reversedWindingConfig = config.GetReversedWindingVariant();
-
-            auto blocking = graph->blockingPipelineUsers > 0;
-            auto state = MaterialGraph::PipelineCache::Request(config, blocking);
-            auto reversedWindingState = MaterialGraph::PipelineCache::Request(reversedWindingConfig, blocking);
-            if (state == PipelineState::Pending || reversedWindingState == PipelineState::Pending)
-                return;
-
-            subData->mainGraphPending = false;
-            if (state == PipelineState::Failed || reversedWindingState == PipelineState::Failed)
-                return;
-
-            subData->mainConfig = config;
-            subData->mainReversedWindingConfig = reversedWindingConfig;
-            subData->mainSoftBodyConfig = PipelineConfig();
-            subData->mainSoftBodyReversedWindingConfig = PipelineConfig();
-
-            subData->mainUsesGraph = true;
+            drawer.Draw(commandList, renderList, *mainPass, &Mesh::MeshSubData::mainPipelines, fillPushConstants, setLod);
 
         }
 

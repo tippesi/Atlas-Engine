@@ -38,10 +38,6 @@ layout(set = 3, binding = 1) uniform sampler2DArray roughnessMetalnessAoMap;
 layout(set = 3, binding = 2) uniform sampler2DArray normalMap;
 layout(set = 3, binding = 3) uniform sampler2DArray depthMap;
 
-layout(std430, set = 1, binding = 2) buffer Matrices {
-    mat4 matrices[];
-};
-
 layout(set = 3, binding = 5, std140) uniform UniformBuffer{
 	vec4 center;
 

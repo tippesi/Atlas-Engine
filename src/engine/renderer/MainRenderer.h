@@ -56,8 +56,6 @@ namespace Atlas {
             void RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
                 Ref<PrimitiveBatch> batch, const CameraComponent& camera, Graphics::CommandList* commandList = nullptr);
 
-            void RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene);
-
             void FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList);
 
             void Update();

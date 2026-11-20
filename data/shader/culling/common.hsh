@@ -23,6 +23,9 @@
 #define IMPOSTOR_COUNTER (2u * MAX_LOD_COUNT)
 #define MESH_COUNTER_COUNT (2u * MAX_LOD_COUNT + 1u)
 
+// The culling result of an instance has a bit per view below its level of detail, GPUScene::maxCullViewCount views
+#define RESULT_LOD_SHIFT 24u
+
 struct Instance {
     // Rows of the global matrix
     mat3x4 matrix;
@@ -42,10 +45,10 @@ struct CullMesh {
     uint flags;
     // Instances with a smaller bounding sphere in pixels are culled
     float minScreenSize;
-    // Each level of detail has a region of this capacity
+    // The region of the indices of the mesh in each view, shared by its levels of detail, windings and impostors
     uint regionOffset;
     uint regionCapacity;
-    uint impostorRegionOffset;
+    uint padding0;
     uint lodCount;
     // Errors of the levels from 1 on divided by their pixel error, an instance uses a level while the error times its
     // scale and the focal length stays below its distance
@@ -76,9 +79,16 @@ struct CullView {
     vec4 planes[6];
     uint shadow;
     uint indexOffset;
-    uint impostorIndexOffset;
+    uint padding0;
     uint counterOffset;
 };
+
+// The counter of the draw an instance is part of in a view
+uint GetDrawCounter(bool impostor, uint lod, bool reversedWinding) {
+
+    return impostor ? IMPOSTOR_COUNTER : 2u * lod + (reversedWinding ? DRAW_REVERSED_WINDING : DRAW_DEFAULT_WINDING);
+
+}
 
 vec3 GetInstancePosition(mat3x4 matrix) {
 

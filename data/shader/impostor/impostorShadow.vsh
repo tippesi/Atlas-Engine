@@ -26,13 +26,7 @@ struct ViewPlane {
     vec4 up;
 };
 
-#ifdef INSTANCE_BUFFER
 #include <../culling/instances.hsh>
-#else
-layout(std430, set = 1, binding = 3) readonly buffer Matrices {
-    mat3x4 matrices[];
-};
-#endif
 
 layout (std430, set = 3, binding = 2) readonly buffer ViewPlanes {
 	ViewPlane viewPlanes[];
@@ -52,8 +46,6 @@ layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
 
     vec4 lightLocation;
-	vec4 lightUp;
-	vec4 lightRight;
 } pushConstants;
 
 vec4 InterpolateTriangle(vec2 coord) {
@@ -74,11 +66,7 @@ vec4 InterpolateTriangle(vec2 coord) {
 
 void main() {
 
-#ifdef INSTANCE_BUFFER
     mat4 mMatrix = GetInstanceMatrix(impostorInstanceIndices[gl_InstanceIndex]);
-#else
-    mat4 mMatrix = mat4(transpose(matrices[gl_InstanceIndex]));
-#endif
 
     texCoordVS = 0.5 * vPosition + 0.5;
 	

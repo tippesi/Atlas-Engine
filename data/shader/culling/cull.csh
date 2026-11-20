@@ -1,9 +1,9 @@
 #include <common.hsh>
 
-// Writes the visible instances of all views into the regions of their meshes. Reversed winding instances fill a
-// region from its end, impostors have their own regions
+// Counts the visible instances of all views per draw and keeps in which views an instance is visible,
+// culling/indices.csh writes the indices once the counts are turned into offsets
 // The main view draws the instances visible in the last frame first, OCCLUSION then tests the others against that
-// depth, writes them into their own view and remembers the visibility for the next frame
+// depth, counts them in their own view and remembers the visibility for the next frame
 
 #ifdef OCCLUSION
 #include <../globals.hsh>
@@ -31,13 +31,12 @@ layout(std430, set = 3, binding = 3) buffer Counters {
     uint counters[];
 };
 
-layout(std430, set = 3, binding = 4) writeonly buffer Indices {
-    uint indices[];
+#ifndef RAY_TRACING_INSTANCES
+// Per instance the views it is visible in (x) and drawn as an impostor in (y), with its level of detail in the high bits of y
+layout(std430, set = 3, binding = 4) buffer Results {
+    uvec2 results[];
 };
-
-layout(std430, set = 3, binding = 5) writeonly buffer ImpostorIndices {
-    uint impostorIndices[];
-};
+#endif
 
 layout(push_constant) uniform constants {
     vec4 cameraLocation;
@@ -165,6 +164,10 @@ void main() {
     uint idx = gl_GlobalInvocationID.x;
     if (idx >= PushConstants.instanceCount)
         return;
+#ifndef RAY_TRACING_INSTANCES
+    // Instances which return early aren't visible in any view
+    results[idx] = uvec2(0u);
+#endif
 #endif
 
     Instance instance = instances[idx];
@@ -219,8 +222,14 @@ void main() {
     if ((mesh.flags & MESH_DRAWABLE) == 0u || !largeEnough)
         return;
 
-    // All views and the ray traced instance use the same level of detail, shadows of another level would fall onto it
+    // All views and the ray traced instance use the same level of detail, shadows of another level would fall onto it.
+    // The occlusion test keeps the one of the first culling, the indices are written with it
+#ifdef OCCLUSION
+    uvec2 result = results[idx];
+    uint lod = result.y >> RESULT_LOD_SHIFT;
+#else
     uint lod = mesh.lodCount > 1u ? SelectLod(mesh, boundsDistance, maxScale, PushConstants.focalLength) : 0u;
+#endif
 
 #ifdef RAY_TRACING_INSTANCES
     if ((instance.flags & INSTANCE_VISIBLE) != 0u)
@@ -229,7 +238,10 @@ void main() {
     return;
 #endif
 
-    uint lodRegionOffset = mesh.regionOffset + lod * mesh.regionCapacity;
+    bool reversedWinding = (instance.flags & INSTANCE_REVERSED_WINDING) != 0u;
+#ifndef OCCLUSION
+    uvec2 result = uvec2(0u, lod << RESULT_LOD_SHIFT);
+#endif
 
     bool visibleLastFrame = instance.visibleLastFrame > 0u;
     bool drawnEarly = (mesh.flags & MESH_DRAW_EARLY) != 0u && (visibleLastFrame || dontCull);
@@ -274,21 +286,14 @@ void main() {
             (!geometry || positionDistanceSqr >= impostorDistance * impostorDistance);
 
         uint counterIdx = view.counterOffset + instance.meshIdx * MESH_COUNTER_COUNT;
-        if (impostor) {
-            uint slot = atomicAdd(counters[counterIdx + IMPOSTOR_COUNTER], 1u);
-            if (slot < mesh.regionCapacity)
-                impostorIndices[view.impostorIndexOffset + mesh.impostorRegionOffset + slot] = idx;
-        }
-        else if ((instance.flags & INSTANCE_REVERSED_WINDING) != 0u) {
-            uint slot = atomicAdd(counters[counterIdx + 2u * lod + DRAW_REVERSED_WINDING], 1u);
-            if (slot < mesh.regionCapacity)
-                indices[view.indexOffset + lodRegionOffset + mesh.regionCapacity - 1u - slot] = idx;
-        }
-        else {
-            uint slot = atomicAdd(counters[counterIdx + 2u * lod + DRAW_DEFAULT_WINDING], 1u);
-            if (slot < mesh.regionCapacity)
-                indices[view.indexOffset + lodRegionOffset + slot] = idx;
-        }
+        atomicAdd(counters[counterIdx + GetDrawCounter(impostor, lod, reversedWinding)], 1u);
+        result.x |= 1u << i;
+        if (impostor)
+            result.y |= 1u << i;
     }
+
+#ifndef RAY_TRACING_INSTANCES
+    results[idx] = result;
+#endif
 
 }

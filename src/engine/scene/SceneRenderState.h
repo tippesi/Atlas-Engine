@@ -220,6 +220,11 @@ namespace Atlas::Scene {
 
         void UpdateTextureBindlessData();
 
+        // Colors are linear, data0 is opacity, roughness and metalness, data1 ao, normal and displacement scale,
+        // data2 reflectance
+        static Renderer::PackedMaterial PackMaterial(vec3 baseColor, vec3 emissiveColor, vec3 transmissionColor,
+            float emissiveIntensity, float tiling, vec3 data0, vec3 data1, vec3 data2, int32_t features);
+
         void UpdateMaterialGraphParameters(const std::function<uint32_t(const ResourceHandle<Texture::Texture2D>&,
             MaterialGraph::DefaultTexture)>& requestTexture);
 

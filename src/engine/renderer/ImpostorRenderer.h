@@ -23,7 +23,7 @@ namespace Atlas {
 
         private:
             PipelineConfig GetPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
-                bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer);
+                bool interpolation, bool pixelDepthOffset);
 
             PipelineConfig GetPipelineConfigForSubData(const Mesh::MeshSubData* subData,
                 Mesh::Mesh* mesh, const Graphics::AttachmentFormats& attachmentFormats);

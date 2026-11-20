@@ -1,4 +1,5 @@
 #include <deferred/texture.hsh>
+#include <common/opacity.hsh>
 
 #if defined(OPACITY_MAP) || defined(MATERIAL_GRAPH_SURFACE)
 layout(location = 0) in vec2 texCoordVS;
@@ -21,9 +22,12 @@ layout(push_constant) uniform constants {
     float windBendScale;
     float windWiggleScale;
     uint textureID;
-    uint jointOffset;
+    uint deformOffset;
     uint jointCount;
     uint instanceOffset;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
 #ifdef MATERIAL_GRAPH
     uint materialGraphOffset;
 #endif
@@ -33,7 +37,7 @@ void main() {
     
 #ifdef OPACITY_MAP
     float opacity = SampleOpacity(texCoordVS, PushConstants.textureID, 0.0);
-    if(opacity < 0.2)
+    if (opacity < opacityCutoff)
         discard;
 #endif
 
@@ -41,7 +45,7 @@ void main() {
     MaterialSurfaceInput surfaceInput = CreateMaterialSurfaceInput(objectPositionVS, normalize(objectNormalVS),
         worldPositionVS, normalize(worldNormalVS), instancePositionVS, mat3(1.0), texCoordVS, vec2(0.0),
         vertexColorsVS, gl_FrontFacing ? 1.0 : -1.0, PushConstants.materialGraphOffset);
-    if (EvaluateMaterialSurface(surfaceInput).opacity < 0.2)
+    if (EvaluateMaterialSurface(surfaceInput).opacity < opacityCutoff)
         discard;
 #endif
 

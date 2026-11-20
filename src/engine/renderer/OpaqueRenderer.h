@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "helper/RenderList.h"
+#include "helper/SubDataDrawer.h"
 
 #include "Renderer.h"
 
@@ -26,11 +27,7 @@ namespace Atlas {
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 Mesh::Mesh* mesh, const Ref<RenderTarget>& target, const MaterialGraph::CompiledGraph* graph = nullptr);
 
-            // Switches to the pipelines of the graph once they are created
-            void UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const Ref<RenderTarget>& target);
-
-            // Draws culled on the GPU have a draw command, simulated soft bodies are drawn apart from the other instances
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*, const RenderList::GPUDraw*, bool>> subDatas;
+            Helper::SubDataDrawer drawer;
 
             struct alignas(16) PushConstants {
                 uint32_t vegetation;
@@ -54,7 +51,7 @@ namespace Atlas {
                 uint32_t aoTextureIdx;
                 uint32_t heightTextureIdx;
                 uint32_t emissiveTextureIdx;
-                uint32_t jointOffset;
+                uint32_t deformOffset;
                 uint32_t jointCount;
                 uint32_t instanceOffset;
                 // Level of detail of host culled draws, the GPU culled ones add their draw index

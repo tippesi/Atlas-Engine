@@ -2,6 +2,8 @@
 #include <../globals.hsh>
 #include <../common/packing.hsh>
 #include <../common/rotation.hsh>
+#include <../common/texCoord.hsh>
+#include <../common/opacity.hsh>
 
 // New naming convention:
 // Vertex attributes v[Name]
@@ -123,7 +125,7 @@ layout(push_constant) uniform constants {
     uint aoTextureIdx;
     uint heightTextureIdx;
     uint emissiveTextureIdx;
-    uint jointOffset;
+    uint deformOffset;
     uint jointCount;
     uint instanceOffset;
     // Level of detail of host culled draws, the GPU culled ones draw a level per draw index
@@ -148,9 +150,8 @@ void main() {
 #endif
 
 #ifdef TEX_COORDS
-    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord; 
-    texCoordVS += vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY) * globalData.time;
-    texCoordVS *= PushConstants.uvTiling;
+    texCoordVS = TransformTexCoord(vTexCoord, PushConstants.invertUVs > 0,
+        vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY), PushConstants.uvTiling);
 #endif
     
     mat4 mvMatrix = globalData.vMatrix * mMatrix;
@@ -163,7 +164,7 @@ void main() {
 #endif
 
 #ifdef SKINNED
-    uint jointOffset = PushConstants.jointOffset + (gl_InstanceIndex - PushConstants.instanceOffset) * PushConstants.jointCount;
+    uint jointOffset = PushConstants.deformOffset + (gl_InstanceIndex - PushConstants.instanceOffset) * PushConstants.jointCount;
     vec4 weights = vWeights / dot(vWeights, vec4(1.0));
 
     mat3x4 skinMatrix = weights.x * currentJointMatrices[jointOffset + vJoints.x] +
@@ -184,7 +185,7 @@ void main() {
 #endif
 
 #ifdef SOFT_BODY
-    uint softBodyVertex = softBodyVertexOffsets[PushConstants.jointOffset + gl_InstanceIndex -
+    uint softBodyVertex = softBodyVertexOffsets[PushConstants.deformOffset + gl_InstanceIndex -
         PushConstants.instanceOffset] + gl_VertexIndex;
     vec4 softBodyCurrent = currentSoftBodyVertices[softBodyVertex];
     position = softBodyCurrent.xyz;
@@ -219,7 +220,7 @@ void main() {
 
 #ifdef MATERIAL_GRAPH_VERTEX_OPACITY
     // The opacity is the same for the whole draw, moving all vertices outside the view keeps fragments free of discards
-    if (EvaluateMaterialOpacity(graphInput) < 0.2) {
+    if (EvaluateMaterialOpacity(graphInput) < opacityCutoff) {
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         return;
     }

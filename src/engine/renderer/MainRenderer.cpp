@@ -160,7 +160,7 @@ namespace Atlas {
 			JobSystem::WaitSpin(renderState->gpuSceneUpdateJob);
 			// Texture streaming targets the output resolution, not the scaled one
 			auto focalLength = float(target->GetHeight()) / (2.0f * glm::tan(0.5f * glm::radians(camera.fieldOfView)));
-			renderState->gpuScene.Cull(renderState->renderList, camera.GetLocation(), focalLength, commandList);
+			auto cullFrame = renderState->gpuScene.Cull(renderState->renderList, camera.GetLocation(), focalLength, commandList);
 			renderState->gpuScene.Bind(commandList);
 
 			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
@@ -183,14 +183,14 @@ namespace Atlas {
 				commandList->EndRendering();
 
 				// The instances which weren't visible in the last frame are tested against the depth of the ones which were
-				if (renderState->gpuScene.HasOcclusionDraws()) {
+				if (cullFrame.HasOcclusionDraws()) {
 					auto occlusionData = target->GetData(FULL_RES);
 
 					commandList->MemoryBarrier(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
 						VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 					hiZRenderer.Generate(occlusionData, 0.0f, commandList);
-					renderState->gpuScene.CullOcclusion(occlusionData->hiZTexture,
+					renderState->gpuScene.CullOcclusion(cullFrame, occlusionData->hiZTexture,
 						ivec2(occlusionData->depthTexture->width, occlusionData->depthTexture->height),
 						occlusionData->hiZLevelCount, commandList);
 
@@ -637,191 +637,6 @@ namespace Atlas {
 
 				device->SubmitCommandList(commandList);
 			}
-
-		}
-
-		void MainRenderer::RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene) {
-
-			/*
-			if (probe->resolution != target->GetWidth() ||
-				probe->resolution != target->GetHeight())
-				return;
-
-			std::vector<PackedMaterial> materials;
-			std::unordered_map<void*, uint16_t> materialMap;
-			Viewport viewport(0, 0, probe->resolution, probe->resolution);
-
-			PrepareMaterials(scene, materials, materialMap);
-
-			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
-				materials.size(), materials.data());
-
-			Lighting::EnvironmentProbe* skyProbe = nullptr;
-
-			if (scene->sky.probe) {
-				skyProbe = scene->sky.probe;
-				scene->sky.probe = nullptr;
-			}
-
-			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
-
-			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
-
-			Camera camera(90.0f, 1.0f, 0.5f, 1000.0f);
-			camera.UpdateProjection();
-
-			glEnable(GL_DEPTH_TEST);
-			glDepthMask(GL_TRUE);
-
-			for (uint8_t i = 0; i < 6; i++) {
-
-				vec3 dir = faces[i];
-				vec3 up = ups[i];
-				vec3 right = normalize(cross(up, dir));
-				up = normalize(cross(dir, right));
-
-				camera.viewMatrix = glm::lookAt(probe->GetPosition(), probe->GetPosition() + dir, up);
-				camera.invViewMatrix = glm::inverse(camera.viewMatrix);
-				camera.location = probe->GetPosition();
-				camera.direction = dir;
-				camera.right = right;
-				camera.up = up;
-
-				camera.frustum = Volume::Frustum(camera.projectionMatrix * camera.viewMatrix);
-
-				scene->Update(&camera, 0.0f);
-
-				// Clear the lights depth maps
-				depthFramebuffer.Bind();
-
-				auto lights = scene->GetLights();
-
-				if (scene->sky.sun) {
-					lights.push_back(scene->sky.sun);
-				}
-
-				for (auto light : lights) {
-
-					if (!light->GetShadow())
-						continue;
-					if (!light->GetShadow()->update)
-						continue;
-
-					for (int32_t j = 0; j < light->GetShadow()->componentCount; j++) {
-						if (light->GetShadow()->useCubemap) {
-							depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
-								&light->GetShadow()->cubemap, j);
-						}
-						else {
-							depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
-								&light->GetShadow()->maps, j);
-						}
-
-						glClear(GL_DEPTH_BUFFER_BIT);
-					}
-				}
-
-				shadowRenderer.Render(&viewport, target, &camera, scene);
-
-				glEnable(GL_CULL_FACE);
-
-				glCullFace(GL_FRONT);
-
-				terrainShadowRenderer.Render(&viewport, target, &camera, scene);
-
-				glCullFace(GL_BACK);
-
-				// Shadows have been updated
-				for (auto light : lights) {
-					if (!light->GetShadow())
-						continue;
-					light->GetShadow()->update = false;
-				}
-
-				materialBuffer.BindBase(0);
-
-				target->geometryFramebuffer.Bind(true);
-				target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-					GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
-					GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 });
-
-				glEnable(GL_CULL_FACE);
-
-				glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-				opaqueRenderer.Render(&viewport, target, &camera, scene, materialMap);
-
-				terrainRenderer.Render(&viewport, target, &camera, scene, materialMap);
-
-				glEnable(GL_CULL_FACE);
-				glDepthMask(GL_FALSE);
-				glDisable(GL_DEPTH_TEST);
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-				target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-					GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
-
-				decalRenderer.Render(&viewport, target, &camera, scene);
-
-				glDisable(GL_BLEND);
-
-				vertexArray.Bind();
-
-				target->lightingFramebuffer.Bind(true);
-				target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
-
-				glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-				glClear(GL_COLOR_BUFFER_BIT);
-
-				directionalLightRenderer.Render(&viewport, target, &camera, scene);
-
-				glEnable(GL_DEPTH_TEST);
-
-				target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-					GL_COLOR_ATTACHMENT1 });
-
-				glDepthMask(GL_TRUE);
-
-				oceanRenderer.Render(&viewport, target, &camera, scene);
-
-				glDisable(GL_CULL_FACE);
-				glCullFace(GL_BACK);
-				glDepthMask(GL_FALSE);
-				glDisable(GL_DEPTH_TEST);
-
-				vertexArray.Bind();
-
-				volumetricRenderer.Render(&viewport, target, &camera, scene);
-
-				createProbeFaceShader.Bind();
-
-				createProbeFaceShader.GetUniform("faceIndex")->SetValue((int32_t)i);
-				createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
-
-				int32_t groupCount = probe->resolution / 8;
-				groupCount += ((groupCount * 8 == probe->resolution) ? 0 : 1);
-
-				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
-				probe->depth.Bind(GL_WRITE_ONLY, 1);
-
-				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
-				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(1);
-
-				glDispatchCompute(groupCount, groupCount, 1);
-
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-			}
-
-			if (skyProbe) {
-				scene->sky.probe = skyProbe;
-			}
-			*/
 
 		}
 

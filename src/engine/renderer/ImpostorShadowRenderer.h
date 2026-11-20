@@ -22,7 +22,7 @@ namespace Atlas {
             Buffer::VertexArray vertexArray;
 
             PipelineConfig GetPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
-                bool interpolation, bool pixelDepthOffset, bool useInstanceBuffer);
+                bool interpolation, bool pixelDepthOffset);
 
         };
 

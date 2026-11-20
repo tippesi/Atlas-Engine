@@ -39,7 +39,7 @@ namespace Atlas {
 
             // Skinned meshes have the joint matrices of each instance one after another, soft body meshes the
             // offsets of the vertices of each instance
-            size_t jointOffset = 0;
+            size_t deformOffset = 0;
 
             // The instances of both windings are ordered by their level of detail
             std::array<uint32_t, Mesh::MeshData::maxLodCount> lodCounts = {};
@@ -107,7 +107,6 @@ namespace Atlas {
 
             std::vector<mat3x4> currentEntityMatrices;
             std::vector<mat3x4> lastEntityMatrices;
-            std::vector<mat3x4> impostorMatrices;
             std::vector<mat3x4> currentJointMatrices;
             std::vector<mat3x4> lastJointMatrices;
             std::vector<uint32_t> softBodyVertexOffsets;
@@ -125,7 +124,6 @@ namespace Atlas {
 
             Ref<Graphics::MultiBuffer> currentMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
-            Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
             Ref<Graphics::MultiBuffer> currentJointMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastJointMatricesBuffer;
             Ref<Graphics::Buffer> softBodyVertexOffsetsBuffer;

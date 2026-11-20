@@ -83,47 +83,26 @@ namespace Atlas::Scene {
                 if (material->graph.IsValid())
                     graphMaterials.push_back(material.Get());
 
-                Renderer::PackedMaterial packed;
+                int32_t features = 0;
+                features |= material->HasBaseColorMap() ? Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP : 0;
+                features |= material->HasOpacityMap() ? Renderer::MaterialFeatures::FEATURE_OPACITY_MAP : 0;
+                features |= material->HasNormalMap() ? Renderer::MaterialFeatures::FEATURE_NORMAL_MAP : 0;
+                features |= material->HasRoughnessMap() ? Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP : 0;
+                features |= material->HasMetalnessMap() ? Renderer::MaterialFeatures::FEATURE_METALNESS_MAP : 0;
+                features |= material->HasAoMap() ? Renderer::MaterialFeatures::FEATURE_AO_MAP : 0;
+                features |= material->HasEmissiveMap() ? Renderer::MaterialFeatures::FEATURE_EMISSIVE_MAP : 0;
+                features |= glm::length(material->transmissiveColor) > 0.0f ? Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
+                features |= material->vertexColors ? Renderer::MaterialFeatures::FEATURE_VERTEX_COLORS : 0;
+                features |= usage & MaterialUsageBits::TerrainBit ? Renderer::MaterialFeatures::FEATURE_TERRAIN : 0;
 
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 0.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor), 0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor), 0.0f));
-
-                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(material->emissiveIntensity, material->tiling));
-
-                vec4 data0, data1, data2;
-
-                data0.x = material->opacity;
-                data0.y = material->roughness;
-                data0.z = material->metalness;
-
-                data1.x = material->ao;
-                data1.y = material->HasNormalMap() ? material->normalScale : 0.0f;
-                data1.z = material->HasDisplacementMap() ? material->displacementScale : 0.0f;
-
-                data2.x = material->reflectance;
-                // Note used
-                data2.y = 0.0f;
-                data2.z = 0.0f;
-
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
-
-                packed.features = 0;
-
-                packed.features |= material->HasBaseColorMap() ? Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP : 0;
-                packed.features |= material->HasOpacityMap() ? Renderer::MaterialFeatures::FEATURE_OPACITY_MAP : 0;
-                packed.features |= material->HasNormalMap() ? Renderer::MaterialFeatures::FEATURE_NORMAL_MAP : 0;
-                packed.features |= material->HasRoughnessMap() ? Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP : 0;
-                packed.features |= material->HasMetalnessMap() ? Renderer::MaterialFeatures::FEATURE_METALNESS_MAP : 0;
-                packed.features |= material->HasAoMap() ? Renderer::MaterialFeatures::FEATURE_AO_MAP : 0;
-                packed.features |= material->HasEmissiveMap() ? Renderer::MaterialFeatures::FEATURE_EMISSIVE_MAP : 0;
-                packed.features |= glm::length(material->transmissiveColor) > 0.0f ? Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
-                packed.features |= material->vertexColors ? Renderer::MaterialFeatures::FEATURE_VERTEX_COLORS : 0;
-                packed.features |= usage & MaterialUsageBits::TerrainBit ? Renderer::MaterialFeatures::FEATURE_TERRAIN : 0;
-
-                materials.push_back(packed);
+                materials.push_back(PackMaterial(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor),
+                    Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor),
+                    Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor),
+                    material->emissiveIntensity, material->tiling,
+                    vec3(material->opacity, material->roughness, material->metalness),
+                    vec3(material->ao, material->HasNormalMap() ? material->normalScale : 0.0f,
+                        material->HasDisplacementMap() ? material->displacementScale : 0.0f),
+                    vec3(material->reflectance, 0.0f, 0.0f), features));
 
                 materialMap[material.Get().get()] = idx++;
             }
@@ -137,77 +116,25 @@ namespace Atlas::Scene {
                 if (!impostor.IsLoaded())
                     continue;
 
-                Renderer::PackedMaterial packed;
-
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(impostor->approxTransmissiveColor), 1.0f));
-
-                vec4 data0, data1, data2;
-
-                data0.x = 1.0f;
-                data0.y = 1.0f;
-                data0.z = 1.0f;
-
-                data1.x = 1.0f;
-                data1.y = 0.0f;
-                data1.z = 0.0f;
-
-                data2.x = impostor->approxReflectance;
-                // Note used
-                data2.y = 0.0f;
-                data2.z = 0.0f;
-
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
-
-                packed.features = 0;
-
-                packed.features |= Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP |
+                int32_t features = Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP |
                     Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP |
                     Renderer::MaterialFeatures::FEATURE_METALNESS_MAP |
                     Renderer::MaterialFeatures::FEATURE_AO_MAP;
-                packed.features |= glm::length(impostor->approxTransmissiveColor) > 0.0f ?
+                features |= glm::length(impostor->approxTransmissiveColor) > 0.0f ?
                     Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
 
-                materials.push_back(packed);
+                materials.push_back(PackMaterial(vec3(1.0f), vec3(0.0f),
+                    Common::ColorConverter::ConvertSRGBToLinear(impostor->approxTransmissiveColor), 0.0f, 1.0f,
+                    vec3(1.0f), vec3(1.0f, 0.0f, 0.0f), vec3(impostor->approxReflectance, 0.0f, 0.0f), features));
 
                 materialMap[impostor.Get().get()] = idx++;
             }
 
             // The reflections start on the ocean surface, which is a perfect mirror for them
             if (scene->ocean) {
-                Renderer::PackedMaterial packed;
-
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-
-                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(0.0f, 1.0f));
-
-                vec4 data0, data1, data2;
-
-                data0.x = 1.0f;
-                data0.y = 0.0f;
-                data0.z = 0.0f;
-
-                data1.x = 1.0f;
-                data1.y = 0.0f;
-                data1.z = 0.0f;
-
                 // F0 of water is 0.02
-                data2.x = sqrtf(0.02f / 0.16f);
-                data2.y = 0.0f;
-                data2.z = 0.0f;
-
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
-
-                packed.features = 0;
-
-                materials.push_back(packed);
+                materials.push_back(PackMaterial(vec3(0.0f), vec3(0.0f), vec3(0.0f), 0.0f, 1.0f,
+                    vec3(1.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), vec3(sqrtf(0.02f / 0.16f), 0.0f, 0.0f), 0));
 
                 materialMap[scene->ocean.get()] = idx++;
             }
@@ -228,22 +155,14 @@ namespace Atlas::Scene {
                 if (!compiled->hasSurface)
                     continue;
 
-                auto packed = materials[data.materialIdx];
-
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
-                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(1.0f, material->tiling));
-
-                vec4 data0(material->opacity, 1.0f, 1.0f, 0.0f);
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                vec4 data1(1.0f, 1.0f, 0.0f, 0.0f);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-
-                packed.features |= Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP | Renderer::MaterialFeatures::FEATURE_NORMAL_MAP |
+                auto features = materials[data.materialIdx].features |
+                    Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP | Renderer::MaterialFeatures::FEATURE_NORMAL_MAP |
                     Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP | Renderer::MaterialFeatures::FEATURE_METALNESS_MAP |
                     Renderer::MaterialFeatures::FEATURE_AO_MAP | Renderer::MaterialFeatures::FEATURE_EMISSIVE_MAP;
 
-                materials.push_back(packed);
+                materials.push_back(PackMaterial(vec3(1.0f), vec3(1.0f),
+                    Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor), 1.0f, material->tiling,
+                    vec3(material->opacity, 1.0f, 1.0f), vec3(1.0f, 1.0f, 0.0f), vec3(material->reflectance, 0.0f, 0.0f), features));
                 data.materialIdx = uint32_t(idx++);
             }
 
@@ -416,6 +335,22 @@ namespace Atlas::Scene {
 
         JobSystem::Execute(bindlessBlasMapUpdateJob, bindlessBlasMapUpdate);
         JobSystem::Execute(prepareBindlessBlasesJob, bindlessBlasBuffersUpdate);
+
+    }
+
+    Renderer::PackedMaterial SceneRenderState::PackMaterial(vec3 baseColor, vec3 emissiveColor, vec3 transmissionColor,
+        float emissiveIntensity, float tiling, vec3 data0, vec3 data1, vec3 data2, int32_t features) {
+
+        return Renderer::PackedMaterial {
+            .baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(baseColor, 0.0f)),
+            .emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(emissiveColor, 0.0f)),
+            .transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(transmissionColor, 0.0f)),
+            .emissiveIntensityTiling = glm::packHalf2x16(vec2(emissiveIntensity, tiling)),
+            .data0 = Common::Packing::PackUnsignedVector3x10_1x2(vec4(data0, 0.0f)),
+            .data1 = Common::Packing::PackUnsignedVector3x10_1x2(vec4(data1, 0.0f)),
+            .data2 = Common::Packing::PackUnsignedVector3x10_1x2(vec4(data2, 0.0f)),
+            .features = features
+        };
 
     }
 
@@ -1119,9 +1054,8 @@ namespace Atlas::Scene {
                     .worldToUnit0 = worldToUnit[0],
                     .worldToUnit1 = worldToUnit[1],
                     .worldToUnit2 = worldToUnit[2],
-                    // The scattering factor only scales the light, the density stays the extinction
-                    .scatteringAndDensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.scatteringColor) * volume.scatteringFactor,
-                        volume.density * fade),
+                    // The density is the extinction, the scattering the albedo times it
+                    .scatteringAndDensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.albedo), volume.density * fade),
                     .emissiveAndEdgeFade = vec4(Common::ColorConverter::ConvertSRGBToLinear(volume.emissiveColor) * preExposure, volume.edgeFade),
                     .noiseOffsetAndFrequency = vec4(windOffset * volume.windInfluence, 1.0f / volume.noiseScale),
                     .noiseAmount = volume.noiseAmount,

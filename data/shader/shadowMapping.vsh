@@ -1,6 +1,8 @@
 #include <globals.hsh>
 #include <wind.hsh>
 #include <common/packing.hsh>
+#include <common/texCoord.hsh>
+#include <common/opacity.hsh>
 
 layout(location=0) in vec3 vPosition;
 #ifdef MATERIAL_GRAPH
@@ -71,9 +73,12 @@ layout(push_constant) uniform constants {
     float windBendScale;
     float windWiggleScale;
     uint textureID;
-    uint jointOffset;
+    uint deformOffset;
     uint jointCount;
     uint instanceOffset;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
 #ifdef MATERIAL_GRAPH
     uint materialGraphOffset;
 #endif
@@ -88,14 +93,15 @@ void main() {
 #endif
     
 #ifdef OPACITY_MAP
-    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    texCoordVS = TransformTexCoord(vTexCoord, PushConstants.invertUVs > 0,
+        vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY), PushConstants.uvTiling);
 #endif
 
     mat4 matrix = mMatrix;
     vec3 position = vPosition;
 
 #ifdef SKINNED
-    uint jointOffset = PushConstants.jointOffset + (gl_InstanceIndex - PushConstants.instanceOffset) * PushConstants.jointCount;
+    uint jointOffset = PushConstants.deformOffset + (gl_InstanceIndex - PushConstants.instanceOffset) * PushConstants.jointCount;
     vec4 weights = vWeights / dot(vWeights, vec4(1.0));
 
     mat3x4 skinMatrix = weights.x * jointMatrices[jointOffset + vJoints.x] +
@@ -107,7 +113,7 @@ void main() {
 #endif
 
 #ifdef SOFT_BODY
-    vec4 softBodyVertex = softBodyVertices[softBodyVertexOffsets[PushConstants.jointOffset + gl_InstanceIndex -
+    vec4 softBodyVertex = softBodyVertices[softBodyVertexOffsets[PushConstants.deformOffset + gl_InstanceIndex -
         PushConstants.instanceOffset] + gl_VertexIndex];
     position = softBodyVertex.xyz;
 #endif
@@ -125,7 +131,8 @@ void main() {
     graphNormal = unpackUnitVector(floatBitsToInt(softBodyVertex.w)).xyz;
 #endif
 #ifdef TEX_COORDS
-    graphTexCoord = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    graphTexCoord = TransformTexCoord(vTexCoord, PushConstants.invertUVs > 0,
+        vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY), PushConstants.uvTiling);
 #endif
 #ifdef TEX_COORDS_1
     graphTexCoord1 = PushConstants.invertUVs > 0 ? vec2(vTexCoord1.x, 1.0 - vTexCoord1.y) : vTexCoord1;
@@ -141,7 +148,7 @@ void main() {
         graphColor, mMatrix, globalData.time, PushConstants.materialGraphOffset);
 
 #ifdef MATERIAL_GRAPH_VERTEX_OPACITY
-    if (EvaluateMaterialOpacity(graphInput) < 0.2) {
+    if (EvaluateMaterialOpacity(graphInput) < opacityCutoff) {
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         return;
     }

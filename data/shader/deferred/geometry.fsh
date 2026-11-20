@@ -1,6 +1,7 @@
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
 #include <../globals.hsh>
+#include <../common/opacity.hsh>
 #include <texture.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
@@ -58,7 +59,7 @@ layout(push_constant) uniform constants {
     uint aoTextureIdx;
     uint heightTextureIdx;
     uint emissiveTextureIdx;
-    uint jointOffset;
+    uint deformOffset;
     uint jointCount;
     uint instanceOffset;
     uint lod;
@@ -143,7 +144,7 @@ void main() {
     MaterialSurfaceOutput surface = EvaluateMaterialSurface(surfaceInput);
 
 #ifdef MATERIAL_GRAPH_OPACITY
-    if (surface.opacity < 0.2)
+    if (surface.opacity < opacityCutoff)
         discard;
 #endif
 
@@ -180,7 +181,7 @@ void main() {
 #ifdef VERTEX_COLORS
     // opacity *= vertexColorsVS.a;
 #endif
-    if (opacity < 0.2)
+    if (opacity < opacityCutoff)
         discard;
 #endif
 

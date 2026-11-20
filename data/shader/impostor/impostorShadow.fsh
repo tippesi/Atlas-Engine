@@ -23,10 +23,6 @@ layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
 layout(set = 3, binding = 1) uniform sampler2DArray depthMap;
 #endif
 
-layout(std430, set = 1, binding = 3) buffer Matrices {
-    mat4 matrices[];
-};
-
 layout(set = 3, binding = 3, std140) uniform UniformBuffer{
 	vec4 center;
 
@@ -41,8 +37,6 @@ layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
 
     vec4 lightLocation;
-	vec4 lightUp;
-	vec4 lightRight;
 } pushConstants;
 
 void main() {

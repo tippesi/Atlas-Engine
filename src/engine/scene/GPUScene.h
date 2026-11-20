@@ -54,6 +54,8 @@ namespace Atlas::Scene {
         // Each view has a counter per winding and level of detail of a mesh and one for its impostors, has to match
         // culling/common.hsh
         static constexpr uint32_t meshCounterCount = 2 * uint32_t(Mesh::MeshData::maxLodCount) + 1;
+        // The culling result of an instance has a bit per view, has to match culling/common.hsh
+        static constexpr uint32_t maxCullViewCount = 24;
 
         // Has to match the structures in culling/common.hsh, GPUDrawRequest the one in culling/draws.csh
         struct alignas(16) GPUInstance {
@@ -77,10 +79,10 @@ namespace Atlas::Scene {
             float impostorShadowDistance;
             uint32_t flags;
             float minScreenSize;
-            // Each level of detail has a region of this capacity
+            // The region of the indices of the mesh in each view, shared by its levels of detail, windings and impostors
             uint32_t regionOffset;
             uint32_t regionCapacity;
-            uint32_t impostorRegionOffset;
+            uint32_t padding0 = 0;
             uint32_t lodCount;
             // Errors of the levels from 1 on divided by their pixel error
             vec4 lodErrors;
@@ -90,7 +92,7 @@ namespace Atlas::Scene {
             vec4 planes[6];
             uint32_t shadow;
             uint32_t indexOffset;
-            uint32_t impostorIndexOffset;
+            uint32_t padding0 = 0;
             uint32_t counterOffset;
         };
 
@@ -116,9 +118,13 @@ namespace Atlas::Scene {
             std::vector<ECS::Entity> entities;
             uint32_t reversedWindingCount = 0;
             uint32_t dontCullCount = 0;
-            // Grows with the instances, it only shrinks once all instances are gone
+            // Grows with the instances where they are added, it only shrinks once all instances are gone
             Volume::AABB bounds;
             bool hasBounds = false;
+            // Instances which are moving, so they don't grow the bounds along their way
+            std::vector<ECS::Entity> movingEntities;
+            // The bounds and the current bounds of the moving instances, set in every update
+            Volume::AABB cullBounds;
 
             // Meshes without visible instances are left out of the first draws of an occluded pass, read back from the
             // occlusion test
@@ -137,7 +143,6 @@ namespace Atlas::Scene {
             // The levels of detail the culling chooses from, each draw has a command for every one of them
             uint32_t lodCount = 1;
             uint32_t regionOffset = 0;
-            uint32_t impostorRegionOffset = 0;
         };
 
         explicit GPUScene(Scene* scene);
@@ -160,8 +165,25 @@ namespace Atlas::Scene {
             std::vector<float> positionDistances;
         };
 
+        // A culling of the GPU culled passes, its occlusion test continues it
+        struct CullFrame {
+            Ref<Graphics::Buffer> viewBuffer;
+            Ref<Graphics::Buffer> requestBuffer;
+            vec3 cameraLocation = vec3(0.0f);
+            float focalLength = 0.0f;
+            // The draws after the occlusion test have a view of their own
+            uint32_t lateView = 0;
+            VkDeviceSize occlusionViewOffset = 0;
+            uint32_t lateFirstRequest = 0;
+            uint32_t lateRequestCount = 0;
+            bool readbackVisibility = false;
+
+            // Whether the main pass has draws which wait for the occlusion test
+            bool HasOcclusionDraws() const { return lateRequestCount > 0; }
+        };
+
         // Writes the draw commands of the GPU culled passes of the render list
-        void Cull(RenderList& renderList, vec3 cameraLocation, float focalLength, Graphics::CommandList* commandList);
+        CullFrame Cull(RenderList& renderList, vec3 cameraLocation, float focalLength, Graphics::CommandList* commandList);
 
         // Only computes the mesh distances, for rendering without any culled pass
         void CullForStreaming(vec3 cameraLocation, float focalLength, Graphics::CommandList* commandList);
@@ -169,13 +191,10 @@ namespace Atlas::Scene {
         // Viewport height in pixels divided by 2 * tan(fov / 2) of the last culling, 0 before the first one
         float GetFocalLength() const;
 
-        // Whether the main pass of the last culling has draws which wait for the occlusion test
-        bool HasOcclusionDraws() const { return lateRequestCount > 0; }
-
         // Tests the instances of the main pass against the depth of its first draws and writes the commands of the
         // draws which are left, needs the hierarchical depth of these draws
-        void CullOcclusion(const Ref<Texture::Texture2D>& hiZTexture, ivec2 depthResolution, int32_t hiZLevelCount,
-            Graphics::CommandList* commandList);
+        void CullOcclusion(const CullFrame& frame, const Ref<Texture::Texture2D>& hiZTexture, ivec2 depthResolution,
+            int32_t hiZLevelCount, Graphics::CommandList* commandList);
 
         // Takes the newest mesh distances that arrived from the GPU, keeps the given ones if there are none
         void TakeMeshDistances(MeshDistances& meshDistances);
@@ -190,8 +209,8 @@ namespace Atlas::Scene {
 
         std::vector<MeshSlot> slots = std::vector<MeshSlot>(1);
 
+        // The instances of the draws of all views, impostors included
         Ref<Graphics::Buffer> indexBuffer;
-        Ref<Graphics::Buffer> impostorIndexBuffer;
 
     private:
         // Has to match culling/cull.csh
@@ -216,9 +235,21 @@ namespace Atlas::Scene {
             uint32_t requestCount;
         };
 
+        // Has to match culling/offsets.csh and culling/indices.csh
+        struct IndexPushConstants {
+            uint32_t firstView;
+            uint32_t viewCount;
+            uint32_t meshCount;
+            uint32_t instanceCount;
+        };
+
+        static constexpr uint32_t notMoving = 0xFFFFFFFF;
+
         struct EntityState {
             uint32_t slot = 0;
             uint32_t slotPosition = 0;
+            // Position in the moving entities of the slot
+            uint32_t movingPosition = notMoving;
             bool reversedWinding = false;
             bool dontCull = false;
         };
@@ -235,12 +266,16 @@ namespace Atlas::Scene {
         uint32_t GetSlot(const ResourceHandle<Mesh::Mesh>& mesh, bool softBody);
 
         void AddToSlot(ECS::Entity entity, EntityState& state, uint32_t slotIdx, bool reversedWinding, bool dontCull,
-            const mat4& globalMatrix);
+            const mat4& globalMatrix, bool moved);
 
         // An entity which stays in its slot keeps its position, otherwise it leaves and empty slots are freed
         void RemoveFromSlot(uint32_t entityIdx, EntityState& state, bool keepPosition);
 
+        void RemoveFromMovingEntities(MeshSlot& slot, EntityState& state);
+
         void GrowBounds(MeshSlot& slot, const mat4& globalMatrix);
+
+        static Volume::AABB GetInstanceBounds(const MeshSlot& slot, const mat4& globalMatrix);
 
         void UpdateMeshes();
 
@@ -270,7 +305,13 @@ namespace Atlas::Scene {
 
         void BindCullBuffers(const Ref<Graphics::Buffer>& viewBuffer, Graphics::CommandList* commandList) const;
 
-        void WriteDrawCommands(uint32_t firstRequest, uint32_t requestCount, Graphics::CommandList* commandList);
+        // Turns the counts of the culling into offsets and writes the indices of the views, the occlusion test only
+        // writes the instances it tested
+        void WriteIndices(const CullFrame& frame, uint32_t firstView, uint32_t viewCount, bool occlusion,
+            Graphics::CommandList* commandList);
+
+        void WriteDrawCommands(const CullFrame& frame, uint32_t firstRequest, uint32_t requestCount,
+            Graphics::CommandList* commandList);
 
         Scene* scene;
 
@@ -301,7 +342,6 @@ namespace Atlas::Scene {
         // The instance buffer is indexed by entity
         uint32_t instanceCount = 0;
         uint32_t totalCapacity = 0;
-        uint32_t impostorCapacity = 0;
 
         bool valid = false;
         bool clearInstances = false;
@@ -311,22 +351,15 @@ namespace Atlas::Scene {
         std::vector<size_t> visibilityMeshIds[FRAME_DATA_COUNT];
         std::vector<size_t> visibleMeshIds;
         std::vector<uint8_t> visibleMeshes;
-        bool readbackVisibility = false;
-
-        // The last culling, the occlusion test continues it
-        Ref<Graphics::Buffer> cullViewBuffer;
-        Ref<Graphics::Buffer> cullRequestBuffer;
-        vec3 cullCameraLocation = vec3(0.0f);
-        float cullFocalLength = 0.0f;
-        uint32_t lateView = 0;
-        VkDeviceSize occlusionViewOffset = 0;
-        uint32_t lateFirstRequest = 0;
-        uint32_t lateRequestCount = 0;
 
         Ref<Graphics::Buffer> instanceBuffer;
         Ref<Graphics::Buffer> historyBuffer;
         Ref<Graphics::Buffer> meshBuffer;
         Ref<Graphics::Buffer> counterBuffer;
+        // The offsets of the draws in the index buffer, they end up behind the indices of their draws
+        Ref<Graphics::Buffer> offsetBuffer;
+        // The views each instance is visible in, see culling/cull.csh
+        Ref<Graphics::Buffer> resultBuffer;
         Ref<Graphics::Buffer> commandBuffer;
         Ref<Graphics::Buffer> meshDistanceBuffer;
         Ref<Graphics::Buffer> occlusionInstanceBuffer;
@@ -336,6 +369,9 @@ namespace Atlas::Scene {
         PipelineConfig cullPipelineConfig;
         PipelineConfig cullRayTracingPipelineConfig;
         PipelineConfig cullOcclusionPipelineConfig;
+        PipelineConfig offsetsPipelineConfig;
+        PipelineConfig indicesPipelineConfig;
+        PipelineConfig indicesOcclusionPipelineConfig;
         PipelineConfig drawsPipelineConfig;
 
     };

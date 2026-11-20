@@ -7,14 +7,6 @@ namespace Atlas {
 
         VegetationRenderer::VegetationRenderer() {
 
-            /*
-            depthShader.AddStage(AE_VERTEX_STAGE, "vegetation/depth.vsh");
-            depthShader.AddStage(AE_FRAGMENT_STAGE, "vegetation/depth.fsh");
-
-            depthShader.AddMacro("OPACITY_MAP");
-            depthShader.Compile();
-             */
-
         }
 
         void VegetationRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
@@ -42,8 +34,6 @@ namespace Atlas {
 
             auto commandBuffer = helper.GetCommandBuffer();
             
-            // DepthPrepass(vegetation, meshes, camera, time, deltaTime);
-
             // How we order the execution of rendering commands doesn't matter here
             for (auto mesh : meshes) {
                 // Clutter can share meshes with the scene, the streaming might have unloaded them
@@ -102,49 +92,6 @@ namespace Atlas {
                     commandList->DrawIndexedIndirect(commandBuffer->Get(), stride * offset, helper.binCount, stride);
                 }
             }
-
-        }
-
-        void VegetationRenderer::DepthPrepass(Scene::Clutter& vegetation, std::vector<Mesh::Mesh*>& meshes,
-            const CameraComponent& camera, float time, float deltaTime) {
-
-            /*
-            glColorMask(false, false, false, false);
-
-            depthShader.Bind();
-
-            depthShader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
-            depthShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-
-            depthShader.GetUniform("time")->SetValue(time);
-            depthShader.GetUniform("deltaTime")->SetValue(deltaTime);
-
-            glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-
-            // How we order the execution of rendering commands doesn't matter here
-            for (auto mesh : meshes) {
-                mesh->Bind();
-                auto buffers = vegetation.GetBuffers(mesh);
-
-                buffers->binnedInstanceData.BindBase(5);
-
-                depthShader.GetUniform("invertUVs")->SetValue(mesh->invertUVs);
-
-                for (auto& subData : mesh->data.subData) {
-                    auto material = subData.material;
-
-                    if (material->opacityMap.IsLoaded())
-                        material->opacityMap->Bind(1);
-
-                    auto offset = helper.GetCommandBufferOffset(*mesh, subData);
-                    glMultiDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
-                        (void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset),
-                        helper.binCount, 0);
-                }
-            }
-
-            glColorMask(true, true, true, true);
-             */
 
         }
 

@@ -93,7 +93,6 @@ namespace Atlas {
             }
 
             commandList->BindBuffer(shadowPass->currentMatricesBuffer, 1, 1);
-            commandList->BindBuffer(shadowPass->impostorMatricesBuffer, 1, 3);
             commandList->BindBuffer(shadowPass->currentJointMatricesBuffer, 1, 4);
             if (shadowPass->softBodyVertexOffsetsBuffer) {
                 commandList->BindBuffer(renderList->currentSoftBodyVerticesBuffer, 1, 24);
@@ -104,7 +103,7 @@ namespace Atlas {
             auto& gpuScene = scene->renderState.gpuScene;
             if (shadowPass->gpuCulled) {
                 commandList->BindBuffer(gpuScene.indexBuffer, 1, 22);
-                commandList->BindBuffer(gpuScene.impostorIndexBuffer, 1, 23);
+                commandList->BindBuffer(gpuScene.indexBuffer, 1, 23);
             }
             else {
                 commandList->BindBuffer(shadowPass->instanceIndicesBuffer, 1, 22);
@@ -122,113 +121,26 @@ namespace Atlas {
             if (!scene->renderState.materialGraphParameters.empty())
                 scene->renderState.materialGraphBuffer.Bind(commandList, 3, 9);
 
-            int32_t subDataCount = 0;
-            // Retrieve all possible materials
-            auto addSubDatas = [&](const std::unordered_map<size_t, RenderList::MeshInstances>& meshToInstances, bool softBody) {
-                for (const auto& [meshId, instances] : meshToInstances) {
-                    if (!instances.count) continue;
-
-                    auto& mesh = renderList->meshIdToMeshMap[meshId];
-                    for (auto& subData : mesh->data.subData) {
-                        if (!subData.material.IsLoaded())
-                            continue;
-
-                        if (subDataCount < subDatas.size())
-                            subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get(), nullptr, softBody };
-                        else
-                            subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get(), nullptr, softBody });
-                        subDataCount++;
-                    }
-                }
+            auto createConfig = [&](Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const MaterialGraph::CompiledGraph* graph) {
+                return GetPipelineConfigForSubData(subData, mesh, attachmentFormats, graph);
             };
-            addSubDatas(shadowPass->meshToInstancesMap, false);
-            addSubDatas(shadowPass->meshToSoftBodyInstancesMap, true);
+            // Graphs which neither move vertices nor cut out parts have the shadows of the regular pipeline
+            auto hasGraphPipeline = [](const MaterialGraph::CompiledGraph& graph) { return graph.UsesShadowPipeline(); };
+            drawer.Prepare(renderList, *shadowPass, shadowPass->gpuDraws, true, &Mesh::MeshSubData::shadowPipelines,
+                createConfig, hasGraphPipeline);
 
-            for (const auto& draw : shadowPass->gpuDraws) {
-                if (!draw.subData)
-                    continue;
-
-                if (subDataCount < subDatas.size())
-                    subDatas[subDataCount] = { draw.subData, draw.meshId, draw.mesh, &draw, false };
-                else
-                    subDatas.push_back({ draw.subData, draw.meshId, draw.mesh, &draw, false });
-                subDataCount++;
-            }
-
-            // Simulated soft bodies read their vertices instead of the instance buffer
-            auto getSoftBodyVariant = [](PipelineConfig config) {
-                config.RemoveMacro("INSTANCE_BUFFER");
-                config.AddMacro("SOFT_BODY");
-                return config;
-            };
-
-            // Check whether materials have pipeline configs
-            for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, _, mesh, gpuDraw, softBody] = subDatas[i];
-                const auto& material = subData->material;
-                if (subData->shadowGraphPending)
-                    UpdateGraphPipelines(subData, mesh, attachmentFormats);
-                if (!subData->shadowConfig.IsValid()) {
-                    subData->shadowConfig = GetPipelineConfigForSubData(subData, mesh, attachmentFormats);
-                    subData->shadowReversedWindingConfig = subData->shadowConfig.GetReversedWindingVariant();
-
-                    if (material->HasGraph()) {
-                        subData->shadowGraphPending = true;
-                        UpdateGraphPipelines(subData, mesh, attachmentFormats);
-                    }
-                }
-
-                if (softBody && !subData->shadowSoftBodyConfig.IsValid()) {
-                    subData->shadowSoftBodyConfig = getSoftBodyVariant(subData->shadowConfig);
-                    subData->shadowSoftBodyReversedWindingConfig = getSoftBodyVariant(subData->shadowReversedWindingConfig);
-                }
-            }
-
-            auto getConfig = [](const auto& entry) -> PipelineConfig& {
-                const auto& [subData, meshID, mesh, gpuDraw, softBody] = entry;
-                if (softBody)
-                    return subData->shadowSoftBodyConfig;
-                return gpuDraw && gpuDraw->type == RenderList::GPUDrawType::ReversedWinding ?
-                    subData->shadowReversedWindingConfig : subData->shadowConfig;
-            };
-
-            // Sort materials by hash
-            std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
-                [&](auto& subData0, auto& subData1) {
-                    return getConfig(subData0).variantHash < getConfig(subData1).variantHash;
-                });
-
-            Hash prevHash = 0;
-            Hash prevMesh = 0;
-            Ref<Graphics::Pipeline> currentPipeline = nullptr;
-            const Graphics::PushConstantRange* constantsRange = nullptr;
-            for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, meshID, mesh, gpuDraw, softBody] = subDatas[i];
-                auto instances = gpuDraw ? RenderList::MeshInstances{} : softBody ?
-                    shadowPass->meshToSoftBodyInstancesMap[meshID] : shadowPass->meshToInstancesMap[meshID];
-
-                const auto& material = subData->material;
-
-                auto& config = getConfig(subDatas[i]);
-
-                if (config.variantHash != prevHash) {
-                    currentPipeline = PipelineManager::GetPipeline(config);
-                    commandList->BindPipeline(currentPipeline);
-                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
-                    prevHash = config.variantHash;
-                }
-
-                if (meshID != prevMesh) {
-                    mesh->vertexArray.Bind(commandList);
-                    prevMesh = meshID;
-                }
+            PushConstants pushConstants;
+            auto fillPushConstants = [&](const Helper::SubDataDrawer::Entry& entry, const RenderList::MeshInstances& instances,
+                bool usesGraph) -> PushConstants& {
+                const auto& mesh = entry.mesh;
+                const auto& material = entry.subData->material;
 
                 auto materialIt = sceneState->materialMap.find(material.Get().get());
                 auto materialIdx = materialIt != sceneState->materialMap.end() ? uint32_t(materialIt->second) : 0u;
                 auto opacityTextureIdx = materialIdx < sceneState->materialTextureIndices.size() ?
                     sceneState->materialTextureIndices[materialIdx].opacity : 0u;
 
-                auto pushConstants = PushConstants{
+                pushConstants = PushConstants{
                     .lightSpaceMatrix = lightSpaceMatrix,
                     .vegetation = mesh->vegetation ? 1u : 0u,
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
@@ -236,39 +148,26 @@ namespace Atlas {
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
                     .textureID = opacityTextureIdx,
-                    .jointOffset = uint32_t(instances.jointOffset),
+                    .deformOffset = uint32_t(instances.deformOffset),
                     .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
                     .instanceOffset = uint32_t(instances.offset),
+                    .uvAnimationX = material->uvAnimation.x,
+                    .uvAnimationY = material->uvAnimation.y,
+                    .uvTiling = material->tiling,
                 };
 
-                if (subData->shadowUsesGraph) {
+                if (usesGraph) {
                     auto graphData = sceneState->materialGraphMap.find(material.Get().get());
                     if (graphData != sceneState->materialGraphMap.end())
                         pushConstants.materialGraphOffset = graphData->second.parameterOffset;
                 }
+                return pushConstants;
+            };
 
-                commandList->PushConstants(constantsRange, &pushConstants);
+            // Shadows don't color the levels of detail
+            auto setLod = [](uint32_t) { return false; };
 
-                if (gpuDraw) {
-                    renderList->DrawGPUCulled(commandList, *gpuDraw);
-                    continue;
-                }
-
-                // Shadows don't color the levels of detail
-                auto noLodPush = [](uint32_t) {};
-                RenderList::DrawInstances(commandList, *subData, instances, false, noLodPush);
-                if (instances.reversedWindingCount) {
-                    auto& reversedWindingConfig = softBody ? subData->shadowSoftBodyReversedWindingConfig :
-                        subData->shadowReversedWindingConfig;
-                    currentPipeline = PipelineManager::GetPipeline(reversedWindingConfig);
-                    commandList->BindPipeline(currentPipeline);
-                    constantsRange = currentPipeline->shader->GetPushConstantRange("constants");
-                    commandList->PushConstants(constantsRange, &pushConstants);
-                    RenderList::DrawInstances(commandList, *subData, instances, true, noLodPush);
-                    prevHash = reversedWindingConfig.variantHash;
-                }
-
-            }
+            drawer.Draw(commandList, renderList, *shadowPass, &Mesh::MeshSubData::shadowPipelines, fillPushConstants, setLod);
 
             profilerScope.Next("Shadow impostors");
             impostorRenderer.Render(attachmentFormats, commandList, renderList,
@@ -288,41 +187,6 @@ namespace Atlas {
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR
                 }
             };
-
-        }
-
-        void ShadowRenderer::UpdateGraphPipelines(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
-            const Graphics::AttachmentFormats& attachmentFormats) {
-
-            using PipelineState = MaterialGraph::PipelineCache::State;
-
-            const auto& graph = subData->material->graph;
-            auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
-            // Graphs which neither move vertices nor cut out parts have the shadows of the regular pipeline
-            if (!compiled || !compiled->valid || !compiled->UsesShadowPipeline()) {
-                subData->shadowGraphPending = false;
-                return;
-            }
-
-            auto config = GetPipelineConfigForSubData(subData, mesh, attachmentFormats, compiled.get());
-            auto reversedWindingConfig = config.GetReversedWindingVariant();
-
-            auto blocking = graph->blockingPipelineUsers > 0;
-            auto state = MaterialGraph::PipelineCache::Request(config, blocking);
-            auto reversedWindingState = MaterialGraph::PipelineCache::Request(reversedWindingConfig, blocking);
-            if (state == PipelineState::Pending || reversedWindingState == PipelineState::Pending)
-                return;
-
-            subData->shadowGraphPending = false;
-            if (state == PipelineState::Failed || reversedWindingState == PipelineState::Failed)
-                return;
-
-            subData->shadowConfig = config;
-            subData->shadowReversedWindingConfig = reversedWindingConfig;
-            subData->shadowSoftBodyConfig = PipelineConfig();
-            subData->shadowSoftBodyReversedWindingConfig = PipelineConfig();
-
-            subData->shadowUsesGraph = true;
 
         }
 

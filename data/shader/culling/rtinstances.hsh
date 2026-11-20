@@ -73,7 +73,7 @@ void WriteRayTracingInstance(Instance instance, uint lod, float distanceSqr, uin
     if ((mesh.flags & RT_MESH_USABLE) == 0u || distanceSqr > mesh.cullingDistanceSqr || distanceSqr < mesh.deformDistanceSqr)
         return;
 
-    // Levels whose BLAS isn't built yet fall back to the coarsest one that is
+    // Levels whose BLAS isn't usable yet fall back to the finest one that is
     lod = min(lod, mesh.lodCount - 1u);
     if (lod > 0u)
         mesh = rtMeshes[mesh.lodOffset + lod - 1u];

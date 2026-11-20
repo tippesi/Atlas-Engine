@@ -1,4 +1,5 @@
 #include <../common/random.hsh>
+#include <../common/opacity.hsh>
 
 layout (location = 0) out vec4 baseColorFS;
 layout (location = 1) out vec3 normalFS;
@@ -112,7 +113,7 @@ void main() {
 
 #ifdef OPACITY_MAP
 	float opacity = texture(opacityMap, texCoords).r;
-	if (opacity < 0.2)
+	if (opacity < opacityCutoff)
 		discard;
 #endif
 
