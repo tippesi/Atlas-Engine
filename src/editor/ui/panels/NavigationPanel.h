@@ -17,6 +17,9 @@ namespace Atlas::Editor::UI {
 
         void Render(Ref<Navigation::Navigation>& navigation);
 
+        // Changes are applied when an edit ends, every change rebuilds the mesh
+        Navigation::NavigationSettings editedSettings;
+
         bool showMesh = false;
         bool rebuilding = false;
 

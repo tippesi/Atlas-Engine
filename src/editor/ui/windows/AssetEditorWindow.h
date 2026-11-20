@@ -94,6 +94,9 @@ namespace Atlas::Editor::UI {
 
         virtual void RestoreState(const json& j) {}
 
+        // Starts a new history, e.g. after another asset was chosen in the same window
+        void ResetHistory();
+
         Panel propertiesPanel = Panel("Properties");
 
         // Area of the panels in this frame, e.g. for a panel maximized within the window

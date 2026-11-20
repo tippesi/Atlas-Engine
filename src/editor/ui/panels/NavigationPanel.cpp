@@ -56,16 +56,27 @@ namespace Atlas::Editor::UI {
             }
         }
 
-        auto& settings = navigation->settings;
+        if (!ImGui::IsAnyItemActive())
+            editedSettings = navigation->settings;
+        auto& settings = editedSettings;
+        auto applySettings = [&]() {
+            if (ImGui::IsItemDeactivatedAfterEdit())
+                navigation->settings = settings;
+        };
+
         if (Widgets::SectionHeader("Agent") && Widgets::BeginProperties("Agent")) {
             Widgets::PropertyLabel("Radius", "How far the mesh stays away from walls and edges, about the radius of a character");
             ImGui::SliderFloat("##Agent radius", &settings.agentRadius, 0.05f, 3.0f, "%.2f m");
+            applySettings();
             Widgets::PropertyLabel("Height", "The free space a character needs above the floor, lower passages aren't walkable");
             ImGui::SliderFloat("##Height", &settings.agentHeight, 0.2f, 5.0f, "%.2f m");
+            applySettings();
             Widgets::PropertyLabel("Max climb", "Steps up to this height are walked over, higher ledges separate the areas");
             ImGui::SliderFloat("##Max climb", &settings.agentMaxClimb, 0.0f, 2.0f, "%.2f m");
+            applySettings();
             Widgets::PropertyLabel("Max slope", "Steeper ground isn't walkable");
             ImGui::SliderFloat("##Max slope", &settings.agentMaxSlope, 0.0f, 85.0f, "%.0f deg");
+            applySettings();
             Widgets::EndProperties();
         }
 
@@ -74,12 +85,15 @@ namespace Atlas::Editor::UI {
                 Widgets::PropertyLabel("Cell size", "Horizontal resolution of the voxels the mesh is built from. Smaller cells follow walls and\n"
                     "gaps more exactly, but take longer to build and produce more polygons");
                 ImGui::SliderFloat("##Cell size", &settings.cellSize, 0.05f, 1.0f, "%.2f m");
+                applySettings();
                 Widgets::PropertyLabel("Cell height", "Vertical resolution of the voxels, steps and the agent height are rounded to it");
                 ImGui::SliderFloat("##Cell height", &settings.cellHeight, 0.05f, 1.0f, "%.2f m");
+                applySettings();
                 Widgets::PropertyLabel("Tile size", "Side length of the tiles which are built and replaced on their own. Larger tiles allow a larger\n"
                     "radius, but take longer to rebuild and can exceed the 4096 polygons of a tile in dense areas\n"
                     "(the tile then stays empty and the log names it). It doesn't change the precision");
                 ImGui::SliderFloat("##Tile size", &settings.tileSize, 8.0f, 128.0f, "%.0f m");
+                applySettings();
                 Widgets::EndProperties();
             }
             ImGui::TextColored(Theme::TextMuted(), "Changing the agent or voxelization settings rebuilds the mesh");

@@ -898,7 +898,7 @@ namespace Atlas::Editor {
             if (!mesh.IsLoaded())
                 continue;
             for (const auto& subData : mesh->data.subData)
-                graphPending |= subData.mainGraphPending;
+                graphPending |= subData.mainPipelines.graphPending;
         }
         if (graphPending) {
             if (job.activeTime <= renderTimeout)

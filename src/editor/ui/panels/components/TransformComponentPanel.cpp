@@ -91,7 +91,6 @@ namespace Atlas::Editor::UI {
             composition.rotation = rotation;
             composition.scale = scale;
             transform.Set(composition.Compose());
-            lastTransform = transform.matrix;
         }
 
         ImGui::PopID();

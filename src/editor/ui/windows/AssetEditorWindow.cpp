@@ -176,6 +176,13 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void AssetEditorWindow::ResetHistory() {
+
+        history.Clear();
+        lastState = json();
+
+    }
+
     void AssetEditorWindow::UpdateHistory() {
 
         auto interactionFinished = history.IsInteractionFinished();

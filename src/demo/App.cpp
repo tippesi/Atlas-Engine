@@ -504,7 +504,6 @@ void App::Render(float deltaTime) {
                 bool pathTraceEnabled = pathTrace;
                 ImGui::Checkbox("Enable##Pathtrace", &pathTrace);
                 ImGui::SliderInt("Bounces##Pathtrace", &mainRenderer->pathTracingRenderer.bounces, 0, 100);
-                ImGui::Checkbox("Sample emissives##Pathtrace", &mainRenderer->pathTracingRenderer.sampleEmissives);
                 ImGui::Text("Realtime");
                 ImGui::Checkbox("Realtime##Pathtrace", &mainRenderer->pathTracingRenderer.realTime);
                 ImGui::SliderInt("Samples per frame##Pathtrace", &mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 100);
@@ -1110,7 +1109,6 @@ void App::CheckLoadScene() {
     if (sceneSelection == CORNELL) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
             sceneAABB.Scale(1.10f), ivec3(20));
-        scene->irradianceVolume->sampleEmissives = true;
         scene->irradianceVolume->SetRayCount(512, 32);
     }
     else if (sceneSelection == SPONZA) {

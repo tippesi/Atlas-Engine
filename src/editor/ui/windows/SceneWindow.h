@@ -111,8 +111,6 @@ namespace Atlas::Editor::UI {
 
         SceneHistory history;
 
-        bool hasMainCamera = false;
-        bool hasPlayer = false;
         bool isPlaying = false;
         bool playMaximized = false;
         bool perfOverlayMaximized = false;
@@ -122,6 +120,21 @@ namespace Atlas::Editor::UI {
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);
+
+        // Toolbar above the viewport with the camera popups and the camera speed hint
+        void RenderViewportToolbar();
+
+        // Left: gizmo operations
+        void RenderGizmoToolbar(float margin);
+
+        // Center: play controls
+        void RenderPlayControls(float width);
+
+        // Right: viewport settings and visualization
+        void RenderViewportSettingsToolbar(float margin, float width);
+
+        // Camera speed, gizmos and the selection with right clicks in the viewport
+        void RenderViewportOverlay();
 
         void ApplyRequestedHistorySteps();
 

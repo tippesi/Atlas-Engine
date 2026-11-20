@@ -1,4 +1,5 @@
 #include "SceneHierarchyPanel.h"
+#include "scene/SceneSerializer.h"
 
 #include "../Widgets.h"
 
@@ -30,7 +31,7 @@ namespace Atlas::Editor::UI {
         bool searchChanged = entitySearch != lastEntitySearch;
 
         // Without a search or filter everything matches, large scenes don't need to go through all their entities
-        if (entitySearch.empty() && (hierarchyFilter & HierarchyFilterBits::AllBit) == HierarchyFilterBits::AllBit) {
+        if (entitySearch.empty() && (hierarchyFilter & GetAllFilterBits()) == GetAllFilterBits()) {
             if (!matchAll) {
                 matchAll = true;
                 std::unordered_set<ECS::Entity>().swap(matchSet);
@@ -60,17 +61,7 @@ namespace Atlas::Editor::UI {
         EntityData data{
             .hierarchyPool = scene->entityManager.GetPool<HierarchyComponent>(),
             .namePool = scene->entityManager.GetPool<NameComponent>(),
-            .transformPool = scene->entityManager.GetPool<TransformComponent>(),
-            .meshPool = scene->entityManager.GetPool<MeshComponent>(),
-            .textPool = scene->entityManager.GetPool<TextComponent>(),
-            .audioPool = scene->entityManager.GetPool<AudioComponent>(),
-            .audioVolumePool = scene->entityManager.GetPool<AudioVolumeComponent>(),
-            .playerPool = scene->entityManager.GetPool<PlayerComponent>(),
-            .rigidBodyPool = scene->entityManager.GetPool<RigidBodyComponent>(),
-            .cameraPool = scene->entityManager.GetPool<CameraComponent>(),
-            .scriptPool = scene->entityManager.GetPool<LuaScriptComponent>(),
-            .lightPool = scene->entityManager.GetPool<LightComponent>(),
-            .fogVolumePool = scene->entityManager.GetPool<FogVolumeComponent>(),
+            .componentStorages = Scene::CopyComponentStorages(scene.get()),
             .search = entitySearch,
             .filter = hierarchyFilter,
         };
@@ -98,7 +89,8 @@ namespace Atlas::Editor::UI {
         if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered() && !ImGui::IsWindowFocused())
             ImGui::SetWindowFocus();
 
-        isFocused = ImGui::IsWindowFocused();
+        // The sticky rows are a child window
+        isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 
         if (scene != nullptr) {
 
@@ -154,8 +146,13 @@ namespace Atlas::Editor::UI {
 
             // A hidden window doesn't submit anything
             if (!ImGui::GetCurrentWindow()->SkipItems) {
+                openRows.clear();
+                stickyRows.clear();
+                stickyRowsFound = false;
+
                 TraverseHierarchy(scene, root, &selectionChanged);
                 FlushSkippedRows();
+                RenderStickyRows(scene, &selectionChanged);
 
                 openSearchMatches = false;
                 // Entities hidden by the search can't be revealed
@@ -298,13 +295,29 @@ namespace Atlas::Editor::UI {
         auto margin = 2.0f * rowHeight;
         bool isRowVisible = rowY + rowHeight >= window->ClipRect.Min.y - margin && rowY <= window->ClipRect.Max.y + margin;
 
+        // The first row below the stack of scrolled out ancestors decides which of them stay at the top
+        if (!stickyRowsFound) {
+            auto top = window->ClipRect.Min.y;
+            // At most half of the window, the outermost ancestors stay
+            auto maxCount = size_t(std::max(1.0f, 0.5f * window->ClipRect.GetHeight() / rowHeight));
+            size_t count = 0;
+            while (count < openRows.size() && count < maxCount && openRows[count].position.y < top + float(count) * rowHeight)
+                count++;
+            if (rowY >= top + float(count) * rowHeight) {
+                stickyRows.assign(openRows.begin(), openRows.begin() + count);
+                stickyRowsFound = true;
+            }
+        }
+
         if (!isRowVisible && entity != revealEntity) {
             skippedRows++;
 
             if (hierarchyComponent && storage->GetInt(id, 0) != 0) {
+                openRows.push_back({ entity, id, ImVec2(window->DC.CursorPos.x, rowY) });
                 ImGui::TreePushOverrideID(id);
                 TraverseChildren(scene, entity, selectionChanged);
                 ImGui::TreePop();
+                openRows.pop_back();
             }
             return;
         }
@@ -345,10 +358,115 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void SceneHierarchyPanel::RenderStickyRows(Ref<Scene::Scene>& scene, bool* selectionChanged) {
+
+        if (stickyRows.empty())
+            return;
+
+        auto window = ImGui::GetCurrentWindow();
+        auto storage = ImGui::GetStateStorage();
+        auto cursor = ImGui::GetCursorScreenPos();
+        auto top = window->ClipRect.Min.y;
+        auto height = float(stickyRows.size()) * rowHeight;
+
+        // A child window on top of the tree, such that the rows below don't get its clicks
+        ImGui::SetCursorScreenPos(ImVec2(window->ClipRect.Min.x, top));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::BeginChild("Sticky rows", ImVec2(window->ClipRect.GetWidth(), height), ImGuiChildFlags_None,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        for (size_t i = 0; i < stickyRows.size(); i++) {
+            const auto& row = stickyRows[i];
+            auto y = top + float(i) * rowHeight;
+            // The rows of the tree might have deleted it
+            if (!row.entity.IsValid())
+                continue;
+            auto nameComponent = row.entity.TryGetComponent<NameComponent>();
+            auto name = nameComponent ? nameComponent->name : "Entity " + std::to_string(row.entity);
+
+            ImGui::SetCursorScreenPos(ImVec2(row.position.x, y));
+            ImGui::SetNextItemOpen(true);
+            auto flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding |
+                ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            flags |= selectedEntities.contains(row.entity) ? ImGuiTreeNodeFlags_Selected : 0;
+            bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uint64_t>(row.entity)), flags, "%s", name.c_str());
+
+            if (!open) {
+                // Collapsing scrolls the tree such that the entity stays where its header was
+                storage->SetInt(row.id, 0);
+                ImGui::SetScrollY(window, window->Scroll.y + row.position.y - y);
+            }
+            else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
+                SelectEntity(row.entity, ImGui::IsKeyDown(ImGuiKey_LeftShift));
+                if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                    focusRequested = true;
+                *selectionChanged = true;
+            }
+
+            if (auto droppedEntity = AcceptEntityDrop(scene); droppedEntity.IsValid())
+                MoveEntities(scene, row.entity, droppedEntity);
+        }
+
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(window->ClipRect.Min.x, top + height - 1.0f),
+            ImVec2(window->ClipRect.Max.x, top + height - 1.0f), ImGui::GetColorU32(ImGuiCol_Separator));
+
+        ImGui::EndChild();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+        ImGui::SetCursorScreenPos(cursor);
+
+    }
+
+    Scene::Entity SceneHierarchyPanel::AcceptEntityDrop(const Ref<Scene::Scene>& scene) {
+
+        Scene::Entity droppedEntity;
+        if (!ImGui::BeginDragDropTarget())
+            return droppedEntity;
+
+        auto dropPayload = ImGui::GetDragDropPayload();
+        if (dropPayload->IsDataType(typeid(Scene::Entity).name())) {
+            // Entities dragged from another scene window stay where they are
+            auto payload = ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name());
+            if (payload && static_cast<Scene::Entity*>(payload->Data)->GetScene() == scene.get())
+                droppedEntity = *static_cast<Scene::Entity*>(payload->Data);
+        }
+
+        ImGui::EndDragDropTarget();
+        return droppedEntity;
+
+    }
+
+    void SceneHierarchyPanel::MoveEntities(Ref<Scene::Scene>& scene, Scene::Entity parent, Scene::Entity droppedEntity) {
+
+        // The selection moves when the dragged entity is part of it, ancestors of the target can't move below it
+        std::vector<Scene::Entity> movedEntities;
+        if (selectedEntities.contains(droppedEntity)) {
+            for (auto ecsEntity : selectedEntities)
+                movedEntities.emplace_back(ecsEntity, &scene->entityManager);
+        }
+        else {
+            movedEntities.push_back(droppedEntity);
+        }
+        for (auto ancestor = parent; ancestor.IsValid(); ancestor = scene->GetParentEntity(ancestor))
+            std::erase(movedEntities, ancestor);
+
+        if (history)
+            history->BeginMove(scene, movedEntities);
+        for (auto movedEntity : movedEntities) {
+            movedEntity.SetParent(parent);
+            sceneChanged = true;
+        }
+        if (history)
+            history->EndMove("Move entities");
+
+    }
+
     void SceneHierarchyPanel::RenderEntityRow(Ref<Scene::Scene>& scene, Scene::Entity entity, bool* selectionChanged) {
 
         renderedRows++;
-        auto rowStartY = ImGui::GetCurrentWindow()->DC.CursorPos.y;
+        auto rowStart = ImGui::GetCursorScreenPos();
+        auto rowStartY = rowStart.y;
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_AllowOverlap |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
@@ -371,7 +489,7 @@ namespace Atlas::Editor::UI {
         bool createEntity = false;
         bool deleteEntity = false;
         bool duplicateEntity = false;
-        bool droppedEntities = false;
+        Scene::Entity droppedEntity;
 
         auto entityId = static_cast<uint64_t>(entity);
 
@@ -445,14 +563,7 @@ namespace Atlas::Editor::UI {
             ImGui::EndDragDropSource();
         }
 
-        if (ImGui::BeginDragDropTarget()) {
-            auto dropPayload = ImGui::GetDragDropPayload();
-            if (dropPayload->IsDataType(typeid(Scene::Entity).name())) {
-                droppedEntities = ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name());
-            }
-
-            ImGui::EndDragDropTarget();
-        }
+        droppedEntity = AcceptEntityDrop(scene);
 
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Focus", "F"))
@@ -562,7 +673,10 @@ namespace Atlas::Editor::UI {
 
         if (nodeOpen && hierarchyComponent) {
 
+            // The open tree node pushed its id
+            openRows.push_back({ entity, ImGui::GetCurrentWindow()->IDStack.back(), rowStart });
             TraverseChildren(scene, entity, selectionChanged);
+            openRows.pop_back();
 
             ImGui::TreePop();
 
@@ -583,24 +697,8 @@ namespace Atlas::Editor::UI {
 
         *selectionChanged |= createEntity | deleteEntity | duplicateEntity;
 
-        if (droppedEntities) {
-            std::vector<Scene::Entity> movedEntities;
-            for (auto ecsEntity : selectedEntities) {
-                Scene::Entity dropEntity(ecsEntity, &scene->entityManager);
-                if (entity != dropEntity)
-                    movedEntities.push_back(dropEntity);
-            }
-
-            if (history)
-                history->BeginMove(scene, movedEntities);
-            for (auto dropEntity : movedEntities) {
-                dropEntity.SetParent(entity);
-                sceneChanged = true;
-            }
-            if (history)
-                history->EndMove("Move entities");
-
-        }
+        if (droppedEntity.IsValid())
+            MoveEntities(scene, entity, droppedEntity);
 
         // If the hierarchy is emtpy after movements or deletions, also remove the hierarchy
         hierarchyComponent = deleteEntity ? nullptr : entity.TryGetComponent<HierarchyComponent>();
@@ -663,49 +761,42 @@ namespace Atlas::Editor::UI {
 
     }
 
+    uint32_t SceneHierarchyPanel::GetAllFilterBits() {
+
+        return (1u << uint32_t(Scene::GetComponentTypes().size())) - 1u;
+
+    }
+
     void SceneHierarchyPanel::RenderFilterPopup() {
 
         ImGui::SameLine();
 
         // Mark the button while a filter hides entities
-        bool filterActive = (hierarchyFilter & HierarchyFilterBits::AllBit) != HierarchyFilterBits::AllBit;
+        bool filterActive = (hierarchyFilter & GetAllFilterBits()) != GetAllFilterBits();
         if (Widgets::ToolbarIconButton("Filter button", Singletons::icons->Get(IconType::Filter),
             filterActive ? "Filter entities (active)" : "Filter entities"))
             ImGui::OpenPopup("Hierarchy filter settings");
         if (filterActive)
             Widgets::ActiveIndicator();
 
-        // Filters can be combined, so they are checkboxes
-        auto renderSingleBitOption = [&](const char* name, HierarchyFilterBits bit) {
-            bool isSet = hierarchyFilter & bit;
-            if (ImGui::Checkbox(name, &isSet)) {
-                hierarchyFilter = isSet ? hierarchyFilter | bit : hierarchyFilter & ~bit;
-            }
-            };
-
         if (ImGui::BeginPopup("Hierarchy filter settings")) {
             ImGui::SeparatorText("Show entities with");
 
             auto prevHierarchyFilter = hierarchyFilter;
-            HierarchyFilter filtered = hierarchyFilter & HierarchyFilterBits::AllBit;
-            bool isSet = filtered == HierarchyFilterBits::AllBit;
+            bool isSet = (hierarchyFilter & GetAllFilterBits()) == GetAllFilterBits();
 
             if (ImGui::Checkbox("All", &isSet)) {
-                hierarchyFilter = isSet ? HierarchyFilterBits::AllBit : 0;
+                hierarchyFilter = isSet ? GetAllFilterBits() : 0;
             }
             ImGui::Separator();
-            renderSingleBitOption("Name", HierarchyFilterBits::NameBit);
-            renderSingleBitOption("Transform", HierarchyFilterBits::TransformBit);
-            renderSingleBitOption("Mesh", HierarchyFilterBits::MeshBit);
-            renderSingleBitOption("Text", HierarchyFilterBits::TextBit);
-            renderSingleBitOption("Audio", HierarchyFilterBits::AudioBit);
-            renderSingleBitOption("Audio volume", HierarchyFilterBits::AudioVolumeBit);
-            renderSingleBitOption("Player", HierarchyFilterBits::PlayerBit);
-            renderSingleBitOption("Rigid body", HierarchyFilterBits::RigidBodyBit);
-            renderSingleBitOption("Camera", HierarchyFilterBits::CameraBit);
-            renderSingleBitOption("Script", HierarchyFilterBits::ScriptBit);
-            renderSingleBitOption("Light", HierarchyFilterBits::LightBit);
-            renderSingleBitOption("Fog volume", HierarchyFilterBits::FogVolumeBit);
+            // Filters can be combined, so they are checkboxes
+            const auto& componentTypes = Scene::GetComponentTypes();
+            for (size_t i = 0; i < componentTypes.size(); i++) {
+                auto bit = 1u << uint32_t(i);
+                bool isBitSet = hierarchyFilter & bit;
+                if (ImGui::Checkbox(componentTypes[i].name, &isBitSet))
+                    hierarchyFilter = isBitSet ? hierarchyFilter | bit : hierarchyFilter & ~bit;
+            }
 
             hierarchyFilterChanged = prevHierarchyFilter != hierarchyFilter;
 
@@ -718,10 +809,11 @@ namespace Atlas::Editor::UI {
 
         sceneChanged |= !selectedEntities.empty();
 
+        // The root stays, e.g. when it is selected while pressing Delete
         std::vector<Scene::Entity> deletedEntities;
         for (auto ecsEntity : selectedEntities) {
             Scene::Entity entity(ecsEntity, &scene->entityManager);
-            if (entity.IsValid())
+            if (entity.IsValid() && entity != scene->GetRootEntity())
                 deletedEntities.push_back(entity);
         }
 
@@ -751,7 +843,7 @@ namespace Atlas::Editor::UI {
 
         for (auto ecsEntity : oldSelectedEntites) {
             Scene::Entity entity(ecsEntity, &scene->entityManager);
-            if (!entity.IsValid())
+            if (!entity.IsValid() || entity == scene->GetRootEntity())
                 continue;
 
             auto newEntity = scene->DuplicateEntity(entity);
@@ -789,27 +881,10 @@ namespace Atlas::Editor::UI {
         parentMatches |= it != name.end();
         parentMatches |= data.search.empty();
 
-        if (data.filter != HierarchyFilterBits::AllBit) {
-            auto checkBit = [&](const ECS::Storage& storage, HierarchyFilterBits bit) -> bool {
-                if (data.filter & bit) {
-                    return storage.Contains(entity);
-                }
-                return false;
-            };
-
+        if ((data.filter & GetAllFilterBits()) != GetAllFilterBits()) {
             bool bitChecks = false;
-            bitChecks |= checkBit(data.namePool, HierarchyFilterBits::NameBit);
-            bitChecks |= checkBit(data.transformPool, HierarchyFilterBits::TransformBit);
-            bitChecks |= checkBit(data.meshPool, HierarchyFilterBits::MeshBit);
-            bitChecks |= checkBit(data.textPool, HierarchyFilterBits::TextBit);
-            bitChecks |= checkBit(data.audioPool, HierarchyFilterBits::AudioBit);
-            bitChecks |= checkBit(data.audioVolumePool, HierarchyFilterBits::AudioVolumeBit);
-            bitChecks |= checkBit(data.playerPool, HierarchyFilterBits::PlayerBit);
-            bitChecks |= checkBit(data.rigidBodyPool, HierarchyFilterBits::RigidBodyBit);
-            bitChecks |= checkBit(data.cameraPool, HierarchyFilterBits::CameraBit);
-            bitChecks |= checkBit(data.scriptPool, HierarchyFilterBits::ScriptBit);
-            bitChecks |= checkBit(data.lightPool, HierarchyFilterBits::LightBit);
-            bitChecks |= checkBit(data.fogVolumePool, HierarchyFilterBits::FogVolumeBit);
+            for (size_t i = 0; i < data.componentStorages.size() && !bitChecks; i++)
+                bitChecks = (data.filter & (1u << uint32_t(i))) && data.componentStorages[i].Contains(entity);
 
             parentMatches &= bitChecks;
         }

@@ -31,24 +31,6 @@ namespace Atlas::Editor::UI {
     class SceneHierarchyPanel : public Panel {
 
     public:
-        typedef uint32_t HierarchyFilter;
-
-        typedef enum HierarchyFilterBits {
-            NameBit = (1 << 0),
-            TransformBit = (1 << 1),
-            MeshBit = (1 << 2),
-            TextBit = (1 << 3),
-            AudioBit = (1 << 4),
-            AudioVolumeBit = (1 << 5),
-            PlayerBit = (1 << 6),
-            RigidBodyBit = (1 << 7),
-            CameraBit = (1 << 8),
-            ScriptBit = (1 << 9),
-            LightBit = (1 << 10),
-            FogVolumeBit = (1 << 11),
-            AllBit = (1 << 12) - 1
-        } HierarchyFilterBits;       
-
         SceneHierarchyPanel() : Panel("Scene hierarchy") {}
 
         ~SceneHierarchyPanel() { JobSystem::Wait(searchJob); }
@@ -73,7 +55,8 @@ namespace Atlas::Editor::UI {
         // Prefabs have no scene settings of their own
         bool showSceneSettings = true;
 
-        HierarchyFilter hierarchyFilter = HierarchyFilterBits::AllBit;
+        // Bit i shows the entities with the component of Scene::GetComponentTypes()[i]
+        uint32_t hierarchyFilter = ~0u;
 
         // Set when the hierarchy changed the scene, e.g. by deleting or renaming entities
         bool sceneChanged = false;
@@ -124,20 +107,12 @@ namespace Atlas::Editor::UI {
         struct EntityData {
             ECS::Pool<HierarchyComponent> hierarchyPool;
             ECS::Pool<NameComponent> namePool;
-            ECS::Storage transformPool;
-            ECS::Storage meshPool;
-            ECS::Storage textPool;
-            ECS::Storage audioPool;
-            ECS::Storage audioVolumePool;
-            ECS::Storage playerPool;
-            ECS::Storage rigidBodyPool;
-            ECS::Storage cameraPool;
-            ECS::Storage scriptPool;
-            ECS::Storage lightPool;
-            ECS::Storage fogVolumePool;
+            std::vector<ECS::Storage> componentStorages;
             std::string search;
-            HierarchyFilter filter;
-        };        
+            uint32_t filter;
+        };
+
+        static uint32_t GetAllFilterBits();
 
         // Goes through the rows of the open tree, only the ones in the window are rendered
         void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, bool* selectionChanged);
@@ -148,6 +123,15 @@ namespace Atlas::Editor::UI {
 
         // Advances the layout by the rows that weren't rendered
         void FlushSkippedRows();
+
+        // Open entities whose rows were scrolled out stay visible at the top of the tree
+        void RenderStickyRows(Ref<Scene::Scene>& scene, bool* selectionChanged);
+
+        // The entity dropped on the last item, invalid without a drop
+        Scene::Entity AcceptEntityDrop(const Ref<Scene::Scene>& scene);
+
+        // Moves the dropped entity, or the selection if it's part of it, below the parent
+        void MoveEntities(Ref<Scene::Scene>& scene, Scene::Entity parent, Scene::Entity droppedEntity);
 
         void RenderExtendedHierarchy(const Ref<Scene::Scene>& scene, bool* selectionChanged);
 
@@ -187,6 +171,16 @@ namespace Atlas::Editor::UI {
         float rowHeight = 20.0f;
         int32_t skippedRows = 0;
         int32_t renderedRows = 0;
+
+        struct OpenRow {
+            Scene::Entity entity;
+            ImGuiID id;
+            ImVec2 position;
+        };
+        // The open ancestors of the current row and the ones shown at the top of the tree
+        std::vector<OpenRow> openRows;
+        std::vector<OpenRow> stickyRows;
+        bool stickyRowsFound = false;
 
         int32_t lastAliveEntityCount = 0;
         std::string lastEntitySearch;

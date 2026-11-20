@@ -3,7 +3,8 @@
 #include "jobsystem/JobSystem.h"
 
 #include <string>
-#include <optional>
+#include <vector>
+#include <atomic>
 
 namespace Atlas::Editor {
 
@@ -13,26 +14,35 @@ namespace Atlas::Editor {
         ~BlockingOperation() { JobSystem::Wait(job); }
 
         void Block(const std::string& text, std::function<void()> blocker) {
-            this->blocker = blocker;
+            blockers.push_back(blocker);
             blockText = text;
         }
 
         void Update() {
-            if (!blocker.has_value())
+            if (blockers.empty() || !job.HasFinished())
                 return;
-            
+
             block = true;
-            JobSystem::Execute(job, [blocker = blocker, &block = block](JobData&) {
-                blocker.value()();
+            JobSystem::Execute(job, [blockers = std::move(blockers), &block = block](JobData&) {
+                for (const auto& blocker : blockers)
+                    blocker();
                 block = false;
                 });
-            blocker = {};
+            blockers.clear();
+        }
+
+        // For callers which destroy what the operations reference before the next update
+        void Finish() {
+            JobSystem::Wait(job);
+            for (const auto& blocker : blockers)
+                blocker();
+            blockers.clear();
         }
 
         JobGroup job { "Blocking operation" };
-        std::optional<std::function<void()>> blocker;
+        std::vector<std::function<void()>> blockers;
         std::string blockText;
-        bool block = false;
+        std::atomic_bool block = false;
 
     };
 

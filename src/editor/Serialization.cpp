@@ -156,9 +156,16 @@ namespace Atlas::Editor {
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
             { "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator },
             { "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator },
-            { "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter },
             { "camera", camera }
         };
+
+        // Hidden components are saved by their key, new component types are shown
+        json hiddenComponents = json::array();
+        const auto& componentTypes = Scene::GetComponentTypes();
+        for (size_t i = 0; i < componentTypes.size(); i++)
+            if (!(sceneWindow->sceneHierarchyPanel.hierarchyFilter & (1u << uint32_t(i))))
+                hiddenComponents.push_back(componentTypes[i].key);
+        j["hierarchyHiddenComponents"] = hiddenComponents;
 
         TryWriteToFile(GetSceneWindowConfigFilename(sceneWindow->scene), to_string(j));
 
@@ -200,10 +207,12 @@ namespace Atlas::Editor {
         try_get_json(j, "camera", camera);
         try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
         try_get_json(j, "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator);
-        try_get_json(j, "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter);
-        // A filter saved before the fog volume bit with everything enabled
-        if (sceneWindow->sceneHierarchyPanel.hierarchyFilter == UI::SceneHierarchyPanel::HierarchyFilterBits::FogVolumeBit - 1)
-            sceneWindow->sceneHierarchyPanel.hierarchyFilter = UI::SceneHierarchyPanel::HierarchyFilterBits::AllBit;
+        std::vector<std::string> hiddenComponents;
+        try_get_json(j, "hierarchyHiddenComponents", hiddenComponents);
+        const auto& componentTypes = Scene::GetComponentTypes();
+        for (size_t i = 0; i < componentTypes.size(); i++)
+            if (std::find(hiddenComponents.begin(), hiddenComponents.end(), componentTypes[i].key) != hiddenComponents.end())
+                sceneWindow->sceneHierarchyPanel.hierarchyFilter &= ~(1u << uint32_t(i));
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), false);

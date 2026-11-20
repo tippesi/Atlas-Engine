@@ -208,8 +208,9 @@ namespace Atlas::Editor::UI {
             auto& meshComponent = entity.GetComponent<MeshComponent>();
             auto wasSkinned = IsSkinned();
             if (meshComponentPanel.Render(scene, entity, meshComponent) && meshComponent.mesh.IsValid()) {
-                // Another mesh was selected, edit that one instead
+                // Another mesh was selected, edit that one instead, the steps of the old one don't apply to it
                 mesh = meshComponent.mesh;
+                ResetHistory();
                 selectedJoint = -1;
                 if (IsSkinned() && !entity.HasComponent<AnimationComponent>())
                     entity.AddComponent<AnimationComponent>();

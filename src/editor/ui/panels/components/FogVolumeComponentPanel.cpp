@@ -20,11 +20,9 @@ namespace Atlas::Editor::UI {
 
             Widgets::PropertyLabel("Density");
             ImGui::DragFloat("##Density", &fogVolumeComponent.density, 0.001f, 0.0f, 10.0f, "%.4f", ImGuiSliderFlags_Logarithmic);
-            Widgets::PropertyLabel("Scattering color");
-            ImGui::ColorEdit3("##Scattering color", &fogVolumeComponent.scatteringColor[0]);
-            Widgets::PropertyLabel("Scattering factor", "Scales the light the volume scatters towards the camera, "
-                "the density alone decides how much it hides");
-            ImGui::DragFloat("##Scattering factor", &fogVolumeComponent.scatteringFactor, 0.005f, 0.0f, 16.0f);
+            Widgets::PropertyLabel("Albedo", "Share of the light the volume removes which it scatters, the rest is "
+                "absorbed. The density decides how much it hides");
+            ImGui::ColorEdit3("##Albedo", &fogVolumeComponent.albedo[0]);
             Widgets::PropertyLabel("Scattering anisotropy", "Negative values scatter towards the light: bright halos around "
                 "the sun and light shafts. Positive values scatter back to it, 0 evenly in all directions. Same as the "
                 "anisotropy of the scene fog");

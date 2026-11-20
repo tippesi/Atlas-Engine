@@ -623,7 +623,9 @@ namespace Atlas::Editor {
             [previewHeightImg = *previewHeightImg, previewMoistureImg = *previewMoistureImg,
             previewBiomeImg = *previewBiomeImg, biomes = biomes, heightAmplitudes = heightAmplitudes,
             moistureAmplitudes = moistureAmplitudes, heightSeed = heightSeed, moistureSeed = moistureSeed,
-            heightExp = heightExp, heightMapImage = heightMapImage, heightMapSelection = heightMapSelection, this](JobData&) mutable {
+            heightExp = heightExp, heightMapImage = heightMapImage, heightMapSelection = heightMapSelection,
+            // The interface changes the members while the job runs
+            materials = materials, selectedMaterial = selectedMaterial, height = height, this](JobData&) mutable {
 
                 if (heightMapSelection == 0 || !heightMapImage) {
                     Common::NoiseGenerator::GeneratePerlinNoise2D(previewHeightImg, heightAmplitudes,
@@ -636,8 +638,8 @@ namespace Atlas::Editor {
                         for (int32_t x = 0; x < previewHeightImg.width; x++) {
                             auto fx = float(x) / float(previewBiomeImg.width);
                             auto fy = float(y) / float(previewBiomeImg.height);
-                            auto height = heightMapImage->SampleBilinear(fx, fy).r;
-                            previewHeightImg.SetData(x, y, 0, height);
+                            auto sampledHeight = heightMapImage->SampleBilinear(fx, fy).r;
+                            previewHeightImg.SetData(x, y, 0, sampledHeight);
                         }
                     }
 
@@ -657,7 +659,7 @@ namespace Atlas::Editor {
                             previewMoistureImg, height);
 
                         std::pair<ResourceHandle<Material>, vec3> pair;
-                        if (biome.materialIdx < 0) {
+                        if (biome.materialIdx < 0 || biome.materialIdx >= int32_t(materials.size())) {
                             // Try to use the default material
                             for (auto mat : materials) {
                                 if (mat.first == selectedMaterial) {

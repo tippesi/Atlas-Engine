@@ -82,8 +82,6 @@ namespace Atlas::Editor {
 
         void RestoreComponents(Scene::Entity entity, const json& j);
 
-        void RemoveComponent(Scene::Entity entity, const std::string& key);
-
         bool IsSameEntity(const json& a, const json& b);
 
         // Playback times, physics bodies and shadow cascades change while nothing is edited

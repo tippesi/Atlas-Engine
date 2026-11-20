@@ -41,6 +41,8 @@ namespace Atlas::Editor {
 
         virtual void Render(float deltaTime) final;
 
+        bool AllowQuit() final;
+
     private:
         struct Drawer {
             UI::DrawerWindow* window;
@@ -104,6 +106,9 @@ namespace Atlas::Editor {
 
         void RenderShortcutsWindow();
 
+        // Asks whether the scenes closed by the user or by quitting are saved or their changes discarded
+        void RenderUnsavedChangesPopup();
+
         void RegisterCommands();
 
         // Opens meshes and materials in their editors and prefabs in a scene window, animations play in the last
@@ -152,6 +157,11 @@ namespace Atlas::Editor {
         std::vector<Ref<UI::SceneWindow>> sceneWindows;
         std::vector<Ref<UI::AssetEditorWindow>> assetEditorWindows;
         Ref<UI::AssetEditorWindow> activeAssetEditorWindow;
+
+        // Scene windows with unsaved changes the user wants to close, all of them before quitting
+        std::vector<Ref<UI::SceneWindow>> unsavedSceneWindows;
+        bool quitAfterUnsavedChanges = false;
+        bool quitConfirmed = false;
 
         size_t activeSceneIdx = 0;
 

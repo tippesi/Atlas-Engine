@@ -120,6 +120,8 @@ namespace Atlas::Editor {
         for (const auto& sceneWindow : sceneWindows) {
             if (sceneWindow->isPlaying)
                 sceneWindow->StopPlaying();
+            // There is no update anymore which would run the queued operations
+            Singletons::blockingOperation->Finish();
             if (!sceneWindow->IsPrefab())
                 Serialization::SerializeSceneWindow(sceneWindow);
         }
@@ -252,6 +254,13 @@ namespace Atlas::Editor {
                 continue;
             }
 
+            // Windows with unsaved changes stay open until the user decided about them
+            if (!sceneWindow->show && sceneWindow->hasUnsavedChanges) {
+                sceneWindow->show = true;
+                if (std::find(unsavedSceneWindows.begin(), unsavedSceneWindows.end(), sceneWindow) == unsavedSceneWindows.end())
+                    unsavedSceneWindows.push_back(sceneWindow);
+            }
+
             // Delete closed windows
             if (!sceneWindow->show) {
                 auto iter = std::find(config->openedScenes.begin(), config->openedScenes.end(),
@@ -276,6 +285,8 @@ namespace Atlas::Editor {
             // Serialize window before erasing it
             if (sceneWindows[sceneWindowIdx]->isPlaying)
                 sceneWindows[sceneWindowIdx]->StopPlaying();
+            // Queued operations reference the window
+            Singletons::blockingOperation->Finish();
             if (!sceneWindows[sceneWindowIdx]->IsPrefab())
                 Serialization::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
             sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
@@ -348,10 +359,11 @@ namespace Atlas::Editor {
 
         };
 
-        if (window.IsOccluded()) {
-            waitForSceneUpdates();
+        // Playing scenes were updated in Update(), the panels below change what their jobs read
+        waitForSceneUpdates();
+
+        if (window.IsOccluded())
             return;
-        }
 
 
         auto& config = Singletons::config;
@@ -577,6 +589,7 @@ namespace Atlas::Editor {
 
         Notifications::Display();
         UI::PopupPanels::Render();
+        RenderUnsavedChangesPopup();
         commandPalette.Render();
 
         // Generates the previews which everything rendered in this frame requested
@@ -1600,6 +1613,92 @@ namespace Atlas::Editor {
 
         auto iter = std::find_if(drawers.begin(), drawers.end(), [&](const Drawer& drawer) { return name == drawer.name; });
         return iter != drawers.end() ? &*iter : nullptr;
+
+    }
+
+    bool App::AllowQuit() {
+
+        if (quitConfirmed)
+            return true;
+
+        for (const auto& sceneWindow : sceneWindows)
+            if (sceneWindow->hasUnsavedChanges && std::find(unsavedSceneWindows.begin(),
+                unsavedSceneWindows.end(), sceneWindow) == unsavedSceneWindows.end())
+                unsavedSceneWindows.push_back(sceneWindow);
+
+        quitAfterUnsavedChanges = !unsavedSceneWindows.empty();
+        return unsavedSceneWindows.empty();
+
+    }
+
+    void App::RenderUnsavedChangesPopup() {
+
+        // Windows can close in other ways in the meantime, e.g. after a save
+        std::erase_if(unsavedSceneWindows, [&](const auto& sceneWindow) {
+            return !sceneWindow->hasUnsavedChanges ||
+                std::find(sceneWindows.begin(), sceneWindows.end(), sceneWindow) == sceneWindows.end();
+            });
+        if (unsavedSceneWindows.empty()) {
+            if (quitAfterUnsavedChanges) {
+                quitConfirmed = true;
+                Exit();
+            }
+            return;
+        }
+
+        // A running save shows its own popup, both would take turns opening
+        if (Singletons::blockingOperation->block)
+            return;
+
+        const char* popupName = "Unsaved changes";
+        if (!ImGui::IsPopupOpen(popupName))
+            ImGui::OpenPopup(popupName);
+
+        auto viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+            return;
+
+        ImGui::TextUnformatted("Save the changes before closing?");
+        ImGui::Spacing();
+        for (const auto& sceneWindow : unsavedSceneWindows)
+            ImGui::BulletText("%s", UI::SceneWindow::GetSceneLabel(sceneWindow->scene).c_str());
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        bool cancel = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+        ImGui::SameLine();
+        bool discard = ImGui::Button("Don't save");
+        ImGui::SameLine();
+        Theme::PushPrimaryButton();
+        bool save = ImGui::Button("Save");
+        Theme::PopPrimaryButton();
+
+        if (save || discard) {
+            for (const auto& sceneWindow : unsavedSceneWindows) {
+                if (save) {
+                    // The scene of a playing window is the state of the game
+                    if (sceneWindow->isPlaying)
+                        sceneWindow->StopPlaying();
+                    sceneWindow->SaveScene();
+                }
+                // Saves of scenes run as blocking operations, which finish before the window is deleted. Quitting
+                // keeps the windows, such that they open again with the next start
+                sceneWindow->hasUnsavedChanges = false;
+                if (!quitAfterUnsavedChanges)
+                    sceneWindow->show = false;
+            }
+        }
+
+        if (save || discard || cancel) {
+            unsavedSceneWindows.clear();
+            if (cancel)
+                quitAfterUnsavedChanges = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
 
     }
 

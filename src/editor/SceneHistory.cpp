@@ -396,7 +396,7 @@ namespace Atlas::Editor {
                 continue;
             }
 
-            RemoveComponent(entity, key);
+            Scene::RemoveComponent(entity, key);
         }
 
         json added = json::object();
@@ -411,41 +411,6 @@ namespace Atlas::Editor {
         auto hierarchy = entity.TryGetComponent<HierarchyComponent>();
         if (hierarchy && j.contains("root"))
             hierarchy->root = j["root"];
-
-    }
-
-    void SceneHistory::RemoveComponent(Scene::Entity entity, const std::string& key) {
-
-        if (key == "name")
-            entity.RemoveComponent<NameComponent>();
-        else if (key == "transform")
-            entity.RemoveComponent<TransformComponent>();
-        else if (key == "mesh")
-            entity.RemoveComponent<MeshComponent>();
-        else if (key == "light")
-            entity.RemoveComponent<LightComponent>();
-        else if (key == "camera")
-            entity.RemoveComponent<CameraComponent>();
-        else if (key == "audio")
-            entity.RemoveComponent<AudioComponent>();
-        else if (key == "audioVolume")
-            entity.RemoveComponent<AudioVolumeComponent>();
-        else if (key == "fogVolume")
-            entity.RemoveComponent<FogVolumeComponent>();
-        else if (key == "rigidBody")
-            entity.RemoveComponent<RigidBodyComponent>();
-        else if (key == "player")
-            entity.RemoveComponent<PlayerComponent>();
-        else if (key == "constraint")
-            entity.RemoveComponent<ConstraintComponent>();
-        else if (key == "text")
-            entity.RemoveComponent<TextComponent>();
-        else if (key == "script")
-            entity.RemoveComponent<LuaScriptComponent>();
-        else if (key == "spline")
-            entity.RemoveComponent<SplineComponent>();
-        else if (key == "animation")
-            entity.RemoveComponent<AnimationComponent>();
 
     }
 
