@@ -122,7 +122,8 @@ namespace Atlas::ImguiExtension {
             UIElements::PropertyLabel("Min luminance");
             ImGui::DragFloat("##Min luminance", &postProcessing.autoExposure.luminanceMin, 0.0005f, 0.00001f, 1000.0f, "%.4f");
             UIElements::PropertyLabel("Max luminance");
-            ImGui::DragFloat("##Max luminance", &postProcessing.autoExposure.luminanceMax, 0.1f, 0.0f, 1000.0f, "%.4f");
+            ImGui::DragFloat("##Max luminance", &postProcessing.autoExposure.luminanceMax, 10.0f,
+                postProcessing.autoExposure.luminanceMin, 1000000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
             UIElements::PropertyLabel("Black level");
             ImGui::DragFloat("##Black level", &postProcessing.autoExposure.blackLevel, 0.000001f, 0.0f, 1.0f, "%.6f");
             UIElements::PropertyLabel("Time coefficient");

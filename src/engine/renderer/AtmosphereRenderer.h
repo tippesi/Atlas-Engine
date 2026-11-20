@@ -23,9 +23,6 @@ namespace Atlas {
             bool Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
                 Graphics::CommandList* commandList);
 
-            static std::string vertexPath;
-            static std::string fragmentPath;
-
         private:
             inline static const ivec2 transmittanceLutResolution = ivec2(256, 64);
             inline static const ivec2 multipleScatteringLutResolution = ivec2(32, 32);
@@ -112,6 +109,8 @@ namespace Atlas {
             Buffer::UniformBuffer probeMatricesBuffer;
 
             ProbeState lastProbeState;
+            // Probe image which was cleared because there is no sun
+            Ref<Graphics::Image> darkProbeImage;
 
         };
 

@@ -289,25 +289,6 @@ namespace Atlas {
             auto clouds = scene->renderState.sky.clouds;
             auto& mainLight = scene->renderState.mainLight;
 
-            /*
-            auto& camera = scene->renderState.camera;
-            float cloudsInnerRadius = scene->renderState.sky.planetRadius + clouds->minHeight;
-            float cloudsOuterRadius = scene->renderState.sky.planetRadius + clouds->maxHeight;
-
-            // This is an option for the future to make the clouds wrap down at the distance limit into the horizon
-            float radiusDiff = cloudsOuterRadius - cloudsInnerRadius;
-
-            float outerRadius = 5.0f * clouds->distanceLimit;
-            float innerRadius = 5.0f * clouds->distanceLimit - radiusDiff;
-
-            float innerHeight = cloudsInnerRadius - scene->renderState.sky.planetRadius;
-
-            vec3 planetCenterDir = normalize(camera.GetLocation() - scene->renderState.sky.planetCenter);
-            vec3 surfacePos = scene->renderState.sky.planetCenter + planetCenterDir * scene->renderState.sky.planetRadius;
-
-            vec3 cloudCenter = surfacePos - (innerRadius - innerHeight) * planetCenterDir;
-            */        
-
             float innerRadius = scene->renderState.sky.planetRadius + clouds->baseAltitude;
             float outerRadius = innerRadius + clouds->layerThickness;
             vec3 cloudCenter = scene->renderState.sky.planetCenter;

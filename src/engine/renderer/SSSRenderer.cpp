@@ -17,7 +17,7 @@ namespace Atlas {
             auto sss = scene->renderState.sss;
 
             auto& mainLight = scene->renderState.mainLight;
-            if (!sss || !sss->enable || !mainLight) return;
+            if (!sss || !sss->enable || !scene->renderState.HasMainLight()) return;
 
             CPUProfiler::Scope profilerScope("Screen space shadows");
             GPUProfiler::Scope gpuScope("Screen space shadows");

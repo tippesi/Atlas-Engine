@@ -13,8 +13,8 @@ layout (set = 3, binding = 4) uniform sampler2D velocityIn;
 layout (set = 3, binding = 5) uniform usampler2D materialIdxIn;
 
 layout (set = 3, binding = 6, r32f) writeonly uniform image2D depthOut;
-layout (set = 3, binding = 7, rgba16f) writeonly uniform image2D normalOut;
-layout (set = 3, binding = 8, rgba16f) writeonly uniform image2D geometryNormalOut;
+layout (set = 3, binding = 7, rg16f) writeonly uniform image2D normalOut;
+layout (set = 3, binding = 8, rg16f) writeonly uniform image2D geometryNormalOut;
 layout (set = 3, binding = 9, rgba8) writeonly uniform image2D roughnessMetallicAoOut;
 layout (set = 3, binding = 10, rg16f) writeonly uniform image2D velocityOut;
 layout (set = 3, binding = 11, r16ui) writeonly uniform uimage2D materialIdxOut;
@@ -105,23 +105,23 @@ void main() {
         imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));
 
 #ifndef DEPTH_ONLY
-        vec3 normal00 = texelFetch(normalIn, coord * 2 + ivec2(0, 0), 0).rgb;
-        vec3 normal10 = texelFetch(normalIn, coord * 2 + ivec2(1, 0), 0).rgb;
-        vec3 normal01 = texelFetch(normalIn, coord * 2 + ivec2(0, 1), 0).rgb;
-        vec3 normal11 = texelFetch(normalIn, coord * 2 + ivec2(1, 1), 0).rgb;
+        vec2 normal00 = texelFetch(normalIn, coord * 2 + ivec2(0, 0), 0).rg;
+        vec2 normal10 = texelFetch(normalIn, coord * 2 + ivec2(1, 0), 0).rg;
+        vec2 normal01 = texelFetch(normalIn, coord * 2 + ivec2(0, 1), 0).rg;
+        vec2 normal11 = texelFetch(normalIn, coord * 2 + ivec2(1, 1), 0).rg;
 
-        vec3 normal = depthIdx < 2 ? (depthIdx < 1 ? normal00 : normal10) :
+        vec2 normal = depthIdx < 2 ? (depthIdx < 1 ? normal00 : normal10) :
             (depthIdx < 3 ? normal01 : normal11);
-        imageStore(normalOut, coord, vec4(normal, 1.0));
+        imageStore(normalOut, coord, vec4(normal, 0.0, 0.0));
 
-        vec3 geometryNormal00 = texelFetch(geometryNormalIn, coord * 2 + ivec2(0, 0), 0).rgb;
-        vec3 geometryNormal10 = texelFetch(geometryNormalIn, coord * 2 + ivec2(1, 0), 0).rgb;
-        vec3 geometryNormal01 = texelFetch(geometryNormalIn, coord * 2 + ivec2(0, 1), 0).rgb;
-        vec3 geometryNormal11 = texelFetch(geometryNormalIn, coord * 2 + ivec2(1, 1), 0).rgb;
+        vec2 geometryNormal00 = texelFetch(geometryNormalIn, coord * 2 + ivec2(0, 0), 0).rg;
+        vec2 geometryNormal10 = texelFetch(geometryNormalIn, coord * 2 + ivec2(1, 0), 0).rg;
+        vec2 geometryNormal01 = texelFetch(geometryNormalIn, coord * 2 + ivec2(0, 1), 0).rg;
+        vec2 geometryNormal11 = texelFetch(geometryNormalIn, coord * 2 + ivec2(1, 1), 0).rg;
 
-        vec3 geometryNormal = depthIdx < 2 ? (depthIdx < 1 ? geometryNormal00 : geometryNormal10) :
+        vec2 geometryNormal = depthIdx < 2 ? (depthIdx < 1 ? geometryNormal00 : geometryNormal10) :
             (depthIdx < 3 ? geometryNormal01 : geometryNormal11);
-        imageStore(geometryNormalOut, coord, vec4(geometryNormal, 1.0));
+        imageStore(geometryNormalOut, coord, vec4(geometryNormal, 0.0, 0.0));
 
         vec3 roughnessMetallicAo00 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(0, 0), 0).rgb;
         vec3 roughnessMetallicAo10 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(1, 0), 0).rgb;

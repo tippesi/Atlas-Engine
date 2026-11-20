@@ -31,8 +31,6 @@ namespace Atlas {
             CPUProfiler::Scope profilerScope("TAA");
             GPUProfiler::Scope gpuScope("TAA");
 
-            pipelineConfig.ManageMacro("PATHTRACE", false);
-
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 

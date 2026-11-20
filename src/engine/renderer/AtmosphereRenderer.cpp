@@ -113,12 +113,22 @@ namespace Atlas {
             auto atmosphere = scene->renderState.sky.atmosphere;
 
             auto& mainLight = scene->renderState.mainLight;
+            // Without a sun the sky doesn't light anything, the probe is cleared and filtered once
             if (!mainLight || !atmosphere) {
                 lastProbeState.image = nullptr;
-                commandList->ImageMemoryBarrier(probe->generatedCubemap.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                const auto& image = probe->generatedCubemap.image;
+                if (darkProbeImage == image)
+                    return false;
+                darkProbeImage = image;
+
+                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+                commandList->ClearImageColor(image, VkClearColorValue {});
+                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
                 return true;
             }
+            darkProbeImage = nullptr;
 
             const auto& light = *mainLight;
             vec3 sunDirection = GetSunDirection(light);

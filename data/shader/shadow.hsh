@@ -451,7 +451,7 @@ float CalculatePointShadow(inout Shadow shadow, textureCube cubeMap, sampler sha
         shadowFactor += clamp(texture(samplerCubeShadow(cubeMap, shadowSampler), 
             vec4(shadowCoords.xyz + sampleOffsetDirections[i] * diskRadius, depth - 0.0001)), 0.0, 1.0); 
     }
-    shadowFactor /= float(samples + 1);  
+    shadowFactor /= float(samples);
 
     return shadowFactor;
 
@@ -459,8 +459,6 @@ float CalculatePointShadow(inout Shadow shadow, textureCube cubeMap, sampler sha
 
 float CalculateSpotShadow(inout Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, 
     vec3 fragmentPosition, vec3 position, vec3 normal, float cosTheta) {
-    
-    float distance = -fragmentPosition.z;
 
     mat4 shadowMatrix;
     shadowMatrix[0] = shadow.cascades[0].cascadeSpace[0];

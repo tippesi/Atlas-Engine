@@ -14,10 +14,8 @@ layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
 layout(set = 3, binding = 4) uniform sampler2D depthTexture;
 layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
 
-#ifndef PATHTRACE
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
 layout(set = 3, binding = 7) uniform usampler2D lastStencilTexture;
-#endif
 
 layout(push_constant) uniform constants {
     vec2 resolution;
@@ -34,10 +32,6 @@ const float maxVelocityBlend = 0.2;
 #define TAA_TONE // Somehow introduces more flickering as well
 #define TAA_CLIP
 //#define TAA_DENOISE
-
-#ifdef PATHTRACE
-#define TAA_CLIP
-#endif
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -361,7 +355,6 @@ void main() {
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * PushConstants.invResolution + velocity;
 
-#ifndef PATHTRACE
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     bool rejectHistory = features.noTemporalAccumulation;
     if (PushConstants.resetHistory == 0) {
@@ -374,7 +367,6 @@ void main() {
         imageStore(resolveImage, pixel, vec4(texelFetch(currentTexture, pixel, 0).rgb, 0.0));
         return;
     }
-#endif
 
     // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
@@ -389,12 +381,10 @@ void main() {
     float range = 1.4;
     float localAntiFlicker = mix(0.6, 5.0, 1.0 - velocityBlend);
 
-#ifndef PATHTRACE
 #ifdef TAA_DENOISE
     range += localAntiFlicker;
 #else
     range += mix(0.0, localAntiFlicker, historyContrast);
-#endif
 #endif
 
     localNeighbourhoodMin = average - range * (average - localNeighbourhoodMin);
@@ -410,11 +400,7 @@ void main() {
     historyColor = clamp(historyColor, localNeighbourhoodMin, localNeighbourhoodMax);
 #endif
 
-#ifndef PATHTRACE
     float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
-#else
-    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
-#endif
 
 #ifdef TAA_YCOCG
     historyColor = YCoCgToRGB(historyColor); 
@@ -426,9 +412,7 @@ void main() {
     currentColor.rgb = InverseTonemap(currentColor.rgb);
 #endif
 
-#ifndef PATHTRACE
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
-#endif    
 
     // Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

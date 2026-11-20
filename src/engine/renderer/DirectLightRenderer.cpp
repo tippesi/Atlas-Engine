@@ -68,14 +68,15 @@ namespace Atlas {
             pushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
             pushConstants.lightBucketCount = int32_t(std::ceil(float(pushConstants.lightCount) / 32.0f));
 
-            pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
+            // Both shadow the main light, without one the first light isn't the main light
+            pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable && scene->renderState.HasMainLight());
             pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow && scene->renderState.HasMainLight());
             pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
 
-            if (sss && sss->enable && scene->renderState.mainLight) {
+            if (sss && sss->enable && scene->renderState.HasMainLight()) {
                 commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 1);
             }
 

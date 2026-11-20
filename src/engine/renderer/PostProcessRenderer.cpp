@@ -9,8 +9,6 @@ namespace Atlas {
 
             this->device = device;
 
-            sharpenPipelineConfig = PipelineConfig("sharpen.csh");
-
             Graphics::BufferDesc bufferDesc{
                 .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,
@@ -28,8 +26,6 @@ namespace Atlas {
 
             auto& postProcessing = scene->renderState.postProcessing;
 
-            const auto& chromaticAberration = postProcessing.chromaticAberration;
-            const auto& vignette = postProcessing.vignette;
             auto& sharpen = postProcessing.sharpen;
             const auto& bloom = postProcessing.bloom;
 
@@ -203,7 +199,7 @@ namespace Atlas {
             GPUProfiler::Scope gpuScope("Auto-exposure");
 
             float logLuminanceMin = log2(exposure.luminanceMin);
-            float logLuminanceRange = log2(exposure.luminanceMax - exposure.luminanceMin);
+            float logLuminanceRange = log2(exposure.luminanceMax) - logLuminanceMin;
 
             // The histogram only samples every second pixel in each direction
             ivec2 histogramResolution = (ivec2(target->GetScaledWidth(), target->GetScaledHeight()) + 1) / 2;
@@ -284,8 +280,15 @@ namespace Atlas {
 
                 commandList->Dispatch(1, 1, 1);
 
+                // The pre-exposure of later frames follows the measured luminance
+                commandList->ImageMemoryBarrier(target->exposureTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+                commandList->CopyImageToBuffer(target->exposureTexture.image, exposure.luminanceReadback);
+                commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+
                 commandList->ImageMemoryBarrier(target->exposureTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
             }
 
         }
@@ -373,7 +376,7 @@ namespace Atlas {
                 for (int32_t i = mipLevels - 2; i >= 0; i--) {
                     Graphics::ImageBarrier imageBarriers[] = {
                         {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                        {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                        {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT}
                     };
                     commandList->PipelineBarrier(imageBarriers, {});
 
@@ -381,8 +384,9 @@ namespace Atlas {
                     groupCount.x += ((groupCount.x * 8 == resolutions[i].x) ? 0 : 1);
                     groupCount.y += ((groupCount.y * 8 == resolutions[i].y) ? 0 : 1);
 
+                    // Each mip adds its downsampled content, except the first one, which isn't thresholded
                     PushConstants constants{
-                        .additive = i != mipLevels - 2 ? 1 : 0,
+                        .additive = i > 0 ? 1 : 0,
                         .mipLevel = i + 1,
                         .filterSize = bloom.filterSize,
                     };
@@ -442,13 +446,16 @@ namespace Atlas {
             const auto& bloom = postProcessing.bloom;
 
             Uniforms uniforms = {
-                .autoExposureMipLevel = float(target->lightingTexture.image->mipLevels - 1),
                 .paperWhiteLuminance = postProcessing.paperWhiteLuminance,
                 .maxScreenLuminance = postProcessing.screenMaxLuminance,
                 .saturation = postProcessing.saturation,
                 .contrast = postProcessing.contrast,
                 .tintColor = vec4(postProcessing.tint, 1.0f)
             };
+
+            // The lighting carries the pre-exposure, the auto exposure replaces it with its own times the compensation
+            auto exposure = scene->renderState.camera.exposure * glm::exp2(postProcessing.exposureCompensation);
+            uniforms.autoExposureScale = postProcessing.autoExposure.enable ? exposure / scene->renderState.preExposure : 1.0f;
 
             if (chromaticAberration.enable) {
                 uniforms.aberrationStrength = chromaticAberration.strength;

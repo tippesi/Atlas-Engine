@@ -179,8 +179,6 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
 
         // Direct diffuse BRDF backside
         directDiffuse = viewDependency * surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
-        // Need to change this back
-        // direct += directDiffuse * radiance * backSurface.NdotL * shadowFactorTransmissive;
         direct += directDiffuse * radiance * backSurface.NdotL * shadowFactor;
     }
 
@@ -221,7 +219,6 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
 
         shadowFactor *= cloudShadowFactor;
 #endif
-        float shadowFactorTransmissive = shadowFactor;
 #ifdef SCREEN_SPACE_SHADOWS
          ivec2 resolution = imageSize(image);
         vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);

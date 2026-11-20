@@ -25,7 +25,6 @@ namespace Atlas {
 
         private:
             struct alignas(16) Uniforms {
-                float autoExposureMipLevel;
                 float paperWhiteLuminance;
                 float maxScreenLuminance;
                 float saturation;
@@ -38,9 +37,11 @@ namespace Atlas {
                 float vignetteOffset;
                 float vignettePower;
                 float vignetteStrength;
-                float padding0;
+                // Exposure the auto exposure applies on top of the pre-exposure
+                float autoExposureScale;
                 float padding1;
                 float padding2;
+                float padding3;
                 vec4 vignetteColor;
                 vec4 tintColor;
             };
@@ -56,7 +57,6 @@ namespace Atlas {
 
             std::vector<std::string> GetMacros() const;
 
-            PipelineConfig sharpenPipelineConfig;
 
             Ref<Graphics::MultiBuffer> uniformBuffer;
 
