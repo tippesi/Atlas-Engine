@@ -27,24 +27,6 @@ void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoo
 
 void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, out float maxDist) {
 
-    /*
-    // This is an option for the future to make the clouds wrap down at the distance limit into the horizon
-    float radiusDiff = cloudUniforms.outerRadius - cloudUniforms.innerRadius;
-
-    float outerRadius = cloudUniforms.distanceLimit;
-    float innerRadius = cloudUniforms.distanceLimit - radiusDiff;
-
-    float innerHeight = cloudUniforms.innerRadius - cloudUniforms.planetRadius;
-
-    vec3 planetCenterDir = normalize(rayOrigin - cloudPlanetCenter);
-    vec3 surfacePos = cloudPlanetCenter + planetCenterDir * cloudUniforms.planetRadius;
-
-    vec3 spherePos = surfacePos - (innerRadius - innerHeight) * planetCenterDir;
-    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, globalData.planetCenter.xyz, cloudUniforms.planetRadius);
-    vec2 inDist = IntersectSphere(rayOrigin, rayDirection, spherePos, innerRadius);
-    vec2 outDist = IntersectSphere(rayOrigin, rayDirection, spherePos, outerRadius);
-    */
-
     vec3 spherePos = cloudPlanetCenter;
     vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, cloudUniforms.planetCenter.xyz, cloudUniforms.planetRadius);
     vec2 inDist = IntersectSphere(rayOrigin, rayDirection, spherePos, cloudUniforms.innerRadius);

@@ -324,11 +324,12 @@ void main() {
 
     vec3 skyAmbient = hasFog ? GetSkyAmbient() : vec3(0.0);
 
-    vec3 scattering = uniforms.fog.scatteringFactor * uniforms.fog.extinctionCoefficients.rgb * density *
+    vec3 scattering = uniforms.fog.albedo.rgb * density *
         (directionalScattering + localScattering + uniforms.fog.ambientFactor * skyAmbient);
     scattering += volumeDirectional * volumeDirectionalScattering + volumeLocal * volumeLocalScattering +
         volumeAmbient * skyAmbient + volumeEmissive;
-    float extinction = uniforms.fog.extinctionFactor * density + volumeExtinction;
+    // Fog volumes have their own extinction, the global fog doesn't change it
+    float extinction = density + volumeExtinction;
 
     vec4 current = vec4(scattering, extinction) * FROXEL_DATA_SCALE;
 

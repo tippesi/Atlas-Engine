@@ -1,5 +1,6 @@
 #include "LightingSerializer.h"
 #include "common/MathHelper.h"
+#include "common/ColorConverter.h"
 #include "../resource/ResourceManager.h"
 
 namespace Atlas::Lighting {
@@ -65,9 +66,7 @@ namespace Atlas::Lighting {
     void to_json(json& j, const Fog& p) {
         j = json {
             {"enable", p.enable},
-            {"scatteringFactor", p.scatteringFactor},
-            {"extinctionFactor", p.extinctionFactor},
-            {"extinctionCoefficients", p.extinctionCoefficients},
+            {"albedo", p.albedo},
             {"ambientFactor", p.ambientFactor},
             {"density", p.density},
             {"height", p.height},
@@ -85,11 +84,26 @@ namespace Atlas::Lighting {
 
     void from_json(const json& j, Fog& p) {
         j.at("enable").get_to(p.enable);
-        j.at("scatteringFactor").get_to(p.scatteringFactor);
-        j.at("extinctionFactor").get_to(p.extinctionFactor);
-        j.at("extinctionCoefficients").get_to(p.extinctionCoefficients);
         j.at("ambientFactor").get_to(p.ambientFactor);
         j.at("density").get_to(p.density);
+
+        // Older scenes scaled the extinction and the scattering independently, the extinction becomes the density and
+        // the scattering per extinction the albedo, which can't scatter more light than the fog removes
+        if (j.contains("albedo")) {
+            j.at("albedo").get_to(p.albedo);
+        }
+        else {
+            float scatteringFactor = 2.0f, extinctionFactor = 0.16f;
+            vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
+            try_get_json(j, "scatteringFactor", scatteringFactor);
+            try_get_json(j, "extinctionFactor", extinctionFactor);
+            try_get_json(j, "extinctionCoefficients", extinctionCoefficients);
+
+            auto extinction = extinctionFactor * extinctionCoefficients.a;
+            p.density *= extinction;
+            auto albedo = extinction > 0.0f ? scatteringFactor * vec3(extinctionCoefficients) / extinction : vec3(1.0f);
+            p.albedo = Common::ColorConverter::ConvertLinearToSRGB(glm::clamp(albedo, vec3(0.0f), vec3(1.0f)));
+        }
         j.at("height").get_to(p.height);
         j.at("heightFalloff").get_to(p.heightFalloff);
         j.at("scatteringAnisotropy").get_to(p.scatteringAnisotropy);
@@ -118,7 +132,6 @@ namespace Atlas::Lighting {
             {"gamma", p.gamma},
             {"storageScale", p.storageScale},
             {"strength", p.strength},
-            {"sampleEmissives", p.sampleEmissives},
             {"optimizeProbes", p.optimizeProbes},
             {"opacityCheck", p.opacityCheck},
             {"scroll", p.scroll},
@@ -145,7 +158,6 @@ namespace Atlas::Lighting {
         j.at("gamma").get_to(p.gamma);
         p.storageScale = j.value("storageScale", 1.0f);
         j.at("strength").get_to(p.strength);
-        j.at("sampleEmissives").get_to(p.sampleEmissives);
         j.at("optimizeProbes").get_to(p.optimizeProbes);
         j.at("opacityCheck").get_to(p.opacityCheck);
         j.at("scroll").get_to(p.scroll);
@@ -456,8 +468,7 @@ namespace Atlas::Lighting {
     void to_json(json& j, const Sky& p) {
         j = json {
             {"planetCenter", p.planetCenter},
-            {"planetRadius", p.planetRadius},
-            {"intensity", p.intensity}
+            {"planetRadius", p.planetRadius}
         };
 
         if (p.atmosphere)
@@ -475,7 +486,6 @@ namespace Atlas::Lighting {
     void from_json(const json& j, Sky& p) {
         j.at("planetCenter").get_to(p.planetCenter);
         j.at("planetRadius").get_to(p.planetRadius);
-        try_get_json(j, "intensity", p.intensity);
 
         if (j.contains("atmosphere")) {
             if (j["atmosphere"].is_null()) {

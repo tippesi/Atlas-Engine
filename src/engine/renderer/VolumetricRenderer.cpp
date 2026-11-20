@@ -148,9 +148,7 @@ namespace Atlas {
             }
 
             auto& fogUniform = uniforms.fog;
-            fogUniform.extinctionCoefficient = fog->extinctionCoefficients;
-            fogUniform.scatteringFactor = fog->scatteringFactor;
-            fogUniform.extinctionFactor = fog->extinctionFactor;
+            fogUniform.albedo = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->albedo), 0.0f);
             fogUniform.density = fog->density;
             fogUniform.heightFalloff = fog->heightFalloff;
             fogUniform.height = fog->height;

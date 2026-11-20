@@ -125,9 +125,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Lighting::Fog>("Fog",
             "enable", &Lighting::Fog::enable,
-            "extinctionFactor", &Lighting::Fog::extinctionFactor,
-            "scatteringFactor", &Lighting::Fog::scatteringFactor,
-            "extinctionCoefficients", &Lighting::Fog::extinctionCoefficients,
+            "albedo", &Lighting::Fog::albedo,
             "density", &Lighting::Fog::density,
             "height", &Lighting::Fog::height,
             "heightFalloff", &Lighting::Fog::heightFalloff,

@@ -52,7 +52,8 @@ void main() {
 
         vec4 froxel = texelFetch(froxelTexture, ivec3(column, i), 0) / FROXEL_DATA_SCALE;
 
-        vec4 extinctionCoefficient = uniforms.fog.extinctionCoefficients * froxel.a;
+        // Extinction of the global fog and the fog volumes, grey for all channels
+        vec4 extinctionCoefficient = vec4(froxel.a);
 
         vec4 clampedExtinction = max(extinctionCoefficient, 0.0000001);
         vec4 stepExtinction = exp(-extinctionCoefficient * stepLength);

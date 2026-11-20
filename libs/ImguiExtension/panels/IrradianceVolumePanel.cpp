@@ -34,8 +34,6 @@ namespace Atlas::ImguiExtension {
 
         UIElements::PropertySection("Sampling");
         if (UIElements::BeginProperties("IrradianceVolumeSampling")) {
-            UIElements::PropertyLabel("Sample emissives");
-            ImGui::Checkbox("##Sample emissives", &volume->sampleEmissives);
             UIElements::PropertyLabel("Calculate visibility");
             ImGui::Checkbox("##Calculate visibility", &volume->visibility);
             UIElements::PropertyLabel("Calculate radiance");

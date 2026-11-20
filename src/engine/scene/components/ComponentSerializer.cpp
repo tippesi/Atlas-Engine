@@ -5,6 +5,7 @@
 #include "physics/PhysicsSerializer.h"
 
 #include "resource/ResourceManager.h"
+#include "common/ColorConverter.h"
 #include "audio/AudioManager.h"
 #include "loader/MeshLoader.h"
 #include "loader/AnimationLoader.h"
@@ -242,8 +243,7 @@ namespace Atlas::Scene::Components {
             {"enable", p.enable},
             {"shape", static_cast<int32_t>(p.shape)},
             {"density", p.density},
-            {"scatteringColor", p.scatteringColor},
-            {"scatteringFactor", p.scatteringFactor},
+            {"albedo", p.albedo},
             {"scatteringAnisotropy", p.scatteringAnisotropy},
             {"emissiveColor", p.emissiveColor},
             {"ambientFactor", p.ambientFactor},
@@ -267,8 +267,18 @@ namespace Atlas::Scene::Components {
 
         try_get_json(j, "enable", p.enable);
         try_get_json(j, "density", p.density);
-        try_get_json(j, "scatteringColor", p.scatteringColor);
-        try_get_json(j, "scatteringFactor", p.scatteringFactor);
+        // Older volumes scaled their scattering color, the albedo can't scatter more light than the volume removes
+        if (j.contains("albedo")) {
+            j.at("albedo").get_to(p.albedo);
+        }
+        else {
+            vec3 scatteringColor = vec3(1.0f);
+            float scatteringFactor = 1.0f;
+            try_get_json(j, "scatteringColor", scatteringColor);
+            try_get_json(j, "scatteringFactor", scatteringFactor);
+            auto albedo = Common::ColorConverter::ConvertSRGBToLinear(scatteringColor) * scatteringFactor;
+            p.albedo = Common::ColorConverter::ConvertLinearToSRGB(glm::clamp(albedo, vec3(0.0f), vec3(1.0f)));
+        }
         try_get_json(j, "scatteringAnisotropy", p.scatteringAnisotropy);
         try_get_json(j, "emissiveColor", p.emissiveColor);
         try_get_json(j, "ambientFactor", p.ambientFactor);

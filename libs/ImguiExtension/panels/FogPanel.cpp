@@ -10,17 +10,13 @@ namespace Atlas::ImguiExtension {
             UIElements::PropertyLabel("Enable", "Resolution settings are shared between fog and volumetric clouds");
             ImGui::Checkbox("##Enable", &fog->enable);
 
-            UIElements::PropertyLabel("Extinction coefficients");
-            ImGui::ColorEdit3("##Extinction coefficients", &fog->extinctionCoefficients[0]);
-            UIElements::PropertyLabel("Extinction factor");
-            ImGui::DragFloat("##Extinction factor", &fog->extinctionFactor, 0.002f, 0.0001f, 4.0f);
-            UIElements::PropertyLabel("Scattering factor");
-            ImGui::DragFloat("##Scattering factor", &fog->scatteringFactor, 0.002f, 0.0001f, 4.0f);
+            UIElements::PropertyLabel("Albedo", "Share of the light the fog removes which it scatters, the rest is absorbed");
+            ImGui::ColorEdit3("##Albedo", &fog->albedo[0]);
             UIElements::PropertyLabel("Ambient factor");
             ImGui::DragFloat("##Ambient factor", &fog->ambientFactor, 0.001f, 0.0001f, 1.0f);
 
-            UIElements::PropertyLabel("Density");
-            ImGui::DragFloat("##Density", &fog->density, 0.0005f, 0.0f, 0.5f, "%.4f", ImGuiSliderFlags_Logarithmic);
+            UIElements::PropertyLabel("Density", "Extinction per world unit below the fog height");
+            ImGui::DragFloat("##Density", &fog->density, 0.0001f, 0.0f, 0.5f, "%.5f", ImGuiSliderFlags_Logarithmic);
             UIElements::PropertyLabel("Height");
             ImGui::DragFloat("##Height", &fog->height, 1.0f, -10000.0f, 10000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             UIElements::PropertyLabel("Height falloff");

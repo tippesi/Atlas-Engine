@@ -13,12 +13,11 @@ namespace Atlas {
 
             bool enable = true;
 
-            float extinctionFactor = 0.16f;
-            float scatteringFactor = 2.00f;
+            // Share of the extinguished light which is scattered, the rest is absorbed (sRGB)
+            vec3 albedo = vec3(0.95f);
 
-            vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
-
-            float density = 0.05f;
+            // Extinction per world unit below the fog height
+            float density = 0.008f;
             float height = 0.0f;
             float heightFalloff = 0.005f;
 
