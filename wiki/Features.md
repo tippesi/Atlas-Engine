@@ -20,7 +20,8 @@ tool isn't listed here, or a listed file doesn't exist.
   `GetHierarchyBounds`; children follow the transform of their parent.
 - **Transforms** (position, rotation, scale, matrix, placement): `TransformComponent` (local and global matrix,
   static or movable), `MatrixDecomposition` (matrix to position, rotation, scale), `TransformOrientation` (mirrored
-  transforms). Lua `TransformComponent`, `MatrixDecomposition`.
+  transforms). Lua `TransformComponent`, `MatrixDecomposition`. `Scene::UpdateTransforms` brings global matrices,
+  mesh bounds and ray casts up to date between updates (tools that edit and query several times per frame).
 - **Names and tags**: `NameComponent`; `ObjectComponent` is an empty marker component.
 - **Prefabs** (templates, reusable groups, blueprints): `.aeprefab` files, `Scene::CreatePrefab`; C++ entity helpers in
   `scene/prefabs/` (`Node`, `MeshInstance`, `Group`, `AudioVolume`). Capture `makePrefab`, `prefab`,
@@ -156,9 +157,10 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Text** (3D text, labels, signs, fonts): `TextComponent` with a `Font` (Lua), `renderer/TextRenderer`.
 - **Decals** (projected textures, animated sprites): `Decal`, `renderer/DecalRenderer`.
 - **Culling** (frustum culling, occlusion culling, HiZ, GPU driven, render lists): `RenderList`, `scene/GPUScene`,
-  `culling/` shaders, `Scene::occlusionCulling`.
+  `culling/` shaders (count, offsets, scatter of the instance indices, one region per mesh and view), `Scene::occlusionCulling`.
 - **Geometry helpers** (cube, sphere, grid, quad): `GeometryHelper`; `CommonStructures` (GPU structs shared by
-  renderers), `RayTracingHelper` (shared ray tracing passes).
+  renderers), `RayTracingHelper` (shared ray tracing passes), `DeferredShadowRays` (shadow rays traced in a pass of
+  their own for RTGI and reflections), `SubDataDrawer` (draw loop of the opaque and shadow passes, sorted by pipeline).
 - **Path tracing** (reference render, ground truth): `renderer/PathTracingRenderer`.
 
 ## Ray tracing
@@ -325,6 +327,8 @@ tracing surfaces in `raytracer/`, wind in `wind.hsh`.
   In the `BeginPropertyContent` of a group everything else (buttons, lists) is hidden unless it's a matching
   `BeginPropertyBlock`, groups without matches are hidden. `PropertySearchBar` is the input, `MatchesSearch` the shared
   case-insensitive matcher. The entity properties panel searches all components (Ctrl+F in the scene window).
+- **Scene hierarchy** (outliner, entity tree, sticky headers): `SceneHierarchyPanel` renders only the visible rows,
+  open ancestors scrolled out of view stay at the top (`RenderStickyRows`), where they can be collapsed and selected.
 
 ## Capture tool (`src/capture`)
 
