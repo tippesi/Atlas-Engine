@@ -6,7 +6,6 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
     Fog fog;
 
     vec4 waterBodyColor;
-    vec4 deepWaterBodyColor;
     vec4 scatterColor;
 
     vec4 translation;
@@ -37,6 +36,11 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
     int N;
     int spectrumCount;
     float innerCloudRadius;
+
+    float foamOffset;
+    float foamScale;
+    float foamSize;
+    float sunAngularRadius;
 } Uniforms;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {

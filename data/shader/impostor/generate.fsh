@@ -1,4 +1,5 @@
 #include <../common/random.hsh>
+#include <../common/opacity.hsh>
 
 layout (location = 0) out vec4 baseColorFS;
 layout (location = 1) out vec3 normalFS;
@@ -112,7 +113,7 @@ void main() {
 
 #ifdef OPACITY_MAP
 	float opacity = texture(opacityMap, texCoords).r;
-	if (opacity < 0.2)
+	if (opacity < opacityCutoff)
 		discard;
 #endif
 
@@ -123,21 +124,18 @@ void main() {
 
 	baseColorFS *= PushConstants.baseColor;
 
-	vec3 geometryNormalFS = normalize(normalVS);
+	vec3 geometryNormal = normalize(normalVS);
+	// We want the normal always to face the camera for two sided materials
+	vec3 facingGeometryNormal = geometryNormal * (PushConstants.twoSided > 0 && dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0);
 
 #ifdef NORMAL_MAP
 	vec3 normalColor = texture(normalMap, texCoords).rgb;
-	normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
-	// We want the normal always to face the camera for two sided materials
-	geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
-	normalFS = 0.5 * normalFS + 0.5;
+	vec3 normal = normalize(mix(geometryNormal, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale));
+	normal *= dot(facingGeometryNormal, normal) < 0.0 ? -1.0 : 1.0;
+	normalFS = 0.5 * normal + 0.5;
 #else
-	// We want the normal always to face the camera for two sided materials
-	geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+	normalFS = 0.5 * facingGeometryNormal + 0.5;
 #endif
-	
-	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
-	normalFS = geometryNormalFS;
 
 	float roughnessFactor = PushConstants.roughness;
 	float metalnessFactor = PushConstants.metalness;

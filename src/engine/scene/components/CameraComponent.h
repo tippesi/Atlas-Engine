@@ -9,6 +9,7 @@ namespace Atlas {
 	namespace Scene {
 
         class Scene;
+        class SceneRenderState;
 
 		namespace Components {
 
@@ -18,7 +19,7 @@ namespace Atlas {
                 CameraComponent() = default;
                 CameraComponent(const CameraComponent& that) = default;
 
-                CameraComponent(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, glm::vec3 location = vec3(0.0f),
+                CameraComponent(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, vec3 location = vec3(0.0f),
                     vec2 rotation = vec2(0.0f));
 
                 void Jitter(vec2 jitter);
@@ -95,6 +96,7 @@ namespace Atlas {
                 mat4 lastViewMatrix = mat4{ 1.0f };
 
                 friend Scene;
+                friend SceneRenderState;
 
             };
 

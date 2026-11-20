@@ -23,9 +23,8 @@ namespace Atlas::Loader {
             j = json::from_bjdata(data);
         }
         else {
-            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                std::istreambuf_iterator<char>());
-            j = json::parse(serialized);
+            auto data = Loader::AssetLoader::GetFileContent(fileStream);
+            j = json::parse(data);
         }
 
         fileStream.close();

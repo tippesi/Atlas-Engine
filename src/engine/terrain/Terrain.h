@@ -40,7 +40,8 @@ namespace Atlas {
              * the resolution to 0.5 we get a total of 12288 units per terrain side. The size of the map is therefore roughly
              * 150 kilounits^2.
              */
-            Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height);
+            Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height,
+                int32_t materialCount = 32);
 
             /**
              * Updates the terrain and the storage queues.
@@ -146,6 +147,8 @@ namespace Atlas {
             Ref<TerrainStorage> storage = nullptr;
 
             Texture::Texture2D shoreLine;
+            // Image of the shore line map, see TerrainTool::GenerateTerrainOceanMap
+            std::string shoreLinePath;
 
             int32_t bakeResolution = 512;
 

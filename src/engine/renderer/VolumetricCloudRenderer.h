@@ -83,8 +83,7 @@ namespace Atlas {
             void GenerateDetailTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float seed);
 
-            CloudUniforms GetUniformStructure(Ref<Scene::Scene> scene,
-                Scene::Entity mainLightEntity);
+            CloudUniforms GetUniformStructure(Ref<Scene::Scene> scene);
 
             PipelineConfig shapeNoisePipelineConfig;
             PipelineConfig detailNoisePipelineConfig;

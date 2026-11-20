@@ -1,6 +1,6 @@
 #include "PerformanceGraphPanel.h"
 
-#include "graphics/Profiler.h"
+#include "profiler/GPUProfiler.h"
 #include "Clock.h"
 
 namespace Atlas::ImguiExtension {
@@ -57,14 +57,14 @@ namespace Atlas::ImguiExtension {
 
     void PerformanceGraphPanel::UpdateGraphData() {
 
-        auto gpuProfilerData = Graphics::Profiler::GetQueries(Graphics::Profiler::OrderBy::MAX_TIME);
+        auto gpuProfilerData = GPUProfiler::GetQueries(GPUProfiler::OrderBy::MAX_TIME);
 
         double slowestTime = 0.0;
         for (int32_t i = 0; i < int32_t(gpuProfilerData.size()); i++) {
             const auto& threadData = gpuProfilerData[i];
             double threadTime = 0.0;
             for (const auto& query : threadData.queries) {
-                threadTime += query.timer.elapsedTime;
+                threadTime += query.elapsedTime;
             }
             if (threadTime > slowestTime) {
                 slowestTime = threadTime;

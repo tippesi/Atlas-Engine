@@ -3,10 +3,12 @@
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
 
-#include <fog.hsh>
 #include <volumetric.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
+
+// Needs the work group size
+#include <../common/upsample.hsh>
 
 layout(set = 3, binding = 0, rgba16f) uniform image2D resolveImage;
 layout(set = 3, binding = 1) uniform sampler2D lowResVolumetricTexture;
@@ -18,13 +20,9 @@ layout(set = 3, binding = 3) uniform sampler2D lowResVolumetricCloudsTexture;
 #endif
 
 layout(set = 3, binding = 5) uniform  UniformBuffer {
-    Fog fog;
     vec4 planetCenter;
-    vec4 mainLightColor;
-    vec4 mainLightDirection;
     int downsampled2x;
     int cloudsEnabled;
-    int fogEnabled;
     float innerCloudRadius;
     float planetRadius;
     float cloudDistanceLimit;
@@ -35,20 +33,12 @@ shared float depths[36];
 shared vec4 volumetrics[36];
 shared vec4 clouds[36];
 
-const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
-const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
-
 vec3 planetCenter = uniforms.planetCenter.xyz;
 
 void LoadGroupSharedData() {
 
-    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
-
-    // We assume data size is smaller than gl_WorkGroupSize.x + gl_WorkGroupSize.y
-    if (gl_LocalInvocationIndex < depthDataSize) {
-        ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
-        offset += workGroupOffset;
-        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0) - ivec2(1));
+    ivec2 offset;
+    if (GetUpsampleTileTexel(textureSize(lowResDepthTexture, 0), offset)) {
         depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
         volumetrics[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricTexture, offset, 0);
 #ifdef CLOUDS
@@ -57,40 +47,6 @@ void LoadGroupSharedData() {
     }
 
     barrier();
-
-}
-
-const ivec2 offsets[9] = ivec2[9](
-    ivec2(-1, -1),
-    ivec2(0, -1),
-    ivec2(1, -1),
-    ivec2(-1, 0),
-    ivec2(0, 0),
-    ivec2(1, 0),
-    ivec2(-1, 1),
-    ivec2(0, 1),
-    ivec2(1, 1)
-);
-
-const ivec2 pixelOffsets[4] = ivec2[4](
-    ivec2(0, 0),
-    ivec2(1, 0),
-    ivec2(0, 1),
-    ivec2(1, 1)
-);
-
-int NearestDepth(float referenceDepth, float[9] depthVec) {
-
-    int idx = 4;
-    float nearest = distance(referenceDepth, depthVec[4]);
-    for (int i = 0; i < 9; i++) {
-        float dist = distance(referenceDepth, depthVec[i]);
-        if (dist < nearest) {
-            nearest = dist;
-            idx = i;
-        }
-    }
-    return idx;
 
 }
 
@@ -162,8 +118,8 @@ void main() {
     if (uniforms.downsampled2x > 0) LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(resolveImage));
@@ -188,28 +144,7 @@ void main() {
 
     vec3 resolve = imageLoad(resolveImage, pixel).rgb;
 
-#ifndef RAYMARCHED_FOG
-    float LdotV = dot(worldDirection, normalize(uniforms.mainLightDirection.xyz));
-    float phaseFunction = ComputeScattering(uniforms.fog.scatteringAnisotropy, LdotV);
-
-    vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
-    volumetricFog.a = ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition);
-
-    vec3 lightPosition = worldPosition - 10000.0 * normalize(uniforms.mainLightDirection.xyz);
-    lightPosition = vec3(globalData.ivMatrix * vec4(lightPosition, 1.0));
-    float extinctionToLight = ComputeVolumetricFog(uniforms.fog, worldPosition, lightPosition);
-
-    vec3 scatteringCoefficient = uniforms.fog.scatteringFactor *
-            uniforms.fog.extinctionCoefficients.rgb;
-
-    vec3 lightScattering = phaseFunction * uniforms.mainLightColor.rgb;
-
-    vec3 scattering = scatteringCoefficient * (lightScattering + vec3(uniforms.fog.ambientFactor));
-
-    volumetricFog.rgb = scattering * clamp(1.0 - volumetricFog.a, 0.0, 1.0);
-#endif
-
-    resolve = ApplyVolumetrics(uniforms.fog, resolve, volumetricFog, volumetricClouds,
+    resolve = ApplyVolumetrics(resolve, volumetricFog, volumetricClouds,
         worldDirection, planetCenter, uniforms.innerCloudRadius);
 
     imageStore(resolveImage, pixel, vec4(resolve, 1.0));

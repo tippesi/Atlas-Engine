@@ -2,11 +2,12 @@
 
 #include "../System.h"
 #include "helper/RenderList.h"
+#include "helper/SubDataDrawer.h"
 #include "Renderer.h"
 #include "ImpostorShadowRenderer.h"
 
 #include <mutex>
-#include <map>
+#include <set>
 #include <tuple>
 
 namespace Atlas {
@@ -26,12 +27,10 @@ namespace Atlas {
             void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
                 RenderList* renderList, Ref<RenderList::Pass> shadowPass);
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
+            Graphics::RenderingDesc GetRendering(const LightComponent& light, uint32_t layer);
 
-            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
-
-            using LightMap = std::map<Scene::Entity, Ref<Graphics::FrameBuffer>>;
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
+                const Graphics::AttachmentFormats& attachmentFormats, const MaterialGraph::CompiledGraph* graph = nullptr);
 
             struct alignas(16) PushConstants {
                 mat4 lightSpaceMatrix;
@@ -41,14 +40,21 @@ namespace Atlas {
                 float windBendScale;
                 float windWiggleScale;
                 uint32_t textureID;
+                uint32_t deformOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
+                float uvAnimationX;
+                float uvAnimationY;
+                float uvTiling;
+                // Only part of the push constants of graphs, the others don't push it
+                uint32_t materialGraphOffset;
             };
 
-            LightMap prevLightMap;
-            LightMap lightMap;
+            std::set<Scene::Entity> processedLights;
 
             ImpostorShadowRenderer impostorRenderer;
 
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+            Helper::SubDataDrawer drawer;
 
 
         };

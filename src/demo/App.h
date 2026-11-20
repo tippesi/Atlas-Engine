@@ -88,7 +88,7 @@ private:
     Atlas::ImguiExtension::ReflectionPanel reflectionPanel;    
     Atlas::ImguiExtension::SSSPanel sssPanel;
     Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
-    Atlas::ImguiExtension::GPUProfilerPanel gpuProfilerPanel;
+    Atlas::ImguiExtension::ProfilerPanel profilerPanel;
     Atlas::ImguiExtension::MaterialsPanel materialsPanel;
     Atlas::ImguiExtension::WindPanel windPanel;
 

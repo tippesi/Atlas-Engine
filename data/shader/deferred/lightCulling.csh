@@ -115,7 +115,7 @@ void main() {
         }
 
         int shiftCount = 31 - endBin + startBin;
-        int downShift = (0xFFFFFFFF >> shiftCount);
+        int downShift = int(0xFFFFFFFFu >> uint(shiftCount));
         int lightMask = downShift << startBin;
 
         if (visible && (lightMask & depthMask) != 0) {

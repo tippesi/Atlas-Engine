@@ -29,6 +29,9 @@ namespace Atlas {
         PipelineConfig(const ShaderConfig& shaderConfig, const Graphics::GraphicsPipelineDesc& desc,
             const std::vector<std::string>& macros);
 
+        // Ray tracing pipeline from a ray generation stage and optional miss, any hit, closest hit and callable stages
+        PipelineConfig(const ShaderConfig& shaderConfig, const std::vector<std::string>& macros);
+
         void AddMacro(const std::string& macro);
 
         void RemoveMacro(const std::string& macro);
@@ -49,6 +52,7 @@ namespace Atlas {
         std::vector<std::string> macros;
 
         bool isCompute = false;
+        bool isRayTracing = false;
 
         Graphics::GraphicsPipelineDesc graphicsPipelineDesc;
 

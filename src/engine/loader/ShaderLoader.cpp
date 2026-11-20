@@ -9,6 +9,8 @@ namespace Atlas {
     namespace Loader {
 
         std::string ShaderLoader::sourceDirectory = "";
+        std::shared_mutex ShaderLoader::virtualFilesMutex;
+        std::unordered_map<std::string, std::string> ShaderLoader::virtualFiles;
 
         Graphics::ShaderStageFile ShaderLoader::LoadFile(const std::string& filename, VkShaderStageFlagBits shaderStage) {
 
@@ -18,7 +20,15 @@ namespace Atlas {
             std::vector<std::string> includes;
             std::vector<Graphics::ShaderStageFile::Extension> extensions;
             std::filesystem::file_time_type lastModified = std::filesystem::file_time_type::min();
-            auto code = ReadShaderFile(path, true, includes, extensions, lastModified);
+            std::string virtualCode;
+            {
+                std::shared_lock lock(virtualFilesMutex);
+                auto iter = virtualFiles.find(filename);
+                if (iter != virtualFiles.end())
+                    virtualCode = iter->second;
+            }
+            auto code = ReadShaderFile(path, true, includes, extensions, lastModified,
+                virtualCode.empty() ? nullptr : &virtualCode);
 
             // Erase all versioning qualifiers, will be filled automatically
             std::string removeVersion = "#version";
@@ -41,8 +51,24 @@ namespace Atlas {
 
         }
 
+        void ShaderLoader::AddVirtualFile(const std::string& filename, const std::string& code) {
+
+            std::unique_lock lock(virtualFilesMutex);
+            virtualFiles[filename] = code;
+
+        }
+
         bool ShaderLoader::CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime,
             std::filesystem::file_time_type& pathLastModified) {
+
+            // Virtual files have no time on the disk, a new code gets a new file. Their includes are checked on their own
+            {
+                std::shared_lock lock(virtualFilesMutex);
+                if (virtualFiles.contains(filename)) {
+                    pathLastModified = fileTime;
+                    return false;
+                }
+            }
 
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
@@ -60,29 +86,33 @@ namespace Atlas {
 
         std::string ShaderLoader::ReadShaderFile(const std::string& filename, bool mainFile,
             std::vector<std::string>& includes, std::vector<Graphics::ShaderStageFile::Extension>& extensions,
-            std::filesystem::file_time_type& lastModified) {
+            std::filesystem::file_time_type& lastModified, const std::string* virtualCode) {
 
             std::string shaderCode;
-            std::ifstream shaderFile;
             std::stringstream shaderStream;
 
-            if (mainFile)
-                lastModified = AssetLoader::GetFileLastModifiedTime(Loader::AssetLoader::GetFullPath(filename), lastModified);
-
-            shaderFile = Loader::AssetLoader::ReadFile(filename, std::ios::in);
-
-            if (!shaderFile.is_open()) {
-                Log::Error("Shader file not found " + filename);
-                return "";
+            if (virtualCode) {
+                shaderStream << *virtualCode;
             }
+            else {
+                if (mainFile)
+                    lastModified = AssetLoader::GetFileLastModifiedTime(Loader::AssetLoader::GetFullPath(filename), lastModified);
 
-            shaderStream << shaderFile.rdbuf();
+                auto shaderFile = Loader::AssetLoader::ReadFile(filename, std::ios::in);
+
+                if (!shaderFile.is_open()) {
+                    Log::Error("Shader file not found " + filename);
+                    return "";
+                }
+
+                shaderStream << shaderFile.rdbuf();
+
+                shaderFile.close();
+            }
 
             std::string line;
             std::vector<std::string> lines;
             while (std::getline(shaderStream, line)) lines.push_back(line);
-
-            shaderFile.close();
 
             lines = ExtractExtensions(lines, extensions);
 

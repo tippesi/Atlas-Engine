@@ -17,7 +17,11 @@ struct TerrainMaterial {
 
     float tiling;
 
-    int padding;
+    uint baseColorTextureIdx;
+    uint roughnessTextureIdx;
+    uint aoTextureIdx;
+    uint normalTextureIdx;
+    uint displacementTextureIdx;
 
 };
 

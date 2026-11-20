@@ -5,7 +5,8 @@
 #include "../resource/ResourceLoadException.h"
 #include "../loader/AssetLoader.h"
 
-#include <SDL_audio.h>
+#include <SDL3/SDL_audio.h>
+#include <SDL3/SDL_iostream.h>
 
 namespace Atlas {
 
@@ -30,13 +31,13 @@ namespace Atlas {
 
             auto filedata = Loader::AssetLoader::GetFileContent(stream);
 
-            auto rw = SDL_RWFromMem(filedata.data(), (int32_t)filedata.size());
+            auto io = SDL_IOFromConstMem(filedata.data(), filedata.size());
 
-            if (!rw) {
-                throw ResourceLoadException(filename, "Couldn't get RWOPS interface");
+            if (!io) {
+                throw ResourceLoadException(filename, "Couldn't get IO stream interface");
             }
 
-            if (!SDL_LoadWAV_RW(rw, 1, &spec, &data, &length)) {
+            if (!SDL_LoadWAV_IO(io, true, &spec, &data, &length)) {
                 throw ResourceLoadException(filename, "Couldn't load audio data");
             }
 
@@ -44,7 +45,7 @@ namespace Atlas {
 
             std::memcpy(this->data.data(), data, length);
 
-            SDL_FreeWAV(data);
+            SDL_free(data);
 
             // Automatically apply format on load
             isValid = ApplyFormat(AudioManager::audioSpec);
@@ -64,26 +65,24 @@ namespace Atlas {
 
         bool AudioData::Convert(uint32_t frequency, uint8_t channels, uint32_t format) {
 
-            SDL_AudioCVT cvt;
+            SDL_AudioSpec dstSpec {
+                .format = (SDL_AudioFormat)format,
+                .channels = channels,
+                .freq = (int32_t)frequency
+            };
 
-            if (SDL_BuildAudioCVT(&cvt, spec.format, spec.channels, spec.freq,
-                    format, channels, frequency)) {
+            uint8_t* dstData = nullptr;
+            int32_t dstLength = 0;
 
-                std::vector<uint8_t> temporary(data.size() * 2 * cvt.len_mult);
+            if (SDL_ConvertAudioSamples(&spec, (const uint8_t*)data.data(), (int32_t)data.size() * 2,
+                    &dstSpec, &dstData, &dstLength)) {
 
-                cvt.buf = temporary.data();
-                cvt.len = (int32_t)data.size() * 2;
+                spec = dstSpec;
 
-                std::memcpy(cvt.buf, data.data(), cvt.len);
+                data.resize(dstLength / 2);
+                std::memcpy(data.data(), dstData, dstLength);
 
-                SDL_ConvertAudio(&cvt);
-
-                spec.freq = frequency;
-                spec.channels = channels;
-                spec.format = format;
-
-                data.resize(cvt.len_cvt / 2);
-                std::memcpy(data.data(), cvt.buf, cvt.len_cvt);
+                SDL_free(dstData);
 
                 return true;
 

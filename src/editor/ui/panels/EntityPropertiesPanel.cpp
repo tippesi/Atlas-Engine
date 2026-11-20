@@ -3,6 +3,7 @@
 #include "Notifications.h"
 #include "Theme.h"
 
+#include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <algorithm>
 
@@ -27,6 +28,14 @@ namespace Atlas::Editor::UI {
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
         bool rootNode = nodeName == "Root";
 
+        ImguiExtension::UIElements::PropertySearchBar("##Property search", propertySearch, focusSearch);
+        // A hidden panel is shown in one of the next frames, the search bar gets the focus then
+        if (!ImGui::GetCurrentWindow()->SkipItems)
+            focusSearch = false;
+        ImGui::Spacing();
+
+        ImguiExtension::UIElements::BeginPropertySearch(propertySearch, uint32_t(entity));
+
         // General components
         {
             if (entity.HasComponent<TransformComponent>()) {
@@ -35,12 +44,13 @@ namespace Atlas::Editor::UI {
             }
 
             if (entity.HasComponent<MeshComponent>()) {
-                // Create a copy here to be able to change the resource
-                auto comp = entity.GetComponent<MeshComponent>();
                 RenderComponentPanel("Mesh", scene,
-                    entity, meshComponentPanel, comp);
-                entity.RemoveComponent<MeshComponent>();
-                entity.AddComponent<MeshComponent>(comp);
+                    entity, meshComponentPanel, entity.GetComponent<MeshComponent>());
+            }
+
+            if (entity.HasComponent<AnimationComponent>()) {
+                RenderComponentPanel("Animation", scene, entity,
+                    animationComponentPanel, entity.GetComponent<AnimationComponent>());
             }
 
             if (entity.HasComponent<LightComponent>()) {
@@ -58,6 +68,12 @@ namespace Atlas::Editor::UI {
                 auto& comp = entity.GetComponent<AudioVolumeComponent>();
                 RenderComponentPanel("Audio volume", scene,
                     entity, audioVolumeComponentPanel, comp);
+            }
+
+            if (entity.HasComponent<FogVolumeComponent>()) {
+                auto& comp = entity.GetComponent<FogVolumeComponent>();
+                RenderComponentPanel("Fog volume", scene,
+                    entity, fogVolumeComponentPanel, comp);
             }
 
             if (entity.HasComponent<CameraComponent>()) {
@@ -88,16 +104,37 @@ namespace Atlas::Editor::UI {
                 }
             }
 
+            if (entity.HasComponent<SoftBodyComponent>()) {
+                RenderComponentPanel("Soft body", scene,
+                    entity, softBodyComponentPanel, entity.GetComponent<SoftBodyComponent>());
+            }
+
             if (entity.HasComponent<PlayerComponent>()) {
                 auto comp = entity.GetComponent<PlayerComponent>();
                 RenderComponentPanel("Player", scene,
                     entity, playerComponentPanel, comp);
-                // Only change if we have new settings
-                entity.RemoveComponent<PlayerComponent>();
-                auto& newComp = entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                // Recreating the player while playing would reset its state, e.g. crouching or touched triggers
+                if (scene->physicsWorld->pauseSimulation) {
+                    entity.RemoveComponent<PlayerComponent>();
+                    entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                }
+                auto& newComp = entity.GetComponent<PlayerComponent>();
                 newComp.slowVelocity = comp.slowVelocity;
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
+                newComp.acceleration = comp.acceleration;
+                newComp.deceleration = comp.deceleration;
+                newComp.allowInput = comp.allowInput;
+                newComp.stickToGroundDistance = comp.stickToGroundDistance;
+                newComp.walkStairStepUpDistance = comp.walkStairStepUpDistance;
+                newComp.crouchHeight = comp.crouchHeight;
+                newComp.crouchVelocity = comp.crouchVelocity;
+            }
+
+            if (entity.HasComponent<ConstraintComponent>()) {
+                auto& comp = entity.GetComponent<ConstraintComponent>();
+                RenderComponentPanel("Constraint", scene,
+                    entity, constraintComponentPanel, comp);
             }
 
             if (entity.HasComponent<SplineComponent>()) {
@@ -107,15 +144,17 @@ namespace Atlas::Editor::UI {
             }
         }
 
+        if (!ImguiExtension::UIElements::EndPropertySearch())
+            Widgets::EmptyState("No properties match the search");
+
         // Add components
         {
             ImGui::Spacing();
 
-            auto spacing = ImGui::GetStyle().ItemSpacing.x;
-            auto buttonWidth = (ImGui::GetContentRegionAvail().x - spacing) * 0.5f;
-
+            // Components are removed with the trash can or the context menu of their header. The name has neither, every
+            // entity keeps it
             Theme::PushPrimaryButton();
-            if (ImGui::Button("Add component", { buttonWidth, 0 }))
+            if (ImGui::Button("Add component", { -FLT_MIN, 0 }))
                 ImGui::OpenPopup("AddComponent");
             Theme::PopPrimaryButton();
 
@@ -130,10 +169,7 @@ namespace Atlas::Editor::UI {
                 ImGui::Separator();
 
                 auto matches = [&](const char* name) {
-                    std::string lowerName = name, lowerSearch = componentSearch;
-                    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
-                    std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
-                    return lowerName.find(lowerSearch) != std::string::npos;
+                    return ImguiExtension::UIElements::MatchesSearch(name, componentSearch);
                     };
                 if (!entity.HasComponent<NameComponent>() && !rootNode && matches("Name") && ImGui::MenuItem("Name"))
                     entity.AddComponent<NameComponent>("Entity " + std::to_string(entity));
@@ -141,12 +177,16 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
                 if (!entity.HasComponent<MeshComponent>() && matches("Mesh") && ImGui::MenuItem("Mesh"))
                     entity.AddComponent<MeshComponent>();
+                if (!entity.HasComponent<AnimationComponent>() && matches("Animation") && ImGui::MenuItem("Animation"))
+                    entity.AddComponent<AnimationComponent>();
                 if (!entity.HasComponent<LightComponent>() && matches("Light") && ImGui::MenuItem("Light"))
                     entity.AddComponent<LightComponent>(LightType::PointLight);
                 if (!entity.HasComponent<AudioComponent>() && matches("Audio") && ImGui::MenuItem("Audio"))
                     entity.AddComponent<AudioComponent>();
                 if (!entity.HasComponent<AudioVolumeComponent>() && matches("Audio volume") && ImGui::MenuItem("Audio volume"))
                     entity.AddComponent<AudioVolumeComponent>();
+                if (!entity.HasComponent<FogVolumeComponent>() && matches("Fog volume") && ImGui::MenuItem("Fog volume"))
+                    entity.AddComponent<FogVolumeComponent>();
                 if (!entity.HasComponent<CameraComponent>() && matches("Camera") && ImGui::MenuItem("Camera"))
                     entity.AddComponent<CameraComponent>();
                 if (!entity.HasComponent<TextComponent>() && matches("Text") && ImGui::MenuItem("Text"))
@@ -184,39 +224,14 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<RigidBodyComponent>(bodySettings);
                 }
 
-                ImGui::EndPopup();
-            }
+                if (entity.HasComponent<RigidBodyComponent>() &&
+                    !entity.HasComponent<ConstraintComponent>() && matches("Constraint") && ImGui::MenuItem("Constraint"))
+                    entity.AddComponent<ConstraintComponent>();
 
-            // Remove components
-            ImGui::SameLine(0.0f, spacing);
-            if (ImGui::Button("Remove component", { -FLT_MIN, 0 }))
-                ImGui::OpenPopup("RemoveComponent");
-
-            if (ImGui::BeginPopup("RemoveComponent")) {
-                if (entity.HasComponent<NameComponent>()  && !rootNode && ImGui::MenuItem("Name"))
-                    entity.RemoveComponent<NameComponent>();
-                if (entity.HasComponent<TransformComponent>() && ImGui::MenuItem("Transform"))
-                    entity.RemoveComponent<TransformComponent>();
-                if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Mesh"))
-                    entity.RemoveComponent<MeshComponent>();
-                if (entity.HasComponent<LightComponent>() && ImGui::MenuItem("Light"))
-                    entity.RemoveComponent<LightComponent>();
-                if (entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Audio"))
-                    entity.RemoveComponent<AudioComponent>();
-                if (entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Audio volume"))
-                    entity.RemoveComponent<AudioVolumeComponent>();
-                if (entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Camera"))
-                    entity.RemoveComponent<CameraComponent>();
-                if (entity.HasComponent<TextComponent>() && ImGui::MenuItem("Text"))
-                    entity.RemoveComponent<TextComponent>();
-                if (entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Lua script"))
-                    entity.RemoveComponent<LuaScriptComponent>();
-                if (entity.HasComponent<SplineComponent>() && ImGui::MenuItem("Spline"))
-                    entity.RemoveComponent<SplineComponent>();
-                if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Player"))
-                    entity.RemoveComponent<PlayerComponent>();
-                if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Rigid body"))
-                    entity.RemoveComponent<RigidBodyComponent>();
+                // Soft bodies simulate the mesh of the entity
+                if (entity.HasComponent<MeshComponent>() && entity.HasComponent<TransformComponent>() &&
+                    !entity.HasComponent<SoftBodyComponent>() && matches("Soft body") && ImGui::MenuItem("Soft body"))
+                    entity.AddComponent<SoftBodyComponent>();
 
                 ImGui::EndPopup();
             }
@@ -227,15 +242,19 @@ namespace Atlas::Editor::UI {
             if (ImGui::MenuItem("Paste")) {
                 if (HandleComponentPaste<TransformComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<MeshComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<AnimationComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<LightComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<AudioVolumeComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<FogVolumeComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<CameraComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<TextComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<LuaScriptComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<SplineComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<PlayerComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<RigidBodyComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<SoftBodyComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<ConstraintComponent>(scene, entity)) {}
                 else {
                     Notifications::Push({"Invalid type to paste as a component."});
                 }

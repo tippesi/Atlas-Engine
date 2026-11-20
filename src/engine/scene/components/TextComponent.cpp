@@ -10,8 +10,8 @@ namespace Atlas::Scene::Components {
 
     Volume::Rectangle TextComponent::GetRectangle() const {
 
-        auto right = glm::mat3_cast(transformedRotation) * glm::vec3(1.0f, 0.0f, 0.0f);
-        auto down = glm::mat3_cast(transformedRotation) * glm::vec3(0.0f, -1.0f, 0.0f);
+        auto right = glm::mat3_cast(transformedRotation) * vec3(1.0f, 0.0f, 0.0f);
+        auto down = glm::mat3_cast(transformedRotation) * vec3(0.0f, -1.0f, 0.0f);
             
         right *= 2.0f * halfSize.x;
         down *= 2.0f * halfSize.y;

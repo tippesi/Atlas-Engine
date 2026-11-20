@@ -4,6 +4,7 @@
 #include "../common/Packing.h"
 #include "../common/RandomHelper.h"
 #include "../pipeline/PipelineManager.h"
+#include "helper/RayTracingHelper.h"
 
 #include "../volume/BVH.h"
 
@@ -22,6 +23,10 @@ namespace Atlas {
 
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
+            rayHitRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("pathtracer/rayHit.rgen");
+            atrousPipelineConfig[0] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE1" });
+            atrousPipelineConfig[1] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE2" });
+            atrousPipelineConfig[2] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE4", "REMODULATE" });
 
             rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
             rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms), bounces + 1);
@@ -34,9 +39,10 @@ namespace Atlas {
             if (!scene->IsRtDataValid())
                 return;
 
-            Graphics::Profiler::BeginQuery("Path tracing");
+            CPUProfiler::Scope profilerScope("Path tracing");
+            GPUProfiler::Scope gpuScope("Path tracing");
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
             auto width = renderTarget->GetScaledWidth();
             auto height = renderTarget->GetScaledHeight();
 
@@ -44,9 +50,11 @@ namespace Atlas {
 
             if (glm::distance(camera.GetLocation(), cameraLocation) > 1e-3f ||
                 glm::distance(camera.rotation, cameraRotation) > 1e-3f ||
+                scene->renderState.preExposure != preExposure ||
                 helper.GetRayBuffer()->GetElementCount() != rayCount) {
                 cameraLocation = camera.GetLocation();
                 cameraRotation = camera.rotation;
+                preExposure = scene->renderState.preExposure;
 
                 sampleCount = 0;
                 imageOffset = ivec2(0);
@@ -60,10 +68,17 @@ namespace Atlas {
                 frameCount++;
             }
 
-            rayGenPipelineConfig.ManageMacro("REALTIME", realTime);
-            rayHitPipelineConfig.ManageMacro("REALTIME", realTime);
+            // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+            auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+            auto& rayHitConfig = useRayTracingPipeline ? rayHitRayTracingPipelineConfig : rayHitPipelineConfig;
 
-            helper.UpdateLights(scene, sampleEmissives);
+            rayGenPipelineConfig.ManageMacro("REALTIME", realTime);
+            rayHitConfig.ManageMacro("REALTIME", realTime);
+            // The compute path traces in a separate pass of the helper
+            rayHitConfig.ManageMacro("OPACITY_CHECK", useRayTracingPipeline);
+            rayHitConfig.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && shaderExecutionReordering);
+
+            helper.UpdateLights(scene);
 
             ivec2 resolution = ivec2(width, height);
             ivec2 tileSize = resolution / imageSubdivisions;
@@ -88,8 +103,6 @@ namespace Atlas {
 
                 uniforms.resolution = resolution;
                 uniforms.seed = Common::Random::SampleFastUniformFloat();
-
-                uniforms.exposure = camera.exposure;
 
                 uniforms.samplesPerFrame = samplesPerFrame;
                 uniforms.maxRadiance = maxRadiance;
@@ -141,8 +154,16 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
                 imageBarriers.push_back({ baseColorTexture->image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->emissionTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->swapRadianceTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->radianceMomentsTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->historyRadianceMomentsTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT });
 
-                commandList->BindImage(renderTarget->lightingTexture.image, 3, 0);
+                commandList->BindImage(renderTarget->swapRadianceTexture.image, 3, 0);
                 commandList->BindImage(renderTarget->frameAccumTexture.image, 3, 1);
                 commandList->BindImage(renderTarget->radianceTexture.image, 3, 3);
 
@@ -153,6 +174,7 @@ namespace Atlas {
                 commandList->BindImage(normalTexture->image, 3, 7);
                 commandList->BindImage(materialIdxTexture->image, 3, 8);
                 commandList->BindImage(baseColorTexture->image, 3, 9);
+                commandList->BindImage(renderTarget->emissionTexture.image, 3, 10);
             }
 
             commandList->PipelineBarrier(imageBarriers, {});
@@ -163,10 +185,10 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == tileResolution.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 8 == tileResolution.y) ? 0 : 1);
 
-            Graphics::Profiler::BeginQuery("Ray generation");
+            GPUProfiler::BeginQuery("Ray generation");
 
             helper.DispatchRayGen(scene, commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
-                ivec3(groupCount.x, groupCount.y, samplesPerFrame), false,
+                ivec3(groupCount.x, groupCount.y, samplesPerFrame),
                 [=]() {
                     auto corners = camera.GetFrustumCorners(camera.nearPlane, camera.farPlane);
 
@@ -195,9 +217,11 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
+                GPUProfiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
-                helper.DispatchHitClosest(scene, commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
+                auto rayHitPipeline = useRayTracingPipeline && materialGraphs ?
+                    Helper::RayTracingHelper::GetRayTracingPipeline(rayHitConfig, scene) : PipelineManager::GetPipeline(rayHitConfig);
+                helper.DispatchHitClosest(scene, commandList, rayHitPipeline, true,
                     [=]() {
                         commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);
@@ -205,7 +229,7 @@ namespace Atlas {
                     );
             }
 
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
             if (realTime) {
 
@@ -223,6 +247,8 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
                 imageBarriers.push_back({ baseColorTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->emissionTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
                 imageBarriers.push_back({ historyDepthTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
                 imageBarriers.push_back({ historyNormalTexture->image,
@@ -236,34 +262,36 @@ namespace Atlas {
                 depthTexture->Bind(commandList, 3, 5);
                 normalTexture->Bind(commandList, 3, 6);
                 materialIdxTexture->Bind(commandList, 3, 7);
+                baseColorTexture->Bind(commandList, 3, 8);
                 historyDepthTexture->Bind(commandList, 3, 9);
                 historyNormalTexture->Bind(commandList, 3, 10);
                 historyMaterialIdxTexture->Bind(commandList, 3, 11);
+                commandList->BindImage(renderTarget->radianceMomentsTexture.image, 3, 12);
+                renderTarget->historyRadianceMomentsTexture.Bind(commandList, 3, 13);
 
                 struct alignas(16) PushConstants {
                     float historyClipMax;
                     float currentClipFactor;
                     float maxHistoryLength;
-                    float exposure;
                     int samplesPerFrame;
                     float maxRadiance;
+                    int resetHistory;
                 };
 
-                Graphics::Profiler::BeginQuery("Temporal");
+                GPUProfiler::BeginQuery("Temporal");
 
                 PushConstants constants = {
                     .historyClipMax = historyClipMax,
                     .currentClipFactor = currentClipFactor,
                     .maxHistoryLength = float(historyLengthMax),
-                    .exposure = camera.exposure,
                     .samplesPerFrame = samplesPerFrame,
-                    .maxRadiance = maxRadiance
+                    .maxRadiance = maxRadiance,
+                    .resetHistory = !renderTarget->HasHistory() ? 1 : 0
                 };
-                commandList->PushConstants("constants", &constants);
-
                 auto pipelineConfig = PipelineConfig("pathtracer/temporal.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
+                commandList->PushConstants("constants", &constants);
 
                 groupCount = resolution / 16;
 
@@ -272,7 +300,41 @@ namespace Atlas {
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndAndBeginQuery("Spatial filter");
+
+                depthTexture->Bind(commandList, 3, 2);
+                normalTexture->Bind(commandList, 3, 3);
+                materialIdxTexture->Bind(commandList, 3, 4);
+                baseColorTexture->Bind(commandList, 3, 5);
+                renderTarget->emissionTexture.Bind(commandList, 3, 6);
+
+                Texture::Texture2D* textures[] = { &renderTarget->swapRadianceTexture, &renderTarget->lightingTexture };
+                for (int32_t i = 0; i < 3; i++) {
+                    auto input = textures[i % 2];
+                    auto output = textures[(i + 1) % 2];
+
+                    imageBarriers.clear();
+                    imageBarriers.push_back({ input->image,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                    imageBarriers.push_back({ output->image,
+                        VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                    commandList->PipelineBarrier(imageBarriers, {});
+
+                    auto atrousPipeline = PipelineManager::GetPipeline(atrousPipelineConfig[i]);
+                    commandList->BindPipeline(atrousPipeline);
+
+                    AtrousConstants atrousConstants = {
+                        .strength = spatialFilterStrength
+                    };
+                    commandList->PushConstants("constants", &atrousConstants);
+
+                    commandList->BindImage(output->image, 3, 0);
+                    input->Bind(commandList, 3, 1);
+
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                }
+
+                GPUProfiler::EndQuery();
 
             }
 
@@ -296,8 +358,6 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             helper.InvalidateRayBuffer(commandList);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

@@ -1,4 +1,5 @@
 #include <../globals.hsh>
+#include <../common/opacity.hsh>
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
 
@@ -74,7 +75,7 @@ void main() {
 #ifdef VERTEX_COLORS
     opacity *= vertexColorsVS.a;
 #endif
-    if (opacity < 0.2)
+    if (opacity < opacityCutoff)
         discard;
 #endif
 

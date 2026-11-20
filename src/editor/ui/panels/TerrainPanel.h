@@ -28,6 +28,9 @@ namespace Atlas::Editor::UI {
 
         void Render(ResourceHandle<Terrain::Terrain> terrain, Ref<Scene::Scene> scene);
 
+        // Collisions and navigation use the height field body, it has to follow edited heights
+        void RebuildTerrainBody(Ref<Scene::Scene>& scene);
+
         bool editingMode = false;
         float brushSize = 1.0f;
         float brushStrength = 1.0f;

@@ -18,8 +18,8 @@ namespace Atlas {
             MultiBufferedBit = (1 << 3),
             HostAccessBit = (1 << 4),
             MemoryTransfersBit = (1 << 5),
-            DedicatedMemoryBit = (1 << 6),
-            HighPriorityMemoryBit = (1 << 7),
+            HighPriorityMemoryBit = (1 << 6),
+            DeviceAddressBit = (1 << 7),
         } BufferUsageBits;
 
         /**

@@ -12,7 +12,8 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::InputTextWithHint("Search", "Type to search material", &materialSearch);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##Search", "Search materials...", &materialSearch);
 
         auto matches = materials | std::views::filter(
             [&](const ResourceHandle<Material>& material) {
@@ -41,18 +42,22 @@ namespace Atlas::ImguiExtension {
             auto nodeID = GetNameID() + std::to_string(counter);
             materialName += "###" + nodeID;
 
-            if (ImGui::TreeNode(materialName.c_str())) {
-                if (materialSelector.has_value()) {
-                    material = materialSelector.value()(material);
-                    ImGui::Separator();
-                }
-                // Might be deleted above
-                if (material.IsLoaded()) {
-                    materialPanel.Render(wrapper, material.Get(), textureSelector);
-                }
+            if (UIElements::BeginPropertyGroup(materialName.c_str())) {
+                if (ImGui::TreeNodeEx(materialName.c_str(), UIElements::PropertyGroupHeaderFlags())) {
+                    UIElements::BeginPropertyContent();
+                    if (materialSelector.has_value()) {
+                        material = materialSelector.value()(material);
+                        ImGui::Separator();
+                    }
+                    // Might be deleted above
+                    if (material.IsLoaded()) {
+                        materialPanel.Render(wrapper, material.Get(), textureSelector);
+                    }
+                    UIElements::EndPropertyContent();
 
-                ImGui::TreePop();
-
+                    ImGui::TreePop();
+                }
+                UIElements::EndPropertyGroup();
             }
 
             ImGui::PopID();
@@ -68,7 +73,8 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::InputTextWithHint("Search", "Type to search material", &materialSearch);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##Search", "Search materials...", &materialSearch);
 
         auto matches = materials | std::views::filter(
             [&](const Ref<Material>& material) {
@@ -85,12 +91,15 @@ namespace Atlas::ImguiExtension {
             auto nodeID = GetNameID() + std::to_string(counter);
             materialName += "###" + nodeID;
 
-            if (ImGui::TreeNode(materialName.c_str())) {
+            if (UIElements::BeginPropertyGroup(materialName.c_str())) {
+                if (ImGui::TreeNodeEx(materialName.c_str(), UIElements::PropertyGroupHeaderFlags())) {
+                    UIElements::BeginPropertyContent();
+                    materialPanel.Render(wrapper, material, textureSelector);
+                    UIElements::EndPropertyContent();
 
-                materialPanel.Render(wrapper, material, textureSelector);
-
-                ImGui::TreePop();
-
+                    ImGui::TreePop();
+                }
+                UIElements::EndPropertyGroup();
             }
 
             ImGui::PopID();

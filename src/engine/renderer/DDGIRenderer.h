@@ -24,13 +24,14 @@ namespace Atlas {
                 std::unordered_map<void*, uint16_t>& materialMap);
 
         private:
+            static mat3 GetRayRotation(uint32_t index);
+
             struct alignas(16) RayGenUniforms {
                 mat4 rotationMatrix;
             };
 
             struct alignas(16) RayHitUniforms {
                 float seed;
-                Shadow shadow;
             };
 
             struct alignas(16) ProbeDebugConstants {
@@ -41,6 +42,8 @@ namespace Atlas {
             };
 
             Buffer::Buffer rayHitBuffer;
+            Buffer::Buffer shadowRayBuffer;
+            Buffer::Buffer shadowRayCountBuffer;
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;
@@ -54,18 +57,15 @@ namespace Atlas {
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
+            PipelineConfig rayHitRayTracingPipelineConfig;
+            PipelineConfig rayShadowPipelineConfig;
 
             PipelineConfig probeStatePipelineConfig;
+
+            uint32_t rayRotationIndex = 0;
             PipelineConfig probeIrradianceUpdatePipelineConfig;
             PipelineConfig probeRadianceUpdatePipelineConfig;
             PipelineConfig probeMomentsUpdatePipelineConfig;
-
-            PipelineConfig irradianceCopyEdgePipelineConfig;
-            PipelineConfig radianceCopyEdgePipelineConfig;
-            PipelineConfig momentsCopyEdgePipelineConfig;
-
-            Ref<Graphics::Sampler> shadowSampler;
-
 
         };
 

@@ -6,7 +6,11 @@
 #include "scene/components/MeshComponent.h"
 
 #include "graphics/Buffer.h"
+#include "graphics/CommandList.h"
+#include "graphics/UploadBufferPool.h"
+#include "volume/Frustum.h"
 
+#include <array>
 #include <unordered_map>
 #include <vector>
 #include <atomic>
@@ -32,6 +36,14 @@ namespace Atlas {
 
             size_t impostorOffset;
             size_t impostorCount;
+
+            // Skinned meshes have the joint matrices of each instance one after another, soft body meshes the
+            // offsets of the vertices of each instance
+            size_t deformOffset = 0;
+
+            // The instances of both windings are ordered by their level of detail
+            std::array<uint32_t, Mesh::MeshData::maxLodCount> lodCounts = {};
+            std::array<uint32_t, Mesh::MeshData::maxLodCount> reversedWindingLodCounts = {};
         };
 
         enum class RenderPassType {
@@ -56,6 +68,28 @@ namespace Atlas {
             std::vector<std::pair<ECS::Entity, Hash>> entities;
         };
 
+        enum class GPUDrawType : uint32_t {
+            DefaultWinding = 0,
+            ReversedWinding = 1,
+            Impostor = 2
+        };
+
+        // Indexed and non-indexed draw commands have the same stride
+        static constexpr uint32_t gpuDrawCommandSize = 5 * sizeof(uint32_t);
+
+        // A draw of the instances which are culled on the GPU, its command is written there
+        struct GPUDraw {
+            // Impostor draws don't have sub data
+            Mesh::MeshSubData* subData = nullptr;
+            Mesh::Mesh* mesh = nullptr;
+            Hash meshId = 0;
+            uint32_t slot = 0;
+            GPUDrawType type = GPUDrawType::DefaultWinding;
+            // The first of the commands, there is one per level of detail
+            uint32_t command = 0;
+            uint32_t lodCount = 1;
+        };
+
         struct Pass {
             RenderPassType type;
 
@@ -66,18 +100,41 @@ namespace Atlas {
 
             std::unordered_map<size_t, EntityBatch> meshToEntityMap;
             std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
+            // The instances of the batches which have a simulated soft body, drawn from their vertices
+            std::unordered_map<size_t, MeshInstances> meshToSoftBodyInstancesMap;
 
             bool wasUsed = false;
 
             std::vector<mat3x4> currentEntityMatrices;
             std::vector<mat3x4> lastEntityMatrices;
-            std::vector<mat3x4> impostorMatrices;
+            std::vector<mat3x4> currentJointMatrices;
+            std::vector<mat3x4> lastJointMatrices;
+            std::vector<uint32_t> softBodyVertexOffsets;
+
+            // With the instance buffer entities which aren't skinned are referenced by their index
+            std::vector<uint32_t> instanceIndices;
+            std::vector<uint32_t> impostorInstanceIndices;
+
+            // Passes culled on the GPU only have the skinned meshes in the lists above
+            bool gpuCulled = false;
+            Volume::Frustum frustum;
+            std::vector<GPUDraw> gpuDraws;
+            // The same draws for the instances which are drawn after the occlusion test of the main pass
+            std::vector<GPUDraw> gpuLateDraws;
 
             Ref<Graphics::MultiBuffer> currentMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
-            Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
+            Ref<Graphics::MultiBuffer> currentJointMatricesBuffer;
+            Ref<Graphics::MultiBuffer> lastJointMatricesBuffer;
+            Ref<Graphics::Buffer> softBodyVertexOffsetsBuffer;
+            Ref<Graphics::UploadBufferPool> uploadPool = CreateRef<Graphics::UploadBufferPool>();
+            Ref<Graphics::MultiBuffer> instanceIndicesBuffer;
+            Ref<Graphics::MultiBuffer> impostorInstanceIndicesBuffer;
 
             RenderPassThreadContext contexts[8];
+
+            // The levels of detail of the entities of a batch while it is updated
+            std::vector<std::pair<uint32_t, ECS::Entity>> entityLods;
 
             void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
                 const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
@@ -88,7 +145,7 @@ namespace Atlas {
 
             void Finalize();
 
-            void Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
+            void Update(vec3 cameraLocation, RenderList& renderList);
 
             void FillBuffers();
 
@@ -99,7 +156,10 @@ namespace Atlas {
 
         ~RenderList();
 
-        void NewFrame(Scene::Scene* scene);
+        void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
+
+        // Needs the simulated vertices of the frame, before the passes are filled
+        void UpdateSoftBodyVertices(Scene::Scene* scene);
 
         // Note: The expected behaviour is to first create and process all shadow passes and then finally do the main pass last
         Ref<Pass> NewMainPass();
@@ -112,6 +172,35 @@ namespace Atlas {
 
         void FinishPass(const Ref<Pass>& pass, RenderPassType type);
 
+        void AddGPUCulledPass(const Ref<Pass>& pass);
+
+        // Draws with the command written by the GPU culling, empty draws are skipped on the GPU
+        void DrawGPUCulled(Graphics::CommandList* commandList, const GPUDraw& draw) const;
+
+        // Draws the instances of one winding of a host culled mesh, a draw per level of detail, beforeDraw(lod) is
+        // called before each draw
+        template<class BeforeDraw>
+        static void DrawInstances(Graphics::CommandList* commandList, const Mesh::MeshSubData& subData,
+            const MeshInstances& instances, bool reversedWinding, const BeforeDraw& beforeDraw) {
+
+            const auto& lodCounts = reversedWinding ? instances.reversedWindingLodCounts : instances.lodCounts;
+            auto firstInstance = uint32_t(reversedWinding ? instances.reversedWindingOffset : instances.offset);
+            for (int32_t lod = 0; lod <= int32_t(subData.lods.size()); lod++) {
+                if (!lodCounts[lod])
+                    continue;
+
+                beforeDraw(uint32_t(lod));
+                auto range = subData.GetLod(lod);
+                commandList->DrawIndexed(range.indicesCount, lodCounts[lod], range.indicesOffset, 0, firstInstance);
+                firstInstance += lodCounts[lod];
+            }
+
+        }
+
+        // The level of detail of an instance in the host culled passes, with the settings of the frame like the GPU
+        // culling chooses it
+        uint32_t GetLod(const Mesh::Mesh& mesh, const mat4& globalMatrix, const Volume::AABB& bounds, vec3 cameraLocation);
+
         Ref<Pass> PopPassFromQueue(RenderPassType type);
 
         void Clear();
@@ -123,12 +212,30 @@ namespace Atlas {
         std::deque<Ref<Pass>> processedMainPasses;
         std::deque<Ref<Pass>> processedShadowPasses;
 
+        // Passes of the current frame which are culled on the GPU and the buffer with their draw commands
+        std::vector<Ref<Pass>> gpuCulledPasses;
+        Ref<Graphics::Buffer> gpuCommandBuffer;
+
+        // Vertices of the simulated soft bodies (position with the packed normal in w) of the frame for all passes
+        std::vector<vec4> currentSoftBodyVertices;
+        std::vector<vec4> lastSoftBodyVertices;
+        std::unordered_map<ECS::Entity, uint32_t> entityToSoftBodyVertices;
+        Ref<Graphics::Buffer> currentSoftBodyVerticesBuffer;
+        Ref<Graphics::Buffer> lastSoftBodyVerticesBuffer;
+        // Each upload gets its own buffer, the passes bind exactly the buffers of their frame
+        Graphics::UploadBufferPool uploadPool;
+
         std::mutex mutex;
         std::atomic_bool wasCleared = false;
 
         std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
 
         JobGroup clearJob { "Clear render list", JobPriority::High };
+
+    private:
+        float lodFocalLength = 0.0f;
+        float lodErrorScale = 1.0f;
+        int32_t forcedLod = -1;
     };
 
 }

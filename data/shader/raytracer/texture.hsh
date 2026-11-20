@@ -81,12 +81,12 @@ vec3 SampleTerrainNormalBilinear(int textureId, float mip, vec2 texCoord) {
 
 vec4 SampleEnvironmentMap(vec3 v) {
 
-    return textureLod(environmentMap, v, 0);
+    return textureLod(environmentMap, v, 0) * globalData.skyCubemapExposure;
 
 }
 
 vec4 SampleEnvironmentMap(vec3 v, float lod) {
 
-    return textureLod(environmentMap, v, lod);
+    return textureLod(environmentMap, v, lod) * globalData.skyCubemapExposure;
 
 }

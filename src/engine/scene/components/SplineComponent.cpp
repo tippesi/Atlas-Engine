@@ -6,7 +6,7 @@
 
 namespace Atlas::Scene::Components {
 
-    void SplineComponent::AddControlPoint(glm::mat4 matrix, float time) {
+    void SplineComponent::AddControlPoint(mat4 matrix, float time) {
 
         controlPoints.emplace_back(matrix, time);
 
@@ -89,7 +89,7 @@ namespace Atlas::Scene::Components {
 
     }
 
-    SplinePoint SplineComponent::GetInterpolated(float time, const glm::mat4& parentMatrix) const {
+    SplinePoint SplineComponent::GetInterpolated(float time, const mat4& parentMatrix) const {
 
         if (controlPoints.empty())
             return SplinePoint{};
@@ -166,7 +166,7 @@ namespace Atlas::Scene::Components {
 
     }
 
-    void SplineComponent::TransformSplinePoint(SplinePoint& point, const glm::mat4& transform) const {
+    void SplineComponent::TransformSplinePoint(SplinePoint& point, const mat4& transform) const {
 
         point.position = vec3(transform * vec4(point.position, 1.0f));
         point.tangent = Helper::Math::NormalizeOrZero(vec3(transform * vec4(point.tangent, 0.0f)));

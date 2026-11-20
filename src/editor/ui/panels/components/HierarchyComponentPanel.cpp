@@ -1,4 +1,5 @@
 #include "HierarchyComponentPanel.h"
+#include "../../Widgets.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -9,7 +10,12 @@ namespace Atlas::Editor::UI {
         Scene::Entity entity, HierarchyComponent& component) {
 
         auto childCount = int32_t(component.GetChildren().size());
-        ImGui::TextDisabled("%d %s", childCount, childCount == 1 ? "child" : "children");
+        if (Widgets::BeginProperties("HierarchyComponent")) {
+            Widgets::PropertyLabel("Children");
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("%d", childCount);
+            Widgets::EndProperties();
+        }
 
         return false;
 

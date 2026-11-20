@@ -28,7 +28,11 @@ namespace Atlas::Editor::UI {
 
         auto width = ImGui::GetContentRegionAvail().x;
 
-        ImGui::DragInt("Seed", &vegetationGenerator.seed, 1.0f, 1, 255);
+        if (Widgets::BeginProperties("Vegetation generator")) {
+            Widgets::PropertyLabel("Seed");
+            ImGui::DragInt("##Seed", &vegetationGenerator.seed, 1.0f, 1, 255);
+            Widgets::EndProperties();
+        }
 
         RenderBiomeVegetationTypes(scene, scene->terrain.Get(), terrainGenerator);
 
@@ -53,42 +57,29 @@ namespace Atlas::Editor::UI {
         if (Singletons::blockingOperation->block)
             return;
 
-        const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
-            | ImGuiTreeNodeFlags_AllowOverlap;
-
         int32_t deleteIdx = -1;
         auto& types = vegetationGenerator.types;
         for (int32_t i = 0; i < int32_t(types.size()); i++) {
             auto& type = types[i];
-            bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(type.id), nodeFlags, "%s", type.name.c_str());
 
-            auto deleteIcon = Singletons::icons->Get(IconType::Trash);
-            auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
-
-            ImGui::SameLine();
-
-            float buttonSize = ImGui::GetTextLineHeight();
-            auto width = ImGui::GetContentRegionAvail().x;
-            auto pos = ImGui::GetCursorPosX();
-
-            ImGui::SetCursorPosX(pos + width - buttonSize);
-
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-
-            if (ImGui::ImageButton("Vegetationtype delete button", set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            // The name can be edited below, the id keeps the header open while typing
+            ImGui::PushID(int32_t(type.id));
+            bool remove = false;
+            bool open = Widgets::RemovableSectionHeader((type.name + "###Vegetation type").c_str(), 0,
+                remove, "Remove vegetation type");
+            if (remove)
                 deleteIdx = i;
+
+            if (!open) {
+                ImGui::PopID();
+                continue;
             }
 
-            ImGui::PopStyleColor();
-            ImGui::PopStyleVar(2);
-
-            // Here we can use the copy pase helper to copy over some settings to other biomes
-            if (!open)
-                continue;
-
-            ImGui::InputText("Name", &type.name);
+            if (Widgets::BeginProperties("Vegetation type")) {
+                Widgets::PropertyLabel("Name");
+                ImGui::InputText("##Name", &type.name);
+                Widgets::EndProperties();
+            }
 
             ImGui::SeparatorText("Entity");
 
@@ -121,36 +112,67 @@ namespace Atlas::Editor::UI {
             type.initialDensity = std::max(0.001f, type.initialDensity);
 
             ImGui::SeparatorText("General");
-
-            ImGui::DragInt("Iterations", &type.iterations);
-            ImGui::DragInt("Seed", &type.seed);
-            ImGui::DragFloat("Initial density", &type.initialDensity, 0.01f, 0.0f, 1.0f);
-            ImGui::DragFloat("Offspring per iteration", &type.offspringPerIteration, 0.01f, 0.0f, 1.0f);
-            ImGui::DragFloat("Offspring spread radius", &type.offspringSpreadRadius, 0.1f, 0.1f, 100.0f);
+            if (Widgets::BeginProperties("General")) {
+                Widgets::PropertyLabel("Iterations");
+                ImGui::DragInt("##Iterations", &type.iterations);
+                Widgets::PropertyLabel("Seed");
+                ImGui::DragInt("##Seed", &type.seed);
+                Widgets::PropertyLabel("Initial density");
+                ImGui::DragFloat("##Initial density", &type.initialDensity, 0.01f, 0.0f, 1.0f);
+                Widgets::PropertyLabel("Offspring per iteration");
+                ImGui::DragFloat("##Offspring per iteration", &type.offspringPerIteration, 0.01f, 0.0f, 1.0f);
+                Widgets::PropertyLabel("Offspring spread radius");
+                ImGui::DragFloat("##Offspring spread radius", &type.offspringSpreadRadius, 0.1f, 0.1f, 100.0f);
+                Widgets::EndProperties();
+            }
 
             ImGui::SeparatorText("Placement");
-            ImGui::DragFloat("Min height", &type.heightMin, 0.001f, 0.0f, 1.0f);
-            ImGui::DragFloat("Max height", &type.heightMax, 0.001f, 0.0f, 1.0f);
+            if (Widgets::BeginProperties("Placement")) {
+                Widgets::PropertyLabel("Min height");
+                ImGui::DragFloat("##Min height", &type.heightMin, 0.001f, 0.0f, 1.0f);
+                Widgets::PropertyLabel("Max height");
+                ImGui::DragFloat("##Max height", &type.heightMax, 0.001f, 0.0f, 1.0f);
 
-            ImGui::DragFloat("Min slope", &type.slopeMin, 0.001f, 0.0f, 1.0f);
-            ImGui::DragFloat("Max slope", &type.slopeMax, 0.001f, 0.0f, 1.0f);
+                Widgets::PropertyLabel("Min slope");
+                ImGui::DragFloat("##Min slope", &type.slopeMin, 0.001f, 0.0f, 1.0f);
+                Widgets::PropertyLabel("Max slope");
+                ImGui::DragFloat("##Max slope", &type.slopeMax, 0.001f, 0.0f, 1.0f);
+                Widgets::EndProperties();
+            }
 
             ImGui::SeparatorText("Transform");
-            Widgets::DragVec3("Offset", type.offset, 0.1f, 0.0f);
-            Widgets::DragVec3("Min scale", type.scaleMin, 0.1f, 1.0f);
-            Widgets::DragVec3("Max scale", type.scaleMax, 0.1f, 1.0f);
+            if (Widgets::BeginProperties("Transform")) {
+                Widgets::PropertyLabel("Offset");
+                Widgets::DragVec3("##Offset", type.offset, 0.1f, 0.0f);
+                Widgets::PropertyLabel("Min scale");
+                Widgets::DragVec3("##Min scale", type.scaleMin, 0.1f, 1.0f);
+                Widgets::PropertyLabel("Max scale");
+                Widgets::DragVec3("##Max scale", type.scaleMax, 0.1f, 1.0f);
 
-            ImGui::Checkbox("Align to surface", &type.alignToSurface);
-            ImGui::DragFloat("Max alignment angle", &type.maxAlignmentAngle, 0.01f, 0.0f, 3.14f / 2.0f);
+                Widgets::PropertyLabel("Align to surface");
+                ImGui::Checkbox("##Align to surface", &type.alignToSurface);
+                Widgets::PropertyLabel("Max alignment angle");
+                ImGui::DragFloat("##Max alignment angle", &type.maxAlignmentAngle, 0.01f, 0.0f, 3.14f / 2.0f);
+                Widgets::EndProperties();
+            }
 
             ImGui::SeparatorText("Growth");
-            ImGui::DragFloat("Collision radius", &type.collisionRadius, 0.01f, 0.0f);
-            ImGui::DragFloat("Shade radius", &type.shadeRadius, 0.01f, 0.0f);
+            if (Widgets::BeginProperties("Growth")) {
+                Widgets::PropertyLabel("Collision radius");
+                ImGui::DragFloat("##Collision radius", &type.collisionRadius, 0.01f, 0.0f);
+                Widgets::PropertyLabel("Shade radius");
+                ImGui::DragFloat("##Shade radius", &type.shadeRadius, 0.01f, 0.0f);
 
-            ImGui::Checkbox("Can grow in shade", &type.canGrowInShade);
-            ImGui::DragInt("Max growth age", &type.growthMaxAge);
-            ImGui::DragFloat("Min growth scale", &type.growthMinScale, 0.01f);
-            ImGui::DragFloat("Max growth scale", &type.growthMaxScale, 0.01f);
+                Widgets::PropertyLabel("Can grow in shade");
+                ImGui::Checkbox("##Can grow in shade", &type.canGrowInShade);
+                Widgets::PropertyLabel("Max growth age");
+                ImGui::DragInt("##Max growth age", &type.growthMaxAge);
+                Widgets::PropertyLabel("Min growth scale");
+                ImGui::DragFloat("##Min growth scale", &type.growthMinScale, 0.01f);
+                Widgets::PropertyLabel("Max growth scale");
+                ImGui::DragFloat("##Max growth scale", &type.growthMaxScale, 0.01f);
+                Widgets::EndProperties();
+            }
 
             // Create a child window with a scrollbar
             ImGui::SeparatorText("Exclude materials");
@@ -176,8 +198,7 @@ namespace Atlas::Editor::UI {
 
             ImGui::EndChild();
 
-            if (open)
-                ImGui::TreePop();
+            ImGui::PopID();
         }
 
         if (deleteIdx >= 0) {

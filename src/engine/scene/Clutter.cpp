@@ -41,7 +41,7 @@ namespace Atlas {
         void Clutter::UpdateActorData(Mesh::Mesh* mesh) {
 
             struct InstanceData {
-                glm::vec4 position;
+                vec4 position;
             };
 
             auto& actors = meshToActorMap[mesh];
@@ -51,7 +51,7 @@ namespace Atlas {
             for (auto actor : actors) {
                 InstanceData instance;
 
-                instance.position = glm::vec4(actor->GetPosition(), 0.0f);
+                instance.position = vec4(actor->GetPosition(), 0.0f);
 
                 instanceData.push_back(instance);
             }

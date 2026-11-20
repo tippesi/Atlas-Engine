@@ -2,6 +2,7 @@
 #include "common/MathHelper.h"
 #include "../renderer/ImpostorRenderer.h"
 #include "../scene/Scene.h"
+#include "../streaming/StreamingManager.h"
 
 namespace Atlas {
 
@@ -67,6 +68,12 @@ namespace Atlas {
             else {
                 projectionMatrix = glm::perspective(fov,
                     1.0f, 1.0f, dist + 2.0f * radius);
+            }
+
+            Streaming::MeshStreaming::LoadGeometry(mesh);
+            for (const auto& material : mesh->data.materials) {
+                if (material.IsLoaded())
+                    Streaming::TextureStreaming::LoadFullResolution(*material.Get());
             }
 
             // Distance to center is center offset + one unit vector

@@ -7,7 +7,8 @@
 #include "../pipeline/PipelineManager.h"
 #include "../buffer/UniformBuffer.h"
 
-#include "../graphics/Profiler.h"
+#include "../profiler/GPUProfiler.h"
+#include "../profiler/CPUProfiler.h"
 #include "../graphics/GraphicsDevice.h"
 
 #include "../common/ColorConverter.h"
@@ -32,8 +33,6 @@ namespace Atlas {
             Renderer& operator=(const Renderer&) = delete;
 
         protected:
-            Scene::Entity GetMainLightEntity(Ref<Scene::Scene>& scene);
-
             Graphics::GraphicsDevice* device = nullptr;
 
         };

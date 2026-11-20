@@ -22,8 +22,6 @@ namespace Atlas {
             mat4 frustumMatrix = mat4(1.0f);
             mat4 terrainFrustumMatrix = mat4(1.0f);
 
-            vec4 orthoSize = vec4(1.0f);
-
         };
 
         class Shadow {
@@ -38,8 +36,6 @@ namespace Atlas {
             void SetResolution(int32_t resolution);
 
             void Update();
-
-            vec3 center = vec3(0.0f);
 
             float distance = 300.0f;
             float longRangeDistance = 1024.0f;
@@ -58,8 +54,8 @@ namespace Atlas {
             Ref<Texture::Texture2DArray> maps;
             Ref<Texture::Cubemap> cubemap;
 
+            // Set by the constructor: directional lights always have cascades, point and spot lights never
             bool isCascaded = false;
-            bool followMainCamera = false;
             bool useCubemap = false;
             bool allowDynamicEntities = false;
             bool allowTerrain = false;

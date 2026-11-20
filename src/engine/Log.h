@@ -85,6 +85,11 @@ namespace Atlas {
          */
         static void Save(const std::string& filename);
 
+        /**
+         * Whether entries are printed to the console, e.g. command line tools print their own output instead.
+         */
+        static bool printToConsole;
+
     private:
         static void AddEntry(const std::string& message, int32_t severity, int32_t type);
 

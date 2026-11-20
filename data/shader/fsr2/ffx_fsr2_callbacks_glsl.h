@@ -238,7 +238,7 @@ layout (set = 0, binding = 1) uniform sampler s_LinearClamp;
 	layout (set = 1, binding = FSR2_BIND_UAV_DILATED_MOTION_VECTORS, rg16f)           writeonly uniform image2D  rw_dilated_motion_vectors;
 #endif
 #if defined FSR2_BIND_UAV_DILATED_DEPTH
-	layout (set = 1, binding = FSR2_BIND_UAV_DILATED_DEPTH, r16f)                     writeonly uniform image2D  rw_dilatedDepth;
+	layout (set = 1, binding = FSR2_BIND_UAV_DILATED_DEPTH, r32f)                     writeonly uniform image2D  rw_dilatedDepth;
 #endif
 #if defined FSR2_BIND_UAV_INTERNAL_UPSCALED
 	layout (set = 1, binding = FSR2_BIND_UAV_INTERNAL_UPSCALED, rgba16f)              writeonly uniform image2D  rw_internal_upscaled_color;
@@ -253,7 +253,7 @@ layout (set = 0, binding = 1) uniform sampler s_LinearClamp;
 	layout(set = 1, binding = FSR2_BIND_UAV_NEW_LOCKS, r8)				 		      uniform image2D    rw_new_locks;
 #endif
 #if defined FSR2_BIND_UAV_PREPARED_INPUT_COLOR
-	layout (set = 1, binding = FSR2_BIND_UAV_PREPARED_INPUT_COLOR, rgba16)            writeonly uniform image2D  rw_prepared_input_color;
+	layout (set = 1, binding = FSR2_BIND_UAV_PREPARED_INPUT_COLOR, rgba16f)            writeonly uniform image2D  rw_prepared_input_color;
 #endif
 #if defined FSR2_BIND_UAV_LUMA_HISTORY
 	layout (set = 1, binding = FSR2_BIND_UAV_LUMA_HISTORY, rgba8)                     uniform image2D  rw_luma_history;
@@ -281,10 +281,10 @@ layout (set = 0, binding = 1) uniform sampler s_LinearClamp;
 #endif
 
 #if defined FSR2_BIND_UAV_AUTOREACTIVE
-	layout(set = 1, binding = FSR2_BIND_UAV_AUTOREACTIVE, r32f)                       uniform image2D   	    rw_output_autoreactive;
+	layout(set = 1, binding = FSR2_BIND_UAV_AUTOREACTIVE, r8)                       uniform image2D   	    rw_output_autoreactive;
 #endif
 #if defined FSR2_BIND_UAV_AUTOCOMPOSITION
-	layout(set = 1, binding = FSR2_BIND_UAV_AUTOCOMPOSITION, r32f)                    uniform image2D   	    rw_output_autocomposition;
+	layout(set = 1, binding = FSR2_BIND_UAV_AUTOCOMPOSITION, r8)                    uniform image2D   	    rw_output_autocomposition;
 #endif
 #if defined FSR2_BIND_UAV_PREV_PRE_ALPHA_COLOR
 	layout(set = 1, binding = FSR2_BIND_UAV_PREV_PRE_ALPHA_COLOR, r11f_g11f_b10f)     uniform image2D   	    rw_output_prev_color_pre_alpha;

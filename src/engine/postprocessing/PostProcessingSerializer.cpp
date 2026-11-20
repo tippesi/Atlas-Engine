@@ -44,13 +44,11 @@ namespace Atlas::PostProcessing {
 
     void to_json(json& j, const TAA& p) {
         j = json {
-            {"enable", p.enable},
             {"jitterRange", p.jitterRange},
         };
     }
 
     void from_json(const json& j, TAA& p) {
-        j.at("enable").get_to(p.enable);
         j.at("jitterRange").get_to(p.jitterRange);
     }
 
@@ -96,9 +94,8 @@ namespace Atlas::PostProcessing {
 
         try_get_json(j, "dirtStrength", p.dirtStrength);
 
-        if (j.contains("dirtMap"))
-            p.dirtMap = ResourceManager<Texture::Texture2D>::GetOrLoadResource(j["dirtMap"], false,
-                Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0);
+        p.dirtMap = j.contains("dirtMap") ? ResourceManager<Texture::Texture2D>::GetOrLoadResourceAsync(j["dirtMap"], false,
+            Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0) : ResourceHandle<Texture::Texture2D>();
     }
 
     void to_json(json& j, const AutoExposure& p) {
@@ -129,7 +126,7 @@ namespace Atlas::PostProcessing {
             {"screenMaxLuminance", p.screenMaxLuminance},
             {"filmicTonemapping", p.filmicTonemapping},
             {"taa", p.taa},
-            {"fsr2", p.fsr2},
+            {"upscaler", static_cast<int>(p.upscaler)},
             {"vignette", p.vignette},
             {"chromaticAberration", p.chromaticAberration},
             {"filmGrain", p.filmGrain},
@@ -148,7 +145,14 @@ namespace Atlas::PostProcessing {
         j.at("screenMaxLuminance").get_to(p.screenMaxLuminance);
         j.at("filmicTonemapping").get_to(p.filmicTonemapping);
         j.at("taa").get_to(p.taa);
-        j.at("fsr2").get_to(p.fsr2);
+        if (j.contains("upscaler")) {
+            p.upscaler = static_cast<Upscaler>(j.at("upscaler").get<int>());
+        }
+        else {
+            // Older scenes have separate switches for FSR2 and TAA, FSR2 took precedence
+            auto taa = j.at("taa").value("enable", false);
+            p.upscaler = j.at("fsr2").get<bool>() ? Upscaler::FSR2 : (taa ? Upscaler::TAA : Upscaler::None);
+        }
         j.at("vignette").get_to(p.vignette);
         j.at("chromaticAberration").get_to(p.chromaticAberration);
         j.at("filmGrain").get_to(p.filmGrain);

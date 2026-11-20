@@ -29,11 +29,14 @@ namespace Atlas {
             bool rt = true;
             bool ssr = true;
             bool ddgi = true;
-            bool useShadowMap = false;
             bool useNormalMaps = true;
             bool opacityCheck = false;
             bool halfResolution = true;
             bool upsampleBeforeFiltering = false;
+
+            // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
+            // they hit before shading
+            bool shaderExecutionReordering = true;
 
         };
 

@@ -1,6 +1,6 @@
 #include "PerformanceCounter.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 namespace Atlas {
 
@@ -23,12 +23,11 @@ namespace Atlas {
 
             TimeStamp stamp;
 
-            stamp.stamp = (double)SDL_GetPerformanceCounter();
+            stamp.stamp = (double)SDL_GetTicksNS();
 
             if (stamps.size()) {
                 auto resetStamp = stamps[0];
-                stamp.delta = (stamp.stamp - resetStamp.stamp) * 1000.0 / (double)
-                    SDL_GetPerformanceFrequency();
+                stamp.delta = (stamp.stamp - resetStamp.stamp) / (double)SDL_NS_PER_MS;
             }
 
             stamps.push_back(stamp);
@@ -41,10 +40,9 @@ namespace Atlas {
 
             TimeStamp stamp;
 
-            stamp.stamp = (double)SDL_GetPerformanceCounter();
+            stamp.stamp = (double)SDL_GetTicksNS();
 
-            stamp.delta = (stamp.stamp - inStamp.stamp) * 1000.0 / (double)
-                SDL_GetPerformanceFrequency();
+            stamp.delta = (stamp.stamp - inStamp.stamp) / (double)SDL_NS_PER_MS;
 
             stamps.push_back(stamp);
 
@@ -56,12 +54,11 @@ namespace Atlas {
 
             TimeStamp stamp;
 
-            stamp.stamp = (double)SDL_GetPerformanceCounter();
+            stamp.stamp = (double)SDL_GetTicksNS();
 
             if (stamps.size()) {
                 auto prevStamp = stamps[stamps.size() - 1];
-                stamp.delta = (stamp.stamp - prevStamp.stamp) * 1000.0 / (double)
-                    SDL_GetPerformanceFrequency();
+                stamp.delta = (stamp.stamp - prevStamp.stamp) / (double)SDL_NS_PER_MS;
             }
 
             stamps.push_back(stamp);

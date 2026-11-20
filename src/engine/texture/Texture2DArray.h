@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "Texture.h"
+#include "../loader/KtxLoader.h"
 
 namespace Atlas {
 
@@ -27,6 +28,15 @@ namespace Atlas {
             Texture2DArray(int32_t width, int32_t height, int32_t layers, VkFormat format,
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest,
                 bool dedicatedMemory = false, bool usedForRenderTarget = false);
+
+            /**
+             * Construct a Texture2DArray object from the layers and mip levels of a ktx2 image.
+             * @param image The ktx2 image.
+             * @param wrapping The wrapping of the texture. Controls texture border behaviour.
+             * @param filtering The filtering of the texture.
+             */
+            explicit Texture2DArray(const Ref<Loader::KtxImage>& image, Wrapping wrapping = Wrapping::Repeat,
+                Filtering filtering = Filtering::Nearest);
 
             /**
              * Sets the data of the texture object.

@@ -1,0 +1,96 @@
+// Direct light at the hits of RTGI and reflections. With DEFERRED_SHADOW_RAYS the shadow rays are written out and
+// traced in a separate pass. Needs the cloud map with CLOUD_SHADOWS
+#ifdef DEFERRED_SHADOW_RAYS
+#include <deferredShadow.hsh>
+
+bool hasDeferredShadowRay = false;
+DeferredShadowRay deferredShadowRay;
+int deferredLightBase = 0;
+#endif
+
+float CheckVisibility(Surface surface, float lightDistance) {
+
+    if (surface.NdotL > 0.0) {
+        Ray ray;
+        ray.direction = surface.L;
+        float side = dot(surface.L, surface.geometryNormal) < 0.0 ? -1.0 : 1.0;
+        ray.origin = surface.P + surface.geometryNormal * (side * EPSILON);
+#ifdef DEFERRED_SHADOW_RAYS
+        hasDeferredShadowRay = true;
+        deferredShadowRay.origin = vec4(ray.origin, lightDistance - 2.0 * EPSILON);
+        deferredShadowRay.direction = vec4(ray.direction, 0.0);
+        return 1.0;
+#else
+        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
+#endif
+    }
+    else {
+        return 0.0;
+    }
+
+}
+
+vec3 EvaluateDirectLight(inout Surface surface, float raySeed, float seed) {
+
+    if (GetLightCount() == 0)
+        return vec3(0.0);
+
+    float lightPdf;
+    Light light = GetLight(surface, raySeed, seed, lightPdf);
+
+    float solidAngle, lightDistance;
+    SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
+
+    bool transmittedLight = IsTransmittedLight(surface);
+    Surface lightSurface = transmittedLight ? GetTransmissionSurface(surface) : surface;
+
+    // Evaluate the BRDF
+    vec3 reflectance = transmittedLight ? GetTransmissionColor(surface.material) * EvaluateDiffuseBRDF(lightSurface) :
+        EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
+    reflectance *= surface.material.opacity;
+    vec3 radiance = light.radiance * solidAngle;
+
+    // The visibility is needed to estimate the solid angle of the light from the surface
+    if (light.castShadow)
+        radiance *= CheckVisibility(lightSurface, lightDistance);
+
+#ifdef CLOUD_SHADOWS
+    if (light.type == uint(DIRECTIONAL_LIGHT)) {
+        vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
+        float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
+
+        radiance *= cloudShadowFactor;
+    }
+#endif
+
+    return reflectance * radiance * lightSurface.NdotL / lightPdf;
+
+}
+
+// The average of several light samples, deferred shadow rays store their sample instead
+vec3 EvaluateDirectLights(inout Surface surface, float raySeed, float seed, int lightSampleCount) {
+
+    vec3 radiance = vec3(0.0);
+    for (int i = 0; i < lightSampleCount; i++) {
+#ifdef DEFERRED_SHADOW_RAYS
+        hasDeferredShadowRay = false;
+        vec3 direct = EvaluateDirectLight(surface, raySeed, seed) / float(lightSampleCount);
+        if (hasDeferredShadowRay) {
+            uint lightIdx = uint(deferredLightBase + i);
+            deferredLights[lightIdx] = vec4(direct, 1.0);
+            uint shadowRayIdx = atomicAdd(deferredShadowRayCount, 1u);
+            deferredShadowRays[shadowRayIdx].origin = deferredShadowRay.origin;
+            deferredShadowRays[shadowRayIdx].direction = vec4(deferredShadowRay.direction.xyz, uintBitsToFloat(lightIdx));
+        }
+        else {
+            radiance += direct;
+        }
+#else
+        radiance += EvaluateDirectLight(surface, raySeed, seed) / float(lightSampleCount);
+#endif
+        seed += 1.0 / float(lightSampleCount);
+    }
+
+    return radiance;
+
+}

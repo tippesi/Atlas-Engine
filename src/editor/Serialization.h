@@ -3,6 +3,8 @@
 #include <string>
 
 #include "ui/windows/SceneWindow.h"
+#include "ui/windows/ContentBrowserWindow.h"
+#include "ui/windows/DrawerWindow.h"
 
 namespace Atlas::Editor {
 
@@ -21,7 +23,17 @@ namespace Atlas::Editor {
 
         static void DeserializeContentBrowserWindow(UI::ContentBrowserWindow& contentBrowserWindow);
 
+        // Only the drawer state, the content browser has its own config
+        static void SerializeDrawerWindow(const UI::DrawerWindow& drawerWindow);
+
+        static void DeserializeDrawerWindow(UI::DrawerWindow& drawerWindow);
+
     private:
+        // Scenes are identified by their file, the internal names of two scenes can be the same
+        static std::string GetSceneWindowConfigFilename(const ResourceHandle<Scene::Scene>& scene);
+
+        static std::string GetDrawerWindowConfigFilename(const UI::DrawerWindow& drawerWindow);
+
         static void TryWriteToFile(const std::string& filename, const std::string& content);
 
         static std::string TryReadFromFile(const std::string& filename);

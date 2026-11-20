@@ -21,6 +21,8 @@ namespace Atlas::Editor::UI {
     private:
         ImguiExtension::MaterialsPanel materialsPanel;
 
+        Mesh::MeshLodSettings lodSettings;
+
         ResourceSelectionPanel<Mesh::Mesh> meshSelectionPanel;
         ResourceSelectionPanel<Material> materialSelectionPanel;
         ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;

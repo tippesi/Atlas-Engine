@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "RenderPass.h"
+#include "Rendering.h"
 #include "Shader.h"
 #include "Pipeline.h"
 #include "Buffer.h"
@@ -10,7 +10,6 @@
 #include "DescriptorSetLayout.h"
 #include "DescriptorPool.h"
 #include "QueryPool.h"
-#include "Framebuffer.h"
 #include "BLAS.h"
 #include "TLAS.h"
 #include "MemoryTransferManager.h"
@@ -55,10 +54,6 @@ namespace Atlas {
             ~MemoryManager();
 
             MemoryManager& operator=(const MemoryManager& that) = delete;
-
-            void DestroyAllocation(Ref<RenderPass>& allocation);
-
-            void DestroyAllocation(Ref<FrameBuffer>& allocation);
 
             void DestroyAllocation(Ref<Shader>& allocation);
 
@@ -114,12 +109,11 @@ namespace Atlas {
                 }
             }
 
-            const size_t framesToDeletion = 3;
+            // One frame more than the frames in flight need, objects can be released while a render thread records
+            const size_t framesToDeletion = 4;
 
             size_t frameIndex = 0;
             std::deque<DeleteLambda> deleteRawAllocations;
-            std::deque<DeleteResource<RenderPass>> deleteRenderPassAllocations;
-            std::deque<DeleteResource<FrameBuffer>> deleteFrameBufferAllocations;
             std::deque<DeleteResource<Shader>> deleteShaderAllocations;
             std::deque<DeleteResource<Pipeline>> deletePipelineAllocations;
             std::deque<DeleteResource<Buffer>> deleteBufferAllocations;

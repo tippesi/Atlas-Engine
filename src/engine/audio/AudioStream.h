@@ -43,9 +43,29 @@ namespace Atlas {
 
             float GetChannelVolume(Channel channel) const;
 
+            // -1 is fully left, 1 fully right
+            void SetPan(float pan);
+
+            /**
+             * Sets volume and panning for a source at a location heard by a listener, returns whether
+             * the source is audible.
+             */
+            bool Spatialize(vec3 source, vec3 listener, vec3 listenerRight, float volume, float falloffFactor,
+                float falloffPower, float cutoff);
+
             void SetPitch(double pitch);
 
             double GetPitch() const;
+
+            // Frequencies above the cutoff (Hz) are damped, e.g. under water or behind a wall, 0 turns the filter off
+            void SetLowPass(float cutoff);
+
+            float GetLowPass() const;
+
+            // How much of the stream goes into the reverb of the audio manager, 0 to 1
+            void SetReverbSend(float send);
+
+            float GetReverbSend() const;
 
             void Pause();
 
@@ -54,6 +74,9 @@ namespace Atlas {
             bool IsPaused() const;
 
             bool IsValid() const;
+
+            // A stream without loop that played to its end
+            bool IsFinished() const;
 
             bool GetChunk(std::vector<int16_t>& chunk);
 
@@ -67,11 +90,21 @@ namespace Atlas {
             float volume = 1.0f;
             double pitch = 1.0f;
 
+            float lowPass = 0.0f;
+            float reverbSend = 0.0f;
+            // Two one pole stages per channel
+            std::array<float, 16> filterState = {};
+
             bool pause = false;
+            std::atomic_bool finished = false;
+            // Played to the end by the audio manager, even when nobody holds a reference anymore
+            bool keepAlive = false;
 
             std::array<float, 8> channelVolume;
 
             mutable std::mutex mutex;
+
+            friend class AudioManager;
 
         };
 

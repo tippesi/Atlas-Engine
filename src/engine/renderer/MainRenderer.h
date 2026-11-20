@@ -20,6 +20,7 @@
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
 #include "GBufferRenderer.h"
+#include "HiZRenderer.h"
 #include "TextRenderer.h"
 #include "SSGIRenderer.h"
 #include "DDGIRenderer.h"
@@ -32,6 +33,7 @@
 #include "TextureRenderer.h"
 #include "PathTracingRenderer.h"
 #include "FSR2Renderer.h"
+#include "UpscalerAddons.h"
 
 namespace Atlas {
 
@@ -54,11 +56,12 @@ namespace Atlas {
             void RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
                 Ref<PrimitiveBatch> batch, const CameraComponent& camera, Graphics::CommandList* commandList = nullptr);
 
-            void RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene);
-
             void FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList);
 
             void Update();
+
+            // FSR4 and DLSS are only supported when they are built in and the GPU supports them, otherwise FSR2 is used
+            bool IsUpscalerSupported(PostProcessing::Upscaler upscaler);
 
             TextRenderer textRenderer;
             TextureRenderer textureRenderer;
@@ -71,11 +74,19 @@ namespace Atlas {
 
             void SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera);
 
-            void PreintegrateBRDF();
+            void SetPreExposure(GlobalUniforms& uniforms, const Ref<Scene::Scene>& scene);
+
+            // Only recorded with the first frame, the renderer doesn't wait for it when it is created
+            void PreintegrateBRDF(Graphics::CommandList* commandList);
 
             void UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
-            PipelineConfig GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
+            UpscalingRenderer* PrepareUpscaler(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
+                Graphics::CommandList* commandList);
+
+            UpscalingRenderer* GetUpscalingRenderer(PostProcessing::Upscaler upscaler);
+
+            PipelineConfig GetPipelineConfigForPrimitives(const Graphics::AttachmentFormats& attachmentFormats,
                 Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth, bool manualDepthTest = false);
 
             Graphics::GraphicsDevice* device = nullptr;
@@ -110,6 +121,7 @@ namespace Atlas {
             SkyboxRenderer skyboxRenderer;
             PostProcessRenderer postProcessRenderer;
             GBufferRenderer gBufferRenderer;
+            HiZRenderer hiZRenderer;
             SSGIRenderer ssgiRenderer;
             DDGIRenderer ddgiRenderer;
             RTGIRenderer rtgiRenderer;
@@ -118,10 +130,17 @@ namespace Atlas {
             VolumetricRenderer volumetricRenderer;
             VolumetricCloudRenderer volumetricCloudRenderer;
             FSR2Renderer fsr2Renderer;
+            Ref<UpscalingRenderer> fsr4Renderer;
+            Ref<UpscalingRenderer> dlssRenderer;
+            UpscalingRenderer* activeUpscaler = nullptr;
 
-            std::vector<vec2> haltonSequence;
-            size_t haltonIndex = 0;
             uint32_t frameCount = 0;
+            float lastPreExposure = 0.0f;
+
+            Ref<Graphics::Image> filteredSkyProbeSource;
+            Ref<Graphics::Image> filteredSkyProbeTarget;
+            float filteredSkyProbePreExposure = 0.0f;
+            bool atmosphereProbeNeedsFilter = false;
 
             std::vector<Graphics::ImageBarrier> shadowImageBarriers;
 

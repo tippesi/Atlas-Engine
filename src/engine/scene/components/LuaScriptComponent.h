@@ -91,6 +91,10 @@ namespace Atlas::Scene {
             bool environmentNeedsInitialization = true;
 
             std::optional<sol::protected_function> updateFunction;
+            std::optional<sol::protected_function> contactBeginFunction;
+            std::optional<sol::protected_function> contactEndFunction;
+            std::optional<sol::protected_function> triggerEnterFunction;
+            std::optional<sol::protected_function> triggerExitFunction;
             std::optional<sol::environment> scriptEnvironment;
 
             bool InitScriptEnvironment();

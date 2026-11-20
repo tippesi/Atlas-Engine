@@ -15,12 +15,13 @@ namespace Atlas {
 
         void SkyboxRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Skybox");
+            CPUProfiler::Scope profilerScope("Skybox");
+            GPUProfiler::Scope gpuScope("Skybox");
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
             auto rtData = target->GetData(FULL_RES);
             auto velocityTexture = rtData->velocityTexture;
             auto depthTexture = rtData->depthTexture;
@@ -34,14 +35,14 @@ namespace Atlas {
             vec4 lastCameraLocation = vec4(camera.GetLastLocation(), 1.0f);
             commandList->PushConstants("constants", &lastCameraLocation);
 
-            const auto& cubeMap = scene->sky.probe->GetCubemap();
+            const auto& cubeMap = scene->renderState.sky.probe->GetCubemap();
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(velocityTexture->image, 3, 1);
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
             commandList->BindImage(cubeMap.image, cubeMap.sampler, 3, 3);
 
-            auto resolution = ivec2(target->GetWidth(), target->GetHeight());
+            auto resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             auto groupCount = resolution / 8;
 
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
@@ -55,8 +56,6 @@ namespace Atlas {
             };
             commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 

@@ -34,6 +34,23 @@ namespace Atlas::Physics {
 
         float gravityFactor = 1.0f;
 
+        // Triggers report contacts with movable bodies and players but don't collide, they never move by themselves
+        bool isTrigger = false;
+        // Bodies with buoyancy float in fluid triggers below their top
+        bool isFluid = false;
+
+        // 1 is neutral, lower values sink, higher values float and zero disables it
+        float buoyancy = 0.0f;
+        float fluidLinearDrag = 0.5f;
+        float fluidAngularDrag = 0.01f;
+
+        // Movable bodies placed at rest start asleep until something touches them
+        bool startAsleep = false;
+
+        // A kinematic body reports contacts with static and kinematic bodies and is seen by triggers, e.g. a boat
+        // steered by a script against the rocks. Others only meet movable bodies
+        bool kinematicContacts = false;
+
         Ref<Shape> shape = nullptr;
     };
 

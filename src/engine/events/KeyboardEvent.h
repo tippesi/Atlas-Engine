@@ -17,11 +17,11 @@ namespace Atlas {
             explicit KeyboardEvent(SDL_KeyboardEvent event) {
 
                 windowID = event.windowID;
-                keyCode = static_cast<Keycode>(event.keysym.sym);
-                keyModifiers = event.keysym.mod;
-                state = event.state;
-                repeat = event.repeat > 0 ? true : false;
-                down = event.type == SDL_KEYDOWN;
+                keyCode = static_cast<Keycode>(event.key);
+                keyModifiers = event.mod;
+                state = event.down ? AE_BUTTON_PRESSED : AE_BUTTON_RELEASED;
+                repeat = event.repeat;
+                down = event.down;
 
             }
 

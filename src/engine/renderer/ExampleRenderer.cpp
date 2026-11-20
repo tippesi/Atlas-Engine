@@ -52,7 +52,7 @@ namespace Atlas {
                 buffer = device->CreateBuffer(bufferDesc);
             }
             {
-                // Setup of render pass plus framebuffer
+                // Setup of the render pass attachments
                 auto colorImageDesc = Graphics::ImageDesc {
                     .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
                                   | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
@@ -76,44 +76,27 @@ namespace Atlas {
                 destinationImage = device->CreateImage(colorImageDesc);
                 auto depthImage = device->CreateImage(depthImageDesc);
 
-                // Define attachments
-                auto colorAttachment = Graphics::RenderPassColorAttachment {
-                    .imageFormat = colorImage->format,
+                // Define attachments, the pass is started with this description
+                auto colorAttachment = Graphics::RenderingAttachment {
+                    .image = colorImage,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
-                auto colorAttachment2 = Graphics::RenderPassColorAttachment{
-                    .imageFormat = dummyImage->format,
+                auto colorAttachment2 = Graphics::RenderingAttachment {
+                    .image = dummyImage,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
+                    .writeEnabled = false
                 };
-                auto depthAttachment = Graphics::RenderPassDepthAttachment{
-                    .imageFormat = depthImage->format,
+                auto depthAttachment = Graphics::RenderingAttachment {
+                    .image = depthImage,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 };
-                auto renderPassDesc = Graphics::RenderPassDesc {
+                mainRendering = Graphics::RenderingDesc {
                     .colorAttachments = { colorAttachment, colorAttachment2 },
                     .depthAttachment = depthAttachment
                 };
-
-                // Finally, create render pass
-                mainRenderPass = device->CreateRenderPass(renderPassDesc);
-
-                // Create frame buffer which references render pass
-                auto frameBufferDesc = Graphics::FrameBufferDesc {
-                    .renderPass = mainRenderPass,
-                    .colorAttachments = {
-                        { colorImage, 0, true },
-                        { dummyImage, 0, false }
-                    },
-                    .depthAttachment = { depthImage, 0, true },
-                    .extent = {1920, 1080}
-                };
-                mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
             }
             {
                 mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoader(
@@ -125,7 +108,7 @@ namespace Atlas {
                     {"example/mesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .frameBuffer = mainFrameBuffer,
+                    .attachmentFormats = Graphics::AttachmentFormats(mainRendering),
                     .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
                 };
                 auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc, { "MYMACRO" });
@@ -172,18 +155,16 @@ namespace Atlas {
 
             auto commandList = device->GetCommandList(Graphics::GraphicsQueue);
             
-            Graphics::Profiler::BeginThread("Main thread", commandList);
+            GPUProfiler::BeginThread("Main thread", commandList);
 
             commandList->BeginCommands();
 
-            Graphics::Profiler::BeginQuery("Main renderer");
-            Graphics::Profiler::BeginQuery("Main model");
-
-            mainFrameBuffer->Refresh();
+            GPUProfiler::BeginQuery("Main renderer");
+            GPUProfiler::BeginQuery("Main model");
 
             {
-                mainRenderPass->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
-                commandList->BeginRenderPass(mainRenderPass, mainFrameBuffer, true);
+                mainRendering.colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
+                commandList->BeginRendering(mainRendering);
 
                 // Viewport and scissor are set to a default when binding a pipeline
                 commandList->BindPipeline(meshPipeline);
@@ -207,17 +188,17 @@ namespace Atlas {
 
                 for (auto &subData: mesh->data.subData) {
                     auto baseColorTexture = subData.material->baseColorMap;
-                    if (subData.material->HasBaseColorMap()) {
+                    if (subData.material->baseColorMap.IsLoaded()) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
                     }
 
                     commandList->DrawIndexed(subData.indicesCount, 1, subData.indicesOffset);
                 }
 
-                commandList->EndRenderPass();
+                commandList->EndRendering();
             }
 
-            Graphics::Profiler::EndAndBeginQuery("Compute pass");
+            GPUProfiler::EndAndBeginQuery("Compute pass");
 
             {
                 commandList->BindPipeline(computePipeline);
@@ -228,29 +209,29 @@ namespace Atlas {
                 };
                 commandList->PushConstants("randomConstant", &randomConstants);
 
-                commandList->BindImage(mainFrameBuffer->GetColorImage(0), 0, 0);
+                commandList->BindImage(mainRendering.colorAttachments[0].image, 0, 0);
                 commandList->Dispatch(1920 / 8, 1080 / 8, 1);
             }
 
-            Graphics::Profiler::EndAndBeginQuery("Copy image");
+            GPUProfiler::EndAndBeginQuery("Copy image");
 
             {
                 Graphics::ImageBarrier imageBarriers[] = {
                     {destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                    {mainFrameBuffer->GetColorImage(0), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT}
+                    {mainRendering.colorAttachments[0].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT}
                 };
                 commandList->PipelineBarrier(imageBarriers, {},
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 // Copy to other image
-                commandList->CopyImage(mainFrameBuffer->GetColorImage(0), destinationImage);
+                commandList->CopyImage(mainRendering.colorAttachments[0].image, destinationImage);
 
                 commandList->ImageMemoryBarrier(destinationImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
             }
 
-            Graphics::Profiler::EndAndBeginQuery("Post processing/render to swap chain");
+            GPUProfiler::EndAndBeginQuery("Post processing/render to swap chain");
 
             {
                 swapChain->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
@@ -264,9 +245,9 @@ namespace Atlas {
                 commandList->EndRenderPass();
             }
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndThread();
+            GPUProfiler::EndQuery();
+            GPUProfiler::EndQuery();
+            GPUProfiler::EndThread();
 
             commandList->EndCommands();
 

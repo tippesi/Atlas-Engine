@@ -22,10 +22,6 @@ namespace Atlas {
             void Render(Ref<RenderTarget> renderTarget, Ref<Scene::Scene> scene,
                 ivec2 imageSubdivisions, Graphics::CommandList* commandList);
 
-            bool UpdateData(Scene::Scene* scene);
-
-            void UpdateMaterials(Scene::Scene* scene);
-
             void ResetSampleCount();
 
             int32_t GetSampleCount() const;
@@ -40,10 +36,15 @@ namespace Atlas {
             int32_t historyLengthMax = 32;
             float historyClipMax = 0.2f;
             float currentClipFactor = 2.0f;
+            float spatialFilterStrength = 4.0f;
 
             float maxRadiance = 65535.0f;
 
-            bool sampleEmissives = false;
+            // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
+            // they hit before shading
+            bool shaderExecutionReordering = true;
+            // Hits of material graphs use their baked values instead of the graphs, e.g. for debugging
+            bool materialGraphs = true;
 
         private:
             struct alignas(16) RayGenUniforms {
@@ -62,22 +63,28 @@ namespace Atlas {
                 int32_t sampleCount;
                 int32_t bounceCount;
                 float seed;
-                float exposure;
                 int32_t samplesPerFrame;
                 float maxRadiance;
                 int32_t frameCount;
+            };
+
+            struct alignas(16) AtrousConstants {
+                float strength;
             };
 
             Helper::RayTracingHelper helper;
 
             vec3 cameraLocation;
             vec2 cameraRotation;
+            float preExposure = 0.0f;
 
             int32_t sampleCount = 0;
             ivec2 imageOffset = ivec2(0);
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
+            PipelineConfig rayHitRayTracingPipelineConfig;
+            PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;

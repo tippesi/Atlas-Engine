@@ -13,6 +13,9 @@
 #include "common/RandomHelper.h"
 #include "jobsystem/JobSystem.h"
 
+#include <functional>
+#include <optional>
+
 namespace Atlas {
 
     struct EngineConfig {
@@ -28,14 +31,20 @@ namespace Atlas {
         std::string shaderDirectory = "shader";
 
         /**
-         * Configures which messages of the validation layers to log
+         * Configures validation layers and robustness of the graphics device
          */
-        Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
+        Graphics::DeviceDesc deviceDesc;
 
         /*
-         * 
+         *
          */
         JobSystemConfig jobSystemConfig;
+
+        /**
+         * Runs before the engine is initialized with the command line arguments, e.g. for command line modes that
+         * need neither a window nor the GPU. Returning an exit code ends the application right away
+         */
+        std::function<std::optional<int32_t>(const std::vector<std::string>& args)> commandLineTool;
     };
 
     class Engine {
@@ -56,8 +65,14 @@ namespace Atlas {
         /**
          * Updates the engine and the system events. Must be called in thread
          * where the engine was initialized.
+         * @param renderThread With a render thread, BeginRenderFrame() is called once the last frame is rendered.
          */
-        static void Update();
+        static void Update(bool renderThread = false);
+
+        /**
+         * Starts the frame of the profiler and reloads changed shaders. Rendering must not run meanwhile.
+         */
+        static void BeginRenderFrame();
 
         /**
          * Returns the size of the screen.

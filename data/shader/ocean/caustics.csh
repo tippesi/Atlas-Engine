@@ -39,8 +39,8 @@ const float fadeoutFalloff = 0.2;
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(refractionImage).x ||
-        pixel.y > imageSize(refractionImage).y)
+    if (pixel.x >= imageSize(refractionImage).x ||
+        pixel.y >= imageSize(refractionImage).y)
         return;
 
     Light light = LightUniforms.light;

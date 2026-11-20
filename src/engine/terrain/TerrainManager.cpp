@@ -30,8 +30,13 @@ namespace Atlas::Terrain {
 
                 // Load new cells
                 cells = storage->GetRequestedCellsQueue();
-                auto span = std::span<TerrainStorageCell*> { cells.begin(), cells.end() };
-                Loader::TerrainLoader::LoadStorageCells(terrain.Get(), cells, terrain.GetResource()->path);
+                // Streaming is the loading boundary of the cells, a broken file leaves them unloaded
+                try {
+                    Loader::TerrainLoader::LoadStorageCells(terrain.Get(), cells, terrain.GetResource()->path);
+                }
+                catch (const ResourceLoadException& exception) {
+                    Log::Error("Couldn't stream terrain cells: " + std::string(exception.what()));
+                }
             }
         };
 

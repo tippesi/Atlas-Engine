@@ -1,13 +1,17 @@
-// Based on SDL2 Imgui backend: https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_sdl2.cpp
+// Based on SDL3 Imgui backend: https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_sdl3.cpp
 
 #include "ImguiWrapper.h"
 
 #ifndef AE_OS_APPLE_MOBILE
 #define VK_NO_PROTOTYPES
 #endif
-#include <SDL2/SDL_mouse.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_clipboard.h>
 #include <graphics/Instance.h>
+#include <profiler/CPUProfiler.h>
 #include <ImguiVulkan.h>
+
+#include <cstring>
 
 namespace Atlas::ImguiExtension {
 
@@ -21,20 +25,27 @@ namespace Atlas::ImguiExtension {
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;        // We can honor io.WantSetMousePos requests (optional, rarely used)
         io.BackendPlatformName = "imgui_impl_atlas";
 
-        /*
-        io.SetClipboardTextFn = ImGui_ImplSDL2_SetClipboardText;
-        io.GetClipboardTextFn = ImGui_ImplSDL2_GetClipboardText;
-        io.ClipboardUserData = NULL;
-        */
+        ImGuiPlatformIO &platformIO = ImGui::GetPlatformIO();
+        platformIO.Platform_ClipboardUserData = this;
+        platformIO.Platform_SetClipboardTextFn = [](ImGuiContext*, const char* text) {
+            SDL_SetClipboardText(text);
+        };
+        platformIO.Platform_GetClipboardTextFn = [](ImGuiContext*) -> const char* {
+            auto wrapper = static_cast<ImguiWrapper*>(ImGui::GetPlatformIO().Platform_ClipboardUserData);
+            // SDL hands out a copy that has to stay valid until ImGui asks again
+            SDL_free(wrapper->clipboardText);
+            wrapper->clipboardText = SDL_GetClipboardText();
+            return wrapper->clipboardText;
+        };
 
-        mouseCursors[ImGuiMouseCursor_Arrow] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-        mouseCursors[ImGuiMouseCursor_TextInput] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
-        mouseCursors[ImGuiMouseCursor_ResizeAll] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
-        mouseCursors[ImGuiMouseCursor_ResizeNS] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-        mouseCursors[ImGuiMouseCursor_ResizeEW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-        mouseCursors[ImGuiMouseCursor_ResizeNESW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
-        mouseCursors[ImGuiMouseCursor_ResizeNWSE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-        mouseCursors[ImGuiMouseCursor_Hand] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+        mouseCursors[ImGuiMouseCursor_Arrow] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
+        mouseCursors[ImGuiMouseCursor_TextInput] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);
+        mouseCursors[ImGuiMouseCursor_ResizeAll] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_MOVE);
+        mouseCursors[ImGuiMouseCursor_ResizeNS] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NS_RESIZE);
+        mouseCursors[ImGuiMouseCursor_ResizeEW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_EW_RESIZE);
+        mouseCursors[ImGuiMouseCursor_ResizeNESW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NESW_RESIZE);
+        mouseCursors[ImGuiMouseCursor_ResizeNWSE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NWSE_RESIZE);
+        mouseCursors[ImGuiMouseCursor_Hand] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_POINTER);
 
         // Subscribe to events
         auto windowEventHandler = std::bind(&ImguiWrapper::WindowHandler, this, std::placeholders::_1);
@@ -55,7 +66,9 @@ namespace Atlas::ImguiExtension {
         auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
         textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
-        RecreateImGuiResources();
+        // The resources might have been created already, e.g. for the fonts of the application
+        if (!initialized)
+            RecreateImGuiResources();
 
     }
 
@@ -73,6 +86,14 @@ namespace Atlas::ImguiExtension {
 
         pool.reset();
 
+        for (auto list : drawListCopies)
+            IM_DELETE(list);
+        drawListCopies.clear();
+        drawDataCopy.Clear();
+
+        SDL_free(clipboardText);
+        clipboardText = nullptr;
+
         initialized = false;
 
     }
@@ -83,9 +104,9 @@ namespace Atlas::ImguiExtension {
 
         io.DeltaTime = deltaTime;
 
-        auto w = (float) window->GetWidth();
-        auto h = (float) window->GetHeight();
-        auto size = glm::vec2(window->GetDrawableSize());
+        auto w = (float) window->GetWidth() / scale;
+        auto h = (float) window->GetHeight() / scale;
+        auto size = vec2(window->GetDrawableSize());
         io.DisplaySize = ImVec2(w, h);
         if (w > 0.0f && h > 0.0f)
             io.DisplayFramebufferScale = ImVec2(size.x / w, size.y / h);
@@ -117,6 +138,8 @@ namespace Atlas::ImguiExtension {
 
     void ImguiWrapper::Render(bool clearSwapChain) {
 
+        Atlas::CPUProfiler::Scope profilerScope("ImGui");
+
         ImGuiIO &io = ImGui::GetIO();
 
         ImGui_ImplVulkan_NewFrame();
@@ -131,15 +154,15 @@ namespace Atlas::ImguiExtension {
 
         commandList->BeginCommands();
 
-        Atlas::Graphics::Profiler::BeginThread("ImGui thread", commandList);
-        Atlas::Graphics::Profiler::BeginQuery("ImGui");
+        Atlas::GPUProfiler::BeginThread("ImGui thread", commandList);
+        Atlas::GPUProfiler::BeginQuery("ImGui");
 
         commandList->BeginRenderPass(swapChain, clearSwapChain);
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
+        ImGui_ImplVulkan_RenderDrawData(hasDrawDataCopy ? &drawDataCopy : ImGui::GetDrawData(), commandList->commandBuffer);
         commandList->EndRenderPass();
 
-        Atlas::Graphics::Profiler::EndQuery();
-        Atlas::Graphics::Profiler::EndThread();
+        Atlas::GPUProfiler::EndQuery();
+        Atlas::GPUProfiler::EndThread();
 
         commandList->EndCommands();
 
@@ -147,14 +170,55 @@ namespace Atlas::ImguiExtension {
 
     }
 
-    void ImguiWrapper::RecreateImGuiResources() {
+    void ImguiWrapper::CopyDrawData() {
 
-        if (initialized) {
-            ImGui_ImplVulkan_Shutdown();
+        auto copyVector = [](auto& destination, const auto& source) {
+            destination.resize(source.Size);
+            if (source.Size)
+                std::memcpy(destination.Data, source.Data, source.size_in_bytes());
+            };
+
+        drawDataCopy.Clear();
+        hasDrawDataCopy = true;
+
+        auto drawData = ImGui::GetDrawData();
+        if (!drawData)
+            return;
+
+        drawDataCopy.Valid = drawData->Valid;
+        drawDataCopy.CmdListsCount = drawData->CmdListsCount;
+        drawDataCopy.TotalIdxCount = drawData->TotalIdxCount;
+        drawDataCopy.TotalVtxCount = drawData->TotalVtxCount;
+        drawDataCopy.DisplayPos = drawData->DisplayPos;
+        drawDataCopy.DisplaySize = drawData->DisplaySize;
+        drawDataCopy.FramebufferScale = drawData->FramebufferScale;
+        drawDataCopy.OwnerViewport = drawData->OwnerViewport;
+
+        for (int32_t i = 0; i < drawData->CmdLists.Size; i++) {
+            auto source = drawData->CmdLists[i];
+            if (i >= drawListCopies.Size)
+                drawListCopies.push_back(IM_NEW(ImDrawList)(source->_Data));
+
+            auto copy = drawListCopies[i];
+            copyVector(copy->CmdBuffer, source->CmdBuffer);
+            copyVector(copy->IdxBuffer, source->IdxBuffer);
+            copyVector(copy->VtxBuffer, source->VtxBuffer);
+            copy->Flags = source->Flags;
+            drawDataCopy.CmdLists.push_back(copy);
         }
+
+    }
+
+    void ImguiWrapper::RecreateImGuiResources() {
 
         auto instance = Atlas::Graphics::Instance::DefaultInstance;
         auto device = instance->GetGraphicsDevice();
+
+        // Frames in flight still use the old font texture
+        if (initialized) {
+            device->WaitForIdle();
+            ImGui_ImplVulkan_Shutdown();
+        }
 
         auto desc = Atlas::Graphics::DescriptorPoolDesc{
             .freeDescriptorSets = true
@@ -185,9 +249,24 @@ namespace Atlas::ImguiExtension {
         //clear font textures from cpu data
         ImGui_ImplVulkan_DestroyFontUploadObjects();
 
+        // The backend only keeps the handle, a queue left locked blocks the render thread forever
+        queue.Unlock();
+
         imageViewToDescriptorSetMap.clear();
 
         initialized = true;
+
+    }
+
+    void ImguiWrapper::SetScale(float scale) {
+
+        this->scale = scale;
+
+    }
+
+    float ImguiWrapper::GetScale() const {
+
+        return scale;
 
     }
 
@@ -238,7 +317,7 @@ namespace Atlas::ImguiExtension {
 
         ImGuiIO &io = ImGui::GetIO();
 
-        io.MousePos = ImVec2((float) event.x, (float) event.y);
+        io.MousePos = ImVec2(event.x / scale, event.y / scale);
 
     }
 
@@ -246,10 +325,8 @@ namespace Atlas::ImguiExtension {
 
         ImGuiIO &io = ImGui::GetIO();
 
-        if (event.x > 0) io.MouseWheelH += 1;
-        if (event.x < 0) io.MouseWheelH -= 1;
-        if (event.y > 0) io.MouseWheel += 1;
-        if (event.y < 0) io.MouseWheel -= 1;
+        io.MouseWheelH += event.x;
+        io.MouseWheel += event.y;
 
     }
 
@@ -280,12 +357,12 @@ namespace Atlas::ImguiExtension {
         ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
         if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None) {
             // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
-            SDL_ShowCursor(SDL_FALSE);
+            SDL_HideCursor();
         } else {
             // Show OS mouse cursor
             SDL_SetCursor(
                 mouseCursors[imgui_cursor] ? mouseCursors[imgui_cursor] : mouseCursors[ImGuiMouseCursor_Arrow]);
-            SDL_ShowCursor(SDL_TRUE);
+            SDL_ShowCursor();
         }
 
     }
@@ -323,7 +400,7 @@ namespace Atlas::ImguiExtension {
                 return ImGuiKey_Enter;
             case SDLK_ESCAPE:
                 return ImGuiKey_Escape;
-            case SDLK_QUOTE:
+            case SDLK_APOSTROPHE:
                 return ImGuiKey_Apostrophe;
             case SDLK_COMMA:
                 return ImGuiKey_Comma;
@@ -343,7 +420,7 @@ namespace Atlas::ImguiExtension {
                 return ImGuiKey_Backslash;
             case SDLK_RIGHTBRACKET:
                 return ImGuiKey_RightBracket;
-            case SDLK_BACKQUOTE:
+            case SDLK_GRAVE:
                 return ImGuiKey_GraveAccent;
             case SDLK_CAPSLOCK:
                 return ImGuiKey_CapsLock;
@@ -427,57 +504,57 @@ namespace Atlas::ImguiExtension {
                 return ImGuiKey_8;
             case SDLK_9:
                 return ImGuiKey_9;
-            case SDLK_a:
+            case SDLK_A:
                 return ImGuiKey_A;
-            case SDLK_b:
+            case SDLK_B:
                 return ImGuiKey_B;
-            case SDLK_c:
+            case SDLK_C:
                 return ImGuiKey_C;
-            case SDLK_d:
+            case SDLK_D:
                 return ImGuiKey_D;
-            case SDLK_e:
+            case SDLK_E:
                 return ImGuiKey_E;
-            case SDLK_f:
+            case SDLK_F:
                 return ImGuiKey_F;
-            case SDLK_g:
+            case SDLK_G:
                 return ImGuiKey_G;
-            case SDLK_h:
+            case SDLK_H:
                 return ImGuiKey_H;
-            case SDLK_i:
+            case SDLK_I:
                 return ImGuiKey_I;
-            case SDLK_j:
+            case SDLK_J:
                 return ImGuiKey_J;
-            case SDLK_k:
+            case SDLK_K:
                 return ImGuiKey_K;
-            case SDLK_l:
+            case SDLK_L:
                 return ImGuiKey_L;
-            case SDLK_m:
+            case SDLK_M:
                 return ImGuiKey_M;
-            case SDLK_n:
+            case SDLK_N:
                 return ImGuiKey_N;
-            case SDLK_o:
+            case SDLK_O:
                 return ImGuiKey_O;
-            case SDLK_p:
+            case SDLK_P:
                 return ImGuiKey_P;
-            case SDLK_q:
+            case SDLK_Q:
                 return ImGuiKey_Q;
-            case SDLK_r:
+            case SDLK_R:
                 return ImGuiKey_R;
-            case SDLK_s:
+            case SDLK_S:
                 return ImGuiKey_S;
-            case SDLK_t:
+            case SDLK_T:
                 return ImGuiKey_T;
-            case SDLK_u:
+            case SDLK_U:
                 return ImGuiKey_U;
-            case SDLK_v:
+            case SDLK_V:
                 return ImGuiKey_V;
-            case SDLK_w:
+            case SDLK_W:
                 return ImGuiKey_W;
-            case SDLK_x:
+            case SDLK_X:
                 return ImGuiKey_X;
-            case SDLK_y:
+            case SDLK_Y:
                 return ImGuiKey_Y;
-            case SDLK_z:
+            case SDLK_Z:
                 return ImGuiKey_Z;
             case SDLK_F1:
                 return ImGuiKey_F1;
@@ -512,10 +589,10 @@ namespace Atlas::ImguiExtension {
     void ImguiWrapper::UpdateKeyModifiers(uint16_t keyModifier) {
 
         ImGuiIO &io = ImGui::GetIO();
-        io.AddKeyEvent(ImGuiMod_Ctrl, (keyModifier & KMOD_CTRL) != 0);
-        io.AddKeyEvent(ImGuiMod_Shift, (keyModifier & KMOD_SHIFT) != 0);
-        io.AddKeyEvent(ImGuiMod_Alt, (keyModifier & KMOD_ALT) != 0);
-        io.AddKeyEvent(ImGuiMod_Super, (keyModifier & KMOD_GUI) != 0);
+        io.AddKeyEvent(ImGuiMod_Ctrl, (keyModifier & SDL_KMOD_CTRL) != 0);
+        io.AddKeyEvent(ImGuiMod_Shift, (keyModifier & SDL_KMOD_SHIFT) != 0);
+        io.AddKeyEvent(ImGuiMod_Alt, (keyModifier & SDL_KMOD_ALT) != 0);
+        io.AddKeyEvent(ImGuiMod_Super, (keyModifier & SDL_KMOD_GUI) != 0);
 
     }
 

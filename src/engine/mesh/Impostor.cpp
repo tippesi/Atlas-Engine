@@ -45,6 +45,12 @@ namespace Atlas {
 
         }
 
+        bool Impostor::IsResident() const {
+
+            return baseColorTexture != nullptr;
+
+        }
+
         void Impostor::AllocateTextures() {
 
             baseColorTexture = CreateRef<Atlas::Texture::Texture2DArray>(resolution,

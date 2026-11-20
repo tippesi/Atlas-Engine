@@ -331,16 +331,16 @@ namespace Atlas::Editor {
         if (ImGui::Button("Generate", ImVec2(width, 0.0f))) {
 
             if (name.empty()) {
-                Notifications::Push({ "Terrain name is missing!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "Terrain name is missing!", NotificationType::Error });
             }
             else if (!materials.size() && advanced) {
-                Notifications::Push({ "At least one material is required!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "At least one material is required!", NotificationType::Error });
             }
             else if (!selectedMaterial.IsLoaded() && !advanced) {
-                Notifications::Push({ "At least one material is required!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "At least one material is required!", NotificationType::Error });
             }
             else if (heightMapSelection && (!heightMap.IsLoaded() || !heightMapImage->HasData())) {
-                Notifications::Push({ "No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ "No heightmap loaded!", NotificationType::Error });
             }
             else {
                 Singletons::blockingOperation->Block("Generating terrain. Please wait...", [&]() {
@@ -434,7 +434,7 @@ namespace Atlas::Editor {
         float heightD = (float)heightImg.SampleBilinear(x, y - yTex).r * scale / 65535.0f;
         float heightU = (float)heightImg.SampleBilinear(x, y + yTex).r * scale / 65535.0f;
 
-        auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
+        auto normal = glm::normalize(vec3(heightL - heightR, 1.0f,
             heightD - heightU));
 
         height = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;
@@ -623,7 +623,9 @@ namespace Atlas::Editor {
             [previewHeightImg = *previewHeightImg, previewMoistureImg = *previewMoistureImg,
             previewBiomeImg = *previewBiomeImg, biomes = biomes, heightAmplitudes = heightAmplitudes,
             moistureAmplitudes = moistureAmplitudes, heightSeed = heightSeed, moistureSeed = moistureSeed,
-            heightExp = heightExp, heightMapImage = heightMapImage, heightMapSelection = heightMapSelection, this](JobData&) mutable {
+            heightExp = heightExp, heightMapImage = heightMapImage, heightMapSelection = heightMapSelection,
+            // The interface changes the members while the job runs
+            materials = materials, selectedMaterial = selectedMaterial, height = height, this](JobData&) mutable {
 
                 if (heightMapSelection == 0 || !heightMapImage) {
                     Common::NoiseGenerator::GeneratePerlinNoise2D(previewHeightImg, heightAmplitudes,
@@ -636,8 +638,8 @@ namespace Atlas::Editor {
                         for (int32_t x = 0; x < previewHeightImg.width; x++) {
                             auto fx = float(x) / float(previewBiomeImg.width);
                             auto fy = float(y) / float(previewBiomeImg.height);
-                            auto height = heightMapImage->SampleBilinear(fx, fy).r;
-                            previewHeightImg.SetData(x, y, 0, height);
+                            auto sampledHeight = heightMapImage->SampleBilinear(fx, fy).r;
+                            previewHeightImg.SetData(x, y, 0, sampledHeight);
                         }
                     }
 
@@ -657,7 +659,7 @@ namespace Atlas::Editor {
                             previewMoistureImg, height);
 
                         std::pair<ResourceHandle<Material>, vec3> pair;
-                        if (biome.materialIdx < 0) {
+                        if (biome.materialIdx < 0 || biome.materialIdx >= int32_t(materials.size())) {
                             // Try to use the default material
                             for (auto mat : materials) {
                                 if (mat.first == selectedMaterial) {

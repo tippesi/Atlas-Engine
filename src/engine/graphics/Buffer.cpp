@@ -8,7 +8,7 @@ namespace Atlas {
     namespace Graphics {
 
         Buffer::Buffer(GraphicsDevice *device, const BufferDesc& desc) : usageFlags(desc.usageFlags),
-            domain(desc.domain), size(desc.size), alignment(desc.alignment), memoryManager(device->memoryManager) {
+            domain(desc.domain), id(device->resourceIdCounter++), size(desc.size), alignment(desc.alignment), memoryManager(device->memoryManager) {
 
             VkBufferCreateInfo bufferInfo = {};
             bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -22,25 +22,29 @@ namespace Atlas {
                 allocationCreateInfo.flags = desc.hostAccess == BufferHostAccess::Random ?
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT :
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+                allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
             }
             else {
                 allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             }
 
-            if (desc.priority == 1.0f)
+            // The pool has a device local memory type, host buffers only get the priority
+            if (desc.priority == 1.0f && desc.domain == BufferDomain::Device)
                 allocationCreateInfo.pool = memoryManager->highPriorityMemoryPool;
 
             if (desc.dedicatedMemory)
                 allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
+            VmaAllocationInfo allocationInfo = {};
             if (alignment == 0) {
                 VK_CHECK(vmaCreateBuffer(memoryManager->allocator, &bufferInfo,
-                    &allocationCreateInfo, &buffer, &allocation, nullptr))
+                    &allocationCreateInfo, &buffer, &allocation, &allocationInfo))
             }
             else {
                 VK_CHECK(vmaCreateBufferWithAlignment(memoryManager->allocator, &bufferInfo,
-                    &allocationCreateInfo, alignment, &buffer, &allocation, nullptr))
+                    &allocationCreateInfo, alignment, &buffer, &allocation, &allocationInfo))
             }
+            persistentMappedData = allocationInfo.pMappedData;
 
             if (desc.data) SetData(desc.data, 0, desc.dataSize > 0 ? desc.dataSize : desc.size, desc.transferManager);
 
@@ -82,7 +86,12 @@ namespace Atlas {
 
         void* Buffer::Map() {
 
-            VK_CHECK(vmaMapMemory(memoryManager->allocator, allocation, &mappedData))
+            if (persistentMappedData) {
+                mappedData = persistentMappedData;
+            }
+            else {
+                VK_CHECK(vmaMapMemory(memoryManager->allocator, allocation, &mappedData))
+            }
             isMapped = true;
 
             return mappedData;
@@ -91,9 +100,16 @@ namespace Atlas {
 
         void Buffer::Unmap() {
 
-            vmaUnmapMemory(memoryManager->allocator, allocation);
+            if (!persistentMappedData)
+                vmaUnmapMemory(memoryManager->allocator, allocation);
             mappedData = nullptr;
             isMapped = false;
+
+        }
+
+        void Buffer::Invalidate() {
+
+            VK_CHECK(vmaInvalidateAllocation(memoryManager->allocator, allocation, 0, VK_WHOLE_SIZE))
 
         }
 
@@ -151,6 +167,12 @@ namespace Atlas {
         void MultiBuffer::Unmap() {
 
             GetCurrent()->Unmap();
+
+        }
+
+        void MultiBuffer::Invalidate() {
+
+            GetCurrent()->Invalidate();
 
         }
 

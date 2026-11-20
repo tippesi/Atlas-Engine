@@ -8,6 +8,10 @@ namespace Atlas::Scripting::Bindings {
 
     void GenerateResourceManagerBindings(sol::table* ns);
 
+    void GenerateAssetLoaderBindings(sol::table* ns);
+
+    void GenerateModelImporterBindings(sol::table* ns);
+
     template<class T>
     void GenerateResourceBinding(sol::table* ns, const std::string& name) {
 

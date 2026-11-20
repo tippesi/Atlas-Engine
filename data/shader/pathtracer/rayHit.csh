@@ -14,7 +14,9 @@
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
+#ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 32) in;
+#endif
 
 #ifdef REALTIME
 layout (set = 3, binding = 1, r32ui) uniform uimage2DArray frameAccumImage;
@@ -23,6 +25,7 @@ layout (set = 3, binding = 6, r32f) writeonly uniform image2D depthImage;
 layout (set = 3, binding = 7, rg16f) writeonly uniform image2D normalImage;
 layout (set = 3, binding = 8, r16ui) writeonly uniform uimage2D materialIdxImage;
 layout (set = 3, binding = 9, rgba8) writeonly uniform image2D albedoImage;
+layout (set = 3, binding = 10, rgba16f) writeonly uniform image2D emissionImage;
 #else
 layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
 #endif
@@ -41,22 +44,24 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     int sampleCount;
     int bounceCount;
     float seed;
-    float exposure;
     int samplesPerFrame;
     float maxRadiance;
 } Uniforms;
 
 const float gamma = 1.0 / 2.2;
+const float minAlbedo = 0.02;
 
 Surface EvaluateBounce(inout Ray ray, inout RayPayload payload);
 vec3 EvaluateDirectLight(inout Surface surface);
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload);
 float CheckVisibility(Surface surface, float lightDistance);
+vec3 GetDemodulationAlbedo(Surface surface);
 
 void main() {
     
     if (IsRayInvocationValid()) {
         Ray ray = ReadRay();
+        TraceBufferedRay(ray);
         RayPayload payload;
 
         payload.radiance = vec3(0.0);
@@ -82,6 +87,8 @@ void main() {
             vec3 position;
             uint materialId;
             vec3 geometryNormal;
+            vec3 albedo;
+            vec3 emission;
             if (ray.hitID >= 0) {
                 instance = bvhInstances[nonuniformEXT(ray.hitInstanceID)];
                 lastMatrix = mat4(transpose(instanceLastMatrices[nonuniformEXT(ray.hitInstanceID)]));
@@ -89,6 +96,8 @@ void main() {
                 position = surface.P;
                 materialId = surface.material.ID;
                 geometryNormal = surface.geometryNormal;
+                albedo = GetDemodulationAlbedo(surface);
+                emission = surface.material.emissiveColor;
             }
             else {
                 instance.inverseMatrix = mat3x4(1.0);
@@ -96,6 +105,8 @@ void main() {
                 position = ray.origin + ray.direction * 100.0;
                 materialId = 65535;
                 geometryNormal = vec3(1.0, 0.0, 0.0);
+                albedo = vec3(1.0);
+                emission = vec3(0.0);
             }
 
             // As a reminder: The current inverse matrix is also transposed
@@ -114,7 +125,9 @@ void main() {
 
             imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? projPositionCurrent.z / projPositionCurrent.w : INF, 0.0, 0.0, 0.0));
             imageStore(materialIdxImage, pixel, uvec4(materialId, 0.0, 0.0, 0.0));
-            imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));            
+            imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));
+            imageStore(albedoImage, pixel, vec4(albedo, 1.0));
+            imageStore(emissionImage, pixel, vec4(min(emission, vec3(65000.0)), 1.0));
         }
 #endif
 
@@ -126,7 +139,8 @@ void main() {
             accumColor += vec4(payload.radiance, 1.0);
             imageStore(outAccumImage, pixel, accumColor);
 
-            vec3 color = accumColor.rgb * Uniforms.exposure / float(Uniforms.sampleCount + 1);
+            // The pre-exposure of the radiance is the exposure
+            vec3 color = accumColor.rgb / float(Uniforms.sampleCount + 1);
             color = vec3(1.0) - exp(-color);
             //color = color / (vec3(1.0) + color);
 
@@ -176,10 +190,8 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     int lod = int(ray.hitDistance / 30.0);
     lod = 0;
     
-    // Unpack the compressed triangle and extract surface parameters
-    Instance instance = GetInstance(ray);
-    Triangle tri = GetTriangle(ray, instance);
-    surface = GetSurfaceParameters(instance, tri, ray, true, lod);
+    bool backfaceHit;
+    surface = GetHitSurface(ray, true, backfaceHit, lod);
 
     // If we hit an emissive surface we need to terminate the ray
 #ifndef REALTIME
@@ -188,7 +200,9 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
         payload.radiance += surface.material.emissiveColor;
     }
 #else
-    payload.radiance += payload.throughput * surface.material.emissiveColor;
+    // The primary emission is added after the denoiser
+    if (Uniforms.bounceCount > 0)
+        payload.radiance += payload.throughput * surface.material.emissiveColor;
 #endif
 
     // Evaluate direct and indirect light
@@ -215,13 +229,23 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 
 }
 
+vec3 GetDemodulationAlbedo(Surface surface) {
+
+    vec3 diffuse = (1.0 - surface.material.metalness) * surface.material.baseColor;
+    vec3 specular = EvaluateIndirectSpecularBRDF(surface);
+    vec3 albedo = mix(vec3(1.0), diffuse + specular, saturate(surface.material.opacity));
+    // Quantized like the albedo image
+    return round(max(saturate(albedo), vec3(minAlbedo)) * 255.0) / 255.0;
+
+}
+
 vec3 EvaluateDirectLight(inout Surface surface) {
 
     if (GetLightCount() == 0)
         return vec3(0.0);
 
     float curSeed = Uniforms.seed;
-    float raySeed = float(gl_GlobalInvocationID.x);
+    float raySeed = float(INVOCATION_ID.x);
 
     float lightPdf;
     Light light = GetLight(surface, raySeed, curSeed, lightPdf);

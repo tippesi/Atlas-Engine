@@ -36,7 +36,7 @@ namespace Atlas {
         if (jobs.empty())
             return std::nullopt;
             
-        auto job = jobs.front();
+        std::optional<Job> job(std::move(jobs.front()));
         jobs.pop_front();
 
         return job;

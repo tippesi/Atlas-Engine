@@ -104,7 +104,7 @@ namespace Atlas::Editor {
 
 		auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
-		for (const auto& dirEntry : std::filesystem::directory_iterator(directory->path)) {
+		for (const auto& dirEntry : std::filesystem::directory_iterator(directory->path, std::filesystem::directory_options::skip_permission_denied)) {
 			auto path = Common::Path::Normalize(dirEntry.path().string());
 			auto assetPath = Common::Path::GetRelative(dataDirectory, path);
 			if (assetPath.starts_with('/'))
@@ -137,11 +137,19 @@ namespace Atlas::Editor {
 				continue;
 
 			auto contentType = Content::contentTypeMapping.at(fileType);
+			std::error_code errorCode;
+			auto fileSize = dirEntry.file_size(errorCode);
+			if (errorCode)
+				fileSize = 0;
+			auto writeTime = dirEntry.last_write_time(errorCode);
+			auto lastWriteTime = errorCode ? int64_t(0) : int64_t(writeTime.time_since_epoch().count());
 			directory->files.emplace_back(Content {
 				.name = filename,
 				.path = path,
 				.assetPath = assetPath,
 				.type = contentType,
+				.size = fileSize,
+				.lastWriteTime = lastWriteTime,
 			});
 
 			result->contentTypeToContentMap[contentType].push_back(directory->files.back());

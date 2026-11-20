@@ -14,7 +14,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorShadowRenderer::Render(const Ref<Graphics::FrameBuffer>& frameBuffer,
+        void ImpostorShadowRenderer::Render(const Graphics::AttachmentFormats& attachmentFormats,
             Graphics::CommandList* commandList, RenderList* renderList, const RenderList::Pass* renderPass,
             mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 
@@ -22,13 +22,36 @@ namespace Atlas {
                 mat4 lightSpaceMatrix;
 
                 vec4 lightLocation;
-                vec4 lightUp;
-                vec4 lightRight;
             };
 
             vertexArray.Bind(commandList);
 
             auto lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
+
+            PushConstants constants = {
+                .lightSpaceMatrix = lightSpaceMatrix,
+
+                .lightLocation = vec4(lightLocation, 1.0f)
+            };
+
+            // All impostors share a few pipeline variants, a pipeline is only looked up and bound when the variant changes
+            int32_t boundVariant = -1;
+            auto bindImpostor = [&](Mesh::Mesh* mesh) {
+                auto& impostor = mesh->impostor;
+                auto variant = int32_t(impostor->interpolation) | int32_t(impostor->pixelDepthOffset) << 1;
+                if (variant != boundVariant) {
+                    boundVariant = variant;
+                    auto config = GetPipelineConfig(attachmentFormats, impostor->interpolation, impostor->pixelDepthOffset);
+                    auto pipeline = PipelineManager::GetPipeline(config);
+                    commandList->BindPipeline(pipeline);
+                    commandList->PushConstants(pipeline->shader->GetPushConstantRange("constants"), &constants);
+                }
+
+                impostor->baseColorTexture->Bind(commandList, 3, 0);
+                impostor->depthTexture->Bind(commandList, 3, 1);
+                impostor->viewPlaneBuffer.Bind(commandList, 3, 2);
+                impostor->impostorInfoBuffer.Bind(commandList, 3, 3);
+            };
 
             for (const auto& item : renderPass->meshToInstancesMap) {
                 auto meshId = item.first;
@@ -40,31 +63,21 @@ namespace Atlas {
 
                 const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
-                auto config = GetPipelineConfig(frameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
-                auto pipeline = PipelineManager::GetPipeline(config);
-
-                commandList->BindPipeline(pipeline);
-
-                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
-                mesh->impostor->depthTexture->Bind(commandList, 3, 1);
-                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 2);
-                mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 3);
-
-                PushConstants constants = {
-                    .lightSpaceMatrix = lightSpaceMatrix,
-
-                    .lightLocation = vec4(lightLocation, 1.0f),
-                    .lightUp = glm::transpose(lightViewMatrix)[1],
-                    .lightRight = glm::transpose(lightViewMatrix)[0]
-                };
-                commandList->PushConstants("constants", &constants);
-
+                bindImpostor(mesh.Get().get());
                 commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
+            }
+
+            for (const auto& draw : renderPass->gpuDraws) {
+                if (draw.type != RenderList::GPUDrawType::Impostor)
+                    continue;
+
+                bindImpostor(draw.mesh);
+                renderList->DrawGPUCulled(commandList, draw);
             }
 
         }
 
-        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
+        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
             bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {
@@ -72,7 +85,7 @@ namespace Atlas {
                 {"impostor/impostorShadow.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = frameBuffer,
+                .attachmentFormats = attachmentFormats,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

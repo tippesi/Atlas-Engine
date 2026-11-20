@@ -3,7 +3,9 @@
 #include "../System.h"
 
 #include "Signal.h"
+#include "JobGroup.h"
 #include "ThreadSafeJobQueue.h"
+#include "../profiler/CPUProfiler.h"
 
 #include <thread>
 
@@ -20,11 +22,12 @@ namespace Atlas {
 
         void Start(std::function<void(Worker&)> function);
 
-        // Can be called from any thread (e.g. work stealing), returns the number of executed jobs
-        inline int32_t Work() {
+        // Can be called from any thread (e.g. work stealing), returns the number of executed jobs.
+        // Stops early once the wait group has finished
+        inline int32_t Work(const JobGroup* waitGroup = nullptr) {
 
             int32_t executedJobs = 0;
-            while(true) {
+            while(!waitGroup || !waitGroup->HasFinished()) {
                 auto job = queue.Pop();
                 if (job == std::nullopt)
                     break;
@@ -55,7 +58,10 @@ namespace Atlas {
                 .userData = job.userData
             };
 
-            job.function(data);
+            {
+                CPUProfiler::Scope profilerScope(job.name ? job.name : "Job");
+                job.function(data);
+            }
 
             job.counter->fetch_sub(1);
 

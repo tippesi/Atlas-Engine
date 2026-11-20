@@ -19,11 +19,9 @@ namespace Atlas {
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
+            // Returns false when the probe is still up to date and wasn't rendered
+            bool Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
                 Graphics::CommandList* commandList);
-
-            static std::string vertexPath;
-            static std::string fragmentPath;
 
         private:
             inline static const ivec2 transmittanceLutResolution = ivec2(256, 64);
@@ -40,6 +38,22 @@ namespace Atlas {
                 float surfaceHeightOffset = 0.0f;
                 float planetRadius = 0.0f;
                 float atmosphereRadius = 0.0f;
+                float sunAngularRadius = 0.0f;
+
+                bool operator==(const AtmosphereParameters&) const = default;
+            };
+
+            struct ProbeState {
+                Ref<Graphics::Image> image;
+                mat4 projectionMatrix = mat4(1.0f);
+                vec3 position = vec3(0.0f);
+                vec3 planetCenter = vec3(0.0f);
+                vec3 sunDirection = vec3(0.0f);
+                vec3 sunRadiance = vec3(0.0f);
+                float indirectLight = 0.0f;
+                AtmosphereParameters atmosphere;
+
+                bool operator==(const ProbeState&) const = default;
             };
 
             struct alignas(16) RenderUniforms {
@@ -48,11 +62,6 @@ namespace Atlas {
                 vec4 cameraLocation;
                 vec4 planetCenter;
                 vec4 sunDirection;
-                vec4 sunRadiance;
-                AtmosphereParameters atmosphere;
-            };
-
-            struct alignas(16) MultipleScatteringUniforms {
                 vec4 sunRadiance;
                 AtmosphereParameters atmosphere;
             };
@@ -68,7 +77,7 @@ namespace Atlas {
             void UpdateTransmittanceLut(AtmosphereParameters atmosphereParameters,
                 Lighting::Atmosphere* atmosphere, Graphics::CommandList* commandList);
 
-            void UpdateMultipleScatteringLut(const MultipleScatteringUniforms& uniforms,
+            void UpdateMultipleScatteringLut(AtmosphereParameters atmosphereParameters,
                 Lighting::Atmosphere* atmosphere, Graphics::CommandList* commandList);
 
             void UpdateSkyViewLut(const SkyViewUniforms& uniforms, Lighting::Atmosphere* atmosphere,
@@ -98,6 +107,10 @@ namespace Atlas {
             Buffer::UniformBuffer multipleScatteringUniformBuffer;
             Buffer::UniformBuffer skyViewUniformBuffer;
             Buffer::UniformBuffer probeMatricesBuffer;
+
+            ProbeState lastProbeState;
+            // Probe image which was cleared because there is no sun
+            Ref<Graphics::Image> darkProbeImage;
 
         };
 

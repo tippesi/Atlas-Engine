@@ -35,8 +35,8 @@ vec3 CubeCoordToWorld(ivec3 cubeCoord, vec2 cubemapSize) {
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(filteredCubeMap).x ||
-        pixel.y > imageSize(filteredCubeMap).y)
+    if (pixel.x >= imageSize(filteredCubeMap).x ||
+        pixel.y >= imageSize(filteredCubeMap).y)
         return;
 
     vec3 worldDirection = CubeCoordToWorld(ivec3(gl_GlobalInvocationID),
@@ -73,7 +73,7 @@ vec3 FilterDiffuse(vec3 worldDirection, ivec2 cubeMapSize) {
 
         NdotL = saturate(NdotL);
         if (NdotL > 0.0) {
-            color.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 5.0);
+            color.xyz += min(textureLod(cubeMap, L, 5.0).rgb * globalData.skyCubemapExposure, 5.0);
             color.w += 1.0;
         }
 
@@ -121,7 +121,7 @@ vec3 FilterSpecular(vec3 worldDirection, ivec2 cubeMapSize) {
 
             lod = pushConstants.mipLevel == 0u ? 0.0 : lod;
 
-            color.xyz += clamp(textureLod(cubeMap, L, lod).rgb, vec3(0.0), vec3(5.0)) * NdotL;
+            color.xyz += clamp(textureLod(cubeMap, L, lod).rgb * globalData.skyCubemapExposure, vec3(0.0), vec3(5.0)) * NdotL;
             color.w += NdotL;
 
         }

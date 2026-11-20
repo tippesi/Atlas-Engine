@@ -49,6 +49,10 @@ namespace Atlas::RayTracing {
         std::vector<ResourceHandle<Material>> materials;
 
         std::vector<GPUTriangle> gpuTriangles;
+        // Index of the source triangle of each GPU triangle
+        std::vector<uint32_t> triangleIndices;
+        // Parent node index * 2 + 1 for right children, -1 for the root
+        std::vector<int32_t> nodeParents;
 
         Buffer::Buffer blasNodeBuffer;
         Buffer::Buffer triangleBuffer;
@@ -56,6 +60,10 @@ namespace Atlas::RayTracing {
         Buffer::Buffer triangleOffsetBuffer;
 
         Ref<Graphics::BLAS> blas = nullptr;
+
+        // Used by the hardware build, dynamic BLASes can be built every frame and refitted if updates are allowed
+        bool isDynamic = false;
+        bool allowUpdate = false;
 
         std::atomic_bool needsBvhRefresh{ false };
         std::atomic_bool isBvhBuilt { false };

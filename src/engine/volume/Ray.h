@@ -17,6 +17,10 @@ namespace Atlas {
             bool valid = false;
             vec3 normal = vec3(0.0f);
             float hitDistance = 10e12f;
+            // Index of the hit triangle for mesh hits, -1 otherwise
+            int32_t triangleIndex = -1;
+            // Whether a mesh hit is on the side its triangle faces, the normal always faces the ray
+            bool frontFace = true;
             T data;
         };
 
@@ -39,6 +43,11 @@ namespace Atlas {
             bool Intersects(vec3 v0, vec3 v1, vec3 v2) const;
 
             bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection) const;
+
+            /**
+             * Tests both faces of a triangle and returns the ray parameter of the hit within [tMin, tMax].
+             */
+            bool IntersectsTriangle(vec3 v0, vec3 v1, vec3 v2, float& t) const;
 
             bool Intersects(const Rectangle& rect, float& t) const;
 

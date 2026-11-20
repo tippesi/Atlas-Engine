@@ -10,6 +10,7 @@ layout(set = 3, binding = 0) uniform usampler2D heightField;
 layout(set = 3, binding = 2) uniform usampler2D splatMap;
 
 #ifdef DISTANCE
+out float gl_ClipDistance[1];
 layout(location=0) out vec2 materialTexCoords;
 layout(location=1) out vec2 texCoords;
 layout(location=2) out vec3 ndcCurrent;
@@ -108,12 +109,14 @@ void main() {
     ndcLast = vec3(last.xy, last.w);
 #endif
 
-    // Produce NaNs here
-    if (heightDiscretized == 65535u) {
-        gl_Position = vec4(0.0, 0.0, 0.0, intBitsToFloat(int(0xFFC00000u)));
-#ifdef DISTANCE
-        ndcLast = ndcCurrent;
+    // Holes leave out the patches around the vertex, the control shader culls them. Without tessellation the
+    // triangles around it are clipped, the large distance leaves at most sub-pixel slivers of them
+    bool hole = heightDiscretized == 65535u;
+#ifndef DISTANCE
+    if (hole)
+        gl_Position.w = -1.0;
+#else
+    gl_ClipDistance[0] = hole ? -1e20 : 1.0;
 #endif
-    }
     
 }

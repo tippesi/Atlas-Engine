@@ -32,7 +32,7 @@ namespace Atlas::Editor {
                 catch (std::exception& e) {
                     success = false;
                     auto message = "Error copying " + path + " to asset directory: " + e.what();
-                    Notifications::Push({ message, vec3(1.0f, 0.0f, 0.0f) });
+                    Notifications::Push({ message, NotificationType::Error });
                     Log::Error(message);
                 }
             }
@@ -62,7 +62,7 @@ namespace Atlas::Editor {
                 catch (std::exception& e) {
                     success = false;
                     auto message = "Error deleting " + path + ": " + e.what();
-                    Notifications::Push({ message, vec3(1.0f, 0.0f, 0.0f) });
+                    Notifications::Push({ message, NotificationType::Error });
                     Log::Error(message);
                 }
             }
@@ -97,7 +97,7 @@ namespace Atlas::Editor {
             }
             catch (std::exception& e) {
                 auto message = "Error duplicating " + path + ": " + e.what();
-                Notifications::Push({ message, vec3(1.0f, 0.0f, 0.0f) });
+                Notifications::Push({ message, NotificationType::Error });
                 Log::Error(message);
             }
             });

@@ -23,8 +23,14 @@ namespace Atlas {
 
             src = GetAbsolute(src);
             dest = GetAbsolute(dest);
-            
-            return std::filesystem::relative(dest, src).string();
+
+            // Lexically: std::filesystem::relative resolves links, a path into a linked directory (junction, symbolic
+            // link) would lead out of the source directory to the target of the link
+            auto relative = std::filesystem::path(dest).lexically_normal().lexically_relative(std::filesystem::path(src).lexically_normal());
+            if (relative.empty())
+                return std::filesystem::relative(dest, src).string();
+
+            return relative.string();
 
         }
 

@@ -2,7 +2,8 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
+// Holds the downsampled mip, the upsampled lower mip is added to it
+layout (set = 3, binding = 0, rgba16f) uniform image2D textureOut;
 layout (set = 3, binding = 1) uniform sampler2D textureIn;
 
 layout(push_constant) uniform constants {
@@ -27,10 +28,8 @@ void main() {
 
         // Lower mip tex coord 
         vec2 texCoord = (coord + 0.5) / size;
-        // Upper mip texel size
-        vec2 texelSize = 1.0 / textureSize(textureIn, pushConstants.mipLevel);
-        vec2 filterSize = vec2(pushConstants.filterSize);
-        texelSize = max(filterSize, filterSize);
+        // Filter size in texture coordinates
+        vec2 texelSize = vec2(pushConstants.filterSize);
 
         // We always sample at pixel border, not centers
         AeF16x3 filter00 = Sample(texCoord + vec2(-texelSize.x, -texelSize.y));
@@ -53,7 +52,7 @@ void main() {
         filtered /= AeF16(16.0);
         
         if (pushConstants.additive > 0) {
-            imageStore(textureOut, coord, vec4(filtered + filter11, 1.0));
+            imageStore(textureOut, coord, vec4(vec3(filtered) + imageLoad(textureOut, coord).rgb, 1.0));
         }
         else {
             imageStore(textureOut, coord, vec4(filtered, 1.0));

@@ -2,7 +2,6 @@ layout (local_size_x = 16, local_size_y = 16) in;
 
 #include <../common/utility.hsh>
 #include <../common/types.hsh>
-#include <../common/flatten.hsh>
 
 layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
 layout (set = 3, binding = 1) uniform sampler2D textureIn;
@@ -11,19 +10,6 @@ layout(push_constant) uniform constants {
     int mipLevel;
     float threshold;
 } pushConstants;
-
-const uint supportSize = 2;
-const uint sharedDataSize = (2u * gl_WorkGroupSize.x + 2u * supportSize) * (2u * gl_WorkGroupSize.y + 2u * supportSize);
-const ivec2 unflattenedSharedDataSize = 2 * ivec2(gl_WorkGroupSize) + 2 * int(supportSize);
-
-shared vec3 sharedMemory[sharedDataSize];
-
-const ivec2 pixelOffsets[4] = ivec2[4](
-    ivec2(0, 0),
-    ivec2(1, 0),
-    ivec2(0, 1),
-    ivec2(1, 1)
-);
 
 AeF16 Luma(AeF16x3 color) {
 

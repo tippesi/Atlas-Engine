@@ -22,11 +22,11 @@ namespace Atlas {
             explicit MouseButtonEvent(SDL_MouseButtonEvent event) {
 
                 windowID = event.windowID;
-                state = event.state;
+                state = event.down ? AE_BUTTON_PRESSED : AE_BUTTON_RELEASED;
                 button = event.button;
-                x = event.x;
-                y = event.y;
-                down = event.type == SDL_MOUSEBUTTONDOWN;
+                x = int32_t(event.x);
+                y = int32_t(event.y);
+                down = event.down;
                 touch = event.which == SDL_TOUCH_MOUSEID;
                 
             }

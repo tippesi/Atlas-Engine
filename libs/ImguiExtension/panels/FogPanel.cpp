@@ -6,25 +6,46 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::Checkbox("Enable", &fog->enable);
-        ImGui::SetItemTooltip("Resoltion settings are shared between fog and volumetric clouds");
+        if (UIElements::BeginProperties("FogGeneral")) {
+            UIElements::PropertyLabel("Enable", "Resolution settings are shared between fog and volumetric clouds");
+            ImGui::Checkbox("##Enable", &fog->enable);
 
-        ImGui::ColorEdit3("Extinction coefficients", &fog->extinctionCoefficients[0]);
-        ImGui::DragFloat("Extinction factor", &fog->extinctionFactor, 0.002f, 0.0001f, 4.0f);
-        ImGui::DragFloat("Scattering factor", &fog->scatteringFactor, 0.002f, 0.0001f, 4.0f);
-        ImGui::DragFloat("Ambient factor", &fog->ambientFactor, 0.001f, 0.0001f, 1.0f);
+            UIElements::PropertyLabel("Albedo", "Share of the light the fog removes which it scatters, the rest is absorbed");
+            ImGui::ColorEdit3("##Albedo", &fog->albedo[0]);
+            UIElements::PropertyLabel("Ambient factor");
+            ImGui::DragFloat("##Ambient factor", &fog->ambientFactor, 0.001f, 0.0001f, 1.0f);
 
-        ImGui::SliderFloat("Density", &fog->density, 0.0f, 0.5f, "%.4f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Height", &fog->height, -10000.0f, 10000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Height falloff", &fog->heightFalloff, 0.0f, 0.5f,
-            "%.4f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Scattering anisotropy", &fog->scatteringAnisotropy, -1.0f, 1.0f,
-            "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SeparatorText("Volumetric");
-        ImGui::Checkbox("Raymarching", &fog->rayMarching);
-        ImGui::Checkbox("Local lights", &fog->localLights);
-        ImGui::DragInt("Raymarch step count", &fog->rayMarchStepCount, 1, 128);
-        ImGui::SliderFloat("Intensity", &fog->volumetricIntensity, 0.0f, 1.0f);
+            UIElements::PropertyLabel("Density", "Extinction per world unit below the fog height");
+            ImGui::DragFloat("##Density", &fog->density, 0.0001f, 0.0f, 0.5f, "%.5f", ImGuiSliderFlags_Logarithmic);
+            UIElements::PropertyLabel("Height");
+            ImGui::DragFloat("##Height", &fog->height, 1.0f, -10000.0f, 10000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            UIElements::PropertyLabel("Height falloff");
+            ImGui::DragFloat("##Height falloff", &fog->heightFalloff, 0.0005f, 0.0f, 0.5f,
+                "%.4f", ImGuiSliderFlags_Logarithmic);
+            UIElements::PropertyLabel("Scattering anisotropy");
+            ImGui::DragFloat("##Scattering anisotropy", &fog->scatteringAnisotropy, 0.005f, -1.0f, 1.0f,
+                "%.3f", ImGuiSliderFlags_Logarithmic);
+            UIElements::EndProperties();
+        }
+
+        UIElements::PropertySection("Volumetric");
+        if (UIElements::BeginProperties("FogVolumetric")) {
+            UIElements::PropertyLabel("Local lights");
+            ImGui::Checkbox("##Local lights", &fog->localLights);
+            UIElements::PropertyLabel("Froxel tile size");
+            ImGui::DragInt("##Froxel tile size", &fog->froxelTileSize, 0.1f, 4, 32);
+            UIElements::PropertyLabel("Froxel slice count");
+            ImGui::DragInt("##Froxel slice count", &fog->froxelSliceCount, 0.1f, 16, 256);
+            UIElements::PropertyLabel("Froxel filter");
+            ImGui::Checkbox("##Froxel filter", &fog->froxelFilter);
+            UIElements::PropertyLabel("Froxel far distance (0 = camera far)");
+            ImGui::DragFloat("##Froxel far distance (0 = camera far)", &fog->froxelFarDistance, 1.0f, 0.0f, 5000.0f);
+            UIElements::PropertyLabel("Froxel distribution exponent");
+            ImGui::DragFloat("##Froxel distribution exponent", &fog->froxelDistributionExponent, 0.01f, 0.25f, 4.0f);
+            UIElements::PropertyLabel("Intensity");
+            ImGui::DragFloat("##Intensity", &fog->volumetricIntensity, 0.005f, 0.0f, 1.0f);
+            UIElements::EndProperties();
+        }
 
         ImGui::PopID();
 

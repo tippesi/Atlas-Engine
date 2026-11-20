@@ -14,16 +14,13 @@ namespace Atlas {
             VegetationRenderer();
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
-                std::unordered_map<void*, uint16_t> materialMap);
+                std::unordered_map<void*, uint16_t>& materialMap);
 
             Helper::VegetationHelper helper;
 
         private:
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target);
-
-            void DepthPrepass(Scene::Clutter& vegetation, std::vector<Mesh::Mesh*>& meshes,
-                const CameraComponent& camera, float time, float deltaTime);
 
         };
 

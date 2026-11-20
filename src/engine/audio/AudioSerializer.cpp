@@ -1,4 +1,5 @@
 #include "AudioSerializer.h"
+#include "common/SerializationContext.h"
 
 namespace Atlas::Audio {
 
@@ -12,7 +13,7 @@ namespace Atlas::Audio {
         };
 
         if (p.data.IsValid() && !p.data.IsGenerated())
-            j["resourcePath"] = p.data.GetResource()->path;
+            SerializationContext::WritePath(j, "resourcePath", p.data.GetResource()->path);
 
     }
 
@@ -30,8 +31,8 @@ namespace Atlas::Audio {
         p.SetPitch(pitch);
         p.SetVolume(volume);
 
-        if (j.contains("resourcePath")) {
-            std::string resourcePath = j["resourcePath"];
+        std::string resourcePath;
+        if (SerializationContext::ReadPath(j, "resourcePath", resourcePath)) {
             auto handle = ResourceManager<Audio::AudioData>::GetOrLoadResourceAsync(resourcePath);
             p.ChangeData(handle);
         }

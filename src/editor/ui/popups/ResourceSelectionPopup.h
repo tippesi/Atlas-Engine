@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Popup.h"
+#include "ContentPreviews.h"
+#include "Singletons.h"
 
 #include "resource/Resource.h"
 
@@ -68,6 +70,9 @@ namespace Atlas::Editor::UI {
                         auto itemName = resource->GetFileName();
 
                         ImGui::PushID(i);
+                        auto previewSize = ImGui::GetTextLineHeight();
+                        Singletons::contentPreviews->Render(resource->path, ImVec2(previewSize, previewSize));
+                        ImGui::SameLine();
                         ImGui::Selectable(itemName.c_str(), &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
                         ImGui::SetItemTooltip("%s", resource->path.c_str());
                         ImGui::PopID();

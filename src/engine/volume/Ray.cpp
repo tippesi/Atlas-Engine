@@ -87,6 +87,33 @@ namespace Atlas {
 
         }
 
+        bool Ray::IntersectsTriangle(vec3 v0, vec3 v1, vec3 v2, float& t) const {
+
+            // Moeller-Trumbore
+            auto e0 = v1 - v0;
+            auto e1 = v2 - v0;
+            auto p = glm::cross(direction, e1);
+            auto det = glm::dot(e0, p);
+
+            if (glm::abs(det) < 1e-12f)
+                return false;
+
+            auto invDet = 1.0f / det;
+            auto s = origin - v0;
+            auto u = glm::dot(s, p) * invDet;
+            if (u < 0.0f || u > 1.0f)
+                return false;
+
+            auto q = glm::cross(s, e0);
+            auto v = glm::dot(direction, q) * invDet;
+            if (v < 0.0f || u + v > 1.0f)
+                return false;
+
+            t = glm::dot(e1, q) * invDet;
+            return t >= tMin && t <= tMax;
+
+        }
+
         bool Ray::Intersects(const Rectangle& rect, float& t) const {
 
             auto N = rect.GetNormal();

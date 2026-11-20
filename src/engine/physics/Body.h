@@ -29,6 +29,9 @@ namespace Atlas::Physics {
 
         vec3 GetLinearVelocity();
 
+        // Asleep bodies aren't moved by the simulation until something wakes them
+        bool IsActive();
+
         void SetAngularVelocity(vec3 velocity);
 
         vec3 GetAngularVelocity();
@@ -40,6 +43,18 @@ namespace Atlas::Physics {
         void SetFriction(float friction);
 
         float GetFriction();
+
+        void AddForce(vec3 force);
+
+        void AddForce(vec3 force, vec3 position);
+
+        void AddImpulse(vec3 impulse);
+
+        void AddImpulse(vec3 impulse, vec3 position);
+
+        void AddTorque(vec3 torque);
+
+        void AddAngularImpulse(vec3 angularImpulse);
 
         Ref<Shape> GetShape() const;
 

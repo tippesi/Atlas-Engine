@@ -18,8 +18,6 @@ layout(set = 3, binding = 5) uniform sampler2D autoExposureTexture;
 #endif
 
 layout(set = 3, binding = 4) uniform UniformBuffer {
-    float exposure;
-    float autoExposureMipLevel;
     float paperWhiteLuminance;
     float maxScreenLuminance;
     float saturation;
@@ -32,8 +30,10 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float vignetteOffset;
     float vignettePower;
     float vignetteStrength;
-    float padding0;
+    float autoExposureScale;
     float padding1;
+    float padding2;
+    float padding3;
     vec4 vignetteColor;
     vec4 tintColor;
 } Uniforms;
@@ -41,13 +41,6 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
 const float gamma = 1.0 / 2.2;
 float screenMaxNits = Uniforms.maxScreenLuminance;
 float paperWhiteNits = Uniforms.paperWhiteLuminance;
-
-float Luma(vec3 color) {
-
-    const vec3 luma = vec3(0.299, 0.587, 0.114);
-    return dot(color, luma);
-
-}
 
 vec3 ACESToneMap(vec3 hdrColor) {
     float a = 2.51;
@@ -74,31 +67,10 @@ vec3 ToneMap(vec3 hdrColor) {
     
 }
 
-float ToneMap(float luminance) {
-
-    return 1.0 - exp(-luminance);
-
-}
-
 vec3 saturate(vec3 color, float factor) {
     const vec3 luma = vec3(0.299, 0.587, 0.114);
     vec3 pixelLuminance = max(vec3(dot(color, luma)), vec3(0.0));
     return mix(pixelLuminance, color, factor);
-}
-
-const mat3 RGBToYCoCgMatrix = mat3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
-const mat3 YCoCgToRGBMatrix = mat3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
-
-vec3 RGBToYCoCg(vec3 RGB) {
-
-    return RGBToYCoCgMatrix * RGB;
-
-}
-
-vec3 YCoCgToRGB(vec3 YCoCg) {
-
-    return YCoCgToRGBMatrix * YCoCg;
-
 }
 
 void main() {
@@ -136,12 +108,12 @@ void main() {
     bloom = Uniforms.bloomDirtStrength * textureLod(bloomDirtTexture, texCoord, 0.0).r * bloom + bloom;
 #endif
 
-    color += bloom;
+    color = color * Uniforms.tintColor.rgb + bloom;
 
-    color *= Uniforms.exposure;
+    // The camera exposure is already applied as the pre-exposure of the lighting
 #ifdef AUTO_EXPOSURE
     float exposureBrightness = texelFetch(autoExposureTexture, ivec2(0.0), 0).r;
-    color /= (9.6 * exposureBrightness);
+    color *= Uniforms.autoExposureScale / (9.6 * exposureBrightness);
 #endif
 
 #ifdef FILM_GRAIN
@@ -186,8 +158,6 @@ void main() {
     color = pow(color, vec3(gamma));
 #endif
 #endif
-
-    color = color * Uniforms.tintColor.rgb;
 
     color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
 

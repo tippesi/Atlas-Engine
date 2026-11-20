@@ -7,18 +7,10 @@ namespace Atlas {
 
         VegetationRenderer::VegetationRenderer() {
 
-            /*
-            depthShader.AddStage(AE_VERTEX_STAGE, "vegetation/depth.vsh");
-            depthShader.AddStage(AE_FRAGMENT_STAGE, "vegetation/depth.fsh");
-
-            depthShader.AddMacro("OPACITY_MAP");
-            depthShader.Compile();
-             */
-
         }
 
         void VegetationRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+            std::unordered_map<void*, uint16_t>& materialMap) {
 
             struct alignas(16) PushConstants {
                 uint32_t invertUVs;
@@ -31,20 +23,23 @@ namespace Atlas {
                 float windWiggleScale;
             };
 
-            if (!scene->clutter) return;
+            if (!scene->renderState.clutter) return;
 
-            Graphics::Profiler::BeginQuery("Vegetation");
+            CPUProfiler::Scope profilerScope("Vegetation");
+            GPUProfiler::Scope gpuScope("Vegetation");
 
-            auto& vegetation = *scene->clutter;
+            auto& vegetation = *scene->renderState.clutter;
 
             auto meshes = vegetation.GetMeshes();
 
             auto commandBuffer = helper.GetCommandBuffer();
             
-            // DepthPrepass(vegetation, meshes, camera, time, deltaTime);
-
             // How we order the execution of rendering commands doesn't matter here
             for (auto mesh : meshes) {
+                // Clutter can share meshes with the scene, the streaming might have unloaded them
+                if (!mesh->IsGeometryResident())
+                    continue;
+
                 auto buffers = vegetation.GetBuffers(mesh);
 
                 mesh->vertexArray.Bind(commandList);
@@ -62,22 +57,22 @@ namespace Atlas {
 
                     auto material = subData.material;
 
-                    if (material->HasBaseColorMap())
+                    if (material->baseColorMap.IsLoaded())
                         material->baseColorMap->Bind(commandList, 3, 0);
-                    if (material->HasOpacityMap())
+                    if (material->opacityMap.IsLoaded())
                         material->opacityMap->Bind(commandList, 3, 1);
-                    if (material->HasNormalMap())
+                    if (material->normalMap.IsLoaded())
                         material->normalMap->Bind(commandList, 3, 2);
-                    if (material->HasRoughnessMap())
+                    if (material->roughnessMap.IsLoaded())
                         material->roughnessMap->Bind(commandList, 3, 3);
-                    if (material->HasMetalnessMap())
+                    if (material->metalnessMap.IsLoaded())
                         material->metalnessMap->Bind(commandList, 3, 4);
-                    if (material->HasAoMap())
+                    if (material->aoMap.IsLoaded())
                         material->aoMap->Bind(commandList, 3, 5);
-                    if (material->HasDisplacementMap())
+                    if (material->displacementMap.IsLoaded())
                         material->displacementMap->Bind(commandList, 3, 6);
 
-                    scene->wind.noiseMap.Bind(commandList, 3, 7);
+                    scene->renderState.wind.noiseMap.Bind(commandList, 3, 7);
 
                     auto pushConstants = PushConstants {
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
@@ -98,51 +93,6 @@ namespace Atlas {
                 }
             }
 
-            Graphics::Profiler::EndQuery();
-
-        }
-
-        void VegetationRenderer::DepthPrepass(Scene::Clutter& vegetation, std::vector<Mesh::Mesh*>& meshes,
-            const CameraComponent& camera, float time, float deltaTime) {
-
-            /*
-            glColorMask(false, false, false, false);
-
-            depthShader.Bind();
-
-            depthShader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
-            depthShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-
-            depthShader.GetUniform("time")->SetValue(time);
-            depthShader.GetUniform("deltaTime")->SetValue(deltaTime);
-
-            glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-
-            // How we order the execution of rendering commands doesn't matter here
-            for (auto mesh : meshes) {
-                mesh->Bind();
-                auto buffers = vegetation.GetBuffers(mesh);
-
-                buffers->binnedInstanceData.BindBase(5);
-
-                depthShader.GetUniform("invertUVs")->SetValue(mesh->invertUVs);
-
-                for (auto& subData : mesh->data.subData) {
-                    auto material = subData.material;
-
-                    if (material->HasOpacityMap())
-                        material->opacityMap->Bind(1);
-
-                    auto offset = helper.GetCommandBufferOffset(*mesh, subData);
-                    glMultiDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
-                        (void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset),
-                        helper.binCount, 0);
-                }
-            }
-
-            glColorMask(true, true, true, true);
-             */
-
         }
 
         PipelineConfig VegetationRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
@@ -153,7 +103,7 @@ namespace Atlas {
                 {"vegetation/vegetation.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = target->gBufferFrameBuffer,
+                .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 
@@ -164,25 +114,25 @@ namespace Atlas {
             }
 
             std::vector<std::string> macros;
-            if (material->HasBaseColorMap()) {
+            if (material->baseColorMap.IsLoaded()) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            if (material->HasOpacityMap()) {
+            if (material->opacityMap.IsLoaded()) {
                 macros.push_back("OPACITY_MAP");
             }
-            if (material->HasNormalMap()) {
+            if (material->normalMap.IsLoaded()) {
                 macros.push_back("NORMAL_MAP");
             }
-            if (material->HasRoughnessMap()) {
+            if (material->roughnessMap.IsLoaded()) {
                 macros.push_back("ROUGHNESS_MAP");
             }
-            if (material->HasMetalnessMap()) {
+            if (material->metalnessMap.IsLoaded()) {
                 macros.push_back("METALNESS_MAP");
             }
-            if (material->HasAoMap()) {
+            if (material->aoMap.IsLoaded()) {
                 macros.push_back("AO_MAP");
             }
-            if (material->HasDisplacementMap()) {
+            if (material->displacementMap.IsLoaded()) {
                 macros.push_back("HEIGHT_MAP");
             }
             // This is a check if we have any maps at all (no macros, no maps)

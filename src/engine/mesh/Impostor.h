@@ -34,6 +34,9 @@ namespace Atlas {
 
             void AllocateTextures();
 
+            // Streaming takes the textures of impostors nobody needs off the GPU, everything else stays
+            bool IsResident() const;
+
             Ref<Texture::Texture2DArray> baseColorTexture;
             Ref<Texture::Texture2DArray> roughnessMetalnessAoTexture;
             Ref<Texture::Texture2DArray> normalTexture;
@@ -55,6 +58,9 @@ namespace Atlas {
 
             bool interpolation = false;
             bool pixelDepthOffset = true;
+
+            // Saves the color maps as ktx2 arrays, transcoded to a block compressed format when loaded
+            bool compressTextures = false;
 
             vec3 approxTransmissiveColor = vec3(0.0f);
             float approxReflectance = 0.5f;

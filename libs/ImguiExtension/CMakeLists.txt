@@ -29,5 +29,5 @@ find_package(implot CONFIG REQUIRED)
 # We cam do this here, since the ImguiExtension dependency uses the engine and therefore is always included
 # after the engine is added
 add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCE_FILES})
-target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
-target_link_libraries(${PROJECT_NAME} imgui::imgui implot::implot volk::volk volk::volk_headers SDL2::SDL2 GPUOpen::VulkanMemoryAllocator Jolt::Jolt)
+target_compile_definitions(${PROJECT_NAME} PUBLIC $<TARGET_PROPERTY:AtlasEngine,INTERFACE_COMPILE_DEFINITIONS>)
+target_link_libraries(${PROJECT_NAME} imgui::imgui implot::implot volk::volk volk::volk_headers SDL3::SDL3 GPUOpen::VulkanMemoryAllocator Jolt::Jolt)

@@ -66,8 +66,8 @@ namespace Atlas {
                 macros.push_back("AE_HARDWARE_RAYTRACING");
             }
 
-            if (device->support.bindless) {
-                macros.push_back("AE_BINDLESS");
+            if (device->support.positionFetch) {
+                macros.push_back("AE_POSITION_FETCH");
             }
 
             if (device->support.shaderFloat16) {
@@ -219,7 +219,7 @@ namespace Atlas {
                 bool isCompiled = false;
                 auto spirvBinary = ShaderCompiler::Compile(stage, macros, true, isCompiled);
 
-                AE_ASSERT(isCompiled && "Shader compilation was unsuccessful");
+                // The compiler logs the errors, user written shaders (e.g. code nodes) can fail
                 if (!isCompiled) return;
 
                 VkShaderModuleCreateInfo createInfo = {};
@@ -419,7 +419,7 @@ namespace Atlas {
                     binding.binding.size = descriptorBinding->block.size;
                     binding.binding.arrayElement = 0;
                     binding.binding.stageFlags = VK_SHADER_STAGE_ALL;
-                    binding.binding.bindless = device->support.bindless;
+                    binding.binding.bindless = true;
 
                     binding.binding.descriptorType =
                         binding.binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?

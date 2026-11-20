@@ -35,6 +35,12 @@ namespace Atlas {
             bool Intersects(AABB aabb) const;
 
             /**
+             * Checks whether a triangle intersects the AABB.
+             * @return True if it intersects, false otherwise.
+             */
+            bool IntersectsTriangle(vec3 v0, vec3 v1, vec3 v2) const;
+
+            /**
              * Checks whether the AABB encloses an object.
              * @param point A point that is tested if it is inside the AABB.
              * @return True if the point is inside, false otherwise.

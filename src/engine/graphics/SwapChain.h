@@ -79,6 +79,8 @@ namespace Atlas {
             VkClearValue depthClearValue = { .depthStencil = { .depth = 1.0f } };
 
             bool isComplete = false;
+            // The images can be copied from (VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+            bool readable = false;
 
             VkSemaphore GetPresentationSemaphore() const;
 

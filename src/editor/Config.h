@@ -10,8 +10,13 @@ namespace Atlas::Editor {
 		bool darkMode = true;
 		bool pathTrace = false;
 		bool vsync = true;
+		// Zero follows the scale of the display set in the system settings
+		float uiScale = 0.0f;
 
 		std::vector<ResourceHandle<Scene::Scene>> openedScenes;
+
+		// Names of the drawers in the status bar, in their order
+		std::vector<std::string> statusBarDrawers = { "Content browser", "Log" };
 
 		// Most recently opened scene paths, newest first
 		std::vector<std::string> recentScenes;

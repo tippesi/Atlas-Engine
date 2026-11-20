@@ -7,6 +7,7 @@
 
 #include "volume/AABB.h"
 #include "volume/Frustum.h"
+#include "volume/Ray.h"
 
 namespace Atlas::Scripting::Bindings {
 
@@ -25,7 +26,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Common::MatrixDecomposition>("MatrixDecomposition",
             sol::call_constructor,
-            sol::constructors<Common::MatrixDecomposition(glm::mat4)>(),
+            sol::constructors<Common::MatrixDecomposition(mat4)>(),
             "Compose", &Common::MatrixDecomposition::Compose,
             "Decompose", &Common::MatrixDecomposition::Decompose,
             "translation", DependentMember<&Common::MatrixDecomposition::translation>(),
@@ -56,7 +57,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Volume::AABB>("AABB",
             sol::call_constructor,
-            sol::constructors<Volume::AABB(), Volume::AABB(glm::vec3, glm::vec3)>(),
+            sol::constructors<Volume::AABB(), Volume::AABB(vec3, vec3)>(),
             "Intersects", &Volume::AABB::Intersects,
             "IsInside", isInsideAABBOverload,
             "Transform", &Volume::AABB::Transform,
@@ -72,6 +73,17 @@ namespace Atlas::Scripting::Bindings {
             "max", DependentMember<&Volume::AABB::max>()
             );
 
+        ns->new_usertype<Volume::Ray>("Ray",
+            sol::call_constructor,
+            sol::constructors<Volume::Ray(), Volume::Ray(vec3, vec3),
+                Volume::Ray(vec3, vec3, float, float)>(),
+            "Get", &Volume::Ray::Get,
+            "origin", DependentMember<&Volume::Ray::origin>(),
+            "direction", DependentMember<&Volume::Ray::direction>(),
+            "tMin", &Volume::Ray::tMin,
+            "tMax", &Volume::Ray::tMax
+            );
+
         auto resizeFrustumOverload = sol::overload(
             [](Volume::Frustum& frustum, const std::array<vec3, 8>& corners) { frustum.Resize(corners); },
             [](Volume::Frustum& frustum, const mat4& matrix) { frustum.Resize(matrix); }
@@ -79,7 +91,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Volume::Frustum>("Frustum",
             sol::call_constructor,
-            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::array<vec3, 8>&), Volume::Frustum(glm::mat4)>(),
+            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::array<vec3, 8>&), Volume::Frustum(mat4)>(),
             "Resize", resizeFrustumOverload,
             "Intersects", &Volume::Frustum::Intersects,
             "IsInside", &Volume::Frustum::IsInside,

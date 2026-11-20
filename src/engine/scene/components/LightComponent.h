@@ -74,12 +74,16 @@ namespace Atlas {
 				void AddDirectionalShadow(float distance, float bias, int32_t resolution, float edgeSoftness,
 					int32_t cascadeCount, float splitCorrection, bool longRange = false, float longRangeDistance = 0.0f);
 
-                void AddDirectionalShadow(float distance, float bias, int32_t resolution,
-                    float edgeSoftness, vec3 shadowCenter, vec4 orthoSize);
-
                 void AddPointShadow(float bias, int32_t resolution);
 
 				void AddSpotShadow(float bias, int32_t resolution);
+
+                // Directional lights have cascades, point lights a cubemap and spot lights a single map. A shadow of another
+                // kind, e.g. after the type changed or an orthographic one from an older scene, gets replaced by a fitting one
+                // with its settings
+                bool HasFittingShadow() const;
+
+                void FitShadowToType();
 
 				bool IsVisible(const Volume::Frustum& frustum) const;
 

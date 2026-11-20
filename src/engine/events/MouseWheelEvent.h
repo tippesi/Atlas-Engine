@@ -30,13 +30,13 @@ namespace Atlas {
              * Horizontal scrolling, is positive when scrolling to
              * the right and negative otherwise
              */
-            int32_t x;
+            float x;
 
             /**
              * Vertical scrolling, is positive when scrolling to
              * the up and negative otherwise
              */
-            int32_t y;
+            float y;
 
         };
 

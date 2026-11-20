@@ -198,14 +198,17 @@ namespace Atlas {
                 usageFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             }
 
+            if (usage & BufferUsageBits::DeviceAddressBit) {
+                usageFlags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+            }
+
             Graphics::BufferDesc desc {
                 .usageFlags = usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 .domain = hostAccessible ? Graphics::BufferDomain::Host : Graphics::BufferDomain::Device,
                 .data = data,
                 .dataSize = elementCount * elementSize,
                 .size = sizeInBytes,
-                .dedicatedMemory = (usageFlags & BufferUsageBits::DedicatedMemoryBit) > 0,
-                .priority = (usageFlags & BufferUsageBits::HighPriorityMemoryBit) > 0 ? 1.0f : 0.5f
+                .priority = (usage & BufferUsageBits::HighPriorityMemoryBit) > 0 ? 1.0f : 0.5f
             };
 
             if (multiBuffered) {

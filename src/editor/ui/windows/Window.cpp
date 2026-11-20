@@ -11,6 +11,11 @@ namespace Atlas::Editor::UI {
         if (!show)
             return false;
 
+        if (requestFocus) {
+            ImGui::SetNextWindowFocus();
+            requestFocus = false;
+        }
+
         if (!ImGui::Begin(GetNameID(), &show, flags)) {
             ImGui::End();
             inFocus = false;
