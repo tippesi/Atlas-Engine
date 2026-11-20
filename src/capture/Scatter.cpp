@@ -212,7 +212,7 @@ namespace Atlas::Capture {
 
     };
 
-    json Scatter(Scene::Scene& scene, const json& spec, EntitySet* unindexedMeshes) {
+    json Scatter(Scene::Scene& scene, const json& spec) {
 
         // Scenes without a terrain are scattered on the first visible surface below castFrom (default: above the scene)
         Ref<Terrain::Terrain> terrain;
@@ -329,84 +329,12 @@ namespace Atlas::Capture {
                 const auto& mesh = meshSubset.Get(entity);
                 if (ignored.contains(entity) || !mesh.visible || !mesh.mesh.IsLoaded())
                     continue;
-                // Their bounds aren't up to date yet, they are added below
-                if (unindexedMeshes && unindexedMeshes->contains(entity))
-                    continue;
                 auto size = mesh.aabb.max - mesh.aabb.min;
                 if (size.x > maxBlockerSize || size.z > maxBlockerSize)
                     continue;
                 blockers.Insert(vec2(mesh.aabb.min.x, mesh.aabb.min.z), vec2(mesh.aabb.max.x, mesh.aabb.max.z), { mesh.aabb, entity });
             }
         }
-
-        // Meshes added or moved by earlier operations of the edit aren't in the ray cast structures of the scene yet
-        struct Unindexed {
-
-            Scene::Entity entity;
-            mat4 matrix;
-            Volume::AABB aabb;
-
-        };
-        SpatialGrid<Unindexed> unindexed;
-        if (unindexedMeshes) {
-            for (auto member : *unindexedMeshes) {
-                Scene::Entity entity = { member, &scene.entityManager };
-                auto meshComponent = entity.IsValid() ? entity.TryGetComponent<MeshComponent>() : nullptr;
-                if (!meshComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() || isIgnored(entity))
-                    continue;
-                auto matrix = HierarchyMatrix(scene, entity);
-                auto aabb = meshComponent->mesh->data.aabb.Transform(matrix);
-                unindexed.Insert(vec2(aabb.min.x, aabb.min.z), vec2(aabb.max.x, aabb.max.z), { entity, matrix, aabb });
-                if (clearance >= 0.0f) {
-                    auto size = aabb.max - aabb.min;
-                    if (size.x <= maxBlockerSize && size.z <= maxBlockerSize)
-                        blockers.Insert(vec2(aabb.min.x, aabb.min.z), vec2(aabb.max.x, aabb.max.z), { aabb, member });
-                }
-            }
-        }
-
-        // A hit on one of them above the ground the scene found replaces it
-        auto castUnindexed = [&](vec3 origin, float maxDistance, RaycastHit& hit) {
-
-            auto point = vec2(origin.x, origin.z);
-            unindexed.Any(point, point, [&](const Unindexed& mesh) {
-
-                auto distance = hit.valid ? hit.distance : maxDistance;
-                if (!Volume::Ray(origin, vec3(0.0f, -1.0f, 0.0f), 0.0f, distance).Intersects(mesh.aabb))
-                    return false;
-
-                auto& data = mesh.entity.GetComponent<MeshComponent>().mesh->data;
-                const auto& vertices = data.vertices.Get();
-                const auto& indices = data.indices.Get();
-                auto inverse = glm::inverse(mesh.matrix);
-                auto localRay = Volume::Ray(vec3(inverse * vec4(origin, 1.0f)), vec3(inverse * vec4(0.0f, -1.0f, 0.0f, 0.0f)), 0.0f, distance);
-                int64_t hitTriangle = -1;
-                for (size_t i = 0; i + 2 < indices.size(); i += 3) {
-                    auto t = 0.0f;
-                    if (localRay.IntersectsTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], t)) {
-                        localRay.tMax = t;
-                        hitTriangle = int64_t(i / 3);
-                    }
-                }
-                if (hitTriangle < 0)
-                    return false;
-
-                const auto& v0 = vertices[indices[hitTriangle * 3]];
-                const auto& v1 = vertices[indices[hitTriangle * 3 + 1]];
-                const auto& v2 = vertices[indices[hitTriangle * 3 + 2]];
-                auto normal = glm::normalize(glm::transpose(glm::inverse(mat3(mesh.matrix))) * glm::cross(v1 - v0, v2 - v0));
-                hit.valid = true;
-                hit.distance = localRay.tMax;
-                hit.position = origin - vec3(0.0f, localRay.tMax, 0.0f);
-                hit.normal = normal.y >= 0.0f ? normal : -normal;
-                hit.entity = mesh.entity;
-                hit.kind = "mesh";
-                hit.triangle = hitTriangle;
-                return false;
-
-            });
-
-        };
 
         SpatialGrid<Placed> placedGrid;
         placedGrid.cellSize = 8.0f;
@@ -493,7 +421,6 @@ namespace Atlas::Capture {
             else {
                 auto surface = Raycast(scene, vec3(point.x, castFrom, point.y), vec3(0.0f, -1.0f, 0.0f),
                     castFrom - sceneBounds.min.y + 1.0f, isIgnored);
-                castUnindexed(vec3(point.x, castFrom, point.y), castFrom - sceneBounds.min.y + 1.0f, surface);
                 sample.valid = surface.valid;
                 sample.height = surface.position.y;
                 sample.normal = surface.normal;
@@ -547,7 +474,6 @@ namespace Atlas::Capture {
 
             // On a terrain the ground has to be the terrain itself, something lying on it (a road, a house) is a mesh hit
             auto ground = Raycast(scene, vec3(point.x, sample.height + 3.0f, point.y), vec3(0.0f, -1.0f, 0.0f), 8.0f, isIgnored);
-            castUnindexed(vec3(point.x, sample.height + 3.0f, point.y), 8.0f, ground);
             if (!ground.valid) {
                 rejected["noGround"]++;
                 continue;
@@ -581,10 +507,6 @@ namespace Atlas::Capture {
             auto entity = scene.CreatePrefab<Scene::Prefabs::MeshInstance>(item.mesh, matrix, true);
             entity.AddComponent<NameComponent>(name);
             entity.GetComponent<TransformComponent>().globalMatrix = matrix;
-            // The scene computes the bounds in its next update, later operations of the edit already need them
-            entity.GetComponent<MeshComponent>().aabb = item.mesh->data.aabb.Transform(matrix);
-            if (unindexedMeshes)
-                unindexedMeshes->insert(entity);
 
             // A light on a child entity, offset in the space of the instance (e.g. the flame of a lantern)
             if (!item.light.is_null()) {

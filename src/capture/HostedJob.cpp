@@ -129,7 +129,7 @@ namespace Atlas::Capture {
         scene = &playedScene;
         try {
             if (!job.settings.empty())
-                ApplySettings(*scene, job.settings);
+                ApplySettings(*scene, job.settings, patchedMaterials);
 
             if (!job.queries.empty()) {
                 auto results = RunQueries(*scene, job.queries, {}, job.outputDirectory);
@@ -280,6 +280,9 @@ namespace Atlas::Capture {
     }
 
     void HostedJob::Finish() {
+
+        UpdatePipelinesOfMaterials(ReloadMaterials(patchedMaterials));
+        patchedMaterials.clear();
 
         for (const auto& [group, title] : groups) {
             const auto& [images, labels] = groupImages[group];

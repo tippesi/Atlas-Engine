@@ -7,6 +7,7 @@
 #include "Image.h"
 
 #include <memory>
+#include <set>
 
 namespace Atlas::Capture {
 
@@ -69,10 +70,11 @@ namespace Atlas::Capture {
         std::unique_ptr<CheckRunner> checks;
         std::unique_ptr<Tracker> tracker;
         Scene::Scene* scene = nullptr;
+        // Materials the settings patched in memory, they go back to their files when the job finishes
+        std::set<std::string> patchedMaterials;
 
         std::vector<Capture> requested;
         std::optional<Capture> pending;
-        bool takenThisFrame = false;
         std::vector<std::pair<std::string, std::string>> groups;
         std::vector<Ref<Image>> sheetImages;
         std::vector<std::string> sheetLabels;

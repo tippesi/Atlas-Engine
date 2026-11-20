@@ -145,7 +145,8 @@ namespace Atlas::Capture {
 
     json ExportSettings(Scene::Scene& scene);
 
-    void ApplySettings(Scene::Scene& scene, const json& settings);
+    // Materials the settings patched in memory are added to patchedMaterials, ReloadMaterials restores them
+    void ApplySettings(Scene::Scene& scene, const json& settings, std::set<std::string>& patchedMaterials);
 
     // Merge patch with the fields of the .aematerial files, null removes a map
     void PatchMaterial(Material& material, const json& patch);
@@ -155,7 +156,10 @@ namespace Atlas::Capture {
 
     // Patches all loaded materials whose path matches a pattern, e.g. { "kingdom/*_01_A*": { "metalness": 0.2 } }
     // The fields are the ones of the .aematerial files. Returns the number of patched materials
-    int32_t ApplyMaterialPatches(const json& patches);
+    int32_t ApplyMaterialPatches(const json& patches, std::set<std::string>& patchedPaths);
+
+    // Loads materials and material graphs from their files again, returns the materials for UpdatePipelinesOfMaterials
+    std::set<const Material*> ReloadMaterials(const std::set<std::string>& paths);
 
     // Runs a list of spatial queries, maps and routes are written into the output directory
     json RunQueries(Scene::Scene& scene, const json& queries, const PickRayFunction& pickRay = {}, const fs::path& outputDirectory = {});

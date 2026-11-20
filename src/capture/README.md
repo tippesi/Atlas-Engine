@@ -115,8 +115,10 @@ direct run and the client, and fails it with its output.
 `postProcessing`, `wind`, `occlusionCulling`, `fog`, `irradianceVolume`, `reflection`, `rtgi`, `ssgi`, `sss`, `ocean`,
 an `--inspect` lists them), plus `sun` (`elevation`, `azimuth` 0 = +Z side, or `direction`; `color`, `intensity`,
 `shadow: { "cascades": 3, "longRange": true }`) and `materials` (`{ "<path pattern>": { /* .aematerial keys */ } }`,
-the running scene only). Patching `ocean` adds one. `postProcessing.upscaler`: 0 none, 1 TAA, 2 FSR2, 3 FSR4, 4 DLSS
-(falls back to FSR2). `variants` render all shots again (`settings`, `renderScale`) with a `<shot>_variants.png` sheet.
+the running scene only, they go back to their files after the variant and the job). Patching `ocean` adds one, `null`
+removes an optional feature (`fog`, `ocean`, `rtgi`, ...). `postProcessing.upscaler`: 0 none, 1 TAA, 2 FSR2, 3 FSR4,
+4 DLSS (falls back to FSR2). `variants` render all shots again (`settings`, `renderScale`) with a `<shot>_variants.png`
+sheet, `play` runs with the settings of the job.
 
 **Cameras**: `"scene"`, `"overview"`, `{ "position", "lookAt" | "yaw"/"pitch", "groundRelative" }`, focus
 `{ "entity", "view", "azimuth", "elevation", "distance", "padding": 1.25, "local", "avoidOcclusion": true }`, follow
@@ -338,7 +340,8 @@ e.g. the start of the game up to the first seconds of playing.
 ## Measuring
 
 - `profile` averages the GPU passes and the CPU profiler over the last frames (`profile.json`, at most 64 frames in a
-  job, `--profile` for more), `hitches` records slow frames with their CPU profile (`hitches.json`; per hitch `source`
+  job, `--profile` for more, frames which write captured images are left out and have no CPU profile), `hitches`
+  records slow frames with their CPU profile (`hitches.json`; per hitch `source`
   `cpu`/`gpu`, `metric` such as `frameTime` or `gpuBusy`, `frameMs`, `averageMs`, `causes` with the queries that took
   much longer than on average, `threads`; `"gpu": true` also records GPU hitches), `--validation` writes the Vulkan
   validation messages by id (`validation.json`), `report.json` lists the GPU memory (`gpuMemory`).

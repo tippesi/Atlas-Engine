@@ -1123,12 +1123,13 @@ namespace Atlas::Capture {
         terrain->storage->inEditing = true;
         Tools::TerrainTool::BakeTerrain(terrain);
 
-        fs::create_directories(target.parent_path());
-        Loader::TerrainLoader::SaveTerrain(terrain, path);
-
+        // Streaming would read the file of a loaded terrain while it is overwritten
         auto existing = ResourceManager<Terrain::Terrain>::GetResource(path);
         if (existing.IsValid())
             throw std::runtime_error("terrainCreate: " + path + " is already loaded, use another path");
+
+        fs::create_directories(target.parent_path());
+        Loader::TerrainLoader::SaveTerrain(terrain, path);
         scene.terrain = ResourceManager<Terrain::Terrain>::AddResource(path, terrain);
 
         // A height field body like the editor creates it, replacing the body of a previous terrain

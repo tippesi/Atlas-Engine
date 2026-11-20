@@ -569,7 +569,8 @@ namespace Atlas::Capture {
         json prefab = *selected;
         filter(prefab);
 
-        if (operation.contains("entity")) {
+        // An area collects the meshes in world space with the parent matrix, the entity included
+        if (operation.contains("entity") && !operation.contains("area")) {
             // The children keep their hierarchy, relative to the origin
             auto local = prefab.contains("transform") ? prefab["transform"].at("matrix").get<mat4>() : mat4(1.0f);
             auto origin = glm::translate(-ToVec3(operation.value("origin", json::array({ 0.0f, 0.0f, 0.0f }))));
@@ -580,7 +581,6 @@ namespace Atlas::Capture {
                     child["transform"]["isStatic"] = false;
                 child["transform"]["matrix"] = origin * parentMatrix * local * childMatrix;
             }
-            parentMatrix = glm::translate(ToVec3(operation.value("origin", json::array({ 0.0f, 0.0f, 0.0f }))));
         }
 
         // With an area only the mesh and light entities around its center are kept, flattened and relative to the center
@@ -651,16 +651,6 @@ namespace Atlas::Capture {
 
     };
 
-    static void MarkUnindexed(EditContext& context, Scene::Entity entity) {
-
-        EntitySet members;
-        CollectHierarchy(entity, members);
-        for (auto member : members)
-            if (context.scene.entityManager.TryGet<MeshComponent>(member))
-                context.state.unindexedMeshes.insert(member);
-
-    }
-
     static json EditSetTransform(EditContext& context, const json& operation) {
 
         auto& scene = context.scene;
@@ -684,7 +674,6 @@ namespace Atlas::Capture {
             if (operation.contains("position"))
                 global[3] = vec4(ToVec3(operation["position"]), 1.0f);
             transform.SetGlobal(global, parent);
-            MarkUnindexed(context, entity);
 
             affected.push_back(GetEntityLabel(entity));
         }
@@ -711,7 +700,6 @@ namespace Atlas::Capture {
             else {
                 throw std::runtime_error("translate.space must be world or local");
             }
-            MarkUnindexed(context, entity);
             affected.push_back(GetEntityLabel(entity));
         }
 
@@ -731,7 +719,6 @@ namespace Atlas::Capture {
             auto origin = vec3(transform.globalMatrix[3]);
             auto rotation = glm::translate(origin) * glm::rotate(yaw, vec3(0.0f, 1.0f, 0.0f)) * glm::translate(-origin);
             transform.SetGlobal(rotation * transform.globalMatrix, scene.GetParentEntity(entity));
-            MarkUnindexed(context, entity);
             affected.push_back(GetEntityLabel(entity));
         }
 
@@ -752,7 +739,6 @@ namespace Atlas::Capture {
 
             auto delta = ground.position.y + offset - bounds.min.y;
             TranslateWorld(entity, vec3(0.0f, delta, 0.0f));
-            MarkUnindexed(context, entity);
             affected.push_back({ { "entity", GetEntityLabel(entity) }, { "deltaY", delta }, { "ground", GetHitLabel(ground) } });
         }
 
@@ -815,7 +801,6 @@ namespace Atlas::Capture {
                 global[3] = vec4(ToVec3(operation["position"]), 1.0f);
                 GetTransform(copy).SetGlobal(global, parent);
             }
-            MarkUnindexed(context, copy);
 
             affected.push_back(GetEntityLabel(copy));
         }
@@ -858,10 +843,6 @@ namespace Atlas::Capture {
 
         for (auto entity : SelectEntities(scene, operation)) {
             affected.push_back(GetEntityLabel(entity));
-            EntitySet members;
-            CollectHierarchy(entity, members);
-            for (auto member : members)
-                context.state.unindexedMeshes.erase(member);
             scene.DestroyEntity(entity);
         }
 
@@ -953,7 +934,6 @@ namespace Atlas::Capture {
             added["script"] = scriptPath;
         }
 
-        MarkUnindexed(context, entity);
         affected.push_back(added);
 
         return affected;
@@ -1021,7 +1001,7 @@ namespace Atlas::Capture {
 
         auto& scene = context.scene;
 
-        return json::array({ Scatter(scene, operation, &context.state.unindexedMeshes) });
+        return json::array({ Scatter(scene, operation) });
 
     }
 
@@ -1511,6 +1491,9 @@ namespace Atlas::Capture {
             throw std::runtime_error("materialCopy: couldn't open " + sourcePath);
         auto material = json::parse(input);
         input.close();
+
+        // References in packages are relative to the material file, the copy gets its own
+        Loader::AssetReferences::ResolveReferences(material, Loader::AssetReferences::Type::Material, sourcePath);
         for (const auto& [key, value] : operation.value("set", json::object()).items()) {
             // Colors are given as [r, g, b]
             if (value.is_array() && value.size() == 3)
@@ -1521,6 +1504,7 @@ namespace Atlas::Capture {
         for (const auto& key : operation.value("remove", std::vector<std::string>()))
             material.erase(key);
         material["name"] = fs::path(outputPath).stem().string();
+        Loader::AssetReferences::MakeReferences(material, Loader::AssetReferences::Type::Material, outputPath);
 
         fs::create_directories(outputFile.parent_path());
         std::ofstream file(outputFile);
@@ -1584,6 +1568,14 @@ namespace Atlas::Capture {
             }
         }
 
+        // The files are rewritten and loaded again, which would drop the changes of earlier operations
+        for (const auto& [path, _] : materials) {
+            auto assetPath = fs::relative(path, GetAssetDirectory()).generic_string();
+            if (state.changedMaterials.contains(assetPath) || state.graphEdits.changed.contains(assetPath))
+                throw std::runtime_error("compressTextures: " + assetPath + " was changed by an earlier operation, "
+                    "compress the textures in an edit of their own first");
+        }
+
         std::vector<std::pair<std::string, std::string>> pending;
         for (const auto& conversion : conversions)
             if (!fs::exists(GetAssetDirectory() / conversion.second))
@@ -1633,6 +1625,7 @@ namespace Atlas::Capture {
             targetBytes += fs::file_size(GetAssetDirectory() / target);
         }
 
+        std::set<std::string> written;
         for (const auto& [path, material] : materials) {
             auto backup = path;
             backup += ".backup";
@@ -1640,7 +1633,11 @@ namespace Atlas::Capture {
                 fs::copy_file(path, backup);
             std::ofstream file(path);
             file << material.dump();
+            written.insert(fs::relative(path, GetAssetDirectory()).generic_string());
         }
+
+        // Loaded materials and graphs take the new textures, otherwise later saves write the old ones back
+        UpdatePipelinesOfMaterials(ReloadMaterials(written));
 
         affected.push_back({ { "materials", materials.size() }, { "textures", conversions.size() },
             { "converted", pending.size() }, { "sourceMB", double(sourceBytes) / 1048576.0 },
@@ -1923,7 +1920,6 @@ namespace Atlas::Capture {
 
         EntitySet members;
         CollectHierarchy(entity, members);
-        MarkUnindexed(context, entity);
         affected.push_back({ { "entity", GetEntityLabel(entity) }, { "prefab", prefabPath }, { "entities", members.size() } });
 
         return affected;
@@ -1969,12 +1965,9 @@ namespace Atlas::Capture {
             auto factor = 1.0f;
             if (matchHeight && oldAabb.max.y > oldAabb.min.y && newAabb.max.y > newAabb.min.y)
                 factor = (oldAabb.max.y - oldAabb.min.y) / (newAabb.max.y - newAabb.min.y);
-            // The global matrix too: later operations of the edit (meshBodies) read it before the next update
             auto adjust = glm::translate(vec3(0.0f, oldAabb.min.y - newAabb.min.y * factor, 0.0f)) * glm::scale(vec3(factor));
             transform.Set(transform.matrix * adjust);
-            transform.globalMatrix = transform.globalMatrix * adjust;
             meshComponent.ChangeResource(replacement);
-            meshComponent.aabb = replacement->data.aabb.Transform(transform.globalMatrix);
             if (entity.HasComponent<RigidBodyComponent>())
                 entity.RemoveComponent<RigidBodyComponent>();
         }
@@ -2117,6 +2110,8 @@ namespace Atlas::Capture {
             json affected;
             try {
                 affected = handler->second(context, operation);
+                // The next operation reads global matrices, bounds and ray casts of the changed entities
+                context.scene.UpdateTransforms();
             }
             catch (const std::exception& e) {
                 // Most operations name themselves in their errors already
@@ -2161,32 +2156,9 @@ namespace Atlas::Capture {
 
     void RevertUnsavedEdits(EditState& state) {
 
-        std::set<const Material*> changed;
-
-        // Loaded graphs follow their files again, graphs created by the edit have none
-        for (const auto& path : state.graphEdits.changed) {
-            auto graph = ResourceManager<MaterialGraph::Graph>::GetResource(path);
-            if (!graph.IsLoaded() || !fs::exists(GetAssetDirectory() / path))
-                continue;
-
-            *graph.Get() = *Loader::MaterialGraphLoader::LoadGraph(path);
-            for (const auto& material : ResourceManager<Material>::GetResources())
-                if (material.IsLoaded() && material->graph.GetResource() == graph.GetResource())
-                    changed.insert(material.Get().get());
-        }
-
-        for (const auto& path : state.changedMaterials) {
-            auto material = ResourceManager<Material>::GetResource(path);
-            if (!material.IsLoaded())
-                continue;
-
-            // Materials can't be copied, the state of the file goes through the serializer
-            json j = *Loader::MaterialLoader::LoadMaterial(path, false);
-            from_json(j, *material.Get());
-            changed.insert(material.Get().get());
-        }
-
-        UpdatePipelinesOfMaterials(changed);
+        auto paths = state.changedMaterials;
+        paths.insert(state.graphEdits.changed.begin(), state.graphEdits.changed.end());
+        UpdatePipelinesOfMaterials(ReloadMaterials(paths));
         state.graphEdits.changed.clear();
         state.changedMaterials.clear();
 

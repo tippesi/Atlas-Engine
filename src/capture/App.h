@@ -166,11 +166,17 @@ namespace Atlas::Capture {
 
         void UpdateShots();
 
+        // The settings of the job without a variant, also the materials patched by them
+        void ApplyBaseSettings();
+
         void StartPlay();
 
         void UpdatePlay();
 
         void UpdateStill();
+
+        // Renders the scene without advancing time, scripts and physics
+        void UpdateSceneFrozen(const CameraSpec& spec);
 
         void Finish();
 
@@ -227,6 +233,8 @@ namespace Atlas::Capture {
         // Asset path of the loaded scene and its settings right after loading, restored for each job
         std::string scenePath;
         json sceneSettings;
+        // Materials patched in memory by the settings of a job or a variant, they go back to their files afterwards
+        std::set<std::string> settingsMaterials;
         // A scene loaded by a command or kept between pipeline steps stays loaded after the job
         bool keepScene = false;
         // Server mode: the last job played or edited the scene, the next one loads it again
@@ -253,6 +261,8 @@ namespace Atlas::Capture {
         // All requests of a frame share the same rendered image
         std::vector<CaptureRequest> captureRequests;
         std::vector<CaptureRequest> pendingReadbacks;
+        // The frame which writes the captured images is left out of the profile
+        bool outputFrame = false;
         std::map<std::string, SheetGroup> sheets;
         std::vector<std::string> sheetOrder;
         // Every capture of the job for sheet.jpg

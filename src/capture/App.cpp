@@ -188,6 +188,8 @@ namespace Atlas::Capture {
         editFrames = 0;
         RevertUnsavedEdits(editState);
         editState = EditState();
+        UpdatePipelinesOfMaterials(ReloadMaterials(settingsMaterials));
+        settingsMaterials.clear();
         variantCaptures.clear();
         stripCameras.clear();
 
@@ -241,6 +243,7 @@ namespace Atlas::Capture {
         // The profilers are disabled by default in release builds, hitches need the CPU profile
         CPUProfiler::enable = job.profileFrames > 0 || job.hitches.has_value();
         GPUProfiler::enable = job.profileFrames > 0 || (job.hitches && job.hitches->gpu);
+        outputFrame = false;
         if (job.hitches) {
             auto hitchSettings = HitchRecorder::GetSettings();
             hitchSettings.cpu.minimumTime = job.hitches->minimumFrameTime;
@@ -312,7 +315,7 @@ namespace Atlas::Capture {
 
         if (scene && scenePath == job.scene && !sceneDirty) {
             // The scene starts each job with the settings it was loaded with, out of play mode
-            ApplySettings(*scene, sceneSettings);
+            ApplySettings(*scene, sceneSettings, settingsMaterials);
             scene->physicsWorld->pauseSimulation = true;
             scene->paused = false;
             captureRenderer.InvalidateHistory();
@@ -466,7 +469,14 @@ namespace Atlas::Capture {
         if (phase == Phase::Done)
             return;
 
-        report.BeginFrame(job.profileFrames);
+        if (outputFrame) {
+            // The profiler dropped the frame which wrote the images, its frame time arrives now
+            outputFrame = false;
+            CPUProfiler::enable = true;
+        }
+        else {
+            report.BeginFrame(job.profileFrames);
+        }
         {
             CPUProfiler::Scope profilerScope("Wait for previous frame");
             graphicsDevice->WaitForPreviousFrameSubmission();
@@ -490,6 +500,12 @@ namespace Atlas::Capture {
         }
 
         try {
+            // Writing the images takes much longer than a frame
+            if (job.profileFrames > 0 && !pendingReadbacks.empty()) {
+                CPUProfiler::enable = false;
+                outputFrame = true;
+            }
+
             CPUProfiler::Scope sectionScope("Readback");
             ProcessReadback();
             sectionScope.Next("Collect log");
@@ -558,6 +574,8 @@ namespace Atlas::Capture {
                 break;
             case Phase::Finish:
                 sectionScope.Next("Finish");
+                // The scene isn't updated anymore, captures of a frame which wasn't rendered (e.g. an event threw) never will be
+                captureRequests.clear();
                 if (!HasPendingCaptures())
                     Finish();
                 break;
@@ -730,8 +748,10 @@ namespace Atlas::Capture {
 
         // The settings come first, the scene update extracts what the next frame renders
         if (!job.settings.empty())
-            ApplySettings(*scene, job.settings);
+            ApplySettings(*scene, job.settings, settingsMaterials);
         baseSettings = ExportSettings(*scene);
+        if (job.settings.contains("materials"))
+            baseSettings["materials"] = job.settings["materials"];
 
         // The renderer expects a scene update in every frame
         UpdateSceneWithCaptureCamera(*activeCamera);
@@ -879,6 +899,13 @@ namespace Atlas::Capture {
             Fail("Output scene " + output + " already exists, set edit.overwrite = true to replace it");
             return;
         }
+        // The patches of the settings are for the running scene only, saving would write them into the file
+        for (const auto& path : editState.changedMaterials) {
+            if (settingsMaterials.contains(path)) {
+                Fail("Material " + path + " is patched by the settings and edited, edit it in a job without the patch");
+                return;
+            }
+        }
 
         if (!editState.graphEdits.changed.empty()) {
             edit["graphs"] = SaveMaterialGraphs(editState.graphEdits);
@@ -965,8 +992,8 @@ namespace Atlas::Capture {
         bool firstFrameOfShot = shotState.settledFrames == 0 && !shotState.requested;
         if (firstFrameOfShot && !job.variants.empty() && shotState.shot == 0 && shotState.view == 0) {
             const auto& variant = job.variants[shotState.variant];
-            ApplySettings(*scene, baseSettings);
-            ApplySettings(*scene, variant.settings);
+            ApplyBaseSettings();
+            ApplySettings(*scene, variant.settings, settingsMaterials);
             captureRenderer.SetRenderScale(variant.renderScale.value_or(baseRenderScale));
             report.Print("Variant '" + variant.name + "'" + GetRenderDescription());
         }
@@ -1040,10 +1067,24 @@ namespace Atlas::Capture {
         if (++shotState.variant < variantCount)
             return;
 
-        if (job.play)
+        if (job.play) {
+            if (!job.variants.empty())
+                ApplyBaseSettings();
             StartPlay();
-        else
+        }
+        else {
             phase = Phase::Finish;
+        }
+
+    }
+
+    void App::ApplyBaseSettings() {
+
+        // Material patches aren't part of the exported settings, the files restore them
+        UpdatePipelinesOfMaterials(ReloadMaterials(settingsMaterials));
+        settingsMaterials.clear();
+        ApplySettings(*scene, baseSettings, settingsMaterials);
+        captureRenderer.SetRenderScale(baseRenderScale);
 
     }
 
@@ -1118,7 +1159,7 @@ namespace Atlas::Capture {
         // A shown window plays in real time, the simulation still advances in fixed steps
         auto realPlayTime = std::chrono::duration<float>(std::chrono::steady_clock::now() - playStartTime).count();
         if (job.showWindow && job.realTime && timeline.time > realPlayTime) {
-            UpdateSceneWithCaptureCamera(*activeCamera, freezeDeltaTime);
+            UpdateSceneFrozen(*activeCamera);
             return;
         }
 
@@ -1214,10 +1255,7 @@ namespace Atlas::Capture {
 
     void App::UpdateStill() {
 
-        auto wasPaused = scene->paused;
-        scene->paused = true;
-        UpdateSceneWithCaptureCamera(stillState.camera, freezeDeltaTime);
-        scene->paused = wasPaused;
+        UpdateSceneFrozen(stillState.camera);
 
         if (!stillState.requested) {
             if (stillState.settledFrames++ < stillState.settleFrames)
@@ -1233,6 +1271,15 @@ namespace Atlas::Capture {
 
         captureRenderer.InvalidateHistory();
         stillState = StillState {};
+
+    }
+
+    void App::UpdateSceneFrozen(const CameraSpec& spec) {
+
+        auto wasPaused = scene->paused;
+        scene->paused = true;
+        UpdateSceneWithCaptureCamera(spec, freezeDeltaTime);
+        scene->paused = wasPaused;
 
     }
 

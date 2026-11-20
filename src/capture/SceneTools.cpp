@@ -14,6 +14,7 @@
 #include "jobsystem/JobSystem.h"
 #include "loader/AssetLoader.h"
 #include "loader/MaterialGraphLoader.h"
+#include "loader/MaterialLoader.h"
 #include "loader/ShaderLoader.h"
 #include "materialgraph/Compiler.h"
 #include "common/MatrixDecomposition.h"
@@ -61,37 +62,44 @@ namespace Atlas::Capture {
 
     }
 
-    static const char* componentNames[] = { "Name", "Transform", "Hierarchy", "Mesh", "Camera", "Light", "RigidBody", "Player",
-        "LuaScript", "Audio", "AudioVolume", "Text", "Spline", "FogVolume" };
-    static constexpr uint32_t meshBit = 1u << 3, scriptBit = 1u << 8;
+    // The bits of Scene::GetComponentMask, the hierarchy isn't a serialized component
+    static constexpr uint32_t hierarchyBit = 1u << 31;
 
-    static uint32_t GetComponentMask(Scene::Entity entity) {
+    static uint32_t GetComponentBit(const char* key) {
 
-        bool has[] = { entity.HasComponent<NameComponent>(), entity.HasComponent<TransformComponent>(),
-            entity.HasComponent<HierarchyComponent>(), entity.HasComponent<MeshComponent>(), entity.HasComponent<CameraComponent>(),
-            entity.HasComponent<LightComponent>(), entity.HasComponent<RigidBodyComponent>(), entity.HasComponent<PlayerComponent>(),
-            entity.HasComponent<LuaScriptComponent>(), entity.HasComponent<AudioComponent>(), entity.HasComponent<AudioVolumeComponent>(),
-            entity.HasComponent<TextComponent>(), entity.HasComponent<SplineComponent>(), entity.HasComponent<FogVolumeComponent>() };
-        uint32_t mask = 0;
-        for (uint32_t i = 0; i < std::size(has); i++)
-            mask |= has[i] ? 1u << i : 0u;
-        return mask;
+        const auto& types = Scene::GetComponentTypes();
+        for (size_t i = 0; i < types.size(); i++)
+            if (std::string_view(types[i].key) == key)
+                return 1u << uint32_t(i);
+        AE_ASSERT(false && "Unknown component key, the scene serializer renamed it");
+        return 0u;
+
+    }
+
+    static const uint32_t meshBit = GetComponentBit("mesh"), scriptBit = GetComponentBit("script");
+
+    static uint32_t GetEntityComponentMask(Scene::Entity entity) {
+
+        return Scene::GetComponentMask(entity) | (entity.HasComponent<HierarchyComponent>() ? hierarchyBit : 0u);
 
     }
 
     static std::vector<std::string> GetComponentNames(uint32_t mask) {
 
         std::vector<std::string> names;
-        for (uint32_t i = 0; i < std::size(componentNames); i++)
-            if (mask & (1u << i))
-                names.push_back(componentNames[i]);
+        const auto& types = Scene::GetComponentTypes();
+        for (size_t i = 0; i < types.size(); i++)
+            if (mask & (1u << uint32_t(i)))
+                names.push_back(types[i].key);
+        if (mask & hierarchyBit)
+            names.push_back("hierarchy");
         return names;
 
     }
 
     static std::vector<std::string> GetComponentNames(Scene::Entity entity) {
 
-        return GetComponentNames(GetComponentMask(entity));
+        return GetComponentNames(GetEntityComponentMask(entity));
 
     }
 
@@ -554,7 +562,7 @@ namespace Atlas::Capture {
             e.name = GetEntityName(entity);
             auto parent = scene.GetParentEntity(entity);
             e.parent = parent.IsValid() ? parent.GetID() : ECS::EntityConfig::InvalidEntity;
-            e.components = GetComponentMask(entity);
+            e.components = GetEntityComponentMask(entity);
             if (auto transform = entity.TryGetComponent<TransformComponent>()) {
                 e.hasTransform = true;
                 e.local = transform->matrix;
@@ -664,6 +672,11 @@ namespace Atlas::Capture {
         json j;
         Scene::SceneSettingsToJson(j, &scene);
 
+        // Restoring the settings removes the features a patch added
+        for (auto key : { "fog", "irradianceVolume", "reflection", "rtgi", "sss", "ssgi", "ocean", "navigation" })
+            if (!j.contains(key))
+                j[key] = nullptr;
+
         // Variants restore these settings, so the sun has to be part of them
         if (scene.HasMainLight()) {
             const auto& light = scene.GetMainLight();
@@ -677,13 +690,13 @@ namespace Atlas::Capture {
 
     }
 
-    void ApplySettings(Scene::Scene& scene, const json& settings) {
+    void ApplySettings(Scene::Scene& scene, const json& settings, std::set<std::string>& patchedMaterials) {
 
         json features = json::object();
 
         for (auto& [key, patch] : settings.items()) {
             if (key == "materials") {
-                ApplyMaterialPatches(patch);
+                ApplyMaterialPatches(patch, patchedMaterials);
             }
             else if (key == "sun") {
                 if (!scene.HasMainLight())
@@ -719,7 +732,7 @@ namespace Atlas::Capture {
             }
             else {
                 // A default constructed ocean has no valid simulation to patch, so it starts with the editor defaults
-                if (key == "ocean" && !scene.ocean)
+                if (key == "ocean" && !scene.ocean && !patch.is_null())
                     scene.ocean = CreateRef<Ocean::Ocean>(9, 4096.0f);
 
                 features[key] = patch;
@@ -767,7 +780,7 @@ namespace Atlas::Capture {
 
     }
 
-    int32_t ApplyMaterialPatches(const json& patches) {
+    int32_t ApplyMaterialPatches(const json& patches, std::set<std::string>& patchedPaths) {
 
         int32_t count = 0;
         for (auto& material : ResourceManager<Material>::GetResources()) {
@@ -780,6 +793,7 @@ namespace Atlas::Capture {
                     continue;
 
                 PatchMaterial(*material.Get(), patch);
+                patchedPaths.insert(path);
                 count++;
             }
         }
@@ -788,6 +802,40 @@ namespace Atlas::Capture {
             throw std::runtime_error("No loaded material matches the material patches " + patches.dump());
 
         return count;
+
+    }
+
+    std::set<const Material*> ReloadMaterials(const std::set<std::string>& paths) {
+
+        std::set<const Material*> reloaded;
+        for (const auto& path : paths) {
+            // Graphs created in memory have no file to go back to
+            if (!fs::exists(GetAssetDirectory() / path))
+                continue;
+
+            if (fs::path(path).extension() == ".aematgraph") {
+                auto graph = ResourceManager<MaterialGraph::Graph>::GetResource(path);
+                if (!graph.IsLoaded())
+                    continue;
+
+                *graph.Get() = *Loader::MaterialGraphLoader::LoadGraph(path);
+                for (const auto& material : ResourceManager<Material>::GetResources())
+                    if (material.IsLoaded() && material->graph.GetResource() == graph.GetResource())
+                        reloaded.insert(material.Get().get());
+                continue;
+            }
+
+            auto material = ResourceManager<Material>::GetResource(path);
+            if (!material.IsLoaded())
+                continue;
+
+            // Materials can't be copied, the state of the file goes through the serializer
+            json j = *Loader::MaterialLoader::LoadMaterial(path, false);
+            from_json(j, *material.Get());
+            reloaded.insert(material.Get().get());
+        }
+
+        return reloaded;
 
     }
 
