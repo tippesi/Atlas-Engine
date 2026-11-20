@@ -22,10 +22,6 @@ namespace Atlas {
             void Render(Ref<RenderTarget> renderTarget, Ref<Scene::Scene> scene,
                 ivec2 imageSubdivisions, Graphics::CommandList* commandList);
 
-            bool UpdateData(Scene::Scene* scene);
-
-            void UpdateMaterials(Scene::Scene* scene);
-
             void ResetSampleCount();
 
             int32_t GetSampleCount() const;
@@ -43,8 +39,6 @@ namespace Atlas {
             float spatialFilterStrength = 4.0f;
 
             float maxRadiance = 65535.0f;
-
-            bool sampleEmissives = false;
 
             // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
             // they hit before shading

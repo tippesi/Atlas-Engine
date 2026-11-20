@@ -149,8 +149,8 @@ struct RaytraceMaterial {
     // Hit group of a material graph in ray tracing pipelines, 0 without one
     uint graphHitGroup;
     uint graphParameterOffset;
-    int padding0;
-    int padding1;
+    float uvAnimationX;
+    float uvAnimationY;
 
 };
 

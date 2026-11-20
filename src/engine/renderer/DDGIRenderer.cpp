@@ -86,7 +86,7 @@ namespace Atlas {
             auto [probeStateBuffer, probeOffsetBuffer] = internalVolume.GetCurrentProbeBuffers();
             auto [historyProbeStateBuffer, historyProbeOffsetBuffer] = internalVolume.GetLastProbeBuffers();
 
-            helper.UpdateLights(scene, volume->sampleEmissives);
+            helper.UpdateLights(scene);
 
             probeStateBuffer.Bind(commandList, 2, 19);
             probeOffsetBuffer.Bind(commandList, 2, 20);
@@ -98,7 +98,7 @@ namespace Atlas {
             commandList->BufferMemoryBarrier(historyProbeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
             auto rayGenPipeline = PipelineManager::GetPipeline(rayGenPipelineConfig);
-            helper.DispatchRayGen(scene, commandList, rayGenPipeline, probeCount, false,
+            helper.DispatchRayGen(scene, commandList, rayGenPipeline, probeCount,
                 [&]() {
                     auto uniforms = RayGenUniforms {
                         .rotationMatrix = mat4(GetRayRotation(rayRotationIndex++))
@@ -141,7 +141,7 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
             }
 
-            helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, volume->opacityCheck,
+            helper.DispatchHitClosest(scene, commandList, rayHitPipeline, volume->opacityCheck,
                 [&]() {
                     RayHitUniforms uniforms;
                     uniforms.seed = Common::Random::SampleUniformFloat();

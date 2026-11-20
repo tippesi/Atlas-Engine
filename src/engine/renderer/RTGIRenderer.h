@@ -4,6 +4,7 @@
 
 #include "Renderer.h"
 #include "helper/RayTracingHelper.h"
+#include "helper/DeferredShadowRays.h"
 
 namespace Atlas {
 
@@ -55,17 +56,13 @@ namespace Atlas {
 
             PipelineConfig rtPipelineConfig;
             PipelineConfig rtRayTracingPipelineConfig;
-            PipelineConfig rtShadowPipelineConfig;
             PipelineConfig rtResolvePipelineConfig;
             PipelineConfig temporalPipelineConfig;
             PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtUniformBuffer;
 
-            Buffer::Buffer deferredSampleBuffer;
-            Buffer::Buffer deferredLightBuffer;
-            Buffer::Buffer deferredShadowRayBuffer;
-            Buffer::Buffer deferredShadowRayCountBuffer;
+            Helper::DeferredShadowRays shadowRays;
         };
 
     }

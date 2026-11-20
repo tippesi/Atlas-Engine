@@ -1,0 +1,9 @@
+#include <../globals.hsh>
+
+// Texture coordinates of a mesh as all passes use them: flipped for meshes with inverted UVs, animated and tiled by the material
+vec2 TransformTexCoord(vec2 texCoord, bool invertUVs, vec2 uvAnimation, float uvTiling) {
+
+    texCoord = invertUVs ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+    return (texCoord + uvAnimation * globalData.time) * uvTiling;
+
+}

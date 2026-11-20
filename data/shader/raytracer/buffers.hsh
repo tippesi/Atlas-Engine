@@ -22,14 +22,6 @@ layout (std430, set = 2, binding = 7) buffer Materials {
     RaytraceMaterial materials[];
 };
 
-layout(std430, set = 2, binding = 17) buffer RayBinCounters {
-    uint rayBinCounters[];
-};
-
-layout(std430, set = 2, binding = 18) buffer RayBinOffsets {
-    uint rayBinOffsets[];
-};
-
 layout(std430, set = 2, binding = 21) buffer Instances {
     Instance bvhInstances[];
 };

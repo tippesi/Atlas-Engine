@@ -76,7 +76,7 @@ void main() {
     colorFS = vec4(pow(clamp(value.rgb, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2)), 1.0);
 #elif defined(EVALUATE_IMPOSTOR)
     MaterialSurfaceOutput surface = EvaluateMaterialSurface(surfaceIn);
-    if (surface.opacity < 0.2)
+    if (surface.opacity < opacityCutoff)
         discard;
 
     // Impostors store the normal in the space of the mesh, like the geometry pass writes it

@@ -160,7 +160,6 @@ void main() {
                     hitPoint = ConvertDepthToViewSpace(depth, hitTexCoord);
                         
                     float NdotV = saturate(dot(-viewDir, stepViewNorm));
-                    NdotL = saturate(dot(viewNorm, hitPoint));
                     if (NdotV > 0.0) {
                         vec3 radiance = textureLod(directLightTexture, hitTexCoord, 0).rgb;
                         float radianceMax = max(max(max(radiance.r,

@@ -1,7 +1,10 @@
+#extension GL_EXT_nonuniform_qualifier : require
+
 // Interface between the geometry and shadow shaders and the code generated from material graphs
 // Only shaders generated from a graph include this file, see materialgraph/Compiler
 
 #include <../globals.hsh>
+#include <../common/opacity.hsh>
 
 #if (defined(MATERIAL_GRAPH_WRITES_NORMAL) || defined(MATERIAL_GRAPH_USES_TANGENTS)) && defined(TANGENTS) && defined(TEX_COORDS) && !defined(NORMAL_MAP)
 #define NORMAL_MAP
@@ -182,18 +185,18 @@ float materialGraphHitTextureLevel = 0.0;
 vec4 MaterialGraphSampleTexture(uint textureIdx, vec2 texCoord) {
 
 #if defined(MATERIAL_GRAPH_STAGE_HIT)
-    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, materialGraphHitTextureLevel);
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), texCoord, materialGraphHitTextureLevel);
 #elif defined(MATERIAL_GRAPH_STAGE_SURFACE)
-    return texture(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, globalData.mipLodBias);
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), texCoord, globalData.mipLodBias);
 #else
-    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, 0.0);
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), texCoord, 0.0);
 #endif
 
 }
 
 vec4 MaterialGraphSampleTextureLod(uint textureIdx, vec2 texCoord, float lod) {
 
-    return textureLod(sampler2D(bindlessTextures[textureIdx], bindlessSampler), texCoord, lod);
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), texCoord, lod);
 
 }
 
@@ -235,7 +238,7 @@ vec3 MaterialGraphSampleTriplanarNormal(uint textureIdx, vec3 position, vec3 nor
 
 vec2 MaterialGraphTextureSize(uint textureIdx) {
 
-    return vec2(textureSize(sampler2D(bindlessTextures[textureIdx], bindlessSampler), 0));
+    return vec2(textureSize(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), 0));
 
 }
 
@@ -522,7 +525,7 @@ vec4 MaterialGraphSampleWithoutTiling(uint textureIdx, vec2 coord, float blend) 
     for (int y = 0; y < 2; y++) {
         for (int x = 0; x < 2; x++) {
             vec2 offset = MaterialGraphHash3(vec3(tile + vec2(float(x), float(y)), 3.0)).xy;
-            values[y * 2 + x] = textureGrad(sampler2D(bindlessTextures[textureIdx], bindlessSampler), coord + offset, ddx, ddy);
+            values[y * 2 + x] = textureGrad(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), coord + offset, ddx, ddy);
         }
     }
 
@@ -541,14 +544,14 @@ vec2 MaterialGraphParallax(uint textureIdx, vec2 coord, vec3 viewDirection, floa
 
     vec2 current = coord;
     float depth = 0.0;
-    float height = 1.0 - textureGrad(sampler2D(bindlessTextures[textureIdx], bindlessSampler), current, ddx, ddy).r;
+    float height = 1.0 - textureGrad(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), current, ddx, ddy).r;
     float previousHeight = height;
 
     for (int i = 0; i < count && depth < height; i++) {
         previousHeight = height;
         current -= delta;
         depth += layerDepth;
-        height = 1.0 - textureGrad(sampler2D(bindlessTextures[textureIdx], bindlessSampler), current, ddx, ddy).r;
+        height = 1.0 - textureGrad(sampler2D(bindlessTextures[nonuniformEXT(textureIdx)], bindlessSampler), current, ddx, ddy).r;
     }
 
     float after = height - depth;

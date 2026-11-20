@@ -7,6 +7,7 @@
 #include <../wind.hsh>
 #include <../common/packing.hsh>
 #include <../common/rotation.hsh>
+#include <../common/texCoord.hsh>
 
 // Has to match the group size of the deformation pass in RayTracingWorld
 layout (local_size_x = 64) in;
@@ -35,7 +36,7 @@ struct DeformJob {
     uint firstGroup;
     uint vertexOffset;
     uint vertexCount;
-    uint jointOffset;
+    uint deformOffset;
     float windBendScale;
     float windWiggleScale;
     float windTextureLod;
@@ -112,10 +113,10 @@ void main() {
     vec4 weights = unpackUnorm4x8(vertex.weights);
     weights /= dot(weights, vec4(1.0));
 
-    mat3x4 skinMatrix = weights.x * jointMatrices[job.jointOffset + joints.x] +
-        weights.y * jointMatrices[job.jointOffset + joints.y] +
-        weights.z * jointMatrices[job.jointOffset + joints.z] +
-        weights.w * jointMatrices[job.jointOffset + joints.w];
+    mat3x4 skinMatrix = weights.x * jointMatrices[job.deformOffset + joints.x] +
+        weights.y * jointMatrices[job.deformOffset + joints.y] +
+        weights.z * jointMatrices[job.deformOffset + joints.z] +
+        weights.w * jointMatrices[job.deformOffset + joints.w];
 
     position = vec4(position, 1.0) * skinMatrix;
     normal = vec4(normal, 0.0) * skinMatrix;
@@ -124,7 +125,7 @@ void main() {
 
 #ifdef SOFT_BODY
     // The vertices of the body start at the joint offset
-    vec4 softBodyVertex = softBodyVertices[job.jointOffset + vertexIdx];
+    vec4 softBodyVertex = softBodyVertices[job.deformOffset + vertexIdx];
     vec3 restNormal = normal;
     position = softBodyVertex.xyz;
     normal = unpackUnitVector(floatBitsToInt(softBodyVertex.w)).xyz;
@@ -133,9 +134,7 @@ void main() {
 
 #ifdef MATERIAL_GRAPH_VERTEX_OFFSET
     vec2 texCoord = unpackHalf2x16(vertex.texCoord);
-    texCoord = job.invertUVs > 0u ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
-    texCoord += job.uvAnimation * globalData.time;
-    texCoord *= job.uvTiling;
+    texCoord = TransformTexCoord(texCoord, job.invertUVs > 0u, job.uvAnimation, job.uvTiling);
 
     // Meshes without tangents use the same default as the rasterizer
     vec3 graphTangent = dot(tangent.xyz, tangent.xyz) > 0.01 ? tangent.xyz : vec3(1.0, 0.0, 0.0);

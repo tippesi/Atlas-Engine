@@ -51,7 +51,7 @@ namespace Atlas {
         }
 
         void RayTracingWorld::Update(Scene::Subset<MeshComponent, TransformComponent> subset,
-            const std::vector<ECS::Entity>& dirtyEntities, bool updateTriangleLights) {
+            const std::vector<ECS::Entity>& dirtyEntities) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -62,6 +62,7 @@ namespace Atlas {
 
             CPUProfiler::Scope profilerScope("Blas infos");
             buildBlases.clear();
+            std::vector<Ref<BLAS>> refreshedBlases;
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
@@ -82,7 +83,6 @@ namespace Atlas {
                 auto& blasInfo = blasInfoIt->second;
                 if (inserted) {
                     blasInfo.mesh = mesh;
-                    BuildTriangleLightsForMesh(mesh);
                     blasInfosChanged = true;
                 }
 
@@ -94,13 +94,13 @@ namespace Atlas {
                 if (hardwareRayTracing) {
                     if (mesh->blas->needsBvhRefresh && mesh->blas->blas->isDynamic) {
                         buildBlases.push_back(mesh->blas->blas);
-                        mesh->blas->needsBvhRefresh = false;
+                        refreshedBlases.push_back(mesh->blas);
                     }
 
                     blasInfo.idx = meshCount++;
                 }
 
-                // The levels of detail have the materials of the mesh, but no triangle lights
+                // The levels of detail have the materials of the mesh
                 for (const auto& lodBlas : mesh->lodBlases) {
                     auto lodBindlessIdx = renderState->blasToBindlessIdx.find(lodBlas);
                     if (lodBindlessIdx == renderState->blasToBindlessIdx.end())
@@ -156,7 +156,10 @@ namespace Atlas {
                 commandList->BeginCommands();
                 GPUProfiler::BeginThread("Dynamic BLASes", commandList);
                 GPUProfiler::BeginQuery("Build BLASes");
-                blasBuilder.BuildBLAS(buildBlases, commandList);
+                // One batch is built per frame, the rest stays requested for the next frames
+                auto builtCount = blasBuilder.BuildBLAS(buildBlases, commandList);
+                for (int32_t i = 0; i < builtCount; i++)
+                    refreshedBlases[i]->needsBvhRefresh = false;
                 GPUProfiler::EndQuery();
                 GPUProfiler::EndThread();
                 commandList->EndCommands();
@@ -177,20 +180,9 @@ namespace Atlas {
             else
                 UpdateForSoftwareRayTracing(cameraLocation, hasCamera);
 
-            if (updateTriangleLights)
-                UpdateTriangleLights();
-
         }
 
         void RayTracingWorld::UpdateMaterials() {
-
-            UpdateMaterials(materials);
-
-        }
-
-        void RayTracingWorld::UpdateMaterials(std::vector<GPUMaterial>& materials) {
-
-            std::lock_guard lock(mutex);
 
             auto sceneState = &scene->renderState;
 
@@ -380,6 +372,8 @@ namespace Atlas {
                         gpuMaterial.normalScale = material->normalScale;
 
                         gpuMaterial.tiling = material->tiling;
+                        gpuMaterial.uvAnimationX = material->uvAnimation.x;
+                        gpuMaterial.uvAnimationY = material->uvAnimation.y;
                         gpuMaterial.terrainTiling = blasInfo.node ? 1.0f / blasInfo.node->sideLength : 1.0f;
 
                         gpuMaterial.invertUVs = mesh.IsLoaded() ? (mesh->invertUVs ? 1 : 0) : 0;
@@ -568,7 +562,9 @@ namespace Atlas {
 
         bool RayTracingWorld::IsValid() {
 
-            return materialBuffer.GetSize() > 0 && !blasInfos.empty();
+            // Without instances there is no TLAS to bind, the pending one is built before the ray traced passes
+            auto hasTLAS = !hardwareRayTracing || tlas || GetPendingInstances();
+            return materialBuffer.GetSize() > 0 && !blasInfos.empty() && hasTLAS;
 
         }
 
@@ -1094,7 +1090,6 @@ namespace Atlas {
         void RayTracingWorld::UpdateDeformedInstances(const std::vector<ECS::Entity>& dirtyEntities) {
 
             auto renderState = &scene->renderState;
-            const auto& gpuScene = renderState->gpuScene;
 
             auto& animationComponentPool = scene->entityManager.GetPool<AnimationComponent>();
             auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
@@ -1206,7 +1201,7 @@ namespace Atlas {
                         .normals = normals,
                         .vertexOffset = firstVertex,
                         .vertexCount = vertexCount,
-                        .jointOffset = sourceOffset,
+                        .deformOffset = sourceOffset,
                         .windBendScale = mesh->windBendScale,
                         .windWiggleScale = mesh->windWiggleScale,
                         .windTextureLod = mesh->windNoiseTextureLod,
@@ -1248,44 +1243,57 @@ namespace Atlas {
                 });
             };
 
+            auto isTraceable = [](const MeshComponent* meshComponent, const TransformComponent* transformComponent) {
+                return meshComponent && transformComponent && meshComponent->visible && meshComponent->mesh.IsLoaded() &&
+                    meshComponent->mesh->IsGeometryResident() && meshComponent->mesh->IsBVHBuilt() && meshComponent->mesh->rayTrace;
+            };
+
+            // An instance keeps its BLAS while the mesh, its BLAS and index buffer stay the same. Skinned meshes and soft
+            // bodies also need a new one when switching between refits and builds
+            auto getInstance = [&](ECS::Entity entity, const ResourceHandle<Mesh::Mesh>& mesh, bool dynamic) {
+                auto item = deformedInstances.find(entity);
+                auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
+                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer ||
+                    dynamic && hardwareRayTracing && item->second.blas->allowUpdate != refitSkinnedBlases;
+                if (created)
+                    item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
+                return std::pair<DeformedInstance&, bool>(item->second, created);
+            };
+
+            // Skinned meshes and soft bodies near the camera are deformed with their joint matrices or simulated vertices,
+            // which are appended to the source data of the frame. Poses that didn't change and asleep bodies keep their
+            // BLAS and normals
+            auto addDynamicInstance = [&](ECS::Entity entity, const MeshComponent& meshComponent, const TransformComponent& transformComponent,
+                bool moved, auto& frameSourceData, const auto& sourceData, bool softBody) {
+                // Entities which already have a BLAS keep it a little further out, so it isn't recreated at the border
+                auto distance = deformedInstances.contains(entity) ? skinnedBlasDistance * 1.25f : skinnedBlasDistance;
+                if (hasCamera && glm::distance2(vec3(transformComponent.globalMatrix[3]), cameraLocation) > distance * distance)
+                    return;
+
+                auto [instance, created] = getInstance(entity, meshComponent.mesh, true);
+                instance.used = true;
+                instance.active = true;
+                instance.deformedStatic = false;
+                if (!created && isBuilt(instance) && !moved)
+                    return;
+
+                auto sourceOffset = uint32_t(frameSourceData.size());
+                frameSourceData.insert(frameSourceData.end(), sourceData.begin(), sourceData.end());
+                addJobs(instance, transformComponent.globalMatrix, sourceOffset, created, softBody);
+            };
+
             CPUProfiler::Scope profilerScope("Skinned instances");
             for (size_t i = 0; i < animationComponentPool.GetCount(); i++) {
                 auto entity = animationComponentPool[i];
                 const auto& animationComponent = animationComponentPool.GetByIndex(i);
                 auto meshComponent = meshComponentPool.TryGet(entity);
                 auto transformComponent = transformComponentPool.TryGet(entity);
-
-                if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
-                    !meshComponent->mesh->IsGeometryResident() || !meshComponent->mesh->IsBVHBuilt() ||
-                    !meshComponent->mesh->rayTrace || !meshComponent->mesh->data.IsSkinned() || animationComponent.jointMatrices.empty())
+                if (!isTraceable(meshComponent, transformComponent) || !meshComponent->mesh->data.IsSkinned() ||
+                    animationComponent.jointMatrices.empty())
                     continue;
 
-                auto item = deformedInstances.find(entity);
-                // Entities which already have a BLAS keep it a little further out, so it isn't recreated at the border
-                auto distance = item != deformedInstances.end() ? skinnedBlasDistance * 1.25f : skinnedBlasDistance;
-                if (hasCamera && glm::distance2(vec3(transformComponent->globalMatrix[3]), cameraLocation) > distance * distance)
-                    continue;
-
-                const auto& mesh = meshComponent->mesh;
-                // The BLAS needs to be created again when switching between refits and builds
-                auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
-                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer ||
-                    hardwareRayTracing && item->second.blas->allowUpdate != refitSkinnedBlases;
-                if (created)
-                    item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
-
-                auto& instance = item->second;
-                instance.used = true;
-                instance.active = true;
-                instance.deformedStatic = false;
-                // Poses that didn't change keep their BLAS and normals
-                if (!created && isBuilt(instance) && !animationComponent.IsPoseUpdated())
-                    continue;
-
-                auto jointOffset = uint32_t(jointMatrices.size());
-                jointMatrices.insert(jointMatrices.end(), animationComponent.jointMatrices.begin(),
-                    animationComponent.jointMatrices.end());
-                addJobs(instance, transformComponent->globalMatrix, jointOffset, created, false);
+                addDynamicInstance(entity, *meshComponent, *transformComponent, animationComponent.IsPoseUpdated(),
+                    jointMatrices, animationComponent.jointMatrices, false);
             }
 
             profilerScope.Next("Soft body instances");
@@ -1295,101 +1303,28 @@ namespace Atlas {
                 const auto& softBodyComponent = softBodyComponentPool.GetByIndex(i);
                 auto meshComponent = meshComponentPool.TryGet(entity);
                 auto transformComponent = transformComponentPool.TryGet(entity);
-
-                if (!softBodyComponent.IsValid() || !meshComponent || !transformComponent || !meshComponent->visible ||
-                    !meshComponent->mesh.IsLoaded() || !meshComponent->mesh->IsGeometryResident() || !meshComponent->mesh->IsBVHBuilt() ||
-                    !meshComponent->mesh->rayTrace || meshComponent->mesh->data.IsSkinned())
+                if (!softBodyComponent.IsValid() || !isTraceable(meshComponent, transformComponent) ||
+                    meshComponent->mesh->data.IsSkinned())
                     continue;
 
-                const auto& mesh = meshComponent->mesh;
-                auto vertexCount = size_t(mesh->data.GetVertexCount() - mesh->data.lodVertexCount);
-                if (softBodyComponent.vertices.size() != vertexCount)
+                const auto& meshData = meshComponent->mesh->data;
+                if (softBodyComponent.vertices.size() != size_t(meshData.GetVertexCount() - meshData.lodVertexCount))
                     continue;
 
-                auto item = deformedInstances.find(entity);
-                auto distance = item != deformedInstances.end() ? skinnedBlasDistance * 1.25f : skinnedBlasDistance;
-                if (hasCamera && glm::distance2(vec3(transformComponent->globalMatrix[3]), cameraLocation) > distance * distance)
-                    continue;
-
-                auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
-                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer ||
-                    hardwareRayTracing && item->second.blas->allowUpdate != refitSkinnedBlases;
-                if (created)
-                    item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
-
-                auto& instance = item->second;
-                instance.used = true;
-                instance.active = true;
-                instance.deformedStatic = false;
-                // Asleep bodies keep their BLAS and normals
-                if (!created && isBuilt(instance) && !softBodyComponent.HasMoved())
-                    continue;
-
-                auto softBodyOffset = uint32_t(softBodyVertices.size());
-                softBodyVertices.insert(softBodyVertices.end(), softBodyComponent.vertices.begin(), softBodyComponent.vertices.end());
-                addJobs(instance, transformComponent->globalMatrix, softBodyOffset, created, true);
+                addDynamicInstance(entity, *meshComponent, *transformComponent, softBodyComponent.HasMoved(),
+                    softBodyVertices, softBodyComponent.vertices, true);
             }
 
             profilerScope.Next("Deformed instances");
             auto activeDistanceSqr = deformedBlasDistance * deformedBlasDistance;
             auto keepDistance = deformedBlasDistance * 1.25f;
 
-            // The deformed meshes and the octree query are expensive in large scenes, they are only searched again
-            // once the camera moved a bit, the meshes of the GPU scene changed or after a while (compiled graphs join)
-            auto candidateMargin = 0.1f * deformedBlasDistance;
-            if (deformCandidateFrames++ >= 60 || deformCandidateSlotCount != gpuScene.slots.size() ||
-                glm::distance2(cameraLocation, deformCandidateLocation) > candidateMargin * candidateMargin) {
-                // Static meshes are only deformed near the camera with hardware ray tracing (software ray tracing would
-                // copy the BVH per instance), the GPU scene writes all instances without one
-                deformedMeshes.clear();
-                for (const auto& slot : gpuScene.slots) {
-                    if (hardwareRayTracing && hasCamera && !slot.instanceVertices && slot.mesh.IsLoaded() && slot.mesh->rayTrace &&
-                        (slot.mesh->vegetation || IsDeformedByMaterial(slot.mesh)))
-                        deformedMeshes.insert(slot.mesh.GetID());
-                }
-
-                deformCandidates.clear();
-                if (!deformedMeshes.empty()) {
-                    auto queryDistance = vec3(keepDistance + candidateMargin);
-                    for (ECS::Entity entity : scene->SpacePartitioning::QueryAABB(
-                        Volume::AABB(cameraLocation - queryDistance, cameraLocation + queryDistance))) {
-                        auto meshComponent = meshComponentPool.TryGet(entity);
-                        if (meshComponent && meshComponent->mesh.IsLoaded() && deformedMeshes.contains(meshComponent->mesh.GetID()))
-                            deformCandidates.push_back(entity);
-                    }
-                }
-                std::sort(deformCandidates.begin(), deformCandidates.end());
-                deformCandidateLocation = cameraLocation;
-                deformCandidateSlotCount = gpuScene.slots.size();
-                deformCandidateFrames = 0;
-            }
-            else {
-                // Entities created, moved or changed since the last search join right away, the GPU scene leaves them
-                // out as soon as they're near the camera
-                auto queryDistance = vec3(keepDistance + candidateMargin);
-                for (auto entity : dirtyEntities) {
-                    auto meshComponent = meshComponentPool.TryGet(entity);
-                    auto transformComponent = transformComponentPool.TryGet(entity);
-                    if (!meshComponent || !transformComponent || !meshComponent->mesh.IsLoaded() ||
-                        !deformedMeshes.contains(meshComponent->mesh.GetID()))
-                        continue;
-
-                    auto offset = glm::abs(vec3(transformComponent->globalMatrix[3]) - deformCandidateLocation);
-                    if (glm::any(glm::greaterThan(offset, queryDistance)))
-                        continue;
-
-                    auto candidate = std::lower_bound(deformCandidates.begin(), deformCandidates.end(), entity);
-                    if (candidate == deformCandidates.end() || *candidate != entity)
-                        deformCandidates.insert(candidate, entity);
-                }
-            }
+            UpdateDeformCandidates(dirtyEntities, cameraLocation, hasCamera);
 
             for (auto entity : deformCandidates) {
                 auto meshComponent = meshComponentPool.TryGet(entity);
                 auto transformComponent = transformComponentPool.TryGet(entity);
-                if (!meshComponent || !transformComponent || !meshComponent->visible || !meshComponent->mesh.IsLoaded() ||
-                    !meshComponent->mesh->IsGeometryResident() || !meshComponent->mesh->IsBVHBuilt() ||
-                    !deformedMeshes.contains(meshComponent->mesh.GetID()))
+                if (!isTraceable(meshComponent, transformComponent) || !deformedMeshes.contains(meshComponent->mesh.GetID()))
                     continue;
 
                 // Has to be the same distance as the one of the GPU scene, which leaves these instances out
@@ -1402,13 +1337,7 @@ namespace Atlas {
                 if (distanceSqr > (item != deformedInstances.end() ? keepDistance * keepDistance : activeDistanceSqr))
                     continue;
 
-                const auto& mesh = meshComponent->mesh;
-                auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
-                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer;
-                if (created)
-                    item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
-
-                auto& instance = item->second;
+                auto [instance, created] = getInstance(entity, meshComponent->mesh, false);
                 instance.used = true;
                 instance.deformedStatic = true;
                 instance.active = distanceSqr < activeDistanceSqr;
@@ -1514,6 +1443,66 @@ namespace Atlas {
             frameDeformation.frameIndex = Graphics::GraphicsDevice::DefaultDevice->GetFrameIndex();
 
             pendingDeformation = std::move(frameDeformation);
+
+        }
+
+        void RayTracingWorld::UpdateDeformCandidates(const std::vector<ECS::Entity>& dirtyEntities, vec3 cameraLocation,
+            bool hasCamera) {
+
+            const auto& gpuScene = scene->renderState.gpuScene;
+            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
+            auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
+            auto keepDistance = deformedBlasDistance * 1.25f;
+
+            // The deformed meshes and the octree query are expensive in large scenes, they are only searched again
+            // once the camera moved a bit, the meshes of the GPU scene changed or after a while (compiled graphs join)
+            auto candidateMargin = 0.1f * deformedBlasDistance;
+            if (deformCandidateFrames++ >= 60 || deformCandidateSlotCount != gpuScene.slots.size() ||
+                glm::distance2(cameraLocation, deformCandidateLocation) > candidateMargin * candidateMargin) {
+                // Static meshes are only deformed near the camera with hardware ray tracing (software ray tracing would
+                // copy the BVH per instance), the GPU scene writes all instances without one
+                deformedMeshes.clear();
+                for (const auto& slot : gpuScene.slots) {
+                    if (hardwareRayTracing && hasCamera && !slot.instanceVertices && slot.mesh.IsLoaded() && slot.mesh->rayTrace &&
+                        (slot.mesh->vegetation || IsDeformedByMaterial(slot.mesh)))
+                        deformedMeshes.insert(slot.mesh.GetID());
+                }
+
+                deformCandidates.clear();
+                if (!deformedMeshes.empty()) {
+                    auto queryDistance = vec3(keepDistance + candidateMargin);
+                    for (ECS::Entity entity : scene->SpacePartitioning::QueryAABB(
+                        Volume::AABB(cameraLocation - queryDistance, cameraLocation + queryDistance))) {
+                        auto meshComponent = meshComponentPool.TryGet(entity);
+                        if (meshComponent && meshComponent->mesh.IsLoaded() && deformedMeshes.contains(meshComponent->mesh.GetID()))
+                            deformCandidates.push_back(entity);
+                    }
+                }
+                std::sort(deformCandidates.begin(), deformCandidates.end());
+                deformCandidateLocation = cameraLocation;
+                deformCandidateSlotCount = gpuScene.slots.size();
+                deformCandidateFrames = 0;
+            }
+            else {
+                // Entities created, moved or changed since the last search join right away, the GPU scene leaves them
+                // out as soon as they're near the camera
+                auto queryDistance = vec3(keepDistance + candidateMargin);
+                for (auto entity : dirtyEntities) {
+                    auto meshComponent = meshComponentPool.TryGet(entity);
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+                    if (!meshComponent || !transformComponent || !meshComponent->mesh.IsLoaded() ||
+                        !deformedMeshes.contains(meshComponent->mesh.GetID()))
+                        continue;
+
+                    auto offset = glm::abs(vec3(transformComponent->globalMatrix[3]) - deformCandidateLocation);
+                    if (glm::any(glm::greaterThan(offset, queryDistance)))
+                        continue;
+
+                    auto candidate = std::lower_bound(deformCandidates.begin(), deformCandidates.end(), entity);
+                    if (candidate == deformCandidates.end() || *candidate != entity)
+                        deformCandidates.insert(candidate, entity);
+                }
+            }
 
         }
 
@@ -1826,97 +1815,6 @@ namespace Atlas {
                 auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
                 return compiled && compiled->valid && !compiled->deformFile.empty();
                 });
-
-        }
-
-        void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
-
-            auto& gpuTriangles = mesh->blas->gpuTriangles;
-            const auto& blasMaterials = mesh->blas->materials;
-
-            auto& blasInfo = blasInfos[mesh->blas];
-            blasInfo.triangleLights.clear();
-
-            // Triangle lights
-            for (size_t i = 0; i < gpuTriangles.size(); i++) {
-                auto& triangle = gpuTriangles[i];
-                auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
-                auto& material = blasMaterials[idx];
-
-                auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor);
-                auto brightness = dot(radiance, vec3(0.3333f));
-
-                if (brightness > 0.0f) {
-                    // Extract normal information again
-                    auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
-                    auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
-                    auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
-
-                    auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
-                    auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
-                    auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
-
-                    // Compute necessary information
-                    auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
-                    auto N = (n0 + n1 + n2) / 3.0f;
-
-                    auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
-                    auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
-                    auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
-                    auto p = 0.5f * (a + b + c);
-                    auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
-
-                    auto weight = area * brightness;
-
-                    uint32_t data = 0;
-                    data |= (1 << 28u); // Type TRIANGLE_LIGHT (see RayTracingHelper.cpp)
-                    data |= uint32_t(i);
-                    auto cd = reinterpret_cast<float&>(data);
-
-                    GPULight light;
-                    light.P = vec4(P, 1.0f);
-                    light.N = vec4(N, area);
-                    light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance) * material->emissiveIntensity, 0.0f);
-                    light.data = vec4(cd, weight, 0.0, 0.0f);
-
-                    blasInfo.triangleLights.push_back(light);
-                }
-            }
-
-        }
-
-        void RayTracingWorld::UpdateTriangleLights() {
-
-            triangleLights.clear();
-
-            /*
-            for (auto& [meshIdx, blasInfo] : blasInfos) {
-
-                for (auto& light : blasInfo.triangleLights) {
-
-                    for (size_t i = 0; i < blasInfo.instanceIndices.size(); i++) {
-
-                        auto instanceIdx = blasInfo.instanceIndices[i];
-                        auto& matrix = blasInfo.matrices[i];
-
-                        vec3 P = matrix * vec4(vec3(light.P), 1.0f);
-                        vec3 N = matrix * vec4(vec3(light.N), 0.0f);
-
-                        auto transformedLight = light;
-
-                        transformedLight.data.w = reinterpret_cast<float&>(instanceIdx);
-
-                        transformedLight.P = vec4(P, light.P.w);
-                        transformedLight.N = vec4(N, light.N.w);
-
-                        triangleLights.push_back(transformedLight);
-
-                    }
-
-                }
-
-            }
-            */
 
         }
 

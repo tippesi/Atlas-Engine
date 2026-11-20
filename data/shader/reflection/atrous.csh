@@ -144,13 +144,6 @@ PixelData GetPixel(ivec2 pixelOffset) {
 
 }
 
-float Luma(vec3 color) {
-
-    const vec3 luma = vec3(0.299, 0.587, 0.114);
-    return dot(color, luma);
-
-}
-
 float GetFilteredVariance(ivec2 pixel) {
 
     float variance = 0.0;

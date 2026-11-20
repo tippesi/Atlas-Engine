@@ -10,6 +10,7 @@ layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
 
 #include <common.hsh>
 #include <intersections.hsh>
+#include <../common/opacity.hsh>
 #include <structures.hsh>
 #include <surface.hsh>
 #include <buffers.hsh>
@@ -142,8 +143,8 @@ int nodePtr, float tmin, float tmax) {
 #endif
         bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
         if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0 && sol.x < ray.hitDistance) {
-            float opacity = tri.opacity < 0.0 ? GetOpacity(tri, sol.yz, materialOffset, 0) : tri.opacity;
-            if (opacity > 0.0) {
+            // Triangles without an opacity map have a positive opacity
+            if (tri.opacity >= 0.0 || GetCutoutOpacity(tri, sol.yz, materialOffset, 0) >= opacityCutoff) {
                 ray.hitDistance = sol.x;
                 ray.hitID = triPtr;
                 ray.hitInstanceID = ray.currentInstanceID;
@@ -470,7 +471,7 @@ float HitAnyTransparency(inout Ray ray, uint cullMask, float tMin, float tMax) {
                     nodePtr = STACK_ENTRY(--stackPtr);
             }
             else {
-                transparency *= CheckLeafTransparency(ray, meshPtr, materialOffset, nodePtr, tMin, tMax, transparency);
+                transparency = CheckLeafTransparency(ray, meshPtr, materialOffset, nodePtr, tMin, tMax, transparency);
                 if (transparency < 0.000001) {
                     transparency = 0.0;
                 }
@@ -657,7 +658,7 @@ void HitClosestTransparency(inout Ray ray, uint cullMask, float tMin, float tMax
 
             Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[nonuniformEXT(hitID)]);
 
-            if (GetOpacity(tri, barrycentric, materialOffset, 0) > 0.001) {
+            if (GetCutoutOpacity(tri, barrycentric, materialOffset, 0) >= opacityCutoff) {
                 rayQueryConfirmIntersectionEXT(rayQuery);
             }
 

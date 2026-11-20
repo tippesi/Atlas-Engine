@@ -22,8 +22,7 @@ void main() {
     float r = 1.0 - s - t;
 
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
-    texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
-    texCoord *= rayMat.tiling;
+    texCoord = TransformTexCoord(texCoord, rayMat.invertUVs > 0, vec2(rayMat.uvAnimationX, rayMat.uvAnimationY), rayMat.tiling);
     vec4 color = r * tri.color0 + s * tri.color1 + t * tri.color2;
 
     mat4 modelMatrix = mat4(gl_ObjectToWorldEXT);
@@ -46,8 +45,7 @@ void main() {
     surfaceIn.tangent = normalize(tri.t);
     surfaceIn.modelMatrix = modelMatrix;
 
-    // The same cutoff as the rasterizer
-    if (EvaluateMaterialSurface(surfaceIn).opacity < 0.2)
+    if (EvaluateMaterialSurface(surfaceIn).opacity < opacityCutoff)
         ignoreIntersectionEXT;
 
 }

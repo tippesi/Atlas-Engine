@@ -78,7 +78,7 @@ namespace Atlas {
             rayHitConfig.ManageMacro("OPACITY_CHECK", useRayTracingPipeline);
             rayHitConfig.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && shaderExecutionReordering);
 
-            helper.UpdateLights(scene, sampleEmissives);
+            helper.UpdateLights(scene);
 
             ivec2 resolution = ivec2(width, height);
             ivec2 tileSize = resolution / imageSubdivisions;
@@ -188,7 +188,7 @@ namespace Atlas {
             GPUProfiler::BeginQuery("Ray generation");
 
             helper.DispatchRayGen(scene, commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
-                ivec3(groupCount.x, groupCount.y, samplesPerFrame), false,
+                ivec3(groupCount.x, groupCount.y, samplesPerFrame),
                 [=]() {
                     auto corners = camera.GetFrustumCorners(camera.nearPlane, camera.farPlane);
 
@@ -221,7 +221,7 @@ namespace Atlas {
 
                 auto rayHitPipeline = useRayTracingPipeline && materialGraphs ?
                     Helper::RayTracingHelper::GetRayTracingPipeline(rayHitConfig, scene) : PipelineManager::GetPipeline(rayHitConfig);
-                helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, true,
+                helper.DispatchHitClosest(scene, commandList, rayHitPipeline, true,
                     [=]() {
                         commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);

@@ -10,6 +10,9 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
+// Needs the work group size
+#include <../common/upsample.hsh>
+
 layout(set = 3, binding = 0, rgba16f) uniform image2D image;
 layout(set = 3, binding = 1) uniform sampler2D giTexture;
 layout(set = 3, binding = 2) uniform sampler2D lowResDepthTexture;
@@ -31,18 +34,10 @@ shared float depths[36];
 shared vec3 normals[36];
 shared vec4 gi[36];
 
-const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
-const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
-
 void LoadGroupSharedData() {
 
-    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
-
-    // We assume data size is smaller than gl_WorkGroupSize.x + gl_WorkGroupSize.y
-    if (gl_LocalInvocationIndex < depthDataSize) {
-        ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
-        offset += workGroupOffset;
-        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+    ivec2 offset;
+    if (GetUpsampleTileTexel(textureSize(lowResDepthTexture, 0), offset)) {
         depths[gl_LocalInvocationIndex] = ConvertDepthToViewSpaceDepth(texelFetch(lowResDepthTexture, offset, 0).r);
 
         vec3 normal = DecodeNormal(texelFetch(lowResNormalTexture, offset, 0).rg);
@@ -54,40 +49,6 @@ void LoadGroupSharedData() {
     }
 
     barrier();
-
-}
-
-const ivec2 offsets[9] = ivec2[9](
-    ivec2(-1, -1),
-    ivec2(0, -1),
-    ivec2(1, -1),
-    ivec2(-1, 0),
-    ivec2(0, 0),
-    ivec2(1, 0),
-    ivec2(-1, 1),
-    ivec2(0, 1),
-    ivec2(1, 1)
-);
-
-const ivec2 pixelOffsets[4] = ivec2[4](
-    ivec2(0, 0),
-    ivec2(1, 0),
-    ivec2(0, 1),
-    ivec2(1, 1)
-);
-
-int NearestDepth(float referenceDepth, float[9] depthVec) {
-
-    int idx = 0;
-    float nearest = distance(referenceDepth, depthVec[0]);
-    for (int i = 1; i < 9; i++) {
-        float dist = distance(referenceDepth, depthVec[i]);
-        if (dist < nearest) {
-            nearest = dist;
-            idx = i;
-        }
-    }
-    return idx;
 
 }
 

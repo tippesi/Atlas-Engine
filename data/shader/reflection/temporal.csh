@@ -70,13 +70,6 @@ const ivec2 pixelOffsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-float Luma(vec3 color) {
-
-    const vec3 luma = vec3(0.299, 0.587, 0.114);
-    return dot(color, luma);
-
-}
-
 vec4 FetchTexel(ivec2 texel) {
     
     vec4 color = texelFetch(currentTexture, texel, 0);
@@ -142,26 +135,6 @@ ivec2 FindNearest3x3(ivec2 pixel) {
     }
 
     return offset;
-
-}
-
-float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
-
-    vec3 origin = history;
-    vec3 dir = current - history;
-
-    // Make sure dir isn't zero
-    dir.x = abs(dir.x) < (1.0 / 32767.0) ? (1.0 / 32767.0) : dir.x;
-    dir.y = abs(dir.y) < (1.0 / 32767.0) ? (1.0 / 32767.0) : dir.y;
-    dir.z = abs(dir.z) < (1.0 / 32767.0) ? (1.0 / 32767.0) : dir.z;
-
-    vec3 invDir = 1.0 / dir;
-
-    vec3 t0 = (boxMin - origin) * invDir;
-    vec3 t1 = (boxMax - origin) * invDir;
-
-    vec3 intersect = min(t0, t1);
-    return max(intersect.x, max(intersect.y, intersect.z));
 
 }
 

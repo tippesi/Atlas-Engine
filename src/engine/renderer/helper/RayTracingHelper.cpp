@@ -41,18 +41,10 @@ namespace Atlas {
                     sizeof(GPULight), lightCount);
                 rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, 3 * sizeof(vec4));
                 rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, sizeof(vec4));
-                rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, sizeof(uint32_t));
-                rayBinOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, sizeof(uint32_t));
-
-                rayBinCounterBuffer.SetSize(1024);
-                rayBinOffsetBuffer.SetSize(1024);
 
                 traceDispatchPipelineConfig = PipelineConfig("raytracer/traceDispatch.csh");
                 traceClosestPipelineConfig = PipelineConfig("raytracer/traceClosest.csh");
                 traceAnyPipelineConfig = PipelineConfig("raytracer/traceAny.csh");
-
-                binningOffsetPipelineConfig = PipelineConfig("raytracer/binning.csh");
-                binningPipelineConfig = PipelineConfig("raytracer/binningOffset.csh");
 
                 std::vector<uint8_t> dummyData = { 0 };
                 dummyTexture = Texture::Texture2DArray(1, 1, 1, VK_FORMAT_R8_UNORM);
@@ -205,7 +197,7 @@ namespace Atlas {
 
             void RayTracingHelper::DispatchRayGen(Ref<Scene::Scene> scene, 
                 Graphics::CommandList* commandList, const Ref<Graphics::Pipeline>& rayGenPipeline, 
-                ivec3 dimensions, bool binning, std::function<void(void)> prepare) {
+                ivec3 dimensions, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 
@@ -280,15 +272,12 @@ namespace Atlas {
                 commandList->BindBuffer(rayBuffer.Get(), 2, 15);
                 commandList->BindBuffer(rayPayloadBuffer.Get(), 2, 16);
 
-                commandList->BindBuffer(rayBinCounterBuffer.Get(), 2, 17);
-
                 commandList->BindPipeline(rayGenPipeline);
 
                 PushConstants constants;
                 constants.lightCount = int32_t(selectedLights.size());
                 constants.rayBufferOffset = uint32_t(rayOffsetCounter++);
                 constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
-                constants.useRayBinning = binning ? 1 : 0;
 
                 commandList->PushConstants("constants", &constants);
 
@@ -298,7 +287,7 @@ namespace Atlas {
 
             void RayTracingHelper::DispatchHitClosest(Ref<Scene::Scene> scene, 
                 Graphics::CommandList* commandList, const Ref<Graphics::Pipeline>& hitPipeline, 
-                bool binning, bool opacityCheck, std::function<void(void)> prepare) {
+                bool opacityCheck, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 
@@ -379,51 +368,6 @@ namespace Atlas {
                 commandList->BindBuffer(rayBuffer.Get(), 2, 15);
                 commandList->BindBuffer(rayPayloadBuffer.Get(), 2, 16);
 
-                commandList->BindBuffer(rayBinCounterBuffer.Get(), 2, 17);
-                commandList->BindBuffer(rayBinOffsetBuffer.Get(), 2, 18);
-
-                /*
-                if (binning) {
-
-                    GPUProfiler::EndAndBeginQuery("Binning offsets");
-
-                    // Calculate binning offsets
-                    {
-                        auto pipeline = PipelineManager::GetPipeline(binningOffsetPipelineConfig);
-                        commandList->BindPipeline(pipeline);
-
-                        commandList->BindBuffer(rayBinCounterBuffer.Get(), 2, 15);
-                        commandList->BindBuffer(rayBinOffsetBuffer.Get(), 2, 16);
-
-
-                        // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-                        // glDispatchCompute(1, 1, 1);
-                    }
-
-                    GPUProfiler::EndAndBeginQuery("Binning rays");
-
-                    // Order rays by their bins
-                    {
-                        auto pipeline = PipelineManager::GetPipeline(binningPipelineConfig);
-                        commandList->BindPipeline(pipeline);
-
-
-                        binningShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
-                        binningShader.GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(payloadOffsetCounter++ % 2));
-                        binningShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
-
-                        // glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-                        // glDispatchComputeIndirect(0);
-
-                        uint32_t zero = 0;
-                        rayBinCounterBuffer.Bind();
-                        rayBinCounterBuffer.InvalidateData();
-                        // rayBinCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
-                    }
-
-                }
-                */
-
                 // A ray tracing pipeline traces and shades in one stage, it reads the rays of the ray generation
                 if (hitPipeline->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
                     GPUProfiler::EndAndBeginQuery("Trace and shade rays");
@@ -436,7 +380,6 @@ namespace Atlas {
                     constants.rayBufferOffset = uint32_t(rayOffsetCounter++ % 2);
                     constants.rayPayloadBufferOffset = uint32_t(payloadOffsetCounter++ % 2);
                     constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
-                    constants.useRayBinning = binning ? 1 : 0;
 
                     commandList->PushConstants("constants", &constants);
 
@@ -499,10 +442,8 @@ namespace Atlas {
                     constants.rayBufferOffset = uint32_t(rayOffsetCounter++ % 2);
                     constants.rayPayloadBufferOffset = uint32_t(payloadOffsetCounter++ % 2);
                     constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
-                    constants.useRayBinning = binning ? 1 : 0;
 
                     commandList->PushConstants("constants", &constants);
-                    //rayBinCounterBuffer.BindBase(11);
 
                     prepare();
 
@@ -544,7 +485,7 @@ namespace Atlas {
 
             }
 
-            void RayTracingHelper::UpdateLights(Ref<Scene::Scene> scene, bool useEmissivesAsLights) {
+            void RayTracingHelper::UpdateLights(Ref<Scene::Scene> scene) {
 
                 lights.clear();
 
@@ -615,11 +556,6 @@ namespace Atlas {
                     lights.push_back(gpuLight);
                 }
 
-                if (useEmissivesAsLights && scene->IsRtDataValid()) {
-                    const auto& rtData = scene->renderState.rayTracingWorld;
-                    lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
-                }
-                
                 if (stochasticLightSelection) {
                     // Find the maximum weight
                     auto maxWeight = 0.0f;

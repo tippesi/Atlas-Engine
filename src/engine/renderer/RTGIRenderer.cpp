@@ -24,7 +24,6 @@ namespace Atlas {
 
             rtPipelineConfig = PipelineConfig("rtgi/rtgi.csh");
             rtRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("rtgi/rtgi.rgen");
-            rtShadowPipelineConfig = PipelineConfig("raytracer/traceShadow.csh");
             rtResolvePipelineConfig = PipelineConfig("rtgi/rtgiResolve.csh");
             temporalPipelineConfig = PipelineConfig("rtgi/temporal.csh");
 
@@ -34,10 +33,7 @@ namespace Atlas {
 
             rtUniformBuffer = Buffer::UniformBuffer(sizeof(RTUniforms));
 
-            deferredSampleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4));
-            deferredLightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
-            deferredShadowRayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4));
-            deferredShadowRayCountBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t), 1);
+            shadowRays.Init();
 
         }
 
@@ -54,7 +50,7 @@ namespace Atlas {
             if (!target->giMomentsTexture.IsValid())
                 target->SetGIResolution(target->GetGIResolution(), true);
 
-            helper.UpdateLights(scene, false);
+            helper.UpdateLights(scene);
 
             ivec2 res = target->GetRelativeResolution(target->GetGIResolution());
 
@@ -138,29 +134,8 @@ namespace Atlas {
 
                 auto sampleCount = size_t(res.x) * size_t(res.y) * size_t(rtgi->sampleCount);
                 auto lightCount = sampleCount * size_t(rtgi->lightSampleCount);
-                if (deferredShadowRays) {
-                    if (deferredSampleBuffer.GetElementCount() != sampleCount)
-                        deferredSampleBuffer.SetSize(sampleCount);
-                    if (deferredLightBuffer.GetElementCount() != lightCount) {
-                        deferredLightBuffer.SetSize(lightCount);
-                        deferredShadowRayBuffer.SetSize(lightCount);
-                    }
-
-                    Graphics::BufferBarrier preBufferBarriers[] = {
-                        { deferredShadowRayCountBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT }
-                    };
-                    commandList->PipelineBarrier({}, preBufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                    uint32_t zero = 0;
-                    commandList->FillBuffer(deferredShadowRayCountBuffer.Get(), &zero);
-
-                    Graphics::BufferBarrier postBufferBarriers[] = {
-                        { deferredShadowRayCountBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT }
-                    };
-                    commandList->PipelineBarrier({}, postBufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-                }
+                if (deferredShadowRays)
+                    shadowRays.Prepare(commandList, sampleCount, lightCount);
 
                 commandList->ImageMemoryBarrier(target->giTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
@@ -186,40 +161,15 @@ namespace Atlas {
                         rtUniformBuffer.SetData(&uniforms, 0);
                         commandList->BindBuffer(rtUniformBuffer.Get(), 3, 10);
 
-                        if (deferredShadowRays) {
-                            commandList->BindBuffer(deferredSampleBuffer.Get(), 3, 12);
-                            commandList->BindBuffer(deferredLightBuffer.Get(), 3, 13);
-                            commandList->BindBuffer(deferredShadowRayBuffer.Get(), 3, 14);
-                            commandList->BindBuffer(deferredShadowRayCountBuffer.Get(), 3, 15);
-                        }
+                        if (deferredShadowRays)
+                            shadowRays.BindForTrace(commandList);
 
                     });
 
                 if (deferredShadowRays) {
                     GPUProfiler::EndAndBeginQuery("Shadow rays");
 
-                    Graphics::BufferBarrier bufferBarriers[] = {
-                        { deferredSampleBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
-                        { deferredLightBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
-                        { deferredShadowRayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
-                        { deferredShadowRayCountBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT }
-                    };
-                    commandList->PipelineBarrier({}, bufferBarriers);
-
-                    auto shadowPipeline = PipelineManager::GetPipeline(rtShadowPipelineConfig);
-                    commandList->BindPipeline(shadowPipeline);
-
-                    commandList->BindBuffer(deferredLightBuffer.Get(), 3, 13);
-                    commandList->BindBuffer(deferredShadowRayBuffer.Get(), 3, 14);
-                    commandList->BindBuffer(deferredShadowRayCountBuffer.Get(), 3, 15);
-
-                    const uint32_t shadowGroupSize = 32;
-                    auto shadowGroupCount = uint32_t(lightCount) / shadowGroupSize;
-                    shadowGroupCount += (uint32_t(lightCount) % shadowGroupSize == 0) ? 0 : 1;
-
-                    commandList->Dispatch(shadowGroupCount, 1, 1);
-
-                    commandList->BufferMemoryBarrier(deferredLightBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+                    shadowRays.Trace(commandList);
                     // The resolve keeps the hit distance written by the trace
                     commandList->ImageMemoryBarrier(target->giTexture.image,
                         VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
@@ -230,8 +180,7 @@ namespace Atlas {
                     commandList->BindPipeline(resolvePipeline);
 
                     commandList->BindImage(target->giTexture.image, 3, 0);
-                    commandList->BindBuffer(deferredSampleBuffer.Get(), 3, 12);
-                    commandList->BindBuffer(deferredLightBuffer.Get(), 3, 13);
+                    shadowRays.BindForResolve(commandList);
 
                     ResolveConstants constants = {
                         .resolution = res,

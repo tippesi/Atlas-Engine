@@ -10,6 +10,8 @@
 #include <intersections.hsh>
 
 #include <../brdf/surface.hsh>
+#include <../common/texCoord.hsh>
+#include <../common/opacity.hsh>
 
 #ifdef RAY_TRACING_PIPELINE
 // The hit of the last ray of TraceClosest, hit objects can't be assigned or passed as out parameters
@@ -193,8 +195,7 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
         normal = normalize(2.0 * SampleTerrainNormalBilinear(rayMat.terrainNormalTexture, 0.0, terrainTexCoord) - 1.0);
     }
 
-    texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
-    texCoord *= rayMat.tiling;
+    texCoord = TransformTexCoord(texCoord, rayMat.invertUVs > 0, vec2(rayMat.uvAnimationX, rayMat.uvAnimationY), rayMat.tiling);
 
     int level = textureLevel;
 
@@ -286,17 +287,21 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray, bool useN
     return GetSurfaceParameters(instance, tri, ray, useNormalMaps, normalFlipped, textureLevel);
 }
 
-float GetOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
+// Surfaces are cut out by their opacity map only, like in the raster passes
+float GetCutoutOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
     float s = barrycentric.x;
     float t = barrycentric.y;
     float r = 1.0 - s - t;
 
     RaytraceMaterial rayMat = materials[tri.materialIndex + materialOffset];
 
-    float vertexAlpha = r * tri.color0.a + s * tri.color1.a + t * tri.color2.a;
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
-    texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+    texCoord = TransformTexCoord(texCoord, rayMat.invertUVs > 0, vec2(rayMat.uvAnimationX, rayMat.uvAnimationY), rayMat.tiling);
 
-    return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord * rayMat.tiling)
-        * rayMat.opacity;
+    return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord);
+}
+
+float GetOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
+    return GetCutoutOpacity(tri, barrycentric, materialOffset, textureLevel) *
+        materials[tri.materialIndex + materialOffset].opacity;
 }

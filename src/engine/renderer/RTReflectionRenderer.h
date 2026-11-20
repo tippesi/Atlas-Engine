@@ -4,6 +4,7 @@
 
 #include "Renderer.h"
 #include "helper/RayTracingHelper.h"
+#include "helper/DeferredShadowRays.h"
 
 namespace Atlas {
 
@@ -19,6 +20,29 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
+            // State the passes of a frame share. The upsampling swaps the two reflection textures
+            struct ReflectionFrame {
+                Ref<Lighting::Reflection> reflection;
+                ivec2 rayRes;
+                ivec2 res;
+                Texture::Texture2D* reflectionTexture;
+                Texture::Texture2D* swapReflectionTexture;
+                bool upsample;
+                bool radianceVolume;
+                uint32_t frameCount;
+            };
+
+            void RenderSSR(const ReflectionFrame& frame, Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
+            // Ray traced reflections where SSR found no hit, with deferred shadow rays without hardware ray tracing
+            void TraceRays(const ReflectionFrame& frame, Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
+            void Upsample(ReflectionFrame& frame, Ref<RenderTarget> target, Graphics::CommandList* commandList);
+
+            void TemporalFilter(const ReflectionFrame& frame, Ref<RenderTarget> target, Graphics::CommandList* commandList);
+
+            void SpatialFilter(const ReflectionFrame& frame, Ref<RenderTarget> target, Graphics::CommandList* commandList);
+
             struct alignas(16) RTRUniforms {
                 float radianceLimit;
                 uint32_t frameSeed;
@@ -64,7 +88,6 @@ namespace Atlas {
             PipelineConfig ssrPipelineConfig;
             PipelineConfig rtrPipelineConfig;
             PipelineConfig rtrRayTracingPipelineConfig;
-            PipelineConfig rtrShadowPipelineConfig;
             PipelineConfig rtrResolvePipelineConfig;
             PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;
@@ -72,10 +95,7 @@ namespace Atlas {
 
             Buffer::UniformBuffer rtrUniformBuffer;
 
-            Buffer::Buffer deferredSampleBuffer;
-            Buffer::Buffer deferredLightBuffer;
-            Buffer::Buffer deferredShadowRayBuffer;
-            Buffer::Buffer deferredShadowRayCountBuffer;
+            Helper::DeferredShadowRays shadowRays;
         };
 
     }

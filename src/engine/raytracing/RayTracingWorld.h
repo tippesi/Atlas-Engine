@@ -114,10 +114,7 @@ namespace Atlas {
             RayTracingWorld();
 
             // The dirty entities were created, moved or changed in this update
-            void Update(Scene::Subset<MeshComponent, TransformComponent> subset, const std::vector<ECS::Entity>& dirtyEntities,
-                bool updateTriangleLights);
-
-            void UpdateMaterials();
+            void Update(Scene::Subset<MeshComponent, TransformComponent> subset, const std::vector<ECS::Entity>& dirtyEntities);
 
             // The GPU scene writes its hardware ray tracing instances next to the ones prepared by the update and builds
             // the acceleration structure with the methods below. Returns nullptr if the current frame has no update.
@@ -177,8 +174,6 @@ namespace Atlas {
                 int32_t idx = 0;
                 // The last update that found the BLAS
                 uint64_t update = 0;
-
-                std::vector<GPULight> triangleLights;
             };
 
             // Nearby animated meshes are deformed into a BLAS of the entity, hardware ray tracing hits read everything
@@ -271,7 +266,7 @@ namespace Atlas {
                 std::vector<mat3x4> lastMatrices;
             };
 
-            void UpdateMaterials(std::vector<GPUMaterial>& materials);
+            void UpdateMaterials();
 
             void AllocateHitRecords(BlasInfo& blasInfo, uint32_t count);
 
@@ -286,15 +281,14 @@ namespace Atlas {
 
             void UpdateDeformedInstances(const std::vector<ECS::Entity>& dirtyEntities);
 
+            // Static meshes deformed by wind or their material near the camera, see deformCandidates
+            void UpdateDeformCandidates(const std::vector<ECS::Entity>& dirtyEntities, vec3 cameraLocation, bool hasCamera);
+
             DeformedInstance CreateDeformedInstance(const ResourceHandle<Mesh::Mesh>& mesh);
 
             void CreateSoftwareTopology(DeformMesh& deformMesh, const ResourceHandle<Mesh::Mesh>& mesh);
 
             bool IsDeformedByMaterial(const ResourceHandle<Mesh::Mesh>& mesh) const;
-
-            void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
-
-            void UpdateTriangleLights();
 
             Scene::Scene* scene;
 
@@ -313,8 +307,6 @@ namespace Atlas {
             std::vector<GPUBVHInstance> gpuBvhInstances;
             std::vector<Volume::AABB> instanceAABBs;
             std::vector<mat3x4> lastMatrices;
-
-            std::vector<GPULight> triangleLights;
 
             std::vector<mat3x4> jointMatrices;
             std::vector<vec4> softBodyVertices;
@@ -386,7 +378,6 @@ namespace Atlas {
             bool hardwareRayTracing = false;
 
             std::atomic_bool isValid = true;
-            std::mutex mutex;
 
         };
 

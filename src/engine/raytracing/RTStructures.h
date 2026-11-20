@@ -55,7 +55,7 @@ namespace Atlas {
         uint32_t firstGroup = 0;
         uint32_t vertexOffset = 0;
         uint32_t vertexCount = 0;
-        uint32_t jointOffset = 0;
+        uint32_t deformOffset = 0;
         float windBendScale = 0.0f;
         float windWiggleScale = 0.0f;
         float windTextureLod = 0.0f;
@@ -133,8 +133,8 @@ namespace Atlas {
         // Hit group of a material graph in ray tracing pipelines (see RayTracingWorld::hitRecords), 0 without one
         uint32_t graphHitGroup = 0;
         uint32_t graphParameterOffset = 0;
-        int32_t padding0 = 0;
-        int32_t padding1 = 0;
+        float uvAnimationX = 0.0f;
+        float uvAnimationY = 0.0f;
     };
 
     struct GPUAABB {

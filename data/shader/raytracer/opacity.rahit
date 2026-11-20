@@ -3,6 +3,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include <surface.hsh>
+#include <../common/opacity.hsh>
 
 hitAttributeEXT vec2 barycentrics;
 
@@ -15,7 +16,7 @@ void main() {
     int materialOffset = bvhInstances[nonuniformEXT(gl_InstanceID)].materialOffset;
     Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[nonuniformEXT(hitID)]);
 
-    if (GetOpacity(tri, barycentrics, materialOffset, 0) <= 0.001)
+    if (GetCutoutOpacity(tri, barycentrics, materialOffset, 0) < opacityCutoff)
         ignoreIntersectionEXT;
 
 }
