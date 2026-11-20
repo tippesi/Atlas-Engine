@@ -349,12 +349,7 @@ namespace Atlas::Tools {
                         int32_t cellOffset = y * (tileResolution + 1) + x;
                         int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
                             i * tileResolution + x;
-                        if (cell->heightData[cellOffset] == FLT_MAX) {
-                            heightData[imageOffset] = 65535;
-                        }
-                        else {
-                            heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65534.0f);
-                        }                        
+                        heightData[imageOffset] = EncodeHeight(cell->heightData[cellOffset]);
                         splatData[imageOffset] = cell->materialIdxData[cellOffset];
                     }
                 }
@@ -467,6 +462,8 @@ namespace Atlas::Tools {
                     int32_t i = idx % tileSideCountLod;
 
                     auto cell = terrain->storage->GetCell(i, j, Lod);
+                    // Ray tracing builds read the cell data in jobs
+                    std::unique_lock lock(cell->heightDataMutex);
 
                     if (cell->heightData.size() != totalTileResolution)
                         cell->heightData.resize(totalTileResolution);
@@ -596,11 +593,9 @@ namespace Atlas::Tools {
 
         for (uint32_t i = 0; i < uint32_t(weights.size()); i++) {
             for (uint32_t j = 0; j < uint32_t(weights.size()); j++) {
-                int32_t xTranslated = x + offsets[i][j].x;
-                int32_t yTranslated = y + offsets[i][j].y;
-                int32_t index = yTranslated * width * 3 + xTranslated;
+                auto index = GetNearbyDataIndex(x + offsets[i][j].x, y + offsets[i][j].y, width, height);
                 // Skip holes
-                if (data[index] == FLT_MAX)
+                if (index < 0 || data[index] == FLT_MAX)
                     continue;
                 float value = data[index] + scale * weights[i][j] / terrain->heightScale;
                 data[index] = Helper::Math::Saturate(value);
@@ -653,13 +648,11 @@ namespace Atlas::Tools {
                     for (int32_t l = -contributingRadius; l <= contributingRadius; l++) {
                         if (k == 0 && l == 0)
                             continue;
-                        int32_t xTranslated = x + i + k;
-                        int32_t yTranslated = y + j + l;
-                        int32_t index = yTranslated * width * 3 + xTranslated;
+                        auto index = GetNearbyDataIndex(x + i + k, y + j + l, width, height);
 
                         // When we're sampling at the edge of the terrain all
                         // values need to be discarded
-                        if (heightsCopy[index] < 0.0f)
+                        if (index < 0 || heightsCopy[index] < 0.0f)
                             continue;
                         // Skip holes
                         if (heightsCopy[index] == FLT_MAX)
@@ -670,11 +663,9 @@ namespace Atlas::Tools {
                     }
                 }
 
-                int32_t xTranslated = x + i;
-                int32_t yTranslated = y + j;
-                int32_t index = yTranslated * width * 3 + xTranslated;
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
                 // Holes and texels outside of the terrain keep their value, as do texels without valid neighbors
-                if (heightsCopy[index] < 0.0f || heightsCopy[index] == FLT_MAX || contributing == 0.0f)
+                if (index < 0 || heightsCopy[index] < 0.0f || heightsCopy[index] == FLT_MAX || contributing == 0.0f)
                     continue;
 
                 sum /= contributing;
@@ -729,11 +720,9 @@ namespace Atlas::Tools {
                 auto weight = 1.0f;
                 if (distance > float(sizeRadius))
                     weight = 1.0f - glm::smoothstep(float(sizeRadius), float(outerRadius), distance);
-                int32_t xTranslated = x + i;
-                int32_t yTranslated = y + j;
-                int32_t index = yTranslated * width * 3 + xTranslated;
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
                 // Skip holes
-                if (data[index] == FLT_MAX)
+                if (index < 0 || data[index] == FLT_MAX)
                     continue;
                 data[index] = glm::mix(data[index], flattenHeight, strength * weight);
             }
@@ -772,8 +761,8 @@ namespace Atlas::Tools {
             for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
                 if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
                     continue;
-                auto index = (y + j) * width * 3 + x + i;
-                if (data[index] == FLT_MAX)
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                if (index >= 0 && data[index] == FLT_MAX)
                     holes.push_back(index);
             }
         }
@@ -844,10 +833,9 @@ namespace Atlas::Tools {
             for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
                 if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
                     continue;
-                int32_t xTranslated = x + i;
-                int32_t yTranslated = y + j;
-                auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
-                data[index] = FLT_MAX;
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                if (index >= 0)
+                    data[index] = FLT_MAX;
             }
         }
 
@@ -891,10 +879,9 @@ namespace Atlas::Tools {
             for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
                 if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
                     continue;
-                int32_t xTranslated = x + i;
-                int32_t yTranslated = y + j;
-                auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
-                data[index] = (uint8_t)slot;
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                if (index >= 0)
+                    data[index] = (uint8_t)slot;
             }
         }
 
@@ -935,7 +922,6 @@ namespace Atlas::Tools {
         for (int32_t i = 0; i < tileSideCount; i++) {
             for (int32_t j = 0; j < tileSideCount; j++) {
                 auto cell = terrain->storage->GetCell(i, j, LoD);
-                auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
                 // Now copy a tile of the original image
                 // We make sure that every tile has the same size
@@ -1052,7 +1038,7 @@ namespace Atlas::Tools {
                         int32_t cellOffset = y * (tileResolution + 1) + x;
                         int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
                             i * tileResolution + x;
-                        heightData[imageOffset] = uint16_t(cell->heightData[cellOffset] * 65535.0f);
+                        heightData[imageOffset] = EncodeHeight(cell->heightData[cellOffset]);
                     }
                 }
             }
@@ -1150,6 +1136,8 @@ namespace Atlas::Tools {
                 int32_t x = idx % dataWidth;
 
                 float heightC = GetHeight(heightData, dataWidth, x, y, width, height, scale);
+                // Holes point up, the filtered normals and the displacement of their rim would bend otherwise
+                auto normal = vec3(0.0f, 1.0f, 0.0f);
                 if (heightC != FLT_MAX) {
                     float heightL = GetHeight(heightData, dataWidth, x - 1, y, width, height, scale);
                     float heightR = GetHeight(heightData, dataWidth, x + 1, y, width, height, scale);
@@ -1161,18 +1149,18 @@ namespace Atlas::Tools {
                     heightD = heightD == FLT_MAX ? heightC : heightD;
                     heightU = heightU == FLT_MAX ? heightC : heightU;
 
-                    auto normal = glm::normalize(vec3(heightL - heightR, 1.0f,
+                    normal = glm::normalize(vec3(heightL - heightR, 1.0f,
                         heightD - heightU));
-
-                    normal = (0.5f * normal + 0.5f) * 255.0f;
-
-                    auto xOffset = 3 * x;
-                    auto yOffset = 3 * y * dataWidth;
-
-                    normalData[yOffset + xOffset] = (uint8_t)normal.x;
-                    normalData[yOffset + xOffset + 1] = (uint8_t)normal.y;
-                    normalData[yOffset + xOffset + 2] = (uint8_t)normal.z;
                 }
+
+                normal = (0.5f * normal + 0.5f) * 255.0f;
+
+                auto xOffset = 3 * x;
+                auto yOffset = 3 * y * dataWidth;
+
+                normalData[yOffset + xOffset] = (uint8_t)normal.x;
+                normalData[yOffset + xOffset + 1] = (uint8_t)normal.y;
+                normalData[yOffset + xOffset + 2] = (uint8_t)normal.z;
 
                 idx++;
 
@@ -1263,6 +1251,21 @@ namespace Atlas::Tools {
 
     }
 
+    int32_t TerrainTool::GetNearbyDataIndex(int32_t x, int32_t y, int32_t width, int32_t height) {
+
+        if (x < 0 || y < 0 || x >= width * 3 || y >= height * 3)
+            return -1;
+        return y * width * 3 + x;
+
+    }
+
+    uint16_t TerrainTool::EncodeHeight(float height) {
+
+        // Cells which don't exist are below 0
+        return height == FLT_MAX ? 65535 : uint16_t(Helper::Math::Saturate(height) * 65534.0f);
+
+    }
+
     void TerrainTool::ApplyDataToNearbyStorage(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
         std::span<float> heightData, std::span<uint8_t> splatData) {
 
@@ -1279,7 +1282,7 @@ namespace Atlas::Tools {
             allHeightData.resize(heightData.size());
             allNormalData.resize(heightData.size() * 3);
             for (size_t i = 0; i < heightData.size(); i++)
-                allHeightData[i] = uint16_t(heightData[i] * 65535.0f);
+                allHeightData[i] = EncodeHeight(heightData[i]);
 
             GenerateNormalData(allHeightData, allNormalData, (width - 1) * 3, (height - 1) * 3, terrain->heightScale);
         }
@@ -1295,6 +1298,11 @@ namespace Atlas::Tools {
 
                 auto cell = cells[i * 3 + j];
                 if (cell == nullptr)
+                    continue;
+
+                // Ray tracing builds read the cell data in jobs, unloaded cells have no textures to update
+                std::unique_lock lock(cell->heightDataMutex);
+                if (!cell->IsLoaded())
                     continue;
 
                 for (int32_t k = 0; k < height; k++) {

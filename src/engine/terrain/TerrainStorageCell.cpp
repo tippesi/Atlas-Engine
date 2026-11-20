@@ -48,6 +48,9 @@ namespace Atlas {
 
         void TerrainStorageCell::Unload() {
 
+            // Ray tracing builds the cell in a job which streaming doesn't wait for
+            std::unique_lock lock(heightDataMutex);
+
             // We keep the height data, even after unload (e.g. needed for ray casting, height estimation)
             if (!storage->inEditing) {
                 materialIdxData.clear();
@@ -69,9 +72,9 @@ namespace Atlas {
 
         void TerrainStorageCell::BuildBVH(float stretchFactor, float heightFactor) {
 
-            if (!IsLoaded()) return;
-
             std::shared_lock lock(heightDataMutex);
+
+            if (!IsLoaded()) return;
 
             int32_t heightFieldSideLength = int32_t(sqrtf(float(heightData.size())));
 
@@ -127,13 +130,10 @@ namespace Atlas {
 
             std::vector<ResourceHandle<Material>> materials;
             for (size_t i = 0; i < storage->materials.size(); i++) {
-                if (storage->materials[i].IsLoaded()) {
+                if (storage->materials[i].IsLoaded())
                     materials.push_back(storage->materials[i]);
-                    materials.back()->twoSided = false;
-                }
-                else {
+                else
                     materials.push_back(ResourceHandle<Material>());
-                }
             }
 
             std::vector<RayTracing::BLAS::Triangle> triangles(indices.size() / 3);

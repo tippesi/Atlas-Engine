@@ -109,6 +109,12 @@ namespace Atlas {
             static void ExtractNearbyStorageData(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
                 std::span<float> heightData, std::span<uint8_t> splatData);
 
+            // Index into the data of the 3x3 nearby cells, -1 outside of them
+            static int32_t GetNearbyDataIndex(int32_t x, int32_t y, int32_t width, int32_t height);
+
+            // Heights from 0 to 1 are stored up to 65534, 65535 marks a hole (FLT_MAX in the cell height data)
+            static uint16_t EncodeHeight(float height);
+
             static void ApplyDataToNearbyStorage(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
                 std::span<float> heightData, std::span<uint8_t> splatData);
 

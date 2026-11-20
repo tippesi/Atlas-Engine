@@ -135,7 +135,10 @@ namespace Atlas {
                 throw ResourceLoadException(filename, "File isn't a terrain file " + filename);
             }
 
-            vec3 translation;
+            // Older terrains have no translation in the header
+            auto legacyHeader = std::count(header.begin(), header.end(), ' ') == 7;
+
+            vec3 translation = vec3(0.0f);
             size_t offset = 4;
             auto materialCount = ReadInt(" ", header, offset);
             auto rootNodeSideCount = ReadInt(" ", header, offset);
@@ -143,9 +146,11 @@ namespace Atlas {
             auto patchSizeFactor = ReadInt(" ", header, offset);
             auto resolution = ReadFloat(" ", header, offset);
             auto heightScale = ReadFloat(" ", header, offset);
-            translation.x = ReadFloat(" ", header, offset);
-            translation.y = ReadFloat(" ", header, offset);
-            translation.z = ReadFloat(" ", header, offset);
+            if (!legacyHeader) {
+                translation.x = ReadFloat(" ", header, offset);
+                translation.y = ReadFloat(" ", header, offset);
+                translation.z = ReadFloat(" ", header, offset);
+            }
             auto bakeResolution = ReadInt(" \r\n", header, offset);
             // The optional shore line map is the rest of the header
             std::string shoreLinePath;
@@ -203,7 +208,11 @@ namespace Atlas {
                 auto pos = line.find_last_of("\r\n");
                 auto materialPath = line.substr(offset, pos - offset);
 
-                materialPath = AssetReferences::ResolveReference(filename, materialPath);
+                // Older terrains stored the paths relative to the terrain or to the data directory
+                if (!legacyHeader)
+                    materialPath = AssetReferences::ResolveReference(filename, materialPath);
+                else if (AssetLoader::FileExists(terrainDir + "/" + materialPath))
+                    materialPath = terrainDir + "/" + materialPath;
                 auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(materialPath,
                     ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
 
@@ -279,6 +288,28 @@ namespace Atlas {
             auto baseOffset = std::streamoff(basePosition);
             auto fileEndOffset = std::streamoff(fileEndPosition);
 
+            auto getNormalDataResolution = [&](int32_t LoD) {
+                auto downsample = int64_t(1) << (terrain->LoDCount - 1 - LoD);
+                auto sizeFactor = glm::min(downsample, int64_t(terrain->bakeResolution / (tileResolution - 1)));
+                return int64_t(tileResolution - 1) * sizeFactor + 3;
+            };
+
+            // Older terrains store the normals with three channels, the size of the data tells them apart
+            auto getDataSize = [&](int64_t normalChannels) {
+                auto dataSize = int64_t(0);
+                auto cellSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
+                for (int32_t j = 0; j < terrain->LoDCount; j++, cellSideCount *= 2) {
+                    auto resolution = getNormalDataResolution(j);
+                    dataSize += cellSideCount * cellSideCount * (nodeDataCount + resolution * resolution * normalChannels);
+                }
+                return dataSize;
+            };
+            auto fileDataSize = int64_t(fileEndOffset - baseOffset);
+            auto normalChannels = fileDataSize == getDataSize(3) ? 3 : 4;
+            // A truncated file fails here, before any cell starts its transfer
+            if (fileDataSize < getDataSize(normalChannels))
+                throw ResourceLoadException(filename, "Terrain file is truncated or corrupted: " + filename);
+
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             Graphics::MemoryTransferManager transferManager(device, device->memoryManager);
 
@@ -297,16 +328,13 @@ namespace Atlas {
                 auto currPos = int64_t(0);
                 auto nodeSize = int64_t(0);
 
-                auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
                 auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
 
                 // Different resolutions for each LoD
                 for (int32_t j = 0; j <= cell->LoD; j++) {
-                    auto sizeFactor = int64_t(glm::min(downsample,
-                        terrain->bakeResolution / (tileResolution - 1)));
-                    normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
+                    normalDataResolution = getNormalDataResolution(j);
                     nodeSize = nodeDataCount + normalDataResolution
-                        * normalDataResolution * 4;
+                        * normalDataResolution * normalChannels;
 
                     if (cell->LoD == j) {
                         currPos += (cell->x * tileSideCount + cell->y) * nodeSize;
@@ -315,7 +343,6 @@ namespace Atlas {
 
                     currPos += tileSideCount * tileSideCount * nodeSize;
 
-                    downsample /= 2;
                     tileSideCount *= 2;
                 }
 
@@ -346,7 +373,7 @@ namespace Atlas {
                     VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
                 cell->heightField->SetData(heightFieldData, &transferManager);
 
-                Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
+                Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, int32_t(normalChannels));
                 auto normalDataSize = std::streamsize(image.GetData().size());
                 ValidateReadBounds(filename, readDataOffset, normalDataSize, cellDataEndOffset, fileEndOffset);
                 auto& normalRet = fileStream.read(reinterpret_cast<char*>(image.GetData().data()), normalDataSize);
@@ -354,6 +381,8 @@ namespace Atlas {
                     throw ResourceLoadException(filename, "Couldn't read terrain normal data from " + filename);
                 }
                 readDataOffset += std::streamoff(normalDataSize);
+                if (normalChannels == 3)
+                    image.ExpandToChannelCount(4, 0);
                 cell->normalData = image.GetData();
 
                 cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,

@@ -2,6 +2,8 @@ layout (location = 0) in vec3 vPosition;
 
 layout (set = 3, binding = 0) uniform usampler2D heightField;
 
+out float gl_ClipDistance[1];
+
 layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
     vec4 translation;
@@ -56,14 +58,13 @@ void main() {
     vec2 texCoords = localPosition;
     texCoords /= PushConstants.nodeSideLength;
 
-    float heightDiscretized = texture(heightField, texCoords).r;
-    // The middle of the texel should match the vertex position
-    float height = float(heightDiscretized) / 65535.0 * PushConstants.heightScale;
+    uint heightDiscretized = texture(heightField, texCoords).r;
+    // The middle of the texel should match the vertex position, 65535 marks holes
+    float height = float(heightDiscretized) / 65534.0 * PushConstants.heightScale;
 
     gl_Position =  PushConstants.lightSpaceMatrix * vec4(vec3(position.x, height, position.y) + PushConstants.translation.xyz, 1.0);
 
-    if (heightDiscretized == 65535u) {
-        gl_Position = vec4(0.0, 0.0, 0.0, intBitsToFloat(int(0xFFC00000u)));
-    }
+    // The triangles around holes are clipped, see terrain.vsh
+    gl_ClipDistance[0] = heightDiscretized == 65535u ? -1e20 : 1.0;
 
 }
