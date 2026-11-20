@@ -130,40 +130,6 @@ namespace Atlas {
 
     }
 
-    void JobSystem::ExecuteMultiple(JobGroup& group, ivec3 count, std::function<void(JobData&, ivec3)> func, 
-        int32_t batchSize, void* userData) {
-
-        int32_t totalSize = count.x * count.y * count.z;
-        group.userCounter = 0;
-
-        std::atomic_int32_t counter = 0;
-        auto workerCount = JobSystem::GetWorkerCount(group.priority);
-        JobSystem::ExecuteMultiple(group, workerCount, [&group,
-            batchSize, totalSize, count, func, &counter](JobData& jobData) {
-            int32_t idx = counter.fetch_add(batchSize);
-            while (idx < totalSize) {
-                int32_t index = idx;
-
-                int32_t z = index / (count.x * count.y);
-                index -= (count.x * count.y * z);
-
-                int32_t y = index / count.x;
-                int32_t x = index % count.x;
-
-                func(jobData, ivec3(x, y, z));
-
-                idx++;
-
-                if (idx % batchSize == 0) {
-                    idx = counter.fetch_add(batchSize);
-                }
-            }
-            });
-
-        JobSystem::Wait(group);
-
-    }
-
     void JobSystem::ParallelFor(JobGroup& group, int32_t count, int32_t jobCount, 
         std::function<void(JobData&, int32_t)> func, void* userData) {
 
@@ -187,21 +153,6 @@ namespace Atlas {
                 func(data, i);
             }
             }, userData);
-
-    }
-
-    void JobSystem::Wait(JobSignal& signal, JobPriority priority) {
-
-#ifdef JOBS_SINGLE_THREADED
-        return;
-#endif
-
-        auto& priorityPool = priorityPools[static_cast<int>(priority)];        
-
-        while (!signal.TryAquire()) {
-            auto& worker = priorityPool.GetNextWorker();
-            priorityPool.Work(worker.workerId);
-        }
 
     }
 

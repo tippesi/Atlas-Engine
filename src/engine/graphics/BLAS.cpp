@@ -47,6 +47,8 @@ namespace Atlas {
         BLAS::~BLAS() {
 
             vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
+            for (const auto& [replacedStructure, replacedBuffer] : replacedStructures)
+                vkDestroyAccelerationStructureKHR(device->device, replacedStructure, nullptr);
 
         }
 
@@ -55,6 +57,9 @@ namespace Atlas {
             // Rebuilds, e.g. of animated meshes every frame, reuse the acceleration structure. Compacted ones are too small
             if (accelerationStructure != VK_NULL_HANDLE && buffer && buffer->size >= sizesInfo.accelerationStructureSize)
                 return;
+
+            if (accelerationStructure != VK_NULL_HANDLE)
+                replacedStructures.emplace_back(accelerationStructure, buffer);
 
             BufferDesc desc = {
                 .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR

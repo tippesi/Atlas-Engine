@@ -70,7 +70,7 @@ namespace Atlas {
                     !mesh->IsSoftBodySimulationMesh(preparation->simulationMesh)) {
                     preparation = CreateRef<Preparation>();
                     preparation->scale = decomposition.scale;
-                    JobSystem::Execute(preparationJobs, [preparation = preparation, mesh, settings = settings](JobData&) {
+                    JobSystem::Execute(preparationJobs, [preparation = preparation, mesh = mesh.Get(), settings = settings](JobData&) {
                         auto simulationMesh = mesh->GetSoftBodySimulationMesh();
                         const auto& restPositions = simulationMesh->positions;
                         if (!restPositions.empty()) {

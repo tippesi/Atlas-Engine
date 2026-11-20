@@ -42,10 +42,10 @@ namespace Atlas {
 
             protected:
                 void Update(const TransformComponent& transform, bool parentChanged, ECS::Pool<TransformComponent>& transformComponentPool,
-                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool);
+                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool);
 
                 void Update(JobGroup& jobGroup, const TransformComponent& transform, bool parentChanged, ECS::Pool<TransformComponent>& transformComponentPool,
-                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool);
+                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool);
 
                 void UpdateHierarchyLevel(int32_t level);
 

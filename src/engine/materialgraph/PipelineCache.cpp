@@ -34,8 +34,11 @@ namespace Atlas::MaterialGraph {
         }
 
         {
+            // Another thread might have requested it since the lookup above
             std::scoped_lock lock(mutex);
-            pipelines[key] = State::Pending;
+            auto [iter, inserted] = pipelines.try_emplace(key, State::Pending);
+            if (!inserted)
+                return iter->second;
         }
 
         // The vertex input of a config points into its vertex array, which refills it for every new config

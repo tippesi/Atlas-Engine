@@ -23,26 +23,27 @@ namespace Atlas::Scene {
     struct ComponentSection {
         using Type = T;
         const char* key;
+        const char* name;
     };
 
     // All serialized components with their key, entities and sections read them in this order
     static constexpr auto componentSections = std::make_tuple(
-        ComponentSection<NameComponent>{ "name" },
-        ComponentSection<TransformComponent>{ "transform" },
-        ComponentSection<MeshComponent>{ "mesh" },
-        ComponentSection<LightComponent>{ "light" },
-        ComponentSection<CameraComponent>{ "camera" },
-        ComponentSection<AudioComponent>{ "audio" },
-        ComponentSection<AudioVolumeComponent>{ "audioVolume" },
-        ComponentSection<FogVolumeComponent>{ "fogVolume" },
-        ComponentSection<RigidBodyComponent>{ "rigidBody" },
-        ComponentSection<SoftBodyComponent>{ "softBody" },
-        ComponentSection<PlayerComponent>{ "player" },
-        ComponentSection<ConstraintComponent>{ "constraint" },
-        ComponentSection<TextComponent>{ "text" },
-        ComponentSection<LuaScriptComponent>{ "script" },
-        ComponentSection<SplineComponent>{ "spline" },
-        ComponentSection<AnimationComponent>{ "animation" }
+        ComponentSection<NameComponent>{ "name", "Name" },
+        ComponentSection<TransformComponent>{ "transform", "Transform" },
+        ComponentSection<MeshComponent>{ "mesh", "Mesh" },
+        ComponentSection<LightComponent>{ "light", "Light" },
+        ComponentSection<CameraComponent>{ "camera", "Camera" },
+        ComponentSection<AudioComponent>{ "audio", "Audio" },
+        ComponentSection<AudioVolumeComponent>{ "audioVolume", "Audio volume" },
+        ComponentSection<FogVolumeComponent>{ "fogVolume", "Fog volume" },
+        ComponentSection<RigidBodyComponent>{ "rigidBody", "Rigid body" },
+        ComponentSection<SoftBodyComponent>{ "softBody", "Soft body" },
+        ComponentSection<PlayerComponent>{ "player", "Player" },
+        ComponentSection<ConstraintComponent>{ "constraint", "Constraint" },
+        ComponentSection<TextComponent>{ "text", "Text" },
+        ComponentSection<LuaScriptComponent>{ "script", "Script" },
+        ComponentSection<SplineComponent>{ "spline", "Spline" },
+        ComponentSection<AnimationComponent>{ "animation", "Animation" }
     );
 
     template<class Func>
@@ -52,13 +53,60 @@ namespace Atlas::Scene {
 
     }
 
+    const std::vector<ComponentType>& GetComponentTypes() {
+
+        static const std::vector<ComponentType> types = []() {
+            std::vector<ComponentType> types;
+            ForEachComponentSection([&](const auto& section) { types.push_back({ section.key, section.name }); });
+            return types;
+        }();
+        return types;
+
+    }
+
+    uint32_t GetComponentMask(const Entity& p) {
+
+        uint32_t mask = 0;
+        uint32_t bit = 0;
+        ForEachComponentSection([&](const auto& section) {
+            using T = typename std::decay_t<decltype(section)>::Type;
+            if (p.HasComponent<T>())
+                mask |= 1u << bit;
+            bit++;
+            });
+        return mask;
+
+    }
+
+    std::vector<ECS::Storage> CopyComponentStorages(Scene* scene) {
+
+        std::vector<ECS::Storage> storages;
+        ForEachComponentSection([&](const auto& section) {
+            using T = typename std::decay_t<decltype(section)>::Type;
+            storages.push_back(scene->entityManager.GetPool<T>());
+            });
+        return storages;
+
+    }
+
+    void RemoveComponent(Entity& p, const std::string& key) {
+
+        ForEachComponentSection([&](const auto& section) {
+            using T = typename std::decay_t<decltype(section)>::Type;
+            if (key == section.key && p.HasComponent<T>())
+                p.RemoveComponent<T>();
+            });
+
+    }
+
     template<class T>
     static T ComponentValue(const Entity& p, Scene* scene) {
 
         if constexpr (std::is_same_v<T, TransformComponent>) {
             // Create a copy and update local matrix (physics always just update global matrices)
             auto transformComponent = p.GetComponent<TransformComponent>();
-            transformComponent.ReconstructLocalMatrix(scene->GetParentEntity(p));
+            // Assigned directly, Set() would mark the entity of the copy dirty
+            transformComponent.matrix = transformComponent.GetReconstructedLocalMatrix(scene->GetParentEntity(p));
             return transformComponent;
         }
         else {
@@ -132,7 +180,33 @@ namespace Atlas::Scene {
         }
     }
 
+    static void EntityFromJson(const json& j, Entity& p, Scene* scene, bool containsEntityManager,
+        std::unordered_map<ECS::Entity, ECS::Entity>& fileToSceneIds);
+
     void EntityFromJson(const json& j, Entity& p, Scene* scene, bool containsEntityManager) {
+
+        std::unordered_map<ECS::Entity, ECS::Entity> fileToSceneIds;
+        EntityFromJson(j, p, scene, containsEntityManager, fileToSceneIds);
+        if (containsEntityManager)
+            return;
+
+        // Fresh entities got new ids, constraints between them follow, others keep the id they had
+        for (auto [fileId, sceneId] : fileToSceneIds) {
+            auto constraint = scene->entityManager.TryGet<ConstraintComponent>(sceneId);
+            if (!constraint)
+                continue;
+            auto connectedId = ECS::Entity(constraint->GetConnectedEntity());
+            if (fileToSceneIds.contains(connectedId))
+                constraint->SetConnectedEntity(Entity(fileToSceneIds[connectedId], &scene->entityManager));
+        }
+
+    }
+
+    static void EntityFromJson(const json& j, Entity& p, Scene* scene, bool containsEntityManager,
+        std::unordered_map<ECS::Entity, ECS::Entity>& fileToSceneIds) {
+
+        if (auto id = j.find("id"); id != j.end())
+            fileToSceneIds[id->get<ECS::Entity>()] = p;
 
         ForEachComponentSection([&]<class T>(const ComponentSection<T>& section) {
             auto it = j.find(section.key);
@@ -154,7 +228,7 @@ namespace Atlas::Scene {
                     entity = Entity(jEntity["id"], &scene->entityManager);
                 else
                     entity = scene->CreateEntity();
-                EntityFromJson(jEntity, entity, scene, containsEntityManager);
+                EntityFromJson(jEntity, entity, scene, containsEntityManager, fileToSceneIds);
                 entities.push_back(entity);
             }
 
@@ -511,6 +585,12 @@ namespace Atlas::Scene {
         auto readFeature = [&]<class T>(const char* key, Ref<T>& feature) {
             if (!j.contains(key))
                 return;
+
+            // Null removes an optional feature
+            if (j[key].is_null()) {
+                feature = nullptr;
+                return;
+            }
 
             if (!feature)
                 feature = CreateRef<T>();

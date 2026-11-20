@@ -939,6 +939,18 @@ namespace Atlas {
 
         void CommandList::CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<Buffer>& dstBuffer) {
 
+            CopyImageToBuffer(srcImage, dstBuffer.get());
+
+        }
+
+        void CommandList::CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<MultiBuffer>& dstBuffer) {
+
+            CopyImageToBuffer(srcImage, dstBuffer->GetCurrent());
+
+        }
+
+        void CommandList::CopyImageToBuffer(const Ref<Image>& srcImage, Buffer* dstBuffer) {
+
             auto size = size_t(srcImage->width) * srcImage->height * GetFormatSize(srcImage->format);
             AE_ASSERT(dstBuffer->size >= size && "The buffer is too small for the image");
             if (dstBuffer->size < size) return;
@@ -1071,6 +1083,54 @@ namespace Atlas {
                     descriptorBindingData.changed[i] = false;
 
                     descriptorBindingData.sets[i] = descriptorPool->GetCachedSet(shader->sets[i].layout);
+
+                    // Arrays are written in ranges of changed elements, small gaps are written along. Elements
+                    // without a resource get a placeholder, the set must not keep references to deleted resources
+                    auto writeArrayRanges = [&](uint32_t binding, VkDescriptorType descriptorType, size_t elementCount,
+                        auto& infos, uint32_t& infoCounter, auto changedAt, auto writeElement) {
+                        size_t rangeStart = 0, rangeEnd = 0;
+                        for (size_t k = 0; k <= elementCount; k++) {
+                            if (k < elementCount) {
+                                auto changed = changedAt(k);
+                                if (changed && rangeStart == rangeEnd)
+                                    rangeStart = rangeEnd = k;
+                                if (changed)
+                                    rangeEnd = k + 1;
+                                if (changed || k < rangeEnd + 16)
+                                    continue;
+                            }
+                            if (rangeStart == rangeEnd)
+                                continue;
+
+                            auto rangeCount = uint32_t(rangeEnd - rangeStart);
+                            AE_ASSERT(infoCounter + rangeCount <= infos.size() &&
+                                "Too much data written into the infos for descriptor set update");
+                            if (infoCounter + rangeCount > infos.size())
+                                break;
+
+                            if (bindingCounter == setWrites.size())
+                                setWrites.emplace_back();
+
+                            auto& setWrite = setWrites[bindingCounter++];
+                            setWrite = {};
+                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                            setWrite.pNext = nullptr;
+                            setWrite.dstBinding = binding;
+                            setWrite.dstArrayElement = uint32_t(rangeStart);
+                            setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                            setWrite.descriptorCount = rangeCount;
+                            setWrite.descriptorType = descriptorType;
+                            if constexpr (std::is_same_v<std::decay_t<decltype(infos[0])>, VkDescriptorImageInfo>)
+                                setWrite.pImageInfo = &infos[infoCounter];
+                            else
+                                setWrite.pBufferInfo = &infos[infoCounter];
+
+                            for (size_t l = rangeStart; l < rangeEnd; l++)
+                                writeElement(l, infos[infoCounter++]);
+
+                            rangeStart = rangeEnd = 0;
+                        }
+                    };
 
                     // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxBufferBinding[i]; j++) {
@@ -1251,60 +1311,22 @@ namespace Atlas {
                         if (descriptorType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                             continue;
 
-                        // We need to overwrite old descriptor binding data with placeholders. If we don't it might
-                        // lead to crashes since resource in descriptor set are deleted already
                         auto elementCount = std::max(images.size(), writtenImages.size());
                         writtenImages.resize(elementCount);
 
-                        size_t rangeStart = 0, rangeEnd = 0;
-                        for (size_t k = 0; k <= elementCount; k++) {
-                            bool changed = false;
-                            if (k < elementCount) {
-                                auto image = k < images.size() && images[k] ? images[k] : placeholderImage.get();
-                                changed = writtenImages[k].id != image->id || writtenImages[k].layout != image->layout;
-                                if (changed && rangeStart == rangeEnd)
-                                    rangeStart = rangeEnd = k;
-                                if (changed)
-                                    rangeEnd = k + 1;
-                                if (changed || k < rangeEnd + 16)
-                                    continue;
-                            }
-                            if (rangeStart == rangeEnd)
-                                continue;
-
-                            auto rangeCount = uint32_t(rangeEnd - rangeStart);
-                            AE_ASSERT(imageInfoCounter + rangeCount <= imageInfos.size() &&
-                                "Too much data written into image infos for descriptor set update");
-                            if (imageInfoCounter + rangeCount > imageInfos.size())
-                                break;
-
-                            if (bindingCounter == setWrites.size())
-                                setWrites.emplace_back();
-
-                            auto& setWrite = setWrites[bindingCounter++];
-                            setWrite = {};
-                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                            setWrite.pNext = nullptr;
-                            setWrite.dstBinding = j;
-                            setWrite.dstArrayElement = uint32_t(rangeStart);
-                            setWrite.dstSet = descriptorBindingData.sets[i]->set;
-                            setWrite.descriptorCount = rangeCount;
-                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                            setWrite.pImageInfo = &imageInfos[imageInfoCounter];
-
-                            for (size_t l = rangeStart; l < rangeEnd; l++) {
-                                auto image = l < images.size() && images[l] ? images[l] : placeholderImage.get();
-
-                                auto& imageInfo = imageInfos[imageInfoCounter++];
+                        auto getImage = [&](size_t k) { return k < images.size() && images[k] ? images[k] : placeholderImage.get(); };
+                        writeArrayRanges(j, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, elementCount, imageInfos, imageInfoCounter,
+                            [&](size_t k) {
+                                auto image = getImage(k);
+                                return writtenImages[k].id != image->id || writtenImages[k].layout != image->layout;
+                            },
+                            [&](size_t l, VkDescriptorImageInfo& imageInfo) {
+                                auto image = getImage(l);
                                 imageInfo.sampler = VK_NULL_HANDLE;
                                 imageInfo.imageView = image->view;
                                 imageInfo.imageLayout = image->layout;
-
                                 writtenImages[l] = { image->id, image->layout };
-                            }
-
-                            rangeStart = rangeEnd = 0;
-                        }
+                            });
                     }
 
                     // BUFFER ARRAYS
@@ -1323,60 +1345,19 @@ namespace Atlas {
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
                             continue;
 
-                        // We need to overwrite old descriptor binding data with placeholders. If we don't it might
-                        // lead to crashes since resource in descriptor set are deleted already
                         auto elementCount = std::max(buffers.size(), writtenBuffers.size());
                         writtenBuffers.resize(elementCount);
 
-                        size_t rangeStart = 0, rangeEnd = 0;
-                        for (size_t k = 0; k <= elementCount; k++) {
-                            bool changed = false;
-                            if (k < elementCount) {
-                                auto buffer = k < buffers.size() && buffers[k] ? buffers[k] : placeholderBuffer.get();
-                                changed = writtenBuffers[k] != buffer->id;
-                                if (changed && rangeStart == rangeEnd)
-                                    rangeStart = rangeEnd = k;
-                                if (changed)
-                                    rangeEnd = k + 1;
-                                if (changed || k < rangeEnd + 16)
-                                    continue;
-                            }
-                            if (rangeStart == rangeEnd)
-                                continue;
-
-                            auto rangeCount = uint32_t(rangeEnd - rangeStart);
-                            AE_ASSERT(bufferInfoCounter + rangeCount <= bufferInfos.size() &&
-                                "Too much data written into buffer infos for descriptor set update");
-                            if (bufferInfoCounter + rangeCount > bufferInfos.size())
-                                break;
-
-                            if (bindingCounter == setWrites.size())
-                                setWrites.emplace_back();
-
-                            auto& setWrite = setWrites[bindingCounter++];
-                            setWrite = {};
-                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                            setWrite.pNext = nullptr;
-                            setWrite.dstBinding = j;
-                            setWrite.dstArrayElement = uint32_t(rangeStart);
-                            setWrite.dstSet = descriptorBindingData.sets[i]->set;
-                            setWrite.descriptorCount = rangeCount;
-                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                            setWrite.pBufferInfo = &bufferInfos[bufferInfoCounter];
-
-                            for (size_t l = rangeStart; l < rangeEnd; l++) {
-                                auto buffer = l < buffers.size() && buffers[l] ? buffers[l] : placeholderBuffer.get();
-
-                                auto& bufferInfo = bufferInfos[bufferInfoCounter++];
+                        auto getBuffer = [&](size_t k) { return k < buffers.size() && buffers[k] ? buffers[k] : placeholderBuffer.get(); };
+                        writeArrayRanges(j, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, elementCount, bufferInfos, bufferInfoCounter,
+                            [&](size_t k) { return writtenBuffers[k] != getBuffer(k)->id; },
+                            [&](size_t l, VkDescriptorBufferInfo& bufferInfo) {
+                                auto buffer = getBuffer(l);
                                 bufferInfo.offset = 0;
                                 bufferInfo.buffer = buffer->buffer;
                                 bufferInfo.range = VK_WHOLE_SIZE;
-
                                 writtenBuffers[l] = buffer->id;
-                            }
-
-                            rangeStart = rangeEnd = 0;
-                        }
+                            });
                     }
 
                     if (bindingCounter > 0)

@@ -190,6 +190,8 @@ namespace Atlas {
             // Copies the first mip level of the first layer, the image has to be in the transfer source layout
             void CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<Buffer>& dstBuffer);
 
+            void CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<MultiBuffer>& dstBuffer);
+
             void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
 
             void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageBlit blit);
@@ -227,6 +229,8 @@ namespace Atlas {
             int32_t id = 0;
 
         private:
+            void CopyImageToBuffer(const Ref<Image>& srcImage, Buffer* dstBuffer);
+
             struct DescriptorBindingData {
                 std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::vector<Buffer*> buffersArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];

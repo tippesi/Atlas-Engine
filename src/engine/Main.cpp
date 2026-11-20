@@ -81,8 +81,9 @@ int main(int argc, char* argv[]) {
     bool quit = false;
 
     Atlas::Events::EventManager::QuitEventDelegate.Subscribe(
-        [&quit]() {
-            quit = true;
+        [&quit, &engineInstance]() {
+            if (engineInstance->AllowQuit())
+                quit = true;
     });
 
     engineInstance->LoadContent();

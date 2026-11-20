@@ -57,18 +57,15 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const ResourceLoadException& exception) {
+            catch (const std::exception& exception) {
                 errorOnLoad = true;
                 errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch (const std::exception& exception) {
-                errorOnLoad = true;
-                errorMessageOnLoad = exception.what();
-            }
             catch(...) {
                 errorOnLoad = true;
                 errorMessageOnLoad = "Unknown issue occurred";
+                Log::Error("Unknown exception on load for resource " + path);
             }
 
         }
@@ -80,18 +77,15 @@ namespace Atlas {
                 data = loaderFunction(path, std::forward<Args>(args)...);
                 isLoaded = true;
             }
-            catch (const ResourceLoadException& exception) {
+            catch (const std::exception& exception) {
                 errorOnLoad = true;
                 errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch(const std::exception& exception) {
-                errorOnLoad = true;
-                errorMessageOnLoad = exception.what();
-            }
             catch (...) {
                 errorOnLoad = true;
                 errorMessageOnLoad = "Unknown issue occurred";
+                Log::Error("Unknown exception on load for resource " + path);
             }
 
         }
@@ -178,7 +172,7 @@ namespace Atlas {
 
         ResourceHandle(const Ref<T>& data) : isGenerated(true) {
             
-            Hash hash;
+            Hash hash = 0;
             HashCombine(hash, static_cast<void*>(data.get()));
             
             auto path = "generated/" + std::to_string(hash);

@@ -81,8 +81,6 @@ namespace Atlas {
 
 			void TransformComponent::Update(const mat4& parentMatrix, bool parentChanged) {
 
-                wasStatic = isStatic;
-
 				if (parentChanged && !changed)
 					entity.MarkDirty();
 				changed |= parentChanged;

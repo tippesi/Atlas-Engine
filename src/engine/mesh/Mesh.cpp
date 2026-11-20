@@ -179,12 +179,14 @@ namespace Atlas {
                 generatingLods = true;
             }
 
-            JobSystem::Execute(lodJob, [this, settings](JobData&) {
-                Ref<MeshData> generated;
-                {
-                    std::scoped_lock lock(dataMutex);
-                    generated = CreateRef<MeshData>(data);
-                }
+            // Copied here instead of in the job, renderers write the pipeline configs of the sub data without a lock
+            Ref<MeshData> generated;
+            {
+                std::scoped_lock lock(dataMutex);
+                generated = CreateRef<MeshData>(data);
+            }
+
+            JobSystem::Execute(lodJob, [this, settings, generated](JobData&) {
                 generated->GenerateLods(settings);
                 generatedLods = generated;
                 });
@@ -377,8 +379,11 @@ namespace Atlas {
         Ref<SoftBodySimulationMesh> Mesh::GetSoftBodySimulationMesh() {
 
             std::scoped_lock lock(softBodySimulationMeshMutex);
-            if (!softBodySimulationMesh)
+            if (!softBodySimulationMesh) {
+                // Levels of detail which are taken over replace the data
+                std::scoped_lock dataLock(dataMutex);
                 softBodySimulationMesh = CreateRef<SoftBodySimulationMesh>(data, softBody);
+            }
             return softBodySimulationMesh;
 
         }

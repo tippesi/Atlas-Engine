@@ -64,7 +64,7 @@ namespace Atlas {
 
 			void HierarchyComponent::Update(const TransformComponent& transform, bool parentChanged,
 				ECS::Pool<TransformComponent>& transformComponentPool,
-				ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool) {
+				ECS::Pool<HierarchyComponent>& hierarchyComponentPool) {
 
 				updated = true;
 
@@ -74,7 +74,6 @@ namespace Atlas {
 					bool transformChanged = parentChanged;
 
 					auto transformComponent = transformComponentPool.TryGet(entity);
-					// auto cameraComponent = cameraComponentPool.TryGet(entity);
 					auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
 
 					if (transformComponent) {
@@ -85,7 +84,7 @@ namespace Atlas {
 					if (hierarchyComponent) {
 						AE_ASSERT(!hierarchyComponent->root && "A child hierarchy should never also be a root hierarchy");
 						hierarchyComponent->Update(transformComponent ? *transformComponent : transform,
-							transformChanged, transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+							transformChanged, transformComponentPool, hierarchyComponentPool);
 					}
 				}
 
@@ -93,7 +92,7 @@ namespace Atlas {
 
 			void HierarchyComponent::Update(JobGroup& jobGroup, const TransformComponent& transform, bool parentChanged,
 				ECS::Pool<TransformComponent>& transformComponentPool,
-				ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool) {
+				ECS::Pool<HierarchyComponent>& hierarchyComponentPool) {
 
                 updated = true;
 
@@ -105,7 +104,6 @@ namespace Atlas {
 						bool transformChanged = parentChanged;
 
 						auto transformComponent = transformComponentPool.TryGet(entity);
-						// auto cameraComponent = cameraComponentPool.TryGet(entity);
 						auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
 
 						if (transformComponent) {
@@ -116,7 +114,7 @@ namespace Atlas {
 						if (hierarchyComponent) {
 							AE_ASSERT(!hierarchyComponent->root && "A child hierarchy should never also be a root hierarchy");
 							hierarchyComponent->Update(jobGroup, transformComponent ? *transformComponent : transform,
-								transformChanged, transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+								transformChanged, transformComponentPool, hierarchyComponentPool);
 						}
 					}
 				}
@@ -127,7 +125,6 @@ namespace Atlas {
 							bool transformChanged = parentChanged;
 
 							auto transformComponent = transformComponentPool.TryGet(entity);
-							// auto cameraComponent = cameraComponentPool.TryGet(entity);
 							auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
 
 							if (transformComponent) {
@@ -138,7 +135,7 @@ namespace Atlas {
 							if (hierarchyComponent) {
 								AE_ASSERT(!hierarchyComponent->root && "A child hierarchy should never also be a root hierarchy");
 								hierarchyComponent->Update(jobGroup, transformComponent ? *transformComponent : transform,
-									transformChanged, transformComponentPool, hierarchyComponentPool, cameraComponentPool);
+									transformChanged, transformComponentPool, hierarchyComponentPool);
 							}
 						});
 				}

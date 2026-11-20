@@ -214,7 +214,7 @@ namespace Atlas {
 
                         max = glm::max(vertex, max);
                         min = glm::min(vertex, min);
-                        radius = glm::dot(vertex, vertex);
+                        radius = glm::max(radius, glm::dot(vertex, vertex));
 
                         vec3 normal = vec3(matrix * vec4(mesh->mNormals[j].x, mesh->mNormals[j].y,
                             mesh->mNormals[j].z, 0.0f));
@@ -594,7 +594,6 @@ namespace Atlas {
 
                     max = glm::max(vertex, max);
                     min = glm::min(vertex, min);
-                    radius = glm::dot(vertex, vertex);
 
                     vec3 normal = vec3(assimpMesh->mNormals[j].x,
                         assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
@@ -641,6 +640,7 @@ namespace Atlas {
                 max -= offset;
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
                     vertices[j] = vertices[j] - offset;
+                    radius = glm::max(radius, glm::dot(vertices[j], vertices[j]));
                 }
 
                 // Copy indices

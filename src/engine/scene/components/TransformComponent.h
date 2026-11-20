@@ -72,7 +72,6 @@ namespace Atlas {
 
                 bool changed = true;
                 bool updated = false;
-                bool wasStatic = true;
                 bool initialized = false;
                 bool lastGlobalMatrixSet = false;
 

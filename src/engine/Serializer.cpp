@@ -14,6 +14,7 @@
 #include "tools/TerrainTool.h"
 #include "common/SerializationContext.h"
 
+#include <cctype>
 #include <map>
 #include <optional>
 
@@ -87,7 +88,11 @@ namespace Atlas {
             auto data = Loader::AssetLoader::GetFileContent(fileStream);
             fileStream.close();
 
-            auto j = binaryJson ? json::from_msgpack(data) : json::parse(data);
+            // Older binary scenes are BJData and some are text, both start with '{', MessagePack never does.
+            // BJData follows with the type marker of the first key's length, text with its quote
+            auto isObject = data.size() > 1 && data[0] == '{';
+            auto isText = !binaryJson || (isObject && (data[1] == '"' || std::isspace(uint8_t(data[1]))));
+            auto j = isText ? json::parse(data) : isObject ? json::from_bjdata(data) : json::from_msgpack(data);
             // The file content isn't needed anymore, large scenes would otherwise keep it while being created
             data = std::vector<char>();
 

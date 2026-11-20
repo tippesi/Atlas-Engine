@@ -41,7 +41,8 @@ namespace Atlas::Mesh {
             {"data", p.data},
         };
 
-        if (p.impostor.IsLoaded()) {
+        // Impostors stream in, a mesh saved before that keeps the reference
+        if (p.impostor.IsValid()) {
             j["impostor"] = p.impostor.GetResource()->path;
         }
     }

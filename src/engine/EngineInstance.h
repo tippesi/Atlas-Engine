@@ -57,6 +57,12 @@ namespace Atlas {
         virtual void Render(float deltaTime) = 0;
 
         /**
+         * Called when the window is closed or Exit() is called.
+         * @return False keeps the application running, e.g. to ask about unsaved changes first.
+         */
+        virtual bool AllowQuit() { return true; }
+
+        /**
          * Updates stuff in the class internally. Is being called from
          * the outside.
          */

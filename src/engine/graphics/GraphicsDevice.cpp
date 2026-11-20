@@ -499,8 +499,10 @@ namespace Atlas {
             JobSystem::Wait(submitFrameJob);
 
             // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
-            // Refrain from using complete frame async for now
-            if (!CheckForWindowResize()) {
+            // Refrain from using complete frame async for now. Only SubmitFrame consumes the resize, it recreates the swap chain
+            int32_t width, height;
+            surface->GetExtent(width, height);
+            if (width == windowWidth && height == windowHeight) {
                 JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
             }
             else {
@@ -1185,6 +1187,7 @@ namespace Atlas {
             features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
             features.features.tessellationShader = availableFeatures.features.tessellationShader;
+            features.features.shaderClipDistance = availableFeatures.features.shaderClipDistance;
             features.features.multiDrawIndirect = availableFeatures.features.multiDrawIndirect;
             features.features.drawIndirectFirstInstance = availableFeatures.features.drawIndirectFirstInstance;
             features.features.depthBounds = availableFeatures.features.depthBounds;

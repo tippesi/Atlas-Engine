@@ -34,6 +34,26 @@ namespace Atlas {
             float minReduction = 0.8f;
         };
 
+        // The pipelines of a sub data in one pass
+        struct MeshSubDataPipelines {
+
+            // Graphs of the material are compiled in the background, the regular pipelines are used until they are done
+            bool graphPending = false;
+            // The configs are the ones of the graph
+            bool usesGraph = false;
+
+            // Indexed by soft body * 2 + reversed winding, the soft body variants are created on their first draw
+            PipelineConfig configs[4];
+
+            PipelineConfig& Get(bool softBody, bool reversedWinding) { return configs[int(softBody) * 2 + int(reversedWinding)]; }
+
+            // Sets the config of regular instances, the others are derived from it
+            void Set(const PipelineConfig& config);
+
+            void Reset();
+
+        };
+
         struct MeshSubData {
 
             std::string name;
@@ -52,24 +72,8 @@ namespace Atlas {
             // Mesh units covered by one unit of the texture coordinates, texture streaming derives resolutions from it
             float uvScale = 0.0f;
 
-            // Graphs of the material are compiled in the background, the regular pipelines are used until they are done
-            // Renderers read these for every draw, so they are next to the other members draws need
-            bool mainGraphPending = false;
-            bool shadowGraphPending = false;
-            // The configs below are the ones of the graph
-            bool mainUsesGraph = false;
-            bool shadowUsesGraph = false;
-
-            PipelineConfig mainConfig;
-            PipelineConfig shadowConfig;
-            // Used for instances with reversed winding
-            PipelineConfig mainReversedWindingConfig;
-            PipelineConfig shadowReversedWindingConfig;
-            // Variants of the configs above for simulated soft bodies, created on their first draw
-            PipelineConfig mainSoftBodyConfig;
-            PipelineConfig shadowSoftBodyConfig;
-            PipelineConfig mainSoftBodyReversedWindingConfig;
-            PipelineConfig shadowSoftBodyReversedWindingConfig;
+            MeshSubDataPipelines mainPipelines;
+            MeshSubDataPipelines shadowPipelines;
 
             void ResetPipelines();
 

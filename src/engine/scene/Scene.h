@@ -126,6 +126,11 @@ namespace Atlas {
             // A valid mainCameraOverride is used as the main camera regardless of the isMain flags
             void Update(float deltaTime, Entity mainCameraOverride = Entity());
 
+            // Brings the global matrices, mesh bounds and ray cast structures of the entities changed since the last
+            // update up to date, for tools which change and query the scene several times between updates. The next
+            // update processes the changes as usual
+            void UpdateTransforms();
+
             /**
              * Time in seconds that the scene was updated for. It stands still while the scene is paused,
              * everything animated by the renderers (wind, clouds, water) uses it.
@@ -145,8 +150,9 @@ namespace Atlas {
 
             bool HasMainCamera() const;
 
-            // Camera exposure all light sources are multiplied with, keeps physical light values within half float range
-            float GetPreExposure();
+            // Camera exposure all light sources are multiplied with, keeps physical light values within half float range.
+            // Set by the update
+            float GetPreExposure() const;
 
             LightComponent& GetMainLight();
 
@@ -264,12 +270,16 @@ namespace Atlas {
             void MarkEntityDirty(const Entity& entity);
 
         private:
+            float preExposure = 1.0f;
+
             struct ThreadContext {
                 std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
                 std::vector<ECS::Entity> changedMeshes;
             }threadContexts[8];
             
             Entity ToSceneEntity(ECS::Entity entity);
+
+            void UpdatePreExposure();
 
             void RegisterSubscribers();
 
@@ -286,9 +296,15 @@ namespace Atlas {
             template<class T>
             void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);           
 
-            void FindChangedTransforms(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+            void FindChangedTransforms(const std::vector<ECS::Entity>& entities,
+                std::optional<std::function<void(void)>> waitFunction = std::nullopt);
 
-            void FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+            void FindChangedMeshes(const std::vector<ECS::Entity>& entities,
+                std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+
+            void UpdateChangedTransforms();
+
+            void UpdateChangedMeshBounds();
 
             void CollectDirtyEntities();
 
@@ -318,9 +334,7 @@ namespace Atlas {
             std::unordered_map<Physics::BodyID, uint32_t> oceanSurfaceQueries;
 
             bool firstTimestep = true;
-            bool hasChanged = true;
             bool rtDataValid = false;
-            bool vegetationChanged = false;
 
             std::vector<std::pair<ECS::Entity, int32_t>> changedTransformSet;
             std::vector<ECS::Entity> changedMeshSet;

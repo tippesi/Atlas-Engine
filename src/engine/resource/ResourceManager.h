@@ -493,12 +493,16 @@ namespace Atlas {
 
         static void ShutdownHandler() {
 
-            for (const auto& [_, resource] : resources) {
-                if (!resource->jobGroup.HasFinished())
-                    continue;
-                
-                JobSystem::Wait(resource->jobGroup);
+            // Waiting runs other jobs, which might add resources to the map
+            std::vector<Ref<Resource<T>>> loadingResources;
+            {
+                std::lock_guard lock(mutex);
+                for (const auto& [_, resource] : resources)
+                    if (!resource->jobGroup.HasFinished())
+                        loadingResources.push_back(resource);
             }
+            for (const auto& resource : loadingResources)
+                JobSystem::Wait(resource->jobGroup);
 
             resources.clear();
 

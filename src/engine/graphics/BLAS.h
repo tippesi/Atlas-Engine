@@ -62,6 +62,9 @@ namespace Atlas {
 
             VkBuildAccelerationStructureFlagsKHR flags;
 
+            // Structures replaced by a larger one, frames in flight can still use them
+            std::vector<std::pair<VkAccelerationStructureKHR, Ref<Buffer>>> replacedStructures;
+
         };
 
     }

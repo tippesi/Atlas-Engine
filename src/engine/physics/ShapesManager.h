@@ -24,9 +24,6 @@ namespace Atlas::Physics {
         template<class T>
         static Ref<Shape> CreateShape(const T& shapeSettings);
 
-        template<class T>
-        static T GetShapeSettings(ShapeRef shapeRef);
-
         static void Update();
 
         // Builds the shape of the mesh in a job, returns true once shapes of the mesh can be created without building it
@@ -132,31 +129,7 @@ namespace Atlas::Physics {
             shape->settings = CreateRef<CompoundShapeSettings>(shapeSettings);
         }
 
-        /*
-        if (!success) {
-            shape->settings = std::make_unique<ShapeSettings>(shapeSettings);
-        }
-        */
-
         return shape;
-
-    }
-
-    template<class T>
-    T ShapesManager::GetShapeSettings(ShapeRef shapeRef) {
-
-        if constexpr (std::is_same_v<MeshShapeSettings, T>) {
-
-        }
-        else if constexpr (std::is_same_v<BoundingBoxShapeSettings, T>) {
-
-        }
-        else if constexpr (std::is_same_v<SphereShapeSettings, T>) {
-
-        }
-        else if constexpr (std::is_same_v<HeightFieldShapeSettings, T>) {
-
-        }
 
     }
 

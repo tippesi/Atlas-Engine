@@ -12,21 +12,28 @@ namespace Atlas {
 
     namespace Mesh {
 
+        void MeshSubDataPipelines::Set(const PipelineConfig& config) {
+
+            configs[0] = config;
+            configs[1] = config.GetReversedWindingVariant();
+            configs[2] = PipelineConfig();
+            configs[3] = PipelineConfig();
+
+        }
+
+        void MeshSubDataPipelines::Reset() {
+
+            for (auto& config : configs)
+                config = PipelineConfig();
+            graphPending = false;
+            usesGraph = false;
+
+        }
+
         void MeshSubData::ResetPipelines() {
 
-            mainConfig = PipelineConfig();
-            shadowConfig = PipelineConfig();
-            mainReversedWindingConfig = PipelineConfig();
-            shadowReversedWindingConfig = PipelineConfig();
-            mainSoftBodyConfig = PipelineConfig();
-            shadowSoftBodyConfig = PipelineConfig();
-            mainSoftBodyReversedWindingConfig = PipelineConfig();
-            shadowSoftBodyReversedWindingConfig = PipelineConfig();
-
-            mainGraphPending = false;
-            shadowGraphPending = false;
-            mainUsesGraph = false;
-            shadowUsesGraph = false;
+            mainPipelines.Reset();
+            shadowPipelines.Reset();
 
         }
 

@@ -269,10 +269,10 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<RayHit>("RayHit",
             "valid", &RayHit::valid,
             "hitDistance", &RayHit::hitDistance,
-            "position", &RayHit::position,
-            "normal", &RayHit::normal,
+            "position", DependentMember<&RayHit::position>(),
+            "normal", DependentMember<&RayHit::normal>(),
             "frontFace", &RayHit::frontFace,
-            "entity", &RayHit::entity
+            "entity", DependentMember<&RayHit::entity>()
             );
 
         auto castRayOverload = sol::overload(
@@ -316,10 +316,10 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Scene::ContactEvent>("ContactEvent",
             "type", &Scene::ContactEvent::type,
-            "entity", &Scene::ContactEvent::entity,
-            "otherEntity", &Scene::ContactEvent::otherEntity,
-            "position", &Scene::ContactEvent::position,
-            "normal", &Scene::ContactEvent::normal,
+            "entity", DependentMember<&Scene::ContactEvent::entity>(),
+            "otherEntity", DependentMember<&Scene::ContactEvent::otherEntity>(),
+            "position", DependentMember<&Scene::ContactEvent::position>(),
+            "normal", DependentMember<&Scene::ContactEvent::normal>(),
             "impactSpeed", &Scene::ContactEvent::impactSpeed,
             "isTrigger", &Scene::ContactEvent::isTrigger
             );
@@ -588,8 +588,7 @@ namespace Atlas::Scripting::Bindings {
             "enable", &FogVolumeComponent::enable,
             "shape", &FogVolumeComponent::shape,
             "density", &FogVolumeComponent::density,
-            "scatteringColor", &FogVolumeComponent::scatteringColor,
-            "scatteringFactor", &FogVolumeComponent::scatteringFactor,
+            "albedo", &FogVolumeComponent::albedo,
             "scatteringAnisotropy", &FogVolumeComponent::scatteringAnisotropy,
             "emissiveColor", &FogVolumeComponent::emissiveColor,
             "ambientFactor", &FogVolumeComponent::ambientFactor,
@@ -705,8 +704,8 @@ namespace Atlas::Scripting::Bindings {
         );
 
         ns->new_usertype<Ocean::OceanSurface>("OceanSurface",
-            "position", &Ocean::OceanSurface::position,
-            "normal", &Ocean::OceanSurface::normal
+            "position", DependentMember<&Ocean::OceanSurface::position>(),
+            "normal", DependentMember<&Ocean::OceanSurface::normal>()
         );
 
         ns->new_usertype<Ocean::OceanSurfaceQueries>("OceanSurfaceQueries",
