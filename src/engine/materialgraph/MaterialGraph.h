@@ -123,6 +123,10 @@ namespace Atlas::MaterialGraph {
         std::vector<CompileError> errors;
 
         bool hasVertexOffset = false;
+        // The shadow reads the time, the wind or the camera and changes every frame
+        bool animatesShadow = false;
+        // The texture coordinates of the shadow move with the UV animation of the material
+        bool shadowReadsTexCoords = false;
         // Otherwise the fragments are the ones of the regular material
         bool hasSurface = false;
         bool hasOpacity = false;

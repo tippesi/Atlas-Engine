@@ -93,6 +93,9 @@ namespace Atlas::MaterialGraph {
         // Inputs which only depend on parameters and constants are the same for a whole draw
         static bool IsUniform(State& state, const Node& node, const InputDefinition& input, std::vector<uint32_t>& visiting);
 
+        // Inputs which are unlinked or only reach a zero through static switches and reroutes, e.g. a disabled wind
+        static bool IsDisconnected(State& state, const Node& node, const InputDefinition& input, std::vector<uint32_t>& visiting);
+
         static std::string GetVertexOpacityFunction(State& state, const Node& output);
 
         static std::string GetVaryingDeclarations(State& state, const std::vector<uint32_t>& usedVaryings, const char* qualifier);

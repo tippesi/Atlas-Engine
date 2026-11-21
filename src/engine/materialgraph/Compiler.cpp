@@ -32,10 +32,18 @@ namespace Atlas::MaterialGraph {
         auto isLinked = [&](const Node* node, const std::string& pin) {
             return node && graph.GetInputLink(node->id, pin) != nullptr;
             };
+        // Vertex outputs which only reach a zero, e.g. wind behind a disabled static switch, don't move the vertices
+        auto isVertexOutputUsed = [&](const std::string& pin) {
+            if (!isLinked(vertexOutput, pin))
+                return false;
+            std::vector<uint32_t> visiting;
+            return !IsDisconnected(state, *vertexOutput, *NodeLibrary::Find(*vertexOutput)->FindInput(pin), visiting);
+            };
 
         const auto& surfaceInputs = NodeLibrary::Find(NodeLibrary::surfaceOutputType)->inputs;
 
-        compiled->hasVertexOffset = isLinked(vertexOutput, NodeLibrary::positionOffsetPin);
+        auto hasPositionOffset = isVertexOutputUsed(NodeLibrary::positionOffsetPin);
+        compiled->hasVertexOffset = hasPositionOffset;
         compiled->hasSurface = std::any_of(surfaceInputs.begin(), surfaceInputs.end(),
             [&](const auto& input) { return isLinked(surfaceOutput, input.name); });
         compiled->hasOpacity = isLinked(surfaceOutput, NodeLibrary::opacityPin);
@@ -47,7 +55,7 @@ namespace Atlas::MaterialGraph {
             compiled->hasUniformOpacity = IsUniform(state, *surfaceOutput, *opacityInput, visiting);
         }
 
-        auto hasVertexNormal = isLinked(vertexOutput, NodeLibrary::vertexNormalPin);
+        auto hasVertexNormal = isVertexOutputUsed(NodeLibrary::vertexNormalPin);
 
         std::string mainSurface, shadowSurface, vertexOpacity;
         std::vector<uint32_t> mainVaryings, shadowVaryings;
@@ -71,7 +79,15 @@ namespace Atlas::MaterialGraph {
         compiled->hasVertexOffset = compiled->hasVertexOffset || hasVertexNormal;
 
         auto mainVertexFunctions = GetVertexFunctions(state, vertexOutput, mainVaryings, compiled->hasVertexOffset, true);
-        auto shadowVertexFunctions = GetVertexFunctions(state, vertexOutput, shadowVaryings, isLinked(vertexOutput, NodeLibrary::positionOffsetPin), false);
+        auto shadowVertexFunctions = GetVertexFunctions(state, vertexOutput, shadowVaryings, hasPositionOffset, false);
+        auto reads = [&](std::initializer_list<const char*> names) {
+            return std::any_of(names.begin(), names.end(), [&](const char* name) {
+                return shadowVertexFunctions.find(name) != std::string::npos || shadowSurface.find(name) != std::string::npos;
+                });
+            };
+        compiled->animatesShadow = reads({ ".time", "globalData.", ".viewDirection", ".viewPosition", ".viewNormal",
+            ".tangentFrame", ".screenCoord" });
+        compiled->shadowReadsTexCoords = reads({ ".texCoord" });
         // Hardware ray tracing deforms the vertices in a compute pass, which has no varyings
         auto deformVertexFunctions = compiled->hasVertexOffset ? GetVertexFunctions(state, vertexOutput, {}, true, true) : std::string();
 
@@ -134,7 +150,7 @@ namespace Atlas::MaterialGraph {
 
         if (usesShadow) {
             compiled->shadowVertexCode = vertexMacros +
-                define("MATERIAL_GRAPH_VERTEX_OFFSET", isLinked(vertexOutput, NodeLibrary::positionOffsetPin)) +
+                define("MATERIAL_GRAPH_VERTEX_OFFSET", hasPositionOffset) +
                 define("MATERIAL_GRAPH_SURFACE", compiled->CutsOutFragments()) +
                 define("MATERIAL_GRAPH_VERTEX_OPACITY", compiled->hasUniformOpacity) + common +
                 GetVaryingDeclarations(state, shadowVaryings, "out") + shadowVertexFunctions + vertexOpacity +
@@ -830,6 +846,38 @@ namespace Atlas::MaterialGraph {
         default:
             return false;
         }
+
+    }
+
+    bool Compiler::IsDisconnected(State& state, const Node& node, const InputDefinition& input, std::vector<uint32_t>& visiting) {
+
+        auto link = state.graph.GetInputLink(node.id, input.name);
+        if (!link) {
+            auto value = input.defaultValue;
+            auto iter = node.inputValues.find(input.name);
+            if (iter != node.inputValues.end())
+                value = iter->second;
+            return input.defaultExpression.empty() && value == vec4(0.0f);
+        }
+
+        auto from = state.graph.GetNode(link->fromNode);
+        auto definition = NodeLibrary::Find(*from);
+        if (std::find(visiting.begin(), visiting.end(), from->id) != visiting.end())
+            return false;
+
+        const InputDefinition* fromInput = nullptr;
+        if (definition->kind == NodeKind::StaticSwitch)
+            fromInput = GetStaticSwitchInput(*from, *definition);
+        else if (definition->kind == NodeKind::Reroute && !definition->inputs.empty())
+            fromInput = &definition->inputs.front();
+        if (!fromInput)
+            return false;
+
+        visiting.push_back(from->id);
+        auto disconnected = IsDisconnected(state, *from, *fromInput, visiting);
+        visiting.pop_back();
+
+        return disconnected;
 
     }
 
