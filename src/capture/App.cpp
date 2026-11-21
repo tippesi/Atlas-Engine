@@ -1091,8 +1091,9 @@ namespace Atlas::Capture {
     void App::StartPlay() {
 
         // The scripts get new entities, the asynchronous work of the last scene update (e.g. the ray tracing world)
-        // still reads the entity storage
+        // still reads the entity storage. Waiting clears the render list of the update, so its frame isn't rendered
         scene->WaitForAsyncWorkCompletion();
+        sceneUpdated = false;
 
         playStartTime = std::chrono::steady_clock::now();
         auto events = job.timeline;
