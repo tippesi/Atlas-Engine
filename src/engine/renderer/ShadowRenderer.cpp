@@ -101,7 +101,7 @@ namespace Atlas {
 
             // Passes culled on the host have their own instance indices
             auto& gpuScene = scene->renderState.gpuScene;
-            if (shadowPass->gpuCulled) {
+            if (shadowPass->gpu.culled) {
                 commandList->BindBuffer(gpuScene.indexBuffer, 1, 22);
                 commandList->BindBuffer(gpuScene.indexBuffer, 1, 23);
             }
@@ -110,24 +110,30 @@ namespace Atlas {
                 commandList->BindBuffer(shadowPass->impostorInstanceIndicesBuffer, 1, 23);
             }
 
-            commandList->BeginRendering(rendering);
-
             auto component = &shadow->views[shadowPass->layer];
             auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
-
-            // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
-            scene->renderState.wind.noiseMap.Bind(commandList, 3, 0);
-
-            if (!scene->renderState.materialGraphParameters.empty())
-                scene->renderState.materialGraphBuffer.Bind(commandList, 3, 9);
 
             auto createConfig = [&](Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const MaterialGraph::CompiledGraph* graph) {
                 return GetPipelineConfigForSubData(subData, mesh, attachmentFormats, graph);
             };
             // Graphs which neither move vertices nor cut out parts have the shadows of the regular pipeline
             auto hasGraphPipeline = [](const MaterialGraph::CompiledGraph& graph) { return graph.UsesShadowPipeline(); };
-            drawer.Prepare(renderList, *shadowPass, shadowPass->gpuDraws, true, &Mesh::MeshSubData::shadowPipelines,
-                createConfig, hasGraphPipeline);
+            // Pipelines which can discard fragments last, so the others keep the early depth test
+            auto getOrder = [](PipelineConfig& config, bool usesGraph) {
+                return usesGraph || config.HasMacro("OPACITY_MAP") ? 1u : 0u;
+            };
+            drawer.Prepare(renderList, *shadowPass, shadowPass->gpu.draws, true, &Mesh::MeshSubData::shadowPipelines,
+                createConfig, hasGraphPipeline, getOrder);
+
+            // Draws of pipelines with draw data can be merged, only their wind differs
+            auto fillDrawData = [&](const Helper::SubDataDrawer::Entry& entry) {
+                const auto& mesh = entry.mesh;
+                return DrawData {
+                    .windTextureLod = mesh->windNoiseTextureLod,
+                    .windBendScale = mesh->windBendScale,
+                    .windWiggleScale = mesh->windWiggleScale
+                };
+            };
 
             PushConstants pushConstants;
             auto fillPushConstants = [&](const Helper::SubDataDrawer::Entry& entry, const RenderList::MeshInstances& instances,
@@ -142,18 +148,15 @@ namespace Atlas {
 
                 pushConstants = PushConstants{
                     .lightSpaceMatrix = lightSpaceMatrix,
-                    .vegetation = mesh->vegetation ? 1u : 0u,
-                    .invertUVs = mesh->invertUVs ? 1u : 0u,
-                    .windTextureLod = mesh->windNoiseTextureLod,
-                    .windBendScale = mesh->windBendScale,
-                    .windWiggleScale = mesh->windWiggleScale,
-                    .textureID = opacityTextureIdx,
                     .deformOffset = uint32_t(instances.deformOffset),
                     .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
                     .instanceOffset = uint32_t(instances.offset),
+                    .invertUVs = mesh->invertUVs ? 1u : 0u,
+                    .textureID = opacityTextureIdx,
                     .uvAnimationX = material->uvAnimation.x,
                     .uvAnimationY = material->uvAnimation.y,
                     .uvTiling = material->tiling,
+                    .draw = fillDrawData(entry)
                 };
 
                 if (usesGraph) {
@@ -164,10 +167,21 @@ namespace Atlas {
                 return pushConstants;
             };
 
+            drawer.PrepareDrawData(commandList, &Mesh::MeshSubData::shadowPipelines, fillDrawData);
+
+            commandList->BeginRendering(rendering);
+
+            // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
+            scene->renderState.wind.noiseMap.Bind(commandList, 3, 0);
+
+            if (!scene->renderState.materialGraphParameters.empty())
+                scene->renderState.materialGraphBuffer.Bind(commandList, 3, 9);
+
             // Shadows don't color the levels of detail
             auto setLod = [](uint32_t) { return false; };
 
-            drawer.Draw(commandList, renderList, *shadowPass, &Mesh::MeshSubData::shadowPipelines, fillPushConstants, setLod);
+            drawer.Draw(commandList, renderList, *shadowPass, &Mesh::MeshSubData::shadowPipelines, fillPushConstants,
+                setLod, 10);
 
             profilerScope.Next("Shadow impostors");
             impostorRenderer.Render(attachmentFormats, commandList, renderList,
@@ -220,6 +234,13 @@ namespace Atlas {
             // Pipelines are rebound when the variant hash changes, which doesn't know about shaders
             if (graph) {
                 macros.push_back("MATERIAL_GRAPH_" + std::to_string(graph->hash));
+            }
+            if (mesh->vegetation) {
+                macros.push_back("VEGETATION");
+            }
+            // Depth only draws of the GPU culling are merged into multi draws, their data comes from a buffer
+            if (!graph && !hasOpacityMap && !mesh->data.IsSkinned()) {
+                macros.push_back("DRAW_DATA");
             }
             if (hasOpacityMap) {
                 macros.push_back("OPACITY_MAP");

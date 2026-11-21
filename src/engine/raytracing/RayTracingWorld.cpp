@@ -795,9 +795,10 @@ namespace Atlas {
                     .mask = mask
                 };
                 if (deformed) {
-                    const auto& indexBuffer = deformed->mesh->indexBuffer;
+                    const auto& indexBuffer = deformed->indexBuffer;
                     gpuBvhInstance.deformedVertices = deformed->normalBuffer.Get()->GetDeviceAddress();
-                    gpuBvhInstance.meshIndices = indexBuffer.buffer->GetDeviceAddress() | (indexBuffer.elementSize == 2 ? 1 : 0);
+                    gpuBvhInstance.meshIndices = (indexBuffer.buffer->GetDeviceAddress() + indexBuffer.offset) |
+                        (indexBuffer.elementSize == 2 ? 1 : 0);
                 }
                 gpuBvhInstances.push_back(gpuBvhInstance);
 
@@ -1253,7 +1254,7 @@ namespace Atlas {
             auto getInstance = [&](ECS::Entity entity, const ResourceHandle<Mesh::Mesh>& mesh, bool dynamic) {
                 auto item = deformedInstances.find(entity);
                 auto created = item == deformedInstances.end() || item->second.mesh.GetID() != mesh.GetID() ||
-                    item->second.meshBlas != mesh->blas || item->second.indexBuffer != mesh->indexBuffer.buffer ||
+                    item->second.meshBlas != mesh->blas || item->second.geometryVersion != mesh->GetGeometryVersion() ||
                     dynamic && hardwareRayTracing && item->second.blas->allowUpdate != refitSkinnedBlases;
                 if (created)
                     item = deformedInstances.insert_or_assign(entity, CreateDeformedInstance(mesh)).first;
@@ -1655,7 +1656,7 @@ namespace Atlas {
 
             auto deformMeshItem = deformMeshes.find(mesh.GetID());
             if (deformMeshItem == deformMeshes.end() || deformMeshItem->second.meshBlas != mesh->blas ||
-                deformMeshItem->second.meshVertexBuffer != mesh->vertexBuffer.buffer) {
+                deformMeshItem->second.geometryVersion != mesh->GetGeometryVersion()) {
                 auto hasTangents = data.tangents.ContainsData();
                 auto hasTexCoords = data.texCoords.ContainsData();
                 auto hasTexCoords1 = data.texCoords1.ContainsData();
@@ -1685,7 +1686,7 @@ namespace Atlas {
 
                 auto& deformMesh = deformMeshes[mesh.GetID()];
                 deformMesh.meshBlas = mesh->blas;
-                deformMesh.meshVertexBuffer = mesh->vertexBuffer.buffer;
+                deformMesh.geometryVersion = mesh->GetGeometryVersion();
                 deformMesh.deformations.clear();
                 deformMesh.subDataVertexRanges.clear();
                 deformMesh.vertexBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
@@ -1724,7 +1725,9 @@ namespace Atlas {
                 return DeformedInstance {
                     .mesh = mesh,
                     .meshBlas = meshBlas,
-                    .indexBuffer = mesh->indexBuffer.buffer,
+                    .geometryVersion = mesh->GetGeometryVersion(),
+                    .geometryRange = mesh->GetGeometryRange(),
+                    .indexBuffer = mesh->indexBuffer,
                     .softwareBlas = softwareBlas,
                     .nodeBoundsBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4),
                         std::max(size_t(levelOffsets.back()), size_t(1)))
@@ -1743,8 +1746,9 @@ namespace Atlas {
 
             // The vertices are written into the position buffer of a frame before every build, see SetVertexData
             Graphics::ASBuilder asBuilder;
-            auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(deformMeshes[mesh.GetID()].vertexBuffer.Get(),
-                mesh->indexBuffer.buffer, vertexCount, sizeof(vec3), mesh->indexBuffer.elementSize, geometryRegions);
+            auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(deformMeshes[mesh.GetID()].vertexBuffer.Get()->GetDeviceAddress(),
+                mesh->indexBuffer.buffer->GetDeviceAddress() + mesh->indexBuffer.offset, vertexCount, sizeof(vec3),
+                mesh->indexBuffer.elementSize, geometryRegions);
             blasDesc.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
             blasDesc.isDynamic = true;
             blasDesc.allowUpdate = refitSkinnedBlases;
@@ -1755,7 +1759,9 @@ namespace Atlas {
                 .blas = device->CreateBLAS(blasDesc),
                 .normalBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DeviceAddressBit,
                     2 * sizeof(uint32_t), vertexCount),
-                .indexBuffer = mesh->indexBuffer.buffer
+                .geometryVersion = mesh->GetGeometryVersion(),
+                .geometryRange = mesh->GetGeometryRange(),
+                .indexBuffer = mesh->indexBuffer
             };
 
         }

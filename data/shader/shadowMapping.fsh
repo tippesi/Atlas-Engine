@@ -1,5 +1,6 @@
 #include <deferred/texture.hsh>
 #include <common/opacity.hsh>
+#include <shadowMapping.hsh>
 
 #if defined(OPACITY_MAP) || defined(MATERIAL_GRAPH_SURFACE)
 layout(location = 0) in vec2 texCoordVS;
@@ -13,25 +14,6 @@ layout(location = 10) in vec3 objectPositionVS;
 layout(location = 11) in vec3 instancePositionVS;
 layout(location = 12) in vec3 objectNormalVS;
 #endif
-
-layout(push_constant) uniform constants {
-    mat4 lightSpaceMatrix;
-    uint vegetation;
-    uint invertUVs;
-    float windTextureLod;
-    float windBendScale;
-    float windWiggleScale;
-    uint textureID;
-    uint deformOffset;
-    uint jointCount;
-    uint instanceOffset;
-    float uvAnimationX;
-    float uvAnimationY;
-    float uvTiling;
-#ifdef MATERIAL_GRAPH
-    uint materialGraphOffset;
-#endif
-} PushConstants;
 
 void main() {
     

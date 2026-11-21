@@ -107,9 +107,9 @@ namespace Atlas::Scene {
 
         auto shadow = pass->type == RenderList::RenderPassType::Shadow;
 
-        pass->frustum = frustum;
-        pass->gpuDraws.clear();
-        pass->gpuLateDraws.clear();
+        pass->gpu.frustum = frustum;
+        pass->gpu.draws.clear();
+        pass->gpu.lateDraws.clear();
 
         for (uint32_t slotIdx = 1; slotIdx < uint32_t(slots.size()); slotIdx++) {
             const auto& slot = slots[slotIdx];
@@ -137,12 +137,12 @@ namespace Atlas::Scene {
         const auto& passes = renderList.gpuCulledPasses;
 
         // Each view is a bit of the culling result of an instance, the draws after the occlusion test have one more
-        auto hasLateDraws = std::any_of(passes.begin(), passes.end(), [](const auto& pass) { return !pass->gpuLateDraws.empty(); });
+        auto hasLateDraws = std::any_of(passes.begin(), passes.end(), [](const auto& pass) { return !pass->gpu.lateDraws.empty(); });
         AE_ASSERT(passes.size() + (hasLateDraws ? 1 : 0) <= maxCullViewCount && "Too many passes culled on the GPU");
         if (passes.size() + (hasLateDraws ? 1 : 0) > maxCullViewCount) {
             for (const auto& pass : passes) {
-                pass->gpuDraws.clear();
-                pass->gpuLateDraws.clear();
+                pass->gpu.draws.clear();
+                pass->gpu.lateDraws.clear();
             }
             return frame;
         }
@@ -150,6 +150,13 @@ namespace Atlas::Scene {
         // The commands of the levels of detail of a draw follow each other, they are drawn as one multi draw
         auto addRequests = [&](RenderList::GPUDraw& draw, uint32_t viewIdx) {
             draw.command = uint32_t(requests.size());
+            uint32_t firstIndex = 0, firstVertex = 0;
+            if (draw.subData) {
+                const auto& indexBuffer = draw.mesh->indexBuffer;
+                const auto& vertexBuffer = draw.mesh->vertexBuffer;
+                firstIndex = uint32_t(indexBuffer.offset / indexBuffer.elementSize);
+                firstVertex = uint32_t(vertexBuffer.offset / vertexBuffer.elementSize);
+            }
             for (uint32_t lod = 0; lod < draw.lodCount; lod++) {
                 auto range = draw.subData ? draw.subData->GetLod(int32_t(lod)) : Mesh::MeshSubDataLod{ 0, 0 };
                 requests.push_back(GPUDrawRequest {
@@ -157,10 +164,32 @@ namespace Atlas::Scene {
                     .view = viewIdx,
                     .type = uint32_t(draw.type),
                     .indexCount = range.indicesCount,
-                    .firstIndex = range.indicesOffset,
-                    .lod = lod
+                    .firstIndex = firstIndex + range.indicesOffset,
+                    .lod = lod,
+                    .vertexOffset = int32_t(firstVertex)
                     });
             }
+        };
+        // The draws with the same pipeline and geometry buffers are drawn as one multi draw, their commands have to
+        // follow each other. Impostor draws go last
+        auto sortDraws = [&](std::vector<RenderList::GPUDraw>& draws, Mesh::MeshSubDataPipelines Mesh::MeshSubData::* pipelines) {
+            drawSortKeys.clear();
+            for (uint32_t i = 0; i < uint32_t(draws.size()); i++) {
+                const auto& draw = draws[i];
+                if (!draw.subData) {
+                    drawSortKeys.push_back({ std::numeric_limits<Hash>::max(), nullptr, nullptr, i });
+                    continue;
+                }
+                auto& config = (draw.subData->*pipelines).Get(false, draw.type == RenderList::GPUDrawType::ReversedWinding);
+                drawSortKeys.push_back({ config.variantHash, draw.mesh->vertexBuffer.buffer.get(),
+                    draw.mesh->indexBuffer.buffer.get(), i });
+            }
+            std::sort(drawSortKeys.begin(), drawSortKeys.end());
+
+            sortedDraws.clear();
+            for (const auto& key : drawSortKeys)
+                sortedDraws.push_back(draws[key.draw]);
+            draws.swap(sortedDraws);
         };
         auto occlusionView = 0xFFFFFFFFu;
         for (size_t i = 0; i < passes.size(); i++) {
@@ -172,14 +201,18 @@ namespace Atlas::Scene {
                 .indexOffset = viewIdx * totalCapacity,
                 .counterOffset = viewIdx * slotCount * meshCounterCount
             };
-            auto planes = pass->frustum.GetPlanes();
+            auto planes = pass->gpu.frustum.GetPlanes();
             std::copy(planes.begin(), planes.end(), view.planes);
             views.push_back(view);
 
-            for (auto& draw : pass->gpuDraws)
+            auto shadow = pass->type == RenderList::RenderPassType::Shadow;
+            auto pipelines = shadow ? &Mesh::MeshSubData::shadowPipelines : &Mesh::MeshSubData::mainPipelines;
+            sortDraws(pass->gpu.draws, pipelines);
+            sortDraws(pass->gpu.lateDraws, pipelines);
+            for (auto& draw : pass->gpu.draws)
                 addRequests(draw, viewIdx);
 
-            if (!pass->gpuLateDraws.empty())
+            if (!pass->gpu.lateDraws.empty())
                 occlusionView = viewIdx;
         }
 
@@ -195,7 +228,7 @@ namespace Atlas::Scene {
             view.counterOffset = frame.lateView * slotCount * meshCounterCount;
             views.push_back(view);
 
-            for (auto& draw : passes[occlusionView]->gpuLateDraws)
+            for (auto& draw : passes[occlusionView]->gpu.lateDraws)
                 addRequests(draw, frame.lateView);
             frame.lateRequestCount = uint32_t(requests.size()) - frame.lateFirstRequest;
         }
@@ -517,7 +550,6 @@ namespace Atlas::Scene {
 
         if (!valid) {
             meshSlots.clear();
-            softBodyMeshSlots.clear();
             freeSlots.clear();
             slots = std::vector<MeshSlot>(1);
             entityStates.clear();
@@ -597,9 +629,9 @@ namespace Atlas::Scene {
 
     uint32_t GPUScene::GetSlot(const ResourceHandle<Mesh::Mesh>& mesh, bool softBody) {
 
-        auto& slotMap = softBody ? softBodyMeshSlots : meshSlots;
-        auto it = slotMap.find(mesh.GetID());
-        if (it != slotMap.end())
+        auto key = SlotKey { mesh.GetID(), softBody };
+        auto it = meshSlots.find(key);
+        if (it != meshSlots.end())
             return it->second;
 
         uint32_t slotIdx;
@@ -614,7 +646,7 @@ namespace Atlas::Scene {
 
         slots[slotIdx].mesh = mesh;
         slots[slotIdx].softBody = softBody;
-        slotMap[mesh.GetID()] = slotIdx;
+        meshSlots[key] = slotIdx;
 
         return slotIdx;
 
@@ -679,7 +711,7 @@ namespace Atlas::Scene {
         state.slot = 0;
 
         if (slot.entities.empty()) {
-            (slot.softBody ? softBodyMeshSlots : meshSlots).erase(slot.mesh.GetID());
+            meshSlots.erase(SlotKey { slot.mesh.GetID(), slot.softBody });
             slot = MeshSlot();
             freeSlots.push_back(slotIdx);
         }
@@ -864,9 +896,9 @@ namespace Atlas::Scene {
         auto addDraw = [&](Mesh::MeshSubData* subData, RenderList::GPUDrawType type) {
             auto lodCount = subData ? slot.lodCount : 1u;
             if (occluded)
-                pass.gpuLateDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
+                pass.gpu.lateDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
             if (!occluded || slot.drawEarly || slot.dontCullCount)
-                pass.gpuDraws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
+                pass.gpu.draws.push_back({ subData, mesh.Get().get(), mesh.GetID(), slotIdx, type, 0, lodCount });
         };
 
         if (hasMeshes) {

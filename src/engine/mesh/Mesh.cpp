@@ -5,6 +5,7 @@
 #include "../renderer/ShadowRenderer.h"
 
 #include "../graphics/ASBuilder.h"
+#include "../graphics/Format.h"
 #include "../jobsystem/JobSystem.h"
 
 namespace Atlas {
@@ -52,6 +53,14 @@ namespace Atlas {
             std::scoped_lock lock(dataMutex);
 
             bool hostAccessible = usage & MeshUsageBits::HostAccessBit;
+            if (!hostAccessible) {
+                CreatePooledBuffers();
+                UpdateVertexArray();
+                geometryVersion++;
+                return;
+            }
+
+            geometryRange = nullptr;
 
             if (data.indices.ContainsData()) {
                 auto type = data.indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
@@ -102,6 +111,59 @@ namespace Atlas {
             }
 
             UpdateVertexArray();
+            geometryVersion++;
+
+        }
+
+        void Mesh::CreatePooledBuffers() {
+
+            auto vertexCount = size_t(data.GetVertexCount());
+            std::vector<VkFormat> vertexFormats;
+            std::vector<std::pair<const void*, size_t>> vertexData;
+            std::vector<Buffer::VertexBuffer*> vertexBuffers;
+            auto addComponent = [&]<class T>(DataComponent<T>& component, Buffer::VertexBuffer& buffer, bool add) {
+                buffer = Buffer::VertexBuffer();
+                if (!add || !component.ContainsData())
+                    return;
+                vertexFormats.push_back(component.GetFormat());
+                vertexData.emplace_back(component.GetConvertedVoid(), vertexCount);
+                vertexBuffers.push_back(&buffer);
+            };
+            addComponent(data.vertices, vertexBuffer, true);
+            addComponent(data.normals, normalBuffer, true);
+            addComponent(data.texCoords, texCoordBuffer, true);
+            addComponent(data.texCoords1, texCoord1Buffer, true);
+            addComponent(data.tangents, tangentBuffer, true);
+            addComponent(data.colors, colorBuffer, true);
+            addComponent(data.joints, jointBuffer, data.IsSkinned());
+            addComponent(data.weights, weightBuffer, data.IsSkinned());
+
+            // The levels of detail are drawn from the same indices behind level 0
+            auto indexType = data.indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
+            DataComponent<uint32_t> allIndices(data.indices.format);
+            allIndices.data.reserve(size_t(data.GetIndexCount()) + data.lodIndices.GetElementCount());
+            allIndices.data.insert(allIndices.data.end(), data.indices.begin(), data.indices.begin() + data.GetIndexCount());
+            allIndices.data.insert(allIndices.data.end(), data.lodIndices.begin(), data.lodIndices.end());
+            auto indexCount = allIndices.GetElementCount();
+
+            geometryRange = Buffer::GeometryPool::Allocate(vertexFormats, indexType, vertexCount, indexCount);
+            Buffer::GeometryPool::Upload(*geometryRange, vertexData, allIndices.GetConvertedVoid(), indexCount);
+
+            for (size_t i = 0; i < vertexBuffers.size(); i++) {
+                auto& buffer = *vertexBuffers[i];
+                buffer.format = vertexFormats[i];
+                buffer.buffer = geometryRange->vertexChunk->buffers[i];
+                buffer.elementCount = vertexCount;
+                buffer.elementSize = Graphics::GetFormatSize(vertexFormats[i]);
+                buffer.offset = geometryRange->firstVertex * buffer.elementSize;
+            }
+
+            indexBuffer = Buffer::IndexBuffer();
+            indexBuffer.type = indexType;
+            indexBuffer.buffer = geometryRange->indexChunk->buffer;
+            indexBuffer.elementCount = indexCount;
+            indexBuffer.elementSize = data.indices.GetElementSize();
+            indexBuffer.offset = geometryRange->firstIndex * indexBuffer.elementSize;
 
         }
 
@@ -340,6 +402,8 @@ namespace Atlas {
         void Mesh::UnloadGeometry() {
 
             geometryResident = false;
+            geometryVersion++;
+            geometryRange = nullptr;
 
             // The configs point into the vertex array, they are created again on the next draw
             for (auto& subData : data.subData)
@@ -404,19 +468,20 @@ namespace Atlas {
 
         size_t Mesh::GetGeometrySize() const {
 
+            // Pooled buffers are shared, only the elements of the mesh count
             size_t size = 0;
-            auto addSize = [&](const Ref<Graphics::Buffer>& buffer) {
-                if (buffer)
-                    size += buffer->size;
+            auto addSize = [&](const auto& buffer) {
+                if (buffer.buffer)
+                    size += buffer.elementCount * buffer.elementSize;
                 };
 
-            addSize(indexBuffer.buffer);
-            addSize(vertexBuffer.buffer);
-            addSize(normalBuffer.buffer);
-            addSize(texCoordBuffer.buffer);
-            addSize(texCoord1Buffer.buffer);
-            addSize(tangentBuffer.buffer);
-            addSize(colorBuffer.buffer);
+            addSize(indexBuffer);
+            addSize(vertexBuffer);
+            addSize(normalBuffer);
+            addSize(texCoordBuffer);
+            addSize(texCoord1Buffer);
+            addSize(tangentBuffer);
+            addSize(colorBuffer);
 
             return size;
 

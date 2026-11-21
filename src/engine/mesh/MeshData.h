@@ -41,6 +41,11 @@ namespace Atlas {
             bool graphPending = false;
             // The configs are the ones of the graph
             bool usesGraph = false;
+            // Of the configs, the order is the one of the pass (see SubDataDrawer) and set on the first draw
+            bool hasDrawData = false;
+            uint32_t order = invalidOrder;
+
+            static constexpr uint32_t invalidOrder = ~0u;
 
             // Indexed by soft body * 2 + reversed winding, the soft body variants are created on their first draw
             PipelineConfig configs[4];

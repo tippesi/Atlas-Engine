@@ -158,6 +158,10 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Decals** (projected textures, animated sprites): `Decal`, `renderer/DecalRenderer`.
 - **Culling** (frustum culling, occlusion culling, HiZ, GPU driven, render lists): `RenderList`, `scene/GPUScene`,
   `culling/` shaders (count, offsets, scatter of the instance indices, one region per mesh and view), `Scene::occlusionCulling`.
+- **Merged draws** (multi draw indirect, gl_DrawID, per draw data): draws of the GPU culling with the same pipeline
+  and geometry pool chunks are one multi draw (`SubDataDrawer::PrepareDrawData`, `DRAW_DATA` pipelines of the opaque
+  and shadow passes), the commands select the mesh with the first index and vertex offset, material and wind of a
+  draw come from a device local buffer; graph, skinned and alpha tested shadow pipelines keep push constants.
 - **Geometry helpers** (cube, sphere, grid, quad): `GeometryHelper`; `CommonStructures` (GPU structs shared by
   renderers), `RayTracingHelper` (shared ray tracing passes), `DeferredShadowRays` (shadow rays traced in a pass of
   their own for RTGI and reflections), `SubDataDrawer` (draw loop of the opaque and shadow passes, sorted by pipeline).
@@ -187,6 +191,9 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Meshes** (models, geometry, LOD, mobility, culling distance, screen size): `mesh/Mesh`, `MeshData`, `MeshComponent`
   (Lua `Mesh`, `MeshData`, `MeshComponent`, `MeshMobility`, `MeshUsageBits`), `.aemesh` files, editor
   `MeshEditorWindow`.
+- **Geometry pool** (shared vertex buffers, index buffers, mega buffer, suballocation): `buffer/GeometryPool`, meshes keep
+  their vertices and indices in chunks shared by meshes with the same vertex formats or index type, `VertexBuffer` and
+  `IndexBuffer` have an offset into them; host accessible meshes keep buffers of their own.
 - **Mesh simplification** (decimation, meshoptimizer, weld, remap, vertex cache): `mesh/MeshSimplifier` with
   `SimplifyOptions` (target ratio or count, max error, locked borders, regularization for even triangles, attributes, per vertex locks), welding by position
   and the remap/optimization steps around it. The engine uses it instead of meshoptimizer directly (levels of detail,
@@ -256,7 +263,8 @@ tool isn't listed here, or a listed file doesn't exist.
   `Texture3D`, `Cubemap`, `TextureAtlas`), CPU images `Image` (`common/Image`).
 - **Streaming** (GPU memory budget, residency, LOD streaming, level streaming): `streaming/` (`StreamingManager`,
   `StreamingSettings`, `MeshStreamingSettings`, `LevelStreamingSettings`, `StreamingStats`, `ResidencyStats`), Lua
-  types of the same names.
+  types of the same names. `SceneRequests` requests the meshes, impostors and texture resolutions a scene needs from
+  the distances the GPU culling measures.
 
 ## Lua
 

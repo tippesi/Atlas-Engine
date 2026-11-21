@@ -16,15 +16,53 @@ namespace Atlas {
 
         }
 
-        void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+        void OpaqueRenderer::Prepare(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
+            RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap) {
+
+            CPUProfiler::Scope profilerScope("Opaque geometry preparation");
+
+            preparedPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
+            if (!preparedPass)
+                return;
+
+            auto createConfig = [&](Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const MaterialGraph::CompiledGraph* graph) {
+                return GetPipelineConfigForSubData(subData, mesh, target, graph);
+            };
+            auto hasGraphPipeline = [](const MaterialGraph::CompiledGraph& graph) { return !graph.mainVertexFile.empty(); };
+            // Expensive fragment shaders after the cheap ones, which occlude parts of them. Pipelines which can discard
+            // fragments last, so the others keep the early depth test
+            auto getOrder = [](PipelineConfig& config, bool usesGraph) {
+                if (usesGraph || config.HasMacro("OPACITY_MAP") || config.HasMacro("VERTEX_COLORS"))
+                    return 2u;
+                return config.HasMacro("HEIGHT_MAP") ? 1u : 0u;
+            };
+            auto fillDrawData = [&](const Helper::SubDataDrawer::Entry& entry) {
+                return GetPushConstants(entry, false, scene.get(), materialMap).draw;
+            };
+
+            // The data of the draws after the occlusion test is uploaded here too, between the passes it would wait for them.
+            // Both drawers share the pipelines of the sub data, which Prepare can switch to finished graph pipelines
+            drawer.Prepare(renderList, *preparedPass, preparedPass->gpu.draws, true, &Mesh::MeshSubData::mainPipelines,
+                createConfig, hasGraphPipeline, getOrder);
+            lateDrawer.Prepare(renderList, *preparedPass, preparedPass->gpu.lateDraws, false, &Mesh::MeshSubData::mainPipelines,
+                createConfig, hasGraphPipeline, getOrder);
+            drawer.PrepareDrawData(commandList, &Mesh::MeshSubData::mainPipelines, fillDrawData);
+            lateDrawer.PrepareDrawData(commandList, &Mesh::MeshSubData::mainPipelines, fillDrawData);
+
+        }
+
+        void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap, bool lateDraws) {
 
             CPUProfiler::Scope profilerScope("Opaque geometry");
             GPUProfiler::Scope gpuScope("Opaque geometry");
 
-            auto mainPass = lateDraws ? renderList->GetMainPass() : renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
+            // The pass is kept until its last draws
+            auto mainPass = preparedPass;
             if (!mainPass)
                 return;
+            if (lateDraws || mainPass->gpu.lateDraws.empty())
+                preparedPass = nullptr;
 
             auto sceneState = &scene->renderState;
 
@@ -44,26 +82,42 @@ namespace Atlas {
             if (!sceneState->materialGraphParameters.empty())
                 sceneState->materialGraphBuffer.Bind(commandList, 3, 9);
 
-            auto createConfig = [&](Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const MaterialGraph::CompiledGraph* graph) {
-                return GetPipelineConfigForSubData(subData, mesh, target, graph);
-            };
-            auto hasGraphPipeline = [](const MaterialGraph::CompiledGraph& graph) { return !graph.mainVertexFile.empty(); };
-            drawer.Prepare(renderList, *mainPass, lateDraws ? mainPass->gpuLateDraws : mainPass->gpuDraws, !lateDraws,
-                &Mesh::MeshSubData::mainPipelines, createConfig, hasGraphPipeline);
-
             PushConstants pushConstants;
             auto fillPushConstants = [&](const Helper::SubDataDrawer::Entry& entry, const RenderList::MeshInstances& instances,
                 bool usesGraph) -> PushConstants& {
-                const auto& mesh = entry.mesh;
-                const auto& material = entry.subData->material;
+                pushConstants = GetPushConstants(entry, usesGraph, scene.get(), materialMap);
+                pushConstants.deformOffset = uint32_t(instances.deformOffset);
+                pushConstants.instanceOffset = uint32_t(instances.offset);
+                return pushConstants;
+            };
 
-                auto materialIt = materialMap.find(material.Get().get());
-                auto materialIdx = materialIt != materialMap.end() ? uint32_t(materialIt->second) : 0u;
-                auto textureIndices = materialIdx < sceneState->materialTextureIndices.size() ?
-                    sceneState->materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
+            // The level of detail is only read to color the levels
+            auto setLod = [&](uint32_t lod) {
+                if (pushConstants.draw.lod == lod)
+                    return false;
+                pushConstants.draw.lod = lod;
+                return true;
+            };
 
-                pushConstants = PushConstants {
-                    .vegetation = mesh->vegetation ? 1u : 0u,
+            auto& passDrawer = lateDraws ? lateDrawer : drawer;
+            passDrawer.Draw(commandList, renderList, *mainPass, &Mesh::MeshSubData::mainPipelines, fillPushConstants, setLod, 10);
+
+        }
+
+        OpaqueRenderer::PushConstants OpaqueRenderer::GetPushConstants(const Helper::SubDataDrawer::Entry& entry, bool usesGraph,
+            Scene::Scene* scene, std::unordered_map<void*, uint16_t>& materialMap) {
+
+            const auto& sceneState = scene->renderState;
+            const auto& mesh = entry.mesh;
+            const auto& material = entry.subData->material;
+
+            auto materialIt = materialMap.find(material.Get().get());
+            auto materialIdx = materialIt != materialMap.end() ? uint32_t(materialIt->second) : 0u;
+            auto textureIndices = materialIdx < sceneState.materialTextureIndices.size() ?
+                sceneState.materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
+
+            auto pushConstants = PushConstants {
+                .draw = {
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
                     .twoSided = material->twoSided ? 1u : 0u,
                     .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
@@ -83,31 +137,19 @@ namespace Atlas {
                     .metalnessTextureIdx = textureIndices.metalness,
                     .aoTextureIdx = textureIndices.ao,
                     .heightTextureIdx = textureIndices.height,
-                    .emissiveTextureIdx = textureIndices.emissive,
-                    .deformOffset = uint32_t(instances.deformOffset),
-                    .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
-                    .instanceOffset = uint32_t(instances.offset),
-                };
+                    .emissiveTextureIdx = textureIndices.emissive
+                },
+                .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
+            };
 
-                if (usesGraph) {
-                    auto graphData = sceneState->materialGraphMap.find(material.Get().get());
-                    if (graphData != sceneState->materialGraphMap.end()) {
-                        pushConstants.materialIdx = graphData->second.materialIdx;
-                        pushConstants.materialGraphOffset = graphData->second.parameterOffset;
-                    }
+            if (usesGraph) {
+                auto graphData = sceneState.materialGraphMap.find(material.Get().get());
+                if (graphData != sceneState.materialGraphMap.end()) {
+                    pushConstants.draw.materialIdx = graphData->second.materialIdx;
+                    pushConstants.materialGraphOffset = graphData->second.parameterOffset;
                 }
-                return pushConstants;
-            };
-
-            // The level of detail is only read to color the levels
-            auto setLod = [&](uint32_t lod) {
-                if (pushConstants.lod == lod)
-                    return false;
-                pushConstants.lod = lod;
-                return true;
-            };
-
-            drawer.Draw(commandList, renderList, *mainPass, &Mesh::MeshSubData::mainPipelines, fillPushConstants, setLod);
+            }
+            return pushConstants;
 
         }
 
@@ -184,9 +226,17 @@ namespace Atlas {
             if (mesh->data.IsSkinned()) {
                 macros.push_back("SKINNED");
             }
+            if (mesh->vegetation) {
+                macros.push_back("VEGETATION");
+            }
 
             if (!mesh->data.IsSkinned()) {
                 macros.push_back("INSTANCE_BUFFER");
+            }
+            // Draws of the GPU culling with the same pipeline and geometry buffers are merged into multi draws, the
+            // data of a draw comes from a buffer
+            if (!graph && !mesh->data.IsSkinned()) {
+                macros.push_back("DRAW_DATA");
             }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);

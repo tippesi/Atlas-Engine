@@ -90,6 +90,17 @@ namespace Atlas {
             uint32_t lodCount = 1;
         };
 
+        // The draws of a pass culled on the GPU, their commands are written by the culling
+        struct GPUDraws {
+            bool culled = false;
+            Volume::Frustum frustum;
+            std::vector<GPUDraw> draws;
+            // The same draws for the instances which are drawn after the occlusion test of the main pass
+            std::vector<GPUDraw> lateDraws;
+
+            void Reset();
+        };
+
         struct Pass {
             RenderPassType type;
 
@@ -115,12 +126,8 @@ namespace Atlas {
             std::vector<uint32_t> instanceIndices;
             std::vector<uint32_t> impostorInstanceIndices;
 
-            // Passes culled on the GPU only have the skinned meshes in the lists above
-            bool gpuCulled = false;
-            Volume::Frustum frustum;
-            std::vector<GPUDraw> gpuDraws;
-            // The same draws for the instances which are drawn after the occlusion test of the main pass
-            std::vector<GPUDraw> gpuLateDraws;
+            // Passes culled on the GPU only have the skinned meshes and soft bodies in the host instances above
+            GPUDraws gpu;
 
             Ref<Graphics::MultiBuffer> currentMatricesBuffer;
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
@@ -178,10 +185,11 @@ namespace Atlas {
         void DrawGPUCulled(Graphics::CommandList* commandList, const GPUDraw& draw) const;
 
         // Draws the instances of one winding of a host culled mesh, a draw per level of detail, beforeDraw(lod) is
-        // called before each draw
+        // called before each draw. Meshes drawn from the buffers of the geometry pool add their first index and vertex
         template<class BeforeDraw>
         static void DrawInstances(Graphics::CommandList* commandList, const Mesh::MeshSubData& subData,
-            const MeshInstances& instances, bool reversedWinding, const BeforeDraw& beforeDraw) {
+            const MeshInstances& instances, bool reversedWinding, uint32_t firstIndex, int32_t vertexOffset,
+            const BeforeDraw& beforeDraw) {
 
             const auto& lodCounts = reversedWinding ? instances.reversedWindingLodCounts : instances.lodCounts;
             auto firstInstance = uint32_t(reversedWinding ? instances.reversedWindingOffset : instances.offset);
@@ -191,7 +199,8 @@ namespace Atlas {
 
                 beforeDraw(uint32_t(lod));
                 auto range = subData.GetLod(lod);
-                commandList->DrawIndexed(range.indicesCount, lodCounts[lod], range.indicesOffset, 0, firstInstance);
+                commandList->DrawIndexed(range.indicesCount, lodCounts[lod], firstIndex + range.indicesOffset, vertexOffset,
+                    firstInstance);
                 firstInstance += lodCounts[lod];
             }
 

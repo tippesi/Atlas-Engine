@@ -81,6 +81,9 @@ namespace Atlas {
 
             void DestroyAllImmediate();
 
+            // One frame more than the frames in flight need, objects can be released while a render thread records
+            static constexpr size_t framesToDeletion = 4;
+
             VmaAllocator allocator;
             VmaPool highPriorityMemoryPool;
             VmaPool highPriorityRenderTargetPool;
@@ -108,9 +111,6 @@ namespace Atlas {
                     deleteAllocations.pop_front();
                 }
             }
-
-            // One frame more than the frames in flight need, objects can be released while a render thread records
-            const size_t framesToDeletion = 4;
 
             size_t frameIndex = 0;
             std::deque<DeleteLambda> deleteRawAllocations;

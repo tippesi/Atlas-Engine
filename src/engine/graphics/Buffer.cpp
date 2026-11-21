@@ -13,7 +13,14 @@ namespace Atlas {
             VkBufferCreateInfo bufferInfo = {};
             bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bufferInfo.size = desc.size;
-            bufferInfo.usage = desc.usageFlags;            
+            bufferInfo.usage = desc.usageFlags;
+
+            uint32_t queueFamilies[] = { device->GetQueueFamilyIndex(GraphicsQueue), device->GetQueueFamilyIndex(TransferQueue) };
+            if (desc.sharedWithTransferQueue && queueFamilies[0] != queueFamilies[1]) {
+                bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+                bufferInfo.queueFamilyIndexCount = 2;
+                bufferInfo.pQueueFamilyIndices = queueFamilies;
+            }
 
             VmaAllocationCreateInfo allocationCreateInfo = {};
             allocationCreateInfo.priority = desc.priority;

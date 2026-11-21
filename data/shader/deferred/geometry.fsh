@@ -3,6 +3,7 @@
 #include <../globals.hsh>
 #include <../common/opacity.hsh>
 #include <texture.hsh>
+#include <geometry.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
 layout (location = 1) out vec2 normalFS;
@@ -36,37 +37,9 @@ layout(location=12) in vec3 objectNormalVS;
 #endif
 
 layout(location=13) flat in uint lodVS;
-
-layout(push_constant) uniform constants {
-    uint vegetation;
-    uint invertUVs;
-    uint twoSided;
-    uint staticMesh;
-    uint materialIdx;
-    float normalScale;
-    float displacementScale;
-    float windTextureLod;
-    float windBendScale;
-    float windWiggleScale;
-    float uvAnimationX;
-    float uvAnimationY;
-    float uvTiling;
-    uint baseColorTextureIdx;
-    uint opacityTextureIdx;
-    uint normalTextureIdx;
-    uint roughnessTextureIdx;
-    uint metalnessTextureIdx;
-    uint aoTextureIdx;
-    uint heightTextureIdx;
-    uint emissiveTextureIdx;
-    uint deformOffset;
-    uint jointCount;
-    uint instanceOffset;
-    uint lod;
-#ifdef MATERIAL_GRAPH
-    uint materialGraphOffset;
+#ifdef DRAW_DATA
+layout(location=14) flat in uint drawIdxVS;
 #endif
-} PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 #ifdef HEIGHT_MAP
@@ -79,20 +52,20 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     // depth of current layer
     float currentLayerDepth = 0.0;
     // the amount to shift the texture coordinates per layer (from vector P)
-    vec2 P = viewDir.xy / viewDir.z * PushConstants.displacementScale;
+    vec2 P = viewDir.xy / viewDir.z * DrawValue(displacementScale);
     vec2 deltaTexCoords = P / numLayers;
     vec2  currentTexCoords = texCoords;
     
     vec2 ddx = dFdx(texCoords);
     vec2 ddy = dFdy(texCoords);
     
-    float currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, PushConstants.heightTextureIdx, ddx, ddy).r;
+    float currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, DrawValue(heightTextureIdx), ddx, ddy).r;
     
     while(currentLayerDepth < currentDepthMapValue) {
         // shift texture coordinates along direction of P
         currentTexCoords -= deltaTexCoords;
         // get depthmap value at current texture coordinates
-        currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, PushConstants.heightTextureIdx, ddx, ddy).r;
+        currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, DrawValue(heightTextureIdx), ddx, ddy).r;
         // get depth of next layer
         currentLayerDepth += layerDepth;  
     }
@@ -101,7 +74,7 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
     // get depth after and before collision for linear interpolation
     float afterDepth  = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = 1.0 - SampleHeight(prevTexCoords, PushConstants.heightTextureIdx, ddx, ddy).r - currentLayerDepth + layerDepth;
+    float beforeDepth = 1.0 - SampleHeight(prevTexCoords, DrawValue(heightTextureIdx), ddx, ddy).r - currentLayerDepth + layerDepth;
      
     // interpolation of texture coordinates
     float weight = afterDepth / (afterDepth - beforeDepth);
@@ -116,6 +89,10 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
 void main() {
 
+#ifdef DRAW_DATA
+    drawIdx = drawIdxVS;
+#endif
+
 #ifdef MATERIAL_GRAPH_SURFACE
     vec2 graphTexCoord = vec2(0.0);
     vec4 graphColor = vec4(1.0);
@@ -127,7 +104,7 @@ void main() {
 #endif
 
     float graphFrontFacing = gl_FrontFacing ? 1.0 : -1.0;
-    vec3 graphGeometryNormal = normalize(normalVS) * (PushConstants.twoSided > 0 ? graphFrontFacing : 1.0);
+    vec3 graphGeometryNormal = normalize(normalVS) * (DrawValue(twoSided) > 0 ? graphFrontFacing : 1.0);
     mat3 graphTangentFrame = mat3(1.0);
 #if defined(MATERIAL_GRAPH_WRITES_NORMAL) || defined(MATERIAL_GRAPH_USES_TANGENTS)
 #ifdef NORMAL_MAP
@@ -176,7 +153,7 @@ void main() {
 #if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
     float opacity = 1.0;
 #ifdef OPACITY_MAP
-    opacity *= SampleOpacity(texCoords, PushConstants.opacityTextureIdx, globalData.mipLodBias);
+    opacity *= SampleOpacity(texCoords, DrawValue(opacityTextureIdx), globalData.mipLodBias);
 #endif
 #ifdef VERTEX_COLORS
     // opacity *= vertexColorsVS.a;
@@ -186,12 +163,12 @@ void main() {
 #endif
 
 #ifdef BASE_COLOR_MAP
-    vec3 textureColor = SampleBaseColor(texCoords, PushConstants.baseColorTextureIdx, globalData.mipLodBias);
+    vec3 textureColor = SampleBaseColor(texCoords, DrawValue(baseColorTextureIdx), globalData.mipLodBias);
     baseColorFS *= textureColor.rgb;
 #endif
 
 #ifdef EMISSIVE_MAP
-    vec3 emissiveColor = SampleEmissive(texCoords, PushConstants.emissiveTextureIdx, globalData.mipLodBias);
+    vec3 emissiveColor = SampleEmissive(texCoords, DrawValue(emissiveTextureIdx), globalData.mipLodBias);
     emissiveFS = emissiveColor.rgb;
 #endif
 
@@ -202,16 +179,16 @@ void main() {
     vec3 geometryNormal = normalize(normalVS);
 
 #ifdef NORMAL_MAP
-    vec3 normalColor = SampleNormal(texCoords, PushConstants.normalTextureIdx, globalData.mipLodBias);
-    vec3 normal = mix(geometryNormal, normalize(TBN * normalColor), PushConstants.normalScale);
+    vec3 normalColor = SampleNormal(texCoords, DrawValue(normalTextureIdx), globalData.mipLodBias);
+    vec3 normal = mix(geometryNormal, normalize(TBN * normalColor), DrawValue(normalScale));
     // We want the normal always to face the camera for two sided materials
-    geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
+    geometryNormal *= DrawValue(twoSided) > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
     normal *= dot(geometryNormal, normal) < 0.0 ? -1.0 : 1.0;
 
     normalFS = EncodeNormal(normal);
 #else
     // We want the normal always to face the camera for two sided materials
-    geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
+    geometryNormal *= DrawValue(twoSided) > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
 #endif
 
     
@@ -226,15 +203,15 @@ void main() {
     float aoFactor = 1.0;
 
 #ifdef ROUGHNESS_MAP
-    roughnessFactor *= SampleRoughness(texCoords, PushConstants.roughnessTextureIdx, globalData.mipLodBias);
+    roughnessFactor *= SampleRoughness(texCoords, DrawValue(roughnessTextureIdx), globalData.mipLodBias);
     roughnessMetalnessAoFS.r = roughnessFactor;
 #endif
 #ifdef METALNESS_MAP
-    metalnessFactor *= SampleMetalness(texCoords, PushConstants.metalnessTextureIdx, globalData.mipLodBias);
+    metalnessFactor *= SampleMetalness(texCoords, DrawValue(metalnessTextureIdx), globalData.mipLodBias);
     roughnessMetalnessAoFS.g = metalnessFactor;
 #endif
 #ifdef AO_MAP
-    aoFactor *= SampleAo(texCoords, PushConstants.aoTextureIdx, globalData.mipLodBias);
+    aoFactor *= SampleAo(texCoords, DrawValue(aoTextureIdx), globalData.mipLodBias);
     roughnessMetalnessAoFS.b = aoFactor;
 #endif
 #endif
@@ -248,7 +225,7 @@ void main() {
 
     velocityFS = (ndcL - ndcC) * 0.5;
 
-    materialIdxFS = PushConstants.materialIdx;
+    materialIdxFS = DrawValue(materialIdx);
 
     if (globalData.debugMeshLods > 0u) {
         const vec3 lodColors[5] = vec3[](vec3(1.0), vec3(0.1, 0.9, 0.1), vec3(0.1, 0.4, 1.0), vec3(1.0, 0.8, 0.1),

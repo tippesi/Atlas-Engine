@@ -165,7 +165,7 @@ namespace Atlas {
 
             // Swaps textures and meshes, before anything of this update reads them
             sectionScope.Next("Streaming");
-            renderState.RequestStreamedResources();
+            renderState.streamingRequests.Request(this);
             Streaming::StreamingManager::Update();
             Mesh::Mesh::ApplyGeneratedLods();
 

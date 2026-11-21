@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "Entity.h"
+#include "common/Hash.h"
 
 #include "mesh/Mesh.h"
 #include "volume/AABB.h"
@@ -101,10 +102,11 @@ namespace Atlas::Scene {
             uint32_t view;
             uint32_t type;
             uint32_t indexCount;
+            // In the buffers of the geometry pool, the draws bind them without offsets
             uint32_t firstIndex;
             uint32_t lod;
-            uint32_t padding1;
-            uint32_t padding2;
+            int32_t vertexOffset;
+            uint32_t padding0;
         };
 
         // The instances of a mesh, slot 0 is invalid
@@ -317,9 +319,33 @@ namespace Atlas::Scene {
 
         Graphics::UploadBufferPool uploadBufferPool;
 
-        std::unordered_map<Hash, uint32_t> meshSlots;
-        std::unordered_map<Hash, uint32_t> softBodyMeshSlots;
+        // Simulated soft bodies of a mesh have a slot of their own
+        struct SlotKey {
+            Hash meshId;
+            bool softBody;
+
+            bool operator==(const SlotKey&) const = default;
+        };
+        struct SlotKeyHasher {
+            size_t operator()(const SlotKey& key) const {
+                Hash hash = key.meshId;
+                HashCombine(hash, key.softBody);
+                return hash;
+            }
+        };
+        std::unordered_map<SlotKey, uint32_t, SlotKeyHasher> meshSlots;
         std::vector<uint32_t> freeSlots;
+
+        struct DrawSortKey {
+            Hash pipeline;
+            const void* vertexBuffer;
+            const void* indexBuffer;
+            uint32_t draw;
+
+            auto operator<=>(const DrawSortKey&) const = default;
+        };
+        std::vector<DrawSortKey> drawSortKeys;
+        std::vector<RenderList::GPUDraw> sortedDraws;
         std::vector<EntityState> entityStates;
 
         std::vector<ECS::Entity> refreshEntities;

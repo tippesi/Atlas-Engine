@@ -3,6 +3,7 @@
 #include <common/packing.hsh>
 #include <common/texCoord.hsh>
 #include <common/opacity.hsh>
+#include <shadowMapping.hsh>
 
 layout(location=0) in vec3 vPosition;
 #ifdef MATERIAL_GRAPH
@@ -64,25 +65,6 @@ layout(std430, set = 1, binding = 26) readonly buffer SoftBodyVertexOffsets {
 #endif
 
 layout(set = 3, binding = 0) uniform sampler2D windNoiseMap;
-
-layout(push_constant) uniform constants {
-    mat4 lightSpaceMatrix;
-    uint vegetation;
-    uint invertUVs;
-    float windTextureLod;
-    float windBendScale;
-    float windWiggleScale;
-    uint textureID;
-    uint deformOffset;
-    uint jointCount;
-    uint instanceOffset;
-    float uvAnimationX;
-    float uvAnimationY;
-    float uvTiling;
-#ifdef MATERIAL_GRAPH
-    uint materialGraphOffset;
-#endif
-} PushConstants;
 
 void main() {
 
@@ -174,15 +156,17 @@ void main() {
 #endif
 #endif
 
-    if (PushConstants.vegetation > 0) {
-
-        // This is not well optimized and could use some work
-        vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
-        vec2 windDir = GetWindDirection(mMatrix);
-        position = WindAnimation(windNoiseMap, position, windDir, PushConstants.windBendScale,
-            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
-
-    }
+#ifdef VEGETATION
+#ifdef DRAW_DATA
+    ShadowDraw draw = shadowDraws[PushConstants.firstDraw + uint(gl_DrawID)];
+#else
+    ShadowDraw draw = PushConstants.draw;
+#endif
+    vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
+    vec2 windDir = GetWindDirection(mMatrix);
+    position = WindAnimation(windNoiseMap, position, windDir, draw.windBendScale,
+        draw.windWiggleScale, draw.windTextureLod, globalData.time, windPosition);
+#endif
     
     gl_Position = PushConstants.lightSpaceMatrix * matrix * vec4(position, 1.0f);
     

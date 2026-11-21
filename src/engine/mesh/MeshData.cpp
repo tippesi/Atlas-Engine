@@ -18,6 +18,8 @@ namespace Atlas {
             configs[1] = config.GetReversedWindingVariant();
             configs[2] = PipelineConfig();
             configs[3] = PipelineConfig();
+            hasDrawData = configs[0].HasMacro("DRAW_DATA");
+            order = invalidOrder;
 
         }
 
@@ -27,6 +29,8 @@ namespace Atlas {
                 config = PipelineConfig();
             graphPending = false;
             usesGraph = false;
+            hasDrawData = false;
+            order = invalidOrder;
 
         }
 

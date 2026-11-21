@@ -25,7 +25,8 @@ namespace Atlas {
 
             ~MemoryTransferManager();
 
-            void BeginMultiTransfer();
+            // Images need the graphics queue for their layout transitions
+            void BeginMultiTransfer(QueueType queueType = GraphicsQueue);
 
             void EndMultiTransfer();
 

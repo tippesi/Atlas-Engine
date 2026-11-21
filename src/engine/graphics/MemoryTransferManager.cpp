@@ -26,9 +26,9 @@ namespace Atlas {
 
         }
 
-        void MemoryTransferManager::BeginMultiTransfer() {
+        void MemoryTransferManager::BeginMultiTransfer(QueueType queueType) {
 
-            commandList = device->GetCommandList(GraphicsQueue, true);
+            commandList = device->GetCommandList(queueType, true);
             commandList->BeginCommands();
 
         }

@@ -67,7 +67,7 @@ namespace Atlas {
                 commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
             }
 
-            for (const auto& draw : renderPass->gpuDraws) {
+            for (const auto& draw : renderPass->gpu.draws) {
                 if (draw.type != RenderList::GPUDrawType::Impostor)
                     continue;
 

@@ -168,6 +168,7 @@ namespace Atlas {
 			{
 				GPUProfiler::Scope gpuScope("Main render pass");
 
+				opaqueRenderer.Prepare(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 				commandList->BeginRendering(target->gBufferRendering);
 
 				opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);

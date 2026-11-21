@@ -40,6 +40,8 @@ namespace Atlas {
 
             bool dedicatedMemory = false;
             float priority = 0.5f;
+            // Written by the transfer queue while the graphics queue reads other parts of it
+            bool sharedWithTransferQueue = false;
 
             MemoryTransferManager* transferManager = nullptr;
         };

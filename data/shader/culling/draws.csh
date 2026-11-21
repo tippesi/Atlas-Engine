@@ -11,8 +11,8 @@ struct DrawRequest {
     uint indexCount;
     uint firstIndex;
     uint lod;
-    uint padding1;
-    uint padding2;
+    int vertexOffset;
+    uint padding0;
 };
 
 layout(std430, set = 3, binding = 0) readonly buffer Meshes {
@@ -77,7 +77,7 @@ void main() {
         commands[offset + 0u] = request.indexCount;
         commands[offset + 1u] = instanceCount;
         commands[offset + 2u] = request.firstIndex;
-        commands[offset + 3u] = 0u;
+        commands[offset + 3u] = uint(request.vertexOffset);
         commands[offset + 4u] = firstInstance;
     }
 

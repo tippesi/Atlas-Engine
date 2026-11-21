@@ -1,0 +1,30 @@
+// Has to match ShadowRenderer::DrawData and ShadowRenderer::PushConstants
+
+// Only the wind differs between the draws of a merged pipeline
+struct ShadowDraw {
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
+};
+
+layout(push_constant) uniform constants {
+    mat4 lightSpaceMatrix;
+    uint deformOffset;
+    uint jointCount;
+    uint instanceOffset;
+    // With DRAW_DATA the data of a draw is at firstDraw + gl_DrawID, the draws of a multi draw follow each other
+    uint firstDraw;
+    uint invertUVs;
+    uint textureID;
+    uint materialGraphOffset;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
+    ShadowDraw draw;
+} PushConstants;
+
+#ifdef DRAW_DATA
+layout(std430, set = 3, binding = 10) readonly buffer ShadowDraws {
+    ShadowDraw shadowDraws[];
+};
+#endif

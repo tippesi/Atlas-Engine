@@ -137,6 +137,8 @@ namespace Atlas {
         Input::ControllerMap::Shutdown();
 
         Events::EventManager::ShutdownEventDelegate.Fire();
+        // The meshes are released by the event
+        Buffer::GeometryPool::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
@@ -159,6 +161,7 @@ namespace Atlas {
         Physics::ShapesManager::Update();
         RayTracing::RayTracingManager::Update();
         Terrain::TerrainManager::Update();
+        Buffer::GeometryPool::Update();
 
     }
 

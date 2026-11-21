@@ -28,6 +28,7 @@
 #include "terrain/Terrain.h"
 #include "raytracing/RayTracingWorld.h"
 #include "streaming/StreamingManager.h"
+#include "streaming/SceneRequests.h"
 
 #include <functional>
 #include <unordered_map>
@@ -104,9 +105,6 @@ namespace Atlas::Scene {
 
         void CullAndSortLights();
 
-        // Requests the meshes and the texture resolutions the closest instances of the meshes need
-        void RequestStreamedResources();
-
         void WaitForAsyncWorkCompletion();
 
         // Waits for the jobs without clearing the render list, which can still be in use by a render thread
@@ -155,6 +153,7 @@ namespace Atlas::Scene {
 
         RenderList renderList;
         GPUScene gpuScene;
+        Streaming::SceneRequests streamingRequests;
 
         Buffer::Buffer materialBuffer;
         Buffer::Buffer materialGraphBuffer;
@@ -244,13 +243,6 @@ namespace Atlas::Scene {
         uint32_t textureFrameCount = 0;
         uint32_t newTextureSlotCount = 0;
         uint32_t textureEvictionIdx = 0;
-
-        GPUScene::MeshDistances meshDistances;
-        std::unordered_map<Material*, float> materialResolutions;
-        std::vector<Streaming::TextureStreaming::MaterialRequest> materialRequests;
-        std::vector<Streaming::MeshStreaming::MeshRequest> meshRequests;
-        std::vector<Streaming::ImpostorStreaming::ImpostorRequest> impostorRequests;
-        size_t streamingRequestOffset = 0;
 
     };
 

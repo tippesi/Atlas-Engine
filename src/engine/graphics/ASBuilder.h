@@ -25,7 +25,7 @@ namespace Atlas {
         public:
             ASBuilder() = default;
 
-            BLASDesc GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer,
+            BLASDesc GetBLASDescForTriangleGeometry(VkDeviceAddress vertexAddress, VkDeviceAddress indexAddress,
                 size_t vertexCount, size_t vertexSize, size_t indexSize, std::span<ASGeometryRegion> regions);
 
             int32_t BuildBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList = nullptr);

@@ -32,22 +32,26 @@ namespace Atlas {
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
                 const Graphics::AttachmentFormats& attachmentFormats, const MaterialGraph::CompiledGraph* graph = nullptr);
 
-            struct alignas(16) PushConstants {
-                mat4 lightSpaceMatrix;
-                uint32_t vegetation;
-                uint32_t invertUVs;
+            // Have to match shadowMapping.hsh, the part of the push constants the draws of a multi draw read from a buffer
+            struct DrawData {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
-                uint32_t textureID;
+            };
+
+            struct alignas(16) PushConstants {
+                mat4 lightSpaceMatrix;
                 uint32_t deformOffset;
                 uint32_t jointCount;
                 uint32_t instanceOffset;
+                uint32_t firstDraw;
+                uint32_t invertUVs;
+                uint32_t textureID;
+                uint32_t materialGraphOffset;
                 float uvAnimationX;
                 float uvAnimationY;
                 float uvTiling;
-                // Only part of the push constants of graphs, the others don't push it
-                uint32_t materialGraphOffset;
+                DrawData draw;
             };
 
             std::set<Scene::Entity> processedLights;

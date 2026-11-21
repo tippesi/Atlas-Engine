@@ -4,6 +4,7 @@
 #include "../Material.h"
 #include "resource/Resource.h"
 #include "../buffer/VertexArray.h"
+#include "../buffer/GeometryPool.h"
 #include "../raytracing/BLAS.h"
 
 #include "MeshData.h"
@@ -130,6 +131,12 @@ namespace Atlas {
 
             bool IsGeometryResident() const;
 
+            // Changes whenever the buffers are created or released
+            uint32_t GetGeometryVersion() const { return geometryVersion; }
+
+            // Users of the buffers beyond drawing keep the range, it stays reserved for them
+            const Ref<Buffer::GeometryPool::Range>& GetGeometryRange() const { return geometryRange; }
+
             // Simulated soft bodies draw level 0 of the mesh, which stays resident while there are any
             bool HasSoftBodies() const { return softBodyCount > 0; }
 
@@ -225,9 +232,14 @@ namespace Atlas {
             SoftBodyMeshSettings softBody;
 
         private:
+            void CreatePooledBuffers();
+
             bool isLoaded = false;
             std::atomic_bool blasCreated = false;
             std::atomic_bool geometryResident = true;
+            std::atomic_uint32_t geometryVersion = 0;
+            // The vertex and index buffers of the mesh, host accessible meshes have buffers of their own
+            Ref<Buffer::GeometryPool::Range> geometryRange;
             std::atomic_int32_t softBodyCount = 0;
             Ref<SoftBodySimulationMesh> softBodySimulationMesh;
             std::mutex softBodySimulationMeshMutex;

@@ -151,6 +151,9 @@ namespace Atlas {
             // The index of the frame which is recorded, data of a frame can be reused after FRAME_DATA_COUNT frames
             int32_t GetFrameIndex() const { return frameIndex; }
 
+            // The transfer queue has its own family if the device has one
+            uint32_t GetQueueFamilyIndex(QueueType queueType) const { return queueFamilyIndices.queueFamilies[queueType].value(); }
+
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
             QueueRef GetAndLockQueue(QueueType queueType);

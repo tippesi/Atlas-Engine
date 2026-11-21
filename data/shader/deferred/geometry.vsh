@@ -4,6 +4,7 @@
 #include <../common/rotation.hsh>
 #include <../common/texCoord.hsh>
 #include <../common/opacity.hsh>
+#include <geometry.hsh>
 
 // New naming convention:
 // Vertex attributes v[Name]
@@ -100,58 +101,35 @@ layout(location=12) out vec3 objectNormalVS;
 #endif
 
 layout(location=13) flat out uint lodVS;
+#ifdef DRAW_DATA
+layout(location=14) flat out uint drawIdxVS;
+#endif
 
 layout(set = 3, binding = 8) uniform sampler2D windNoiseMap;
-
-layout(push_constant) uniform constants {
-    uint vegetation;
-    uint invertUVs;
-    uint twoSided;
-    uint staticMesh;
-    uint materialIdx;
-    float normalScale;
-    float displacementScale;
-    float windTextureLod;
-    float windBendScale;
-    float windWiggleScale;
-    float uvAnimationX;
-    float uvAnimationY;
-    float uvTiling;
-    uint baseColorTextureIdx;
-    uint opacityTextureIdx;
-    uint normalTextureIdx;
-    uint roughnessTextureIdx;
-    uint metalnessTextureIdx;
-    uint aoTextureIdx;
-    uint heightTextureIdx;
-    uint emissiveTextureIdx;
-    uint deformOffset;
-    uint jointCount;
-    uint instanceOffset;
-    // Level of detail of host culled draws, the GPU culled ones draw a level per draw index
-    uint lod;
-#ifdef MATERIAL_GRAPH
-    uint materialGraphOffset;
-#endif
-} PushConstants;
 
 // Functions
 void main() {
 
-    lodVS = PushConstants.lod + uint(gl_DrawID);
+#ifdef DRAW_DATA
+    drawIdx = PushConstants.firstDraw + uint(gl_DrawID);
+    drawIdxVS = drawIdx;
+    lodVS = PushConstants.draw.lod + DrawValue(lod);
+#else
+    lodVS = PushConstants.draw.lod + uint(gl_DrawID);
+#endif
 
 #ifdef INSTANCE_BUFFER
     uint instanceIdx = instanceIndices[gl_InstanceIndex];
     mat4 mMatrix = GetInstanceMatrix(instanceIdx);
-    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : GetLastInstanceMatrix(instanceIdx);
+    mat4 mMatrixLast = DrawValue(staticMesh) > 0 ? mMatrix : GetLastInstanceMatrix(instanceIdx);
 #else
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
-    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
+    mat4 mMatrixLast = DrawValue(staticMesh) > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
 #endif
 
 #ifdef TEX_COORDS
-    texCoordVS = TransformTexCoord(vTexCoord, PushConstants.invertUVs > 0,
-        vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY), PushConstants.uvTiling);
+    texCoordVS = TransformTexCoord(vTexCoord, DrawValue(invertUVs) > 0,
+        vec2(DrawValue(uvAnimationX), DrawValue(uvAnimationY)), DrawValue(uvTiling));
 #endif
     
     mat4 mvMatrix = globalData.vMatrix * mMatrix;
@@ -206,7 +184,7 @@ void main() {
     graphTexCoord = texCoordVS;
 #endif
 #ifdef TEX_COORDS_1
-    graphTexCoord1 = PushConstants.invertUVs > 0 ? vec2(vTexCoord1.x, 1.0 - vTexCoord1.y) : vTexCoord1;
+    graphTexCoord1 = DrawValue(invertUVs) > 0 ? vec2(vTexCoord1.x, 1.0 - vTexCoord1.y) : vTexCoord1;
 #endif
 #ifdef TANGENTS
     graphTangent = vTangent.xyz;
@@ -248,18 +226,15 @@ void main() {
 #endif
 #endif
 
-    if (PushConstants.vegetation > 0) {
-
-        // This is not well optimized and could use some work
-        vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
-        vec2 windDir = GetWindDirection(mMatrix);
-        position = WindAnimation(windNoiseMap, position, windDir, PushConstants.windBendScale,
-            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
-        lastPosition = WindAnimation(windNoiseMap, lastPosition, windDir, PushConstants.windBendScale,
-            PushConstants.windWiggleScale, PushConstants.windTextureLod,
-            globalData.time - globalData.deltaTime, windPosition);
-
-    }
+#ifdef VEGETATION
+    vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
+    vec2 windDir = GetWindDirection(mMatrix);
+    position = WindAnimation(windNoiseMap, position, windDir, DrawValue(windBendScale),
+        DrawValue(windWiggleScale), DrawValue(windTextureLod), globalData.time, windPosition);
+    lastPosition = WindAnimation(windNoiseMap, lastPosition, windDir, DrawValue(windBendScale),
+        DrawValue(windWiggleScale), DrawValue(windTextureLod),
+        globalData.time - globalData.deltaTime, windPosition);
+#endif
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
     positionVS = positionToCamera.xyz;
@@ -285,7 +260,7 @@ void main() {
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normalView = normalize(normalVS);
-    float correctionFactor = orientation * vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
+    float correctionFactor = orientation * vTangent.w * (DrawValue(invertUVs) > 0 ? 1.0 : -1.0);
     vec3 tangentView = mat3(mvMatrix) * tangent;
     tangentView = normalize(tangentView - normalView * dot(tangentView, normalView));
     

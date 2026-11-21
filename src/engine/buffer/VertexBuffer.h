@@ -48,6 +48,8 @@ namespace Atlas {
 
             size_t elementCount = 0;
             size_t elementSize = 0;
+            // Bytes in front of the elements, e.g. in a buffer of the geometry pool
+            size_t offset = 0;
 
             bool hostAccessible = false;
 

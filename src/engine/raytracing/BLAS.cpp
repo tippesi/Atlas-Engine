@@ -24,8 +24,9 @@ namespace Atlas::RayTracing {
         if (hardwareRayTracing) {
             Graphics::ASBuilder asBuilder;
 
-            auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(vertexBuffer.buffer, indexBuffer.buffer,
-                vertexBuffer.elementCount, vertexBuffer.elementSize, indexBuffer.elementSize, geometryRegions);
+            auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(vertexBuffer.buffer->GetDeviceAddress() + vertexBuffer.offset,
+                indexBuffer.buffer->GetDeviceAddress() + indexBuffer.offset, vertexBuffer.elementCount, vertexBuffer.elementSize,
+                indexBuffer.elementSize, geometryRegions);
             if (isDynamic) {
                 blasDesc.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
                 blasDesc.isDynamic = true;

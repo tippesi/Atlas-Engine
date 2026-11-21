@@ -167,7 +167,7 @@ namespace Atlas {
 
         std::scoped_lock lock(mutex);
 
-        pass->gpuCulled = true;
+        pass->gpu.culled = true;
         gpuCulledPasses.push_back(pass);
 
     }
@@ -247,9 +247,7 @@ namespace Atlas {
         impostorInstanceIndices.clear();
         if (lastSize) impostorInstanceIndices.reserve(lastSize);
 
-        gpuCulled = false;
-        gpuDraws.clear();
-        gpuLateDraws.clear();
+        gpu.Reset();
 
         std::erase_if(meshToEntityMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
         std::erase_if(meshToInstancesMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
@@ -524,12 +522,18 @@ namespace Atlas {
         for (auto& context : contexts)
             context.entities.clear();
 
-        gpuCulled = false;
-        gpuDraws.clear();
-        gpuLateDraws.clear();
+        gpu.Reset();
 
         wasUsed = false;
         scene = nullptr;
+
+    }
+
+    void RenderList::GPUDraws::Reset() {
+
+        culled = false;
+        draws.clear();
+        lateDraws.clear();
 
     }
 

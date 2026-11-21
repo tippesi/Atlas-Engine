@@ -184,8 +184,11 @@ namespace Atlas {
                 Ref<BLAS> meshBlas;
                 Ref<Graphics::BLAS> blas;
                 Buffer::Buffer normalBuffer;
-                // The BLAS reads the indices of the mesh, buffers created again (e.g. for levels of detail) invalidate it
-                Ref<Graphics::Buffer> indexBuffer;
+                // The BLAS reads the indices of the mesh, geometry created again (e.g. for levels of detail) invalidates it
+                uint32_t geometryVersion = 0;
+                // Keeps the indices of the mesh until the instance is created again, hits read the ones it was built with
+                Ref<Buffer::GeometryPool::Range> geometryRange;
+                Buffer::IndexBuffer indexBuffer;
 
                 Ref<BLAS> softwareBlas;
                 Buffer::Buffer nodeBoundsBuffer;
@@ -212,8 +215,8 @@ namespace Atlas {
             // Undeformed vertices of a mesh and the vertices of each sub mesh as first vertex and count
             struct DeformMesh {
                 Ref<BLAS> meshBlas;
-                // The vertices are copied from the data, they change with the buffers of the mesh
-                Ref<Graphics::Buffer> meshVertexBuffer;
+                // The vertices are copied from the data, they change with the geometry of the mesh
+                uint32_t geometryVersion = 0;
                 std::vector<SubDataDeformation> deformations;
                 std::vector<SubDataDeformation> softBodyDeformations;
                 Buffer::Buffer vertexBuffer;

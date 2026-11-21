@@ -46,11 +46,14 @@ namespace Atlas::Editor::UI {
                     Widgets::PropertyLabel("Invert UVs");
                     ImGui::Checkbox("##Invert UVs", &mesh->invertUVs);
                     Widgets::PropertyLabel("Cull backfaces");
-                    ImGui::Checkbox("##Cull backfaces", &mesh->cullBackFaces);
+                    // Both are part of the pipelines
+                    if (ImGui::Checkbox("##Cull backfaces", &mesh->cullBackFaces))
+                        mesh->UpdatePipelines();
                     Widgets::PropertyLabel("Ray trace");
                     ImGui::Checkbox("##Ray trace", &mesh->rayTrace);
                     Widgets::PropertyLabel("Is vegetation");
-                    ImGui::Checkbox("##Is vegetation", &mesh->vegetation);
+                    if (ImGui::Checkbox("##Is vegetation", &mesh->vegetation))
+                        mesh->UpdatePipelines();
 
                     Widgets::PropertyLabel("Cast shadow");
                     ImGui::Checkbox("##Cast shadow", &mesh->castShadow);

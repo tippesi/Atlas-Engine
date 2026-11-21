@@ -6,11 +6,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        BLASDesc ASBuilder::GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer,
+        BLASDesc ASBuilder::GetBLASDescForTriangleGeometry(VkDeviceAddress vertexAddress, VkDeviceAddress indexAddress,
             size_t vertexCount, size_t vertexSize, size_t indexSize, std::span<ASGeometryRegion> regions) {
-
-            VkDeviceAddress vertexAddress = vertexBuffer->GetDeviceAddress();
-            VkDeviceAddress indexAddress  = indexBuffer->GetDeviceAddress();
 
             VkAccelerationStructureGeometryTrianglesDataKHR trianglesData = {};
             trianglesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;

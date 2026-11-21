@@ -86,11 +86,12 @@ namespace Atlas {
             // For many draws with one pipeline: the range looked up once with the shader's GetPushConstantRange
             void PushConstants(const PushConstantRange* pushConstantRange, void* data, uint32_t size = 0);
 
-            void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type);
+            void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type, VkDeviceSize offset = 0);
 
             void BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding);
 
-            void BindVertexBuffers(std::vector<Ref<Buffer>>& buffers, uint32_t bindingOffset, uint32_t bindingCount);
+            void BindVertexBuffers(std::vector<Ref<Buffer>>& buffers, const std::vector<VkDeviceSize>& offsets,
+                uint32_t bindingOffset, uint32_t bindingCount);
 
             void BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
 
