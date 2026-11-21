@@ -173,6 +173,7 @@ namespace Atlas {
                 subData.material = data.materials[subData.materialIdx];
                 subData.ResetPipelines();
             }
+            pipelineVersion++;
 
             UpdateRenderBounds();
 

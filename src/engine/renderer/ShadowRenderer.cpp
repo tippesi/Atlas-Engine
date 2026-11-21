@@ -125,8 +125,31 @@ namespace Atlas {
             drawer.Prepare(renderList, *shadowPass, shadowPass->gpu.draws, true, &Mesh::MeshSubData::shadowPipelines,
                 createConfig, hasGraphPipeline, getOrder);
 
+            // Shadow maps drawn with defaults or with casters which change every frame aren't kept
+            auto isFinal = true;
+            auto checkFinal = [&](const Helper::SubDataDrawer::Entry& entry) {
+                if (!isFinal)
+                    return;
+
+                const auto& pipelines = entry.subData->shadowPipelines;
+                const auto& material = entry.subData->material;
+                auto readsTexCoords = pipelines.usesGraph ? pipelines.graphReadsTexCoords : material->HasOpacityMap();
+                isFinal = !pipelines.graphPending && !pipelines.graphAnimatesShadow &&
+                    !(readsTexCoords && material->uvAnimation != vec2(0.0f));
+                if (isFinal && pipelines.usesGraph) {
+                    auto graphData = sceneState->materialGraphMap.find(material.Get().get());
+                    isFinal = graphData != sceneState->materialGraphMap.end() && !graphData->second.hasDefaultTextures;
+                }
+                else if (isFinal && material->HasOpacityMap()) {
+                    auto materialIt = sceneState->materialMap.find(material.Get().get());
+                    isFinal = materialIt != sceneState->materialMap.end() && materialIt->second < sceneState->materialTextureIndices.size() &&
+                        !sceneState->IsDefaultTextureSlot(sceneState->materialTextureIndices[materialIt->second].opacity);
+                }
+            };
+
             // Draws of pipelines with draw data can be merged, only their wind differs
             auto fillDrawData = [&](const Helper::SubDataDrawer::Entry& entry) {
+                checkFinal(entry);
                 const auto& mesh = entry.mesh;
                 return DrawData {
                     .windTextureLod = mesh->windNoiseTextureLod,
@@ -180,14 +203,17 @@ namespace Atlas {
             // Shadows don't color the levels of detail
             auto setLod = [](uint32_t) { return false; };
 
-            drawer.Draw(commandList, renderList, *shadowPass, &Mesh::MeshSubData::shadowPipelines, fillPushConstants,
-                setLod, 10);
+            auto drawnAll = drawer.Draw(commandList, renderList, *shadowPass, &Mesh::MeshSubData::shadowPipelines,
+                fillPushConstants, setLod, 10);
 
             profilerScope.Next("Shadow impostors");
             impostorRenderer.Render(attachmentFormats, commandList, renderList,
                 shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
             commandList->EndRendering();
+
+            shadowPass->keepsShadowMap = isFinal && drawnAll;
+            shadowPass->drawnContentHash = shadowPass->keepsShadowMap ? shadowPass->contentHash : 0;
 
         }
 

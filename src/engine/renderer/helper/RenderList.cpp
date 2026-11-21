@@ -305,6 +305,9 @@ namespace Atlas {
         auto& animationPool = scene->entityManager.GetPool<AnimationComponent>();
         auto& meshPool = scene->entityManager.GetPool<MeshComponent>();
         const auto& meshIdToMeshMap = renderList.meshIdToMeshMap;
+        auto hashContent = type == RenderPassType::Shadow && keepsShadowMap;
+        contentHash = 0;
+        hasDeformingCasters = false;
         for (auto& [meshId, batch] : meshToEntityMap) {
             auto item = meshIdToMeshMap.find(meshId);
             // This happens when meshes are loaded async
@@ -315,6 +318,29 @@ namespace Atlas {
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
             auto isSkinned = mesh->data.IsSkinned();
+            if (type == RenderPassType::Shadow)
+                hasDeformingCasters |= isSkinned || mesh->vegetation;
+            hashContent &= !hasDeformingCasters;
+            if (hashContent) {
+                HashCombine(contentHash, meshId);
+                HashCombine(contentHash, mesh->data.GetLodCount());
+                HashCombine(contentHash, mesh->GetGeometryVersion());
+                HashCombine(contentHash, mesh->GetPipelineVersion());
+                HashCombine(contentHash, mesh->invertUVs);
+                // Graph parameters can move vertices, the tiling moves the opacity
+                for (const auto& subData : mesh->data.subData) {
+                    if (!subData.material.IsLoaded())
+                        continue;
+                    HashCombine(contentHash, subData.material->graphParameterVersion);
+                    HashCombine(contentHash, subData.material->tiling);
+                }
+                if (mesh->impostor.IsLoaded()) {
+                    const auto& impostor = mesh->impostor;
+                    HashCombine(contentHash, impostor.Get().get());
+                    HashCombine(contentHash, impostor->baseColorTexture.get());
+                    HashCombine(contentHash, impostor->depthTexture.get());
+                }
+            }
             auto jointCount = size_t(mesh->data.skeleton.GetJointCount());
             auto needsHistory = mesh->mobility != Mesh::MeshMobility::Stationary
                 && type != RenderPassType::Shadow;
@@ -332,6 +358,7 @@ namespace Atlas {
                     });
 
             auto addInstances = [&](std::span<ECS::Entity> entities, bool isSoftBody) {
+                hasDeformingCasters |= isSoftBody && !entities.empty();
                 auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated && mesh->impostor->IsResident() &&
                     !isSkinned && !isSoftBody;
 
@@ -374,12 +401,23 @@ namespace Atlas {
                     auto& transformComponent = transformPool.Get(entities[i]);
                     const auto distance = hasImpostor ? glm::distance2(
                         vec3(transformComponent.globalMatrix[3]), cameraLocation) : 0.0f;
+                    if (hashContent) {
+                        HashCombine(contentHash, entities[i]);
+                        for (int32_t column = 0; column < 4; column++) {
+                            for (int32_t row = 0; row < 3; row++)
+                                HashCombine(contentHash, transformComponent.globalMatrix[column][row]);
+                        }
+                    }
                     // Only meshes which use the instance indices have impostors
                     if (hasImpostor && distance >= sqdDistance) {
+                        if (hashContent)
+                            HashCombine(contentHash, Mesh::MeshData::maxLodCount);
                         impostorInstanceIndices.push_back(ECS::EntityToIdx(entities[i]));
                         continue;
                     }
                     auto lod = selectLods ? entityLods[i].first : 0u;
+                    if (hashContent)
+                        HashCombine(contentHash, lod);
                     if (i < defaultWindingEntityCount)
                         instances.lodCounts[lod]++;
                     else
@@ -435,6 +473,9 @@ namespace Atlas {
                 meshToSoftBodyInstancesMap[meshId] = addInstances(std::span(softBodyBegin, batchEnd), true);
 
         }
+
+        if (!hashContent || hasDeformingCasters)
+            contentHash = 0;
 
     }
 

@@ -29,6 +29,8 @@ namespace Atlas {
                 config = PipelineConfig();
             graphPending = false;
             usesGraph = false;
+            graphAnimatesShadow = false;
+            graphReadsTexCoords = false;
             hasDrawData = false;
             order = invalidOrder;
 

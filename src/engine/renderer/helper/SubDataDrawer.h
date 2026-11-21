@@ -219,9 +219,10 @@ namespace Atlas {
                 }
 
                 // Draws after PrepareDrawData with fillPushConstants(entry, instances, usesGraph), setLod(lod) returns
-                // whether it changed them. Shaders read the draw data at firstDraw + gl_DrawID of drawDataBinding in set 3
+                // whether it changed them. Shaders read the draw data at firstDraw + gl_DrawID of drawDataBinding in set 3.
+                // Returns false if pipelines of some draws weren't ready
                 template<class FillPushConstants, class SetLod>
-                void Draw(Graphics::CommandList* commandList, RenderList* renderList, const RenderList::Pass& pass,
+                bool Draw(Graphics::CommandList* commandList, RenderList* renderList, const RenderList::Pass& pass,
                     Mesh::MeshSubDataPipelines Mesh::MeshSubData::* pipelines, const FillPushConstants& fillPushConstants,
                     const SetLod& setLod, uint32_t drawDataBinding) {
 
@@ -235,6 +236,7 @@ namespace Atlas {
                     Hash prevHash = 0;
                     Ref<Graphics::Pipeline> currentPipeline;
                     const Graphics::PushConstantRange* constantsRange = nullptr;
+                    bool drawnAll = true;
 
                     // Variants whose shader the driver couldn't compile aren't drawn instead of binding an invalid pipeline
                     auto bindPipeline = [&](PipelineConfig& config) {
@@ -265,6 +267,7 @@ namespace Atlas {
                             continue;
 
                         if (!bindPipeline(GetConfig(entry, pipelines))) {
+                            drawnAll = false;
                             i += run.entryCount - 1;
                             continue;
                         }
@@ -302,11 +305,17 @@ namespace Atlas {
                         auto firstIndex = geometryOnly ? range->firstIndex : 0u;
                         auto vertexOffset = geometryOnly ? int32_t(range->firstVertex) : 0;
                         RenderList::DrawInstances(commandList, *entry.subData, instances, false, firstIndex, vertexOffset, beforeDraw);
-                        if (instances.reversedWindingCount && bindPipeline(subDataPipelines.Get(entry.softBody, true))) {
-                            commandList->PushConstants(constantsRange, &pushConstants);
-                            RenderList::DrawInstances(commandList, *entry.subData, instances, true, firstIndex, vertexOffset, beforeDraw);
+                        if (!instances.reversedWindingCount)
+                            continue;
+                        if (!bindPipeline(subDataPipelines.Get(entry.softBody, true))) {
+                            drawnAll = false;
+                            continue;
                         }
+                        commandList->PushConstants(constantsRange, &pushConstants);
+                        RenderList::DrawInstances(commandList, *entry.subData, instances, true, firstIndex, vertexOffset, beforeDraw);
                     }
+
+                    return drawnAll;
 
                 }
 
@@ -361,6 +370,8 @@ namespace Atlas {
 
                     subDataPipelines.Set(config);
                     subDataPipelines.usesGraph = true;
+                    subDataPipelines.graphAnimatesShadow = compiled->animatesShadow;
+                    subDataPipelines.graphReadsTexCoords = compiled->shadowReadsTexCoords;
 
                 }
 

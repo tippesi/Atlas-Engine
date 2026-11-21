@@ -116,6 +116,14 @@ namespace Atlas {
 
             bool wasUsed = false;
 
+            // Shadow passes keep their shadow map while the hash of their instances stays the one it was drawn with.
+            // The renderer only keeps final shadow maps (see ShadowRenderer), others and passes with casters which
+            // move their vertices (skinning, wind, soft bodies) aren't hashed (0)
+            Hash contentHash = 0;
+            Hash drawnContentHash = 0;
+            bool keepsShadowMap = true;
+            bool hasDeformingCasters = false;
+
             std::vector<mat3x4> currentEntityMatrices;
             std::vector<mat3x4> lastEntityMatrices;
             std::vector<mat3x4> currentJointMatrices;

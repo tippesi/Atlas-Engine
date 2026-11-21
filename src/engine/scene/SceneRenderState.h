@@ -61,6 +61,8 @@ namespace Atlas::Scene {
         uint32_t materialIdx = 0;
         // Position of the values in the parameter buffer
         uint32_t parameterOffset = 0;
+        // Some of the texture parameters are drawn with a default texture
+        bool hasDefaultTextures = false;
     };
 
     struct MaterialGraphCache {
@@ -93,6 +95,9 @@ namespace Atlas::Scene {
         void UpdateBlasBindlessData(bool rayTracing);
 
         uint32_t GetBindlessTextureIdx(const Ref<Texture::Texture2D>& texture) const;
+
+        // Textures which aren't loaded or don't have a slot yet are drawn with a default one
+        bool IsDefaultTextureSlot(uint32_t slot) const { return slot < uint32_t(DefaultTextureSlot::Count); }
 
         void UpdateOtherTextureBindlessData();
 

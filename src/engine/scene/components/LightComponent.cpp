@@ -202,8 +202,9 @@ namespace Atlas {
                     shadow->views[0].frustumMatrix = clipMatrix * projectionMatrix * viewMatrix;
                 }
 
+                // The views whose casters didn't change keep their shadow maps
                 if (mobility == LightMobility::MovableLight)
-                    shadow->Update();
+                    shadow->update = true;
 
             }
 

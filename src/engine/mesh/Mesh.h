@@ -134,6 +134,9 @@ namespace Atlas {
             // Changes whenever the buffers are created or released
             uint32_t GetGeometryVersion() const { return geometryVersion; }
 
+            // Changes whenever the materials or their pipelines are updated
+            uint32_t GetPipelineVersion() const { return pipelineVersion; }
+
             // Users of the buffers beyond drawing keep the range, it stays reserved for them
             const Ref<Buffer::GeometryPool::Range>& GetGeometryRange() const { return geometryRange; }
 
@@ -238,6 +241,7 @@ namespace Atlas {
             std::atomic_bool blasCreated = false;
             std::atomic_bool geometryResident = true;
             std::atomic_uint32_t geometryVersion = 0;
+            std::atomic_uint32_t pipelineVersion = 0;
             // The vertex and index buffers of the mesh, host accessible meshes have buffers of their own
             Ref<Buffer::GeometryPool::Range> geometryRange;
             std::atomic_int32_t softBodyCount = 0;

@@ -120,7 +120,9 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Lights** (sun, point, spot, lamp, torch, directional): `LightComponent` with `LightType`, `LightMobility`,
   `TypeProperties`, `DirectionalLightProperties`, `PointLightProperties`, `SpotLightProperties`; `Scene::GetMainLight`.
 - **Shadows** (shadow maps, cascades, cube shadows): `Shadow`, `ShadowView` (Lua), terrain and cloud shadows in their
-  renderers.
+  renderers. Point and spot lights query their casters once for all views (`Scene::GetShadowCasters`) and keep the
+  maps of views whose casters didn't change (shadow cache, `RenderList::Pass::contentHash`), `Shadow::Update` draws
+  them again.
 - **Sky** (day, night, time of day, sun position, skybox, HDR, sky probe): `lighting/Sky`, `Atmosphere`, `Skybox`,
   `EnvironmentProbe`, Lua `Sky` (`scene.sky`), `Atmosphere`, `EnvironmentProbe`, `Cubemap`, ImGui `SkyPanel`.
 - **Clouds** (volumetric clouds, cloud shadows, overcast): `VolumetricClouds` (authoring parameters only),

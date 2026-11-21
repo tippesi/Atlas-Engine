@@ -68,6 +68,7 @@ namespace Atlas {
         void Shadow::Update() {
 
             update = true;
+            updateVersion++;
 
         }     
 

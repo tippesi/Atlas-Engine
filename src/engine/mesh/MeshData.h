@@ -41,6 +41,10 @@ namespace Atlas {
             bool graphPending = false;
             // The configs are the ones of the graph
             bool usesGraph = false;
+            // See MaterialGraph::CompiledGraph, read by the shadows
+            bool graphAnimatesShadow = false;
+            bool graphReadsTexCoords = false;
+
             // Of the configs, the order is the one of the pass (see SubDataDrawer) and set on the first draw
             bool hasDrawData = false;
             uint32_t order = invalidOrder;

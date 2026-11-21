@@ -35,6 +35,7 @@ namespace Atlas {
 
             void SetResolution(int32_t resolution);
 
+            // Draws all views again, even the ones whose casters didn't change
             void Update();
 
             float distance = 300.0f;
@@ -61,6 +62,7 @@ namespace Atlas {
             bool allowTerrain = false;
             bool longRange = false;
             bool update = true;
+            uint32_t updateVersion = 0;
 
         };
 

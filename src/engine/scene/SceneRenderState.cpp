@@ -212,8 +212,12 @@ namespace Atlas::Scene {
             materialGraphParameters.insert(materialGraphParameters.end(), cache.words.begin(), cache.words.end());
 
             // The slots of textures change between frames
-            for (const auto& texture : cache.textures)
-                materialGraphParameters[offset + texture.offset] = requestTexture(*texture.handle, texture.fallback);
+            dataIter->second.hasDefaultTextures = false;
+            for (const auto& texture : cache.textures) {
+                auto slot = requestTexture(*texture.handle, texture.fallback);
+                materialGraphParameters[offset + texture.offset] = slot;
+                dataIter->second.hasDefaultTextures |= texture.handle->IsValid() && IsDefaultTextureSlot(slot);
+            }
         }
 
         if (materialGraphCaches.size() > graphMaterials.size())
@@ -650,6 +654,20 @@ namespace Atlas::Scene {
                     }
                     profilerScope.Next("Shadow pass update");
                     shadowPass->Update(camera.GetLocation(), renderList);
+
+                    // Shadow maps keep their content, views with the casters they were drawn with aren't drawn again
+                    if (!gpuCulled && shadowPass->contentHash) {
+                        auto image = shadow->useCubemap ? shadow->cubemap->image.get() : shadow->maps->image.get();
+                        HashCombine(shadowPass->contentHash, image);
+                        HashCombine(shadowPass->contentHash, shadow->updateVersion);
+                        for (int32_t column = 0; column < 4; column++) {
+                            for (int32_t row = 0; row < 4; row++)
+                                HashCombine(shadowPass->contentHash, component->frustumMatrix[column][row]);
+                        }
+                        if (!shadow->allowTerrain && shadowPass->contentHash == shadowPass->drawnContentHash)
+                            return;
+                    }
+
                     profilerScope.Next("Shadow pass buffers");
                     shadowPass->FillBuffers();
                     renderList.FinishPass(shadowPass, RenderList::RenderPassType::Shadow);
