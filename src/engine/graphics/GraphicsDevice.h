@@ -20,6 +20,7 @@
 #include "../common/Ref.h"
 #include "../jobsystem/JobSystem.h"
 
+#include <map>
 #include <optional>
 #include <functional>
 #include <vector>
@@ -314,6 +315,9 @@ namespace Atlas {
             }
 
             QueueFamilyIndices queueFamilyIndices;
+
+            // Shaders with the same bindings share their layouts, under the mutex of descriptorSetLayouts
+            std::map<std::vector<uint64_t>, std::weak_ptr<DescriptorSetLayout>> descriptorSetLayoutCache;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;

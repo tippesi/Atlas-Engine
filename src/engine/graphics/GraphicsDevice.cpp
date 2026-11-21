@@ -338,9 +338,30 @@ namespace Atlas {
 
         Ref<DescriptorSetLayout> GraphicsDevice::CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc) {
 
-            auto layout = std::make_shared<DescriptorSetLayout>(this, desc);
+            // Pipelines switching between shaders with a shared layout keep their bound sets
+            std::vector<const DescriptorSetBinding*> bindings;
+            for (uint32_t i = 0; i < desc.bindingCount; i++)
+                bindings.push_back(&desc.bindings[i]);
+            std::sort(bindings.begin(), bindings.end(), [](const auto* binding0, const auto* binding1) {
+                return binding0->bindingIdx < binding1->bindingIdx;
+                });
+
+            std::vector<uint64_t> key;
+            for (const auto* binding : bindings) {
+                key.push_back(binding->bindingIdx);
+                key.push_back(uint64_t(binding->descriptorType));
+                key.push_back(binding->descriptorCount);
+                key.push_back(binding->stageFlags);
+                key.push_back(binding->bindless ? 1 : 0);
+            }
 
             std::lock_guard<std::mutex> guard(descriptorSetLayouts.mutex);
+            auto& cached = descriptorSetLayoutCache[key];
+            if (auto layout = cached.lock())
+                return layout;
+
+            auto layout = std::make_shared<DescriptorSetLayout>(this, desc);
+            cached = layout;
             descriptorSetLayouts.data.push_back(layout);
 
             return layout;
