@@ -598,6 +598,11 @@ namespace Atlas::Scene {
         if (!light.shadow || !light.shadow->update)
             return;
 
+        // Only the shadows of visible lights are read, the others keep their update (see Extract)
+        const auto& cameraFrustum = scene->GetMainCamera().frustum;
+        if (!light.IsVisible(cameraFrustum))
+            return;
+
         // The cascades of directional lights cover most of the scene, other lights stay culled on the host.
         // The renderer waits for the GPU culled passes separately.
         auto gpuCulled = light.type == LightType::DirectionalLight;
@@ -617,23 +622,37 @@ namespace Atlas::Scene {
             auto componentCount = shadow->longRange ?
                 shadow->viewCount - 1 : shadow->viewCount;
 
-            // The views of a light share one query of the space partitioning
+            // The views of a light share one query of the space partitioning. Movable lights draw every frame, so their
+            // views outside of the camera can be skipped, the others draw all views once
             Ref<std::vector<ShadowCaster>> casters;
+            uint32_t culledViews = 0;
             if (!gpuCulled) {
                 CPUProfiler::Scope profilerScope("Shadow caster query");
-                auto corners = Volume::Frustum(shadow->views[0].frustumMatrix).GetCorners();
-                Volume::AABB bounds(corners[0], corners[0]);
+                std::optional<Volume::AABB> bounds;
                 for (int32_t i = 0; i < componentCount; i++) {
-                    for (auto corner : Volume::Frustum(shadow->views[i].frustumMatrix).GetCorners())
-                        bounds.Grow(corner);
+                    auto corners = Volume::Frustum(shadow->views[i].frustumMatrix).GetCorners();
+                    Volume::AABB viewBounds(corners[0], corners[0]);
+                    for (auto corner : corners)
+                        viewBounds.Grow(corner);
+                    if (light.mobility == LightMobility::MovableLight && !camera.frustum.Intersects(viewBounds)) {
+                        culledViews |= 1u << i;
+                        continue;
+                    }
+                    if (!bounds)
+                        bounds = viewBounds;
+                    bounds->Grow(viewBounds);
                 }
 
                 casters = CreateRef<std::vector<ShadowCaster>>();
-                scene->GetShadowCasters(bounds, *casters);
+                if (bounds)
+                    scene->GetShadowCasters(*bounds, *casters);
             }
 
             JobSystem::ExecuteMultiple(*jobGroup, componentCount,
-                [&, shadow = shadow, entity = entity, gpuCulled, casters](JobData& data) {
+                [&, shadow = shadow, entity = entity, gpuCulled, casters, culledViews](JobData& data) {
+                    if (culledViews & (1u << data.idx))
+                        return;
+
                     auto component = &shadow->views[data.idx];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
@@ -910,8 +929,9 @@ namespace Atlas::Scene {
         for (auto& lightEntity : lightSubset) {
             auto& light = lightEntity.GetComponent<LightComponent>();
             auto& extracted = allLights.emplace_back(LightEntity{ lightEntity, light });
-            // Scripts can request a shadow update again while this frame renders
-            if (light.shadow) {
+            // Scripts can request a shadow update again while this frame renders. Lights outside of the view keep it
+            // until they are visible
+            if (light.shadow && hasCamera && light.IsVisible(camera.frustum)) {
                 extracted.updateShadow = light.shadow->update;
                 light.shadow->update = false;
             }
