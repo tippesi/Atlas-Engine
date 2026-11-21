@@ -39,6 +39,7 @@
 #include <functional>
 #include <mutex>
 #include <optional>
+#include <span>
 
 namespace Atlas {
 
@@ -68,6 +69,12 @@ namespace Atlas {
             float impactSpeed = 0.0f;
 
             bool isTrigger = false;
+        };
+
+        // A mesh which can cast shadows into the views of a light, see Scene::GetShadowCasters
+        struct ShadowCaster {
+            Entity entity;
+            const MeshComponent* meshComponent;
         };
 
         class Scene : public SpacePartitioning {
@@ -197,7 +204,12 @@ namespace Atlas {
             // The state the scripts of the scene run in, e.g. for tools that evaluate Lua next to them
             sol::state& GetLuaState() { return luaScriptManager.state(); }
 
-            void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
+            // Lights with several views (point lights) collect the casters within the bounds of all views once and cull
+            // them for each view
+            void GetShadowCasters(const Volume::AABB& bounds, std::vector<ShadowCaster>& casters);
+
+            void CullShadowCasters(const Volume::Frustum& frustum, std::span<const ShadowCaster> casters,
+                const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();
 

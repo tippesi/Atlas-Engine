@@ -613,8 +613,23 @@ namespace Atlas::Scene {
             auto componentCount = shadow->longRange ?
                 shadow->viewCount - 1 : shadow->viewCount;
 
+            // The views of a light share one query of the space partitioning
+            Ref<std::vector<ShadowCaster>> casters;
+            if (!gpuCulled) {
+                CPUProfiler::Scope profilerScope("Shadow caster query");
+                auto corners = Volume::Frustum(shadow->views[0].frustumMatrix).GetCorners();
+                Volume::AABB bounds(corners[0], corners[0]);
+                for (int32_t i = 0; i < componentCount; i++) {
+                    for (auto corner : Volume::Frustum(shadow->views[i].frustumMatrix).GetCorners())
+                        bounds.Grow(corner);
+                }
+
+                casters = CreateRef<std::vector<ShadowCaster>>();
+                scene->GetShadowCasters(bounds, *casters);
+            }
+
             JobSystem::ExecuteMultiple(*jobGroup, componentCount,
-                [&, shadow = shadow, entity = entity, gpuCulled](JobData& data) {
+                [&, shadow = shadow, entity = entity, gpuCulled, casters](JobData& data) {
                     auto component = &shadow->views[data.idx];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
@@ -631,7 +646,7 @@ namespace Atlas::Scene {
                         renderList.AddGPUCulledPass(shadowPass);
                     }
                     else {
-                        scene->GetRenderList(frustum, shadowPass);
+                        scene->CullShadowCasters(frustum, *casters, shadowPass);
                     }
                     profilerScope.Next("Shadow pass update");
                     shadowPass->Update(camera.GetLocation(), renderList);

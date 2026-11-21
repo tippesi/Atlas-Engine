@@ -1323,76 +1323,37 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
+        void Scene::GetShadowCasters(const Volume::AABB& bounds, std::vector<ShadowCaster>& casters) {
 
             if (!mainCameraEntity.IsValid())
                 return;
 
             auto cameraPos = mainCameraEntity.GetComponent<CameraComponent>().GetLocation();
 
-            bool mainPass = pass->type == RenderList::RenderPassType::Main;
+            std::vector<Entity> entities;
+            renderableMovableEntityOctree.QueryAABB(entities, bounds);
 
-            auto isDistCulled = [&](const MeshComponent& comp) -> bool {
+            auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+            for (auto entity : entities) {
+                auto& comp = meshComponentPool.Get(entity);
+                if (!comp.mesh.IsLoaded() || !comp.mesh->IsGeometryResident() || !comp.mesh->castShadow)
+                    continue;
+
                 auto diff = comp.aabb.GetCenter() - cameraPos;
-
-                float dist2 = glm::dot(diff, diff);
-                float cullingDist = mainPass ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
-                float cullingDist2 = cullingDist * cullingDist;
-
-                return dist2 > cullingDist2;
-                };
-
-            // For the main pass we use the "dumb" method of just iterating over all the data, since we expect most things to
-            // be visible and are exploiting the cache coherency in the meantime
-            if (mainPass) {
-                
-                JobGroup jobGroup{ "Main pass culling", JobPriority::High};
-                auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
-                JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
-                    auto& comp = meshComponentPool.GetByIndex(idx);
-                    auto entity = meshComponentPool[idx];
-
-                    if (!comp.mesh.IsLoaded() || !comp.mesh->IsGeometryResident())
-                        return;
-
-                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
-                        pass->Add(data.idx, entity, comp);
-                    });
-
-                JobSystem::Wait(jobGroup);
-                pass->Finalize();
-
+                auto cullingDistance = comp.mesh->shadowDistanceCulling;
+                auto distanceCulled = glm::dot(diff, diff) > cullingDistance * cullingDistance;
+                if (comp.dontCull || comp.visible && !distanceCulled && bounds.Intersects(comp.aabb))
+                    casters.push_back({ entity, &comp });
             }
-            else {
-                std::vector<Entity> entities;
-                std::vector<Entity> insideEntities;
-                renderableMovableEntityOctree.QueryFrustum(entities, insideEntities, frustum);
 
-                auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+        }
 
-                for (auto& entity : entities) {
-                    auto& comp = meshComponentPool.Get(entity);
-                    if (!comp.mesh.IsLoaded() || !comp.mesh->IsGeometryResident())
-                        continue;
+        void Scene::CullShadowCasters(const Volume::Frustum& frustum, std::span<const ShadowCaster> casters,
+            const Ref<RenderList::Pass>& pass) {
 
-                    if (!comp.mesh->castShadow)
-                        continue;
-
-                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
-                        pass->Add(entity, comp);
-                }
-
-                for (auto& entity : insideEntities) {
-                    auto& comp = meshComponentPool.Get(entity);
-                    if (!comp.mesh.IsLoaded() || !comp.mesh->IsGeometryResident())
-                        continue;
-
-                    if (!comp.mesh->castShadow)
-                        continue;
-
-                    if (comp.dontCull || comp.visible && !isDistCulled(comp))
-                        pass->Add(entity, comp);
-                }
+            for (const auto& caster : casters) {
+                if (caster.meshComponent->dontCull || frustum.Intersects(caster.meshComponent->aabb))
+                    pass->Add(caster.entity, *caster.meshComponent);
             }
 
         }

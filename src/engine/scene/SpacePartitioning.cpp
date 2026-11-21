@@ -61,64 +61,6 @@ namespace Atlas {
 
 		}
 
-        void SpacePartitioning::GetRenderList(const Volume::Frustum& frustum, const Ref<RenderList::Pass>& pass) {
-            
-            auto entityManager = &scene->entityManager;
-
-            std::vector<Entity> staticEntities;
-            std::vector<Entity> insideStaticEntities;
-            std::vector<Entity> movableEntities;
-            std::vector<Entity> insideMovableEntities;
-
-            renderableStaticEntityOctree.QueryFrustum(staticEntities,
-                insideStaticEntities, frustum);
-            renderableMovableEntityOctree.QueryFrustum(movableEntities,
-                insideMovableEntities, frustum);
-
-            // Shadow passes drop meshes without shadows later on, don't collect them in the first place
-            auto shadowPass = pass->type == RenderList::RenderPassType::Shadow;
-            auto getMeshComponent = [&](Entity entity) -> MeshComponent* {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
-                if (!meshComp || shadowPass && meshComp->mesh.IsLoaded() && !meshComp->mesh->castShadow)
-                    return nullptr;
-                return meshComp;
-            };
-
-            for (auto entity : staticEntities) {
-                auto meshComp = getMeshComponent(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
-                    pass->Add(entity, *meshComp);
-            }
-
-            for (auto entity : insideStaticEntities) {
-                auto meshComp = getMeshComponent(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->visible)
-                    pass->Add(entity, *meshComp);
-            }
-
-            for (auto entity : movableEntities) {
-                auto meshComp = getMeshComponent(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
-                    pass->Add(entity, *meshComp);
-            }
-
-            for (auto entity : insideMovableEntities) {
-                auto meshComp = getMeshComponent(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->visible)
-                    pass->Add(entity, *meshComp);
-            }
-
-
-        }
-
 	}
 
 }

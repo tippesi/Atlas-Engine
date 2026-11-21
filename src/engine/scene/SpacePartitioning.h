@@ -37,8 +37,6 @@ namespace Atlas {
 
 			void RemoveRenderableEntity(Entity entity, const MeshComponent& transform);
 
-			void GetRenderList(const Volume::Frustum& frustum, const Ref<RenderList::Pass>& pass);
-
 			Scene* scene;
 
 			Volume::Octree<Entity> renderableMovableEntityOctree;
