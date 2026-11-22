@@ -41,6 +41,11 @@ namespace Atlas {
                         entry.spirvBinary.size() * sizeof(uint32_t));
 
                     fileStream.close();
+
+                    // The file gets the time of its sources: written now, it would look newer than a source changed while
+                    // this process ran, the next one would load the old code
+                    std::error_code errorCode;
+                    std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(entry.fileName), entry.lastModified, errorCode);
                 }
             }
 

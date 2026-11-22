@@ -8,10 +8,10 @@ debugging a GPU crash. Feature specific notes are in `wiki/EngineNotes.md`.
 - `GraphicsDevice` keeps a reference to every created GPU object (`pipelines`, `buffers`, ...). Objects whose only remaining reference is the device's are handed to the `MemoryManager` and destroyed `framesToDeletion` (3) frames later, with `FRAME_DATA_COUNT` (2) frames in flight. Dropping a `Ref` is safe; don't add per-command-list lifetime tracking for pipelines or other objects.
 - `PipelineManager` caches pipelines per shader and variant hash and creates them lazily on first use. In non-release builds shader hot reload is active and clears the pipeline variants of changed shaders.
 - Shader compilation and the pipeline cache are used from several threads. The SPIR-V cache in `ShaderCompiler`, `Shader::GetVariant` and the `PipelineManager` map are guarded by locks; keep the lock order `variantsMutex` -> `variantMutex`, and keep hot reload skipping incomplete cache entries.
-- A cache entry counts as fresh when its file is newer than the shader and its includes. A process writes the entries it
-  compiled when it exits, so a bridge server or editor which still runs while a shader is changed writes the old SPIR-V
-  with a newer time when it stops, and the next run uses it. Stop servers before changing shaders, or empty `data/.cache`
-  and `bin/<config>/.cache` when a change doesn't show up.
+- A cache entry counts as fresh when its file is not older than the shader and its includes. A process writes the
+  entries it compiled when it exits and gives the files the time of their sources, so a process which ran while a
+  shader changed doesn't leave its old SPIR-V looking newer. Empty `data/.cache` and `bin/<config>/.cache` after a
+  compiler update, which doesn't change the sources.
 - Never write into shared create infos, e.g. `ShaderVariant::stageCreateInfos`. Extend a local copy (see `requiredSubgroupSize` in `Pipeline`), and never chain pointers to stack variables into data that outlives the call.
 - `DescriptorPool` checks layouts against the capacity of its pools (`poolSizes`). Every new pool costs about 1 ms, a stutter that grows with the number of pipeline switches points there.
 - Extension structs passed to Vulkan need the matching feature enabled in `GraphicsDevice` (e.g. `subgroupSizeControl` for `VkPipelineShaderStageRequiredSubgroupSizeCreateInfo`).
