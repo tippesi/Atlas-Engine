@@ -216,6 +216,9 @@ namespace Atlas::Editor::UI {
                 },
                 [&](ResourceHandle<Texture::Texture2D> texture) {
                     return textureSelectionPanel.Render(texture);
+                },
+                [&](Ref<Material>& material) {
+                    graphParametersPanel.Render(material);
                 });
 
             // Just update materials regardless of any change

@@ -7,6 +7,7 @@
 #include "scene/components/MeshComponent.h"
 
 #include "../ResourceSelectionPanel.h"
+#include "../MaterialGraphParametersPanel.h"
 #include "ImguiExtension/panels/MaterialsPanel.h"
 
 namespace Atlas::Editor::UI {
@@ -20,6 +21,7 @@ namespace Atlas::Editor::UI {
 
     private:
         ImguiExtension::MaterialsPanel materialsPanel;
+        MaterialGraphParametersPanel graphParametersPanel;
 
         Mesh::MeshLodSettings lodSettings;
 

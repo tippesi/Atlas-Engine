@@ -81,11 +81,16 @@ namespace Atlas::ImguiExtension {
             UIElements::PropertyLabel("Reflectance");
             ImGui::SliderFloat("##Reflectance", &material->reflectance, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
-            UIElements::PropertyLabel("Transmissive color");
-            ImGui::ColorEdit3("##Transmissive color", glm::value_ptr(material->transmissiveColor));
-
             UIElements::PropertyLabel("Two sided");
             ImGui::Checkbox("##Two sided", &material->twoSided);
+            UIElements::EndProperties();
+        }
+
+        UIElements::PropertySection("Transmission");
+        if (UIElements::BeginProperties("MaterialTransmission")) {
+            UIElements::PropertyLabel("Transmitted color", "Light shining through thin surfaces like leaves or cloth, lit from "
+                "the back side and tinted by this color. Black lets no light through");
+            ImGui::ColorEdit3("##Transmitted color", glm::value_ptr(material->transmissiveColor));
             UIElements::EndProperties();
         }
 

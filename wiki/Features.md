@@ -234,7 +234,8 @@ tool isn't listed here, or a listed file doesn't exist.
   the scene and mesh editors), bridge `inspect` lists their triangles.
 - **Skeletons** (bones, rig, joints): `Skeleton`, `Joint` (Lua).
 - **Materials** (PBR, textures, emission, transmission): `Material` (Lua), `.aematerial` files, editor
-  `MaterialEditorWindow`, ImGui `MaterialPanel`, `MaterialsPanel`. Bridge `material`, `materialCopy`, `meshMaterials`.
+  `MaterialEditorWindow`, ImGui `MaterialPanel`, `MaterialsPanel` (materials with a graph show its parameters through
+  `MaterialGraphParametersPanel`, in the entity inspector as well). Bridge `material`, `materialCopy`, `meshMaterials`.
 - **Material graphs** (node materials, shader graph, procedural textures, vertex animation, displacement):
   `materialgraph/` (`.aematgraph`, `Compiler`, `NodeLibrary`, `Baker`), editor `MaterialGraphPanel`, see
   `wiki/MaterialGraphs.md`. Lua `Atlas.MaterialGraph` (nodes by id: `AddNode`, `Connect`, `SetInput`, `SetValue`,

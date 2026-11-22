@@ -3,6 +3,7 @@
 #include "AssetEditorWindow.h"
 
 #include "../panels/MaterialGraphPanel.h"
+#include "../panels/MaterialGraphParametersPanel.h"
 #include "../panels/ResourceSelectionPanel.h"
 
 #include <ImguiExtension/panels/MaterialPanel.h>
@@ -70,10 +71,6 @@ namespace Atlas::Editor::UI {
 
         void RenderGraphSection();
 
-        void RenderParameters(const MaterialGraph::CompiledGraph& compiled);
-
-        void RenderParameter(const MaterialGraph::Parameter& parameter);
-
         void RenderBakeSection(const MaterialGraph::CompiledGraph& compiled);
 
         void RenderGraphCanvas();
@@ -112,10 +109,7 @@ namespace Atlas::Editor::UI {
         ResourceSelectionPanel<Mesh::Mesh> meshSelectionPanel;
         std::string bakeError;
 
-        std::string parameterSearch;
-        // Short lists stay open and don't need a search
-        static constexpr size_t maxParametersWithoutSearch = 12;
-
+        MaterialGraphParametersPanel parametersPanel;
         ImguiExtension::MaterialPanel materialPanel;
         ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
         ResourceSelectionPanel<MaterialGraph::Graph> graphSelectionPanel;

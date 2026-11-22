@@ -8,7 +8,8 @@
 namespace Atlas::ImguiExtension {
 
     void MaterialsPanel::Render(Ref<ImguiWrapper>& wrapper, std::vector<ResourceHandle<Material>>& materials,
-        MaterialSelector materialSelector, MaterialPanel::TextureSelector textureSelector) {
+        MaterialSelector materialSelector, MaterialPanel::TextureSelector textureSelector,
+        GraphMaterialRenderer graphMaterialRenderer) {
 
         ImGui::PushID(GetNameID());
 
@@ -50,7 +51,10 @@ namespace Atlas::ImguiExtension {
                         ImGui::Separator();
                     }
                     // Might be deleted above
-                    if (material.IsLoaded()) {
+                    if (material.IsLoaded() && material->HasGraph() && graphMaterialRenderer.has_value()) {
+                        graphMaterialRenderer.value()(material.Get());
+                    }
+                    else if (material.IsLoaded()) {
                         materialPanel.Render(wrapper, material.Get(), textureSelector);
                     }
                     UIElements::EndPropertyContent();
