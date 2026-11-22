@@ -59,6 +59,7 @@ initialize the engine yourself
 - **ATLAS_BUNDLE** Allows the applications to be bundled and installed on MacOS. Disabled by default
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html).
+To let an agent (Claude Code, Codex, ChatGPT, ...) work in the scene open in the editor, see [Atlas Bridge](wiki/AtlasBridge.md).
 ## License
 The source code is licensed under the MIT license. The copyright notices of the dependencies can be found
 in the LICENSE.md file in the dependency directory. 

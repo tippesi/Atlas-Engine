@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Checks that wiki/Features.md lists every component, Lua type, capture tool event, edit operation, query and check,
+# Checks that wiki/Features.md lists every component, Lua type, bridge event, edit operation, query and check,
 # every engine folder, helper header and editor tool, and that the files it names exist. Exits with 1 otherwise.
 import pathlib
 import re
@@ -7,7 +7,7 @@ import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
 engine = root / "src" / "engine"
-capture = root / "src" / "capture"
+bridge = root / "src" / "bridge"
 editor = root / "src" / "editor"
 index = root / "wiki" / "Features.md"
 
@@ -55,11 +55,11 @@ def required():
     return {
         "components": stems(engine / "scene" / "components", "*Component.h"),
         "Lua types, enums and tables": lua_names(),
-        "capture timeline events": strings(block(capture / "Job.cpp", "std::vector<std::string> types =")),
-        "capture camera modes": strings(block(capture / "Job.cpp", "std::set<std::string> modes =")),
-        "capture checks": strings(block(capture / "Job.cpp", "CheckKeys(checks,")) - {"checks", "interval"},
-        "capture edit operations": keys(block(capture / "SceneEditor.cpp", "editOperations = {")),
-        "capture queries": keys(block(capture / "SceneTools.cpp", "queryTypes = {")),
+        "bridge timeline events": strings(block(bridge / "Job.cpp", "std::vector<std::string> types =")),
+        "bridge camera modes": strings(block(bridge / "Job.cpp", "std::set<std::string> modes =")),
+        "bridge checks": strings(block(bridge / "Job.cpp", "CheckKeys(checks,")) - {"checks", "interval"},
+        "bridge edit operations": keys(block(bridge / "SceneEditor.cpp", "editOperations = {")),
+        "bridge queries": keys(block(bridge / "SceneTools.cpp", "queryTypes = {")),
         "helper headers": stems(engine / "common") | stems(engine / "volume") | stems(engine / "tools") |
                           stems(engine / "renderer" / "helper"),
         "editor tools and windows": stems(editor / "tools") | stems(editor / "ui" / "windows"),

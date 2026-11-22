@@ -33,7 +33,7 @@ textures, they are bindless.
 added in the inspector are its arguments (name and type), it returns the result type. It can call the functions every shader
 has (`common.hsh`), but doesn't see the input of the stage; connect `Position`, `Time` and similar nodes to its inputs instead.
 Nodes with the same code share one function. Errors in the code show up when the pipeline compiles, not in the graph.
-Graph files and capture jobs store the inputs as `[["name", "vec3"], ...]` and the result type as `"codeOutputType": "vec3"`,
+Graph files and bridge jobs store the inputs as `[["name", "vec3"], ...]` and the result type as `"codeOutputType": "vec3"`,
 types are `float`, `vec2`, `vec3` and `vec4`.
 
 **Opacity:** an `Opacity` that varies over the surface cuts out fragments, which turns off early depth tests and costs time even
@@ -67,9 +67,9 @@ material->graph = ResourceHandle<MaterialGraph::Graph>(graph);
 New nodes are entries in `materialgraph/NodeLibrary.cpp` with a GLSL expression, helpers go into
 `data/shader/materialGraph/common.hsh`.
 
-Capture jobs build and change graphs with the edit operation `materialGraph` and put them on materials with
+Bridge jobs build and change graphs with the edit operation `materialGraph` and put them on materials with
 `assignMaterialGraph`, `check` finds wrong node types, pins and compile errors without loading anything
-(`src/capture/README.md`). `AtlasEngineCapture inspect nodes` lists the node library with its pins, `inspect <graph>`
+(`src/bridge/README.md`). `AtlasBridge inspect nodes` lists the node library with its pins, `inspect <graph>`
 the nodes of a graph with their links and stages.
 
 ## Sharing a graph
@@ -87,7 +87,7 @@ materials use until they select their own.
 ## Baking for ray tracing
 
 Reflections, global illumination, ray traced shadows and the path tracer don't run graphs, they use the properties of the material.
-`Bake for ray tracing` in the material window (or the capture operation `bakeMaterial`) writes the surface of the graph into them:
+`Bake for ray tracing` in the material window (or the bridge operation `bakeMaterial`) writes the surface of the graph into them:
 
 - **Textures**: maps at one point in time for the positions and texture coordinates of one mesh, in `baked/` next to the material.
   Properties that don't vary only get a value. Texture coordinates have to be from 0 to 1 and shouldn't overlap.
