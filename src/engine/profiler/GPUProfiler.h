@@ -155,6 +155,8 @@ namespace Atlas {
         static constexpr size_t maxContextFrames = 64;
 
         static bool supportsDebugMarkers;
+        // The queries are checkpoints of the crash diagnostics (Graphics::DeviceDesc::enableCrashDiagnostics)
+        static bool supportsCheckpoints;
 
     };
 

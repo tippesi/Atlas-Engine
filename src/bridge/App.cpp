@@ -240,9 +240,11 @@ namespace Atlas::Bridge {
             window.Hide();
         }
 
-        // The profilers are disabled by default in release builds, hitches need the CPU profile
+        // The profilers are disabled by default in release builds, hitches need the CPU profile. The GPU queries write the
+        // checkpoints of the crash diagnostics
         CPUProfiler::enable = job.profileFrames > 0 || job.hitches.has_value();
-        GPUProfiler::enable = job.profileFrames > 0 || (job.hitches && job.hitches->gpu);
+        GPUProfiler::enable = job.profileFrames > 0 || (job.hitches && job.hitches->gpu) ||
+            Graphics::GraphicsDevice::DefaultDevice->support.diagnosticCheckpoints;
         outputFrame = false;
         if (job.hitches) {
             auto hitchSettings = HitchRecorder::GetSettings();

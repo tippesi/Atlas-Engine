@@ -8,6 +8,9 @@
 #include <map>
 #include <cassert>
 #include <set>
+#include <format>
+#include <mutex>
+#include <unordered_set>
 
 #include <vulkan/vulkan_beta.h>
 
@@ -92,6 +95,10 @@ namespace Atlas {
             std::vector<std::string> requestedExtensions;
             if (desc.optionalExtensions)
                 requestedExtensions = desc.optionalExtensions(instance->instance, physicalDevice);
+            if (desc.enableCrashDiagnostics) {
+                requestedExtensions.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+                requestedExtensions.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+            }
             for (const auto& extension : requestedExtensions) {
                 auto isEqual = [&](const char* name) { return extension == name; };
                 if (std::none_of(requiredExtensions.begin(), requiredExtensions.end(), isEqual) &&
@@ -692,6 +699,60 @@ namespace Atlas {
             Log::Error("Graphics device lost on " + std::string(DefaultDevice->deviceProperties.properties.deviceName) +
                 " (driver " + std::string(DefaultDevice->driverProperties.driverInfo) + "), shutting down");
             AE_LOG_STACKTRACE();
+            DefaultDevice->LogCrashDiagnostics();
+
+        }
+
+        const char* GraphicsDevice::GetCheckpointMarker(const std::string& name) {
+
+            // The elements of the set keep their addresses
+            static std::mutex mutex;
+            static std::unordered_set<std::string> names;
+
+            std::scoped_lock lock(mutex);
+            return names.insert(name).first->c_str();
+
+        }
+
+        void GraphicsDevice::LogCrashDiagnostics() {
+
+            if (support.diagnosticCheckpoints) {
+                for (const auto& family : queueFamilyIndices.families) {
+                    for (const auto& queue : family.queues) {
+                        uint32_t count = 0;
+                        vkGetQueueCheckpointDataNV(queue->queue, &count, nullptr);
+                        std::vector<VkCheckpointDataNV> checkpoints(count, { VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV });
+                        vkGetQueueCheckpointDataNV(queue->queue, &count, checkpoints.data());
+                        // The queries the queue began (top of pipe) and finished (bottom of pipe) last
+                        for (const auto& checkpoint : checkpoints) {
+                            auto stage = checkpoint.stage == VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT ? "began" :
+                                checkpoint.stage == VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT ? "finished" : "reached";
+                            auto marker = checkpoint.pCheckpointMarker ? static_cast<const char*>(checkpoint.pCheckpointMarker) : "nothing";
+                            Log::Error("Queue family " + std::to_string(family.index) + " " + stage + ": " + marker);
+                        }
+                    }
+                }
+            }
+
+            if (support.deviceFault) {
+                VkDeviceFaultCountsEXT counts = { VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT };
+                vkGetDeviceFaultInfoEXT(device, &counts, nullptr);
+                std::vector<VkDeviceFaultAddressInfoEXT> addressInfos(counts.addressInfoCount);
+                std::vector<VkDeviceFaultVendorInfoEXT> vendorInfos(counts.vendorInfoCount);
+                counts.vendorBinarySize = 0;
+                VkDeviceFaultInfoEXT info = { VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT };
+                info.pAddressInfos = addressInfos.data();
+                info.pVendorInfos = vendorInfos.data();
+                vkGetDeviceFaultInfoEXT(device, &counts, &info);
+
+                Log::Error("Device fault: " + std::string(info.description));
+                for (const auto& addressInfo : addressInfos)
+                    Log::Error(std::format("Fault address type {} at 0x{:x} (precision {})", int32_t(addressInfo.addressType),
+                        addressInfo.reportedAddress, addressInfo.addressPrecision));
+                for (const auto& vendorInfo : vendorInfos)
+                    Log::Error(std::format("Vendor fault {}: code {}, data {}", vendorInfo.description, vendorInfo.vendorFaultCode,
+                        vendorInfo.vendorFaultData));
+            }
 
         }
 
@@ -1112,6 +1173,11 @@ namespace Atlas {
             if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
                 featureBuilder.Append(availableRayTracingPipelineFeatures);
 
+            availableFaultFeatures = {};
+            availableFaultFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_DEVICE_FAULT_EXTENSION_NAME))
+                featureBuilder.Append(availableFaultFeatures);
+
             availablePositionFetchFeatures = {};
             availablePositionFetchFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
             if (supportedExtensions.contains(VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME))
@@ -1273,6 +1339,15 @@ namespace Atlas {
             float8Features.pNext = nullptr;
             if (isEnabled(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME))
                 featureBuilder.Append(float8Features);
+
+            // Crash diagnostics, their extensions are only enabled on request
+            support.diagnosticCheckpoints = isEnabled(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+            auto faultFeatures = availableFaultFeatures;
+            faultFeatures.pNext = nullptr;
+            if (isEnabled(VK_EXT_DEVICE_FAULT_EXTENSION_NAME) && faultFeatures.deviceFault) {
+                featureBuilder.Append(faultFeatures);
+                support.deviceFault = true;
+            }
 
             // Check for ray tracing extension support
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&

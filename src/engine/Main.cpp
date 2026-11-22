@@ -3,6 +3,7 @@
 #include "graphics/Instance.h"
 #include "common/Path.h"
 #include "profiler/CPUProfiler.h"
+#include "profiler/GPUProfiler.h"
 
 #include <SDL3/SDL_main.h>
 
@@ -48,6 +49,11 @@ int main(int argc, char* argv[]) {
         if (std::string(argv[i]) == "--validation") {
             engineConfig.deviceDesc.enableValidationLayers = true;
             engineConfig.deviceDesc.enableExtendedValidation = true;
+        }
+        // The checkpoints are written by the queries of the GPU profiler, which release builds don't have otherwise
+        if (std::string(argv[i]) == "--crash-diagnostics") {
+            engineConfig.deviceDesc.enableCrashDiagnostics = true;
+            Atlas::GPUProfiler::enable = true;
         }
         if (std::string(argv[i]) == "--shader-dir" && i + 1 < argc)
             engineConfig.shaderDirectory = argv[i + 1];

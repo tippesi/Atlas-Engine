@@ -71,6 +71,9 @@ namespace Atlas {
 
             void EndDebugMarker();
 
+            // A marker of GraphicsDevice::GetCheckpointMarker, only with GraphicsDevice::support.diagnosticCheckpoints
+            void SetCheckpoint(const char* marker);
+
             void BindPipeline(const Ref<Pipeline>& pipeline);
 
             void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);

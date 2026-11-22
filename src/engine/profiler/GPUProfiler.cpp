@@ -18,6 +18,7 @@ namespace Atlas {
     std::atomic_size_t GPUProfiler::frameIdx = size_t(-1);
 
     bool GPUProfiler::supportsDebugMarkers = false;
+    bool GPUProfiler::supportsCheckpoints = false;
 
 #if !defined(AE_OS_MACOS) && !defined(AE_BUILDTYPE_RELEASE)
     std::atomic_bool GPUProfiler::enable = true;
@@ -37,6 +38,7 @@ namespace Atlas {
         if (!enable) return;
 
         frameIdx++;
+        supportsCheckpoints = Graphics::GraphicsDevice::DefaultDevice->support.diagnosticCheckpoints;
 
         std::scoped_lock lock(unevaluatedThreadContextsMutex);
 
@@ -230,6 +232,8 @@ namespace Atlas {
 
         if (supportsDebugMarkers)
             context->commandList->BeginDebugMarker(name);
+        if (supportsCheckpoints)
+            context->commandList->SetCheckpoint(Graphics::GraphicsDevice::GetCheckpointMarker(name));
 
         TimestampQuery query;
 
@@ -259,6 +263,8 @@ namespace Atlas {
 
         auto query = context.stack.back();
         context.commandList->Timestamp(context.queryPool, query.endId);
+        if (supportsCheckpoints)
+            context.commandList->SetCheckpoint(Graphics::GraphicsDevice::GetCheckpointMarker("End of " + query.name));
 
         context.stack.pop_back();
 

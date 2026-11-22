@@ -48,6 +48,9 @@ namespace Atlas {
             bool enableExtendedValidation = false;
             // Configures which messages of the validation layers to log
             Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
+            // A lost device logs the profiler queries the queues were in (VK_NV_device_diagnostic_checkpoints) and the
+            // fault the driver reports (VK_EXT_device_fault), the checkpoints cost a little GPU time
+            bool enableCrashDiagnostics = false;
             // Device extensions enabled where the selected physical device supports them
             std::function<std::vector<std::string>(VkInstance, VkPhysicalDevice)> optionalExtensions;
         };
@@ -64,6 +67,9 @@ namespace Atlas {
             bool shaderFloat16 = false;
             bool extendedDynamicState = false;
             bool memoryPriority = false;
+            // Crash diagnostics, see DeviceDesc::enableCrashDiagnostics
+            bool diagnosticCheckpoints = false;
+            bool deviceFault = false;
         };
 
         struct CommandListSubmission {
@@ -165,6 +171,10 @@ namespace Atlas {
 
             static void HandleDeviceLost();
 
+            // Marks the progress of a command list, see DeviceDesc::enableCrashDiagnostics. Returns a pointer to the name
+            // which stays valid, the queues report it when the device is lost
+            static const char* GetCheckpointMarker(const std::string& name);
+
             void SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle);
 
             template <class T>
@@ -201,6 +211,7 @@ namespace Atlas {
             VkPhysicalDeviceRayTracingPipelineFeaturesKHR availableRayTracingPipelineFeatures = {};
             VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR availablePositionFetchFeatures = {};
             VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT availableInvocationReorderFeatures = {};
+            VkPhysicalDeviceFaultFeaturesEXT availableFaultFeatures = {};
 
             DeviceDesc desc;
             DeviceSupport support;
@@ -265,6 +276,9 @@ namespace Atlas {
                 const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);
 
             bool FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+
+            // The last checkpoints of the queues and the fault of the driver
+            void LogCrashDiagnostics();
 
             std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos();
 

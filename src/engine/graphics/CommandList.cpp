@@ -257,6 +257,12 @@ namespace Atlas {
 
         }
 
+        void CommandList::SetCheckpoint(const char* marker) {
+
+            vkCmdSetCheckpointNV(commandBuffer, marker);
+
+        }
+
         void CommandList::BindPipeline(const Ref<Pipeline>& pipeline) {
 
             AE_ASSERT(pipeline->isComplete && "Can't bind a pipeline which wasn't created");
