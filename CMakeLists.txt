@@ -14,6 +14,8 @@ endif(COMMAND cmake_policy)
 cmake_minimum_required(VERSION 3.25)
 
 project(AtlasEngine VERSION 0.2.1)
+# The engine library has its own project() call, which clears PROJECT_VERSION
+set(ATLAS_ENGINE_VERSION ${PROJECT_VERSION})
 
 # Only 64 bit is supported
 ###################################################################
@@ -27,8 +29,8 @@ option(ATLAS_EXPORT_MAIN "Add main file in root of directory tree. Add ${ATLAS_E
 option(ATLAS_NO_APP "Disables the engines main function" OFF)
 option(ATLAS_DEMO "Build demo executable" OFF)
 option(ATLAS_EDITOR "Build editor executable" ON)
-option(ATLAS_CAPTURE "Build the scene capture and inspection tool executable" OFF)
-option(ATLAS_CAPTURE_LIBRARY "Build only the capture library, for game hosts that run capture jobs" OFF)
+option(ATLAS_BRIDGE "Build the Atlas Bridge executable, the scene capture and inspection tool" OFF)
+option(ATLAS_BRIDGE_LIBRARY "Build only the bridge library, for game hosts that run bridge jobs" OFF)
 option(ATLAS_IMGUI "Activate ImGui integration" OFF)
 option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 option(ATLAS_HEADLESS "Activate support for running the engine in headless mode" OFF)
@@ -74,7 +76,7 @@ endif()
 if (ATLAS_DEMO)
 set(ATLAS_EXPORT_MAIN ON CACHE BOOL "Override engine settings" FORCE)
 endif()
-if (ATLAS_CAPTURE)
+if (ATLAS_BRIDGE)
 set(ATLAS_EXPORT_MAIN ON CACHE BOOL "Override engine settings" FORCE)
 endif()
 
@@ -83,7 +85,7 @@ set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
 set (TESTS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
 set (EDITOR_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/editor)
-set (CAPTURE_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/capture)
+set (BRIDGE_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/bridge)
 set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
@@ -127,8 +129,9 @@ if (ATLAS_EDITOR)
     add_subdirectory(${EDITOR_LOCATION})
 endif()
 
-if (ATLAS_CAPTURE OR ATLAS_CAPTURE_LIBRARY)
-    add_subdirectory(${CAPTURE_LOCATION})
+# The editor runs the commands of the bridge in the open scene
+if (ATLAS_BRIDGE OR ATLAS_BRIDGE_LIBRARY OR ATLAS_EDITOR)
+    add_subdirectory(${BRIDGE_LOCATION})
 endif()
 
 if (ATLAS_TESTS)

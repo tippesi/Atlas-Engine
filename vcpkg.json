@@ -46,9 +46,17 @@
     "sol2",
     "ktx",
     "recastnavigation",
-    "meshoptimizer"
+    "meshoptimizer",
+    {
+      "name": "cpp-httplib",
+      "default-features": false
+    }
   ],
   "overrides": [
+    {
+      "name": "cpp-httplib",
+      "version": "0.63.0"
+    },
     {
       "name": "stb",
       "version": "2024-07-29#1"
