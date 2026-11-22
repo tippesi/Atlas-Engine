@@ -2,6 +2,7 @@
 #include "TerrainTools.h"
 #include "SceneEditor.h"
 #include "Check.h"
+#include "Client.h"
 #include "Summary.h"
 #include "Tools.h"
 #include "InstanceRegistry.h"
@@ -115,11 +116,7 @@ namespace Atlas::Bridge {
         try {
             if (!serve.empty()) {
                 mode = Mode::Server;
-                std::vector<std::string> serverOptions;
-                for (const auto& option : { "--streaming", "--validation" })
-                    if (std::find(args.begin(), args.end(), option) != args.end())
-                        serverOptions.push_back(option);
-                server.emplace(ResolveUserPath(serve), serverOptions);
+                server.emplace(ResolveUserPath(serve), GetServerOptions(args));
 
                 // Scenes can be loaded before the first job, which sets up the renderer for its resolution
                 captureRenderer.Init(mainRenderer, job.resolution);

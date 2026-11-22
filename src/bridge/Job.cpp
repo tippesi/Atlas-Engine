@@ -750,6 +750,9 @@ namespace Atlas::Bridge {
             else if (arg == "--shader-dir")
                 // Read by the engine before it starts
                 next();
+            else if (arg == "--software-ray-tracing" || arg == "--crash-diagnostics") {
+                // Read by the engine before it starts
+            }
             else if (arg == "--profile")
                 j["profile"] = { { "frames", std::stoi(next()) } };
             else if (arg == "--pause")
@@ -878,6 +881,8 @@ Options:
   --profile <frames>      Write the GPU and CPU times averaged over the last frames to profile.json
   --pause                 Pause the scene at the start of playing
   --shader-dir <dir>      Shaders from another directory relative to data/, e.g. for a bench
+  --software-ray-tracing  Trace with the compute BVH even on GPUs with hardware ray tracing
+  --crash-diagnostics     Write GPU checkpoints and fault information for lost devices
   --no-wait-gpu           Load right away, by default scenes load once no other engine application keeps the GPU busy
   --gpu-wait-timeout <s>  Fail when the GPU is still busy after this time (default 1800)
   --verbose               Print the whole engine log, otherwise only its errors (log.txt has everything)

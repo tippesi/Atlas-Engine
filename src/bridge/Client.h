@@ -14,6 +14,9 @@ namespace Atlas::Bridge {
     // --timeout <s> (stop waiting, default 540), --no-wait-gpu (the server loads without waiting for the GPU)
     std::optional<int32_t> RunClient(const std::vector<std::string>& args);
 
+    // The options of args the engine reads before it starts, a server runs with them and is restarted for other ones
+    std::vector<std::string> GetServerOptions(const std::vector<std::string>& args);
+
     // Prints the engine applications that run on this machine, what they do and whom they wait for, see InstanceRegistry
     void PrintInstances();
 

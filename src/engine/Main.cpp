@@ -55,6 +55,8 @@ int main(int argc, char* argv[]) {
             engineConfig.deviceDesc.enableCrashDiagnostics = true;
             Atlas::GPUProfiler::enable = true;
         }
+        if (std::string(argv[i]) == "--software-ray-tracing")
+            engineConfig.deviceDesc.enableHardwareRayTracing = false;
         if (std::string(argv[i]) == "--shader-dir" && i + 1 < argc)
             engineConfig.shaderDirectory = argv[i + 1];
     }

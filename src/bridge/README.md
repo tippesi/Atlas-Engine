@@ -51,15 +51,16 @@ possible), `--no-shots`, `--overlay`, `--play <s>`, `--set path=value` (settings
 (pause at the start of playing), `--hitches [ms]`, `--inspect [file]`, `--sound`, `--no-wait-gpu`,
 `--gpu-wait-timeout <s>`, and before the engine starts: `--validation`, `--streaming` (on for a `--pipeline` with
 `--no-shots`, which takes no pictures and so keeps the GPU memory of a world build small), `--shader-dir <dir>` (relative
-to `data/`), `--verbose` (the whole engine log, otherwise only its errors). Shot options:
+to `data/`), `--software-ray-tracing` (the compute BVH on GPUs with hardware ray tracing), `--crash-diagnostics` (GPU checkpoints and
+fault information for lost devices), `--verbose` (the whole engine log, otherwise only its errors). Shot options:
 `--focus <pattern>`, `--views front,low`, `--camera x,y,z`, `--look-at x,y,z`, `--yaw`, `--pitch`, `--fov`,
 `--distance`, `--overview`, `--passes albedo,normal`, `--shot <name>`. Outputs: `bin/bridge/<job name>/` or `--out`.
 
 ### Client and server
 
 `run`, `eval`, `wait`, `status`, `cancel` and `stop` talk to `bin/bridge-server/<executable>/` (`--server <dir>`). The
-client starts a server when none runs and replaces one of another build or with other `--streaming`/`--validation`
-options once it is idle. Commands queue in file name order, several clients share a server. The server keeps the last
+client starts a server when none runs and replaces one of another build or with other engine start options (`--streaming`, `--validation`,
+`--software-ray-tracing`, `--crash-diagnostics`) once it is idle. Commands queue in file name order, several clients share a server. The server keeps the last
 scene loaded; a job for another scene, or after a job that played or edited, loads it again and keeps the meshes,
 materials and textures meanwhile. While waiting for commands or for the GPU it presents with vsync, jobs run without.
 The client waits up to `--timeout` (540 s), also while the server waits for the GPU, then prints the command to `wait`
@@ -375,7 +376,7 @@ content type other than JSON. ChatGPT connects through a tunnel with a token (`A
   much longer than on average, `threads`; `"gpu": true` also records GPU hitches), `--validation` writes the Vulkan
   validation messages by id (`validation.json`), `report.json` lists the GPU memory (`gpuMemory`).
 - `bench <bench.json>` follows the measuring procedure of `wiki/Performance.md`: builds (`"builds": { "base": "x_base.exe", "change":
-  "x.exe" }`) or shader directories (`"shaders": { "base": "<dir>", "change": "shader" }`, the differing files are touched
+  "x.exe" }`, an old build with the shaders of its commit as `{ "executable": "x_base.exe", "shaders": "shader_base" }`) or shader directories (`"shaders": { "base": "<dir>", "change": "shader" }`, the differing files are touched
   before each run so the SPIR-V cache doesn't serve the other one) run interleaved in alternating order at 1920x1080,
   `frames` (240) rendered and the last 64 profiled, auto exposure off and the scene paused; `rounds` (2) and up to `maxRounds` (5) while the frame
   total is within twice its standard error and above 1 %. It prints every pass (or `passes`) as mean (min - max) per

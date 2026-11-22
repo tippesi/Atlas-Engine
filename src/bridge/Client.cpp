@@ -354,6 +354,16 @@ namespace Atlas::Bridge {
 
     }
 
+    std::vector<std::string> GetServerOptions(const std::vector<std::string>& args) {
+
+        std::vector<std::string> options;
+        for (const auto& option : { "--streaming", "--validation", "--software-ray-tracing", "--crash-diagnostics" })
+            if (std::find(args.begin(), args.end(), option) != args.end())
+                options.push_back(option);
+        return options;
+
+    }
+
     std::optional<int32_t> RunClient(const std::vector<std::string>& args) {
 
         static const std::vector<std::string> commands = { "run", "eval", "wait", "status", "cancel", "stop" };
@@ -362,6 +372,7 @@ namespace Atlas::Bridge {
 
         ClientOptions options;
         options.server = GetDefaultServerDirectory();
+        options.serverOptions = GetServerOptions(args);
         for (size_t i = 1; i < args.size(); i++) {
             const auto& arg = args[i];
             if (arg == "--server" && i + 1 < args.size())
@@ -375,9 +386,7 @@ namespace Atlas::Bridge {
             else if (arg == "--wait-gpu") {
                 // The default, accepted for older command lines
             }
-            else if (arg == "--streaming" || arg == "--validation")
-                options.serverOptions.push_back(arg);
-            else
+            else if (std::find(options.serverOptions.begin(), options.serverOptions.end(), arg) == options.serverOptions.end())
                 options.arguments.push_back(arg);
         }
 

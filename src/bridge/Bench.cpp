@@ -93,28 +93,42 @@ namespace Atlas::Bridge {
 
         };
 
-        std::vector<Variant> variants;
-        if (bench.contains("builds")) {
-            for (const auto& [name, executable] : bench["builds"].items())
-                variants.push_back({ name, resolve(executable.get<std::string>()) });
-            for (const auto& variant : variants)
-                if (!fs::exists(variant.executable))
-                    throw std::runtime_error("The build " + variant.name + " doesn't exist: " + variant.executable.string());
-            return variants;
-        }
-        if (!bench.contains("shaders"))
-            throw std::runtime_error("A bench needs builds or shaders");
-
         // Shader directories are given to the engine relative to the data directory
         auto data = GetAssetDirectory();
-        std::vector<fs::path> directories;
-        for (const auto& [name, directory] : bench["shaders"].items()) {
-            fs::path path(directory.get<std::string>());
+        auto resolveShaders = [&](const std::string& name, const std::string& directory) {
+
+            fs::path path(directory);
             auto absolute = path.is_absolute() ? path : fs::exists(data / path) ? data / path : resolve(path.string());
             if (!fs::is_directory(absolute))
                 throw std::runtime_error("The shader directory " + name + " doesn't exist: " + absolute.string());
-            directories.push_back(fs::weakly_canonical(absolute));
-            variants.push_back({ name, GetExecutablePath(), fs::relative(directories.back(), data).generic_string() });
+            return fs::weakly_canonical(absolute);
+
+        };
+
+        std::vector<Variant> variants;
+        std::vector<fs::path> directories;
+        if (bench.contains("builds")) {
+            // A build is its executable, or { "executable", "shaders" } for an old build that needs the shaders of its commit
+            for (const auto& [name, build] : bench["builds"].items()) {
+                auto executable = build.is_object() ? build.at("executable").get<std::string>() : build.get<std::string>();
+                variants.push_back({ name, resolve(executable) });
+                if (!fs::exists(variants.back().executable))
+                    throw std::runtime_error("The build " + name + " doesn't exist: " + variants.back().executable.string());
+                directories.push_back(resolveShaders(name, build.is_object() ? build.value("shaders", "shader") : "shader"));
+                if (build.is_object() && build.contains("shaders"))
+                    variants.back().shaderDirectory = fs::relative(directories.back(), data).generic_string();
+            }
+            if (std::all_of(variants.begin(), variants.end(), [](const Variant& variant) { return variant.shaderDirectory.empty(); }))
+                return variants;
+        }
+        else if (bench.contains("shaders")) {
+            for (const auto& [name, directory] : bench["shaders"].items()) {
+                directories.push_back(resolveShaders(name, directory.get<std::string>()));
+                variants.push_back({ name, GetExecutablePath(), fs::relative(directories.back(), data).generic_string() });
+            }
+        }
+        else {
+            throw std::runtime_error("A bench needs builds or shaders");
         }
 
         // Only the files that differ are touched, the shaders of other applications are reloaded when they change
