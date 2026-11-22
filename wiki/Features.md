@@ -182,8 +182,9 @@ tool isn't listed here, or a listed file doesn't exist.
   `deferred/direct.csh`),
   DDGI, froxel fog (`volumetric/froxelSlices.hsh`) and screen space refraction: the rays are refracted where they enter, leave closed meshes through their back faces
   (`REFRACTION_BACK_FACES`, depth and normals) and are traced through the depth of a copy of the background with mips,
-  rays which leave the screen take the image where they leave it, rays behind the camera or hidden by surfaces in front
-  see the probe, in the outer 5 % of the screen the refraction fades out. Refracting surfaces without opacity are clear
+  rays which leave the screen take the image where they leave it, rays hidden by surfaces in front of the refracting one
+  see the background straight behind it, rays which pass behind a surface end on it (surfaces are taken as thick), rays
+  behind the camera see the probe, in the outer 5 % of the screen the refraction fades out. Refracting surfaces without opacity are clear
   glass. Rough ones blur the background by the cone of the refracted rays (narrower than the reflection lobe), the
   distance to the hit and the magnification measured in the pixel quad (`GetRefractionMipLevel`); the path tracer
   refracts through GGX sampled microfacets. `screenSpaceRefraction` (project and scene setting, Lua, project settings window) turns

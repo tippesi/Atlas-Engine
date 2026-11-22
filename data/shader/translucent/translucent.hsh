@@ -157,14 +157,17 @@ bool IsOnScreen(vec2 texCoord) {
 }
 
 // Results of TraceBackground: the ray hit the background, left the screen or the distance without a hit (the image goes on
-// there like at its edge), or was lost behind the camera or a surface in front of it
+// there like at its edge), was lost behind the camera, or ran behind a surface in front of the refracting one, which
+// hides the background there
 const int traceHit = 0;
 const int traceLeft = 1;
 const int traceLost = 2;
+const int traceOccluded = 3;
 
 // Marches the ray through the depth of the background copy with steps growing with the distance. The texture coordinate
-// is where the ray hit or left the screen, or where it ended
-int TraceBackground(vec3 origin, vec3 direction, float maxDistance, out vec2 hitTexCoord) {
+// is where the ray hit or left the screen, or where it ended. Surfaces closer than the refracting one at surfaceDepth
+// (view space) are in front of it, the ray is never behind them
+int TraceBackground(vec3 origin, vec3 direction, float maxDistance, float surfaceDepth, out vec2 hitTexCoord) {
 
     const int stepCount = 24;
     hitTexCoord = ProjectToTexCoord(origin);
@@ -193,28 +196,29 @@ int TraceBackground(vec3 origin, vec3 direction, float maxDistance, out vec2 hit
             return traceLeft;
         }
 
-        float backgroundDepth = textureLod(refractionDepthTexture, texCoord, 0.0).r;
-        float behind = ConvertDepthToViewSpaceDepth(backgroundDepth) - position.z;
+        float backgroundViewDepth = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, texCoord, 0.0).r);
+        if (backgroundViewDepth > surfaceDepth)
+            return traceOccluded;
+
         hitTexCoord = texCoord;
-        if (behind > 0.0) {
-            // Refine between the last two steps, surfaces in front of the ray only count if it ends close behind them
+        if (backgroundViewDepth > position.z) {
+            // Refine between the last two steps. Surfaces are taken as thick, a ray which passes behind one ends on it, what
+            // it would hit behind isn't on the screen
             float near = lastDistance, far = distance;
             for (int j = 0; j < 4; j++) {
                 float middle = 0.5 * (near + far);
                 vec3 middlePosition = origin + direction * middle;
                 vec2 middleTexCoord = ProjectToTexCoord(middlePosition);
-                float middleBehind = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, middleTexCoord, 0.0).r) -
-                    middlePosition.z;
-                if (middleBehind > 0.0) {
+                float middleViewDepth = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, middleTexCoord, 0.0).r);
+                if (middleViewDepth > middlePosition.z && middleViewDepth <= surfaceDepth) {
                     far = middle;
                     hitTexCoord = middleTexCoord;
-                    behind = middleBehind;
                 }
                 else {
                     near = middle;
                 }
             }
-            return behind < 2.0 * (distance - lastDistance) + 0.1 ? traceHit : traceLost;
+            return traceHit;
         }
         lastDistance = distance;
     }
@@ -283,9 +287,13 @@ vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveInde
 
     // Open surfaces like water planes are a slab of the thickness, the background inside it is seen directly
     vec2 backgroundTexCoord;
-    bool seesBackground = !closed && TraceBackground(surface.P, inside, thickness, backgroundTexCoord) == traceHit;
-    if (!seesBackground)
-        seesBackground = TraceBackground(exitPosition, exitDirection, 64.0, backgroundTexCoord) != traceLost;
+    int result = closed ? traceLost : TraceBackground(surface.P, inside, thickness, surface.P.z, backgroundTexCoord);
+    if (result != traceHit && result != traceOccluded)
+        result = TraceBackground(exitPosition, exitDirection, 64.0, surface.P.z, backgroundTexCoord);
+    // Where surfaces in front of this one hide the refracted background, the one straight behind is seen
+    if (result == traceOccluded)
+        backgroundTexCoord = texCoord;
+    bool seesBackground = result != traceLost;
 
     // Lenses magnify the background and its blur by how fast the hit moves between neighboring pixels, which is measured
     // in the pixel quad. The smaller direction ignores jumps at the outlines of what is hit
@@ -295,8 +303,7 @@ vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveInde
         return textureLod(refractionTexture, backgroundTexCoord,
             GetRefractionMipLevel(spread * magnification, surface.P, backgroundTexCoord)).rgb;
 
-    // Rays behind the camera or hidden by surfaces in front of them see the probe, its mips are filtered for the
-    // roughness of reflections
+    // Rays behind the camera see the probe, its mips are filtered for the roughness of reflections
     vec3 worldDirection = normalize(mat3(globalData.ivMatrix) * exitDirection);
     float probeMipLevel = sqrt(spread) * float(translucentUniforms.specularProbeMipLevels - 1);
     return textureLod(specularProbe, worldDirection, probeMipLevel).rgb;
