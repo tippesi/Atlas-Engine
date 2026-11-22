@@ -10,9 +10,20 @@
 #include <unordered_set>
 #include <filesystem>
 
+#include <nlohmann/json_fwd.hpp>
+
+using json = nlohmann::json;
+
 namespace Atlas {
 
     namespace Loader {
+
+        enum class JsonFormat {
+            Compact = 0,
+            Indented,
+            MessagePack,
+            BJData
+        };
 
         /**
          * The asset loader is an abstraction for the operating system reads and writes to
@@ -72,6 +83,12 @@ namespace Atlas {
              * <a href="http://www.cplusplus.com/reference/fstream/ofstream/">cplusplus.com</a> for more.
              */
             static std::ofstream WriteFile(std::string filename, std::ios_base::openmode mode);
+
+            /**
+             * Writes json to a file of the asset directory, the engine version is added as "engineVersion".
+             * @return False if the file couldn't be opened.
+             */
+            static bool WriteJson(const std::string& filename, json& j, JsonFormat format);
 
             /**
              * Removes a file from the asset directory.

@@ -38,21 +38,12 @@ namespace Atlas::Loader {
 
     void MaterialGraphLoader::SaveGraph(const Ref<MaterialGraph::Graph>& graph, const std::string& filename) {
 
-        auto path = Loader::AssetLoader::GetFullPath(filename);
-        auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-        if (!fileStream.is_open()) {
-            Log::Error("Couldn't write material graph file " + filename);
-            return;
-        }
-
         json j;
         to_json(j, *graph);
         AssetReferences::MakeReferences(j, AssetReferences::Type::MaterialGraph, filename);
 
-        fileStream << j.dump(2);
-
-        fileStream.close();
+        if (!AssetLoader::WriteJson(filename, j, JsonFormat::Indented))
+            Log::Error("Couldn't write material graph file " + filename);
 
     }
 

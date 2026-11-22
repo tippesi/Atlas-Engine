@@ -412,6 +412,8 @@ namespace Atlas {
                     ResourceManager<T>::UpdateHandler);
                 Events::EventManager::ShutdownEventDelegate.Subscribe(
                     ResourceManager<T>::ShutdownHandler);
+                Events::EventManager::AssetDirectoryChangeEventDelegate.Subscribe(
+                    ResourceManager<T>::ShutdownHandler);
             }
 
         }
@@ -504,6 +506,7 @@ namespace Atlas {
             for (const auto& resource : loadingResources)
                 JobSystem::Wait(resource->jobGroup);
 
+            std::lock_guard lock(mutex);
             resources.clear();
 
         }

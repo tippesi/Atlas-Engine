@@ -39,26 +39,12 @@ namespace Atlas::Loader {
 
     void AnimationLoader::SaveAnimation(const Ref<Animation::Animation>& animation, const std::string& filename, bool binaryJson) {
 
-        auto path = Loader::AssetLoader::GetFullPath(filename);
-        auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-        if (!fileStream.is_open()) {
-            Log::Error("Couldn't write animation file " + filename);
-            return;
-        }
-
         json j;
         to_json(j, *animation);
 
-        if (binaryJson) {
-            auto data = json::to_msgpack(j);
-            fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
-        }
-        else {
-            fileStream << j.dump();
-        }
-
-        fileStream.close();
+        auto format = binaryJson ? Loader::JsonFormat::MessagePack : Loader::JsonFormat::Compact;
+        if (!Loader::AssetLoader::WriteJson(filename, j, format))
+            Log::Error("Couldn't write animation file " + filename);
 
     }
 

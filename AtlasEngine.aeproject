@@ -1,0 +1,6 @@
+{
+  "name": "Atlas Engine",
+  "assetDirectory": "data",
+  "mainScript": "",
+  "startScene": "scenes/sponza.aescene"
+}

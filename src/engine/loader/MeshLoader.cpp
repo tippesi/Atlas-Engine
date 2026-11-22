@@ -42,27 +42,15 @@ namespace Atlas::Loader {
     void MeshLoader::SaveMesh(const Ref<Mesh::Mesh>& mesh, const std::string& filename, 
         bool binaryJson, bool formatJson, bool saveImpostor) {
 
-        auto path = Loader::AssetLoader::GetFullPath(filename);
-        auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-        if (!fileStream.is_open()) {
-            Log::Error("Couldn't write mesh file " + filename);
-            return;
-        }
-
         json j;
         to_json(j, *mesh);
         AssetReferences::MakeReferences(j, AssetReferences::Type::Mesh, filename);
-        
-        if (binaryJson) {
-            auto data = json::to_msgpack(j);
-            fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
-        }
-        else {
-            fileStream << (formatJson ? j.dump(2) : j.dump());
-        }
 
-        fileStream.close();
+        auto format = binaryJson ? JsonFormat::MessagePack : formatJson ? JsonFormat::Indented : JsonFormat::Compact;
+        if (!AssetLoader::WriteJson(filename, j, format)) {
+            Log::Error("Couldn't write mesh file " + filename);
+            return;
+        }
 
         // Impostors the streaming reduced keep the file they were loaded from
         const auto& impostor = mesh->impostor;

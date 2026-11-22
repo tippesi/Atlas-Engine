@@ -182,6 +182,10 @@ target_include_directories(${PROJECT_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
 
+# Only Engine.cpp includes the version, a new version doesn't rebuild the whole engine
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/EngineVersion.h.in ${CMAKE_CURRENT_BINARY_DIR}/generated/EngineVersion.h)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+
 message(${VULKAN_HEADERS_INCLUDE_DIRS})
     
 # Link libraries ##################################################################################

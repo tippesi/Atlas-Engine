@@ -28,6 +28,8 @@ namespace Atlas {
     std::vector<Log::Entry> Log::GetLatestEntries(int32_t count) {
         std::lock_guard<std::mutex> lock(mutex);
 
+        if (count <= 0)
+            return {};
         if (count >= int32_t(entries.size()))
             return entries;
 

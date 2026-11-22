@@ -80,6 +80,11 @@ namespace Atlas {
          */
         static ivec2 GetScreenSize();
 
+        /**
+         * Returns the version of the engine, e.g. 0.2.1. Saved files contain it as "engineVersion".
+         */
+        static const std::string& GetVersion();
+
         static Window* DefaultWindow;
 
     };

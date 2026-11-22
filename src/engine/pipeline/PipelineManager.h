@@ -24,6 +24,9 @@ namespace Atlas {
 
         static void Clear();
 
+        // Drops the pipelines, they are created again from the shader files, the descriptor set layouts stay
+        static void ClearPipelines();
+
         static void Update();
 
         static void EnableHotReload();

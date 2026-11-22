@@ -22,6 +22,7 @@ namespace Atlas {
         EventDelegate<FrameEvent> EventManager::FrameEventDelegate;
         EventDelegate<> EventManager::QuitEventDelegate;
         EventDelegate<> EventManager::ShutdownEventDelegate;
+        EventDelegate<> EventManager::AssetDirectoryChangeEventDelegate;
 
         std::mutex EventManager::handlerMutex;
 

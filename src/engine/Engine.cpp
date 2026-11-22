@@ -25,6 +25,7 @@
 
 #include "graphics/ShaderCompiler.h"
 
+#include <EngineVersion.h>
 #include <SDL3/SDL_vulkan.h>
 
 extern Atlas::EngineInstance* GetEngineInstance();
@@ -179,6 +180,13 @@ namespace Atlas {
             return ivec2(0);
 
         return ivec2(displayMode->w, displayMode->h);
+
+    }
+
+    const std::string& Engine::GetVersion() {
+
+        static const std::string version = AE_ENGINE_VERSION;
+        return version;
 
     }
 

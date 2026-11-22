@@ -6,6 +6,8 @@
 # Project files
 !/.gitattributes
 !/.gitignore
+!/.mcp.json
+!/AtlasEngine.aeproject
 !/CMakeLists.txt
 !/Doxyfile
 !/LICENSE.md
@@ -18,6 +20,7 @@
 !/.github/
 !/libs/
 !/src/
+!/templates/
 !/wiki/
 
 # Vendor SDKs of the optional upscalers are downloaded separately (see libs/upscalers/README.md)
@@ -84,4 +87,4 @@ __pycache__/
 local.properties
 CMakeSettings.json
 CMakeUserPresets.json
-src/capture/examples
+src/bridge/examples

@@ -22,14 +22,6 @@ namespace Atlas {
 
     void Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool saveDependencies, bool binaryJson,  bool formatJson) {
 
-            auto path = Loader::AssetLoader::GetFullPath(filename);
-            auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-            if (!fileStream.is_open()) {
-                Log::Error("Couldn't write scene file " + filename);
-                return;
-            }
-
             JobGroup saveDependenciesGroup{ "Save scene dependencies", JobPriority::Medium };
             if (saveDependencies) {
                 JobSystem::Execute(saveDependenciesGroup, [&](JobData&) {
@@ -48,15 +40,10 @@ namespace Atlas {
             }
             Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Scene, filename);
 
-            if (binaryJson) {
-                auto data = json::to_msgpack(j);
-                fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
-            }
-            else {
-                fileStream << (formatJson ? j.dump(2) : j.dump());
-            }
-
-            fileStream.close();
+            auto format = binaryJson ? Loader::JsonFormat::MessagePack :
+                formatJson ? Loader::JsonFormat::Indented : Loader::JsonFormat::Compact;
+            if (!Loader::AssetLoader::WriteJson(filename, j, format))
+                Log::Error("Couldn't write scene file " + filename);
 
             JobSystem::Wait(saveDependenciesGroup);
 
@@ -107,14 +94,6 @@ namespace Atlas {
 
         void Serializer::SerializePrefab(Ref<Scene::Scene> scene, Scene::Entity entity, const std::string& filename, bool formatJson) {
 
-            auto path = Loader::AssetLoader::GetFullPath(filename);
-            auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-            if (!fileStream.is_open()) {
-                Log::Error("Couldn't write entity file " + filename);
-                return;
-            }
-
             json j;
 
             std::set<ECS::Entity> insertedEntities;
@@ -128,9 +107,9 @@ namespace Atlas {
 
             Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Entity, filename);
 
-            fileStream << (formatJson ? j.dump(2) : j.dump());
-
-            fileStream.close();
+            auto format = formatJson ? Loader::JsonFormat::Indented : Loader::JsonFormat::Compact;
+            if (!Loader::AssetLoader::WriteJson(filename, j, format))
+                Log::Error("Couldn't write entity file " + filename);
 
         }
 

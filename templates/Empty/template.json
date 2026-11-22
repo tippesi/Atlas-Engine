@@ -1,0 +1,32 @@
+{
+  "description": "A scene with a sun, sky and clouds and an empty Main.lua",
+  "standardData": [
+    "editor",
+    "font",
+    "shader",
+    "prefabs/FirstPersonCameraPlayer.aeprefab",
+    "scripts/cameraAnimation.lua",
+    "scripts/entitySpawner.lua",
+    "scripts/example.lua",
+    "scripts/firstPersonCamera.lua",
+    "scripts/rotateEntity.lua",
+    "scripts/thirdPersonPlayer.lua",
+    "materials/CapsuleMaterial.aematerial",
+    "materials/Chrome.aematerial",
+    "materials/Material.001.aematerial",
+    "meshes/capsule.aemesh",
+    "meshes/chromesphere.aemesh",
+    "meshes/metallicwall.aemesh",
+    "capsule.gltf",
+    "chromesphere.bin",
+    "chromesphere.gltf",
+    "cloudHeight.png",
+    "environment.hdr",
+    "icon.png",
+    "loading.png",
+    "metallicwall.gltf",
+    "noise.png",
+    "scrambling_ranking.png",
+    "sobol.png"
+  ]
+}

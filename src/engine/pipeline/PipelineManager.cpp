@@ -4,6 +4,7 @@
 #include "../common/Hash.h"
 #include "../loader/ShaderLoader.h"
 #include "../graphics/GraphicsDevice.h"
+#include "../events/EventManager.h"
 
 namespace Atlas {
 
@@ -25,6 +26,9 @@ namespace Atlas {
             globalDescriptorSetLayoutOverrides[i] = nullptr;
         }
 
+        // The shaders of another asset directory can differ under the same path
+        Events::EventManager::AssetDirectoryChangeEventDelegate.Subscribe([]() { ClearPipelines(); });
+
     }
 
     void PipelineManager::Shutdown() {
@@ -41,6 +45,12 @@ namespace Atlas {
                 globalDescriptorSetLayoutOverrides[i] = nullptr;
             }
         }
+
+        ClearPipelines();
+
+    }
+
+    void PipelineManager::ClearPipelines() {
 
         std::unique_lock lock(shaderToVariantsMutex);
         shaderToVariantsMap.clear();

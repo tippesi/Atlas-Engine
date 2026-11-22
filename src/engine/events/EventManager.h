@@ -51,6 +51,8 @@ namespace Atlas {
             static EventDelegate<FrameEvent> FrameEventDelegate;
             static EventDelegate<> QuitEventDelegate; 
             static EventDelegate<> ShutdownEventDelegate;
+            // The asset directory changed, e.g. to another project: resources and pipelines of the old one are dropped
+            static EventDelegate<> AssetDirectoryChangeEventDelegate;
 
         private:
             static std::mutex handlerMutex;

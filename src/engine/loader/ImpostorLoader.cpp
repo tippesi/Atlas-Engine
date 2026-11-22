@@ -265,23 +265,9 @@ namespace Atlas::Loader {
             }
         }
 
-        auto path = Loader::AssetLoader::GetFullPath(data->filename);
-        auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-        if (!fileStream.is_open()) {
+        auto format = data->binaryJson ? Loader::JsonFormat::MessagePack : Loader::JsonFormat::Compact;
+        if (!Loader::AssetLoader::WriteJson(data->filename, j, format))
             Log::Error("Couldn't write impostor file " + data->filename);
-            return;
-        }
-
-        if (data->binaryJson) {
-            auto msgpack = json::to_msgpack(j);
-            fileStream.write(reinterpret_cast<const char*>(msgpack.data()), msgpack.size());
-        }
-        else {
-            fileStream << j.dump();
-        }
-
-        fileStream.close();
 
     }
 

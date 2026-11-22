@@ -1,7 +1,10 @@
 #include "AssetLoader.h"
 #include "../common/Path.h"
 #include "../Log.h"
+#include "../Engine.h"
+#include "../events/EventManager.h"
 
+#include <nlohmann/json.hpp>
 #include <SDL3/SDL.h>
 
 #include <vector>
@@ -39,11 +42,15 @@ namespace Atlas {
 
         void AssetLoader::SetAssetDirectory(const std::string& directory) {
 
+            auto changed = !assetDirectory.empty() && assetDirectory != directory;
             assetDirectory = directory;
 
 #if !defined(AE_OS_ANDROID) && !defined(AE_OS_APPLE_MOBILE)
             dataDirectory = Common::Path::Normalize(Common::Path::GetAbsolute(directory));
 #endif
+
+            if (changed)
+                Events::EventManager::AssetDirectoryChangeEventDelegate.Fire();
 
         }
 
@@ -132,6 +139,26 @@ namespace Atlas {
             }
 
             return stream;
+
+        }
+
+        bool AssetLoader::WriteJson(const std::string& filename, json& j, JsonFormat format) {
+
+            auto stream = WriteFile(GetFullPath(filename), std::ios::out | std::ios::binary);
+            if (!stream.is_open())
+                return false;
+
+            j["engineVersion"] = Engine::GetVersion();
+
+            if (format == JsonFormat::MessagePack || format == JsonFormat::BJData) {
+                auto data = format == JsonFormat::MessagePack ? json::to_msgpack(j) : json::to_bjdata(j);
+                stream.write(reinterpret_cast<const char*>(data.data()), std::streamsize(data.size()));
+            }
+            else {
+                stream << (format == JsonFormat::Indented ? j.dump(2) : j.dump());
+            }
+
+            return stream.good();
 
         }
 
