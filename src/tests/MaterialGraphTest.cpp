@@ -216,9 +216,10 @@ TEST(MaterialGraphCompiler, OpacityOfParametersIsEvaluatedPerVertex) {
     EXPECT_TRUE(compiled->hasUniformOpacity);
     EXPECT_FALSE(compiled->CutsOutFragments());
 
-    // Fragments without a discard keep early depth tests, the vertices cut out the whole draw
+    // Fragments without a discard keep early depth tests, the vertices cut out the whole draw. Only translucent
+    // passes read the opacity of the surface
     EXPECT_FALSE(Contains(compiled->mainFragmentCode, "MATERIAL_GRAPH_OPACITY"));
-    EXPECT_FALSE(Contains(compiled->mainFragmentCode, "alphaParameter"));
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "MATERIAL_GRAPH_HAS_OPACITY"));
     EXPECT_TRUE(Contains(compiled->mainVertexCode, "EvaluateMaterialOpacity"));
     EXPECT_TRUE(Contains(compiled->shadowVertexCode, "EvaluateMaterialOpacity"));
     EXPECT_FALSE(Contains(compiled->shadowFragmentCode, "#define MATERIAL_GRAPH_SURFACE"));

@@ -16,6 +16,6 @@ void main() {
     ray.direction = deferredShadowRays[idx].direction.xyz;
 
     uint lightIdx = floatBitsToUint(deferredShadowRays[idx].direction.w);
-    deferredLights[lightIdx].w = HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, deferredShadowRays[idx].origin.w);
+    deferredLights[lightIdx].w = HitAnyTransparency(ray, INSTANCE_MASK_SHADOW_TRANSPARENCY, 0.0, deferredShadowRays[idx].origin.w);
 
 }

@@ -399,7 +399,7 @@ void main() {
     currentRadiance = YCoCgToRGB(currentRadiance);
 
     float temporalWeight = (pushConstants.maxHistoryLength - 1.0) / pushConstants.maxHistoryLength;
-    float factor = mix(0.0, temporalWeight - maxVelocity, 1.0 - adjClipBlend);
+    float factor = mix(0.0, temporalWeight, 1.0 - adjClipBlend);
     factor = (historyUV.x < 0.0 || historyUV.y < 0.0 || historyUV.x > 1.0
          || historyUV.y > 1.0) ? 0.0 : factor;
 

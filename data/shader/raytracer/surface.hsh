@@ -110,6 +110,9 @@ Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMater
     mat.normalScale = rayMat.normalScale;
     mat.displacementScale = 0.0;
 
+    mat.blendMode = rayMat.blendMode;
+    mat.refractiveIndex = rayMat.refractiveIndex;
+
     return mat;
 }
 
@@ -185,6 +188,8 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     bool twoSided = rayMat.twoSided > 0 || mat.transmissive;
     backfaceHit = twoSided || rayMat.cullBackFaces == 0 ? false : flipNormal;
     triangleNormal *= flipNormal && twoSided ? -1.0 : 1.0;
+    // Rays leave refracting surfaces through their back faces
+    mat.refractiveIndex = flipNormal ? 1.0 / mat.refractiveIndex : mat.refractiveIndex;
 
     vec3 geometryNormal = triangleNormal;
 
@@ -287,13 +292,10 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray, bool useN
     return GetSurfaceParameters(instance, tri, ray, useNormalMaps, normalFlipped, textureLevel);
 }
 
-// Surfaces are cut out by their opacity map only, like in the raster passes
-float GetCutoutOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
+float SampleMaterialOpacity(RaytraceMaterial rayMat, Triangle tri, vec2 barrycentric, int textureLevel) {
     float s = barrycentric.x;
     float t = barrycentric.y;
     float r = 1.0 - s - t;
-
-    RaytraceMaterial rayMat = materials[tri.materialIndex + materialOffset];
 
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
     texCoord = TransformTexCoord(texCoord, rayMat.invertUVs > 0, vec2(rayMat.uvAnimationX, rayMat.uvAnimationY), rayMat.tiling);
@@ -301,7 +303,24 @@ float GetCutoutOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int 
     return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord);
 }
 
+// Surfaces are cut out by their opacity map only, like in the raster passes. Rays pass through translucent ones,
+// the path tracer blends them itself (TRANSLUCENT_HITS)
+float GetCutoutOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
+    RaytraceMaterial rayMat = materials[tri.materialIndex + materialOffset];
+#ifdef TRANSLUCENT_HITS
+    if (rayMat.blendMode != blendModeNone)
+        return 1.0;
+#else
+    if (rayMat.blendMode != blendModeNone)
+        return 0.0;
+#endif
+    return SampleMaterialOpacity(rayMat, tri, barrycentric, textureLevel);
+}
+
+// The share of the light a surface blocks, translucent ones block it by their opacity, additive ones not at all
 float GetOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
-    return GetCutoutOpacity(tri, barrycentric, materialOffset, textureLevel) *
-        materials[tri.materialIndex + materialOffset].opacity;
+    RaytraceMaterial rayMat = materials[tri.materialIndex + materialOffset];
+    if (rayMat.blendMode == blendModeAdditive)
+        return 0.0;
+    return SampleMaterialOpacity(rayMat, tri, barrycentric, textureLevel) * rayMat.opacity;
 }

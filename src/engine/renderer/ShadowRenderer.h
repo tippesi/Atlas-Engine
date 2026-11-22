@@ -37,6 +37,7 @@ namespace Atlas {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
+                float opacity;
             };
 
             struct alignas(16) PushConstants {

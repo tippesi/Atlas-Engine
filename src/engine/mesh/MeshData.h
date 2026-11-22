@@ -63,6 +63,15 @@ namespace Atlas {
 
         };
 
+        // The pipeline of a sub data in one variant of a translucent pass, see TranslucentRenderer
+        struct MeshSubDataTranslucentPipeline {
+
+            Hash variant;
+            bool usesGraph;
+            PipelineConfig config;
+
+        };
+
         struct MeshSubData {
 
             std::string name;
@@ -83,6 +92,8 @@ namespace Atlas {
 
             MeshSubDataPipelines mainPipelines;
             MeshSubDataPipelines shadowPipelines;
+            // Only translucent sub data have them
+            std::vector<MeshSubDataTranslucentPipeline> translucentPipelines;
 
             void ResetPipelines();
 

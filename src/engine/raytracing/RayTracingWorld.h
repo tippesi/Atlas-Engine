@@ -271,6 +271,9 @@ namespace Atlas {
 
             void UpdateMaterials();
 
+            // Meshes with only translucent materials are left out of the rays which would see them as opaque
+            static uint32_t GetInstanceMask(const Mesh::Mesh& mesh);
+
             void AllocateHitRecords(BlasInfo& blasInfo, uint32_t count);
 
             void ReleaseHitRecords(BlasInfo& blasInfo);

@@ -92,11 +92,13 @@ namespace Atlas {
 
         }
 
-        void GBufferRenderer::GenerateReactiveMask(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
+        void GBufferRenderer::GenerateReactiveMask(const Ref<RenderTarget>& target, const Texture::Texture2D* translucencyTexture,
+            Graphics::CommandList* commandList) {
 
             CPUProfiler::Scope profilerScope("Generate reactive mask");
             GPUProfiler::Scope gpuScope("Generate reactive mask");
 
+            generateReactiveMaskPipelineConfig.ManageMacro("TRANSLUCENCY", translucencyTexture != nullptr);
             auto pipeline = PipelineManager::GetPipeline(generateReactiveMaskPipelineConfig);
             commandList->BindPipeline(pipeline);
 
@@ -119,6 +121,8 @@ namespace Atlas {
             auto lastStencilTexture = target->GetHistoryData(RenderResolution::FULL_RES)->stencilTexture;
             commandList->BindImage(lastStencilTexture->image, lastStencilTexture->sampler, 3, 3);
             commandList->BindImage(rt->velocityTexture->image, rt->velocityTexture->sampler, 3, 4);
+            if (translucencyTexture)
+                commandList->BindImage(translucencyTexture->image, translucencyTexture->sampler, 3, 5);
 
             int32_t hasHistory = target->HasHistory() ? 1 : 0;
             commandList->PushConstants("constants", &hasHistory);

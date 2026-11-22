@@ -2,7 +2,8 @@
 #include <../common/convert.hsh>
 #include <../common/stencil.hsh>
 
-// The G-buffer, but the reflections start on the ocean surface where it's visible
+// The G-buffer, but the reflections start on the closest surface: the visible ocean (OCEAN) or the closest alpha blended
+// surface (FRONT_LAYER) if they are in front of it
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -13,9 +14,19 @@ layout (set = 3, binding = 3) uniform sampler2D roughnessMetallicAoIn;
 layout (set = 3, binding = 4) uniform sampler2D velocityIn;
 layout (set = 3, binding = 5) uniform usampler2D materialIdxIn;
 
+#ifdef OCEAN
 layout (set = 3, binding = 6) uniform sampler2D oceanDepthIn;
 layout (set = 3, binding = 7) uniform sampler2D oceanNormalIn;
 layout (set = 3, binding = 8) uniform usampler2D oceanStencilIn;
+#endif
+#ifdef FRONT_LAYER
+layout (set = 3, binding = 22) uniform sampler2D frontLayerDepthIn;
+layout (set = 3, binding = 23) uniform sampler2D frontLayerNormalIn;
+layout (set = 3, binding = 24) uniform sampler2D frontLayerGeometryNormalIn;
+layout (set = 3, binding = 25) uniform sampler2D frontLayerRoughnessMetallicAoIn;
+layout (set = 3, binding = 26) uniform sampler2D frontLayerVelocityIn;
+layout (set = 3, binding = 27) uniform usampler2D frontLayerMaterialIdxIn;
+#endif
 
 layout (set = 3, binding = 9, r32f) writeonly uniform image2D depthOut;
 layout (set = 3, binding = 10, rg16f) writeonly uniform image2D normalOut;
@@ -69,29 +80,49 @@ void main() {
         return;
 
     float depth = texelFetch(depthIn, pixel, 0).r;
+
+#ifdef FRONT_LAYER
+    // Starts out as a copy of the depth, the surfaces only write where they are in front
+    float frontLayerDepth = texelFetch(frontLayerDepthIn, pixel, 0).r;
+#else
+    float frontLayerDepth = 1.0;
+#endif
+
+#ifdef OCEAN
     float oceanDepth = texelFetch(oceanDepthIn, pixel, 0).r;
     StencilFeatures features = DecodeStencilFeatures(texelFetch(oceanStencilIn, pixel, 0).r);
+    bool oceanVisible = oceanDepth < 1.0 && oceanDepth <= depth && !features.underWaterPixel;
 
-    if (oceanDepth >= 1.0 || oceanDepth > depth || features.underWaterPixel) {
-        Store(pixel, depth, texelFetch(normalIn, pixel, 0).rg, texelFetch(geometryNormalIn, pixel, 0).rg,
-            texelFetch(roughnessMetallicAoIn, pixel, 0), texelFetch(velocityIn, pixel, 0).rg,
-            texelFetch(materialIdxIn, pixel, 0).r);
+    if (oceanVisible && oceanDepth <= frontLayerDepth) {
+        vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
+        vec3 viewPos = ConvertDepthToViewSpace(oceanDepth, texCoord);
+        vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
+
+        vec2 normal = texelFetch(oceanNormalIn, pixel, 0).rg;
+
+        // Same velocity as the ocean surface pass, which only accounts for the camera movement
+        vec4 last = globalData.pvMatrixLast * vec4(worldPos, 1.0);
+        vec4 current = globalData.pMatrix * vec4(viewPos, 1.0);
+        vec2 ndcLast = last.xy / last.w - globalData.jitterLast;
+        vec2 ndcCurrent = current.xy / current.w - globalData.jitterCurrent;
+
+        Store(pixel, oceanDepth, normal, normal, vec4(0.0, 0.0, 1.0, 0.0), (ndcLast - ndcCurrent) * 0.5,
+            PushConstants.oceanMaterialIdx);
         return;
     }
+#endif
 
-    vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
-    vec3 viewPos = ConvertDepthToViewSpace(oceanDepth, texCoord);
-    vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
+#ifdef FRONT_LAYER
+    if (frontLayerDepth < depth) {
+        Store(pixel, frontLayerDepth, texelFetch(frontLayerNormalIn, pixel, 0).rg,
+            texelFetch(frontLayerGeometryNormalIn, pixel, 0).rg, texelFetch(frontLayerRoughnessMetallicAoIn, pixel, 0),
+            texelFetch(frontLayerVelocityIn, pixel, 0).rg, texelFetch(frontLayerMaterialIdxIn, pixel, 0).r);
+        return;
+    }
+#endif
 
-    vec2 normal = texelFetch(oceanNormalIn, pixel, 0).rg;
-
-    // Same velocity as the ocean surface pass, which only accounts for the camera movement
-    vec4 last = globalData.pvMatrixLast * vec4(worldPos, 1.0);
-    vec4 current = globalData.pMatrix * vec4(viewPos, 1.0);
-    vec2 ndcLast = last.xy / last.w - globalData.jitterLast;
-    vec2 ndcCurrent = current.xy / current.w - globalData.jitterCurrent;
-
-    Store(pixel, oceanDepth, normal, normal, vec4(0.0, 0.0, 1.0, 0.0), (ndcLast - ndcCurrent) * 0.5,
-        PushConstants.oceanMaterialIdx);
+    Store(pixel, depth, texelFetch(normalIn, pixel, 0).rg, texelFetch(geometryNormalIn, pixel, 0).rg,
+        texelFetch(roughnessMetallicAoIn, pixel, 0), texelFetch(velocityIn, pixel, 0).rg,
+        texelFetch(materialIdxIn, pixel, 0).r);
 
 }

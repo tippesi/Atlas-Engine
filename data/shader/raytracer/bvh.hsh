@@ -746,7 +746,7 @@ void TraceBufferedRay(inout Ray ray) {
     ray.hitID = -1;
     ray.hitDistance = 0.0;
     if (ray.ID >= 0)
-        HitClosestOpacityCheck(ray, INSTANCE_MASK_ALL, 0.0, INF);
+        HitClosestOpacityCheck(ray, INSTANCE_MASK_CLOSEST, 0.0, INF);
 #endif
 
 }

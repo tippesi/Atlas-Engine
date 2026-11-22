@@ -17,6 +17,11 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
+            // The G-buffer channels the reflections start from where the ocean or the front layer of the translucent
+            // surfaces is closer, see RenderTarget::SetSeparateReflectionData
+            void RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, bool ocean,
+                const RenderTargetData* frontLayer, Graphics::CommandList* commandList);
+
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
@@ -91,6 +96,9 @@ namespace Atlas {
             PipelineConfig rtrResolvePipelineConfig;
             PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;
+            PipelineConfig reflectionDataPipelineConfig;
+
+            Ref<Graphics::Sampler> nearestSampler;
             PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtrUniformBuffer;

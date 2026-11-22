@@ -24,14 +24,6 @@ layout(push_constant) uniform constants {
     int jitter;
 } pushConstants;
 
-float EdgeFadeOut(vec2 screenPos, float fadeDist) {
-
-    screenPos = abs(screenPos * 2.0 - 1.0);
-    vec2 fadeOut = (screenPos - 1.0 + fadeDist) / fadeDist;
-    return saturate(1.0 - max(fadeOut.x, fadeOut.y));
-
-}
-
 vec2 PosToUV(vec3 pos) {
 
     vec4 clipSpace = globalData.pMatrix * vec4(pos, 1.0);

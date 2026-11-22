@@ -9,6 +9,7 @@
 #include "ImpostorRenderer.h"
 #include "TerrainRenderer.h"
 #include "OceanRenderer.h"
+#include "TranslucentRenderer.h"
 #include "ShadowRenderer.h"
 #include "ImpostorShadowRenderer.h"
 #include "TerrainShadowRenderer.h"
@@ -76,10 +77,16 @@ namespace Atlas {
 
             void SetPreExposure(GlobalUniforms& uniforms, const Ref<Scene::Scene>& scene);
 
+            void SetCloudShadowUniforms(const Ref<Scene::Scene>& scene, const CameraComponent& camera);
+
             // Only recorded with the first frame, the renderer doesn't wait for it when it is created
             void PreintegrateBRDF(Graphics::CommandList* commandList);
 
             void UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
+
+            // The deferred passes read the G-buffer from set 1, where geometry passes bind their instance buffers. Passes
+            // which draw geometry after the G-buffer is complete (translucency) have to bind it again
+            void BindGBuffer(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
             UpscalingRenderer* PrepareUpscaler(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
                 Graphics::CommandList* commandList);
@@ -107,6 +114,7 @@ namespace Atlas {
             Buffer::VertexArray cubeVertexArray;
 
             OpaqueRenderer opaqueRenderer;
+            TranslucentRenderer translucentRenderer;
             ImpostorRenderer impostorRenderer;
             TerrainRenderer terrainRenderer;
             ShadowRenderer shadowRenderer;

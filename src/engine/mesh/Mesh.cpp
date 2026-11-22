@@ -177,6 +177,9 @@ namespace Atlas {
 
             UpdateRenderBounds();
 
+            if (blas && GetRayTracingMaterialHash() != blasMaterialHash)
+                blas->isBvhBuilt = false;
+
         }
 
         Volume::AABB Mesh::GetRenderBounds() const {
@@ -340,7 +343,7 @@ namespace Atlas {
                             .indexCount = range.indicesCount,
                             .indexOffset = range.indicesOffset,
                             .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f &&
-                                !subData.material->HasGraph()
+                                !subData.material->HasGraph() && !subData.material->IsTranslucent()
                             });
                     }
 
@@ -362,7 +365,25 @@ namespace Atlas {
 
             lodBlases = std::move(newLodBlases);
             blas = buildLod(0);
+            blasMaterialHash = GetRayTracingMaterialHash();
             blasCreated = true;
+
+        }
+
+        Hash Mesh::GetRayTracingMaterialHash() const {
+
+            Hash hash = 0;
+            for (const auto& subData : data.subData) {
+                const auto& material = subData.material;
+                if (!material.IsLoaded())
+                    continue;
+                // Software triangles keep the opacity of materials without a map which aren't translucent, the others
+                // read it from the material
+                HashCombine(hash, material->opacityMap.IsValid() || material->IsTranslucent() ? -1.0f : material->opacity);
+                HashCombine(hash, material->HasGraph());
+                HashCombine(hash, int32_t(material->blendMode));
+            }
+            return hash;
 
         }
 

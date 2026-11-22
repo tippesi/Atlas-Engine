@@ -109,6 +109,27 @@ namespace Atlas {
 
         }
 
+        VolumetricRenderer::FroxelGrid VolumetricRenderer::GetFroxelGrid(const Ref<RenderTarget>& target,
+            const Ref<Scene::Scene>& scene) {
+
+            auto fog = scene->renderState.fog;
+            auto& camera = scene->renderState.camera;
+
+            FroxelGrid grid;
+            grid.resolution = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
+            grid.tileSize = glm::clamp(fog->froxelTileSize, 4, 32);
+            grid.columnCount = grid.resolution / grid.tileSize;
+            grid.columnCount.x += ((grid.resolution.x % grid.tileSize == 0) ? 0 : 1);
+            grid.columnCount.y += ((grid.resolution.y % grid.tileSize == 0) ? 0 : 1);
+            grid.sliceCount = std::max(fog->froxelSliceCount, 1);
+            grid.near = camera.nearPlane;
+            grid.far = fog->froxelFarDistance > camera.nearPlane ? std::min(fog->froxelFarDistance, camera.farPlane) : camera.farPlane;
+            grid.extendedFar = camera.farPlane;
+            grid.distributionExponent = glm::clamp(fog->froxelDistributionExponent, 0.1f, 4.0f);
+            return grid;
+
+        }
+
         void VolumetricRenderer::RenderFroxels(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList) {
 
@@ -119,7 +140,8 @@ namespace Atlas {
             auto& camera = renderState->camera;
             auto& mainLight = renderState->mainLight;
 
-            auto resolution = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
+            auto grid = GetFroxelGrid(target, scene);
+            auto resolution = grid.resolution;
 
             renderState->volumetricLightBuffer.Bind(commandList, 3, 8);
             renderState->volumetricShadowBuffer.Bind(commandList, 3, 9);
@@ -186,12 +208,8 @@ namespace Atlas {
             volumetricUniformBuffer.SetData(&uniforms, 0);
             commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
 
-            auto tileSize = glm::clamp(fog->froxelTileSize, 4, 32);
-            ivec2 columnCount = resolution / tileSize;
-            columnCount.x += ((resolution.x % tileSize == 0) ? 0 : 1);
-            columnCount.y += ((resolution.y % tileSize == 0) ? 0 : 1);
-
-            auto sliceCount = std::max(fog->froxelSliceCount, 1);
+            auto columnCount = grid.columnCount;
+            auto sliceCount = grid.sliceCount;
             auto froxelCount = ivec3(columnCount, sliceCount);
 
             ivec3 clusterCount = froxelCount / froxelClusterSize;
@@ -240,16 +258,15 @@ namespace Atlas {
                 .columnCount = columnCount,
                 .resolution = resolution,
                 .sliceCount = sliceCount,
-                .tileSize = tileSize,
-                .near = camera.nearPlane,
-                .far = fog->froxelFarDistance > camera.nearPlane ?
-                    std::min(fog->froxelFarDistance, camera.farPlane) : camera.farPlane,
+                .tileSize = grid.tileSize,
+                .near = grid.near,
+                .far = grid.far,
                 .lightCount = std::min(4096, int32_t(renderState->volumetricLights.size())),
                 .resetHistory = resetHistory ? 1 : 0,
                 .fogVolumeCount = fogVolumeCount,
                 .jitter = jitter,
-                .extendedFar = camera.farPlane,
-                .distributionExponent = glm::clamp(fog->froxelDistributionExponent, 0.1f, 4.0f)
+                .extendedFar = grid.extendedFar,
+                .distributionExponent = grid.distributionExponent
             };
 
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;

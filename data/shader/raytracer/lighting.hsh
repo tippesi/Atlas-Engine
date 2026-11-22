@@ -21,7 +21,7 @@ float CheckVisibility(Surface surface, float lightDistance) {
         deferredShadowRay.direction = vec4(ray.direction, 0.0);
         return 1.0;
 #else
-        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
+        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW_TRANSPARENCY, 0.0, lightDistance - 2.0 * EPSILON);
 #endif
     }
     else {

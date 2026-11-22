@@ -2,9 +2,46 @@
 #include <../common/normalencode.hsh>
 #include <../globals.hsh>
 #include <../common/opacity.hsh>
+#include <../common/material.hsh>
 #include <texture.hsh>
 #include <geometry.hsh>
 
+#if defined(TRANSLUCENT)
+#include <../translucent/translucent.hsh>
+
+layout (location = 0) out vec4 colorFS;
+layout (location = 1) out vec4 coverageFS;
+layout (location = 2) out vec4 blendedVelocityFS;
+
+vec3 baseColorFS;
+vec2 normalFS;
+vec2 geometryNormalFS;
+vec3 roughnessMetalnessAoFS;
+vec3 emissiveFS;
+uint materialIdxFS;
+vec2 velocityFS;
+#elif defined(FRONT_LAYER)
+// The channels of the G-buffer which the reflections read
+layout (location = 0) out vec2 normalFS;
+layout (location = 1) out vec2 geometryNormalFS;
+layout (location = 2) out vec3 roughnessMetalnessAoFS;
+layout (location = 3) out uint materialIdxFS;
+layout (location = 4) out vec2 velocityFS;
+
+vec3 baseColorFS;
+vec3 emissiveFS;
+#elif defined(REFRACTION_BACK_FACES)
+// The normal pointing out of the surface where refracted rays leave it, the depth is written as well
+layout (location = 0) out vec2 backNormalFS;
+
+vec3 baseColorFS;
+vec2 normalFS;
+vec2 geometryNormalFS;
+vec3 roughnessMetalnessAoFS;
+vec3 emissiveFS;
+uint materialIdxFS;
+vec2 velocityFS;
+#else
 layout (location = 0) out vec3 baseColorFS;
 layout (location = 1) out vec2 normalFS;
 layout (location = 2) out vec2 geometryNormalFS;
@@ -12,6 +49,7 @@ layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out vec3 emissiveFS;
 layout (location = 5) out uint materialIdxFS;
 layout (location = 6) out vec2 velocityFS;
+#endif
 
 layout(location=0) in vec3 positionVS;
 layout(location=1) in vec3 normalVS;
@@ -93,6 +131,9 @@ void main() {
     drawIdx = drawIdxVS;
 #endif
 
+    // The coverage of translucent surfaces, the others are cut out by it
+    float opacity = 1.0;
+
 #ifdef MATERIAL_GRAPH_SURFACE
     vec2 graphTexCoord = vec2(0.0);
     vec4 graphColor = vec4(1.0);
@@ -120,7 +161,9 @@ void main() {
         graphColor, graphFrontFacing, PushConstants.materialGraphOffset);
     MaterialSurfaceOutput surface = EvaluateMaterialSurface(surfaceInput);
 
-#ifdef MATERIAL_GRAPH_OPACITY
+#if defined(MATERIAL_GRAPH_HAS_OPACITY) && defined(TRANSLUCENT_PASS)
+    opacity = surface.opacity;
+#elif defined(MATERIAL_GRAPH_OPACITY)
     if (surface.opacity < opacityCutoff)
         discard;
 #endif
@@ -151,15 +194,16 @@ void main() {
     baseColorFS = vec3(1.0);
 
 #if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
-    float opacity = 1.0;
 #ifdef OPACITY_MAP
     opacity *= SampleOpacity(texCoords, DrawValue(opacityTextureIdx), globalData.mipLodBias);
 #endif
 #ifdef VERTEX_COLORS
     // opacity *= vertexColorsVS.a;
 #endif
+#ifndef TRANSLUCENT_PASS
     if (opacity < opacityCutoff)
         discard;
+#endif
 #endif
 
 #ifdef BASE_COLOR_MAP
@@ -232,5 +276,52 @@ void main() {
             vec3(1.0, 0.1, 0.1));
         baseColorFS = lodColors[min(lodVS, 4u)] * (0.5 + 0.5 * dot(baseColorFS, vec3(0.333)));
     }
+
+#ifdef TRANSLUCENT_PASS
+    // The material holds the factors of the maps like in the deferred passes, see deferred/deferred.hsh
+    Material material = UnpackMaterial(materialIdxFS);
+    opacity *= material.opacity;
+#endif
+
+#if defined(FRONT_LAYER) || defined(REFRACTION_BACK_FACES)
+    // Only surfaces with some coverage reflect, refracting ones are clear glass without it like in the path tracer
+    if (opacity <= 0.0 && PushConstants.refractiveIndex == 1.0)
+        discard;
+#endif
+
+#ifdef REFRACTION_BACK_FACES
+    vec3 backNormal = DecodeNormal(normalFS);
+    backNormalFS = EncodeNormal(dot(backNormal, positionVS) < 0.0 ? -backNormal : backNormal);
+#endif
+
+#ifdef TRANSLUCENT
+    if (material.baseColorMap || material.vertexColors)
+        material.baseColor *= baseColorFS;
+    if (material.roughnessMap)
+        material.roughness *= roughnessMetalnessAoFS.r;
+    if (material.metalnessMap)
+        material.metalness *= roughnessMetalnessAoFS.g;
+    if (material.aoMap)
+        material.ao *= roughnessMetalnessAoFS.b;
+    if (material.emissiveMap)
+        material.emissiveColor *= emissiveFS;
+
+    vec3 shadingGeometryNormal = DecodeNormal(geometryNormalFS);
+    vec3 shadingNormal = material.normalMap ? DecodeNormal(normalFS) : shadingGeometryNormal;
+
+    float coverage;
+    colorFS = ShadeTranslucent(material, shadingNormal, shadingGeometryNormal, positionVS, saturate(opacity),
+        PushConstants.refractiveIndex, PushConstants.thickness, coverage);
+    coverageFS = vec4(coverage, 0.0, 0.0, coverage);
+    // The upscaler reprojects by the surface as much as it covers the background, light added or multiplied keeps
+    // the motion of the background
+#if defined(BLEND_ALPHA)
+    blendedVelocityFS = vec4(velocityFS * coverage, 0.0, coverage);
+#elif defined(BLEND_ADDITIVE)
+    blendedVelocityFS = vec4(0.0);
+#else
+    blendedVelocityFS = vec4(1.0);
+#endif
+#endif
 
 }

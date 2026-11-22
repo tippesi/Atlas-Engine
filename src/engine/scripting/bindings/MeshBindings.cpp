@@ -102,6 +102,13 @@ namespace Atlas::Scripting::Bindings {
 
     void GenerateMaterialBindings(Binder* ns) {
 
+        ns->new_enum("MaterialBlendMode",
+            "None", MaterialBlendMode::None,
+            "Alpha", MaterialBlendMode::Alpha,
+            "Additive", MaterialBlendMode::Additive,
+            "Multiply", MaterialBlendMode::Multiply
+            );
+
          ns->new_usertype<Material>("Material",
             "HasBaseColorMap", &Material::HasBaseColorMap,
             "HasOpacityMap", &Material::HasOpacityMap,
@@ -125,6 +132,10 @@ namespace Atlas::Scripting::Bindings {
             "tiling", &Material::tiling,
             "twoSided", &Material::twoSided,
             "vertexColors", &Material::vertexColors,
+            "blendMode", &Material::blendMode,
+            "refractiveIndex", &Material::refractiveIndex,
+            "thickness", &Material::thickness,
+            "IsTranslucent", &Material::IsTranslucent,
             "baseColorMap", &Material::baseColorMap,
             "opacityMap", &Material::opacityMap,
             "normalMap", &Material::normalMap,

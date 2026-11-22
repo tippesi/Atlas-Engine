@@ -249,14 +249,6 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
 
 }
 
-float EdgeFadeOut(vec2 screenPos, float fadeDist) {
-
-    screenPos = abs(screenPos * 2.0 - 1.0);
-    vec2 fadeOut = (screenPos - 1.0 + fadeDist) / fadeDist;
-    return saturate(1.0 - max(fadeOut.x, fadeOut.y));
-
-}
-
 void main() {
 
     LoadGroupSharedData();

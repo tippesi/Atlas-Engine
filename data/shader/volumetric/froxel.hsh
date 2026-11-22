@@ -1,5 +1,6 @@
 #include <../globals.hsh>
 #include <../common/convert.hsh>
+#include <froxelSlices.hsh>
 
 #define FROXEL_CLUSTER_SIZE 4
 // Thin fog is far below the normal range of the half floats of the froxels
@@ -22,35 +23,22 @@ layout(push_constant) uniform constants {
     float padding2;
 } pushConstants;
 
-float GetRegularFroxelSliceDepth(float slice) {
+FroxelSlices GetFroxelSlices() {
 
-    float t = pow(clamp(slice / float(pushConstants.sliceCount), 0.0, 1.0), pushConstants.distributionExponent);
-    return pushConstants.near * pow(pushConstants.far / pushConstants.near, t);
+    return FroxelSlices(pushConstants.near, pushConstants.far, pushConstants.extendedFar, pushConstants.sliceCount,
+        pushConstants.distributionExponent);
 
 }
 
 float GetFroxelSliceDepth(float slice) {
 
-    float lastSlice = float(pushConstants.sliceCount - 1);
-    if (slice <= lastSlice)
-        return GetRegularFroxelSliceDepth(slice);
-
-    float lastSliceStart = GetRegularFroxelSliceDepth(lastSlice);
-    return mix(lastSliceStart, max(pushConstants.extendedFar, pushConstants.far), slice - lastSlice);
+    return GetFroxelSliceDepth(GetFroxelSlices(), slice);
 
 }
 
 float GetFroxelSlice(float viewDepth) {
 
-    float lastSlice = float(pushConstants.sliceCount - 1);
-    float lastSliceStart = GetRegularFroxelSliceDepth(lastSlice);
-    if (viewDepth >= lastSliceStart) {
-        float lastSliceEnd = max(pushConstants.extendedFar, pushConstants.far);
-        return lastSlice + clamp((viewDepth - lastSliceStart) / max(lastSliceEnd - lastSliceStart, 1e-6), 0.0, 1.0);
-    }
-
-    float t = log(max(viewDepth, pushConstants.near) / pushConstants.near) / log(pushConstants.far / pushConstants.near);
-    return pow(t, 1.0 / pushConstants.distributionExponent) * float(pushConstants.sliceCount);
+    return GetFroxelSlice(GetFroxelSlices(), viewDepth);
 
 }
 

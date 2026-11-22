@@ -238,6 +238,7 @@ namespace Atlas {
         if (lastSize) lastJointMatrices.reserve(lastSize);
 
         softBodyVertexOffsets.clear();
+        translucentInstances.clear();
 
         lastSize = instanceIndices.size();
         instanceIndices.clear();
@@ -318,6 +319,8 @@ namespace Atlas {
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
             auto isSkinned = mesh->data.IsSkinned();
+            auto translucent = type == RenderPassType::Main && std::any_of(mesh->data.subData.begin(), mesh->data.subData.end(),
+                [](const auto& subData) { return subData.material.IsLoaded() && subData.material->IsTranslucent(); });
             if (type == RenderPassType::Shadow)
                 hasDeformingCasters |= isSkinned || mesh->vegetation;
             hashContent &= !hasDeformingCasters;
@@ -327,12 +330,14 @@ namespace Atlas {
                 HashCombine(contentHash, mesh->GetGeometryVersion());
                 HashCombine(contentHash, mesh->GetPipelineVersion());
                 HashCombine(contentHash, mesh->invertUVs);
-                // Graph parameters can move vertices, the tiling moves the opacity
+                // Graph parameters can move vertices, the tiling moves the opacity, translucent surfaces dither by it
                 for (const auto& subData : mesh->data.subData) {
                     if (!subData.material.IsLoaded())
                         continue;
                     HashCombine(contentHash, subData.material->graphParameterVersion);
                     HashCombine(contentHash, subData.material->tiling);
+                    HashCombine(contentHash, int32_t(subData.material->blendMode));
+                    HashCombine(contentHash, subData.material->opacity);
                 }
                 if (mesh->impostor.IsLoaded()) {
                     const auto& impostor = mesh->impostor;
@@ -360,7 +365,7 @@ namespace Atlas {
             auto addInstances = [&](std::span<ECS::Entity> entities, bool isSoftBody) {
                 hasDeformingCasters |= isSoftBody && !entities.empty();
                 auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated && mesh->impostor->IsResident() &&
-                    !isSkinned && !isSoftBody;
+                    !isSkinned && !isSoftBody && !translucent;
 
                 // Skinned meshes and soft bodies need their joint matrices or vertices next to the matrices of the instances
                 auto useIndices = !isSkinned && !isSoftBody;
@@ -423,6 +428,21 @@ namespace Atlas {
                     else
                         instances.reversedWindingLodCounts[lod]++;
 
+                    if (translucent) {
+                        MeshInstances instance{};
+                        instance.offset = instanceCount();
+                        instance.count = 1;
+                        instance.reversedWindingOffset = instance.offset;
+                        instance.deformOffset = isSoftBody ? softBodyVertexOffsets.size() : currentJointMatrices.size();
+                        if (i < defaultWindingEntityCount)
+                            instance.lodCounts[lod] = 1;
+                        else
+                            instance.reversedWindingLodCounts[lod] = 1;
+                        instance.reversedWindingCount = i < defaultWindingEntityCount ? 0 : 1;
+                        auto distance = glm::distance2(meshPool.Get(entities[i]).aabb.GetCenter(), cameraLocation);
+                        translucentInstances.push_back({ meshId, instance, isSoftBody, distance });
+                    }
+
                     if (useIndices) {
                         instanceIndices.push_back(ECS::EntityToIdx(entities[i]));
                         continue;
@@ -468,7 +488,10 @@ namespace Atlas {
                 return instances;
             };
 
-            meshToInstancesMap[meshId] = addInstances(std::span(batch.entities.begin(), softBodyBegin), false);
+            // The other sub data of translucent meshes culled on the GPU is drawn by its draws
+            auto instances = addInstances(std::span(batch.entities.begin(), softBodyBegin), false);
+            if (!translucent || isSkinned)
+                meshToInstancesMap[meshId] = instances;
             if (softBodyBegin != batchEnd)
                 meshToSoftBodyInstancesMap[meshId] = addInstances(std::span(softBodyBegin, batchEnd), true);
 
@@ -476,6 +499,11 @@ namespace Atlas {
 
         if (!hashContent || hasDeformingCasters)
             contentHash = 0;
+
+        std::sort(translucentInstances.begin(), translucentInstances.end(),
+            [](const TranslucentInstance& instance0, const TranslucentInstance& instance1) {
+                return instance0.distance > instance1.distance;
+            });
 
     }
 
@@ -559,6 +587,7 @@ namespace Atlas {
         // Need to clear this to free the references
         meshToInstancesMap.clear();
         meshToSoftBodyInstancesMap.clear();
+        translucentInstances.clear();
 
         for (auto& context : contexts)
             context.entities.clear();

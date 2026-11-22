@@ -405,6 +405,7 @@ namespace Atlas::Scripting::Bindings {
             },
             "paused", &Scene::Scene::paused,
             "occlusionCulling", &Scene::Scene::occlusionCulling,
+            "screenSpaceRefraction", &Scene::Scene::screenSpaceRefraction,
             "meshLodErrorScale", &Scene::Scene::meshLodErrorScale,
             "binaryColumns", &Scene::Scene::binaryColumns,
             "debugMeshLods", &Scene::Scene::debugMeshLods,

@@ -28,6 +28,13 @@ namespace Atlas {
             rtrResolvePipelineConfig = PipelineConfig("reflection/rtreflectionResolve.csh");
             upsamplePipelineConfig = PipelineConfig("reflection/upsample.csh");
             temporalPipelineConfig = PipelineConfig("reflection/temporal.csh");
+            reflectionDataPipelineConfig = PipelineConfig("reflection/reflectionData.csh");
+
+            auto samplerDesc = Graphics::SamplerDesc{
+                .filter = VK_FILTER_NEAREST,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+            };
+            nearestSampler = device->CreateSampler(samplerDesc);
 
             atrousPipelineConfig[0] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE1" });
             atrousPipelineConfig[1] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE2" });
@@ -36,6 +43,85 @@ namespace Atlas {
             rtrUniformBuffer = Buffer::UniformBuffer(sizeof(RTRUniforms));
 
             shadowRays.Init();
+
+        }
+
+        void RTReflectionRenderer::RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, bool ocean,
+            const RenderTargetData* frontLayer, Graphics::CommandList* commandList) {
+
+            CPUProfiler::Scope profilerScope("Reflection data");
+            GPUProfiler::Scope gpuScope("Reflection data");
+
+            auto rt = target->GetData(FULL_RES);
+            auto reflectionRt = target->GetReflectionData(FULL_RES);
+            auto halfResReflectionRt = target->GetReflectionData(HALF_RES);
+
+            ivec2 res = ivec2(reflectionRt->depthTexture->width, reflectionRt->depthTexture->height);
+
+            ivec2 groupCount = res / 8;
+            groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
+            groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
+
+            reflectionDataPipelineConfig.ManageMacro("OCEAN", ocean);
+            reflectionDataPipelineConfig.ManageMacro("FRONT_LAYER", frontLayer != nullptr);
+            auto pipeline = PipelineManager::GetPipeline(reflectionDataPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            uint32_t oceanMaterialIdx = ocean ? scene->renderState.materialMap[scene->renderState.ocean.get()] : 0u;
+            commandList->PushConstants("constants", &oceanMaterialIdx);
+
+            commandList->BindImage(rt->depthTexture->image, nearestSampler, 3, 0);
+            commandList->BindImage(rt->normalTexture->image, nearestSampler, 3, 1);
+            commandList->BindImage(rt->geometryNormalTexture->image, nearestSampler, 3, 2);
+            commandList->BindImage(rt->roughnessMetallicAoTexture->image, nearestSampler, 3, 3);
+            commandList->BindImage(rt->velocityTexture->image, nearestSampler, 3, 4);
+            commandList->BindImage(rt->materialIdxTexture->image, nearestSampler, 3, 5);
+
+            // The ray origins on the ocean are written by the depth only pass
+            if (ocean) {
+                commandList->BindImage(target->oceanDepthTexture.image, nearestSampler, 3, 6);
+                commandList->BindImage(target->oceanNormalTexture.image, nearestSampler, 3, 7);
+                commandList->BindImage(target->oceanStencilTexture.image, nearestSampler, 3, 8);
+            }
+            if (frontLayer) {
+                commandList->BindImage(frontLayer->depthTexture->image, nearestSampler, 3, 22);
+                commandList->BindImage(frontLayer->normalTexture->image, nearestSampler, 3, 23);
+                commandList->BindImage(frontLayer->geometryNormalTexture->image, nearestSampler, 3, 24);
+                commandList->BindImage(frontLayer->roughnessMetallicAoTexture->image, nearestSampler, 3, 25);
+                commandList->BindImage(frontLayer->velocityTexture->image, nearestSampler, 3, 26);
+                commandList->BindImage(frontLayer->materialIdxTexture->image, nearestSampler, 3, 27);
+            }
+
+            reflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            halfResReflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+            commandList->BindImage(reflectionRt->depthTexture->image, 3, 9);
+            commandList->BindImage(reflectionRt->normalTexture->image, 3, 10);
+            commandList->BindImage(reflectionRt->geometryNormalTexture->image, 3, 11);
+            commandList->BindImage(reflectionRt->roughnessMetallicAoTexture->image, 3, 12);
+            commandList->BindImage(reflectionRt->velocityTexture->image, 3, 13);
+            commandList->BindImage(reflectionRt->materialIdxTexture->image, 3, 14);
+
+            commandList->BindImage(halfResReflectionRt->depthTexture->image, 3, 15);
+            commandList->BindImage(halfResReflectionRt->normalTexture->image, 3, 16);
+            commandList->BindImage(halfResReflectionRt->geometryNormalTexture->image, 3, 17);
+            commandList->BindImage(halfResReflectionRt->roughnessMetallicAoTexture->image, 3, 18);
+            commandList->BindImage(halfResReflectionRt->velocityTexture->image, 3, 19);
+            commandList->BindImage(halfResReflectionRt->materialIdxTexture->image, 3, 20);
+            commandList->BindImage(halfResReflectionRt->offsetTexture->image, 3, 21);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            reflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            halfResReflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+            // Freshly created history data was never written, it can only be read after a transition
+            if (!target->HasHistory()) {
+                target->GetReflectionHistoryData(FULL_RES)->Transition(commandList,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                target->GetReflectionHistoryData(HALF_RES)->Transition(commandList,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            }
 
         }
 

@@ -18,6 +18,26 @@ bridge (`src/bridge/README.md`) checks them.
 - Scene files: binary `.aescene` (MessagePack) store each resource path once in `resources` and reference it by index, transform matrices as raw little endian floats (`common/SerializationContext`, active while a binary scene is written or read); readable JSON scenes keep paths and arrays. Code reading scene files directly handles both (bridge `SceneFile`, makePrefab via `AssetReferences::InlineResourceTable`, Odyssey `tools/worldgen/kits.py` `load_scene`). Saving a scene right after loading needs a `Scene::Update` first, otherwise local matrices of nested entities are reconstructed from global matrices that were never composed.
 - Render state: renderers read the extracted render state (`scene->renderState.camera`, `.mainLight`, `.allLights`, `.sky`, `.fog`, ...), filled by `SceneRenderState::Extract()` at the end of `Scene::Update`, never live components or `scene->sky` directly. With `EngineInstance::renderThread` a frame renders while the next one is updated; the app calls `WaitForRender()` before it changes anything rendering reads, and state scripts share with a renderer needs a lock (see `OceanSurfaceQueries`). One `MainRenderer` renders one scene: frame to frame state like `lastPreExposure` lives in the renderer, an application with several scenes uses a renderer per scene. Only the main thread updates a scene. Run a `scene->Update` in every frame before `RenderScene`, frames without one show garbage or lose the device.
 - Fog: froxels are the only path and fog always starts at the near plane. Don't move the start of the grid to win slices, redistribute them with `froxelDistributionExponent` and `froxelFarDistance`. `lighting/Fog` holds the global settings, `FogVolumeComponent` local volumes (unit box or ellipsoid of the entity transform). The extraction uploads the closest `MAX_FOG_VOLUMES` visible volumes, `froxelCulling.csh` writes one bitmask per cluster, and `froxelInject.csh` stores `rgb = scattering`, `a = extinction` scaled by `FROXEL_DATA_SCALE`. Volumes smaller than the froxels (slices grow with distance) don't resolve, so keep them soft and a few meters or larger. Lower quality means a larger `froxelTileSize` and fewer `froxelSliceCount`.
+- Translucency: the blend mode is a property of the material, `None` keeps the opacity a cutout. Translucent sub data is
+  left out of the G-buffer, impostors and the hits of rays (`blendMode` in the ray tracing material, non-opaque BLAS
+  geometry, decided when the BLAS is built), its meshes are host culled and sorted per instance in the main pass, so keep
+  their count low. Hardware rays without an opacity check treat non-opaque geometry as opaque: meshes with only
+  translucent materials have instance masks of their own (`RayTracingWorld::GetInstanceMask`) which only the path
+  tracer and the shadow rays with transparency trace, glass in a mesh with opaque materials still blocks those rays.
+  Shadow maps discard interleaved gradient noise by the opacity, changing every frame, which the shadow filter and the
+  temporal accumulation average to a gray partial shadow (no color); shadow rays multiply the transmittance, additive
+  surfaces cast none. `Mesh::UpdatePipelines` builds the acceleration structures again when the materials let rays
+  through differently (blend mode, opacity, opacity map, graph) and creates the translucent pipelines again
+  (`MeshSubData::translucentPipelines`), call it after changing those. Both the path tracer and the screen space
+  refraction of the forward pass refract closed meshes like solid glass (a glass ball inverts the image). Open meshes
+  differ: the forward pass treats them as a slab of the `thickness`, the path tracer as the surface of a medium the ray
+  stays in. The screen space refraction only sees what is on screen and in front of the back faces, nested refracting
+  surfaces only refract at the closest one. Without `screenSpaceRefraction` the back faces aren't drawn and the
+  background is only displaced by `(refractiveIndex - 1) * thickness` along the normal. Only the closest alpha blended
+  surface of a pixel gets traced reflections, the separate reflection data stays on while
+  `GPUScene::HasTranslucentMeshes()`, so the reflection history and the `REFLECTION` pipelines don't change with the
+  view. Refraction samples a copy of the background taken before the pass, refracting glass behind refracting glass
+  isn't in it.
 - Ocean: `scene->ocean` is saved with the scene (`ocean` key, `ocean/OceanSerializer`); an ocean is constructed from its LoD count, size, translation (the water level is its y) and simulation resolution, the other members are patched afterwards.
 - Time: renderers and shaders animate with the scene time (`Scene::GetTime()`/`GetDeltaTime()`, `globalData.time`), which stands still while `Scene::paused` is set. `Clock` is the real application time, use it only for UI and profiling.
 - Animation level of detail: skinned meshes beyond `Mesh::animationLodDistance` update their pose every few frames (up to `animationMaxInterval`, out of view twice as rarely), skipped frames add up their delta time. `AnimationComponent::IsPoseUpdated()` tells whether the pose changed; joint attachments, the octree bounds and the ray tracing skinning only do work when it did.

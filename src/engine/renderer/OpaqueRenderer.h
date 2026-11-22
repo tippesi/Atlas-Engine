@@ -28,14 +28,6 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                 RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap, bool lateDraws = false);
 
-        private:
-            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, const Ref<RenderTarget>& target, const MaterialGraph::CompiledGraph* graph = nullptr);
-
-            Helper::SubDataDrawer drawer;
-            Helper::SubDataDrawer lateDrawer;
-            Ref<RenderList::Pass> preparedPass;
-
             // Have to match deferred/geometry.hsh, the material part of the push constants. The draws of a multi draw
             // read it from a buffer
             struct DrawData {
@@ -72,8 +64,17 @@ namespace Atlas {
                 uint32_t materialGraphOffset;
             };
 
-            PushConstants GetPushConstants(const Helper::SubDataDrawer::Entry& entry, bool usesGraph, Scene::Scene* scene,
+            // The G-buffer pipeline of the sub data, the translucent passes derive theirs from it
+            static PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
+                Mesh::Mesh* mesh, const Ref<RenderTarget>& target, const MaterialGraph::CompiledGraph* graph = nullptr);
+
+            static PushConstants GetPushConstants(const Helper::SubDataDrawer::Entry& entry, bool usesGraph, Scene::Scene* scene,
                 std::unordered_map<void*, uint16_t>& materialMap);
+
+        private:
+            Helper::SubDataDrawer drawer;
+            Helper::SubDataDrawer lateDrawer;
+            Ref<RenderList::Pass> preparedPass;
 
         };
 

@@ -947,6 +947,7 @@ namespace Atlas::Scene {
         time = scene->GetTime();
         deltaTime = scene->GetDeltaTime();
         debugMeshLods = scene->debugMeshLods;
+        screenSpaceRefraction = scene->screenSpaceRefraction;
 
         fogVolumes.clear();
         if (hasCamera) {

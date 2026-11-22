@@ -126,7 +126,8 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Sky** (day, night, time of day, sun position, skybox, HDR, sky probe): `lighting/Sky`, `Atmosphere`, `Skybox`,
   `EnvironmentProbe`, Lua `Sky` (`scene.sky`), `Atmosphere`, `EnvironmentProbe`, `Cubemap`, ImGui `SkyPanel`.
 - **Clouds** (volumetric clouds, cloud shadows, overcast): `VolumetricClouds` (authoring parameters only),
-  `VolumetricCloudsScattering`, ImGui `VolumetricCloudsPanel`; moved by the wind. There is no weather system (rain,
+  `VolumetricCloudsScattering`, ImGui `VolumetricCloudsPanel`; moved by the wind. Their shadow map (`clouds/shadow.hsh`) darkens the sun in the
+  rasterizer, the ray traced effects and the path tracer. There is no weather system (rain,
   snow) in the engine.
 - **Fog** (haze, mist, volumetric fog, god rays, fog volumes): `lighting/Fog` (Lua `Fog`, `scene.fog`, ImGui
   `FogPanel`), local volumes `FogVolumeComponent` (`FogVolumeShape` box or ellipsoid), froxel volumetrics.
@@ -168,6 +169,27 @@ tool isn't listed here, or a listed file doesn't exist.
   renderers), `RayTracingHelper` (shared ray tracing passes), `DeferredShadowRays` (shadow rays traced in a pass of
   their own for RTGI and reflections), `SubDataDrawer` (draw loop of the opaque and shadow passes, sorted by pipeline).
 - **Path tracing** (reference render, ground truth): `renderer/PathTracingRenderer`.
+- **Translucency** (transparency, alpha blending, glass, additive, multiply, refraction, forward pass): materials with a
+  `MaterialBlendMode` (Lua, `blendMode`, `refractiveIndex`, `thickness`, ImGui `MaterialPanel`) are drawn by
+  `renderer/TranslucentRenderer` after the ocean, one instance after another from far to near (`RenderList::Pass::translucentInstances`,
+  host culled `GPUScene` slots, their other sub data is culled on the GPU, `RenderList::IsDrawnInPass`). Shadow maps dither
+  them by their opacity with a pattern changing every frame (`shadowMapping.fsh` with `TRANSLUCENT`), shadow rays are dimmed by it (`GetOpacity` in
+  `raytracer/surface.hsh`). The path tracer is the reference: it hits them (`TRANSLUCENT_HITS`), passes alpha blended
+  surfaces by their opacity and refracts them with the refractive index (back faces of one sided ones only refract, like the culled ones of the
+  rasterizer), adds additive ones and tints with multiplied
+  ones (`pathtracer/rayHit.csh`). `translucent/translucent.hsh` shades them in `deferred/geometry.fsh` with `TRANSLUCENT`: light
+  tiles from the near plane (`deferred/lightCulling.csh` with `FROM_NEAR_PLANE`, `deferred/directLight.hsh` shared with
+  `deferred/direct.csh`),
+  DDGI, froxel fog (`volumetric/froxelSlices.hsh`) and screen space refraction: the rays are refracted where they enter, leave closed meshes through their back faces
+  (`REFRACTION_BACK_FACES`, depth and normals) and are traced through the depth of a copy of the background with mips,
+  rays which leave the screen take the image where they leave it, rays behind the camera or hidden by surfaces in front
+  see the probe, in the outer 5 % of the screen the refraction fades out. Refracting surfaces without opacity are clear
+  glass. Rough ones blur the background by the cone of the refracted rays (narrower than the reflection lobe), the
+  distance to the hit and the magnification measured in the pixel quad (`GetRefractionMipLevel`); the path tracer
+  refracts through GGX sampled microfacets. `screenSpaceRefraction` (project and scene setting, Lua, project settings window) turns
+  it off for a displacement by the normal like behind thin glass. The closest alpha
+  blended surfaces are a front layer (`FRONT_LAYER`) the reflections start on (`RTReflectionRenderer::RenderReflectionData`
+  with the ocean), the ones behind use the probe. Their coverage makes them reactive for the upscalers and blends their motion into the velocity.
 
 ## Ray tracing
 
@@ -297,6 +319,10 @@ tool isn't listed here, or a listed file doesn't exist.
   culling, upscaler, LOD error scale, binary scene columns; `ApplySettings`, `ApplyTo(scene)`, `Save`). Changes by the
   editor's MCP `lua` tool are applied and one undo step of the project settings window, the user saves the project
   there (Ctrl+S, File > Save project, asked when the editor closes).
+- **GPU crash diagnostics** (device lost, TDR, GPU hang, breadcrumbs, checkpoints): `--crash-diagnostics`
+  (`DeviceDesc::enableCrashDiagnostics`) makes the `GPUProfiler` queries checkpoints (`VK_NV_device_diagnostic_checkpoints`,
+  `GraphicsDevice::GetCheckpointMarker`); a lost device logs the queries the queues began and finished last and the fault of
+  the driver (`VK_EXT_device_fault`, `GraphicsDevice::LogCrashDiagnostics`).
 - **Profiling** (timings, CPU and GPU profiler, hitches, frame time, stutter): `profiler/` (`CPUProfiler`,
   `GPUProfiler`, `HitchRecorder`), `PerformanceCounter`, editor `ProfilerWindow`, ImGui `ProfilerPanel`,
   `PerformanceGraphPanel`.

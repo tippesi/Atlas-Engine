@@ -1,0 +1,41 @@
+// The depths of the slices of the froxel grid, which is shared by the froxel passes and the translucent surfaces
+
+struct FroxelSlices {
+    float near;
+    float far;
+    float extendedFar;
+    int sliceCount;
+    float distributionExponent;
+};
+
+float GetRegularFroxelSliceDepth(FroxelSlices slices, float slice) {
+
+    float t = pow(clamp(slice / float(slices.sliceCount), 0.0, 1.0), slices.distributionExponent);
+    return slices.near * pow(slices.far / slices.near, t);
+
+}
+
+float GetFroxelSliceDepth(FroxelSlices slices, float slice) {
+
+    float lastSlice = float(slices.sliceCount - 1);
+    if (slice <= lastSlice)
+        return GetRegularFroxelSliceDepth(slices, slice);
+
+    float lastSliceStart = GetRegularFroxelSliceDepth(slices, lastSlice);
+    return mix(lastSliceStart, max(slices.extendedFar, slices.far), slice - lastSlice);
+
+}
+
+float GetFroxelSlice(FroxelSlices slices, float viewDepth) {
+
+    float lastSlice = float(slices.sliceCount - 1);
+    float lastSliceStart = GetRegularFroxelSliceDepth(slices, lastSlice);
+    if (viewDepth >= lastSliceStart) {
+        float lastSliceEnd = max(slices.extendedFar, slices.far);
+        return lastSlice + clamp((viewDepth - lastSliceStart) / max(lastSliceEnd - lastSliceStart, 1e-6), 0.0, 1.0);
+    }
+
+    float t = log(max(viewDepth, slices.near) / slices.near) / log(slices.far / slices.near);
+    return pow(t, 1.0 / slices.distributionExponent) * float(slices.sliceCount);
+
+}

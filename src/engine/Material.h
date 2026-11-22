@@ -24,6 +24,15 @@ namespace Atlas {
         ImpostorBit = (1 << 2)
     } MaterialUsageBits;
 
+    // How a translucent surface is combined with what is behind it, None is opaque or cut out by the opacity
+    enum class MaterialBlendMode {
+        None = 0,
+        // Premultiplied, the reflections stay at full strength
+        Alpha,
+        Additive,
+        Multiply
+    };
+
     class Material {
 
     public:
@@ -42,6 +51,11 @@ namespace Atlas {
         std::array<ResourceHandle<Texture::Texture2D>, 8> GetMaps() const;
 
         bool HasGraph() const;
+
+        bool IsTranslucent() const { return blendMode != MaterialBlendMode::None; }
+
+        // Alpha blended with a thickness and a refractive index other than 1
+        bool Refracts() const { return blendMode == MaterialBlendMode::Alpha && thickness > 0.0f && refractiveIndex != 1.0f; }
 
         // All textures the parameters of the graph use, with the ones of this material where it has its own
         std::vector<ResourceHandle<Texture::Texture2D>> GetGraphTextures() const;
@@ -91,6 +105,13 @@ namespace Atlas {
 
         bool twoSided = false;
         bool vertexColors = false;
+
+        // Translucent materials are blended in a forward pass instead of being cut out, the opacity is their coverage
+        MaterialBlendMode blendMode = MaterialBlendMode::None;
+        // Alpha blended surfaces with a thickness refract the background: closed meshes leave the rays through their back
+        // faces, open ones like water planes are a slab of the thickness in meters. Zero doesn't refract
+        float refractiveIndex = 1.5f;
+        float thickness = 0.0f;
 
         vec2 uvAnimation = vec2(0.0f);
 

@@ -42,7 +42,8 @@ material, is evaluated per vertex instead and hides the whole draw, the fragment
 
 ## Limits
 
-- Opaque and cutout surfaces only, no transparency. The lighting model is the regular one, graphs write into the G-buffer.
+- The lighting model is the regular one, graphs write into the G-buffer. Materials with a blend mode use the same surface in
+  the translucent pass, their `Opacity` is the coverage instead of cutting out fragments (a uniform one still hides the draw at 0).
 - Ray tracing doesn't run graphs: reflections, GI, ray traced shadows and the path tracer see the mesh without displacement and
   the regular material properties, which act as the fallback.
 - Impostors show the surface of a graph at the `Time` of its bake settings as it looked when they were generated, without

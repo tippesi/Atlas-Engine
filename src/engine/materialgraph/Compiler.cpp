@@ -60,9 +60,10 @@ namespace Atlas::MaterialGraph {
         std::string mainSurface, shadowSurface, vertexOpacity;
         std::vector<uint32_t> mainVaryings, shadowVaryings;
         if (compiled->hasSurface) {
+            // Translucent materials blend by the opacity, opaque ones only read it to cut out fragments
             std::vector<std::string> pins;
             for (const auto& input : surfaceInputs) {
-                if (input.name != NodeLibrary::opacityPin || compiled->CutsOutFragments())
+                if (input.name != NodeLibrary::opacityPin || compiled->hasOpacity)
                     pins.push_back(input.name);
             }
             mainSurface = GetSurfaceFunction(state, *surfaceOutput, pins, mainVaryings);
@@ -144,7 +145,8 @@ namespace Atlas::MaterialGraph {
             define("MATERIAL_GRAPH_SURFACE", compiled->hasSurface) +
             define("MATERIAL_GRAPH_WRITES_NORMAL", compiled->writesNormal) +
             define("MATERIAL_GRAPH_USES_TANGENTS", usesTangents) +
-            define("MATERIAL_GRAPH_OPACITY", compiled->CutsOutFragments()) + common +
+            define("MATERIAL_GRAPH_OPACITY", compiled->CutsOutFragments()) +
+            define("MATERIAL_GRAPH_HAS_OPACITY", compiled->hasOpacity) + common +
             GetVaryingDeclarations(state, mainVaryings, "in") + mainSurface +
             "#include <../deferred/geometry.fsh>\n";
 

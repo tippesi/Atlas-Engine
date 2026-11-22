@@ -30,4 +30,8 @@ GPU timings come from the `profile` section of a bridge job (`profile.json`, mil
 - Shader changes affect register pressure: computing values early that stay live across a texture-heavy loop can make the shader slower. Measure alternatives; a minimal early-out often beats moving code around.
 - Fields read per mesh, material or draw count as cold reads: with thousands of meshes one cold cache line per mesh showed up as +0.07 ms. Keep them next to fields those loops read anyway.
 - Upload all layers of an array with one `MemoryTransferManager::UploadImageData` call: every call transitions the whole image and regenerates its mips (256 per-layer uploads made a single impostor depth array cost 25-70 ms).
+- Translucency (a view with a large refracting glass ball, 1920x1080 at 0.75 render scale, plus four
+  translucent meshes): translucent pass 0.24 ms (with its light culling and background copy), front layer 0.05 ms,
+  reflection data 0.06 ms. The forward shading of large surfaces dominates; skipping the back faces of refracting
+  materials saved 0.12 ms, the background copy only runs for refracting materials.
 - Common cheap wins: dispatch sizes have to come from the image a pass writes (half resolution targets, `GetScaledWidth()` instead of `GetWidth()`), bounds checks use `>=` against `imageSize`, expensive sampling (shadows, ray marching) gets an early-out when its result is multiplied by zero, and work on static data (e.g. probe filtering) shouldn't run every frame.

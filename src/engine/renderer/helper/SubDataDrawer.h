@@ -56,7 +56,7 @@ namespace Atlas {
 
                             auto& mesh = renderList->meshIdToMeshMap[meshId];
                             for (auto& subData : mesh->data.subData) {
-                                if (subData.material.IsLoaded())
+                                if (RenderList::IsDrawnInPass(pass.type, subData))
                                     add({ &subData, mesh.GetID(), mesh.Get().get(), nullptr, softBody });
                             }
                         }

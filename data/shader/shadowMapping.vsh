@@ -30,6 +30,10 @@ layout(location=7) in vec2 vTexCoord1;
 layout(location=0) out vec2 texCoordVS;
 #endif
 
+#ifdef TRANSLUCENT
+layout(location=13) flat out float opacityVS;
+#endif
+
 #ifdef MATERIAL_GRAPH_SURFACE
 layout(location=1) out vec3 worldPositionVS;
 layout(location=2) out vec3 worldNormalVS;
@@ -73,7 +77,16 @@ void main() {
 #else
     mat4 mMatrix = mat4(transpose(matrices[gl_InstanceIndex]));
 #endif
-    
+
+#ifdef DRAW_DATA
+    ShadowDraw draw = shadowDraws[PushConstants.firstDraw + uint(gl_DrawID)];
+#else
+    ShadowDraw draw = PushConstants.draw;
+#endif
+#ifdef TRANSLUCENT
+    opacityVS = draw.opacity;
+#endif
+
 #ifdef OPACITY_MAP
     texCoordVS = TransformTexCoord(vTexCoord, PushConstants.invertUVs > 0,
         vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY), PushConstants.uvTiling);
@@ -130,7 +143,12 @@ void main() {
         graphColor, mMatrix, globalData.time, PushConstants.materialGraphOffset);
 
 #ifdef MATERIAL_GRAPH_VERTEX_OPACITY
+#ifdef TRANSLUCENT
+    opacityVS *= EvaluateMaterialOpacity(graphInput);
+    if (opacityVS <= 0.0) {
+#else
     if (EvaluateMaterialOpacity(graphInput) < opacityCutoff) {
+#endif
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         return;
     }
@@ -157,11 +175,6 @@ void main() {
 #endif
 
 #ifdef VEGETATION
-#ifdef DRAW_DATA
-    ShadowDraw draw = shadowDraws[PushConstants.firstDraw + uint(gl_DrawID)];
-#else
-    ShadowDraw draw = PushConstants.draw;
-#endif
     vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
     vec2 windDir = GetWindDirection(mMatrix);
     position = WindAnimation(windNoiseMap, position, windDir, draw.windBendScale,

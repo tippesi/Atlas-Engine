@@ -385,6 +385,9 @@ namespace Atlas {
             {"vertexColors", p.vertexColors},
             {"uvChannel", p.uvChannel},
             {"uvAnimation", p.uvAnimation},
+            {"blendMode", int32_t(p.blendMode)},
+            {"refractiveIndex", p.refractiveIndex},
+            {"thickness", p.thickness},
         };
 
         if (p.baseColorMap.IsValid() && !p.baseColorMap.IsGenerated())
@@ -472,6 +475,11 @@ namespace Atlas {
         p.reflectance = Helper::Math::Saturate(p.reflectance);
 
         try_get_json(j, "uvAnimation", p.uvAnimation);
+        int32_t blendMode = 0;
+        try_get_json(j, "blendMode", blendMode);
+        p.blendMode = MaterialBlendMode(blendMode);
+        try_get_json(j, "refractiveIndex", p.refractiveIndex);
+        try_get_json(j, "thickness", p.thickness);
 
         // Maps are only written when set, a missing one removes the map. They load in the background, the material
         // uses them once they are loaded (Scene::WaitForResourceLoad waits for them)

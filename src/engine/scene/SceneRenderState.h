@@ -134,6 +134,7 @@ namespace Atlas::Scene {
         float time = 0.0f;
         float deltaTime = 0.0f;
         bool debugMeshLods = false;
+        bool screenSpaceRefraction = true;
 
         Wind wind;
         // The clouds are a copy as well, the atmosphere, the probe and the irradiance volume are shared

@@ -4,6 +4,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include <surface.hsh>
+#include <../common/random.hsh>
 
 hitAttributeEXT vec2 barycentrics;
 
@@ -16,6 +17,11 @@ void main() {
     Instance instance = bvhInstances[nonuniformEXT(gl_InstanceID)];
     Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[nonuniformEXT(hitID)]);
     RaytraceMaterial rayMat = materials[nonuniformEXT(tri.materialIndex + instance.materialOffset)];
+#ifndef TRANSLUCENT_HITS
+    // Rays pass through translucent surfaces
+    if (rayMat.blendMode != blendModeNone)
+        ignoreIntersectionEXT;
+#endif
 
     float s = barycentrics.x;
     float t = barycentrics.y;
@@ -45,7 +51,17 @@ void main() {
     surfaceIn.tangent = normalize(tri.t);
     surfaceIn.modelMatrix = modelMatrix;
 
-    if (EvaluateMaterialSurface(surfaceIn).opacity < opacityCutoff)
+    float opacity = EvaluateMaterialSurface(surfaceIn).opacity;
+#ifdef TRANSLUCENT_HITS
+    // The path tracer blends the opacity of translucent materials itself, the one of the graph decides which hits it sees
+    if (rayMat.blendMode != blendModeNone) {
+        uint seed = hash(uvec4(gl_LaunchIDEXT.xy, floatBitsToUint(gl_HitTEXT), uint(globalData.frameCount)));
+        if (opacity <= floatConstruct(seed))
+            ignoreIntersectionEXT;
+        return;
+    }
+#endif
+    if (opacity < opacityCutoff)
         ignoreIntersectionEXT;
 
 }

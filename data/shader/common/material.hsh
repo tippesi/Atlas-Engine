@@ -42,7 +42,18 @@ struct Material {
     bool transmissive;
     bool vertexColors;
     bool terrain;
+
+    // Only set for the hits of rays
+    uint blendMode;
+    // Of the side the ray enters relative to the one it comes from
+    float refractiveIndex;
 };
+
+// Has to match MaterialBlendMode
+const uint blendModeNone = 0u;
+const uint blendModeAlpha = 1u;
+const uint blendModeAdditive = 2u;
+const uint blendModeMultiply = 3u;
 
 struct PackedMaterial {
     vec4 data0;

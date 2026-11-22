@@ -40,6 +40,7 @@ namespace Atlas {
 
             mainPipelines.Reset();
             shadowPipelines.Reset();
+            translucentPipelines.clear();
 
         }
 
@@ -173,7 +174,9 @@ namespace Atlas {
                     }
 
                     triangles[k].materialIdx = sub.materialIdx;
-                    triangles[k].opacity = sub.material->opacityMap.IsValid() ? -1.0f : sub.material->opacity;
+                    // A negative opacity reads the material, closest hits pass through translucent surfaces
+                    triangles[k].opacity = sub.material->opacityMap.IsValid() || sub.material->IsTranslucent() ?
+                        -1.0f : sub.material->opacity;
 
                 }
 

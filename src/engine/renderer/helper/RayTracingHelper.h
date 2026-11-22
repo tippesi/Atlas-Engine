@@ -35,8 +35,10 @@ namespace Atlas {
                     const Ref<Graphics::Pipeline>& rayGenPipeline, ivec3 dimensions,
                     std::function<void(void)> prepare);
 
+                // With translucentHits rays stop at translucent surfaces instead of passing through, ray tracing
+                // pipelines need the TRANSLUCENT_HITS macro for it
                 void DispatchHitClosest(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
-                    const Ref<Graphics::Pipeline>& hitPipeline, bool opacityCheck,
+                    const Ref<Graphics::Pipeline>& hitPipeline, bool opacityCheck, bool translucentHits,
                     std::function<void(void)> prepare);
 
                 void DispatchHitAny(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,

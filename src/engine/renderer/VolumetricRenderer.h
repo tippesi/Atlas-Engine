@@ -16,6 +16,20 @@ namespace Atlas {
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
+            // The froxel grid of the fog, translucent surfaces read the integrated froxels with it
+            struct FroxelGrid {
+                ivec2 resolution;
+                ivec2 columnCount;
+                int32_t sliceCount;
+                int32_t tileSize;
+                float near;
+                float far;
+                float extendedFar;
+                float distributionExponent;
+            };
+
+            static FroxelGrid GetFroxelGrid(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene);
+
         private:
             struct alignas(16) FroxelPushConstants {
                 ivec2 columnCount;

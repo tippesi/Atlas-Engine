@@ -12,7 +12,7 @@ namespace Atlas {
             { "startScene", p.startScene },
             { "streaming", p.settings.streaming },
             { "rendering", { { "occlusionCulling", p.settings.occlusionCulling }, { "meshLodErrorScale", p.settings.meshLodErrorScale },
-                { "upscaler", int32_t(p.settings.upscaler) } } },
+                { "upscaler", int32_t(p.settings.upscaler) }, { "screenSpaceRefraction", p.settings.screenSpaceRefraction } } },
             { "scenes", { { "binaryColumns", p.settings.binarySceneColumns } } }
         };
 
@@ -32,6 +32,7 @@ namespace Atlas {
         if (p.hasSceneSettings) {
             try_get_json(j["rendering"], "occlusionCulling", p.settings.occlusionCulling);
             try_get_json(j["rendering"], "meshLodErrorScale", p.settings.meshLodErrorScale);
+            try_get_json(j["rendering"], "screenSpaceRefraction", p.settings.screenSpaceRefraction);
             p.settings.upscaler = PostProcessing::Upscaler(j["rendering"]["upscaler"].get<int32_t>());
         }
         if (j.contains("scenes"))

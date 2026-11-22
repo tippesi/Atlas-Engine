@@ -24,6 +24,8 @@ namespace Atlas {
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
             rayHitRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("pathtracer/rayHit.rgen");
+            // The path tracer blends translucent surfaces itself
+            rayHitRayTracingPipelineConfig.AddMacro("TRANSLUCENT_HITS");
             atrousPipelineConfig[0] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE1" });
             atrousPipelineConfig[1] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE2" });
             atrousPipelineConfig[2] = PipelineConfig("pathtracer/atrous.csh", { "STEP_SIZE4", "REMODULATE" });
@@ -77,6 +79,10 @@ namespace Atlas {
             // The compute path traces in a separate pass of the helper
             rayHitConfig.ManageMacro("OPACITY_CHECK", useRayTracingPipeline);
             rayHitConfig.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && shaderExecutionReordering);
+
+            auto clouds = scene->renderState.sky.clouds;
+            auto cloudShadows = clouds && clouds->enable && clouds->castShadow && scene->renderState.HasMainLight();
+            rayHitConfig.ManageMacro("CLOUD_SHADOWS", cloudShadows);
 
             helper.UpdateLights(scene);
 
@@ -221,10 +227,12 @@ namespace Atlas {
 
                 auto rayHitPipeline = useRayTracingPipeline && materialGraphs ?
                     Helper::RayTracingHelper::GetRayTracingPipeline(rayHitConfig, scene) : PipelineManager::GetPipeline(rayHitConfig);
-                helper.DispatchHitClosest(scene, commandList, rayHitPipeline, true,
+                helper.DispatchHitClosest(scene, commandList, rayHitPipeline, true, true,
                     [=]() {
                         commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);
+                        if (cloudShadows)
+                            clouds->shadowTexture.Bind(commandList, 3, 11);
                     }
                     );
             }

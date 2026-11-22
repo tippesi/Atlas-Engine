@@ -8,7 +8,10 @@ namespace Atlas {
 
     enum InstanceCullMasks {
         MaskAll = 1 << 7,
-        MaskShadow = 1 << 6
+        MaskShadow = 1 << 6,
+        // Meshes with only translucent materials, only rays which pass them by their opacity trace them
+        MaskTranslucent = 1 << 5,
+        MaskTranslucentShadow = 1 << 4
     };
 
     struct GPUTriangle {
@@ -135,6 +138,15 @@ namespace Atlas {
         uint32_t graphParameterOffset = 0;
         float uvAnimationX = 0.0f;
         float uvAnimationY = 0.0f;
+
+        // A MaterialBlendMode, rays pass through translucent surfaces except in the path tracer, shadow rays are dimmed by
+        // their opacity
+        uint32_t blendMode = 0;
+        // Of the inside of refracting surfaces, 1 for the others
+        float refractiveIndex = 1.0f;
+
+        uint32_t padding0 = 0;
+        uint32_t padding1 = 0;
     };
 
     struct GPUAABB {

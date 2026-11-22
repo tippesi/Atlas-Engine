@@ -89,14 +89,14 @@ namespace Atlas {
             auto reflectionEnabled = reflection && reflection->enable && (rtDataValid || reflection->ssr);
             auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
             bool ssgiAo = ssgiEnabled && ssgi->enableAo;
-            bool oceanReflections = target->HasSeparateReflectionData();
+            bool separateReflections = target->HasSeparateReflectionData();
 
             specularPipelineConfig.ManageMacro("RTGI", rtgiEnabled);
             specularPipelineConfig.ManageMacro("DDGI", ddgiEnabled);
             specularPipelineConfig.ManageMacro("DDGI_SCROLL", ddgiEnabled && volume->scroll);
             specularPipelineConfig.ManageMacro("VISIBILITY_VOLUME", ddgiVisibility);
             specularPipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
-            specularPipelineConfig.ManageMacro("OCEAN_REFLECTION", oceanReflections);
+            specularPipelineConfig.ManageMacro("SEPARATE_REFLECTION", separateReflections);
             specularPipelineConfig.ManageMacro("SSGI", ssgiEnabled);
 
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
@@ -111,9 +111,9 @@ namespace Atlas {
             if (ssgiEnabled || rtgiEnabled) {
                 commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 2);
             }
-            if (oceanReflections) {
-                commandList->BindImage(target->oceanDepthTexture.image, target->oceanDepthTexture.sampler, 3, 6);
-                commandList->BindImage(target->oceanStencilTexture.image, target->oceanStencilTexture.sampler, 3, 7);
+            if (separateReflections) {
+                auto reflectionDepthTexture = target->GetReflectionData(FULL_RES)->depthTexture;
+                commandList->BindImage(reflectionDepthTexture->image, reflectionDepthTexture->sampler, 3, 6);
             }
 
             auto uniforms = Uniforms{ 

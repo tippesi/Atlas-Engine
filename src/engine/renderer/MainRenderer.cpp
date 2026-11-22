@@ -34,6 +34,7 @@ namespace Atlas {
 			cloudShadowUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
 			opaqueRenderer.Init(device);
+			translucentRenderer.Init(device);
 			impostorRenderer.Init(device);
 			terrainRenderer.Init(device);
 			shadowRenderer.Init(device);
@@ -239,15 +240,7 @@ namespace Atlas {
 
 			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
 
-			auto targetData = target->GetData(FULL_RES);
-
-			commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 3);
-			commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
-			commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
-			commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
-			commandList->BindImage(targetData->emissiveTexture->image, targetData->emissiveTexture->sampler, 1, 7);
-			commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 8);
-			commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
+			BindGBuffer(target, commandList);
 
 			if (!target->HasHistory()) {
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -322,12 +315,19 @@ namespace Atlas {
 
 			auto reflection = scene->renderState.reflection;
 
-			// The reflections start on the ocean surface where it's visible, which isn't part of the G-buffer
+			// The reflections start on the visible ocean surface and the closest alpha blended surfaces, which aren't part
+			// of the G-buffer. The separate data stays while the scene has translucent meshes, the history depends on it
 			auto reflectionEnabled = reflection && reflection->enable && (reflection->ssr || scene->IsRtDataValid());
 			auto oceanReflections = reflectionEnabled && scene->renderState.ocean && scene->renderState.ocean->enable;
-			target->SetSeparateReflectionData(oceanReflections);
-			if (oceanReflections) {
-				oceanRenderer.RenderReflectionData(target, scene, commandList);
+			auto translucentReflections = reflectionEnabled && renderState->gpuScene.HasTranslucentMeshes();
+			target->SetSeparateReflectionData(oceanReflections || translucentReflections);
+			auto frontLayerReflections = translucentReflections && translucentRenderer.RenderFrontLayer(target, scene,
+				commandList, &renderState->renderList, renderState->materialMap);
+			if (frontLayerReflections)
+				BindGBuffer(target, commandList);
+			if (oceanReflections || translucentReflections) {
+				rtrRenderer.RenderReflectionData(target, scene, oceanReflections,
+					frontLayerReflections ? &translucentRenderer.frontLayer : nullptr, commandList);
 			}
 
 			if (reflection && reflection->enable && reflection->ssr) {
@@ -347,9 +347,6 @@ namespace Atlas {
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 			commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-			// This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
-			// downscaleRenderer.Downscale(target, commandList);
 
 			{
 				commandList->BeginRendering(target->afterLightingRendering);
@@ -381,12 +378,18 @@ namespace Atlas {
 
 			oceanRenderer.Render(target, scene, commandList);
 
+			auto translucentDrawn = translucentRenderer.Render(target, scene, commandList, &renderState->renderList,
+				renderState->materialMap, translucentReflections);
+			if (translucentDrawn)
+				BindGBuffer(target, commandList);
+
 			for (const auto& primitiveBatch : primitiveBatches)
 				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->renderState.camera, commandList);
 
 			if (upscaler) {
 				if (upscaler->UsesReactiveMask())
-					gBufferRenderer.GenerateReactiveMask(target, commandList);
+					gBufferRenderer.GenerateReactiveMask(target, translucentDrawn ? &translucentRenderer.translucencyTexture : nullptr,
+						commandList);
 
 				upscaler->Render(target, scene, commandList);
 			}
@@ -465,6 +468,7 @@ namespace Atlas {
 			SetPreExposure(globalUniforms, scene);
 
 			pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
+			SetCloudShadowUniforms(scene, camera);
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
@@ -478,6 +482,7 @@ namespace Atlas {
 			commandList->BindSampler(globalSampler, 1, 14);
 			commandList->BindSampler(globalNearestSampler, 1, 16);
 			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
+			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 
 			// Writes the hardware ray tracing instances and builds the acceleration structure
 			if (scene->renderState.rayTracingWorld) {
@@ -510,6 +515,8 @@ namespace Atlas {
 				if (atmosphereRenderer.Render(scene->renderState.sky.atmosphere->probe, scene, commandList))
 					atmosphereProbeNeedsFilter = true;
 			}
+
+			volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
 			pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
 
@@ -859,6 +866,27 @@ namespace Atlas {
 
 		}
 
+		void MainRenderer::SetCloudShadowUniforms(const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
+
+			auto clouds = scene->renderState.sky.clouds;
+			if (!clouds || !clouds->enable || !clouds->castShadow || !scene->renderState.HasMainLight())
+				return;
+
+			const auto& light = *scene->renderState.mainLight;
+
+			CloudShadow cloudShadowUniform;
+			clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
+				cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
+
+			cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
+			cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
+
+			cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
+
+			cloudShadowUniformBuffer->SetData(&cloudShadowUniform, 0, sizeof(CloudShadow));
+
+		}
+
 		void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
 			bool mipBias = scene->renderState.postProcessing.upscaler != PostProcessing::Upscaler::None;
@@ -966,21 +994,7 @@ namespace Atlas {
 				ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
 			}
 
-			auto clouds = scene->renderState.sky.clouds;
-			if (clouds && clouds->enable && clouds->castShadow && scene->renderState.HasMainLight()) {
-				const auto& light = *scene->renderState.mainLight;
-
-				CloudShadow cloudShadowUniform;
-				clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
-					cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
-
-				cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
-				cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
-
-				cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
-
-				cloudShadowUniformBuffer->SetData(&cloudShadowUniform, 0, sizeof(CloudShadow));
-			}
+			SetCloudShadowUniforms(scene, camera);
 
 			for (auto& mesh : scene->renderState.meshes) {
 				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated || !mesh->impostor->IsResident()) continue;
@@ -1027,6 +1041,20 @@ namespace Atlas {
 				VK_ACCESS_SHADER_READ_BIT);
 			commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
 				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+		}
+
+		void MainRenderer::BindGBuffer(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
+
+			auto targetData = target->GetData(FULL_RES);
+
+			commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 3);
+			commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
+			commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
+			commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
+			commandList->BindImage(targetData->emissiveTexture->image, targetData->emissiveTexture->sampler, 1, 7);
+			commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 8);
+			commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
 
 		}
 

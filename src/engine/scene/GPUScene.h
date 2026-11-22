@@ -138,6 +138,8 @@ namespace Atlas::Scene {
             // Loaded meshes without instance vertices, also the ones which aren't drawable: the streaming needs their
             // distances from the culling
             bool culled = false;
+            // Meshes with translucent materials, their instances are culled and sorted by the host
+            bool translucent = false;
             // The geometry of a streamed mesh can be unloaded, its instances are drawn as impostors then
             bool geometry = false;
             bool impostor = false;
@@ -192,6 +194,9 @@ namespace Atlas::Scene {
 
         // Viewport height in pixels divided by 2 * tan(fov / 2) of the last culling, 0 before the first one
         float GetFocalLength() const;
+
+        // Whether any mesh has translucent sub data, independent of the view so the passes for them don't toggle
+        bool HasTranslucentMeshes() const { return hasTranslucentMeshes; }
 
         // Tests the instances of the main pass against the depth of its first draws and writes the commands of the
         // draws which are left, needs the hierarchical depth of these draws
@@ -368,6 +373,7 @@ namespace Atlas::Scene {
         // The instance buffer is indexed by entity
         uint32_t instanceCount = 0;
         uint32_t totalCapacity = 0;
+        bool hasTranslucentMeshes = false;
 
         bool valid = false;
         bool clearInstances = false;

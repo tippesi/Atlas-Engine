@@ -1,0 +1,362 @@
+// Forward shading of translucent surfaces, included by the geometry fragment shader with TRANSLUCENT. One blend mode
+// macro is set: BLEND_ALPHA (premultiplied), BLEND_ADDITIVE or BLEND_MULTIPLY
+
+#define SHADOW_FILTER_VOGEL
+
+#include <../deferred/deferred.hsh>
+#include <../structures.hsh>
+#include <../shadow.hsh>
+#include <../common/light.hsh>
+#include <../brdf/brdfEval.hsh>
+#include <../clouds/shadow.hsh>
+#include <../volumetric/froxelSlices.hsh>
+
+#ifdef DDGI
+#include <../ddgi/ddgi.hsh>
+#endif
+
+layout(set = 3, binding = 11) uniform sampler shadowSampler;
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 12) uniform sampler2D cloudMap;
+#endif
+
+#include <../deferred/directLight.hsh>
+
+// Light tiles which reach from the near plane to the opaque surfaces, with the buckets of deferred/lightCulling.hsh
+const int lightBucketCount = 128;
+
+layout(std430, set = 3, binding = 13) readonly buffer TranslucentLightBuckets {
+    int lightBuckets[];
+};
+
+layout(set = 3, binding = 14) uniform sampler2D refractionTexture;
+layout(set = 3, binding = 15) uniform sampler2D refractionDepthTexture;
+// The closest back faces of refracting surfaces with their normals pointing out of them
+layout(set = 3, binding = 20) uniform sampler2D refractionBackDepthTexture;
+layout(set = 3, binding = 21) uniform sampler2D refractionBackNormalTexture;
+#ifdef REFLECTION
+// Traced from the closest alpha blended surface, see the front layer of the translucent renderer
+layout(set = 3, binding = 16) uniform sampler2D reflectionTexture;
+layout(set = 3, binding = 17) uniform sampler2D reflectionDepthTexture;
+#endif
+#ifdef FOG
+layout(set = 3, binding = 18) uniform sampler3D integratedFroxelTexture;
+#endif
+
+layout(std140, set = 3, binding = 19) uniform TranslucentUniformBuffer {
+    vec2 resolution;
+    // Maps the unjittered screen coordinates to the froxel columns
+    vec2 froxelGridScale;
+    int lightBucketCount;
+    int lightTileCountX;
+    int specularProbeMipLevels;
+    int refractionMipLevels;
+    float froxelNear;
+    float froxelFar;
+    float froxelExtendedFar;
+    int froxelSliceCount;
+    float froxelDistributionExponent;
+} translucentUniforms;
+
+vec3 GetTranslucentDirectLight(Surface surface, vec3 geometryNormal, ivec2 pixel, vec2 texCoord) {
+
+    ivec2 tile = pixel / ivec2(16);
+    int bucketOffset = (tile.x + tile.y * translucentUniforms.lightTileCountX) * lightBucketCount;
+
+    vec3 direct = vec3(0.0);
+    for (int i = 0; i < translucentUniforms.lightBucketCount; i++) {
+        uint lightBucket = uint(lightBuckets[bucketOffset + i]);
+        if (lightBucket == 0u)
+            continue;
+
+        uint bucketBitCount = findMSB(lightBucket) + 1u;
+        for (uint j = 0u; j < bucketBitCount; j++) {
+            if ((lightBucket & (1u << j)) == 0u)
+                continue;
+
+            uint lightIdx = uint(i) * 32u + j;
+            direct += EvaluateLight(lights[lightIdx], surface, geometryNormal, lightIdx == 0u, pixel, texCoord);
+        }
+    }
+    return direct;
+
+}
+
+vec3 GetTranslucentIndirectDiffuse(Surface surface, vec3 geometryNormal) {
+
+    vec3 worldView = -normalize(vec3(globalData.ivMatrix * vec4(surface.P, 0.0)));
+    vec3 worldPosition = vec3(globalData.ivMatrix * vec4(surface.P, 1.0));
+    vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
+    vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
+
+    vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
+#ifdef DDGI
+#ifdef DDGI_SCROLL
+    vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
+        GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal, prefilteredDiffuse) : vec4(0.0, 0.0, 0.0, 1.0);
+#else
+    vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
+        GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);
+#endif
+    prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
+    prefilteredDiffuse = (prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a) * ddgiData.volumeStrength;
+#endif
+    return prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * surface.material.ao;
+
+}
+
+vec3 GetTranslucentIndirectSpecular(Surface surface, vec2 texCoord) {
+
+    vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
+    float mipLevel = surface.material.roughness * float(translucentUniforms.specularProbeMipLevels - 1);
+    vec3 indirectSpecular = textureLod(specularProbe, R, mipLevel).rgb;
+
+#ifdef REFLECTION
+    // Only the closest alpha blended surface has traced reflections, the ones behind it use the probe
+    float reflectionDepth = textureLod(reflectionDepthTexture, texCoord, 0.0).r;
+    float reflectionViewDepth = ConvertDepthToViewSpace(reflectionDepth, texCoord).z;
+    if (abs(reflectionViewDepth - surface.P.z) < 0.01 * abs(surface.P.z))
+        indirectSpecular = textureLod(reflectionTexture, texCoord, 0.0).rgb;
+#endif
+
+    return indirectSpecular * EvaluateIndirectSpecularBRDF(surface) * surface.material.ao;
+
+}
+
+// The in-scattered light (rgb) and transmittance (a) between the camera and the surface
+vec4 GetTranslucentFog(vec3 viewPosition, vec2 texCoord) {
+
+#ifdef FOG
+    FroxelSlices slices = FroxelSlices(translucentUniforms.froxelNear, translucentUniforms.froxelFar,
+        translucentUniforms.froxelExtendedFar, translucentUniforms.froxelSliceCount, translucentUniforms.froxelDistributionExponent);
+
+    // Each slice stores the integral up to its far end, inside the first slice it is interpolated from the camera
+    float slice = GetFroxelSlice(slices, -viewPosition.z);
+    vec2 unjitteredTexCoord = texCoord - 0.5 * globalData.jitterCurrent;
+    vec2 gridTexCoord = unjitteredTexCoord * translucentUniforms.froxelGridScale;
+    float sliceTexCoord = (max(slice - 1.0, 0.0) + 0.5) / float(translucentUniforms.froxelSliceCount);
+    vec4 integrated = textureLod(integratedFroxelTexture, vec3(gridTexCoord, sliceTexCoord), 0.0);
+    return mix(vec4(0.0, 0.0, 0.0, 1.0), integrated, clamp(slice, 0.0, 1.0));
+#else
+    return vec4(0.0, 0.0, 0.0, 1.0);
+#endif
+
+}
+
+vec2 ProjectToTexCoord(vec3 viewPosition) {
+
+    vec4 projected = globalData.pMatrix * vec4(viewPosition, 1.0);
+    return projected.xy / projected.w * 0.5 + 0.5;
+
+}
+
+bool IsOnScreen(vec2 texCoord) {
+
+    return all(greaterThanEqual(texCoord, vec2(0.0))) && all(lessThanEqual(texCoord, vec2(1.0)));
+
+}
+
+// Results of TraceBackground: the ray hit the background, left the screen or the distance without a hit (the image goes on
+// there like at its edge), or was lost behind the camera or a surface in front of it
+const int traceHit = 0;
+const int traceLeft = 1;
+const int traceLost = 2;
+
+// Marches the ray through the depth of the background copy with steps growing with the distance. The texture coordinate
+// is where the ray hit or left the screen, or where it ended
+int TraceBackground(vec3 origin, vec3 direction, float maxDistance, out vec2 hitTexCoord) {
+
+    const int stepCount = 24;
+    hitTexCoord = ProjectToTexCoord(origin);
+    float lastDistance = 0.0;
+    for (int i = 1; i <= stepCount; i++) {
+        float distance = maxDistance * sqr(float(i) / float(stepCount));
+        vec3 position = origin + direction * distance;
+        if (position.z >= 0.0)
+            return traceLost;
+
+        vec2 texCoord = ProjectToTexCoord(position);
+        if (!IsOnScreen(texCoord)) {
+            // Where the ray crosses the edge of the screen, the neighbors which still hit continue there
+            float near = lastDistance, far = distance;
+            for (int j = 0; j < 5; j++) {
+                float middle = 0.5 * (near + far);
+                vec2 middleTexCoord = ProjectToTexCoord(origin + direction * middle);
+                if (IsOnScreen(middleTexCoord)) {
+                    near = middle;
+                    hitTexCoord = middleTexCoord;
+                }
+                else {
+                    far = middle;
+                }
+            }
+            return traceLeft;
+        }
+
+        float backgroundDepth = textureLod(refractionDepthTexture, texCoord, 0.0).r;
+        float behind = ConvertDepthToViewSpaceDepth(backgroundDepth) - position.z;
+        hitTexCoord = texCoord;
+        if (behind > 0.0) {
+            // Refine between the last two steps, surfaces in front of the ray only count if it ends close behind them
+            float near = lastDistance, far = distance;
+            for (int j = 0; j < 4; j++) {
+                float middle = 0.5 * (near + far);
+                vec3 middlePosition = origin + direction * middle;
+                vec2 middleTexCoord = ProjectToTexCoord(middlePosition);
+                float middleBehind = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, middleTexCoord, 0.0).r) -
+                    middlePosition.z;
+                if (middleBehind > 0.0) {
+                    far = middle;
+                    hitTexCoord = middleTexCoord;
+                    behind = middleBehind;
+                }
+                else {
+                    near = middle;
+                }
+            }
+            return behind < 2.0 * (distance - lastDistance) + 0.1 ? traceHit : traceLost;
+        }
+        lastDistance = distance;
+    }
+
+    return traceLeft;
+
+}
+
+// The angle of the cone rough surfaces scatter refracted rays into. A microfacet tilted by an angle only turns the ray by
+// the fraction 1 - 1 / n of it, at both sides of the surface
+float GetRefractionSpread(float roughness, float refractiveIndex) {
+
+    return 2.0 * sqr(roughness) * abs(1.0 - 1.0 / refractiveIndex);
+
+}
+
+// The mip of the background which blurs it like the cone of the refracted rays where they hit it, far from the surface
+// the blur is larger
+float GetRefractionMipLevel(float spread, vec3 surfacePosition, vec2 hitTexCoord) {
+
+    vec3 hitPosition = ConvertDepthToViewSpace(textureLod(refractionDepthTexture, hitTexCoord, 0.0).r, hitTexCoord);
+    float radius = spread * distance(hitPosition, surfacePosition);
+    float pixels = radius * abs(globalData.pMatrix[1][1]) * float(textureSize(refractionTexture, 0).y) / max(-hitPosition.z, 0.001);
+    return clamp(log2(max(pixels, 1.0)), 0.0, float(translucentUniforms.refractionMipLevels - 1));
+
+}
+
+// The background seen through the surface. With SCREEN_SPACE_REFRACTION the ray is refracted where it enters, leaves
+// closed surfaces through their back faces and open ones after the thickness, where it's refracted again. Otherwise the
+// background is only displaced by the normal like behind thin glass. Rough surfaces blur the background
+vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveIndex, float thickness) {
+
+    // Toward the edges of the screen the refraction fades out, the background behind the surface continues to the edge
+    refractiveIndex = mix(1.0, refractiveIndex, EdgeFadeOut(texCoord, 0.1));
+    float spread = GetRefractionSpread(surface.material.roughness, refractiveIndex);
+#ifdef SCREEN_SPACE_REFRACTION
+    vec3 incident = normalize(surface.P);
+    vec3 normal = dot(surface.N, incident) < 0.0 ? surface.N : -surface.N;
+    vec3 inside = refract(incident, normal, 1.0 / refractiveIndex);
+
+    vec3 exitPosition = surface.P + inside * thickness;
+    vec3 exitDirection = refract(inside, normal, refractiveIndex);
+    float backDepth = textureLod(refractionBackDepthTexture, texCoord, 0.0).r;
+    float backViewDepth = ConvertDepthToViewSpaceDepth(backDepth);
+    bool closed = backDepth < 1.0 && backViewDepth < surface.P.z;
+    if (closed) {
+        // The distance to the back face along the refracted ray, found in a few fixed point steps
+        float distance = length(ConvertDepthToViewSpace(backDepth, texCoord) - surface.P);
+        vec2 exitTexCoord = texCoord;
+        for (int i = 0; i < 3; i++) {
+            vec2 stepTexCoord = ProjectToTexCoord(surface.P + inside * distance);
+            float stepDepth = IsOnScreen(stepTexCoord) ? textureLod(refractionBackDepthTexture, stepTexCoord, 0.0).r : 1.0;
+            if (stepDepth >= 1.0)
+                break;
+            exitTexCoord = stepTexCoord;
+            distance = length(ConvertDepthToViewSpace(stepDepth, stepTexCoord) - surface.P);
+        }
+
+        vec3 backNormal = DecodeNormal(textureLod(refractionBackNormalTexture, exitTexCoord, 0.0).rg);
+        exitPosition = surface.P + inside * distance;
+        exitDirection = refract(inside, -backNormal, refractiveIndex);
+        // Total internal reflection keeps the ray inside, it's approximated by the reflected direction
+        if (dot(exitDirection, exitDirection) == 0.0)
+            exitDirection = reflect(inside, -backNormal);
+    }
+
+    // Open surfaces like water planes are a slab of the thickness, the background inside it is seen directly
+    vec2 backgroundTexCoord;
+    bool seesBackground = !closed && TraceBackground(surface.P, inside, thickness, backgroundTexCoord) == traceHit;
+    if (!seesBackground)
+        seesBackground = TraceBackground(exitPosition, exitDirection, 64.0, backgroundTexCoord) != traceLost;
+
+    // Lenses magnify the background and its blur by how fast the hit moves between neighboring pixels, which is measured
+    // in the pixel quad. The smaller direction ignores jumps at the outlines of what is hit
+    vec2 hitPixel = backgroundTexCoord * translucentUniforms.resolution;
+    float magnification = clamp(min(length(dFdx(hitPixel)), length(dFdy(hitPixel))), 1.0, 16.0);
+    if (seesBackground)
+        return textureLod(refractionTexture, backgroundTexCoord,
+            GetRefractionMipLevel(spread * magnification, surface.P, backgroundTexCoord)).rgb;
+
+    // Rays behind the camera or hidden by surfaces in front of them see the probe, its mips are filtered for the
+    // roughness of reflections
+    vec3 worldDirection = normalize(mat3(globalData.ivMatrix) * exitDirection);
+    float probeMipLevel = sqrt(spread) * float(translucentUniforms.specularProbeMipLevels - 1);
+    return textureLod(specularProbe, worldDirection, probeMipLevel).rgb;
+#else
+    vec3 offsetPosition = surface.P - vec3(surface.N.xy * (refractiveIndex - 1.0) * thickness, 0.0);
+    // Off screen the image goes on like at its edge
+    vec2 offsetTexCoord = clamp(ProjectToTexCoord(offsetPosition), vec2(0.0), vec2(1.0));
+    // Surfaces in front of this one stay in front, they would bleed into it
+    float backgroundViewDepth = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, offsetTexCoord, 0.0).r);
+    vec2 refractedTexCoord = backgroundViewDepth < surface.P.z ? offsetTexCoord : texCoord;
+    return textureLod(refractionTexture, refractedTexCoord, GetRefractionMipLevel(spread, surface.P, refractedTexCoord)).rgb;
+#endif
+
+}
+
+// The color to blend for the material at the view space position with the opacity as coverage. The blend state of the
+// mode combines it with the background, the coverage is written for the reactive mask
+vec4 ShadeTranslucent(Material material, vec3 normal, vec3 geometryNormal, vec3 viewPosition, float opacity,
+    float refractiveIndex, float thickness, out float coverage) {
+
+    ivec2 pixel = ivec2(gl_FragCoord.xy);
+    vec2 texCoord = gl_FragCoord.xy / translucentUniforms.resolution;
+    vec4 fog = GetTranslucentFog(viewPosition, texCoord);
+
+#ifdef BLEND_MULTIPLY
+    // Darkens the background by the color, the fog in front of the surface isn't darkened
+    coverage = 1.0;
+    vec3 factor = mix(vec3(1.0), material.baseColor, opacity);
+    return vec4(mix(vec3(1.0), factor, fog.a), 1.0);
+#else
+    Surface surface = CreateSurface(normalize(-viewPosition), normal, vec3(0.0, -1.0, 0.0), material);
+    surface.P = viewPosition;
+#ifdef BLEND_ADDITIVE
+    surface.material.opacity = 1.0;
+#else
+    // The direct light weights the diffuse part by it
+    surface.material.opacity = opacity;
+#endif
+
+    vec3 direct = GetTranslucentDirectLight(surface, geometryNormal, pixel, texCoord);
+    vec3 indirectDiffuse = GetTranslucentIndirectDiffuse(surface, geometryNormal);
+    vec3 specular = GetTranslucentIndirectSpecular(surface, texCoord);
+    vec3 emissive = material.emissiveColor * globalData.preExposure;
+
+    coverage = opacity;
+#ifdef BLEND_ADDITIVE
+    // Adds light only, the fog in front of the surface is already in the background
+    vec3 color = (direct + indirectDiffuse + specular + emissive) * opacity;
+    return vec4(color * fog.a, 0.0);
+#else
+    // Reflections and emission keep their strength on clear surfaces
+    vec3 color = direct + indirectDiffuse * opacity + specular + emissive;
+    color = color * fog.a + fog.rgb * opacity;
+    if (refractiveIndex == 1.0)
+        return vec4(color, opacity);
+
+    // The refracted background replaces the one behind the surface
+    vec3 background = GetRefractedBackground(surface, texCoord, refractiveIndex, thickness);
+    return vec4(color + background * (1.0 - opacity), 1.0);
+#endif
+#endif
+
+}

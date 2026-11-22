@@ -18,9 +18,9 @@ layout(set = 3, binding = 1) uniform sampler2D reflectionTexture;
 layout(set = 3, binding = 2) uniform sampler2D giTexture;
 layout(set = 3, binding = 3) uniform sampler2D lowResDepthTexture;
 layout(set = 3, binding = 4) uniform sampler2D lowResNormalTexture;
-#ifdef OCEAN_REFLECTION
-layout(set = 3, binding = 6) uniform sampler2D oceanDepthTexture;
-layout(set = 3, binding = 7) uniform usampler2D oceanStencilTexture;
+#ifdef SEPARATE_REFLECTION
+// Where the reflections start, the ocean or a translucent surface in front of the G-buffer
+layout(set = 3, binding = 6) uniform sampler2D reflectionDepthTexture;
 #endif
 
 layout(set = 3, binding = 5) uniform UniformBuffer {
@@ -198,11 +198,9 @@ void main() {
 
 #ifdef REFLECTION
         vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? upsampleResult.reflection : textureLod(reflectionTexture, texCoord, 0.0).rgb;
-#ifdef OCEAN_REFLECTION
-        // Below the visible ocean surface the reflections were traced from the ocean
-        float oceanDepth = texelFetch(oceanDepthTexture, pixel, 0).r;
-        StencilFeatures oceanFeatures = DecodeStencilFeatures(texelFetch(oceanStencilTexture, pixel, 0).r);
-        if (oceanDepth < depth && !oceanFeatures.underWaterPixel)
+#ifdef SEPARATE_REFLECTION
+        // Behind the surface the reflections were traced from, the probe reflects
+        if (texelFetch(reflectionDepthTexture, pixel, 0).r < depth)
             indirectSpecular = prefilteredSpecular;
 #endif
 #else

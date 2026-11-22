@@ -116,9 +116,10 @@ namespace Atlas::Scene {
             if ((!slot.drawable && !slot.instanceVertices) || (shadow && !slot.mesh->castShadow))
                 continue;
 
-            if (slot.instanceVertices)
+            // The main pass sorts the instances of translucent meshes on the host, their other sub data is culled here
+            if (slot.instanceVertices || (slot.translucent && !shadow))
                 AddHostCulledInstances(slot, frustum, cameraLocation, *pass);
-            else
+            if (!slot.instanceVertices)
                 AddGPUDraws(slotIdx, frustum, cameraLocation, *pass);
         }
 
@@ -755,6 +756,7 @@ namespace Atlas::Scene {
         cullMeshes.resize(slots.size());
         cullMeshIds.resize(slots.size());
         totalCapacity = 0;
+        hasTranslucentMeshes = false;
 
         for (size_t slotIdx = 0; slotIdx < slots.size(); slotIdx++) {
             auto& slot = slots[slotIdx];
@@ -762,8 +764,11 @@ namespace Atlas::Scene {
             auto loaded = slotIdx > 0 && !slot.entities.empty() && slot.mesh.IsLoaded();
             slot.instanceVertices = loaded && (slot.softBody || slot.mesh->data.IsSkinned());
             slot.culled = loaded && !slot.instanceVertices;
+            slot.translucent = slot.culled && std::any_of(slot.mesh->data.subData.begin(), slot.mesh->data.subData.end(),
+                [](const auto& subData) { return subData.material.IsLoaded() && subData.material->IsTranslucent(); });
+            hasTranslucentMeshes |= slot.translucent;
             slot.geometry = slot.culled && slot.mesh->IsGeometryResident();
-            slot.impostor = slot.culled && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated &&
+            slot.impostor = slot.culled && !slot.translucent && slot.mesh->impostor.IsLoaded() && slot.mesh->impostor->isGenerated &&
                 slot.mesh->impostor->IsResident();
             // Without resident geometry the instances are drawn as impostors
             slot.drawable = slot.geometry || slot.impostor;
@@ -903,7 +908,7 @@ namespace Atlas::Scene {
 
         if (hasMeshes) {
             for (auto& subData : mesh->data.subData) {
-                if (!subData.material.IsLoaded())
+                if (!RenderList::IsDrawnInPass(pass.type, subData))
                     continue;
 
                 addDraw(&subData, RenderList::GPUDrawType::DefaultWinding);

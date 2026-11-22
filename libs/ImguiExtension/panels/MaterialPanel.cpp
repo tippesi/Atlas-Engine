@@ -89,6 +89,24 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
+        UIElements::PropertySection("Translucency");
+        if (UIElements::BeginProperties("MaterialTranslucency")) {
+            const char* blendModes[] = { "None", "Alpha", "Additive", "Multiply" };
+            auto blendMode = int32_t(material->blendMode);
+            UIElements::PropertyLabel("Blend mode");
+            if (ImGui::Combo("##Blend mode", &blendMode, blendModes, IM_ARRAYSIZE(blendModes)))
+                material->blendMode = MaterialBlendMode(blendMode);
+
+            if (material->blendMode == MaterialBlendMode::Alpha) {
+                UIElements::PropertyLabel("Refractive index");
+                ImGui::SliderFloat("##Refractive index", &material->refractiveIndex, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                UIElements::PropertyLabel("Thickness", "Above zero the surface refracts. Closed meshes refract where the rays "
+                    "leave them through their back faces, the thickness only applies to open meshes like water planes");
+                ImGui::DragFloat("##Thickness", &material->thickness, 0.001f, 0.0f, 1.0f, "%.3f m", ImGuiSliderFlags_AlwaysClamp);
+            }
+            UIElements::EndProperties();
+        }
+
         UIElements::PropertySection("UV");
         if (UIElements::BeginProperties("MaterialUV")) {
             UIElements::PropertyLabel("UV animation");

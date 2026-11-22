@@ -8,6 +8,10 @@ debugging a GPU crash. Feature specific notes are in `wiki/EngineNotes.md`.
 - `GraphicsDevice` keeps a reference to every created GPU object (`pipelines`, `buffers`, ...). Objects whose only remaining reference is the device's are handed to the `MemoryManager` and destroyed `framesToDeletion` (3) frames later, with `FRAME_DATA_COUNT` (2) frames in flight. Dropping a `Ref` is safe; don't add per-command-list lifetime tracking for pipelines or other objects.
 - `PipelineManager` caches pipelines per shader and variant hash and creates them lazily on first use. In non-release builds shader hot reload is active and clears the pipeline variants of changed shaders.
 - Shader compilation and the pipeline cache are used from several threads. The SPIR-V cache in `ShaderCompiler`, `Shader::GetVariant` and the `PipelineManager` map are guarded by locks; keep the lock order `variantsMutex` -> `variantMutex`, and keep hot reload skipping incomplete cache entries.
+- A cache entry counts as fresh when its file is newer than the shader and its includes. A process writes the entries it
+  compiled when it exits, so a bridge server or editor which still runs while a shader is changed writes the old SPIR-V
+  with a newer time when it stops, and the next run uses it. Stop servers before changing shaders, or empty `data/.cache`
+  and `bin/<config>/.cache` when a change doesn't show up.
 - Never write into shared create infos, e.g. `ShaderVariant::stageCreateInfos`. Extend a local copy (see `requiredSubgroupSize` in `Pipeline`), and never chain pointers to stack variables into data that outlives the call.
 - `DescriptorPool` checks layouts against the capacity of its pools (`poolSizes`). Every new pool costs about 1 ms, a stutter that grows with the number of pipeline switches points there.
 - Extension structs passed to Vulkan need the matching feature enabled in `GraphicsDevice` (e.g. `subgroupSizeControl` for `VkPipelineShaderStageRequiredSubgroupSizeCreateInfo`).
@@ -32,4 +36,10 @@ debugging a GPU crash. Feature specific notes are in `wiki/EngineNotes.md`.
 
 - An access violation inside `nvgpucomp64.dll`/`nvoglv64.dll` on a driver thread, seconds after the last pipeline creation, is the NVIDIA driver compiling or optimizing a pipeline in the background. Only driver frames are on the stack. It can be a driver bug even for valid SPIR-V; reproduce it with an empty shader cache (`data/.cache/` plus the driver's cache).
 - First check the SPIR-V of the involved shaders with `spirv-val`, run with validation layers, and make sure create infos don't reference freed or changing data before suspecting object lifetimes.
+- A lost device only shows where the CPU noticed it. Start the application with `--crash-diagnostics` (editor, game,
+  bridge): the log then names the profiler query the GPU was in and the faulting addresses. To find the shader, return
+  early from parts of it and start again, shaders are compiled at runtime.
+- Set 1 is shared: geometry passes bind their instance and joint buffers where the deferred passes read the G-buffer
+  (bindings 1 to 5). Geometry drawn after `MainRenderer` bound the G-buffer (the translucent passes) has to bind it again
+  (`MainRenderer::BindGBuffer`), otherwise the deferred passes read buffers as images and the device is lost.
 - Temporary diagnostics (logging, frame tracking) must be marked clearly and removed again before committing.

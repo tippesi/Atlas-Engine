@@ -13,6 +13,7 @@
 #include <../brdf/brdfSample.hsh>
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
+#include <../clouds/shadow.hsh>
 
 #ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 32) in;
@@ -28,6 +29,10 @@ layout (set = 3, binding = 9, rgba8) writeonly uniform image2D albedoImage;
 layout (set = 3, binding = 10, rgba16f) writeonly uniform image2D emissionImage;
 #else
 layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
+#endif
+
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 11) uniform sampler2D cloudMap;
 #endif
 
 /*
@@ -54,6 +59,7 @@ const float minAlbedo = 0.02;
 Surface EvaluateBounce(inout Ray ray, inout RayPayload payload);
 vec3 EvaluateDirectLight(inout Surface surface);
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload);
+vec3 RefractThrough(Surface surface, vec3 direction, float raySeed, inout float seed);
 float CheckVisibility(Surface surface, float lightDistance);
 vec3 GetDemodulationAlbedo(Surface surface);
 
@@ -97,7 +103,8 @@ void main() {
                 materialId = surface.material.ID;
                 geometryNormal = surface.geometryNormal;
                 albedo = GetDemodulationAlbedo(surface);
-                emission = surface.material.emissiveColor;
+                emission = surface.material.blendMode == blendModeMultiply ? vec3(0.0) : surface.material.emissiveColor *
+                    (surface.material.blendMode == blendModeAdditive ? surface.material.opacity : 1.0);
             }
             else {
                 instance.inverseMatrix = mat3x4(1.0);
@@ -193,6 +200,33 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     bool backfaceHit;
     surface = GetHitSurface(ray, true, backfaceHit, lod);
 
+    // Additive surfaces add their light, multiplied ones tint the light behind them, the ray continues unchanged
+    if (surface.material.blendMode == blendModeAdditive || surface.material.blendMode == blendModeMultiply) {
+        if (surface.material.blendMode == blendModeAdditive) {
+            vec3 emission = surface.material.emissiveColor * surface.material.opacity;
+#ifdef REALTIME
+            // The primary emission is added after the denoiser
+            emission = Uniforms.bounceCount > 0 ? emission : vec3(0.0);
+#endif
+            payload.radiance += payload.throughput * (emission + EvaluateDirectLight(surface));
+        }
+        else {
+            payload.throughput *= mix(vec3(1.0), surface.material.baseColor, surface.material.opacity);
+        }
+        ray.origin = surface.P + ray.direction * EPSILON;
+        return surface;
+    }
+
+    // Alpha blended surfaces which aren't two sided cover the light behind them once like in the rasterizer, their back
+    // faces are only where the rays leave them
+    if (backfaceHit && surface.material.blendMode == blendModeAlpha) {
+        surface.material.opacity = 0.0;
+        float curSeed = Uniforms.seed;
+        ray.direction = RefractThrough(surface, ray.direction, float(ray.ID), curSeed);
+        ray.origin = surface.P + ray.direction * EPSILON;
+        return surface;
+    }
+
     // If we hit an emissive surface we need to terminate the ray
 #ifndef REALTIME
     if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&
@@ -205,9 +239,8 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
         payload.radiance += payload.throughput * surface.material.emissiveColor;
 #endif
 
-    // Evaluate direct and indirect light
-    vec3 radiance = payload.throughput * saturate(surface.material.opacity)
-        * EvaluateDirectLight(surface);
+    // Evaluate direct and indirect light, the direct light is weighted by the opacity
+    vec3 radiance = payload.throughput * EvaluateDirectLight(surface);
     
     // Clamp indirect radiance
     // This has to be used cautiously and might be the reason
@@ -230,6 +263,10 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 }
 
 vec3 GetDemodulationAlbedo(Surface surface) {
+
+    // Additive and multiplied surfaces only change the light behind them
+    if (surface.material.blendMode == blendModeAdditive || surface.material.blendMode == blendModeMultiply)
+        return vec3(1.0);
 
     vec3 diffuse = (1.0 - surface.material.metalness) * surface.material.baseColor;
     vec3 specular = EvaluateIndirectSpecularBRDF(surface);
@@ -256,10 +293,17 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     if (lightPdf <= 0.0) return vec3(0.0);
 
     vec3 transmissionColor = GetTransmissionColor(surface.material);
-    // Front side reflection, transmission is evaluated separately below
-    vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
-    reflectance *= surface.material.opacity;
+    // Front side reflection, transmission is evaluated separately below. Alpha blended surfaces like glass reflect
+    // regardless of their opacity
+    float specularOpacity = surface.material.blendMode == blendModeAlpha ? 1.0 : surface.material.opacity;
+    vec3 reflectance = EvaluateDiffuseBRDF(surface) * surface.material.opacity +
+        EvaluateSpecularBRDF(surface) * specularOpacity;
     vec3 radiance = light.radiance * solidAngle;
+#ifdef CLOUD_SHADOWS
+    if (light.type == uint(DIRECTIONAL_LIGHT))
+        radiance *= CalculateCloudShadow(vec3(globalData.vMatrix * vec4(surface.P, 1.0)), cloudShadowUniforms.cloudShadow,
+            cloudMap);
+#endif
     float visibility = light.castShadow ? CheckVisibility(surface, lightDistance) : 1.0;
     vec3 direct = reflectance * radiance * surface.NdotL * visibility / lightPdf;
 
@@ -306,7 +350,8 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 
         if (rnd < specChance) {
             brdfSample = SampleSpecularBRDF(surface, vec2(u0, u1));
-            brdfSample.reflectance *= opacity;
+            // Alpha blended surfaces like glass reflect regardless of their opacity
+            brdfSample.reflectance *= mat.blendMode == blendModeAlpha ? 1.0 : opacity;
             brdfSample.pdf *= specChance;
             cosine = surface.NdotL;
         }
@@ -334,7 +379,7 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
         brdfSample.pdf *= (1.0 - passThroughChance);
     }
     else {
-        brdfSample.L = ray.direction;
+        brdfSample.L = RefractThrough(surface, ray.direction, raySeed, curSeed);
         brdfSample.pdf = passThroughChance;
         brdfSample.reflectance = vec3(1.0 - opacity);
         transmitted = true;
@@ -356,9 +401,10 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
         payload.throughput = vec3(0.0);
         return;
     }
-    // Offset the origin to the side the ray continues on
+    // Offset the origin to the side the ray continues on, rays passing through may also leave a surface or be reflected
+    float passedSide = dot(ray.direction, surface.geometryNormal) > 0.0 ? 1.0 : -1.0;
     ray.origin = transmitted && !passedThrough ? surface.P - surface.geometryNormal * EPSILON :
-        passedThrough ? surface.P - surface.N * EPSILON : surface.P + surface.V * EPSILON;
+        passedThrough ? surface.P + surface.geometryNormal * (passedSide * EPSILON) : surface.P + surface.V * EPSILON;
     payload.throughput *= mat.ao;
 
     // Russain roulette, terminate rays with a chance of one percent
@@ -383,10 +429,28 @@ float CheckVisibility(Surface surface, float lightDistance) {
         ray.direction = surface.L;
         // For transmitted light N is already flipped to the back side
         ray.origin = surface.P + surface.N * EPSILON;
-        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
+        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW_TRANSPARENCY, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {
         return 0.0;
     }
+
+}
+
+// Refracting surfaces bend the ray where it enters and leaves them, it's reflected beyond the critical angle. Rough ones
+// refract it through a normal of their microfacets
+vec3 RefractThrough(Surface surface, vec3 direction, float raySeed, inout float seed) {
+
+    if (surface.material.refractiveIndex == 1.0)
+        return direction;
+
+    vec3 facingNormal = dot(direction, surface.N) < 0.0 ? surface.N : -surface.N;
+    if (surface.material.roughness > 0.0) {
+        vec2 u = vec2(random(raySeed, seed), random(raySeed, seed));
+        vec3 microfacetNormal = ImportanceSampleGGX(u, facingNormal, sqr(surface.material.roughness));
+        facingNormal = dot(microfacetNormal, direction) < 0.0 ? microfacetNormal : facingNormal;
+    }
+    vec3 refracted = refract(direction, facingNormal, 1.0 / surface.material.refractiveIndex);
+    return dot(refracted, refracted) > 0.0 ? refracted : reflect(direction, facingNormal);
 
 }

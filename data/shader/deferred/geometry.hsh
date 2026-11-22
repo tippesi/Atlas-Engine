@@ -1,3 +1,9 @@
+// Translucent surfaces are blended (TRANSLUCENT), write the closest one for the reflections (FRONT_LAYER) or the back
+// faces where refracted rays leave them (REFRACTION_BACK_FACES) instead of being cut out
+#if defined(TRANSLUCENT) || defined(FRONT_LAYER) || defined(REFRACTION_BACK_FACES)
+#define TRANSLUCENT_PASS
+#endif
+
 // Has to match OpaqueRenderer::DrawData, multi draws read it from a buffer instead of the push constants
 struct GeometryDraw {
     uint invertUVs;
@@ -31,6 +37,11 @@ layout(push_constant) uniform constants {
     uint instanceOffset;
     // With DRAW_DATA the data of a draw is at firstDraw + gl_DrawID, the draws of a multi draw follow each other
     uint firstDraw;
+#ifdef TRANSLUCENT_PASS
+    // See TranslucentRenderer::PushConstants, 1 without refraction
+    float refractiveIndex;
+    float thickness;
+#endif
 #ifdef MATERIAL_GRAPH
     uint materialGraphOffset;
 #endif

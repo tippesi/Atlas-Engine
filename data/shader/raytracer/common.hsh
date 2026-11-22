@@ -16,6 +16,17 @@
 
 #define INSTANCE_MASK_ALL (1 << 7)
 #define INSTANCE_MASK_SHADOW (1 << 6)
+// Meshes with only translucent materials, rays without TRANSLUCENT_HITS would see them as opaque without an opacity check
+#define INSTANCE_MASK_TRANSLUCENT (1 << 5)
+#define INSTANCE_MASK_TRANSLUCENT_SHADOW (1 << 4)
+
+// The instances of closest hits, and of shadow rays which pass translucent surfaces by their opacity
+#ifdef TRANSLUCENT_HITS
+#define INSTANCE_MASK_CLOSEST (INSTANCE_MASK_ALL | INSTANCE_MASK_TRANSLUCENT)
+#else
+#define INSTANCE_MASK_CLOSEST INSTANCE_MASK_ALL
+#endif
+#define INSTANCE_MASK_SHADOW_TRANSPARENCY (INSTANCE_MASK_SHADOW | INSTANCE_MASK_TRANSLUCENT_SHADOW)
 
 Triangle UnpackTriangle(PackedTriangle triangle) {    
     Triangle tri;

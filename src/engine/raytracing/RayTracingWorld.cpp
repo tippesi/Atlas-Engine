@@ -182,6 +182,16 @@ namespace Atlas {
 
         }
 
+        uint32_t RayTracingWorld::GetInstanceMask(const Mesh::Mesh& mesh) {
+
+            auto translucent = !mesh.data.subData.empty() && std::all_of(mesh.data.subData.begin(), mesh.data.subData.end(),
+                [](const auto& subData) { return subData.material.IsLoaded() && subData.material->IsTranslucent(); });
+            if (translucent)
+                return InstanceCullMasks::MaskTranslucent | (mesh.castShadow ? InstanceCullMasks::MaskTranslucentShadow : 0u);
+            return InstanceCullMasks::MaskAll | (mesh.castShadow ? InstanceCullMasks::MaskShadow : 0u);
+
+        }
+
         void RayTracingWorld::UpdateMaterials() {
 
             auto sceneState = &scene->renderState;
@@ -288,8 +298,8 @@ namespace Atlas {
                             auto graphHit = graphHits.find(material.Get().get());
                             geometryHitGroups.push_back(graphHit != graphHits.end() ? graphHit->second.hitGroup : 0);
                             hasGraph |= material->HasGraph();
-                            opaque &= material->HasGraph() ? opaqueGraphs.contains(material.Get().get()) :
-                                !material->opacityMap.IsValid() && material->opacity == 1.0f;
+                            opaque &= !material->IsTranslucent() && (material->HasGraph() ? opaqueGraphs.contains(material.Get().get()) :
+                                !material->opacityMap.IsValid() && material->opacity == 1.0f);
                         }
                     }
                     blasInfo.forceOpaque = hasGraph && opaque;
@@ -362,6 +372,8 @@ namespace Atlas {
                             * material->emissiveIntensity;
 
                         gpuMaterial.opacity = material->opacity;
+                        gpuMaterial.blendMode = uint32_t(material->blendMode);
+                        gpuMaterial.refractiveIndex = material->Refracts() ? material->refractiveIndex : 1.0f;
 
                         gpuMaterial.roughness = material->roughness;
                         gpuMaterial.metalness = material->metalness;
@@ -636,14 +648,11 @@ namespace Atlas {
                     jobContext.instanceAABBs.push_back(meshComponent.aabb);
                     auto inverseMatrix = mat3x4(glm::transpose(transformComponent->inverseGlobalMatrix));
 
-                    uint32_t mask = InstanceCullMasks::MaskAll;
-                    mask |= meshComponent.mesh->castShadow ? InstanceCullMasks::MaskShadow : 0;
-
                     GPUBVHInstance gpuBvhInstance = {
                         .inverseMatrix = inverseMatrix,
                         .meshOffset = blasInfo.offset,
                         .materialOffset = blasInfo.materialOffset,
-                        .mask = mask
+                        .mask = GetInstanceMask(*meshComponent.mesh.Get())
                     };
 
                     jobContext.gpuBvhInstances.emplace_back(gpuBvhInstance);
@@ -727,10 +736,6 @@ namespace Atlas {
                 return blas && blasInfos.contains(blas) && blas->blas->isBuilt && !blas->needsBvhRefresh;
             };
 
-            auto getMask = [](bool castShadow) {
-                return uint32_t(InstanceCullMasks::MaskAll) | (castShadow ? uint32_t(InstanceCullMasks::MaskShadow) : 0u);
-            };
-
             // The instances of the GPU scene reference their mesh by slot, the levels of detail come after the slots
             size_t gpuInstanceCount = 0;
             rtMeshes.resize(gpuScene.slots.size());
@@ -742,7 +747,7 @@ namespace Atlas {
                     return GPURTMesh {
                         .blasOffset = uint32_t(blasInfo.offset),
                         .materialOffset = blasInfo.materialOffset,
-                        .mask = getMask(slot.mesh->castShadow),
+                        .mask = GetInstanceMask(*slot.mesh.Get()),
                         .flags = rtMeshUsable | (blasInfo.forceOpaque ? rtMeshForceOpaque : 0u),
                         .cullingDistanceSqr = blasInfo.cullingDistanceSqr,
                         .deformDistanceSqr = deformedMeshes.contains(slot.mesh.GetID()) && hasCamera ?
@@ -812,7 +817,7 @@ namespace Atlas {
 
                 auto nodePosition = vec3(node->location.x, 0.0f, node->location.y) + scene->terrain->translation;
                 auto globalMatrix = glm::translate(nodePosition);
-                addInstance(node->cell->blas, globalMatrix, globalMatrix, getMask(true));
+                addInstance(node->cell->blas, globalMatrix, globalMatrix, uint32_t(InstanceCullMasks::MaskAll | InstanceCullMasks::MaskShadow));
             }
 
             for (const auto& slot : gpuScene.slots) {
@@ -838,7 +843,7 @@ namespace Atlas {
                     auto deformedInstance = deformed != deformedInstances.end() && deformed->second.blas->isBuilt ?
                         &deformed->second : nullptr;
                     addInstance(blas, transformComponent->globalMatrix, transformComponent->lastGlobalMatrix,
-                        getMask(slot.mesh->castShadow), deformedInstance);
+                        GetInstanceMask(*slot.mesh.Get()), deformedInstance);
                 }
             }
 
@@ -857,7 +862,7 @@ namespace Atlas {
                     continue;
 
                 addInstance(blas, transformComponent->globalMatrix, transformComponent->lastGlobalMatrix,
-                    getMask(instance.mesh->castShadow), instance.blas->isBuilt ? &instance : nullptr);
+                    GetInstanceMask(*instance.mesh.Get()), instance.blas->isBuilt ? &instance : nullptr);
             }
 
             auto hostInstanceCount = uint32_t(hardwareInstances.size());
@@ -1740,7 +1745,7 @@ namespace Atlas {
                     .indexCount = subData.indicesCount,
                     .indexOffset = subData.indicesOffset,
                     .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f &&
-                        !subData.material->HasGraph()
+                        !subData.material->HasGraph() && !subData.material->IsTranslucent()
                     });
             }
 

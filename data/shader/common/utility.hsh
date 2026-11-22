@@ -130,6 +130,15 @@ float min4(vec4 value) {
 
 }
 
+// 1 inside the screen, going to 0 at its edges over the fade distance in normalized device coordinates
+float EdgeFadeOut(vec2 screenPos, float fadeDist) {
+
+    screenPos = abs(screenPos * 2.0 - 1.0);
+    vec2 fadeOut = (screenPos - 1.0 + fadeDist) / fadeDist;
+    return saturate(1.0 - max(fadeOut.x, fadeOut.y));
+
+}
+
 vec3 Cartesian(vec2 spherical) {
     float sinTheta = sin(spherical.x);
     return normalize(vec3(

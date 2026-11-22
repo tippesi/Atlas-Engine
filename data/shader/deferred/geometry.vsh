@@ -198,7 +198,11 @@ void main() {
 
 #ifdef MATERIAL_GRAPH_VERTEX_OPACITY
     // The opacity is the same for the whole draw, moving all vertices outside the view keeps fragments free of discards
+#ifdef TRANSLUCENT_PASS
+    if (EvaluateMaterialOpacity(graphInput) <= 0.0) {
+#else
     if (EvaluateMaterialOpacity(graphInput) < opacityCutoff) {
+#endif
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         return;
     }

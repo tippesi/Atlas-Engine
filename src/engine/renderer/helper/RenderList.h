@@ -46,10 +46,27 @@ namespace Atlas {
             std::array<uint32_t, Mesh::MeshData::maxLodCount> reversedWindingLodCounts = {};
         };
 
+        // An instance of a mesh with translucent sub data in the main pass, drawn one by one from far to near
+        struct TranslucentInstance {
+            size_t meshId;
+            MeshInstances instances;
+            bool softBody;
+            float distance;
+        };
+
         enum class RenderPassType {
             Main = 0,
             Shadow = 1
         };
+
+        // Translucent sub data is drawn by the translucent pass instead of the main one. Shadows are dithered by its
+        // opacity, additive surfaces only add light and cast none
+        static bool IsDrawnInPass(RenderPassType type, const Mesh::MeshSubData& subData) {
+            const auto& material = subData.material;
+            if (!material.IsLoaded())
+                return false;
+            return type == RenderPassType::Main ? !material->IsTranslucent() : material->blendMode != MaterialBlendMode::Additive;
+        }
 
         struct EntityBatch {
             size_t count = 0;
@@ -113,6 +130,8 @@ namespace Atlas {
             std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
             // The instances of the batches which have a simulated soft body, drawn from their vertices
             std::unordered_map<size_t, MeshInstances> meshToSoftBodyInstancesMap;
+            // Sorted from the farthest to the closest instance, only in the main pass
+            std::vector<TranslucentInstance> translucentInstances;
 
             bool wasUsed = false;
 

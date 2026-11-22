@@ -20,8 +20,6 @@ namespace Atlas {
 
             void RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
-
             // Surfaces of the ocean surface queries, read back FRAME_DATA_COUNT frames later
             void ComputeSurfaceQueries(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
@@ -87,7 +85,6 @@ namespace Atlas {
 
             PipelineConfig causticPipelineConfig;
             PipelineConfig underWaterPipelineConfig;
-            PipelineConfig reflectionDataPipelineConfig;
 
             Buffer::VertexArray vertexArray;
 

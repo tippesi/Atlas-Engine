@@ -245,6 +245,8 @@ namespace Atlas {
 
             // Tests the instances of the main pass against the depth of the ones visible in the last frame
             bool occlusionCulling = true;
+            // Refracting surfaces trace the background through their back faces, otherwise it's only displaced
+            bool screenSpaceRefraction = true;
 
             // Scales the pixel error of the mesh levels of detail, larger values switch to coarser levels earlier
             float meshLodErrorScale = 1.0f;

@@ -1,10 +1,11 @@
 // Has to match ShadowRenderer::DrawData and ShadowRenderer::PushConstants
 
-// Only the wind differs between the draws of a merged pipeline
+// Only the wind and the opacity differ between the draws of a merged pipeline
 struct ShadowDraw {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    float opacity;
 };
 
 layout(push_constant) uniform constants {

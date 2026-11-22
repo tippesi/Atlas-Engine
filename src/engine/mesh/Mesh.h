@@ -14,6 +14,7 @@
 #include "../graphics/Buffer.h"
 #include "../graphics/BLAS.h"
 #include "../jobsystem/JobGroup.h"
+#include "../common/Hash.h"
 
 #include <mutex>
 
@@ -62,7 +63,8 @@ namespace Atlas {
             void UpdateData();
 
             /*
-             * Resets material pipeline configs 
+             * Resets material pipeline configs, the acceleration structures are built again if the materials let rays
+             * through differently
              */
             void UpdatePipelines();
 
@@ -237,8 +239,13 @@ namespace Atlas {
         private:
             void CreatePooledBuffers();
 
+            // The material values the acceleration structures depend on: which geometry is opaque and whether the
+            // triangles read the opacity of the material
+            Hash GetRayTracingMaterialHash() const;
+
             bool isLoaded = false;
             std::atomic_bool blasCreated = false;
+            std::atomic<Hash> blasMaterialHash = 0;
             std::atomic_bool geometryResident = true;
             std::atomic_uint32_t geometryVersion = 0;
             std::atomic_uint32_t pipelineVersion = 0;

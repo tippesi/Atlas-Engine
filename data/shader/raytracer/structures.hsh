@@ -152,6 +152,15 @@ struct RaytraceMaterial {
     float uvAnimationX;
     float uvAnimationY;
 
+    // A blend mode of common/material.hsh, rays pass through translucent surfaces except with TRANSLUCENT_HITS, shadow
+    // rays are dimmed by their opacity
+    uint blendMode;
+    // Of the inside of refracting surfaces, 1 for the others
+    float refractiveIndex;
+
+    uint padding0;
+    uint padding1;
+
 };
 
 struct PackedLight {

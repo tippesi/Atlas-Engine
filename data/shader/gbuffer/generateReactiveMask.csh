@@ -7,6 +7,9 @@ layout (set = 3, binding = 1) uniform usampler2D stencilTexture;
 layout (set = 3, binding = 2) uniform sampler2D roughnessMetalnessAoTexture;
 layout (set = 3, binding = 3) uniform usampler2D lastStencilTexture;
 layout (set = 3, binding = 4) uniform sampler2D velocityTexture;
+#ifdef TRANSLUCENCY
+layout (set = 3, binding = 5) uniform sampler2D translucencyTexture;
+#endif
 
 layout(push_constant) uniform constants {
     int hasHistory;
@@ -28,6 +31,10 @@ void main() {
         vec3 roughnessMetallicAo = texelFetch(roughnessMetalnessAoTexture, pixel, 0).rgb;
         float reflectiveReactivity = min(1.0, 5.0 * roughnessMetallicAo.r);
         reactivity = max(reactivity, mix(0.5, 0.0, reflectiveReactivity));
+#ifdef TRANSLUCENCY
+        // Blended surfaces don't move with the velocity of what is behind them
+        reactivity = max(reactivity, 0.9 * texelFetch(translucencyTexture, pixel, 0).r);
+#endif
 
         bool rejectHistory = features.noTemporalAccumulation;
         if (pushConstants.hasHistory > 0) {

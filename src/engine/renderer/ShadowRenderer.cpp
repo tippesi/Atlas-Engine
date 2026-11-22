@@ -120,7 +120,7 @@ namespace Atlas {
             auto hasGraphPipeline = [](const MaterialGraph::CompiledGraph& graph) { return graph.UsesShadowPipeline(); };
             // Pipelines which can discard fragments last, so the others keep the early depth test
             auto getOrder = [](PipelineConfig& config, bool usesGraph) {
-                return usesGraph || config.HasMacro("OPACITY_MAP") ? 1u : 0u;
+                return usesGraph || config.HasMacro("OPACITY_MAP") || config.HasMacro("TRANSLUCENT") ? 1u : 0u;
             };
             drawer.Prepare(renderList, *shadowPass, shadowPass->gpu.draws, true, &Mesh::MeshSubData::shadowPipelines,
                 createConfig, hasGraphPipeline, getOrder);
@@ -147,14 +147,15 @@ namespace Atlas {
                 }
             };
 
-            // Draws of pipelines with draw data can be merged, only their wind differs
+            // Draws of pipelines with draw data can be merged, only their wind and opacity differ
             auto fillDrawData = [&](const Helper::SubDataDrawer::Entry& entry) {
                 checkFinal(entry);
                 const auto& mesh = entry.mesh;
                 return DrawData {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
-                    .windWiggleScale = mesh->windWiggleScale
+                    .windWiggleScale = mesh->windWiggleScale,
+                    .opacity = entry.subData->material->opacity
                 };
             };
 
@@ -238,12 +239,14 @@ namespace Atlas {
             bool hasTexCoords = mesh->data.texCoords.ContainsData();
             bool hasOpacityMap = material->HasOpacityMap() && hasTexCoords && (!graph || !graph->hasSurface);
             bool hasGraphOpacity = graph && graph->CutsOutFragments();
+            // Translucent surfaces let light through by their opacity, see shadowMapping.fsh
+            bool translucent = material->IsTranslucent();
 
-            // Without an opacity map only depth is written, which doesn't need a fragment shader
+            // Without an opacity only depth is written, which doesn't need a fragment shader
             auto shaderConfig = ShaderConfig {
                 {graph ? graph->shadowVertexFile : "shadowMapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
             };
-            if (hasOpacityMap || hasGraphOpacity) {
+            if (hasOpacityMap || hasGraphOpacity || translucent) {
                 shaderConfig.push_back({graph ? graph->shadowFragmentFile : "shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT});
             }
 
@@ -270,6 +273,9 @@ namespace Atlas {
             }
             if (hasOpacityMap) {
                 macros.push_back("OPACITY_MAP");
+            }
+            if (translucent) {
+                macros.push_back("TRANSLUCENT");
             }
             if (graph && hasTexCoords) {
                 macros.push_back("TEX_COORDS");

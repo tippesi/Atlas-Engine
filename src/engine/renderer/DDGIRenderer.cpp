@@ -141,7 +141,7 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
             }
 
-            helper.DispatchHitClosest(scene, commandList, rayHitPipeline, volume->opacityCheck,
+            helper.DispatchHitClosest(scene, commandList, rayHitPipeline, volume->opacityCheck, false,
                 [&]() {
                     RayHitUniforms uniforms;
                     uniforms.seed = Common::Random::SampleUniformFloat();

@@ -36,8 +36,13 @@ void main() {
     float depth = texelFetch(depthTexture, pixel, 0).r;
     float viewDepth = ConvertDepthToViewSpaceDepth(depth);
 
+    // Translucent surfaces are in front of the opaque ones, their tiles reach from the near plane
     if (gl_LocalInvocationIndex == 0u) {
+#ifdef FROM_NEAR_PLANE
+        sharedDepthMin = floatBitsToUint(0.0);
+#else
         sharedDepthMin = floatBitsToUint(depth);
+#endif
         sharedDepthMax = floatBitsToUint(depth);
         depthMask = 0;
     }
@@ -118,7 +123,11 @@ void main() {
         int downShift = int(0xFFFFFFFFu >> uint(shiftCount));
         int lightMask = downShift << startBin;
 
+#ifdef FROM_NEAR_PLANE
+        if (visible) {
+#else
         if (visible && (lightMask & depthMask) != 0) {
+#endif
             atomicOr(sharedLightBuckets[lightBucketIdx], 1 << lightBuckedBit);
         }
     }
