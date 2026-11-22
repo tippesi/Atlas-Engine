@@ -5,7 +5,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GeneratePhysicsBindings(sol::table* ns) {
+    void GeneratePhysicsBindings(Binder* ns) {
 
         ns->new_enum<Physics::Layers>("Layers", {
             { "Static", Physics::Layers::Static },

@@ -7,7 +7,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateGraphicBindings(sol::table* ns) {
+    void GenerateGraphicBindings(Binder* ns) {
 
         ns->new_usertype<Texture::Texture2D>("Texture2D",
             "width", &Texture::Texture2D::width,

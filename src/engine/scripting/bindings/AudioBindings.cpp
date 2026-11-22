@@ -6,7 +6,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateAudioBindings(sol::table* ns) {
+    void GenerateAudioBindings(Binder* ns) {
 
         ns->new_usertype<Audio::AudioData>("AudioData",
             "GetChannelCount", &Audio::AudioData::GetChannelCount,

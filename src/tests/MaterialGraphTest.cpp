@@ -1060,7 +1060,7 @@ TEST(MaterialGraphSerialization, CodeNodesRoundTrip) {
     EXPECT_EQ(node->codeOutputType, ValueType::Vec2);
     EXPECT_EQ(loaded->Compile()->mainFragmentCode, compiled->mainFragmentCode);
 
-    // Types are stored by name, the same format capture jobs use
+    // Types are stored by name, the same format bridge jobs use
     for (const auto& nodeJson : j["nodes"]) {
         if (nodeJson["id"] != code)
             continue;

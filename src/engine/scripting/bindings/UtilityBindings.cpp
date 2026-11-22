@@ -11,13 +11,23 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateUtilityBindings(sol::table* ns) {
+    void GenerateUtilityBindings(Binder* ns) {
 
         auto log = ns->new_usertype<Log>("Log");
         // Set it manually here to avoid having a function that require the optional argument to log
         log.set_function("Message", [](const std::string& msg) { Log::Message(msg); });
         log.set_function("Warning", [](const std::string& warn) { Log::Warning(warn); });
         log.set_function("Error", [](const std::string& err) { Log::Error(err); });
+        // The newest entries, oldest first, as { message, type ("message", "warning", "error"), time }
+        log.set_function("GetLatest", [](int32_t count, sol::this_state state) {
+            static const char* types[] = { "message", "warning", "error" };
+            sol::state_view lua(state);
+            sol::table entries = lua.create_table();
+            for (const auto& entry : Log::GetLatestEntries(count))
+                entries.add(lua.create_table_with("message", entry.message, "type", types[entry.type],
+                    "time", entry.time));
+            return entries;
+            });
 
         ns->new_usertype<Clock>("Clock",
             "Get", &Clock::Get,
@@ -38,7 +48,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateVolumeBindings(sol::table* ns) {
+    void GenerateVolumeBindings(Binder* ns) {
 
         auto isInsideAABBOverload = sol::overload(
             [](Volume::AABB& aabb0, const Volume::AABB& aabb1) { return aabb0.IsInside(aabb1); },

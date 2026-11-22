@@ -1,11 +1,12 @@
 #pragma once
 
 #include "../LuaScriptManager.h"
+#include "../Binder.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateKeyboardBindings(sol::table* ns);
+    void GenerateKeyboardBindings(Binder* ns);
 
-    void GenerateControllerBindings(sol::table* ns);
+    void GenerateControllerBindings(Binder* ns);
 
 }

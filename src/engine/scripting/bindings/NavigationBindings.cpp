@@ -5,7 +5,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateNavigationBindings(sol::table* ns) {
+    void GenerateNavigationBindings(Binder* ns) {
 
         ns->new_enum<JobPriority>("JobPriority", {
             { "High", JobPriority::High },

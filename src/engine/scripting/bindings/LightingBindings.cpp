@@ -11,10 +11,12 @@
 #include "lighting/Fog.h"
 #include "lighting/VolumetricClouds.h"
 #include "lighting/Sky.h"
+#include "resource/ResourceManager.h"
+#include "texture/Cubemap.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateLightingBindings(sol::table* ns) {
+    void GenerateLightingBindings(Binder* ns) {
 
         ns->new_usertype<Lighting::IrradianceVolume>("IrradianceVolume",
             sol::no_constructor,
@@ -32,7 +34,9 @@ namespace Atlas::Scripting::Bindings {
             "phaseAlpha", &Lighting::VolumetricClouds::Scattering::phaseAlpha
             );
 
+        // The features of the sky are created as references, e.g. scene.sky.clouds = Atlas.VolumetricClouds.new()
         ns->new_usertype<Lighting::VolumetricClouds>("VolumetricClouds",
+            "new", sol::factories([]() { return CreateRef<Lighting::VolumetricClouds>(); }),
             "coverageTexture", &Lighting::VolumetricClouds::coverageTexture,
             "shapeTexture", &Lighting::VolumetricClouds::shapeTexture,
             "detailTexture", &Lighting::VolumetricClouds::detailTexture,
@@ -55,6 +59,7 @@ namespace Atlas::Scripting::Bindings {
             );
 
         ns->new_usertype<Lighting::Atmosphere>("Atmosphere",
+            "new", sol::factories([]() { return CreateRef<Lighting::Atmosphere>(); }),
             "height", &Lighting::Atmosphere::height,
             "rayleighScatteringCoeff", &Lighting::Atmosphere::rayleighScatteringCoeff,
             "groundAlbedo", &Lighting::Atmosphere::groundAlbedo,
@@ -112,7 +117,11 @@ namespace Atlas::Scripting::Bindings {
             "opacityCheck", &Lighting::Reflection::opacityCheck
         );
 
+        // A sky probe from a cubemap or an equirectangular .hdr image relative to the asset directory
         ns->new_usertype<Lighting::EnvironmentProbe>("EnvironmentProbe",
+            "new", sol::factories([](const std::string& cubemapPath) {
+                return CreateRef<Lighting::EnvironmentProbe>(ResourceManager<Texture::Cubemap>::GetOrLoadResourceAsync(cubemapPath));
+                }),
             "viewMatrices", &Lighting::EnvironmentProbe::viewMatrices,
             "projectionMatrix", &Lighting::EnvironmentProbe::projectionMatrix,
             "update", &Lighting::EnvironmentProbe::update,
@@ -143,9 +152,13 @@ namespace Atlas::Scripting::Bindings {
             "GetProbe", &Lighting::Sky::GetProbe,
             "planetCenter", &Lighting::Sky::planetCenter,
             "planetRadius", &Lighting::Sky::planetRadius,
-            "clouds", &Lighting::Sky::clouds,
-            "atmosphere", &Lighting::Sky::atmosphere,
-            "probe", &Lighting::Sky::probe
+            // nil removes a feature, e.g. scene.sky.probe = nil
+            "clouds", sol::property([](Lighting::Sky& sky) { return sky.clouds; },
+                [](Lighting::Sky& sky, sol::optional<Ref<Lighting::VolumetricClouds>> clouds) { sky.clouds = clouds.value_or(nullptr); }),
+            "atmosphere", sol::property([](Lighting::Sky& sky) { return sky.atmosphere; },
+                [](Lighting::Sky& sky, sol::optional<Ref<Lighting::Atmosphere>> atmosphere) { sky.atmosphere = atmosphere.value_or(nullptr); }),
+            "probe", sol::property([](Lighting::Sky& sky) { return sky.probe; },
+                [](Lighting::Sky& sky, sol::optional<Ref<Lighting::EnvironmentProbe>> probe) { sky.probe = probe.value_or(nullptr); })
         );
 
         ns->new_usertype<Lighting::ShadowView>("ShadowView",

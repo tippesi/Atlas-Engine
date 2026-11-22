@@ -5,7 +5,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateStreamingBindings(sol::table* ns) {
+    void GenerateStreamingBindings(Binder* ns) {
 
         using Settings = Streaming::StreamingSettings;
 

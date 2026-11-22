@@ -1,9 +1,10 @@
 #pragma once
 
 #include "../LuaScriptManager.h"
+#include "../Binder.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GeneratePostProcessingBindings(sol::table* ns);
+    void GeneratePostProcessingBindings(Binder* ns);
 
 }

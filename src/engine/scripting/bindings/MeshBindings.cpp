@@ -4,7 +4,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateMeshBindings(sol::table* ns) {
+    void GenerateMeshBindings(Binder* ns) {
 
         ns->new_enum<Mesh::MeshMobility>("MeshMobility", {
             { "Stationary", Mesh::MeshMobility::Stationary },
@@ -100,7 +100,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateMaterialBindings(sol::table* ns) {
+    void GenerateMaterialBindings(Binder* ns) {
 
          ns->new_usertype<Material>("Material",
             "HasBaseColorMap", &Material::HasBaseColorMap,
@@ -132,6 +132,7 @@ namespace Atlas::Scripting::Bindings {
             "metalnessMap", &Material::metalnessMap,
             "aoMap", &Material::aoMap,
             "displacementMap", &Material::displacementMap,
+            "graph", &Material::graph,
             "SetGraphParameter", sol::overload(
                 &Material::SetGraphParameter,
                 [](Material& material, const std::string& parameter, float value) { material.SetGraphParameter(parameter, vec4(value)); },

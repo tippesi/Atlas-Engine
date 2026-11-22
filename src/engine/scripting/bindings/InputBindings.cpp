@@ -6,7 +6,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateKeyboardBindings(sol::table* ns) {
+    void GenerateKeyboardBindings(Binder* ns) {
 
         ns->new_enum("Keycode", 
             "KeyUnknown", Keycode::KeyUnknown,
@@ -120,7 +120,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateControllerBindings(sol::table* ns) {
+    void GenerateControllerBindings(Binder* ns) {
 
         ns->new_enum("ControllerButton",
             "A", AE_CONTROLLERBUTTON_A,

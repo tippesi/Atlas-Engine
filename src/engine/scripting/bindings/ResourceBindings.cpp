@@ -14,6 +14,8 @@
 
 #include "loader/AssetLoader.h"
 #include "loader/MaterialLoader.h"
+#include "loader/MaterialGraphLoader.h"
+#include "materialgraph/MaterialGraph.h"
 #include "loader/MeshLoader.h"
 #include "loader/AnimationLoader.h"
 #include "loader/ModelImporter.h"
@@ -38,7 +40,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateAssetLoaderBindings(sol::table* ns) {
+    void GenerateAssetLoaderBindings(Binder* ns) {
 
         auto type = ns->create_named("AssetLoader");
 
@@ -84,7 +86,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateModelImporterBindings(sol::table* ns) {
+    void GenerateModelImporterBindings(Binder* ns) {
 
         ns->new_enum<Loader::ImportTextureFormat>("ImportTextureFormat", {
             { "Original", Loader::ImportTextureFormat::Original },
@@ -161,7 +163,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateResourceManagerBindings(sol::table* ns) {
+    void GenerateResourceManagerBindings(Binder* ns) {
 
         GenerateResourceBinding<Audio::AudioData>(ns, "AudioResourceHandle");
         GenerateResourceBinding<Material>(ns, "MaterialResourceHandle");
@@ -282,6 +284,10 @@ namespace Atlas::Scripting::Bindings {
             }
         );
 
+        type.set_function("GetOrLoadMaterialGraph", [](const std::string& filename) {
+                return ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoader(filename, ResourceOrigin::User,
+                    Loader::MaterialGraphLoader::LoadGraph);
+            });
         type.set_function("GetOrLoadMaterial", getOrLoadMaterialOverload);
         type.set_function("GetOrLoadMaterialAsync", getOrLoadMaterialAsyncOverload);
         type.set_function("GetMaterial", [](const std::string& filename) {

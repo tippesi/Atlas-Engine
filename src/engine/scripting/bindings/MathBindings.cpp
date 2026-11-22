@@ -103,7 +103,7 @@ namespace Atlas::Scripting::Bindings {
 
     // The arithmetic of each type written into an existing object, the operators create a new one every time
     template<class... T>
-    static void GenerateArithmeticToBindings(sol::table* ns) {
+    static void GenerateArithmeticToBindings(Binder* ns) {
 
         ns->set_function("AddTo", sol::overload(
             [](T& out, const T& v0, const T& v1) { out = v0 + v1; }...,
@@ -141,7 +141,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateMathBindings(sol::table* ns) {
+    void GenerateMathBindings(Binder* ns) {
 
         GenerateGlmTypeBinding<vec2, float>(ns, "Vec2",
             sol::constructors<vec2(float), vec2(float, float)>(),

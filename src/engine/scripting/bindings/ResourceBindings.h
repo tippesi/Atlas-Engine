@@ -1,19 +1,20 @@
 #pragma once
 
 #include "../LuaScriptManager.h"
+#include "../Binder.h"
 
 #include "resource/ResourceManager.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateResourceManagerBindings(sol::table* ns);
+    void GenerateResourceManagerBindings(Binder* ns);
 
-    void GenerateAssetLoaderBindings(sol::table* ns);
+    void GenerateAssetLoaderBindings(Binder* ns);
 
-    void GenerateModelImporterBindings(sol::table* ns);
+    void GenerateModelImporterBindings(Binder* ns);
 
     template<class T>
-    void GenerateResourceBinding(sol::table* ns, const std::string& name) {
+    void GenerateResourceBinding(Binder* ns, const std::string& name) {
 
         auto type = ns->new_usertype<ResourceHandle<T>>(name,
             "IsValid", &ResourceHandle<T>::IsValid,

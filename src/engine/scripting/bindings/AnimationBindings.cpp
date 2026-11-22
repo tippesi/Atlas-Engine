@@ -4,7 +4,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateAnimationBindings(sol::table* ns) {
+    void GenerateAnimationBindings(Binder* ns) {
 
         ns->new_usertype<Animation::Channel>("AnimationChannel",
             "SamplePosition", &Animation::Channel::SamplePosition,

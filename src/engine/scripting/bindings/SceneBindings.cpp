@@ -15,6 +15,9 @@ namespace Atlas::Scripting::Bindings {
         vec3 normal = vec3(0.0f);
         bool frontFace = true;
         Scene::Entity entity;
+        // Mesh hits: the triangle and the path of its material, or the name of its sub data without one
+        int32_t triangle = -1;
+        std::string material;
     };
 
     static bool IsIgnored(Scene::Scene& scene, Scene::Entity entity, Scene::Entity ignored) {
@@ -68,6 +71,14 @@ namespace Atlas::Scripting::Bindings {
         hit.normal = result.normal;
         hit.frontFace = result.frontFace;
         hit.entity = result.data;
+        hit.triangle = result.triangleIndex;
+
+        // Terrain and body hits have no triangle and no valid entity
+        auto meshComponent = hit.triangle >= 0 && hit.entity.IsValid() ? hit.entity.TryGetComponent<MeshComponent>() : nullptr;
+        if (meshComponent && meshComponent->mesh.IsLoaded()) {
+            if (auto subData = meshComponent->mesh->data.GetSubDataOfTriangle(hit.triangle))
+                hit.material = subData->material.IsValid() ? subData->material.GetResource()->path : subData->name;
+        }
 
         return hit;
 
@@ -93,11 +104,11 @@ namespace Atlas::Scripting::Bindings {
     }
 
     template<class Comp>
-    static sol::object GetComponentRef(Scene::Entity& entity, sol::this_state state) {
+    static sol::optional<ComponentRef<Comp>> GetComponentRef(Scene::Entity& entity) {
 
         if (!entity.IsValid() || !entity.HasComponent<Comp>())
-            return sol::lua_nil;
-        return sol::make_object(state, ComponentRef<Comp>{ entity });
+            return sol::nullopt;
+        return ComponentRef<Comp>{ entity };
 
     }
 
@@ -188,7 +199,7 @@ namespace Atlas::Scripting::Bindings {
     }
 
     template<class Comp>
-    static void GenerateComponentRefBindings(sol::table* ns, const std::string& name) {
+    static void GenerateComponentRefBindings(Binder* ns, const std::string& name) {
 
         auto state = ns->lua_state();
         sol::state_view lua(state);
@@ -250,7 +261,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateSceneBindings(sol::table* ns) {
+    void GenerateSceneBindings(Binder* ns) {
 
         ns->new_usertype<Scene::Wind>("Wind",
             "direction", &Scene::Wind::direction,
@@ -272,7 +283,9 @@ namespace Atlas::Scripting::Bindings {
             "position", DependentMember<&RayHit::position>(),
             "normal", DependentMember<&RayHit::normal>(),
             "frontFace", &RayHit::frontFace,
-            "entity", DependentMember<&RayHit::entity>()
+            "entity", DependentMember<&RayHit::entity>(),
+            "triangle", &RayHit::triangle,
+            "material", &RayHit::material
             );
 
         auto castRayOverload = sol::overload(
@@ -284,6 +297,9 @@ namespace Atlas::Scripting::Bindings {
             },
             [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components, Scene::Entity ignored) {
                 return CastRay(scene, ray, components, ignored);
+            },
+            [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components, const sol::protected_function& skip) {
+                return CastRay(scene, ray, components, Scene::Entity(), skip.valid() ? &skip : nullptr);
             },
             // skip(entity) returns true for entities the ray passes through
             [](Scene::Scene& scene, const Volume::Ray& ray, uint32_t components, Scene::Entity ignored,
@@ -370,14 +386,14 @@ namespace Atlas::Scripting::Bindings {
             "GetHierarchyBounds", &Scene::Scene::GetHierarchyBounds,
             "GetGlobalMatrix", &Scene::Scene::GetGlobalMatrix,
             "GetEntityCount", &Scene::Scene::GetEntityCount,
-            "GetMainCamera", [](Scene::Scene& scene, sol::this_state state) -> sol::object {
+            "GetMainCamera", [](Scene::Scene& scene) -> sol::optional<ComponentRef<CameraComponent>> {
                 // The main camera is a component as well, scripts get a reference to it
                 auto& mainCamera = scene.GetMainCamera();
                 auto cameraSubset = scene.GetSubset<CameraComponent>();
                 for (auto entity : cameraSubset)
                     if (&cameraSubset.Get(entity) == &mainCamera)
-                        return sol::make_object(state, ComponentRef<CameraComponent>{ entity });
-                return sol::lua_nil;
+                        return ComponentRef<CameraComponent>{ entity };
+                return sol::nullopt;
             },
             "HasMainCamera", &Scene::Scene::HasMainCamera,
             "GetMeshes", &Scene::Scene::GetMeshes,
@@ -408,7 +424,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateEntityBindings(sol::table* ns) {
+    void GenerateEntityBindings(Binder* ns) {
 
         auto entityType = ns->new_usertype<Scene::Entity>("Entity",
             "IsValid", &Scene::Entity::IsValid,
@@ -477,7 +493,7 @@ namespace Atlas::Scripting::Bindings {
 
     }
 
-    void GenerateComponentBindings(sol::table* ns) {
+    void GenerateComponentBindings(Binder* ns) {
 
         auto playOverload = sol::overload(
             [](AnimationComponent& animationComponent, const ResourceHandle<Animation::Animation>& animation) {

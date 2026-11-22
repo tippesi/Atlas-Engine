@@ -4,7 +4,7 @@
 
 namespace Atlas::Scripting::Bindings {
 
-    void GeneratePostProcessingBindings(sol::table* ns) {
+    void GeneratePostProcessingBindings(Binder* ns) {
 
         ns->new_enum<PostProcessing::Upscaler>("Upscaler", {
             { "None", PostProcessing::Upscaler::None },

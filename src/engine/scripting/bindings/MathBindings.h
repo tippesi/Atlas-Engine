@@ -1,13 +1,14 @@
 #pragma once
 
 #include "../LuaScriptManager.h"
+#include "../Binder.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateMathBindings(sol::table* ns);
+    void GenerateMathBindings(Binder* ns);
 
     template<class T, class S, typename... Args1, typename... Args2>
-    sol::usertype<T> GenerateGlmTypeBinding(sol::table* ns, const std::string& name,
+    UsertypeBinder<T> GenerateGlmTypeBinding(Binder* ns, const std::string& name,
         const sol::constructor_list<Args1...> constructors, Args2&&... args) {
 
         auto multiplication_overloads = sol::overload(

@@ -269,6 +269,9 @@ namespace Atlas::MaterialGraph {
         // The next node gets this id, ids stay unique over the lifetime of a graph
         uint32_t nextNodeId = 1;
 
+        // Counted up by changes from scripts, an editor showing the graph compares it to notice them
+        uint32_t revision = 0;
+
     private:
         mutable std::mutex compiledMutex;
         Ref<const CompiledGraph> compiled;
