@@ -5,6 +5,7 @@
 #include <LuaJob.h>
 #include <McpTools.h>
 #include <Processes.h>
+#include <SceneTools.h>
 #include <project/ProjectSerializer.h>
 #include <scripting/LuaHost.h>
 
@@ -76,14 +77,20 @@ namespace Atlas::Editor {
                 reply(Bridge::McpServer::TextContent((redo ? "Redone: " : "Undone: ") + step));
                 } });
 
-        server.AddTool({ .name = "status", .description = "Which program serves the tools (the editor), its project and open scene",
+        server.AddTool({ .name = "status", .description = "Which program serves the tools (the editor), its project, open scene and selected entities",
             .call = [this, project](const json&, const Bridge::McpServer::Reply& reply) {
                 auto sceneWindow = this->getSceneWindow();
                 auto hasScene = sceneWindow && sceneWindow->scene.IsValid();
+                // The selected entities as "Name (#id)", Bridge.Find takes the #id
+                json selected = json::array();
+                if (hasScene && sceneWindow->scene.IsLoaded()) {
+                    for (auto ecsEntity : sceneWindow->sceneHierarchyPanel.selectedEntities)
+                        selected.push_back(Bridge::GetEntityLabel(Scene::Entity(ecsEntity, &sceneWindow->scene->entityManager)));
+                }
                 json status = { { "program", "editor" }, { "project", project->name }, { "projectFile", project->path },
                     { "scene", hasScene ? UI::SceneWindow::GetScenePath(sceneWindow->scene) : "" },
                     { "loaded", hasScene && sceneWindow->scene.IsLoaded() }, { "playing", sceneWindow && sceneWindow->isPlaying },
-                    { "selected", sceneWindow ? sceneWindow->sceneHierarchyPanel.selectedEntities.size() : 0 } };
+                    { "selected", selected } };
                 reply(Bridge::McpServer::TextContent(status.dump(2)));
                 } });
 

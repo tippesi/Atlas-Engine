@@ -378,6 +378,9 @@ namespace Atlas::Bridge {
             auto impostor = CreateRef<Mesh::Impostor>();
             impostor->compressTextures = importTextureFormat == Loader::ImportTextureFormat::KTX2;
             mesh->impostor = ResourceManager<Mesh::Impostor>::AddResource(impostorPath, impostor);
+            // A referenced impostor whose file is missing stays as a resource that failed to load, it takes the new one
+            if (!mesh->impostor.IsLoaded())
+                mesh->impostor.GetResource()->Swap(impostor);
         }
 
         // Settings the spec leaves out stay those of the impostor that is replaced, like in the editor
@@ -648,6 +651,8 @@ namespace Atlas::Bridge {
         // added entities are new. Other operations may rename or remove entities, they clear both
         std::unordered_set<std::string> names;
         bool namesCollected = false;
+        // The first add of a run compares the names without collecting them
+        bool addedWithoutNames = false;
         std::unordered_map<std::string, Scene::Entity> parents;
 
         ~EditContext() {
@@ -745,14 +750,24 @@ namespace Atlas::Bridge {
         json affected = json::array();
 
         auto name = operation.at("name").get<std::string>();
-        if (!context.namesCollected) {
-            auto nameSubset = scene.GetSubset<NameComponent>();
+        // A single add (e.g. Bridge.Edit from Lua) compares the names once, a run of adds collects them into a set
+        auto nameSubset = scene.GetSubset<NameComponent>();
+        if (!context.namesCollected && !context.addedWithoutNames) {
             for (auto entity : nameSubset)
-                context.names.insert(nameSubset.Get(entity).name);
-            context.namesCollected = true;
+                if (nameSubset.Get(entity).name == name)
+                    throw std::runtime_error("An entity named '" + name + "' already exists");
+            context.names.insert(name);
+            context.addedWithoutNames = true;
         }
-        if (!context.names.insert(name).second)
-            throw std::runtime_error("An entity named '" + name + "' already exists");
+        else {
+            if (!context.namesCollected) {
+                for (auto entity : nameSubset)
+                    context.names.insert(nameSubset.Get(entity).name);
+                context.namesCollected = true;
+            }
+            if (!context.names.insert(name).second)
+                throw std::runtime_error("An entity named '" + name + "' already exists");
+        }
 
         Scene::Entity parent;
         auto parentName = operation.contains("parent") ? operation["parent"].get<std::string>() : std::string();
@@ -2015,6 +2030,7 @@ namespace Atlas::Bridge {
             if (type != "add") {
                 context.names.clear();
                 context.namesCollected = false;
+                context.addedWithoutNames = false;
                 context.parents.clear();
             }
 
