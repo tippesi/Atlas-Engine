@@ -27,16 +27,11 @@ namespace Atlas::Editor::UI {
                 ImGui::TextDisabled("The graph has no parameters");
         }
 
-        auto selectTexture = [&](ResourceHandle<Texture::Texture2D> texture) { return textureSelectionPanel.Render(texture); };
+        // Graphs which only move vertices keep the surface of the material properties
         auto replacesSurface = compiled && compiled->valid && compiled->hasSurface;
         if (!replacesSurface) {
-            materialPanel.Render(Singletons::imguiWrapper, material, selectTexture);
-        }
-        else if (ImGui::TreeNodeEx("Properties for ray tracing", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-            Widgets::Callout("The graph describes the surface. Ray traced reflections, global illumination and shadows "
-                "don't run graphs, they use these values instead.", Theme::Accent());
-            materialPanel.Render(Singletons::imguiWrapper, material, selectTexture);
-            ImGui::TreePop();
+            materialPanel.Render(Singletons::imguiWrapper, material,
+                [&](ResourceHandle<Texture::Texture2D> texture) { return textureSelectionPanel.Render(texture); });
         }
 
         ImGui::PopID();

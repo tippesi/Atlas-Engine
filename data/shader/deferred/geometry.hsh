@@ -41,6 +41,9 @@ layout(push_constant) uniform constants {
     // See TranslucentRenderer::PushConstants, 1 without refraction
     float refractiveIndex;
     float thickness;
+    // Packed with packColorVector
+    uint attenuationColor;
+    float attenuationDistance;
 #endif
 #ifdef MATERIAL_GRAPH
     uint materialGraphOffset;

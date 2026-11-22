@@ -135,6 +135,8 @@ namespace Atlas::Scripting::Bindings {
             "blendMode", &Material::blendMode,
             "refractiveIndex", &Material::refractiveIndex,
             "thickness", &Material::thickness,
+            "attenuationColor", &Material::attenuationColor,
+            "attenuationDistance", &Material::attenuationDistance,
             "IsTranslucent", &Material::IsTranslucent,
             "baseColorMap", &Material::baseColorMap,
             "opacityMap", &Material::opacityMap,

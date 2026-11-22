@@ -1,6 +1,9 @@
 #include "TranslucentRenderer.h"
 #include "VolumetricRenderer.h"
 
+#include "../common/ColorConverter.h"
+#include "../common/MathHelper.h"
+#include "../common/Packing.h"
 #include "../materialgraph/PipelineCache.h"
 
 namespace Atlas {
@@ -207,6 +210,10 @@ namespace Atlas {
                 macros.push_back("SOFT_BODY");
             }
 
+            // Graphs give the refractive index per fragment, a pipeline of its own decides whether there is refraction
+            if (material->Refracts())
+                macros.push_back("REFRACTION");
+
             auto desc = baseConfig.graphicsPipelineDesc;
             if (drawPass == DrawPass::FrontLayer) {
                 macros.push_back("FRONT_LAYER");
@@ -229,7 +236,7 @@ namespace Atlas {
                 blend.blendEnable = VK_TRUE;
                 blend.colorBlendOp = VK_BLEND_OP_ADD;
                 blend.alphaBlendOp = VK_BLEND_OP_ADD;
-                if (material->blendMode == MaterialBlendMode::Multiply) {
+                if (material->GetBlendMode() == MaterialBlendMode::Multiply) {
                     macros.push_back("BLEND_MULTIPLY");
                     blend.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
                     blend.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
@@ -238,7 +245,7 @@ namespace Atlas {
                 }
                 else {
                     // Additive surfaces have no coverage in the alpha of their color
-                    macros.push_back(material->blendMode == MaterialBlendMode::Additive ? "BLEND_ADDITIVE" : "BLEND_ALPHA");
+                    macros.push_back(material->GetBlendMode() == MaterialBlendMode::Additive ? "BLEND_ADDITIVE" : "BLEND_ALPHA");
                     blend.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
                     blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
                     blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -281,13 +288,13 @@ namespace Atlas {
                         const auto& material = subData.material;
                         if (!material.IsLoaded() || !material->IsTranslucent())
                             continue;
-                        if (drawPass == DrawPass::FrontLayer && material->blendMode != MaterialBlendMode::Alpha)
+                        if (drawPass == DrawPass::FrontLayer && material->GetBlendMode() != MaterialBlendMode::Alpha)
                             continue;
                         if (drawPass == DrawPass::RefractionBackFaces && !material->Refracts())
                             continue;
                         if (drawPass == DrawPass::Blended && backFaces) {
                             // Refracting front faces replace the background, back faces behind them would be overwritten
-                            if ((!material->twoSided && mesh->cullBackFaces) || material->Refracts())
+                            if ((!material->IsTwoSided() && mesh->cullBackFaces) || material->Refracts())
                                 continue;
                         }
                         drawSubData(instance, subData, mesh, backFaces);
@@ -364,6 +371,9 @@ namespace Atlas {
                     .firstDraw = 0,
                     .refractiveIndex = material.Refracts() ? material.refractiveIndex : 1.0f,
                     .thickness = material.thickness,
+                    .attenuationColor = uint32_t(Common::Packing::PackUnsignedVector3x10_1x2(
+                        vec4(::Helper::Math::Saturate(Common::ColorConverter::ConvertSRGBToLinear(material.attenuationColor)), 0.0f))),
+                    .attenuationDistance = material.attenuationDistance,
                     .materialGraphOffset = opaqueConstants.materialGraphOffset
                 };
 

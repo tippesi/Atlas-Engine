@@ -34,6 +34,14 @@ Material GetMaterial(vec2 texCoord) {
     if (material.emissiveMap) {
         material.emissiveColor *= textureLod(emissiveTexture, texCoord, 0).rgb;
     }
+    if (material.reflectanceMap) {
+        material.reflectance = textureLod(roughnessMetalnessAoTexture, texCoord, 0).a;
+    }
+    // The transmitted light has the base color, the G-buffer holds the amount
+    if (material.transmissionMap) {
+        material.transmissiveColor = material.baseColor * textureLod(baseColorTexture, texCoord, 0).a;
+        material.transmissive = any(greaterThan(material.transmissiveColor, vec3(0.0)));
+    }
     return material;
 }
 

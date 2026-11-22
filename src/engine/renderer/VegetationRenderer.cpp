@@ -76,7 +76,7 @@ namespace Atlas {
 
                     auto pushConstants = PushConstants {
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
-                        .twoSided = material->twoSided ? 1u : 0u,
+                        .twoSided = material->IsTwoSided() ? 1u : 0u,
                         .materialIdx = uint32_t(materialMap[material.Get().get()]),
                         .normalScale = material->normalScale,
                         .displacementScale = material->displacementScale,
@@ -109,7 +109,7 @@ namespace Atlas {
 
             auto material = subData->material;
 
-            if (material->twoSided || !mesh->cullBackFaces) {
+            if (material->IsTwoSided() || !mesh->cullBackFaces) {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 

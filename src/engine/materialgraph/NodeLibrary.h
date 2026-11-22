@@ -106,6 +106,12 @@ namespace Atlas::MaterialGraph {
         static const std::string aoPin;
         static const std::string emissivePin;
         static const std::string opacityPin;
+        static const std::string reflectancePin;
+        static const std::string transmissionPin;
+        static const std::string refractiveIndexPin;
+        static const std::string thicknessPin;
+        static const std::string attenuationColorPin;
+        static const std::string attenuationDistancePin;
 
     private:
         static std::vector<NodeDefinition> CreateDefinitions();

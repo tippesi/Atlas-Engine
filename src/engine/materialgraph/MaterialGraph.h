@@ -12,6 +12,19 @@
 #include <unordered_map>
 #include <vector>
 
+namespace Atlas {
+
+    // How a translucent surface is combined with what is behind it, None is opaque or cut out by the opacity
+    enum class MaterialBlendMode {
+        None = 0,
+        // Premultiplied, the reflections stay at full strength
+        Alpha,
+        Additive,
+        Multiply
+    };
+
+}
+
 namespace Atlas::MaterialGraph {
 
     enum class ValueType {
@@ -133,6 +146,8 @@ namespace Atlas::MaterialGraph {
         // The opacity only depends on parameters, it's evaluated per vertex and cuts out whole draws
         bool hasUniformOpacity = false;
         bool writesNormal = false;
+        // A refractive index other than 1 and a thickness, linked pins count as both
+        bool refracts = false;
 
         // Shadow files are empty if the regular shadow pipeline can be used
         std::string mainVertexFile;
@@ -248,6 +263,9 @@ namespace Atlas::MaterialGraph {
 
         const Link* GetInputLink(uint32_t toNode, const std::string& toPin) const;
 
+        // The value of an input of the surface output without a link, the default of the pin without a surface output
+        vec4 GetSurfaceValue(const std::string& pin) const;
+
         // Generates the shaders from the current state, has to be called after a structural change
         Ref<const CompiledGraph> Compile();
 
@@ -261,6 +279,13 @@ namespace Atlas::MaterialGraph {
 
         // Largest distance a vertex moves in object space, culling needs it since the bounds stay those of the mesh
         float maxDisplacement = 0.0f;
+
+        // The material type of every material using the graph, they are pipeline state and can't change per fragment
+        MaterialBlendMode blendMode = MaterialBlendMode::None;
+        bool twoSided = false;
+
+        // Loaded from a file of the time materials held the material type and the volume, see Material::MigrateGraphSettings
+        std::atomic_bool legacyMaterialSettings = false;
 
         // With any user pipelines are created in place instead of in the background, e.g. while editing to not show
         // the fallback

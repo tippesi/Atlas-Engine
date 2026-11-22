@@ -36,6 +36,14 @@ Nodes with the same code share one function. Errors in the code show up when the
 Graph files and bridge jobs store the inputs as `[["name", "vec3"], ...]` and the result type as `"codeOutputType": "vec3"`,
 types are `float`, `vec2`, `vec3` and `vec4`.
 
+**Material type and volume:** the blend mode (opaque, alpha, additive, multiply) and two sidedness are settings of the graph
+(`Material type` in the graph panel), they are pipeline state of every material using it. The surface output also has
+`Reflectance`, `Transmission` (the amount of the base color passing thin surfaces from behind), `Refractive index`,
+`Thickness`, `Attenuation color` and `Attenuation distance`, so materials with a graph describing the surface don't use any
+of their regular properties. Graphs saved before these existed take them once from the first material which loads them
+(`Material::MigrateGraphSettings`), save the graph to keep them. Values which should differ between materials of one graph
+belong into parameters.
+
 **Opacity:** an `Opacity` that varies over the surface cuts out fragments, which turns off early depth tests and costs time even
 where nothing is cut out. An `Opacity` that only depends on parameters and constants, e.g. a fade or visibility switch per
 material, is evaluated per vertex instead and hides the whole draw, the fragments stay as fast as opaque ones.
@@ -44,8 +52,9 @@ material, is evaluated per vertex instead and hides the whole draw, the fragment
 
 - The lighting model is the regular one, graphs write into the G-buffer. Materials with a blend mode use the same surface in
   the translucent pass, their `Opacity` is the coverage instead of cutting out fragments (a uniform one still hides the draw at 0).
-- Ray tracing doesn't run graphs: reflections, GI, ray traced shadows and the path tracer see the mesh without displacement and
-  the regular material properties, which act as the fallback.
+- Ray tracing pipelines run the surface of graphs in hit groups (devices with shader execution reordering), the hit gets its
+  values packed into eight words (`raytracer/graphHit.hsh`). Ray queries on other devices don't run graphs and use the bake
+  (see below) and the values of the surface output.
 - Impostors show the surface of a graph at the `Time` of its bake settings as it looked when they were generated, without
   displacement and emission. Graphs whose shader doesn't compile show the regular properties, the log says which ones.
   Vegetation clutter and terrain don't use graphs.

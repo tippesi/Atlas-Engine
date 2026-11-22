@@ -20,6 +20,12 @@ namespace Atlas::MaterialGraph {
     const std::string NodeLibrary::aoPin = "Ambient occlusion";
     const std::string NodeLibrary::emissivePin = "Emissive";
     const std::string NodeLibrary::opacityPin = "Opacity";
+    const std::string NodeLibrary::reflectancePin = "Reflectance";
+    const std::string NodeLibrary::transmissionPin = "Transmission";
+    const std::string NodeLibrary::refractiveIndexPin = "Refractive index";
+    const std::string NodeLibrary::thicknessPin = "Thickness";
+    const std::string NodeLibrary::attenuationColorPin = "Attenuation color";
+    const std::string NodeLibrary::attenuationDistancePin = "Attenuation distance";
 
     const InputDefinition* NodeDefinition::FindInput(const std::string& name) const {
 
@@ -382,7 +388,9 @@ namespace Atlas::MaterialGraph {
             "the surface is the one of the regular material properties",
             .kind = NodeKind::SurfaceOutput, .stages = SurfaceStage,
             .inputs = { { baseColorPin, V3, vec4(1.0f) }, { normalPin, V3, vec4(0.0f, 0.0f, 1.0f, 0.0f) }, { roughnessPin, F, vec4(0.8f) },
-                { metalnessPin, F }, { aoPin, F, vec4(1.0f) }, { emissivePin, V3 }, { opacityPin, F, vec4(1.0f) } } });
+                { metalnessPin, F }, { aoPin, F, vec4(1.0f) }, { emissivePin, V3 }, { opacityPin, F, vec4(1.0f) },
+                { reflectancePin, F, vec4(0.5f) }, { transmissionPin, F }, { refractiveIndexPin, F, vec4(1.5f) },
+                { thicknessPin, F }, { attenuationColorPin, V3, vec4(1.0f) }, { attenuationDistancePin, F } } });
 
         return definitions;
 

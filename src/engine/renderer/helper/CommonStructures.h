@@ -18,7 +18,10 @@ namespace Atlas {
             FEATURE_EMISSIVE_MAP = (1 << 7),
             FEATURE_TRANSMISSION = (1 << 8),
             FEATURE_VERTEX_COLORS = (1 << 9),
-            FEATURE_TERRAIN = (1 << 10)
+            FEATURE_TERRAIN = (1 << 10),
+            // The G-buffer holds the value, written by the fragments of material graphs
+            FEATURE_REFLECTANCE_MAP = (1 << 11),
+            FEATURE_TRANSMISSION_MAP = (1 << 12)
         };
 
         struct alignas(16) Cascade {

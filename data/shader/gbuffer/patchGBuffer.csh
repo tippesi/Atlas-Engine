@@ -16,7 +16,8 @@ void main() {
         coord.y < size.y) {
 
         vec2 normal = imageLoad(normalImage, coord).rg;
-        vec3 roughnessMetalnessAo = imageLoad(roughnessMetalnessAoImage, coord).rgb;
+        // Alpha holds the reflectance of material graphs, see FEATURE_REFLECTANCE_MAP
+        vec4 roughnessMetalnessAo = imageLoad(roughnessMetalnessAoImage, coord);
 
         vec2 geometryNormal = texelFetch(geometryNormalTexture, coord, 0).rg;
 
@@ -30,7 +31,7 @@ void main() {
         roughnessMetalnessAo.b = material.aoMap || material.terrain ? roughnessMetalnessAo.b * material.ao : material.ao;
 
         imageStore(normalImage, coord, vec4(normal, 0.0, 0.0));
-        imageStore(roughnessMetalnessAoImage, coord, vec4(roughnessMetalnessAo, 0.0));
+        imageStore(roughnessMetalnessAoImage, coord, roughnessMetalnessAo);
         
     }
 

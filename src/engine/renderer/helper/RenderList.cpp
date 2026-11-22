@@ -336,7 +336,7 @@ namespace Atlas {
                         continue;
                     HashCombine(contentHash, subData.material->graphParameterVersion);
                     HashCombine(contentHash, subData.material->tiling);
-                    HashCombine(contentHash, int32_t(subData.material->blendMode));
+                    HashCombine(contentHash, int32_t(subData.material->GetBlendMode()));
                     HashCombine(contentHash, subData.material->opacity);
                 }
                 if (mesh->impostor.IsLoaded()) {

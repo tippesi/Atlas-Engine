@@ -117,6 +117,8 @@ namespace Atlas::MaterialGraph {
         j = json{
             {"name", p.name},
             {"maxDisplacement", p.maxDisplacement},
+            {"blendMode", int32_t(p.blendMode)},
+            {"twoSided", p.twoSided},
             {"nodes", p.nodes},
             {"links", p.links},
         };
@@ -130,6 +132,11 @@ namespace Atlas::MaterialGraph {
         j.at("links").get_to(p.links);
 
         try_get_json(j, "maxDisplacement", p.maxDisplacement);
+        p.legacyMaterialSettings = !j.contains("blendMode");
+        int32_t blendMode = 0;
+        try_get_json(j, "blendMode", blendMode);
+        p.blendMode = MaterialBlendMode(blendMode);
+        try_get_json(j, "twoSided", p.twoSided);
 
         p.nextNodeId = 1;
         for (const auto& node : p.nodes)

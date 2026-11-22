@@ -381,7 +381,7 @@ namespace Atlas {
                 // read it from the material
                 HashCombine(hash, material->opacityMap.IsValid() || material->IsTranslucent() ? -1.0f : material->opacity);
                 HashCombine(hash, material->HasGraph());
-                HashCombine(hash, int32_t(material->blendMode));
+                HashCombine(hash, int32_t(material->GetBlendMode()));
             }
             return hash;
 

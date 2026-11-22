@@ -65,7 +65,7 @@ namespace Atlas {
             const auto& material = subData.material;
             if (!material.IsLoaded())
                 return false;
-            return type == RenderPassType::Main ? !material->IsTranslucent() : material->blendMode != MaterialBlendMode::Additive;
+            return type == RenderPassType::Main ? !material->IsTranslucent() : material->GetBlendMode() != MaterialBlendMode::Additive;
         }
 
         struct EntityBatch {

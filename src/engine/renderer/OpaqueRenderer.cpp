@@ -119,7 +119,7 @@ namespace Atlas {
             auto pushConstants = PushConstants {
                 .draw = {
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
-                    .twoSided = material->twoSided ? 1u : 0u,
+                    .twoSided = material->IsTwoSided() ? 1u : 0u,
                     .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
                     .materialIdx = materialIdx,
                     .normalScale = material->normalScale,
@@ -167,7 +167,7 @@ namespace Atlas {
 
             auto material = subData->material;
 
-            if (material->twoSided || !mesh->cullBackFaces) {
+            if (material->IsTwoSided() || !mesh->cullBackFaces) {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 

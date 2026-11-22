@@ -212,7 +212,7 @@ namespace Atlas {
                             .time = material->graphBake.time,
                             .invertUVs = mesh->invertUVs ? 1u : 0u,
                             .distanceToPlaneCenter = distToCenter,
-                            .twoSided = material->twoSided ? 1u : 0u
+                            .twoSided = material->IsTwoSided() ? 1u : 0u
                         };
                         commandList->PushConstants("constants", &pushConstants);
 
@@ -247,7 +247,7 @@ namespace Atlas {
                         .metalness = material->metalness,
                         .ao = material->ao,
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
-                        .twoSided = material->twoSided ? 1u : 0u,
+                        .twoSided = material->IsTwoSided() ? 1u : 0u,
                         .normalScale = material->normalScale,
                         .displacementScale = material->displacementScale,
                         .distanceToPlaneCenter = distToCenter
@@ -334,7 +334,7 @@ namespace Atlas {
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 
-            if (material->twoSided || !mesh->cullBackFaces) {
+            if (material->IsTwoSided() || !mesh->cullBackFaces) {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 

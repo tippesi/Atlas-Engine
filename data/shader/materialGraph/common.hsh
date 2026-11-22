@@ -72,6 +72,14 @@ struct MaterialSurfaceOutput {
     float metalness;
     float ao;
     float opacity;
+    float reflectance;
+    // The amount of light passing thin surfaces from behind, it has the base color
+    float transmission;
+    // The volume of refracting surfaces
+    float refractiveIndex;
+    float thickness;
+    vec3 attenuationColor;
+    float attenuationDistance;
 };
 
 MaterialSurfaceOutput CreateMaterialSurfaceOutput() {
@@ -85,6 +93,12 @@ MaterialSurfaceOutput CreateMaterialSurfaceOutput() {
     surface.metalness = 0.0;
     surface.ao = 1.0;
     surface.opacity = 1.0;
+    surface.reflectance = 0.5;
+    surface.transmission = 0.0;
+    surface.refractiveIndex = 1.5;
+    surface.thickness = 0.0;
+    surface.attenuationColor = vec3(1.0);
+    surface.attenuationDistance = 0.0;
 
     return surface;
 

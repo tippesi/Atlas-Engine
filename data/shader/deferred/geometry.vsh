@@ -196,8 +196,9 @@ void main() {
     MaterialVertexInput graphInput = CreateMaterialVertexInput(vPosition, position, normal, graphTangent, graphTexCoord, graphTexCoord1,
         graphColor, mMatrix, globalData.time, PushConstants.materialGraphOffset);
 
-#ifdef MATERIAL_GRAPH_VERTEX_OPACITY
-    // The opacity is the same for the whole draw, moving all vertices outside the view keeps fragments free of discards
+#if defined(MATERIAL_GRAPH_VERTEX_OPACITY) && !defined(REFRACTION)
+    // The opacity is the same for the whole draw, moving all vertices outside the view keeps fragments free of discards.
+    // Refracting surfaces stay without opacity, they are clear glass
 #ifdef TRANSLUCENT_PASS
     if (EvaluateMaterialOpacity(graphInput) <= 0.0) {
 #else

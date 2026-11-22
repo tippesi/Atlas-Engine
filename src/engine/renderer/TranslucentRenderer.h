@@ -53,6 +53,9 @@ namespace Atlas {
                 // 1 without refraction
                 float refractiveIndex;
                 float thickness;
+                // RGB packed as 10:10:10
+                uint32_t attenuationColor;
+                float attenuationDistance;
                 uint32_t materialGraphOffset;
             };
 

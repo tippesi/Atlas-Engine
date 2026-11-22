@@ -155,10 +155,13 @@ namespace Atlas::Scene {
                 if (!compiled->hasSurface)
                     continue;
 
+                // Reflectance and transmission are replaced by the G-buffer, the values of the material stay for the
+                // passes which only read this entry
                 auto features = materials[data.materialIdx].features |
                     Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP | Renderer::MaterialFeatures::FEATURE_NORMAL_MAP |
                     Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP | Renderer::MaterialFeatures::FEATURE_METALNESS_MAP |
-                    Renderer::MaterialFeatures::FEATURE_AO_MAP | Renderer::MaterialFeatures::FEATURE_EMISSIVE_MAP;
+                    Renderer::MaterialFeatures::FEATURE_AO_MAP | Renderer::MaterialFeatures::FEATURE_EMISSIVE_MAP |
+                    Renderer::MaterialFeatures::FEATURE_REFLECTANCE_MAP | Renderer::MaterialFeatures::FEATURE_TRANSMISSION_MAP;
 
                 materials.push_back(PackMaterial(vec3(1.0f), vec3(1.0f),
                     Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor), 1.0f, material->tiling,

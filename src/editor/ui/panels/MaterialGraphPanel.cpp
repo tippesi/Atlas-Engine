@@ -606,8 +606,8 @@ namespace Atlas::Editor::UI {
                     Pill("Moves vertices", Theme::Success(), "The vertex output moves the vertices of the mesh. "
                         "Set the largest displacement, culling needs it", first);
                 if (compiled->hasSurface)
-                    Pill("Surface", Theme::Accent(), "The surface output describes the surface. Ray tracing uses the regular "
-                        "properties or a bake of the graph", first);
+                    Pill("Surface", Theme::Accent(), "The surface output describes the surface, also for ray tracing. GPUs "
+                        "without ray tracing pipelines use a bake of the graph", first);
                 if (compiled->hasUniformOpacity)
                     Pill("Cutout per draw", Theme::Accent(), "Opacity only depends on parameters and constants: it is evaluated "
                         "per vertex and hides the whole draw, fragments stay as fast as opaque ones", first);
@@ -617,6 +617,22 @@ namespace Atlas::Editor::UI {
                 if (compiled->UsesShadowPipeline())
                     Pill("Own shadows", Theme::Accent(), "Moved vertices or cut out fragments need their own shadow shaders, "
                         "otherwise shadows use the regular pipeline", first);
+            }
+
+            // The material type is pipeline state of every material using the graph
+            if (Widgets::BeginProperties("Material type")) {
+                const char* blendModes[] = { "Opaque", "Alpha", "Additive", "Multiply" };
+                auto blendMode = int32_t(graph.blendMode);
+                Widgets::PropertyLabel("Blend mode", "Opaque surfaces cut out by the opacity, the others are blended by it in a "
+                    "forward pass. Alpha blended surfaces refract with a refractive index other than 1 and a thickness");
+                if (ImGui::Combo("##Blend mode", &blendMode, blendModes, IM_ARRAYSIZE(blendModes))) {
+                    graph.blendMode = MaterialBlendMode(blendMode);
+                    compileRequested = true;
+                }
+                Widgets::PropertyLabel("Two sided");
+                if (ImGui::Checkbox("##Two sided", &graph.twoSided))
+                    compileRequested = true;
+                Widgets::EndProperties();
             }
 
             // Only graphs moving vertices need it, a value from before stays editable to remove it

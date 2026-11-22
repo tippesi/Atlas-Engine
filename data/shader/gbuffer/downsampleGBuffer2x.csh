@@ -123,14 +123,15 @@ void main() {
             (depthIdx < 3 ? geometryNormal01 : geometryNormal11);
         imageStore(geometryNormalOut, coord, vec4(geometryNormal, 0.0, 0.0));
 
-        vec3 roughnessMetallicAo00 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(0, 0), 0).rgb;
-        vec3 roughnessMetallicAo10 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(1, 0), 0).rgb;
-        vec3 roughnessMetallicAo01 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(0, 1), 0).rgb;
-        vec3 roughnessMetallicAo11 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(1, 1), 0).rgb;
+        vec4 roughnessMetallicAo00 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(0, 0), 0);
+        vec4 roughnessMetallicAo10 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(1, 0), 0);
+        vec4 roughnessMetallicAo01 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(0, 1), 0);
+        vec4 roughnessMetallicAo11 = texelFetch(roughnessMetallicAoIn, coord * 2 + ivec2(1, 1), 0);
 
-        vec3 roughnessMetallicAo = depthIdx < 2 ? (depthIdx < 1 ? roughnessMetallicAo00 : roughnessMetallicAo10) :
+        // Alpha holds the reflectance of material graphs
+        vec4 roughnessMetallicAo = depthIdx < 2 ? (depthIdx < 1 ? roughnessMetallicAo00 : roughnessMetallicAo10) :
             (depthIdx < 3 ? roughnessMetallicAo01 : roughnessMetallicAo11);
-        imageStore(roughnessMetallicAoOut, coord, vec4(roughnessMetallicAo, 1.0));
+        imageStore(roughnessMetallicAoOut, coord, roughnessMetallicAo);
 
         vec2 velocity00 = texelFetch(velocityIn, coord * 2 + ivec2(0, 0), 0).rg;
         vec2 velocity10 = texelFetch(velocityIn, coord * 2 + ivec2(1, 0), 0).rg;

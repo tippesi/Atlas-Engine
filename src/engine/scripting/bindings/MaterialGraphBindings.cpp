@@ -59,6 +59,8 @@ namespace Atlas::Scripting::Bindings {
         auto graphType = ns->new_usertype<Graph>("MaterialGraph", sol::no_constructor,
             "name", &Graph::name,
             "maxDisplacement", &Graph::maxDisplacement,
+            "blendMode", &Graph::blendMode,
+            "twoSided", &Graph::twoSided,
             "revision", sol::readonly(&Graph::revision),
             "GetNodes", [](Graph& graph, sol::this_state state) {
                 sol::state_view lua(state);

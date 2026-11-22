@@ -18,8 +18,7 @@ namespace Atlas::Editor::UI {
     public:
         MaterialGraphParametersPanel() : Panel("Material graph parameters") {}
 
-        // The parameters, followed by the properties of the material. Ray tracing uses them instead of a graph which
-        // describes the surface
+        // The parameters, followed by the properties of the material for graphs which don't describe the surface
         void Render(Ref<Material>& material);
 
         void RenderParameters(Material& material, const MaterialGraph::CompiledGraph& compiled);

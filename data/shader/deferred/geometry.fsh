@@ -49,6 +49,12 @@ layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out vec3 emissiveFS;
 layout (location = 5) out uint materialIdxFS;
 layout (location = 6) out vec2 velocityFS;
+#ifdef MATERIAL_GRAPH_SURFACE
+// Graphs write the amount of transmission next to the base color and their reflectance next to the roughness, see
+// FEATURE_TRANSMISSION_MAP and FEATURE_REFLECTANCE_MAP
+layout (location = 0, component = 3) out float transmissionFS;
+layout (location = 3, component = 3) out float reflectanceFS;
+#endif
 #endif
 
 layout(location=0) in vec3 positionVS;
@@ -170,6 +176,10 @@ void main() {
 
     baseColorFS = surface.baseColor;
     emissiveFS = surface.emissive;
+#ifndef TRANSLUCENT_PASS
+    reflectanceFS = surface.reflectance;
+    transmissionFS = surface.transmission;
+#endif
     roughnessMetalnessAoFS = vec3(surface.roughness, surface.metalness, surface.ao);
     geometryNormalFS = EncodeNormal(graphGeometryNormal);
 
@@ -285,8 +295,10 @@ void main() {
 
 #if defined(FRONT_LAYER) || defined(REFRACTION_BACK_FACES)
     // Only surfaces with some coverage reflect, refracting ones are clear glass without it like in the path tracer
-    if (opacity <= 0.0 && PushConstants.refractiveIndex == 1.0)
+#ifndef REFRACTION
+    if (opacity <= 0.0)
         discard;
+#endif
 #endif
 
 #ifdef REFRACTION_BACK_FACES
@@ -309,9 +321,24 @@ void main() {
     vec3 shadingGeometryNormal = DecodeNormal(geometryNormalFS);
     vec3 shadingNormal = material.normalMap ? DecodeNormal(normalFS) : shadingGeometryNormal;
 
+    float refractiveIndex = PushConstants.refractiveIndex;
+    float thickness = PushConstants.thickness;
+    material.attenuationColor = unpackColorVector(int(PushConstants.attenuationColor)).rgb;
+    material.attenuationDistance = PushConstants.attenuationDistance;
+#ifdef MATERIAL_GRAPH_SURFACE
+    // Graphs describe the reflectance, the transmission and the volume per fragment
+    material.reflectance = surface.reflectance;
+    material.transmissiveColor = material.baseColor * surface.transmission;
+    material.transmissive = surface.transmission > 0.0;
+    refractiveIndex = surface.refractiveIndex;
+    thickness = surface.thickness;
+    material.attenuationColor = surface.attenuationColor;
+    material.attenuationDistance = surface.attenuationDistance;
+#endif
+
     float coverage;
     colorFS = ShadeTranslucent(material, shadingNormal, shadingGeometryNormal, positionVS, saturate(opacity),
-        PushConstants.refractiveIndex, PushConstants.thickness, coverage);
+        refractiveIndex, thickness, coverage);
     coverageFS = vec4(coverage, 0.0, 0.0, coverage);
     // The upscaler reprojects by the surface as much as it covers the background, light added or multiplied keeps
     // the motion of the background

@@ -120,7 +120,7 @@ namespace Atlas::MaterialGraph {
         if (!impostorMaterial)
             pipelineDesc.depthStencilInputInfo = Graphics::Initializers::InitPipelineDepthStencilStateCreateInfo(false, false,
                 VK_COMPARE_OP_ALWAYS);
-        if (!impostorMaterial || impostorMaterial->twoSided || !mesh->cullBackFaces)
+        if (!impostorMaterial || impostorMaterial->IsTwoSided() || !mesh->cullBackFaces)
             pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
 
         std::vector<std::string> macros;

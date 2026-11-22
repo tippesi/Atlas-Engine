@@ -30,6 +30,9 @@ namespace Atlas::MaterialGraph {
             nodes = that.nodes;
             links = that.links;
             maxDisplacement = that.maxDisplacement;
+            blendMode = that.blendMode;
+            twoSided = that.twoSided;
+            legacyMaterialSettings = that.legacyMaterialSettings.load();
             nextNodeId = that.nextNodeId;
 
             auto thatCompiled = that.GetCompiled();
@@ -132,6 +135,20 @@ namespace Atlas::MaterialGraph {
         auto iter = std::find_if(links.begin(), links.end(),
             [&](const Link& link) { return link.toNode == toNode && link.toPin == toPin; });
         return iter != links.end() ? &*iter : nullptr;
+
+    }
+
+    vec4 Graph::GetSurfaceValue(const std::string& pin) const {
+
+        auto definition = NodeLibrary::Find(NodeLibrary::surfaceOutputType);
+        auto surface = std::find_if(nodes.begin(), nodes.end(),
+            [](const Node& node) { return node.type == NodeLibrary::surfaceOutputType; });
+        if (surface != nodes.end()) {
+            auto iter = surface->inputValues.find(pin);
+            if (iter != surface->inputValues.end())
+                return iter->second;
+        }
+        return definition->FindInput(pin)->defaultValue;
 
     }
 

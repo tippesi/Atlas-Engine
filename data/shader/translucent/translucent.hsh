@@ -1,5 +1,5 @@
 // Forward shading of translucent surfaces, included by the geometry fragment shader with TRANSLUCENT. One blend mode
-// macro is set: BLEND_ALPHA (premultiplied), BLEND_ADDITIVE or BLEND_MULTIPLY
+// macro is set: BLEND_ALPHA (premultiplied), BLEND_ADDITIVE or BLEND_MULTIPLY. Refracting materials have REFRACTION
 
 #define SHADOW_FILTER_VOGEL
 
@@ -264,6 +264,8 @@ vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveInde
     float backDepth = textureLod(refractionBackDepthTexture, texCoord, 0.0).r;
     float backViewDepth = ConvertDepthToViewSpaceDepth(backDepth);
     bool closed = backDepth < 1.0 && backViewDepth < surface.P.z;
+    // The path of the ray inside the surface, which absorbs the light on it
+    float insideDistance = thickness;
     if (closed) {
         // The distance to the back face along the refracted ray, found in a few fixed point steps
         float distance = length(ConvertDepthToViewSpace(backDepth, texCoord) - surface.P);
@@ -279,6 +281,7 @@ vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveInde
 
         vec3 backNormal = DecodeNormal(textureLod(refractionBackNormalTexture, exitTexCoord, 0.0).rg);
         exitPosition = surface.P + inside * distance;
+        insideDistance = distance;
         exitDirection = refract(inside, -backNormal, refractiveIndex);
         // Total internal reflection keeps the ray inside, it's approximated by the reflected direction
         if (dot(exitDirection, exitDirection) == 0.0)
@@ -288,6 +291,11 @@ vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveInde
     // Open surfaces like water planes are a slab of the thickness, the background inside it is seen directly
     vec2 backgroundTexCoord;
     int result = closed ? traceLost : TraceBackground(surface.P, inside, thickness, surface.P.z, backgroundTexCoord);
+    if (result == traceHit) {
+        float hitDepth = textureLod(refractionDepthTexture, backgroundTexCoord, 0.0).r;
+        insideDistance = distance(ConvertDepthToViewSpace(hitDepth, backgroundTexCoord), surface.P);
+    }
+    vec3 absorption = GetAbsorption(surface.material.attenuationColor, surface.material.attenuationDistance, insideDistance);
     if (result != traceHit && result != traceOccluded)
         result = TraceBackground(exitPosition, exitDirection, 64.0, surface.P.z, backgroundTexCoord);
     // Where surfaces in front of this one hide the refracted background, the one straight behind is seen
@@ -300,13 +308,13 @@ vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveInde
     vec2 hitPixel = backgroundTexCoord * translucentUniforms.resolution;
     float magnification = clamp(min(length(dFdx(hitPixel)), length(dFdy(hitPixel))), 1.0, 16.0);
     if (seesBackground)
-        return textureLod(refractionTexture, backgroundTexCoord,
+        return absorption * textureLod(refractionTexture, backgroundTexCoord,
             GetRefractionMipLevel(spread * magnification, surface.P, backgroundTexCoord)).rgb;
 
     // Rays behind the camera see the probe, its mips are filtered for the roughness of reflections
     vec3 worldDirection = normalize(mat3(globalData.ivMatrix) * exitDirection);
     float probeMipLevel = sqrt(spread) * float(translucentUniforms.specularProbeMipLevels - 1);
-    return textureLod(specularProbe, worldDirection, probeMipLevel).rgb;
+    return absorption * textureLod(specularProbe, worldDirection, probeMipLevel).rgb;
 #else
     vec3 offsetPosition = surface.P - vec3(surface.N.xy * (refractiveIndex - 1.0) * thickness, 0.0);
     // Off screen the image goes on like at its edge
@@ -314,7 +322,8 @@ vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveInde
     // Surfaces in front of this one stay in front, they would bleed into it
     float backgroundViewDepth = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, offsetTexCoord, 0.0).r);
     vec2 refractedTexCoord = backgroundViewDepth < surface.P.z ? offsetTexCoord : texCoord;
-    return textureLod(refractionTexture, refractedTexCoord, GetRefractionMipLevel(spread, surface.P, refractedTexCoord)).rgb;
+    vec3 absorption = GetAbsorption(surface.material.attenuationColor, surface.material.attenuationDistance, thickness);
+    return absorption * textureLod(refractionTexture, refractedTexCoord, GetRefractionMipLevel(spread, surface.P, refractedTexCoord)).rgb;
 #endif
 
 }
@@ -354,15 +363,19 @@ vec4 ShadeTranslucent(Material material, vec3 normal, vec3 geometryNormal, vec3 
     vec3 color = (direct + indirectDiffuse + specular + emissive) * opacity;
     return vec4(color * fog.a, 0.0);
 #else
-    // Reflections and emission keep their strength on clear surfaces
+    // Reflections and emission keep their strength on clear surfaces. What the surface reflects doesn't pass it, the
+    // background is dimmed by the reflected part of the light like in the path tracer
+    vec3 transmittance = (1.0 - opacity) * (1.0 - EvaluateIndirectSpecularBRDF(surface));
+    float alpha = 1.0 - dot(transmittance, vec3(1.0 / 3.0));
     vec3 color = direct + indirectDiffuse * opacity + specular + emissive;
-    color = color * fog.a + fog.rgb * opacity;
-    if (refractiveIndex == 1.0)
-        return vec4(color, opacity);
-
+    color = color * fog.a + fog.rgb * alpha;
+#ifndef REFRACTION
+    return vec4(color, alpha);
+#else
     // The refracted background replaces the one behind the surface
     vec3 background = GetRefractedBackground(surface, texCoord, refractiveIndex, thickness);
-    return vec4(color + background * (1.0 - opacity), 1.0);
+    return vec4(color + background * transmittance, 1.0);
+#endif
 #endif
 #endif
 

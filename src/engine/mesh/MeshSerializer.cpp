@@ -388,6 +388,8 @@ namespace Atlas {
             {"blendMode", int32_t(p.blendMode)},
             {"refractiveIndex", p.refractiveIndex},
             {"thickness", p.thickness},
+            {"attenuationColor", p.attenuationColor},
+            {"attenuationDistance", p.attenuationDistance},
         };
 
         if (p.baseColorMap.IsValid() && !p.baseColorMap.IsGenerated())
@@ -480,6 +482,8 @@ namespace Atlas {
         p.blendMode = MaterialBlendMode(blendMode);
         try_get_json(j, "refractiveIndex", p.refractiveIndex);
         try_get_json(j, "thickness", p.thickness);
+        try_get_json(j, "attenuationColor", p.attenuationColor);
+        try_get_json(j, "attenuationDistance", p.attenuationDistance);
 
         // Maps are only written when set, a missing one removes the map. They load in the background, the material
         // uses them once they are loaded (Scene::WaitForResourceLoad waits for them)
@@ -501,6 +505,7 @@ namespace Atlas {
         // The bounds of meshes depend on the graph, so it is loaded right away like materials are for meshes
         p.graph = j.contains("graphPath") ? ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoader(
             j["graphPath"], ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph) : ResourceHandle<MaterialGraph::Graph>();
+        p.MigrateGraphSettings();
 
         p.graphParameterVersion++;
         p.graphValues.clear();

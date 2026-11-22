@@ -81,8 +81,11 @@ namespace Atlas::ImguiExtension {
             UIElements::PropertyLabel("Reflectance");
             ImGui::SliderFloat("##Reflectance", &material->reflectance, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
-            UIElements::PropertyLabel("Two sided");
-            ImGui::Checkbox("##Two sided", &material->twoSided);
+            // The graph decides it for materials with one
+            if (!material->HasGraph()) {
+                UIElements::PropertyLabel("Two sided");
+                ImGui::Checkbox("##Two sided", &material->twoSided);
+            }
             UIElements::EndProperties();
         }
 
@@ -94,8 +97,10 @@ namespace Atlas::ImguiExtension {
             UIElements::EndProperties();
         }
 
-        UIElements::PropertySection("Translucency");
-        if (UIElements::BeginProperties("MaterialTranslucency")) {
+        // The graph holds the material type and the volume for materials with one
+        if (!material->HasGraph())
+            UIElements::PropertySection("Translucency");
+        if (!material->HasGraph() && UIElements::BeginProperties("MaterialTranslucency")) {
             const char* blendModes[] = { "None", "Alpha", "Additive", "Multiply" };
             auto blendMode = int32_t(material->blendMode);
             UIElements::PropertyLabel("Blend mode");
@@ -108,6 +113,12 @@ namespace Atlas::ImguiExtension {
                 UIElements::PropertyLabel("Thickness", "Above zero the surface refracts. Closed meshes refract where the rays "
                     "leave them through their back faces, the thickness only applies to open meshes like water planes");
                 ImGui::DragFloat("##Thickness", &material->thickness, 0.001f, 0.0f, 1.0f, "%.3f m", ImGuiSliderFlags_AlwaysClamp);
+                UIElements::PropertyLabel("Attenuation color", "The color light has after passing the attenuation distance "
+                    "inside the refracting surface, e.g. green for bottle glass or blue green for water");
+                ImGui::ColorEdit3("##Attenuation color", glm::value_ptr(material->attenuationColor));
+                UIElements::PropertyLabel("Attenuation distance", "Zero doesn't absorb light, smaller distances tint deeper");
+                ImGui::DragFloat("##Attenuation distance", &material->attenuationDistance, 0.01f, 0.0f, 1000.0f, "%.2f m",
+                    ImGuiSliderFlags_AlwaysClamp);
             }
             UIElements::EndProperties();
         }

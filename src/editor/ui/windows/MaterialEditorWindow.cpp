@@ -143,12 +143,8 @@ namespace Atlas::Editor::UI {
         if (replacesSurface && Widgets::SectionHeader("Bake for ray tracing", ImGuiTreeNodeFlags_DefaultOpen))
             RenderBakeSection(*compiled);
 
-        if (Widgets::SectionHeader(replacesSurface ? "Properties for ray tracing" : "Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (replacesSurface) {
-                Widgets::Callout("The graph describes the surface. Ray traced reflections, global illumination and shadows "
-                    "don't run graphs, they use these values instead.", Theme::Accent());
-            }
-
+        // A graph describing the surface replaces all properties, the bake writes them for GPUs without ray tracing pipelines
+        if (!replacesSurface && Widgets::SectionHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
             materialPanel.Render(Singletons::imguiWrapper, material.Get(), [&](ResourceHandle<Texture::Texture2D> texture) {
                 return textureSelectionPanel.Render(texture);
                 });

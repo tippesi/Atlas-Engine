@@ -24,15 +24,6 @@ namespace Atlas {
         ImpostorBit = (1 << 2)
     } MaterialUsageBits;
 
-    // How a translucent surface is combined with what is behind it, None is opaque or cut out by the opacity
-    enum class MaterialBlendMode {
-        None = 0,
-        // Premultiplied, the reflections stay at full strength
-        Alpha,
-        Additive,
-        Multiply
-    };
-
     class Material {
 
     public:
@@ -52,10 +43,19 @@ namespace Atlas {
 
         bool HasGraph() const;
 
-        bool IsTranslucent() const { return blendMode != MaterialBlendMode::None; }
+        // Materials with a graph have the blend mode and two sidedness of the graph
+        MaterialBlendMode GetBlendMode() const;
 
-        // Alpha blended with a thickness and a refractive index other than 1
-        bool Refracts() const { return blendMode == MaterialBlendMode::Alpha && thickness > 0.0f && refractiveIndex != 1.0f; }
+        bool IsTwoSided() const;
+
+        bool IsTranslucent() const { return GetBlendMode() != MaterialBlendMode::None; }
+
+        // Alpha blended with a thickness and a refractive index other than 1, graphs decide it with their surface pins
+        bool Refracts() const;
+
+        // Graphs saved before they held the material type and the volume of the surface take them from the first material
+        // which loads them
+        void MigrateGraphSettings();
 
         // All textures the parameters of the graph use, with the ones of this material where it has its own
         std::vector<ResourceHandle<Texture::Texture2D>> GetGraphTextures() const;
@@ -112,6 +112,10 @@ namespace Atlas {
         // faces, open ones like water planes are a slab of the thickness in meters. Zero doesn't refract
         float refractiveIndex = 1.5f;
         float thickness = 0.0f;
+        // Refracting surfaces absorb light inside them like the volume of glTF materials: after the attenuation distance in
+        // meters the light passing them has the attenuation color. Zero doesn't absorb
+        vec3 attenuationColor = vec3(1.0f);
+        float attenuationDistance = 0.0f;
 
         vec2 uvAnimation = vec2(0.0f);
 

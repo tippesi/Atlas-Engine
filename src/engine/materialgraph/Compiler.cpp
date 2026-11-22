@@ -46,8 +46,18 @@ namespace Atlas::MaterialGraph {
         compiled->hasVertexOffset = hasPositionOffset;
         compiled->hasSurface = std::any_of(surfaceInputs.begin(), surfaceInputs.end(),
             [&](const auto& input) { return isLinked(surfaceOutput, input.name); });
-        compiled->hasOpacity = isLinked(surfaceOutput, NodeLibrary::opacityPin);
+        auto getInlineValue = [&](const std::string& pin) {
+            auto iter = surfaceOutput->inputValues.find(pin);
+            return iter != surfaceOutput->inputValues.end() ? iter->second.x :
+                NodeLibrary::Find(NodeLibrary::surfaceOutputType)->FindInput(pin)->defaultValue.x;
+            };
+        // An opacity typed into the output counts as well, it is uniform
+        compiled->hasOpacity = surfaceOutput && (isLinked(surfaceOutput, NodeLibrary::opacityPin) ||
+            getInlineValue(NodeLibrary::opacityPin) != 1.0f);
         compiled->writesNormal = isLinked(surfaceOutput, NodeLibrary::normalPin);
+        compiled->refracts = surfaceOutput && (isLinked(surfaceOutput, NodeLibrary::refractiveIndexPin) ||
+            getInlineValue(NodeLibrary::refractiveIndexPin) != 1.0f) && (isLinked(surfaceOutput, NodeLibrary::thicknessPin) ||
+            getInlineValue(NodeLibrary::thicknessPin) > 0.0f);
 
         if (compiled->hasOpacity) {
             std::vector<uint32_t> visiting;
@@ -93,13 +103,14 @@ namespace Atlas::MaterialGraph {
         auto deformVertexFunctions = compiled->hasVertexOffset ? GetVertexFunctions(state, vertexOutput, {}, true, true) : std::string();
 
         // Ray tracing pipelines call the surface per hit, which has no varyings either, the stages of the nodes stay the
-        // ones of the rasterizer
+        // ones of the rasterizer. The any hit stage passes translucent surfaces by their opacity, refracting ones are
+        // hit and blend it like glass
         std::string hitSurface;
         if (compiled->hasSurface) {
             auto nodeStages = compiled->nodeStages;
             std::vector<std::string> pins;
             for (const auto& input : surfaceInputs) {
-                if (input.name != NodeLibrary::opacityPin)
+                if (input.name != NodeLibrary::opacityPin || compiled->refracts)
                     pins.push_back(input.name);
             }
             std::vector<uint32_t> hitVaryings;
@@ -734,7 +745,13 @@ namespace Atlas::MaterialGraph {
             { NodeLibrary::metalnessPin, "metalness" },
             { NodeLibrary::aoPin, "ao" },
             { NodeLibrary::emissivePin, "emissive" },
-            { NodeLibrary::opacityPin, "opacity" }
+            { NodeLibrary::opacityPin, "opacity" },
+            { NodeLibrary::reflectancePin, "reflectance" },
+            { NodeLibrary::transmissionPin, "transmission" },
+            { NodeLibrary::refractiveIndexPin, "refractiveIndex" },
+            { NodeLibrary::thicknessPin, "thickness" },
+            { NodeLibrary::attenuationColorPin, "attenuationColor" },
+            { NodeLibrary::attenuationDistancePin, "attenuationDistance" }
         };
 
         auto definition = NodeLibrary::Find(output);
