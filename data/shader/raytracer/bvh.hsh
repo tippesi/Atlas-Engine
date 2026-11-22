@@ -3,7 +3,7 @@
 #ifdef AE_HARDWARE_RAYTRACING
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
-#extension GL_EXT_ray_tracing_position_fetch : enable
+#extension GL_EXT_ray_tracing_position_fetch : require
 
 layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
 #endif
@@ -131,20 +131,21 @@ int nodePtr, float tmin, float tmax) {
     vec3 sol, v0, v1, v2, n;
 
     while (!endOfNode) {
-        Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshPtr)].data[triPtr]);
-        v0 = tri.v0.xyz;
-        v1 = tri.v1.xyz;
-        v2 = tri.v2.xyz;
-        endOfNode = tri.endOfNode;
+        PackedBVHTriangle bvhTriangle = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr];
+        v0 = bvhTriangle.v0.xyz;
+        v1 = bvhTriangle.v1.xyz;
+        v2 = bvhTriangle.v2.xyz;
+        endOfNode = bvhTriangle.v0.w > 0.0;
         float d = 0.0;
- #ifdef BACKFACE_CULLING
+#ifdef BACKFACE_CULLING
         n = cross(v0 - v1, v0 - v2);
         d = dot(n, ray.direction);
 #endif
         bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
         if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0 && sol.x < ray.hitDistance) {
-            // Triangles without an opacity map have a positive opacity
-            if (tri.opacity >= 0.0 || GetCutoutOpacity(tri, sol.yz, materialOffset, 0) >= opacityCutoff) {
+            // Triangles without an opacity map have a positive opacity, only the others need their attributes
+            if (bvhTriangle.v2.w >= 0.0 || GetCutoutOpacity(UnpackTriangle(triangles[nonuniformEXT(meshPtr)].data[triPtr]),
+                sol.yz, materialOffset, 0) >= opacityCutoff) {
                 ray.hitDistance = sol.x;
                 ray.hitID = triPtr;
                 ray.hitInstanceID = ray.currentInstanceID;
@@ -164,11 +165,11 @@ float tmin, float tmax, float transparency) {
     vec3 sol, v0, v1, v2, n;
 
     while (!endOfNode) {
-        Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshPtr)].data[triPtr]);
-        v0 = tri.v0.xyz;
-        v1 = tri.v1.xyz;
-        v2 = tri.v2.xyz;
-        endOfNode = tri.endOfNode;
+        PackedBVHTriangle bvhTriangle = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr];
+        v0 = bvhTriangle.v0.xyz;
+        v1 = bvhTriangle.v1.xyz;
+        v2 = bvhTriangle.v2.xyz;
+        endOfNode = bvhTriangle.v0.w > 0.0;
         float d = 0.0;
 #ifdef BACKFACE_CULLING
         n = cross(v0 - v1, v0 - v2);
@@ -179,7 +180,9 @@ float tmin, float tmax, float transparency) {
             ray.hitDistance = sol.x;
             ray.hitID = triPtr;
             ray.hitInstanceID = ray.currentInstanceID;
-            transparency *= (1.0 - (tri.opacity < 0.0 ? GetOpacity(tri, sol.yz, materialOffset, 0) : tri.opacity));
+            float opacity = bvhTriangle.v2.w;
+            transparency *= (1.0 - (opacity < 0.0 ? GetOpacity(UnpackTriangle(triangles[nonuniformEXT(meshPtr)].data[triPtr]),
+                sol.yz, materialOffset, 0) : opacity));
         }
         triPtr++;
     }
@@ -532,11 +535,9 @@ void TraceClosest(inout Ray ray, uint rayFlags, uint cullMask, float tMin, float
     if (hitObjectIsHitEXT(closestHitObject)) {
         hitObjectGetAttributesEXT(closestHitObject, 0);
         ray.hitBarycentrics = hitObjectBarycentrics;
-#ifdef AE_POSITION_FETCH
         vec3 positions[3];
         hitObjectGetIntersectionTriangleVertexPositionsEXT(closestHitObject, positions);
         ray.hitGeometryNormal = GetTriangleNormal(positions[0], positions[1], positions[2]);
-#endif
 
         ray.hitDistance = hitObjectGetRayTMaxEXT(closestHitObject);
         ray.hitInstanceID = hitObjectGetInstanceIdEXT(closestHitObject);
@@ -566,11 +567,9 @@ void HitClosestTransparency(inout Ray ray, uint cullMask, float tMin, float tMax
 void SetCommittedHitGeometry(inout Ray ray, rayQueryEXT rayQuery) {
 
     ray.hitBarycentrics = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
-#ifdef AE_POSITION_FETCH
     vec3 positions[3];
     rayQueryGetIntersectionTriangleVertexPositionsEXT(rayQuery, true, positions);
     ray.hitGeometryNormal = GetTriangleNormal(positions[0], positions[1], positions[2]);
-#endif
 
 }
 

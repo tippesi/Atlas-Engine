@@ -16,11 +16,15 @@ void main() {
 
     Instance instance = bvhInstances[nonuniformEXT(gl_InstanceID)];
     Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[nonuniformEXT(hitID)]);
-    RaytraceMaterial rayMat = materials[nonuniformEXT(tri.materialIndex + instance.materialOffset)];
+    RaytraceMaterial rayMat = GetRaytraceMaterial(tri.materialIndex + instance.materialOffset);
 #ifndef TRANSLUCENT_HITS
     // Rays pass through translucent surfaces
     if (rayMat.blendMode != blendModeNone)
         ignoreIntersectionEXT;
+#else
+    // Refracting surfaces are hit, the path tracer blends their opacity like the one of glass
+    if (rayMat.blendMode != blendModeNone && rayMat.refractiveIndex != 1.0)
+        return;
 #endif
 
     float s = barycentrics.x;

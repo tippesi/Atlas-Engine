@@ -12,6 +12,7 @@
 #include <../brdf/surface.hsh>
 #include <../common/texCoord.hsh>
 #include <../common/opacity.hsh>
+#include <../common/normalencode.hsh>
 
 #ifdef RAY_TRACING_PIPELINE
 // The hit of the last ray of TraceClosest, hit objects can't be assigned or passed as out parameters
@@ -68,20 +69,23 @@ Triangle GetTriangle(Ray ray, Instance instance) {
         uvec2 v1 = vertices.data[GetMeshIndex(instance.meshIndices, firstIndex + 1u)];
         uvec2 v2 = vertices.data[GetMeshIndex(instance.meshIndices, firstIndex + 2u)];
 
-        // The bitangent keeps the handedness of the undeformed triangle
-        float handedness = dot(cross(tri.n0 + tri.n1 + tri.n2, tri.t), tri.bt) < 0.0 ? -1.0 : 1.0;
-
         tri.n0 = unpackUnitVector(int(v0.x)).xyz;
         tri.n1 = unpackUnitVector(int(v1.x)).xyz;
         tri.n2 = unpackUnitVector(int(v2.x)).xyz;
 
         vec3 tangent = unpackUnitVector(int(v0.y)).xyz + unpackUnitVector(int(v1.y)).xyz + unpackUnitVector(int(v2.y)).xyz;
         // Meshes without tangents have zero tangents, which unpack to almost zero
+        // The bitangent keeps the handedness of the undeformed triangle
         if (dot(tangent, tangent) > 0.01) {
             tri.t = normalize(tangent);
-            tri.bt = handedness * normalize(cross(tri.n0 + tri.n1 + tri.n2, tri.t));
+            tri.bt = tri.handedness * normalize(cross(tri.t, tri.n0 + tri.n1 + tri.n2));
         }
     }
+#else
+    PackedBVHTriangle bvhTriangle = bvhTriangles[nonuniformEXT(instance.meshOffset)].data[nonuniformEXT(ray.hitID)];
+    tri.v0 = bvhTriangle.v0.xyz;
+    tri.v1 = bvhTriangle.v1.xyz;
+    tri.v2 = bvhTriangle.v2.xyz;
 #endif
 
     return tri;
@@ -90,7 +94,7 @@ Triangle GetTriangle(Ray ray, Instance instance) {
 
 Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMaterial rayMat) {
     Material mat;
-    rayMat = materials[nonuniformEXT(tri.materialIndex + materialOffset)];
+    rayMat = GetRaytraceMaterial(tri.materialIndex + materialOffset);
 
     mat.ID = rayMat.ID;
 
@@ -112,6 +116,8 @@ Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMater
 
     mat.blendMode = rayMat.blendMode;
     mat.refractiveIndex = rayMat.refractiveIndex;
+    mat.attenuationColor = unpackColorVector(int(rayMat.attenuationColor)).rgb;
+    mat.attenuationDistance = rayMat.attenuationDistance;
 
     return mat;
 }
@@ -170,12 +176,7 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
 #ifdef AE_HARDWARE_RAYTRACING
     // The normal matrix keeps the front face of transforms with reversed winding
     mat3 normalMatrix = transpose(mat3(transpose(instance.inverseMatrix)));
-#ifdef AE_POSITION_FETCH
     vec3 triangleNormal = normalize(normalMatrix * ray.hitGeometryNormal);
-#else
-    // The undeformed triangle of the mesh, deformed instances only use it to find the front face
-    vec3 triangleNormal = normalize(normalMatrix * cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
-#endif
 #else
     // Produces some problems in the bottom left corner of the Sponza scene,
     // but fixes the cube. Should work in theory.
@@ -210,24 +211,38 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
 
 #if defined(MATERIAL_GRAPH_HITS) && defined(RAY_TRACING_PIPELINE)
     if (rayMat.graphHitGroup > 0u) {
-        graphHit.tangentFrame = TBN;
-        graphHit.color = packUnorm4x8(vertexColor);
-        graphHit.texCoord = texCoord;
-        graphHit.frontFacing = flipNormal ? -1.0 : 1.0;
-        graphHit.textureLevel = float(level);
-        graphHit.parameterOffset = rayMat.graphParameterOffset;
+        MaterialGraphHitInput hitInput;
+        hitInput.tangentFrame = TBN;
+        hitInput.color = vertexColor;
+        hitInput.texCoord = texCoord;
+        hitInput.frontFacing = flipNormal ? -1.0 : 1.0;
+        hitInput.textureLevel = float(level);
+        hitInput.parameterOffset = rayMat.graphParameterOffset;
+        graphHit = PackGraphHitInput(hitInput);
 
         hitObjectExecuteShaderEXT(closestHitObject, 1);
 
-        // The G-buffer limits these values, an albedo above one would amplify itself in the bounces of the DDGI
-        mat.baseColor = saturate(graphHit.baseColor);
-        mat.roughness = saturate(graphHit.roughness);
-        mat.metalness = saturate(graphHit.metalness);
-        mat.ao = saturate(graphHit.ao);
-        mat.emissiveColor = graphHit.emissive * globalData.preExposure;
+        // The packing limits the colors to one like the G-buffer, an albedo above one would amplify itself in the
+        // bounces of the DDGI
+        MaterialGraphHitOutput graphSurface = UnpackGraphHitOutput(graphHit);
+        mat.baseColor = graphSurface.baseColor;
+        mat.roughness = graphSurface.roughness;
+        mat.metalness = graphSurface.metalness;
+        mat.ao = graphSurface.ao;
+        mat.reflectance = graphSurface.reflectance;
+        mat.emissiveColor = graphSurface.emissive * globalData.preExposure;
+        mat.transmissiveColor = graphSurface.baseColor * graphSurface.transmission;
+        mat.transmissive = graphSurface.transmission > 0.0;
+        // Rays leave refracting surfaces through their back faces, the material decides whether it refracts at all
+        if (rayMat.refractiveIndex != 1.0) {
+            mat.refractiveIndex = flipNormal ? 1.0 / graphSurface.refractiveIndex : graphSurface.refractiveIndex;
+            mat.opacity = graphSurface.opacity;
+        }
+        mat.attenuationColor = graphSurface.attenuationColor;
+        mat.attenuationDistance = graphSurface.attenuationDistance;
 
-        vec3 graphNormal = TBN * graphHit.normal;
-        if (useNormalMaps && dot(graphNormal, graphNormal) > 0.0)
+        vec3 graphNormal = TBN * graphSurface.normal;
+        if (useNormalMaps)
             normal = normalize(graphNormal);
     }
     else
@@ -306,7 +321,7 @@ float SampleMaterialOpacity(RaytraceMaterial rayMat, Triangle tri, vec2 barrycen
 // Surfaces are cut out by their opacity map only, like in the raster passes. Rays pass through translucent ones,
 // the path tracer blends them itself (TRANSLUCENT_HITS)
 float GetCutoutOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
-    RaytraceMaterial rayMat = materials[tri.materialIndex + materialOffset];
+    RaytraceMaterial rayMat = GetRaytraceMaterial(tri.materialIndex + materialOffset);
 #ifdef TRANSLUCENT_HITS
     if (rayMat.blendMode != blendModeNone)
         return 1.0;
@@ -319,7 +334,7 @@ float GetCutoutOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int 
 
 // The share of the light a surface blocks, translucent ones block it by their opacity, additive ones not at all
 float GetOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
-    RaytraceMaterial rayMat = materials[tri.materialIndex + materialOffset];
+    RaytraceMaterial rayMat = GetRaytraceMaterial(tri.materialIndex + materialOffset);
     if (rayMat.blendMode == blendModeAdditive)
         return 0.0;
     return SampleMaterialOpacity(rayMat, tri, barrycentric, textureLevel) * rayMat.opacity;

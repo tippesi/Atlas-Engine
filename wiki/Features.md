@@ -184,7 +184,8 @@ tool isn't listed here, or a listed file doesn't exist.
   (`REFRACTION_BACK_FACES`, depth and normals) and are traced through the depth of a copy of the background with mips,
   rays which leave the screen take the image where they leave it, rays hidden by surfaces in front of the refracting one
   see the background straight behind it, rays which pass behind a surface end on it (surfaces are taken as thick), rays
-  behind the camera see the probe, in the outer 5 % of the screen the refraction fades out. Refracting surfaces without opacity are clear
+  behind the camera see the probe, in the outer 5 % of the screen the refraction fades out. What alpha blended surfaces reflect doesn't pass them (both renderers dim the
+  background by the integrated Fresnel term). Refracting surfaces without opacity are clear
   glass. Rough ones blur the background by the cone of the refracted rays (narrower than the reflection lobe), the
   distance to the hit and the magnification measured in the pixel quad (`GetRefractionMipLevel`); the path tracer
   refracts through GGX sampled microfacets. `screenSpaceRefraction` (project and scene setting, Lua, project settings window) turns
@@ -195,7 +196,9 @@ tool isn't listed here, or a listed file doesn't exist.
 ## Ray tracing
 
 - **Acceleration structures** (TLAS, BLAS, hardware ray tracing): `raytracing/RayTracingWorld`, `RayTracingManager`,
-  `BLAS`/`TLAS` in `graphics/`; animated meshes get skinned BLASes.
+  `BLAS`/`TLAS` in `graphics/`; animated meshes get skinned BLASes. Hardware ray tracing requires position fetch
+  (`VK_KHR_ray_tracing_position_fetch`), the triangles of a BLAS (`GPUTriangle`, 48 bytes) only hold the attributes, the
+  software BVH keeps the positions in `GPUBVHTriangle`. `--software-ray-tracing` forces the software path.
 - **Deformed ray tracing geometry** (skinning, wind, material graph vertex offsets in ray tracing, position fetch):
   `RayTracingWorld` deforms nearby instances with `raytracer/deform.csh` (`skinnedBlasDistance`, `deformedBlasDistance`),
   hits read positions from the BLAS and normals of deformed instances in `raytracer/surface.hsh` (`GetTriangle`).
@@ -210,6 +213,9 @@ tool isn't listed here, or a listed file doesn't exist.
   baked values until their pipeline is compiled in the background (`RayTracingHelper::GetRayTracingPipeline`,
   `RayTracingWorld::GetMaterialGraphPipelineConfig`); compute paths use the bake. The path tracer can turn graphs off for
   debugging (`PathTracingRenderer::materialGraphs`).
+- **Light selection at ray hits** (many lights, light sampling, RIS, reservoir): `GetLight` in `raytracer/direct.hsh`
+  weights all lights up to 8, otherwise the first (directional lights first, `RayTracingHelper`) and 7 uniform candidates;
+  the path tracer weights all lights (`ALL_LIGHT_CANDIDATES`).
 
 ## Meshes, materials and impostors
 
@@ -239,7 +245,8 @@ tool isn't listed here, or a listed file doesn't exist.
   `MaterialGraphParametersPanel`, in the entity inspector as well). Bridge `material`, `materialCopy`, `meshMaterials`.
 - **Material graphs** (node materials, shader graph, procedural textures, vertex animation, displacement):
   `materialgraph/` (`.aematgraph`, `Compiler`, `NodeLibrary`, `Baker`), editor `MaterialGraphPanel`, see
-  `wiki/MaterialGraphs.md`. Lua `Atlas.MaterialGraph` (nodes by id: `AddNode`, `Connect`, `SetInput`, `SetValue`,
+  `wiki/MaterialGraphs.md`. The graph holds the material type (blend mode, two sided) and the surface output every
+  property (reflectance, transmission, refractive index, thickness, attenuation), also in ray tracing hit groups. Lua `Atlas.MaterialGraph` (nodes by id: `AddNode`, `Connect`, `SetInput`, `SetValue`,
   `SetCode`, `Compile`; `ResourceManager.GetOrLoadMaterialGraph`, `material.graph`), changes count up
   `Graph::revision`, which an open graph editor compiles with an undo step. Bridge `materialGraph` (create and change
   graphs: nodes, links, parameters),

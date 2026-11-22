@@ -1349,11 +1349,17 @@ namespace Atlas {
                 support.deviceFault = true;
             }
 
-            // Check for ray tracing extension support
-            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+            // Check for ray tracing extension support. Hits read their positions from the acceleration structure, the
+            // triangles of a BLAS only hold the attributes (RTX 20 and RDNA 2 onwards support position fetch)
+            auto rayTracingExtensions = desc.enableHardwareRayTracing && supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
                 supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
                 supportedExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-                supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+                supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+            auto positionFetch = supportedExtensions.contains(VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME) &&
+                availablePositionFetchFeatures.rayTracingPositionFetch;
+            if (rayTracingExtensions && !positionFetch)
+                Log::Warning("The driver supports ray tracing without position fetch, ray tracing uses the software BVH");
+            if (rayTracingExtensions && positionFetch) {
 
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
                 accelerationStructureFeature.descriptorBindingAccelerationStructureUpdateAfterBind = VK_TRUE;
@@ -1367,12 +1373,8 @@ namespace Atlas {
                 featureBuilder.Append(rtPipelineFeature);
                 featureBuilder.Append(rayQueryFeature);
 
-                // Without position fetch hits take the triangle normal from the undeformed mesh
-                if (availablePositionFetchFeatures.rayTracingPositionFetch) {
-                    positionFetchFeature.rayTracingPositionFetch = VK_TRUE;
-                    featureBuilder.Append(positionFetchFeature);
-                    support.positionFetch = true;
-                }
+                positionFetchFeature.rayTracingPositionFetch = VK_TRUE;
+                featureBuilder.Append(positionFetchFeature);
 
                 if (supportedExtensions.contains(VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME) && instance->validationLayersEnabled) {
                     validationFeatures.rayTracingValidation = VK_TRUE;

@@ -1,3 +1,6 @@
+// The reference weights every light of the buffer (RayTracingHelper), see GetLight
+#define LIGHT_CANDIDATE_COUNT 128
+
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
 #include <../raytracer/direct.hsh>
@@ -220,6 +223,9 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // Alpha blended surfaces which aren't two sided cover the light behind them once like in the rasterizer, their back
     // faces are only where the rays leave them
     if (backfaceHit && surface.material.blendMode == blendModeAlpha) {
+        // The ray crossed the medium since it entered at the front face
+        payload.throughput *= GetAbsorption(surface.material.attenuationColor, surface.material.attenuationDistance,
+            ray.hitDistance);
         surface.material.opacity = 0.0;
         float curSeed = Uniforms.seed;
         ray.direction = RefractThrough(surface, ray.direction, float(ray.ID), curSeed);
@@ -288,7 +294,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     Light light = GetLight(surface, raySeed, curSeed, lightPdf);
 
     float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
+    SampleLight(light, surface, solidAngle, lightDistance);
 
     if (lightPdf <= 0.0) return vec3(0.0);
 
@@ -381,7 +387,9 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
     else {
         brdfSample.L = RefractThrough(surface, ray.direction, raySeed, curSeed);
         brdfSample.pdf = passThroughChance;
-        brdfSample.reflectance = vec3(1.0 - opacity);
+        // What alpha blended surfaces reflect doesn't pass them, cut out ones only have holes
+        brdfSample.reflectance = vec3(1.0 - opacity) *
+            (mat.blendMode == blendModeAlpha ? vec3(1.0) - EvaluateIndirectSpecularBRDF(surface) : vec3(1.0));
         transmitted = true;
         passedThrough = true;
     }

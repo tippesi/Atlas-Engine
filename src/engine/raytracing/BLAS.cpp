@@ -3,6 +3,8 @@
 #include "../volume/BVH.h"
 #include "../common/Packing.h"
 
+#include <glm/gtc/packing.hpp>
+
 namespace Atlas::RayTracing {
 
     void BLAS::Build(std::vector<Triangle>& triangles, std::vector<ResourceHandle<Material>>& materials) {
@@ -133,47 +135,21 @@ namespace Atlas::RayTracing {
             auto tangent = glm::normalize(s - normal * dot(normal, s));
             auto handedness = (glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f);
 
-            auto bitangent = handedness * glm::normalize(glm::cross(tangent, normal));
+            AE_ASSERT(triangle.materialIdx >= 0 && triangle.materialIdx <= 0xFFFF && "Triangles hold 16 bit material indices");
 
-            // Compress data
-            auto pn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n0, 0.0f));
-            auto pn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n1, 0.0f));
-            auto pn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n2, 0.0f));
-
-            auto pt = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
-            auto pbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
-
-            auto puv0 = glm::packHalf2x16(triangle.uv0);
-            auto puv1 = glm::packHalf2x16(triangle.uv1);
-            auto puv2 = glm::packHalf2x16(triangle.uv2);
-
-            auto pc0 = glm::packUnorm4x8(triangle.color0);
-            auto pc1 = glm::packUnorm4x8(triangle.color1);
-            auto pc2 = glm::packUnorm4x8(triangle.color2);
-
-            auto cn0 = reinterpret_cast<float&>(pn0);
-            auto cn1 = reinterpret_cast<float&>(pn1);
-            auto cn2 = reinterpret_cast<float&>(pn2);
-
-            auto ct = reinterpret_cast<float&>(pt);
-            auto cbt = reinterpret_cast<float&>(pbt);
-
-            auto cuv0 = reinterpret_cast<float&>(puv0);
-            auto cuv1 = reinterpret_cast<float&>(puv1);
-            auto cuv2 = reinterpret_cast<float&>(puv2);
-
-            auto cc0 = reinterpret_cast<float&>(pc0);
-            auto cc1 = reinterpret_cast<float&>(pc1);
-            auto cc2 = reinterpret_cast<float&>(pc2);
-
+            // The shaders rebuild the bitangent from the handedness, see UnpackTriangle in raytracer/common.hsh
             GPUTriangle gpuTriangle;
-
-            gpuTriangle.v0 = vec4(triangle.v0, cn0);
-            gpuTriangle.v1 = vec4(triangle.v1, cn1);
-            gpuTriangle.v2 = vec4(triangle.v2, cn2);
-            gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
-            gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
-            gpuTriangle.d2 = vec4(cc0, cc1, cc2, triangle.opacity);
+            gpuTriangle.normals[0] = uint32_t(Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n0, 0.0f)));
+            gpuTriangle.normals[1] = uint32_t(Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n1, 0.0f)));
+            gpuTriangle.normals[2] = uint32_t(Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n2, 0.0f)));
+            gpuTriangle.tangent = uint32_t(Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, handedness)));
+            gpuTriangle.texCoords[0] = glm::packHalf2x16(triangle.uv0);
+            gpuTriangle.texCoords[1] = glm::packHalf2x16(triangle.uv1);
+            gpuTriangle.texCoords[2] = glm::packHalf2x16(triangle.uv2);
+            gpuTriangle.materialOpacity = uint32_t(triangle.materialIdx) | (uint32_t(glm::packHalf1x16(triangle.opacity)) << 16u);
+            gpuTriangle.colors[0] = glm::packUnorm4x8(triangle.color0);
+            gpuTriangle.colors[1] = glm::packUnorm4x8(triangle.color1);
+            gpuTriangle.colors[2] = glm::packUnorm4x8(triangle.color2);
 
             gpuTriangles.push_back(gpuTriangle);
             triangleIndices.push_back(uint32_t(bvhTriangle.idx));
@@ -181,7 +157,7 @@ namespace Atlas::RayTracing {
             if (!hardwareRayTracing) {
                 GPUBVHTriangle gpuBvhTriangle;
                 gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
-                gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float&>(triangle.materialIdx));
+                gpuBvhTriangle.v1 = vec4(triangle.v1, 0.0f);
                 gpuBvhTriangle.v2 = vec4(triangle.v2, triangle.opacity);
 
                 gpuBvhTriangles.push_back(gpuBvhTriangle);

@@ -14,13 +14,19 @@ namespace Atlas {
         MaskTranslucentShadow = 1 << 4
     };
 
+    // The attributes of a triangle, has to match PackedTriangle in raytracer/structures.hsh. Hits take the positions from
+    // the acceleration structure or from GPUBVHTriangle
     struct GPUTriangle {
-        vec4 v0;
-        vec4 v1;
-        vec4 v2;
-        vec4 d0;
-        vec4 d1;
-        vec4 d2;
+        // 10:10:10 each, the tangent has the handedness of the bitangent in w
+        uint32_t normals[3] = {};
+        uint32_t tangent = 0;
+        // Halves
+        uint32_t texCoords[3] = {};
+        // The material index in the lower 16 bit, the opacity as a half in the upper, negative to read the material
+        uint32_t materialOpacity = 0;
+        // RGBA8
+        uint32_t colors[3] = {};
+        uint32_t padding0 = 0;
     };
 
     // The triangles of one software BLAS gathered from its deformed vertices, has to match raytracer/deformTriangles.csh
@@ -145,8 +151,31 @@ namespace Atlas {
         // Of the inside of refracting surfaces, 1 for the others
         float refractiveIndex = 1.0f;
 
-        uint32_t padding0 = 0;
-        uint32_t padding1 = 0;
+        // RGB packed as 10:10:10, absorbed inside refracting surfaces, see Material::attenuationDistance
+        uint32_t attenuationColor = 0;
+        float attenuationDistance = 0.0f;
+    };
+
+    // GPUMaterial as the buffer holds it, see raytracer/buffers.hsh. Colors are 10:10:10, emission, tiling and coordinates halves
+    struct alignas(16) GPUPackedMaterial {
+        uint32_t baseColor = 0;
+        uint32_t emissiveRedGreen = 0;
+        uint32_t emissiveBlue = 0;
+        // Unorm 4x8
+        uint32_t opacityRoughnessMetalnessAo = 0;
+        // Unorm 8 each, then the flags of the material and its blend mode
+        uint32_t reflectanceNormalScaleFlags = 0;
+        uint32_t tiling = 0;
+        uint32_t uvAnimation = 0;
+        // 16 bit bindless indices, 0xFFFF without a texture: base color and opacity, normal and roughness, metalness and
+        // ambient occlusion, emission and terrain normal
+        uint32_t textures[4] = {};
+        uint32_t transmissionColor = 0;
+        // 16 bit each
+        uint32_t idGraphHitGroup = 0;
+        uint32_t graphParameterOffset = 0;
+        uint32_t refractiveIndexAttenuationDistance = 0;
+        uint32_t attenuationColor = 0;
     };
 
     struct GPUAABB {

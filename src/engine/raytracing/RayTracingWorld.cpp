@@ -1,4 +1,5 @@
 #include "RayTracingWorld.h"
+#include "materialgraph/NodeLibrary.h"
 #include "common/MathHelper.h"
 #include "scene/Scene.h"
 
@@ -9,6 +10,8 @@
 #include "profiler/GPUProfiler.h"
 #include "pipeline/PipelineManager.h"
 #include "common/ColorConverter.h"
+
+#include <glm/gtc/packing.hpp>
 #include "common/Packing.h"
 #include "common/Hash.h"
 #include "materialgraph/PipelineCache.h"
@@ -31,7 +34,7 @@ namespace Atlas {
             auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HostAccessBit |
                 Buffer::BufferUsageBits::HighPriorityMemoryBit | Buffer::BufferUsageBits::MultiBufferedBit;
 
-            materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
+            materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUPackedMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
             tlasNodeBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHNode));
             lastMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4x3));
@@ -189,6 +192,36 @@ namespace Atlas {
             if (translucent)
                 return InstanceCullMasks::MaskTranslucent | (mesh.castShadow ? InstanceCullMasks::MaskTranslucentShadow : 0u);
             return InstanceCullMasks::MaskAll | (mesh.castShadow ? InstanceCullMasks::MaskShadow : 0u);
+
+        }
+
+        GPUPackedMaterial RayTracingWorld::PackMaterial(const GPUMaterial& material) {
+
+            auto packTextures = [](int32_t first, int32_t second) {
+                return uint32_t(first < 0 ? 0xFFFF : first) | (uint32_t(second < 0 ? 0xFFFF : second) << 16u);
+                };
+            auto flags = (material.invertUVs ? 1u : 0u) | (material.twoSided ? 2u : 0u) | (material.cullBackFaces ? 4u : 0u) |
+                (material.useVertexColors ? 8u : 0u);
+
+            return GPUPackedMaterial {
+                .baseColor = uint32_t(Common::Packing::PackUnsignedVector3x10_1x2(vec4(::Helper::Math::Saturate(material.baseColor), 0.0f))),
+                .emissiveRedGreen = glm::packHalf2x16(vec2(material.emissiveColor.r, material.emissiveColor.g)),
+                .emissiveBlue = glm::packHalf2x16(vec2(material.emissiveColor.b, 0.0f)),
+                .opacityRoughnessMetalnessAo = glm::packUnorm4x8(vec4(material.opacity, material.roughness, material.metalness, material.ao)),
+                .reflectanceNormalScaleFlags = (glm::packUnorm4x8(vec4(material.reflectance, material.normalScale, 0.0f, 0.0f)) & 0xFFFFu) |
+                    (flags << 16u) | (material.blendMode << 24u),
+                .tiling = glm::packHalf2x16(vec2(material.tiling, material.terrainTiling)),
+                .uvAnimation = glm::packHalf2x16(vec2(material.uvAnimationX, material.uvAnimationY)),
+                .textures = { packTextures(material.baseColorTexture, material.opacityTexture),
+                    packTextures(material.normalTexture, material.roughnessTexture),
+                    packTextures(material.metalnessTexture, material.aoTexture),
+                    packTextures(material.emissiveTexture, material.terrainNormalTexture) },
+                .transmissionColor = material.transmissionColor,
+                .idGraphHitGroup = (uint32_t(material.ID) & 0xFFFFu) | (material.graphHitGroup << 16u),
+                .graphParameterOffset = material.graphParameterOffset,
+                .refractiveIndexAttenuationDistance = glm::packHalf2x16(vec2(material.refractiveIndex, material.attenuationDistance)),
+                .attenuationColor = material.attenuationColor
+            };
 
         }
 
@@ -365,21 +398,38 @@ namespace Atlas {
                     if (material.IsLoaded()) {
                         auto& mesh = blasInfo.mesh;
 
+                        // Graphs hold these values in their surface output, hit groups replace them per hit
+                        using MaterialGraph::NodeLibrary;
+                        const auto& graph = material->graph;
+                        auto hasGraph = material->HasGraph();
+                        auto transmission = hasGraph ? vec3(graph->GetSurfaceValue(NodeLibrary::baseColorPin)) *
+                            graph->GetSurfaceValue(NodeLibrary::transmissionPin).x :
+                            Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor);
+                        auto attenuationColor = hasGraph ? vec3(graph->GetSurfaceValue(NodeLibrary::attenuationColorPin)) :
+                            Common::ColorConverter::ConvertSRGBToLinear(material->attenuationColor);
+                        auto refractiveIndex = hasGraph ? graph->GetSurfaceValue(NodeLibrary::refractiveIndexPin).x : material->refractiveIndex;
+                        auto attenuationDistance = hasGraph ? graph->GetSurfaceValue(NodeLibrary::attenuationDistancePin).x :
+                            material->attenuationDistance;
+
                         gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
                         gpuMaterial.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(
-                            vec4(Helper::Math::Saturate(Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor)), 0.0f));
+                            vec4(Helper::Math::Saturate(transmission), 0.0f));
                         gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
                             * material->emissiveIntensity;
 
                         gpuMaterial.opacity = material->opacity;
-                        gpuMaterial.blendMode = uint32_t(material->blendMode);
-                        gpuMaterial.refractiveIndex = material->Refracts() ? material->refractiveIndex : 1.0f;
+                        gpuMaterial.blendMode = uint32_t(material->GetBlendMode());
+                        // Refracting graphs need an index other than 1, the one of their hit decides
+                        gpuMaterial.refractiveIndex = material->Refracts() ? (refractiveIndex != 1.0f ? refractiveIndex : 1.5f) : 1.0f;
+                        gpuMaterial.attenuationColor = Common::Packing::PackUnsignedVector3x10_1x2(
+                            vec4(Helper::Math::Saturate(attenuationColor), 0.0f));
+                        gpuMaterial.attenuationDistance = material->Refracts() ? attenuationDistance : 0.0f;
 
                         gpuMaterial.roughness = material->roughness;
                         gpuMaterial.metalness = material->metalness;
                         gpuMaterial.ao = material->ao;
 
-                        gpuMaterial.reflectance = material->reflectance;
+                        gpuMaterial.reflectance = hasGraph ? graph->GetSurfaceValue(NodeLibrary::reflectancePin).x : material->reflectance;
 
                         gpuMaterial.normalScale = material->normalScale;
 
@@ -389,7 +439,7 @@ namespace Atlas {
                         gpuMaterial.terrainTiling = blasInfo.node ? 1.0f / blasInfo.node->sideLength : 1.0f;
 
                         gpuMaterial.invertUVs = mesh.IsLoaded() ? (mesh->invertUVs ? 1 : 0) : 0;
-                        gpuMaterial.twoSided = material->twoSided ? 1 : 0;
+                        gpuMaterial.twoSided = material->IsTwoSided() ? 1 : 0;
                         gpuMaterial.cullBackFaces = mesh.IsLoaded() ? (mesh->cullBackFaces ? 1 : 0) : 0;
                         gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
@@ -432,7 +482,7 @@ namespace Atlas {
                         }
                     }
 
-                    materials[blasInfo.materialOffset + meshMaterialID - 1] = gpuMaterial;
+                    materials[blasInfo.materialOffset + meshMaterialID - 1] = PackMaterial(gpuMaterial);
                 }
                 });
             JobSystem::Wait(jobGroup);

@@ -45,15 +45,16 @@ struct AABB {
     
 };
 
+// See GPUTriangle, the positions come from the acceleration structure or from the BVH triangles
 struct PackedTriangle {
-    
-    vec4 v0;
-    vec4 v1;
-    vec4 v2;
-    vec4 d0;
-    vec4 d1;
-    vec4 d2;
-    
+
+    // 10:10:10 normals, the tangent with the handedness of the bitangent in w
+    uvec4 normalsTangent;
+    // Half texture coordinates, the material index in the lower 16 bit and the opacity as a half in the upper
+    uvec4 texCoordsMaterialOpacity;
+    // RGBA8, w is unused
+    uvec4 colors;
+
 };
 
 struct Triangle {
@@ -68,7 +69,8 @@ struct Triangle {
     
     vec3 t;
     vec3 bt;
-    
+    float handedness;
+
     vec2 uv0;
     vec2 uv1;
     vec2 uv2;
@@ -78,7 +80,6 @@ struct Triangle {
     vec4 color2;
     
     int materialIndex;
-    bool endOfNode;
     float opacity;
     
 };
@@ -103,6 +104,23 @@ struct Texture {
     TextureLevel level4;
     
     int valid;
+};
+
+// See GPUPackedMaterial, GetRaytraceMaterial of buffers.hsh unpacks it
+struct PackedRaytraceMaterial {
+    uint baseColor;
+    uint emissiveRedGreen;
+    uint emissiveBlue;
+    uint opacityRoughnessMetalnessAo;
+    uint reflectanceNormalScaleFlags;
+    uint tiling;
+    uint uvAnimation;
+    uint textures[4];
+    uint transmissionColor;
+    uint idGraphHitGroup;
+    uint graphParameterOffset;
+    uint refractiveIndexAttenuationDistance;
+    uint attenuationColor;
 };
 
 struct RaytraceMaterial {
@@ -158,8 +176,9 @@ struct RaytraceMaterial {
     // Of the inside of refracting surfaces, 1 for the others
     float refractiveIndex;
 
-    uint padding0;
-    uint padding1;
+    // Absorbed inside refracting surfaces, 0 doesn't absorb
+    uint attenuationColor;
+    float attenuationDistance;
 
 };
 
@@ -177,24 +196,14 @@ struct Light {
     vec3 radiance;
 
     uint type;
-    int triangleIdx;
-    int instanceIdx;
 
     bool castShadow;
 
     float pdf;
-    float area;
     float radius;
     float angleScale;
     float angleOffset;
     float brightness;
-};
-
-struct LightSample {
-    vec3 P;
-    vec3 N;
-
-    float pdf;
 };
 
 struct Instance {

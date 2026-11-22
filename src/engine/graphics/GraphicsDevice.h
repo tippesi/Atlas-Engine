@@ -51,14 +51,15 @@ namespace Atlas {
             // A lost device logs the profiler queries the queues were in (VK_NV_device_diagnostic_checkpoints) and the
             // fault the driver reports (VK_EXT_device_fault), the checkpoints cost a little GPU time
             bool enableCrashDiagnostics = false;
+            // Off traces with the software BVH where the device supports hardware ray tracing, e.g. to compare both
+            bool enableHardwareRayTracing = true;
             // Device extensions enabled where the selected physical device supports them
             std::function<std::vector<std::string>(VkInstance, VkPhysicalDevice)> optionalExtensions;
         };
 
         struct DeviceSupport {
+            // Includes position fetch, hits read their triangle positions from the acceleration structure
             bool hardwareRayTracing = false;
-            // Hits read their triangle positions from the acceleration structure
-            bool positionFetch = false;
             // Hit objects in ray tracing pipelines on devices which reorder them
             bool shaderExecutionReordering = false;
             bool shaderPrintf = false;

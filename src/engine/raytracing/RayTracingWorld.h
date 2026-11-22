@@ -274,6 +274,8 @@ namespace Atlas {
             // Meshes with only translucent materials are left out of the rays which would see them as opaque
             static uint32_t GetInstanceMask(const Mesh::Mesh& mesh);
 
+            static GPUPackedMaterial PackMaterial(const GPUMaterial& material);
+
             void AllocateHitRecords(BlasInfo& blasInfo, uint32_t count);
 
             void ReleaseHitRecords(BlasInfo& blasInfo);
@@ -378,7 +380,7 @@ namespace Atlas {
             std::unordered_map<Ref<BLAS>, BlasInfo> blasInfos;
             uint64_t blasInfoUpdate = 0;
 
-            std::vector<GPUMaterial> materials;
+            std::vector<GPUPackedMaterial> materials;
             std::vector<JobContext> jobContexts;
 
             bool hardwareRayTracing = false;

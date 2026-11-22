@@ -78,10 +78,10 @@ void main() {
     }
 
     TriangleBuffer triangles = TriangleBuffer(job.triangles);
-    vec4 texCoords = triangles.triangles[idx].d0;
-    vec2 uv0 = unpackHalf2x16(floatBitsToUint(texCoords.x));
-    vec2 uv1 = unpackHalf2x16(floatBitsToUint(texCoords.y));
-    vec2 uv2 = unpackHalf2x16(floatBitsToUint(texCoords.z));
+    uvec4 texCoords = triangles.triangles[idx].texCoordsMaterialOpacity;
+    vec2 uv0 = unpackHalf2x16(texCoords.x);
+    vec2 uv1 = unpackHalf2x16(texCoords.y);
+    vec2 uv2 = unpackHalf2x16(texCoords.z);
 
     // Same tangent frame as the triangles built on the CPU
     vec3 v0v1 = positions[1] - positions[0];
@@ -98,12 +98,10 @@ void main() {
 
     vec3 tangent = normalize(s - normal * dot(normal, s));
     float handedness = dot(cross(tangent, normal), t) < 0.0 ? 1.0 : -1.0;
-    vec3 bitangent = handedness * normalize(cross(tangent, normal));
 
-    triangles.triangles[idx].v0 = vec4(positions[0], intBitsToFloat(packUnitVector(normals[0])));
-    triangles.triangles[idx].v1 = vec4(positions[1], intBitsToFloat(packUnitVector(normals[1])));
-    triangles.triangles[idx].v2 = vec4(positions[2], intBitsToFloat(packUnitVector(normals[2])));
-    triangles.triangles[idx].d1.xy = vec2(intBitsToFloat(packUnitVector(tangent)), intBitsToFloat(packUnitVector(bitangent)));
+    // UnpackTriangle of common.hsh rebuilds the bitangent from the handedness
+    triangles.triangles[idx].normalsTangent = uvec4(uint(packUnitVector(normals[0])), uint(packUnitVector(normals[1])),
+        uint(packUnitVector(normals[2])), uint(packUnitVector(vec4(tangent, handedness))));
 
     BVHTriangleBuffer bvhTriangles = BVHTriangleBuffer(job.bvhTriangles);
     bvhTriangles.bvhTriangles[idx].v0.xyz = positions[0];

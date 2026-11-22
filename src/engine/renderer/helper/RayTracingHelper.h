@@ -56,6 +56,9 @@ namespace Atlas {
                 bool stochasticLightSelection = false;
 
             private:
+                // Fills the light buffer, directional lights first
+                void SelectLights(const Ref<Scene::Scene>& scene);
+
                 struct alignas(16) PushConstants {
                     int32_t lightCount = 0;
                     uint32_t rayBufferOffset = 0;

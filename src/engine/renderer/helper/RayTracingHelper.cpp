@@ -8,8 +8,9 @@
 #include "../../materialgraph/PipelineCache.h"
 #include <glm/gtx/norm.hpp>
 
+#include <algorithm>
+
 #define DIRECTIONAL_LIGHT 0
-#define TRIANGLE_LIGHT 1
 #define POINT_LIGHT 2
 #define SPOT_LIGHT 3
 
@@ -91,56 +92,7 @@ namespace Atlas {
                 if (!scene->IsRtDataValid()) return;
 
                 // Select lights once per initial ray dispatch
-                {
-                    auto lightCount = lightBuffer.GetElementCount();
-                    selectedLights.clear();
-                    // Randomly select lights (only at image offset 0)
-                    if (lights.size() > lightCount && stochasticLightSelection) {
-                        std::vector<float> weights;
-                        weights.reserve(lights.size());
-                        for (auto& light : lights) {
-                            weights.push_back(light.data.y);
-                        }
-
-                        auto piecewiseDistribution = Common::Piecewise1D(weights);
-
-                        for (size_t i = 0; i < lightCount; i++) {                            
-                            float pdf = 0.0f;
-                            int32_t offset = 0;
-                            piecewiseDistribution.Sample(pdf, offset);
-
-                            selectedLights.push_back(lights[offset]);
-                        }
-
-                        for (auto& light : selectedLights) {
-                            light.data.y *= float(selectedLights.size());
-                        }
-                    }
-                    else if (lights.size() > lightCount && !stochasticLightSelection) {
-                        auto& camera = scene->renderState.camera;
-                        auto cameraLocation = camera.GetLocation();
-
-                        std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {  
-                            return glm::distance2(vec3(light0.P), cameraLocation)
-                               < glm::distance2(vec3(light1.P), cameraLocation);
-                        });
-
-                        for (size_t i = 0; i < lightCount; i++) {
-                            auto& light = lights[i];
-
-                            light.data.y = 1.0f;
-                            selectedLights.push_back(light);
-                        }
-                    }
-                    else {
-                        for (auto& light : lights) {
-                            light.data.y = 1.0f;
-                            selectedLights.push_back(light);
-                        }
-                    }
-
-                    lightBuffer.SetData(selectedLights.data(), 0, selectedLights.size());
-                }
+                SelectLights(scene);
 
                 // Bind textures and buffers
                 {
@@ -206,56 +158,7 @@ namespace Atlas {
                 payloadOffsetCounter = 0;
 
                 // Select lights once per initial ray dispatch
-                {
-                    auto lightCount = lightBuffer.GetElementCount();
-                    selectedLights.clear();
-                    // Randomly select lights (only at image offset 0)
-                    if (lights.size() > lightCount && stochasticLightSelection) {
-                        std::vector<float> weights;
-                        weights.reserve(lights.size());
-                        for (auto& light : lights) {
-                            weights.push_back(light.data.y);
-                        }
-
-                        auto piecewiseDistribution = Common::Piecewise1D(weights);
-
-                        for (size_t i = 0; i < lightCount; i++) {
-                            float pdf = 0.0f;
-                            int32_t offset = 0;
-                            piecewiseDistribution.Sample(pdf, offset);
-
-                            selectedLights.push_back(lights[offset]);
-                        }
-
-                        for (auto& light : selectedLights) {
-                            light.data.y *= float(selectedLights.size());
-                        }
-                    }
-                    else if (lights.size() > lightCount && !stochasticLightSelection) {
-                        auto& camera = scene->renderState.camera;
-                        auto cameraLocation = camera.GetLocation();
-
-                        std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {
-                            return glm::distance2(vec3(light0.P), cameraLocation)
-                                < glm::distance2(vec3(light1.P), cameraLocation);
-                            });
-
-                        for (size_t i = 0; i < lightCount; i++) {
-                            auto& light = lights[i];
-
-                            light.data.y = 1.0f;
-                            selectedLights.push_back(light);
-                        }
-                    }
-                    else {
-                        for (auto& light : lights) {
-                            light.data.y = 1.0f;
-                            selectedLights.push_back(light);
-                        }
-                    }
-
-                    lightBuffer.SetData(selectedLights.data(), 0, selectedLights.size());
-                }
+                SelectLights(scene);
 
                 // From last invalidation we need to take care of the transfer stage as well
                 commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT,
@@ -459,6 +362,63 @@ namespace Atlas {
 
             }
 
+            void RayTracingHelper::SelectLights(const Ref<Scene::Scene>& scene) {
+
+                auto lightCount = lightBuffer.GetElementCount();
+                selectedLights.clear();
+                // Randomly select lights (only at image offset 0)
+                if (lights.size() > lightCount && stochasticLightSelection) {
+                    std::vector<float> weights;
+                    weights.reserve(lights.size());
+                    for (auto& light : lights) {
+                        weights.push_back(light.data.y);
+                    }
+
+                    auto piecewiseDistribution = Common::Piecewise1D(weights);
+
+                    for (size_t i = 0; i < lightCount; i++) {
+                        float pdf = 0.0f;
+                        int32_t offset = 0;
+                        piecewiseDistribution.Sample(pdf, offset);
+
+                        selectedLights.push_back(lights[offset]);
+                    }
+
+                    for (auto& light : selectedLights) {
+                        light.data.y *= float(selectedLights.size());
+                    }
+                }
+                else if (lights.size() > lightCount && !stochasticLightSelection) {
+                    auto& camera = scene->renderState.camera;
+                    auto cameraLocation = camera.GetLocation();
+
+                    std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {
+                        return glm::distance2(vec3(light0.P), cameraLocation)
+                            < glm::distance2(vec3(light1.P), cameraLocation);
+                    });
+
+                    for (size_t i = 0; i < lightCount; i++) {
+                        auto& light = lights[i];
+
+                        light.data.y = 1.0f;
+                        selectedLights.push_back(light);
+                    }
+                }
+                else {
+                    for (auto& light : lights) {
+                        light.data.y = 1.0f;
+                        selectedLights.push_back(light);
+                    }
+                }
+
+                // The light selection of the hits always weights the first light, see GetLight of raytracer/direct.hsh
+                std::stable_partition(selectedLights.begin(), selectedLights.end(), [](const GPULight& light) {
+                    return (reinterpret_cast<const uint32_t&>(light.data.x) >> 28u) == DIRECTIONAL_LIGHT;
+                });
+                lightBuffer.SetData(selectedLights.data(), 0, selectedLights.size());
+
+            }
+
             void RayTracingHelper::InvalidateRayBuffer(Graphics::CommandList* commandList) {
 
                 Graphics::BufferBarrier preBufferBarriers[] = {
@@ -546,7 +506,6 @@ namespace Atlas {
                         data1 |= 1u;
                     }
 
-                    data0 |= uint32_t(lights.size());
                     auto castData0 = reinterpret_cast<float&>(data0);
                     auto castData1 = reinterpret_cast<float&>(data1);
 

@@ -39,7 +39,7 @@ vec3 EvaluateDirectLight(inout Surface surface, float raySeed, float seed) {
     Light light = GetLight(surface, raySeed, seed, lightPdf);
 
     float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
+    SampleLight(light, surface, solidAngle, lightDistance);
 
     bool transmittedLight = IsTransmittedLight(surface);
     Surface lightSurface = transmittedLight ? GetTransmissionSurface(surface) : surface;
