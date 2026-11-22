@@ -24,8 +24,8 @@ namespace Atlas {
                     continue;
                 
                 RenderOutlined3D(commandList, textComp.font.Get(), textComp.text, textComp.GetTransformedPosition(),
-                    textComp.GetTransformedRotation(), textComp.halfSize, textComp.textColor, textComp.outlineColor,
-                    textComp.outlineFactor, textComp.textScale);
+                    textComp.GetTransformedRotation(), textComp.GetLastTransformedPosition(), textComp.GetLastTransformedRotation(),
+                    textComp.halfSize, textComp.textColor, textComp.outlineColor, textComp.outlineFactor, textComp.textScale);
 
             }
 
@@ -107,8 +107,8 @@ namespace Atlas {
         }
 
         void TextRenderer::RenderOutlined3D(Graphics::CommandList* commandList, Ref<Font> font, const std::string& text, 
-                vec3 position, quat rotation, vec2 halfSize, vec4 color, vec4 outlineColor, float outlineScale,
-                float scale) {
+                vec3 position, quat rotation, vec3 lastPosition, quat lastRotation, vec2 halfSize, vec4 color,
+                vec4 outlineColor, float outlineScale, float scale) {
 
             scale /= 16.0f;
 
@@ -123,13 +123,11 @@ namespace Atlas {
             ReserveInstances(characterCount);
             instanceBuffer.SetData(instances.data(), frameCharacterCount, characterCount);
 
-            auto right = glm::mat3_cast(rotation) * vec3(1.0f, 0.0f, 0.0f);
-            auto down = glm::mat3_cast(rotation) * vec3(0.0f, -1.0f, 0.0f);
-
             PushConstants3D constants {
                 .position = vec4(position, 1.0f),
-                .right = vec4(right, 1.0f),
-                .down = vec4(down, 1.0f),
+                .rotation = vec4(rotation.x, rotation.y, rotation.z, rotation.w),
+                .lastPosition = vec4(lastPosition, 1.0f),
+                .lastRotation = vec4(lastRotation.x, lastRotation.y, lastRotation.z, lastRotation.w),
                 .characterColor = color,
                 .outlineColor = outlineColor,
                 .renderHalfSize = halfSize,

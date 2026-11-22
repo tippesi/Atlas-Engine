@@ -26,7 +26,9 @@ namespace Atlas::Scene::Components {
     
         transformedPosition = vec4(transform.globalMatrix * vec4(position, 1.0f));
         transformedRotation = glm::quat_cast(transform.globalMatrix) * rotation;
-    
+        lastTransformedPosition = vec4(transform.lastGlobalMatrix * vec4(position, 1.0f));
+        lastTransformedRotation = glm::quat_cast(transform.lastGlobalMatrix) * rotation;
+
     }
 
 }

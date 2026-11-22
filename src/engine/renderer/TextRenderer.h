@@ -33,9 +33,9 @@ namespace Atlas {
                 const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
                 vec4 clipArea, vec4 blendArea, float scale = 1.0f);
 
-            void RenderOutlined3D(Graphics::CommandList* commandList, Ref<Font> font, const std::string& text, 
-                vec3 position, quat rotation, vec2 halfSize, vec4 color, vec4 outlineColor, float outlineScale,
-                float scale = 1.0f);
+            void RenderOutlined3D(Graphics::CommandList* commandList, Ref<Font> font, const std::string& text,
+                vec3 position, quat rotation, vec3 lastPosition, quat lastRotation, vec2 halfSize, vec4 color,
+                vec4 outlineColor, float outlineScale, float scale = 1.0f);
 
             void Update();
 
@@ -53,10 +53,12 @@ namespace Atlas {
                 float smoothness;
             };
 
+            // Rotations are quaternions as x, y, z, w
             struct alignas(16) PushConstants3D {
                 vec4 position;
-                vec4 right;
-                vec4 down;
+                vec4 rotation;
+                vec4 lastPosition;
+                vec4 lastRotation;
                 vec4 characterColor;
                 vec4 outlineColor;
                 vec2 renderHalfSize;

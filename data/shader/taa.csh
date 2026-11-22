@@ -15,7 +15,6 @@ layout(set = 3, binding = 4) uniform sampler2D depthTexture;
 layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
 
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
-layout(set = 3, binding = 7) uniform usampler2D lastStencilTexture;
 
 layout(push_constant) uniform constants {
     vec2 resolution;
@@ -355,20 +354,7 @@ void main() {
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * PushConstants.invResolution + velocity;
 
-    StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
-    bool rejectHistory = features.noTemporalAccumulation;
-    if (PushConstants.resetHistory == 0) {
-        ivec2 historyPixel = clamp(ivec2(uv * PushConstants.resolution), ivec2(0), ivec2(PushConstants.resolution) - 1);
-        StencilFeatures historyFeatures = DecodeStencilFeatures(texelFetch(lastStencilTexture, historyPixel, 0).r);
-        StencilFeatures previousFeatures = DecodeStencilFeatures(texelFetch(lastStencilTexture, pixel, 0).r);
-        rejectHistory = rejectHistory || historyFeatures.noTemporalAccumulation || previousFeatures.noTemporalAccumulation;
-    }
-    if (rejectHistory) {
-        imageStore(resolveImage, pixel, vec4(texelFetch(currentTexture, pixel, 0).rgb, 0.0));
-        return;
-    }
-
-    // Maybe we might want to filter the current input pixel
+// Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
 
     vec3 historyColor = history.rgb;
@@ -412,6 +398,7 @@ void main() {
     currentColor.rgb = InverseTonemap(currentColor.rgb);
 #endif
 
+    StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
 
     // Check if we sampled outside the viewport area

@@ -32,6 +32,10 @@ namespace Atlas::Scene {
             vec3 GetTransformedPosition() const { return transformedPosition; }
             quat GetTransformedRotation() const { return transformedRotation; }
 
+            // The transform of the last frame, for motion vectors
+            vec3 GetLastTransformedPosition() const { return lastTransformedPosition; }
+            quat GetLastTransformedRotation() const { return lastTransformedRotation; }
+
             ResourceHandle<Font> font;
 
             std::string text;
@@ -53,6 +57,8 @@ namespace Atlas::Scene {
 
             vec3 transformedPosition;
             quat transformedRotation;
+            vec3 lastTransformedPosition;
+            quat lastTransformedRotation;
 
         };
 

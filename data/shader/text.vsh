@@ -23,8 +23,9 @@ layout (set = 3, binding = 2, std430) readonly buffer InstancesBuffer {
 #ifdef TEXT_3D
 layout(push_constant) uniform constants {
     vec4 position;
-    vec4 right;
-    vec4 down;
+    vec4 rotation;
+    vec4 lastPosition;
+    vec4 lastRotation;
     vec4 characterColor;
     vec4 outlineColor;
     vec2 renderHalfSize;
@@ -46,6 +47,23 @@ layout(push_constant) uniform constants {
     float edgeValue;
     float smoothness;
 } pushConstants;
+#endif
+
+vec3 RotateByQuaternion(vec4 rotation, vec3 vector) {
+
+    return vector + 2.0 * cross(rotation.xyz, cross(rotation.xyz, vector) + rotation.w * vector);
+
+}
+
+#ifdef TEXT_3D
+// The world position of a point of the text rectangle, x goes right and y down from its corner
+vec3 GetWorldPosition(vec3 origin, vec4 rotation, vec2 position) {
+
+    vec3 right = RotateByQuaternion(rotation, vec3(1.0, 0.0, 0.0));
+    vec3 down = RotateByQuaternion(rotation, vec3(0.0, -1.0, 0.0));
+    return origin + right * (position.x - pushConstants.renderHalfSize.x) + down * (position.y - pushConstants.renderHalfSize.y);
+
+}
 #endif
 
 void main() {
@@ -76,19 +94,13 @@ void main() {
     texCoordVS = vec3(position * glyph.scale, characterInfo.z);
 
 #ifdef TEXT_3D
-    vec3 right = normalize(pushConstants.right.xyz);
-    vec3 down = normalize(pushConstants.down.xyz);
-
-    vec2 halfSize = pushConstants.renderHalfSize;
-    vec3 worldPosition = right * screenPositionVS.x + down * screenPositionVS.y;
-    worldPosition = worldPosition + pushConstants.position.xyz - right * halfSize.x - down * halfSize.y;
-
-    // Text isn't accumulated temporally (see text.fsh), the jitter would only make it shake
-    gl_Position = globalData.pMatrixUnjitterd * globalData.vMatrix * vec4(worldPosition, 1.0);
-
+    vec3 worldPosition = GetWorldPosition(pushConstants.position.xyz, pushConstants.rotation, screenPositionVS);
+    gl_Position = globalData.pMatrix * globalData.vMatrix * vec4(worldPosition, 1.0);
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
-    // For moving objects we need the last frames matrix
-    vec4 last = globalData.pvMatrixLast * vec4(worldPosition, 1.0);
+
+    // The text was at its last transform in the last frame
+    vec3 lastWorldPosition = GetWorldPosition(pushConstants.lastPosition.xyz, pushConstants.lastRotation, screenPositionVS);
+    vec4 last = globalData.pvMatrixLast * vec4(lastWorldPosition, 1.0);
     ndcLastVS = vec3(last.xy, last.w);
 #else
     vec2 clipPosition = 2.0 * (screenPositionVS / pushConstants.renderArea) - 1.0;

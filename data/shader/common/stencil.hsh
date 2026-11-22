@@ -2,7 +2,6 @@ struct StencilFeatures {
     bool responsivePixel;
     bool waterPixel;
     bool underWaterPixel;
-    bool noTemporalAccumulation;
 };
 
 StencilFeatures CreateStencilFeatures() {
@@ -12,8 +11,7 @@ StencilFeatures CreateStencilFeatures() {
     features.responsivePixel = false;
     features.waterPixel = false;
     features.underWaterPixel = false;
-    features.noTemporalAccumulation = false;
-    
+
     return features;
     
 }
@@ -23,14 +21,12 @@ uint EncodeStencilFeatures(StencilFeatures features) {
     const uint responsivePixel = (1 << 0);
     const uint waterPixel = (1 << 1);
     const uint underWaterPixel = (1 << 2);
-    const uint noTemporalAccumulation = (1 << 3);
 
     uint data = 0u;
 
     data |= features.responsivePixel ? responsivePixel : 0u;
     data |= features.waterPixel ? waterPixel : 0u;
     data |= features.underWaterPixel ? underWaterPixel : 0u;
-    data |= features.noTemporalAccumulation ? noTemporalAccumulation : 0u;
 
     return data;
 
@@ -41,14 +37,12 @@ StencilFeatures DecodeStencilFeatures(uint data) {
     const uint responsivePixel = (1 << 0);
     const uint waterPixel = (1 << 1);
     const uint underWaterPixel = (1 << 2);
-    const uint noTemporalAccumulation = (1 << 3);
 
     StencilFeatures features;
 
     features.responsivePixel = (data & responsivePixel) > 0u;
     features.waterPixel = (data & waterPixel) > 0u;
     features.underWaterPixel = (data & underWaterPixel) > 0u;
-    features.noTemporalAccumulation = (data & noTemporalAccumulation) > 0u;
 
     return features;
 

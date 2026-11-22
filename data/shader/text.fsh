@@ -20,8 +20,9 @@ layout(set = 3, binding = 0) uniform sampler2DArray glyphsTexture;
 #ifdef TEXT_3D
 layout(push_constant) uniform constants {
     vec4 position;
-    vec4 right;
-    vec4 down;
+    vec4 rotation;
+    vec4 lastPosition;
+    vec4 lastRotation;
     vec4 characterColor;
     vec4 outlineColor;
     vec2 renderHalfSize;
@@ -74,15 +75,14 @@ void main() {
     if (colorFS.a < 0.5)
         discard;
 
-    StencilFeatures features = CreateStencilFeatures();
-    features.noTemporalAccumulation = true;
-    stencilFS = EncodeStencilFeatures(features);
+    // Text covers the features of the surfaces behind it, e.g. water
+    stencilFS = EncodeStencilFeatures(CreateStencilFeatures());
 
     vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
     vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-    // The current position is unjittered already (see text.vsh), the last one used the jittered matrix
     ndcL -= globalData.jitterLast;
+    ndcC -= globalData.jitterCurrent;
 
     velocityFS = (ndcL - ndcC) * 0.5;
 #endif
