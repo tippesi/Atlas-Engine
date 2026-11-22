@@ -353,6 +353,8 @@ namespace Atlas {
 
             std::mutex dirtyEntitiesMutex;
             std::vector<ECS::Entity> dirtyEntities;
+            // The first dirty entities UpdateTransforms brought up to date, the next call only processes the later ones
+            size_t updatedDirtyEntities = 0;
             std::vector<ECS::Entity> frameDirtyEntities;
             std::vector<ECS::Entity> lastFrameDirtyEntities;
             // Entities of the bodies the simulation moved in the last update

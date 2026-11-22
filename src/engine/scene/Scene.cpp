@@ -1454,6 +1454,7 @@ namespace Atlas {
             entityManager.Clear();
 
             dirtyEntities.clear();
+            updatedDirtyEntities = 0;
             frameDirtyEntities.clear();
             lastFrameDirtyEntities.clear();
             renderState.gpuScene.Invalidate();
@@ -1730,12 +1731,16 @@ namespace Atlas {
 
             WaitForAsyncWorkCompletion();
 
-            // The dirty entities stay where they are, the next update still has to process them
+            // The dirty entities stay where they are, the next update still has to process them. Earlier calls brought
+            // the first ones up to date, an entity changed again is marked again. Tools which change a scene many times
+            // between updates would otherwise process all earlier changes after each one
+            size_t dirtyEnd = 0;
             auto getDirtyEntities = [&]() {
                 std::vector<ECS::Entity> entities;
                 {
                     std::scoped_lock lock(dirtyEntitiesMutex);
-                    entities = dirtyEntities;
+                    dirtyEnd = dirtyEntities.size();
+                    entities.assign(dirtyEntities.begin() + std::min(updatedDirtyEntities, dirtyEnd), dirtyEntities.end());
                 }
                 std::sort(entities.begin(), entities.end());
                 entities.erase(std::unique(entities.begin(), entities.end()), entities.end());
@@ -1764,6 +1769,9 @@ namespace Atlas {
             auto& hierarchyComponentPool = entityManager.GetPool<HierarchyComponent>();
             for (size_t i = 0; i < hierarchyComponentPool.GetCount(); i++)
                 hierarchyComponentPool.GetByIndex(i).updated = false;
+
+            std::scoped_lock lock(dirtyEntitiesMutex);
+            updatedDirtyEntities = dirtyEnd;
 
         }
 
@@ -1946,6 +1954,7 @@ namespace Atlas {
                 std::scoped_lock lock(dirtyEntitiesMutex);
                 frameDirtyEntities.insert(frameDirtyEntities.end(), dirtyEntities.begin(), dirtyEntities.end());
                 dirtyEntities.clear();
+                updatedDirtyEntities = 0;
             }
 
             // An entity is marked again when its components are removed and added in the same frame
