@@ -20,6 +20,7 @@ namespace Atlas::Editor {
         EnvironmentTexture,
         Animation,
         MaterialGraph,
+        Shader,
         None
     };
 

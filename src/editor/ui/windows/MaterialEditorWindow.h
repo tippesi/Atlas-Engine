@@ -100,6 +100,8 @@ namespace Atlas::Editor::UI {
 
         // Editing a graph without a material of its own, which isn't saved then
         ResourceHandle<MaterialGraph::Graph> editedGraph;
+        // Revision of the graph when it was compiled here, scripts count it up
+        uint32_t compiledRevision = 0;
 
         Panel graphPanelWindow = Panel("Material graph");
 

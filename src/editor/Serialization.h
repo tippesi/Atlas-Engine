@@ -28,19 +28,20 @@ namespace Atlas::Editor {
 
         static void DeserializeDrawerWindow(UI::DrawerWindow& drawerWindow);
 
+        // The .atlas directory of a project, without a project .config in the asset directory
+        static void SetConfigDirectory(const std::string& directory);
+
     private:
         // Scenes are identified by their file, the internal names of two scenes can be the same
         static std::string GetSceneWindowConfigFilename(const ResourceHandle<Scene::Scene>& scene);
 
         static std::string GetDrawerWindowConfigFilename(const UI::DrawerWindow& drawerWindow);
 
-        static void TryWriteToFile(const std::string& filename, const std::string& content);
+        static void TryWriteToFile(const std::string& filename, json& j);
 
         static std::string TryReadFromFile(const std::string& filename);
 
-        static const std::string configFilename;
-        static const std::string configPath;
-        static const std::string contentBrowserWindowFilename;
+        static std::string configPath;
 
     };
 

@@ -9,6 +9,9 @@
 
 #include "resource/Resource.h"
 #include "scene/Scene.h"
+#include "scripting/LuaHost.h"
+
+#include <memory>
 
 namespace Atlas::Editor::UI {
 
@@ -106,9 +109,6 @@ namespace Atlas::Editor::UI {
 
         Physics::DebugDrawSettings physicsDebugDrawSettings;
 
-        // Shown as a red star in the title, cleared when saving
-        bool hasUnsavedChanges = false;
-
         SceneHistory history;
 
         bool isPlaying = false;
@@ -154,8 +154,12 @@ namespace Atlas::Editor::UI {
         // Whether the entity or one of its ancestors is selected, such that rays ignore what they place
         bool IsInSelection(Scene::Entity entity);
 
+        static constexpr size_t maxSelectedHistoryEntities = 1000;
+
         std::vector<uint8_t> sceneState;
         std::vector<uint8_t> cameraState;
+        // Main script of the project while playing, a new one each time playing starts
+        std::unique_ptr<Scripting::LuaHost> mainScript;
         // Editor camera from before a scene camera was viewed
         CameraComponent editorCameraBackup;
 

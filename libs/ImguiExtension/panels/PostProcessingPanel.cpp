@@ -9,7 +9,8 @@ namespace Atlas::ImguiExtension {
         // Settings of disabled effects are shown, but greyed out
         UIElements::PropertySection("Anti-aliasing and upscaling");
         if (UIElements::BeginProperties("PostProcessingUpscaling")) {
-            RenderUpscalerSelection(postProcessing.upscaler, isUpscalerSupported, true);
+            if (showUpscaler)
+                RenderUpscalerSelection(postProcessing.upscaler, isUpscalerSupported, true);
             ImGui::BeginDisabled(postProcessing.upscaler == PostProcessing::Upscaler::None);
             UIElements::PropertyLabel("Jitter range");
             ImGui::SliderFloat("##Jitter range", &postProcessing.taa.jitterRange, 0.001f, 0.999f);

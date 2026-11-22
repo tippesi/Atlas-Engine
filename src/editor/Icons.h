@@ -60,7 +60,12 @@ namespace Atlas::Editor {
         ScaleInverse,
         Pin,
         PinFilled,
-        Profiler
+        Profiler,
+        Save,
+        Undo,
+        Redo,
+        Search,
+        Close
     };
 
     class Icons {

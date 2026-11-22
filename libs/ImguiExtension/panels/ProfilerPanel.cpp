@@ -3,6 +3,7 @@
 
 #include "profiler/CPUProfiler.h"
 #include "profiler/GPUProfiler.h"
+#include "Clock.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,20 +11,32 @@
 
 namespace Atlas::ImguiExtension {
 
+    void ProfilerPanel::Refresh() {
+
+        auto order = GetOrder();
+        if (Clock::Get() - lastRefreshTime < 0.25f && order == refreshedOrder && lastRefreshTime >= 0.0f)
+            return;
+        lastRefreshTime = Clock::Get();
+        refreshedOrder = order;
+
+        // The main and the render thread come first and are open, the workers are listed collapsed
+        cpuThreads = CPUProfiler::enable ? CPUProfiler::GetQueriesAverage(64, order) : std::vector<Profiler::ThreadData>();
+        std::stable_partition(cpuThreads.begin(), cpuThreads.end(), [](const auto& thread) {
+            return thread.name == "Main" || thread.name == "Render";
+            });
+        gpuThreads = GPUProfiler::enable ? GPUProfiler::GetQueriesAverage(64, order) : std::vector<Profiler::ThreadData>();
+
+    }
+
     void ProfilerPanel::Render() {
 
+        Refresh();
         ImGui::PushID(GetNameID());
 
         if (ImGui::BeginTabBar("Profilers")) {
             if (ImGui::BeginTabItem("CPU")) {
-                if (RenderControls(CPUProfiler::enable, false)) {
-                    // The main and the render thread come first and are open, the workers are listed collapsed
-                    auto threadData = CPUProfiler::GetQueriesAverage(64, GetOrder());
-                    std::stable_partition(threadData.begin(), threadData.end(), [](const auto& thread) {
-                        return thread.name == "Main" || thread.name == "Render";
-                        });
-                    RenderTable(threadData, false);
-                }
+                if (RenderControls(CPUProfiler::enable, false))
+                    RenderTable(cpuThreads, false);
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("GPU")) {
@@ -31,7 +44,7 @@ namespace Atlas::ImguiExtension {
                     if (showGraph)
                         perfGraphPanel.Render();
                     else
-                        RenderTable(GPUProfiler::GetQueriesAverage(64, GetOrder()), true);
+                        RenderTable(gpuThreads, true);
                 }
                 ImGui::EndTabItem();
             }

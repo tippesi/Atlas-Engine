@@ -15,8 +15,9 @@ namespace Atlas::Editor::UI {
         auto fps = frameTime > 0.0f ? 1000.0f / frameTime : 0.0f;
 
         // CPU time is the time of the main thread, GPU time the time of the slowest queue
+        profilerPanel.Refresh();
         double cpuTime = 0.0;
-        for (const auto& threadData : CPUProfiler::GetQueriesAverage(32)) {
+        for (const auto& threadData : profilerPanel.cpuThreads) {
             if (threadData.name != "Main")
                 continue;
             for (const auto& query : threadData.queries)
@@ -24,8 +25,7 @@ namespace Atlas::Editor::UI {
         }
 
         double gpuTime = 0.0;
-        auto gpuProfilerData = GPUProfiler::GetQueriesAverage(32, GPUProfiler::OrderBy::MAX_TIME);
-        for (const auto& threadData : gpuProfilerData) {
+        for (const auto& threadData : profilerPanel.gpuThreads) {
             double threadTime = 0.0;
             for (const auto& query : threadData.queries)
                 threadTime += double(query.elapsedTime);

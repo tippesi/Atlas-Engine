@@ -1,10 +1,14 @@
 #include "CodeEditor.h"
 #include "../Theme.h"
+#include "../Singletons.h"
+#include "Widgets.h"
 
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 #include <algorithm>
 #include <cctype>
 #include <string_view>
+#include <unordered_set>
 
 namespace Atlas::Editor::UI {
 
@@ -20,9 +24,60 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void CodeEditor::Reset(const std::string& text) {
+
+        content = text;
+        cursor = 0;
+        anchor = 0;
+        undoStack.clear();
+        redoStack.clear();
+        Tokenize();
+
+    }
+
     bool CodeEditor::IsDeactivatedAfterEdit() const {
 
         return deactivatedAfterEdit;
+
+    }
+
+    std::vector<CodeCompletion> CodeEditor::FindGlslFunctions(const std::string& code) {
+
+        std::vector<CodeCompletion> functions;
+
+        // Definitions start at the beginning of a line, e.g. "float MaterialGraphRemap(float value, ...) {"
+        std::string comment;
+        size_t lineStart = 0;
+        while (lineStart < code.size()) {
+            auto lineEnd = code.find('\n', lineStart);
+            if (lineEnd == std::string::npos)
+                lineEnd = code.size();
+            auto line = code.substr(lineStart, lineEnd - lineStart);
+            lineStart = lineEnd + 1;
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+
+            if (line.starts_with("// ")) {
+                comment += (comment.empty() ? "" : " ") + line.substr(3);
+                continue;
+            }
+
+            auto argumentsStart = line.find('(');
+            auto nameStart = line.rfind(' ', argumentsStart);
+            if (!line.empty() && std::isalpha((unsigned char)line[0]) && argumentsStart != std::string::npos &&
+                nameStart != std::string::npos && nameStart + 1 < argumentsStart && line.ends_with(") {")) {
+                auto name = line.substr(nameStart + 1, argumentsStart - nameStart - 1);
+                auto signature = line.substr(0, line.size() - 2);
+                auto iter = std::find_if(functions.begin(), functions.end(),
+                    [&](const CodeCompletion& completion) { return completion.text == name; });
+                if (iter == functions.end())
+                    functions.push_back({ name, "Function", signature, comment });
+                else if (iter->signature.find(signature) == std::string::npos)
+                    iter->signature += "\n" + signature;
+            }
+            comment.clear();
+        }
+        return functions;
 
     }
 
@@ -31,15 +86,19 @@ namespace Atlas::Editor::UI {
         changed = false;
         deactivatedAfterEdit = false;
 
-        // Another id is another text, e.g. of another node, the editor starts again
+        // Another id is another text, e.g. of another node, the editor starts again. A text set before the first render
+        // keeps its undo steps
         auto editorId = ImGui::GetID(id);
         if (editorId != lastId) {
+            auto prepared = lastId == 0 && content == text;
             lastId = editorId;
             content = text;
-            cursor = 0;
-            anchor = 0;
-            undoStack.clear();
-            redoStack.clear();
+            if (!prepared) {
+                cursor = 0;
+                anchor = 0;
+                undoStack.clear();
+                redoStack.clear();
+            }
             wasFocused = false;
             editedWhileFocused = false;
             completionOpen = false;
@@ -63,8 +122,24 @@ namespace Atlas::Editor::UI {
 
         interfaceFont = ImGui::GetFont();
         ImGui::PushFont(Theme::codeFont ? Theme::codeFont : interfaceFont);
-        characterWidth = ImGui::CalcTextSize("M").x;
+        // ImGui::CalcTextSize rounds up to whole pixels, the advance of the glyphs isn't rounded
+        characterWidth = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, 0.0f, "M").x;
         lineHeight = std::round(ImGui::GetFontSize() * 1.3f);
+
+        auto action = std::exchange(requestedAction, Action::None);
+        if (editedText && action == Action::Undo)
+            Restore(undoStack, redoStack);
+        if (editedText && action == Action::Redo)
+            Restore(redoStack, undoStack);
+        if (action == Action::Search || action == Action::Replace) {
+            searchOpen = true;
+            searchFocusRequested = true;
+            replaceOpen = action == Action::Replace && editedText;
+        }
+
+        searchMatches = searchOpen ? FindMatches() : std::vector<int32_t>();
+        if (searchOpen)
+            RenderSearch(editedText != nullptr);
 
         auto lineCount = int32_t(lineStarts.size());
         gutterWidth = float(std::max(int32_t(std::to_string(lineCount).size()), 2) + 2) * characterWidth;
@@ -186,6 +261,17 @@ namespace Atlas::Editor::UI {
             if (focused && line == cursorLine && selectionStart == selectionEnd)
                 drawList->AddRectFilled(ImVec2(visibleMin.x, y), ImVec2(visibleMax.x, y + lineHeight),
                     ImGui::GetColorU32(ImGuiCol_Text, 0.05f));
+
+            if (searchOpen && !searchText.empty()) {
+                auto first = std::lower_bound(searchMatches.begin(), searchMatches.end(), lineStart);
+                for (auto iter = first; iter != searchMatches.end() && *iter <= lineEnd; iter++) {
+                    auto match = *iter;
+                    auto x0 = float(GetColumn(match)) * characterWidth;
+                    auto x1 = float(GetColumn(std::min(match + int32_t(searchText.size()), lineEnd))) * characterWidth;
+                    drawList->AddRectFilled(ImVec2(textOrigin.x + x0, y), ImVec2(textOrigin.x + x1, y + lineHeight),
+                        ImGui::GetColorU32(Theme::Accent(0.3f)));
+                }
+            }
 
             if (selectionStart < selectionEnd && selectionStart <= lineEnd && selectionEnd >= lineStart) {
                 auto x0 = float(GetColumn(std::max(selectionStart, lineStart))) * characterWidth;
@@ -416,8 +502,21 @@ namespace Atlas::Editor::UI {
             MoveCursor(io.KeyCtrl ? 0 : lineStart, shift);
         else if (ImGui::IsKeyPressed(ImGuiKey_End))
             MoveCursor(io.KeyCtrl ? int32_t(content.size()) : GetLineEnd(line), shift);
-        else if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+        else if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             anchor = cursor;
+            searchOpen = false;
+        }
+        else if (shortcut && (ImGui::IsKeyPressed(ImGuiKey_F) || ImGui::IsKeyPressed(ImGuiKey_H))) {
+            // A selection within a line is searched for
+            if (hasSelection && content.find('\n', selectionStart) >= size_t(selectionEnd))
+                searchText = content.substr(selectionStart, selectionEnd - selectionStart);
+            searchOpen = true;
+            searchFocusRequested = true;
+            replaceOpen = canEdit && ImGui::IsKeyPressed(ImGuiKey_H);
+        }
+        else if (ImGui::IsKeyPressed(ImGuiKey_F3) && !searchText.empty()) {
+            FindNext(!shift);
+        }
         else if (shortcut && ImGui::IsKeyPressed(ImGuiKey_A)) {
             anchor = 0;
             cursor = int32_t(content.size());
@@ -523,11 +622,30 @@ namespace Atlas::Editor::UI {
         context.prefix = content.substr(completionStart, cursor - completionStart);
         if (completionStart > 0 && (content[completionStart - 1] == '.' || content[completionStart - 1] == ':')) {
             context.separator = content[completionStart - 1];
+            // The whole expression with calls and indices, e.g. scene:GetMainCamera() or children[i + 1]
             auto qualifierStart = completionStart - 1;
-            while (qualifierStart > 0 && (IsWordCharacter(qualifierStart - 1) ||
-                content[qualifierStart - 1] == '.' || content[qualifierStart - 1] == ':'))
+            while (qualifierStart > 0) {
+                auto c = content[qualifierStart - 1];
+                if (c == ')' || c == ']') {
+                    auto open = c == ')' ? '(' : '[';
+                    auto depth = 0;
+                    auto i = qualifierStart - 1;
+                    for (; i >= 0; i--) {
+                        depth += content[i] == c ? 1 : content[i] == open ? -1 : 0;
+                        if (depth == 0)
+                            break;
+                    }
+                    if (i < 0)
+                        break;
+                    qualifierStart = i;
+                    continue;
+                }
+                if (!IsWordCharacter(qualifierStart - 1) && c != '.' && c != ':')
+                    break;
                 qualifierStart--;
+            }
             context.qualifier = content.substr(qualifierStart, completionStart - 1 - qualifierStart);
+            context.text = std::string_view(content).substr(0, qualifierStart);
         }
 
         completions.clear();
@@ -550,6 +668,22 @@ namespace Atlas::Editor::UI {
                 addWords(luaKeywords, "Keyword");
                 addWords(luaBuiltins, "Builtin");
             }
+
+            // Names in the text, e.g. local variables, except the word being typed
+            std::unordered_set<std::string_view> words;
+            for (int32_t i = 0; i < int32_t(content.size());) {
+                if (!IsWordCharacter(i) || std::isdigit((unsigned char)content[i])) {
+                    i++;
+                    continue;
+                }
+                auto start = i;
+                while (IsWordCharacter(i))
+                    i++;
+                if (start != completionStart && i - start > 1)
+                    words.insert(std::string_view(content).substr(start, i - start));
+            }
+            for (auto word : words)
+                candidates.push_back({ std::string(word), "Word" });
         }
 
         // Case doesn't matter while typing, an exactly typed word needs no suggestion
@@ -778,6 +912,145 @@ namespace Atlas::Editor::UI {
         while (IsWordCharacter(offset + at))
             offset += direction;
         return offset;
+
+    }
+
+    void CodeEditor::RenderSearch(bool canEdit) {
+
+        auto& io = ImGui::GetIO();
+        const auto& style = ImGui::GetStyle();
+        auto matches = int32_t(searchMatches.size());
+        auto countText = std::to_string(matches) + (matches == 1 ? " match" : " matches");
+
+        ImGui::PushFont(interfaceFont);
+        auto buttonWidth = [&](const char* label) { return ImGui::CalcTextSize(label).x + 2.0f * style.FramePadding.x; };
+        auto iconWidth = ImGui::GetTextLineHeight() + 2.0f * style.FramePadding.x;
+        auto rightWidth = ImGui::CalcTextSize(countText.c_str()).x + 3.0f * iconWidth + (canEdit ? buttonWidth("Replace") : 0.0f) +
+            (canEdit ? 5.0f : 4.0f) * style.ItemSpacing.x;
+
+        ImGui::SetNextItemWidth(-rightWidth);
+        if (searchFocusRequested) {
+            ImGui::SetKeyboardFocusHere();
+            searchFocusRequested = false;
+        }
+        if (ImGui::InputTextWithHint("##Search", "Search...", &searchText, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            FindNext(!io.KeyShift);
+            // Enter takes the focus from the field, the next match follows with the next Enter
+            ImGui::SetKeyboardFocusHere(-1);
+        }
+        if (ImGui::IsItemActive() && ImGui::IsKeyPressed(ImGuiKey_Escape))
+            searchOpen = false;
+
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(Theme::TextMuted(), "%s", countText.c_str());
+        ImGui::SameLine();
+        if (Widgets::ToolbarIconButton("Previous match", Singletons::icons->Get(IconType::ArrowUp), "Previous match (Shift+F3)"))
+            FindNext(false);
+        ImGui::SameLine();
+        if (Widgets::ToolbarIconButton("Next match", Singletons::icons->Get(IconType::ArrowDown), "Next match (F3)"))
+            FindNext(true);
+        if (canEdit) {
+            ImGui::SameLine();
+            if (replaceOpen)
+                Theme::PushPrimaryButton();
+            auto toggled = ImGui::Button("Replace");
+            if (replaceOpen)
+                Theme::PopPrimaryButton();
+            ImGui::SetItemTooltip("Replace (Ctrl+H)");
+            if (toggled)
+                replaceOpen = !replaceOpen;
+        }
+        ImGui::SameLine();
+        if (Widgets::ToolbarIconButton("Close search", Singletons::icons->Get(IconType::Close), "Close (Esc)"))
+            searchOpen = false;
+
+        if (canEdit && replaceOpen) {
+            ImGui::SetNextItemWidth(-(buttonWidth("Replace") + buttonWidth("Replace all") + 2.0f * style.ItemSpacing.x));
+            ImGui::InputTextWithHint("##Replace", "Replace with...", &replaceText);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(matches == 0);
+            if (ImGui::Button("Replace"))
+                ReplaceMatch(false);
+            ImGui::SameLine();
+            if (ImGui::Button("Replace all"))
+                ReplaceMatch(true);
+            ImGui::EndDisabled();
+        }
+        ImGui::PopFont();
+
+    }
+
+    void CodeEditor::ReplaceMatch(bool all) {
+
+        auto matches = FindMatches();
+        if (matches.empty())
+            return;
+
+        auto length = int32_t(searchText.size());
+        if (all) {
+            // One replacement of the whole text is one undo step
+            std::string replaced;
+            int32_t position = 0;
+            for (auto match : matches) {
+                replaced += content.substr(position, match - position) + replaceText;
+                position = match + length;
+            }
+            replaced += content.substr(position);
+            Replace(0, int32_t(content.size()), replaced, false);
+            MoveCursor(std::min(matches.front(), int32_t(content.size())), false);
+            return;
+        }
+
+        // The selected match is replaced, otherwise the next one is selected first
+        auto selectionStart = std::min(cursor, anchor);
+        auto selected = std::max(cursor, anchor) - selectionStart == length &&
+            std::find(matches.begin(), matches.end(), selectionStart) != matches.end();
+        if (selected)
+            Replace(selectionStart, selectionStart + length, replaceText, false);
+        FindNext(true);
+
+    }
+
+    std::vector<int32_t> CodeEditor::FindMatches() const {
+
+        std::vector<int32_t> matches;
+        if (searchText.empty())
+            return matches;
+        auto equal = [](char a, char b) { return std::tolower((unsigned char)a) == std::tolower((unsigned char)b); };
+        auto iter = content.begin();
+        while ((iter = std::search(iter, content.end(), searchText.begin(), searchText.end(), equal)) != content.end()) {
+            matches.push_back(int32_t(iter - content.begin()));
+            iter += searchText.size();
+        }
+        return matches;
+
+    }
+
+    void CodeEditor::FindNext(bool forward) {
+
+        auto matches = FindMatches();
+        if (matches.empty())
+            return;
+
+        auto selectionStart = std::min(cursor, anchor);
+        auto selectionEnd = std::max(cursor, anchor);
+        auto match = forward ? matches.front() : matches.back();
+        if (forward) {
+            auto next = std::lower_bound(matches.begin(), matches.end(), selectionEnd);
+            if (next != matches.end())
+                match = *next;
+        }
+        else {
+            auto previous = std::lower_bound(matches.begin(), matches.end(), selectionStart);
+            if (previous != matches.begin())
+                match = *(previous - 1);
+        }
+
+        anchor = match;
+        cursor = match + int32_t(searchText.size());
+        scrollToCursor = true;
+        completionOpen = false;
 
     }
 

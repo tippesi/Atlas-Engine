@@ -97,6 +97,9 @@ namespace Atlas::Editor::UI {
         // Starts a new history, e.g. after another asset was chosen in the same window
         void ResetHistory();
 
+        // The asset was changed by something else than the window, e.g. a script, the next frame records it
+        bool changedOutside = false;
+
         Panel propertiesPanel = Panel("Properties");
 
         // Area of the panels in this frame, e.g. for a panel maximized within the window

@@ -163,6 +163,13 @@ namespace Atlas::Editor::UI {
 
     void MaterialEditorWindow::RenderPanels() {
 
+        // Changes from scripts are compiled like the ones of the panel, the history notices them by the state
+        if (material.IsLoaded() && material->HasGraph() && material->graph->revision != compiledRevision) {
+            compiledRevision = material->graph->revision;
+            material->graph->Compile();
+            changedOutside = true;
+        }
+
         ImGui::Begin(graphPanelWindow.GetNameID());
 
         graphPanelWindow.isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);

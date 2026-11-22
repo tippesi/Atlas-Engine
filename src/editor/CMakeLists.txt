@@ -47,9 +47,15 @@ endif()
 
 target_precompile_headers(${PROJECT_NAME} REUSE_FROM AtlasEngine)
 
+# A running editor can't be overwritten (LNK1168), it keeps running from a renamed file
+if (WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_LINK
+        COMMAND ${CMAKE_COMMAND} -DEXECUTABLE=$<TARGET_FILE:${PROJECT_NAME}> -P ${CMAKE_CURRENT_SOURCE_DIR}/../bridge/MoveRunningExecutable.cmake)
+endif()
+
 # We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
 # needs to be turned on.
-target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension 
+target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension AtlasBridgeLibrary
     imguizmo::imguizmo Jolt::Jolt)
 
 if (APPLE AND ATLAS_BUNDLE)

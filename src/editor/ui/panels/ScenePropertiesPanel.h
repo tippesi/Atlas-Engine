@@ -104,6 +104,8 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
+                // The upscaler is a project setting
+                postProcessingPanel.showUpscaler = false;
                 postProcessingPanel.isUpscalerSupported = [](PostProcessing::Upscaler upscaler) {
                     return Singletons::mainRenderer->IsUpscalerSupported(upscaler);
                 };
@@ -115,17 +117,7 @@ namespace Atlas::Editor::UI {
             else if constexpr (std::is_same_v<T, Ref<Scene::Scene>>) {
                 // One heading for the scene, the statistics bring their own sections
                 RenderHeading("Scene");
-                if (Widgets::BeginProperties("Scene rendering")) {
-                    Widgets::PropertyLabel("Occlusion culling", "Skips meshes hidden behind others");
-                    ImGui::Checkbox("##Occlusion culling", &t->occlusionCulling);
-                    Widgets::EndProperties();
-                }
-                if (Widgets::BeginProperties("Scene file")) {
-                    Widgets::PropertyLabel("Binary columns", "Stores the common components as raw values in the binary scene file, "
-                        "it loads about twice as fast. Takes effect when the scene is saved");
-                    ImGui::Checkbox("##Binary columns", &t->binaryColumns);
-                    Widgets::EndProperties();
-                }
+                ImGui::TextDisabled("Occlusion culling, mesh LODs, the upscaler and the file format are project settings");
                 sceneStatisticsPanel.Render(t);
             }
 

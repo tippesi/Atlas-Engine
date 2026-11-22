@@ -1,5 +1,6 @@
 #include "AssetEditorWindow.h"
 #include "../Widgets.h"
+#include "../../Singletons.h"
 
 #include "../../DataCreator.h"
 #include "../../Singletons.h"
@@ -22,6 +23,10 @@ namespace Atlas::Editor::UI {
     }
 
     void AssetEditorWindow::Render() {
+
+        // The asset identifies the window, the label gets room for the unsaved marker
+        auto assetPath = GetAssetPath();
+        SetTitle(name, assetPath.empty() ? std::to_string(ID) : assetPath);
 
         ImGui::SetNextWindowSize(ImVec2(1280, 720), ImGuiCond_FirstUseEver);
         if (!Begin())
@@ -100,8 +105,10 @@ namespace Atlas::Editor::UI {
         controlDown = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
 #endif
         bool typing = ImGui::GetIO().WantTextInput;
-        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false))
+        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
             Save();
+            hasUnsavedChanges = false;
+        }
         if (inFocus && history.HandleShortcuts())
             lastState = SaveState();
         // Only the window the user works in has edits, an interaction which moved the focus away still has to finish
@@ -192,7 +199,8 @@ namespace Atlas::Editor::UI {
             return;
         }
 
-        if (!interactionFinished)
+        // A change from a script has no interaction of its own
+        if (!interactionFinished && !std::exchange(changedOutside, false))
             return;
 
         auto state = SaveState();
@@ -200,6 +208,7 @@ namespace Atlas::Editor::UI {
             return;
 
         auto before = lastState;
+        hasUnsavedChanges = true;
         history.Push({
             .name = "Edit " + Common::Path::GetFileName(GetAssetPath()),
             .undo = [this, before]() { RestoreState(before); },
@@ -215,8 +224,7 @@ namespace Atlas::Editor::UI {
         auto path = GetAssetPath();
 
         // Heading with the save button on the right
-        auto saveLabel = "Save";
-        auto saveWidth = ImGui::CalcTextSize(saveLabel).x + 4.0f * style.FramePadding.x;
+        auto saveWidth = ImGui::GetTextLineHeight() + 2.0f * style.FramePadding.x;
         auto headingStart = ImGui::GetCursorPos();
 
         // The name is cut off before the save button
@@ -229,11 +237,10 @@ namespace Atlas::Editor::UI {
         auto headingEnd = ImGui::GetCursorPos();
 
         ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionMax().x - saveWidth, headingStart.y));
-        Theme::PushPrimaryButton();
-        if (ImGui::Button(saveLabel, ImVec2(saveWidth, 0.0f)))
+        if (Widgets::ToolbarIconButton("Save", Singletons::icons->Get(IconType::Save), saveTooltip)) {
             Save();
-        Theme::PopPrimaryButton();
-        ImGui::SetItemTooltip("%s", saveTooltip);
+            hasUnsavedChanges = false;
+        }
         ImGui::SetCursorPos(headingEnd);
 
         ImGui::Separator();

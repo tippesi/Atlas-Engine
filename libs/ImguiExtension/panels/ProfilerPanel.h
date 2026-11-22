@@ -18,6 +18,13 @@ namespace Atlas::ImguiExtension {
 
         void Render();
 
+        // Averages of the queries over the history, refreshed a few times per second: merging the history of all
+        // threads every frame costs more than most of the work it measures
+        void Refresh();
+
+        std::vector<Profiler::ThreadData> cpuThreads;
+        std::vector<Profiler::ThreadData> gpuThreads;
+
         bool showGraph = false;
 
         int32_t sortItem = 0;
@@ -51,6 +58,9 @@ namespace Atlas::ImguiExtension {
         std::vector<HitchRecorder::CauseSummary> hitchSummary;
         uint64_t hitchRevision = std::numeric_limits<uint64_t>::max();
         uint64_t selectedHitchId = std::numeric_limits<uint64_t>::max();
+
+        float lastRefreshTime = -1.0f;
+        Profiler::OrderBy refreshedOrder = Profiler::OrderBy::MAX_TIME;
 
     };
 

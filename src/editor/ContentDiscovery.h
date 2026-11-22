@@ -22,7 +22,8 @@ namespace Atlas::Editor {
 	class ContentDiscovery {
 
 	public:
-		static void Shutdown() { JobSystem::Wait(contentDiscoveryJob); }
+		// The content is discovered again afterwards, e.g. in the directory of another project
+		static void Shutdown() { JobSystem::Wait(contentDiscoveryJob); content.reset(); nextContent.reset(); }
 
 		static void Execute();
 

@@ -42,7 +42,8 @@ namespace Atlas::Editor::UI {
 			EnvTextureBit = (1 << 10),
 			AnimationBit = (1 << 11),
 			MaterialGraphBit = (1 << 12),
-			AllBit = (1 << 13) - 1
+			ShaderBit = (1 << 13),
+			AllBit = (1 << static_cast<int>(ContentType::None)) - 1
 		} ContentFilterBits;
 
         std::string currentDirectory = Loader::AssetLoader::GetDataDirectory();

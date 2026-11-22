@@ -17,6 +17,7 @@ namespace Atlas::ImguiExtension {
 
     void ImguiWrapper::Load(Atlas::Window *window) {
 
+        this->window = window;
         ImPlot::CreateContext();
 
         // Setup back-end capabilities flags
@@ -79,8 +80,21 @@ namespace Atlas::ImguiExtension {
 
         device->WaitForIdle();
 
-        // Unsubscribe from all events
         ImGui_ImplVulkan_Shutdown();
+
+        if (window) {
+            window->windowEventDelegate.Unsubscribe(windowID);
+            window->mouseButtonEventDelegate.Unsubscribe(mouseButtonID);
+            window->mouseMotionEventDelegate.Unsubscribe(mouseMotionID);
+            window->mouseWheelEventDelegate.Unsubscribe(mouseWheelID);
+            window = nullptr;
+        }
+        Atlas::Events::EventManager::KeyboardEventDelegate.Unsubscribe(keyboardID);
+        Atlas::Events::EventManager::TextInputEventDelegate.Unsubscribe(textInputID);
+        for (auto& cursor : mouseCursors) {
+            SDL_DestroyCursor(cursor);
+            cursor = nullptr;
+        }
 
         ImPlot::DestroyContext();
 

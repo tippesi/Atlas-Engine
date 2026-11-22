@@ -23,11 +23,13 @@ namespace Atlas::Editor::UI {
         std::string description;
     };
 
-    // The word in front of the cursor and, after a . or :, what it belongs to, e.g. "entity" and ':' for "entity:Get"
+    // The word in front of the cursor and, after a . or :, what it belongs to, e.g. "entity" and ':' for "entity:Get".
+    // The qualifier keeps calls and indices ("scene:GetMainCamera()"), text is the code in front of it
     struct CodeCompletionContext {
         std::string prefix;
         std::string qualifier;
         char separator = 0;
+        std::string_view text;
     };
 
     // Text editor with syntax highlighting and line numbers. It keeps the cursor and undo history of the text
@@ -44,13 +46,47 @@ namespace Atlas::Editor::UI {
         // True for one frame when the editor lost the focus after the text was changed
         bool IsDeactivatedAfterEdit() const;
 
+        // Actions of a toolbar, they happen in the next Render
+        void Undo() { requestedAction = Action::Undo; }
+
+        void Redo() { requestedAction = Action::Redo; }
+
+        void OpenSearch(bool replace) { requestedAction = replace ? Action::Replace : Action::Search; }
+
+        // Starts with a text before the editor is rendered, e.g. the file of a window, without undo steps
+        void Reset(const std::string& text);
+
+        // Replaces the whole text as one undo step, the caller changes its own copy of the text too
+        void SetText(const std::string& text) { Replace(0, int32_t(content.size()), text, false); }
+
+        bool CanUndo() const { return !undoStack.empty(); }
+
+        bool CanRedo() const { return !redoStack.empty(); }
+
         CodeLanguage language = CodeLanguage::GLSL;
         bool readOnly = false;
 
         // Suggestions for a context, the editor filters them by the prefix and adds the keywords and builtins of the language
         std::function<std::vector<CodeCompletion>(const CodeCompletionContext& context)> completionProvider;
 
+        // Functions defined in GLSL code with their signatures, the // comment lines above become the description.
+        // Overloads are one completion with a signature per line
+        static std::vector<CodeCompletion> FindGlslFunctions(const std::string& code);
+
     private:
+        enum class Action {
+            None = 0,
+            Undo,
+            Redo,
+            Search,
+            Replace
+        };
+
+        void RenderSearch(bool canEdit);
+
+        // Replaces the selected match and selects the next one, or replaces all matches as one undo step
+        void ReplaceMatch(bool all);
+
         // In the order of the code colors of the theme
         enum class TokenType {
             Keyword = 0,
@@ -112,6 +148,12 @@ namespace Atlas::Editor::UI {
 
         bool IsWordCharacter(int32_t offset) const;
 
+        // Selects the next match of the search after the selection, or the one before it
+        void FindNext(bool forward);
+
+        // Offsets of the matches of the search, ignoring case
+        std::vector<int32_t> FindMatches() const;
+
         std::string content;
         std::vector<int32_t> lineStarts = { 0 };
         std::vector<Token> tokens;
@@ -148,6 +190,16 @@ namespace Atlas::Editor::UI {
         bool wasFocused = false;
         bool editedWhileFocused = false;
         bool deactivatedAfterEdit = false;
+
+        // Ctrl+F opens the search above the text, Enter and F3 go to the next match, with Shift to the one before
+        bool searchOpen = false;
+        bool searchFocusRequested = false;
+        bool replaceOpen = false;
+        std::string searchText;
+        std::string replaceText;
+        // Offsets of the matches, found once per frame
+        std::vector<int32_t> searchMatches;
+        Action requestedAction = Action::None;
 
         const int32_t tabSize = 4;
 

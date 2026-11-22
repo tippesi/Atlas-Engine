@@ -21,6 +21,8 @@ namespace Atlas::ImguiExtension {
             const std::function<bool(PostProcessing::Upscaler)>& isSupported, bool inProperties);
 
         std::function<bool(PostProcessing::Upscaler)> isUpscalerSupported;
+        // Hosts with the upscaler in other settings, e.g. the project settings of the editor, hide it here
+        bool showUpscaler = true;
 
     };
 

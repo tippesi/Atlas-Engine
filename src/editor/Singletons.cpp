@@ -9,6 +9,7 @@ namespace Atlas::Editor {
     Ref<Config> Singletons::config;
     Ref<BlockingOperation> Singletons::blockingOperation;
     Ref<ContentPreviews> Singletons::contentPreviews;
+    Ref<Project> Singletons::project;
 
     void Singletons::Destruct() {
 
@@ -18,6 +19,7 @@ namespace Atlas::Editor {
         icons.reset();
         config.reset();
         blockingOperation.reset();
+        project.reset();
 
     }
 

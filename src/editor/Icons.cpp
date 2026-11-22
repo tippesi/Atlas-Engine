@@ -120,6 +120,11 @@ namespace Atlas::Editor {
                 { IconType::Pin, Texture::Texture2D("editor/icons/pin.png") },
                 { IconType::PinFilled, Texture::Texture2D("editor/icons/pinFilled.png") },
                 { IconType::Profiler, Texture::Texture2D("editor/icons/profiler.png") },
+                { IconType::Save, Texture::Texture2D("editor/icons/save.png") },
+                { IconType::Undo, Texture::Texture2D("editor/icons/undo.png") },
+                { IconType::Redo, Texture::Texture2D("editor/icons/redo.png") },
+                { IconType::Search, Texture::Texture2D("editor/icons/search.png") },
+                { IconType::Close, Texture::Texture2D("editor/icons/cancel.png") },
             };
         }
         else {
@@ -178,6 +183,11 @@ namespace Atlas::Editor {
                 { IconType::Pin, Texture::Texture2D("editor/icons/pin_light.png") },
                 { IconType::PinFilled, Texture::Texture2D("editor/icons/pinFilled_light.png") },
                 { IconType::Profiler, Texture::Texture2D("editor/icons/profiler_light.png") },
+                { IconType::Save, Texture::Texture2D("editor/icons/save_light.png") },
+                { IconType::Undo, Texture::Texture2D("editor/icons/undo_light.png") },
+                { IconType::Redo, Texture::Texture2D("editor/icons/redo_light.png") },
+                { IconType::Search, Texture::Texture2D("editor/icons/search_light.png") },
+                { IconType::Close, Texture::Texture2D("editor/icons/cancel_light.png") },
             };
         }
 

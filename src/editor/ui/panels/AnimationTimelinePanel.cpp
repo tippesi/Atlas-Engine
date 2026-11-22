@@ -320,18 +320,14 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat("##Speed", track.speed, 0.01f, -10.0f, 10.0f, "%.2fx");
         ImGui::SetItemTooltip("Playback speed");
 
-        // Save on the right
-        auto saveLabel = "Save animation";
-        auto saveWidth = ImGui::CalcTextSize(saveLabel).x + 2.0f * ImGui::GetStyle().FramePadding.x;
+        // Save on the right, highlighted while there are changes
+        auto saveWidth = ImGui::GetTextLineHeight() + 2.0f * ImGui::GetStyle().FramePadding.x;
         ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - saveWidth));
-        if (modified)
-            Theme::PushPrimaryButton();
-        if (ImGui::Button(saveLabel) || saveRequested)
+        auto saveTooltip = "Save the animation to " + animation.GetResource()->path;
+        if (Widgets::ToolbarIconButton("Save animation", Singletons::icons->Get(IconType::Save), saveTooltip.c_str(), modified) ||
+            saveRequested)
             SaveAnimation(animation);
         saveRequested = false;
-        if (modified)
-            Theme::PopPrimaryButton();
-        ImGui::SetItemTooltip("Writes the keys to %s", animation.GetResource()->path.c_str());
 
         ImGui::TextDisabled("Click a key to select it, drag to move it, Delete removes it, double click a lane adds one. "
             "Ctrl + mouse wheel zooms");

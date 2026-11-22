@@ -17,9 +17,13 @@
 
 namespace Atlas::Editor {
 
-    const std::string Serialization::configPath = ".config/";
-    const std::string Serialization::configFilename = configPath + "config.json";
-    const std::string Serialization::contentBrowserWindowFilename = configPath + "contentBrowserWindowConfig.json";
+    std::string Serialization::configPath = ".config/";
+
+    void Serialization::SetConfigDirectory(const std::string& directory) {
+
+        configPath = directory.ends_with('/') ? directory : directory + "/";
+
+    }
 
     void Serialization::SerializeConfig() {
 
@@ -58,13 +62,13 @@ namespace Atlas::Editor {
             { "hitches", hitches }
         };
 
-        TryWriteToFile(configFilename, to_string(j));
+        TryWriteToFile(configPath + "config.json", j);
 
     }
 
     void Serialization::DeserializeConfig() {
 
-       auto serialized = TryReadFromFile(configFilename);
+       auto serialized = TryReadFromFile(configPath + "config.json");
 
         if (serialized.empty())
             return;
@@ -167,7 +171,7 @@ namespace Atlas::Editor {
                 hiddenComponents.push_back(componentTypes[i].key);
         j["hierarchyHiddenComponents"] = hiddenComponents;
 
-        TryWriteToFile(GetSceneWindowConfigFilename(sceneWindow->scene), to_string(j));
+        TryWriteToFile(GetSceneWindowConfigFilename(sceneWindow->scene), j);
 
     }
 
@@ -238,13 +242,13 @@ namespace Atlas::Editor {
             { "drawerHeight", contentBrowserWindow.height },
         };
 
-        TryWriteToFile(contentBrowserWindowFilename, to_string(j));
+        TryWriteToFile(configPath + "contentBrowserWindowConfig.json", j);
 
     }
 
     void Serialization::DeserializeContentBrowserWindow(UI::ContentBrowserWindow& contentBrowserWindow) {
 
-        auto serialized = TryReadFromFile(contentBrowserWindowFilename);
+        auto serialized = TryReadFromFile(configPath + "contentBrowserWindowConfig.json");
 
         if (serialized.empty())
             return;
@@ -257,8 +261,9 @@ namespace Atlas::Editor {
             j.at("searchRecursively").get_to(contentBrowserWindow.searchRecursively);
         if (j.contains("contentFilter"))
             j.at("contentFilter").get_to(contentBrowserWindow.contentFilter);
-        // All types before animations and material graphs could be filtered
-        if (contentBrowserWindow.contentFilter == (1 << 11) - 1 || contentBrowserWindow.contentFilter == (1 << 12) - 1)
+        // A filter showing all types of an older version shows the types added since then too
+        auto filter = contentBrowserWindow.contentFilter;
+        if (filter == (1u << 11) - 1 || filter == (1u << 12) - 1 || filter == (1u << 13) - 1)
             contentBrowserWindow.contentFilter = UI::ContentBrowserWindow::AllBit;
         if (j.contains("iconSize"))
             j.at("iconSize").get_to(contentBrowserWindow.iconSize);
@@ -282,7 +287,7 @@ namespace Atlas::Editor {
             { "drawerHeight", drawerWindow.height },
         };
 
-        TryWriteToFile(GetDrawerWindowConfigFilename(drawerWindow), to_string(j));
+        TryWriteToFile(GetDrawerWindowConfigFilename(drawerWindow), j);
 
     }
 
@@ -312,19 +317,12 @@ namespace Atlas::Editor {
 
     }
 
-    void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {
+    void Serialization::TryWriteToFile(const std::string& filename, json& j) {
 
-        auto fileStream = Loader::AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
-
-        if (!fileStream.is_open()) {
+        if (!Loader::AssetLoader::WriteJson(filename, j, Loader::JsonFormat::Compact)) {
             Log::Error("Couldn't write config file");
             Notifications::Push({ .message = "Couldn't write the editor settings to " + filename, .type = NotificationType::Error });
-            return;
         }
-
-        fileStream << content;
-
-        fileStream.close();
 
     }
 

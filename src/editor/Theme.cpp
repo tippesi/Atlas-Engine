@@ -333,6 +333,7 @@ namespace Atlas::Editor {
         case Editor::ContentType::Audio: color = Rgb(170, 110, 226); break;
         case Editor::ContentType::Font: color = Rgb(180, 180, 188); break;
         case Editor::ContentType::Script: color = Rgb(218, 206, 84); break;
+        case Editor::ContentType::Shader: color = Rgb(196, 150, 98); break;
         case Editor::ContentType::Terrain: color = Rgb(140, 160, 80); break;
         case Editor::ContentType::Animation: color = Rgb(226, 104, 164); break;
         default: color = GetPalette(dark).textMuted; break;

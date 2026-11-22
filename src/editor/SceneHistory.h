@@ -32,6 +32,25 @@ namespace Atlas::Editor {
 
         void EndEdit(const std::string& name);
 
+        // Changes made by code, e.g. a Lua command of the bridge, become one step. An entity is saved the first time it
+        // is about to change, of transforms only the matrices are kept, such that edits of many entities stay cheap
+        void BeginScriptChange(const Ref<Scene::Scene>& scene);
+
+        void BeforeEntityChange(Scene::Entity entity);
+
+        void BeforeTransformChange(Scene::Entity entity);
+
+        void EntityCreated(Scene::Entity entity);
+
+        void BeforeEntityDestroy(Scene::Entity entity);
+
+        // For changes which can't say what they touch: the root hierarchy is saved once, before the first of them, and
+        // after the command. Changes after it aren't recorded separately
+        void BeforeSceneChange();
+
+        // Pushes the step if something changed, returns the number of changed, created and destroyed entities
+        size_t EndScriptChange(const std::string& name);
+
         bool Undo(const Ref<Scene::Scene>& scene);
 
         bool Redo(const Ref<Scene::Scene>& scene);
@@ -115,6 +134,35 @@ namespace Atlas::Editor {
         std::unordered_map<ECS::Entity, ECS::Entity> remappedEntities;
 
         std::vector<ECS::Entity> changedEntities;
+
+        struct ScriptChange {
+            bool active = false;
+            bool sceneSaved = false;
+            std::unordered_map<ECS::Entity, json> entitiesBefore;
+            std::unordered_set<ECS::Entity> transformEntities;
+            std::vector<std::pair<ECS::Entity, mat4>> transforms;
+            std::unordered_set<ECS::Entity> created;
+            std::vector<Hierarchy> destroyed;
+            std::vector<Hierarchy> sceneBefore;
+            // Sky, fog, post processing and the other settings of the scene
+            json settingsBefore;
+        } scriptChange;
+
+        // Shared by the undo and redo of a step, such that large steps are kept once
+        struct ScriptStep {
+            std::vector<EntityChange> entities;
+            std::vector<ECS::Entity> transformEntities;
+            std::vector<mat4> transformsBefore;
+            std::vector<mat4> transformsAfter;
+            std::vector<Hierarchy> created;
+            std::vector<Hierarchy> destroyed;
+            std::vector<Hierarchy> sceneBefore;
+            std::vector<Hierarchy> sceneAfter;
+            json settingsBefore;
+            json settingsAfter;
+        };
+
+        void ApplyScriptStep(const ScriptStep& step, bool undo);
 
     };
 

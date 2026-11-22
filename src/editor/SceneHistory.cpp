@@ -203,9 +203,10 @@ namespace Atlas::Editor {
     std::vector<Scene::Entity> SceneHistory::GetChangedEntities() {
 
         std::vector<Scene::Entity> entities;
+        std::unordered_set<ECS::Entity> added;
         for (auto ecsEntity : changedEntities) {
             Scene::Entity entity(Resolve(ecsEntity), &scene->entityManager);
-            if (entity.IsValid() && std::find(entities.begin(), entities.end(), entity) == entities.end())
+            if (entity.IsValid() && added.insert(entity).second)
                 entities.push_back(entity);
         }
         return entities;
@@ -232,7 +233,200 @@ namespace Atlas::Editor {
 
     }
 
+    void SceneHistory::BeginScriptChange(const Ref<Scene::Scene>& scene) {
+
+        this->scene = scene;
+        scriptChange = ScriptChange { .active = true, .settingsBefore = SaveSettings() };
+
+    }
+
+    void SceneHistory::BeforeEntityChange(Scene::Entity entity) {
+
+        if (!scriptChange.active || scriptChange.sceneSaved || !entity.IsValid() || scriptChange.entitiesBefore.contains(entity))
+            return;
+        scriptChange.entitiesBefore[entity] = SaveComponents(entity);
+
+    }
+
+    void SceneHistory::BeforeTransformChange(Scene::Entity entity) {
+
+        if (!scriptChange.active || scriptChange.sceneSaved || !entity.IsValid() || !scriptChange.transformEntities.insert(entity).second)
+            return;
+        auto transform = entity.TryGetComponent<TransformComponent>();
+        if (!transform)
+            return;
+
+        scriptChange.transforms.push_back({ entity, transform->matrix });
+
+    }
+
+    void SceneHistory::EntityCreated(Scene::Entity entity) {
+
+        if (scriptChange.active && !scriptChange.sceneSaved)
+            scriptChange.created.insert(entity);
+
+    }
+
+    void SceneHistory::BeforeEntityDestroy(Scene::Entity entity) {
+
+        if (!scriptChange.active || scriptChange.sceneSaved || !entity.IsValid())
+            return;
+
+        // Entities created by the same command just disappear again
+        if (scriptChange.created.erase(entity))
+            return;
+
+        // Changes the script made before are taken back, the hierarchy is saved as it was before the command
+        auto restoreBefore = [&](auto&& self, Scene::Entity current) -> void {
+            if (auto before = scriptChange.entitiesBefore.find(current); before != scriptChange.entitiesBefore.end())
+                RestoreComponents(current, before->second);
+            for (const auto& [transformEntity, matrix] : scriptChange.transforms)
+                if (transformEntity == current && current.HasComponent<TransformComponent>())
+                    current.GetComponent<TransformComponent>().Set(matrix);
+            if (auto hierarchy = current.TryGetComponent<HierarchyComponent>())
+                for (auto child : hierarchy->GetChildren())
+                    self(self, child);
+            };
+        restoreBefore(restoreBefore, entity);
+        auto destroyed = SaveHierarchies({ entity });
+        scriptChange.destroyed.insert(scriptChange.destroyed.end(), destroyed.begin(), destroyed.end());
+
+    }
+
+    void SceneHistory::BeforeSceneChange() {
+
+        if (!scriptChange.active || scriptChange.sceneSaved)
+            return;
+
+        // The root hierarchy as it was before the command: changes recorded so far are undone first, then the saved
+        // root replaces the one the script leaves behind
+        auto root = scene->GetRootEntity();
+        if (!root.IsValid())
+            return;
+        scriptChange.sceneBefore = SaveHierarchies({ root });
+        scriptChange.sceneSaved = true;
+
+    }
+
+    size_t SceneHistory::EndScriptChange(const std::string& name) {
+
+        if (!scriptChange.active)
+            return 0;
+        auto change = std::move(scriptChange);
+        scriptChange = ScriptChange();
+        // Selected entities and settings are compared against their state after the script from now on
+        ResetStates();
+
+        auto step = CreateRef<ScriptStep>();
+        for (auto& [ecsEntity, before] : change.entitiesBefore) {
+            Scene::Entity entity(ecsEntity, &scene->entityManager);
+            if (!entity.IsValid())
+                continue;
+            auto after = SaveComponents(entity);
+            if (!IsSameEntity(before, after))
+                step->entities.push_back({ ecsEntity, std::move(before), std::move(after) });
+        }
+
+        // Created entities are restored with their transform, those restored as a whole don't need their matrix
+        for (const auto& [ecsEntity, before] : change.transforms) {
+            Scene::Entity entity(ecsEntity, &scene->entityManager);
+            auto transform = entity.IsValid() ? entity.TryGetComponent<TransformComponent>() : nullptr;
+            if (!transform || transform->matrix == before || change.entitiesBefore.contains(ecsEntity) ||
+                change.created.contains(ecsEntity))
+                continue;
+            step->transformEntities.push_back(ecsEntity);
+            step->transformsBefore.push_back(before);
+            step->transformsAfter.push_back(transform->matrix);
+        }
+
+        std::vector<Scene::Entity> createdEntities;
+        createdEntities.reserve(change.created.size());
+        for (auto ecsEntity : change.created)
+            createdEntities.emplace_back(ecsEntity, &scene->entityManager);
+        step->created = SaveHierarchies(createdEntities);
+        step->destroyed = std::move(change.destroyed);
+
+        if (change.sceneSaved) {
+            step->sceneBefore = std::move(change.sceneBefore);
+            step->sceneAfter = SaveHierarchies({ scene->GetRootEntity() });
+        }
+
+        auto settingsAfter = SaveSettings();
+        if (!IsSameSettings(change.settingsBefore, settingsAfter)) {
+            step->settingsBefore = std::move(change.settingsBefore);
+            step->settingsAfter = std::move(settingsAfter);
+        }
+
+        auto count = step->entities.size() + step->transformEntities.size() + step->created.size() + step->destroyed.size() +
+            (change.sceneSaved ? size_t(1) : size_t(0)) + (step->settingsAfter.is_null() ? size_t(0) : size_t(1));
+        if (count == 0)
+            return 0;
+
+        std::shared_ptr<const ScriptStep> data = step;
+        history.Push({
+            .name = name,
+            .undo = [this, data]() { ApplyScriptStep(*data, true); },
+            .redo = [this, data]() { ApplyScriptStep(*data, false); }
+        });
+
+        return count;
+
+    }
+
+    void SceneHistory::ApplyScriptStep(const ScriptStep& step, bool undo) {
+
+        auto setTransforms = [&](const std::vector<mat4>& matrices) {
+            for (size_t i = 0; i < step.transformEntities.size(); i++) {
+                Scene::Entity entity(Resolve(step.transformEntities[i]), &scene->entityManager);
+                if (!entity.IsValid())
+                    continue;
+                entity.GetComponent<TransformComponent>().Set(matrices[i]);
+                changedEntities.push_back(entity);
+            }
+            };
+        auto setEntities = [&]() {
+            for (const auto& entityChange : step.entities) {
+                Scene::Entity entity(Resolve(entityChange.entity), &scene->entityManager);
+                if (!entity.IsValid())
+                    continue;
+                RestoreComponents(entity, undo ? entityChange.before : entityChange.after);
+                changedEntities.push_back(entity);
+            }
+            };
+
+        // The scene was saved after the changes recorded before it, which are undone afterwards and redone before it
+        if (undo) {
+            if (!step.sceneBefore.empty()) {
+                RemoveHierarchies(step.sceneAfter);
+                RestoreHierarchies(step.sceneBefore);
+            }
+            RemoveHierarchies(step.created);
+            RestoreHierarchies(step.destroyed);
+            setEntities();
+            setTransforms(step.transformsBefore);
+            if (!step.settingsBefore.is_null())
+                RestoreSettings(step.settingsBefore);
+        }
+        else {
+            if (!step.settingsAfter.is_null())
+                RestoreSettings(step.settingsAfter);
+            setTransforms(step.transformsAfter);
+            setEntities();
+            RemoveHierarchies(step.destroyed);
+            RestoreHierarchies(step.created);
+            if (!step.sceneAfter.empty()) {
+                RemoveHierarchies(step.sceneBefore);
+                RestoreHierarchies(step.sceneAfter);
+            }
+        }
+
+    }
+
     std::vector<SceneHistory::Hierarchy> SceneHistory::SaveHierarchies(const std::vector<Scene::Entity>& roots) {
+
+        // Scripts save thousands of roots at once, e.g. all entities they created under the same parent
+        std::unordered_set<ECS::Entity> rootSet(roots.begin(), roots.end());
+        std::unordered_map<ECS::Entity, std::unordered_map<ECS::Entity, size_t>> childIndices;
 
         std::vector<Hierarchy> hierarchies;
         for (auto root : roots) {
@@ -241,8 +435,8 @@ namespace Atlas::Editor {
 
             // Descendants of other roots are part of their hierarchy already
             auto hasRootAncestor = false;
-            for (auto parent = scene->GetParentEntity(root); parent.IsValid(); parent = scene->GetParentEntity(parent))
-                hasRootAncestor |= std::find(roots.begin(), roots.end(), parent) != roots.end();
+            for (auto parent = scene->GetParentEntity(root); parent.IsValid() && !hasRootAncestor; parent = scene->GetParentEntity(parent))
+                hasRootAncestor = rootSet.contains(parent);
             if (hasRootAncestor)
                 continue;
 
@@ -251,8 +445,13 @@ namespace Atlas::Editor {
             hierarchy.parent = parent;
             hierarchy.index = 0;
             if (parent.IsValid()) {
-                const auto& children = parent.GetComponent<HierarchyComponent>().GetChildren();
-                hierarchy.index = size_t(std::find(children.begin(), children.end(), root) - children.begin());
+                auto [indices, inserted] = childIndices.try_emplace(parent);
+                if (inserted) {
+                    const auto& children = parent.GetComponent<HierarchyComponent>().GetChildren();
+                    for (size_t i = 0; i < children.size(); i++)
+                        indices->second[children[i]] = i;
+                }
+                hierarchy.index = indices->second[root];
             }
 
             std::set<ECS::Entity> insertedEntities;

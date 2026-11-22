@@ -25,7 +25,7 @@ namespace Atlas::Editor::UI {
 
         // Overwrite the window name, the file identifies the scene: two files can contain scenes with the same name.
         // The id stays the same while the label gets room for the unsaved marker
-        nameID = GetSceneLabel(scene) + "###" + GetScenePath(scene);
+        SetTitle(GetSceneLabel(scene), GetScenePath(scene));
 
         sceneHierarchyPanel.history = &history;
 
@@ -95,7 +95,20 @@ namespace Atlas::Editor::UI {
 
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
+            if (mainScript && !scene->paused) {
+                mainScript->Update(deltaTime);
+                // The editor plays the scene of its window, the player of a project changes scenes
+                if (!mainScript->requestedScene.empty()) {
+                    Notifications::Push({ .message = "Host.LoadScene(\"" + mainScript->requestedScene +
+                        "\") changes the scene in the player, the editor keeps playing this one", .type = NotificationType::Warning });
+                    mainScript->requestedScene.clear();
+                }
+            }
             scene->Update(deltaTime);
+            if (mainScript && mainScript->quitRequested) {
+                StopPlaying();
+                return;
+            }
         }
         else {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
@@ -150,27 +163,10 @@ namespace Atlas::Editor::UI {
     void SceneWindow::Render() {
 
         if (scene.IsLoaded())
-            nameID = GetSceneLabel(scene) + (hasUnsavedChanges ? "   ###" : "###") + GetScenePath(scene);
+            SetTitle(GetSceneLabel(scene), GetScenePath(scene));
 
         if (!Begin())
             return;
-
-        if (hasUnsavedChanges && scene.IsLoaded()) {
-            // A title has only one color, the marker goes into the room after the name
-            auto window = ImGui::GetCurrentWindow();
-            const auto& style = ImGui::GetStyle();
-            bool docked = window->DockIsActive && window->DockNode && window->DockNode->HostWindow;
-            auto titleRect = docked ? window->DC.DockTabItemRect : window->TitleBarRect();
-            auto drawList = docked ? window->DockNode->HostWindow->DrawList : window->DrawList;
-            // Undocked windows have the collapse button in front of the name
-            auto textOffset = docked ? style.FramePadding.x : style.FramePadding.x + ImGui::GetFontSize() + style.ItemInnerSpacing.x;
-            auto markerPos = ImVec2(titleRect.Min.x + textOffset + ImGui::CalcTextSize(GetSceneLabel(scene).c_str()).x + 0.5f * style.ItemInnerSpacing.x,
-                titleRect.Min.y + style.FramePadding.y);
-
-            drawList->PushClipRect(titleRect.Min, titleRect.Max, false);
-            drawList->AddText(markerPos, ImGui::GetColorU32(Theme::Error()), "*");
-            drawList->PopClipRect();
-        }
 
         if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
             ImGui::SetWindowFocus();
@@ -445,13 +441,8 @@ namespace Atlas::Editor::UI {
             ImGui::SeparatorText("Rendering");
 
             ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
-            // The upscaler is a setting of the scene, the same as in its post processing properties
-            ImguiExtension::PostProcessingPanel::RenderUpscalerSelection(scene->postProcessing.upscaler,
-                [&](PostProcessing::Upscaler upscaler) { return viewportPanel.mainRenderer->IsUpscalerSupported(upscaler); }, false);
 
             ImGui::SeparatorText("Levels of detail");
-            ImGui::DragFloat("Error scale##Mesh LODs", &scene->meshLodErrorScale, 0.05f, 0.0f, 16.0f);
-            ImGui::SetItemTooltip("Larger values switch meshes to coarser levels of detail earlier");
             auto getLodLabel = [](int32_t lod) { return lod < 0 ? std::string("Automatic") : "LOD " + std::to_string(lod); };
             if (ImGui::BeginCombo("Shown level##Mesh LODs", getLodLabel(scene->forcedMeshLod).c_str())) {
                 for (int32_t lod = -1; lod < Mesh::MeshData::maxLodCount; lod++) {
@@ -903,6 +894,16 @@ namespace Atlas::Editor::UI {
 
             scene->physicsWorld->pauseSimulation = false;
             scene->paused = false;
+
+            const auto& project = Singletons::project;
+            if (project && !project->mainScript.empty()) {
+                mainScript = std::make_unique<Scripting::LuaHost>();
+                if (mainScript->Load(project->mainScript))
+                    mainScript->SetScene(scene.Get());
+                if (mainScript->HasFailed())
+                    Notifications::Push({ .message = "The main script " + project->mainScript + " failed, the log has the error",
+                        .type = NotificationType::Error });
+            }
             // Unselect when starting the simulation/scene (otherwise some physics settings might not
             // be reverted after stopping
             sceneHierarchyPanel.ClearSelection();
@@ -928,6 +929,8 @@ namespace Atlas::Editor::UI {
     void SceneWindow::StopPlaying() {
 
         Singletons::blockingOperation->Block("Restoring scene state. Please wait...", [&]() {
+            // The script refers to the scene which is replaced
+            mainScript.reset();
             RestoreSceneState();
 
             isPlaying = false;
@@ -1152,8 +1155,12 @@ namespace Atlas::Editor::UI {
 
         hasUnsavedChanges = true;
 
+        // Selecting the entities of a large script step would make every following frame compare all of them
         auto changedEntities = history.GetChangedEntities();
-        if (!changedEntities.empty()) {
+        if (changedEntities.size() > maxSelectedHistoryEntities) {
+            sceneHierarchyPanel.ClearSelection();
+        }
+        else if (!changedEntities.empty()) {
             sceneHierarchyPanel.ClearSelection();
             for (auto entity : changedEntities)
                 sceneHierarchyPanel.SelectEntity(entity, true);

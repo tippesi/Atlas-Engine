@@ -1505,34 +1505,12 @@ namespace Atlas::Editor::UI {
         auto stream = Loader::AssetLoader::ReadFile("shader/materialGraph/common.hsh", std::ios::in);
         if (!stream.is_open())
             return;
+        std::string code((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 
-        // Definitions start at the beginning of a line, e.g. "float MaterialGraphRemap(float value, ...) {"
-        std::string line, comment;
-        while (std::getline(stream, line)) {
-            if (line.starts_with("// ")) {
-                comment += (comment.empty() ? "" : " ") + line.substr(3);
-                continue;
-            }
-
-            auto nameStart = line.find(" MaterialGraph");
-            auto argumentsStart = line.find('(');
-            if (!line.empty() && line[0] != ' ' && line[0] != '#' && nameStart != std::string::npos &&
-                argumentsStart != std::string::npos && nameStart < argumentsStart && line.ends_with(") {")) {
-                auto name = line.substr(nameStart + 1, argumentsStart - nameStart - 1);
-                if (std::find(internalFunctions.begin(), internalFunctions.end(), name) != internalFunctions.end()) {
-                    comment.clear();
-                    continue;
-                }
-                auto signature = line.substr(0, line.size() - 2);
-                auto iter = std::find_if(codeFunctionCompletions.begin(), codeFunctionCompletions.end(),
-                    [&](const CodeCompletion& completion) { return completion.text == name; });
-                if (iter == codeFunctionCompletions.end())
-                    codeFunctionCompletions.push_back({ name, "Function", signature, comment });
-                // Overloads are listed below each other
-                else if (iter->signature.find(signature) == std::string::npos)
-                    iter->signature += "\n" + signature;
-            }
-            comment.clear();
+        for (auto& function : CodeEditor::FindGlslFunctions(code)) {
+            if (function.text.starts_with("MaterialGraph") &&
+                std::find(internalFunctions.begin(), internalFunctions.end(), function.text) == internalFunctions.end())
+                codeFunctionCompletions.push_back(std::move(function));
         }
 
     }

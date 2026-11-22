@@ -638,7 +638,8 @@ namespace Atlas::Editor::UI {
                     FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
                 else if (contentType == ContentType::Mesh || contentType == ContentType::Animation ||
                     contentType == ContentType::Material || contentType == ContentType::Prefab ||
-                    contentType == ContentType::MaterialGraph)
+                    contentType == ContentType::MaterialGraph || contentType == ContentType::Script ||
+                    contentType == ContentType::Shader)
                     contentToEditPath = assetRelativePath;
             }
         }
@@ -663,7 +664,8 @@ namespace Atlas::Editor::UI {
             }
 
             auto hasAssetEditor = contentType == ContentType::Mesh || contentType == ContentType::Material ||
-                contentType == ContentType::MaterialGraph || contentType == ContentType::Prefab;
+                contentType == ContentType::MaterialGraph || contentType == ContentType::Prefab ||
+                contentType == ContentType::Script || contentType == ContentType::Shader;
             if (!isDirectory && hasAssetEditor && singleSelect && ImGui::MenuItem("Open"))
                 contentToEditPath = assetRelativePath;
             if (!isDirectory && contentType == ContentType::Scene && singleSelect && ImGui::MenuItem("Open"))
@@ -1024,6 +1026,7 @@ namespace Atlas::Editor::UI {
         case ContentType::Terrain: return "Terrain";
         case ContentType::Scene: return "Scene";
         case ContentType::Script: return "Script";
+        case ContentType::Shader: return "Shader";
         case ContentType::Font: return "Font";
         case ContentType::Prefab: return "Prefab";
         case ContentType::Texture: return "Texture";

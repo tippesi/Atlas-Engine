@@ -7,6 +7,8 @@
 #include "Config.h"
 #include "BlockingOperation.h"
 
+#include "project/Project.h"
+
 namespace Atlas::Editor {
 
     class ContentPreviews;
@@ -23,6 +25,8 @@ namespace Atlas::Editor {
         static Ref<BlockingOperation> blockingOperation;
         // Shared by everything which shows content, e.g. the content browser and resource selections
         static Ref<ContentPreviews> contentPreviews;
+        // Without a project the editor shows the project hub
+        static Ref<Project> project;
 
     };
 

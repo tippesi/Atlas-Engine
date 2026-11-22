@@ -6,15 +6,22 @@
 #include "ContentDiscovery.h"
 #include "Theme.h"
 #include "DataCreator.h"
+#include "RecentProjects.h"
+
+#include <Processes.h>
 #include "ui/panels/PopupPanels.h"
 #include "tools/FileSystemHelper.h"
 #include <ImGuizmo.h>
 #include <profiler/CPUProfiler.h>
 #include <profiler/HitchRecorder.h>
 #include <streaming/StreamingManager.h>
+#include <Serializer.h>
+#include <scripting/BindingRegistry.h>
 #include <imgui_internal.h>
+#include <SDL3/SDL.h>
 
 #include <filesystem>
+#include <fstream>
 #include <algorithm>
 #include <implot.h>
 
@@ -41,15 +48,25 @@ namespace Atlas::Editor {
         Streaming::StreamingManager::settings.impostors.enable = false;
         Streaming::StreamingManager::settings.meshes.enable = false;
 
+        if (engineDataDirectory.empty())
+            engineDataDirectory = Loader::AssetLoader::GetDataDirectory();
+        LoadProject();
+
         ContentDiscovery::Update();
 
+        // The ImGui wrapper creates the ImPlot context
         ImGui::CreateContext();
-        ImPlot::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        // Each project keeps its own layout
+        if (Singletons::project) {
+            imguiIniPath = Singletons::project->GetDirectory() + "/.atlas/imgui.ini";
+            io.IniFilename = imguiIniPath.c_str();
+        }
 
-        SetDefaultWindowResolution();
+        if (!switchingProject)
+            SetDefaultWindowResolution();
 
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
@@ -76,6 +93,7 @@ namespace Atlas::Editor {
             HitchRecorder::SetSettings(hitchSettings);
         }
 
+        contentBrowserWindow.currentDirectory = Loader::AssetLoader::GetDataDirectory();
         Serialization::DeserializeContentBrowserWindow(contentBrowserWindow);
 
         Serialization::DeserializeDrawerWindow(logWindow);
@@ -107,6 +125,259 @@ namespace Atlas::Editor {
 
         RegisterCommands();
 
+        projectHub = std::make_unique<UI::ProjectHubWindow>(engineDataDirectory,
+            (std::filesystem::path(engineDataDirectory).parent_path() / "templates").generic_string());
+
+        if (Singletons::project) {
+            projectSettingsWindow.onChange = [this](const Project&) { ApplyProjectSettings(); };
+            ApplyProjectSettings();
+            OpenStartScene();
+            // --mcp-port <port> if another program uses the default port
+            auto port = Bridge::McpServer::defaultPort;
+            for (size_t i = 0; i + 1 < args.size(); i++) {
+                if (args[i] == "--mcp-port")
+                    port = std::stoi(args[i + 1]);
+            }
+            bridge = std::make_unique<EditorBridge>(Singletons::project, port, [this]() { return GetActiveSceneWindow(); });
+            bridge->addEditorFunctions = [this](Scripting::Binder& editor) { AddEditorFunctions(editor); };
+            // Recorded for the bindings and completions before the first script runs
+            sol::state recorder;
+            Scripting::Binder editorTable(recorder.create_table(), "Editor");
+            AddEditorFunctions(editorTable);
+            // Lua of the agent changes the project like the settings window: applied, undoable there and saved by the user
+            bridge->onProjectChange = [this](const Project& before) {
+                projectSettingsWindow.RecordChange(Singletons::project, before, "project (Lua)");
+                };
+        }
+
+    }
+
+    void App::LoadProject() {
+
+        std::string path;
+        for (size_t i = 0; i + 1 < args.size(); i++) {
+            if (args[i] == "--project")
+                path = args[i + 1];
+        }
+
+        // main() changes into the directory of the executable
+        auto project = path.empty() ? nullptr : Project::Load(Bridge::ResolveUserPath(path).string());
+        if (!project) {
+            // The hub works with the data of the engine, e.g. after closing a project
+            Project::Activate(nullptr);
+            Loader::AssetLoader::SetAssetDirectory(engineDataDirectory);
+            // The project hub only keeps settings like the interface scale, it opens no scenes
+            auto prefPath = SDL_GetPrefPath("AtlasEngine", "Editor");
+            if (prefPath)
+                Serialization::SetConfigDirectory(prefPath);
+            SDL_free(prefPath);
+            return;
+        }
+
+        Project::Activate(project);
+
+        // Asset directories which were used without a project kept the editor state in .config
+        auto stateDirectory = std::filesystem::path(project->GetDirectory()) / ".atlas";
+        auto legacyDirectory = std::filesystem::path(project->GetAssetDirectory()) / ".config";
+        std::error_code error;
+        if (!std::filesystem::exists(stateDirectory, error) && std::filesystem::is_directory(legacyDirectory, error))
+            std::filesystem::copy(legacyDirectory, stateDirectory, std::filesystem::copy_options::recursive, error);
+        Serialization::SetConfigDirectory(stateDirectory.generic_string());
+
+        RecentProjects::Add(*project);
+        window.SetTitle("Atlas Engine Editor - " + project->name);
+        Singletons::project = project;
+
+    }
+
+    void App::ApplyProjectSettings() {
+
+        auto& project = Singletons::project;
+        project->ApplySettings();
+        // Meshes and impostors are saved and baked here, they stay resident whatever the project sets
+        Streaming::StreamingManager::settings.impostors.enable = false;
+        Streaming::StreamingManager::settings.meshes.enable = false;
+
+        for (const auto& sceneWindow : sceneWindows) {
+            if (sceneWindow->scene.IsLoaded())
+                project->ApplyTo(*sceneWindow->scene.Get());
+        }
+
+    }
+
+    void App::ExportLuaAnnotations() {
+
+        auto directory = std::filesystem::path(Singletons::project->GetDirectory());
+        auto file = directory / ".atlas" / "lua" / "atlas.lua";
+        std::filesystem::create_directories(file.parent_path());
+        std::ofstream(file, std::ios::binary) << Scripting::BindingRegistry::ToLuaAnnotations();
+
+        auto luarc = directory / ".luarc.json";
+        if (!std::filesystem::exists(luarc))
+            std::ofstream(luarc, std::ios::binary) << json({ { "workspace.library", { ".atlas/lua" } } }).dump(2);
+        Notifications::Push({ .message = "Lua annotations written to " + file.generic_string() });
+
+    }
+
+    void App::OpenStartScene() {
+
+        auto& project = Singletons::project;
+        if (project->startScene.empty() || !Singletons::config->openedScenes.empty())
+            return;
+
+        if (!Loader::AssetLoader::FileExists(project->startScene)) {
+            auto scene = DataCreator::CreateScene(Common::Path::GetFileNameWithoutExtension(project->startScene),
+                vec3(-2048.0f), vec3(2048.0f), 8);
+
+            // Playing needs a main camera
+            auto camera = scene->CreateEntity();
+            camera.AddComponent<NameComponent>("Camera");
+            camera.AddComponent<TransformComponent>(glm::translate(mat4(1.0f), vec3(0.0f, 2.0f, 10.0f)));
+            auto& cameraComponent = camera.AddComponent<CameraComponent>(47.0f, 2.0f, 0.5f, 2000.0f);
+            cameraComponent.isMain = true;
+            scene->GetRootEntity().GetComponent<HierarchyComponent>().AddChild(camera);
+
+            Serializer::SerializeScene(scene, project->startScene, false, true, false);
+        }
+
+        FileImporter::ImportFile<Scene::Scene>(project->startScene);
+
+    }
+
+    void App::OpenProject(const std::string& path) {
+
+        // Unsaved changes are asked about first, like when the editor closes
+        nextProject = path;
+        if (AllowQuit())
+            projectSwitchRequested = true;
+
+    }
+
+    void App::AddEditorFunctions(Scripting::Binder& editor) {
+
+        // { name, kind, path, shown, focused, unsaved } of the tabs and drawers
+        editor.set_function("Windows", [this](sol::this_state state) {
+            sol::state_view lua(state);
+            sol::table windows = lua.create_table();
+            auto add = [&](const UI::Window& window, const char* kind, const std::string& path) {
+                windows.add(lua.create_table_with("name", window.name, "kind", kind, "path", path, "shown", window.show,
+                    "focused", window.inFocus, "unsaved", window.hasUnsavedChanges));
+                };
+            for (const auto& window : sceneWindows)
+                add(*window, "scene", UI::SceneWindow::GetScenePath(window->scene));
+            for (const auto& window : assetEditorWindows)
+                add(*window, "asset", window->GetAssetPath());
+            for (const auto& window : codeEditorWindows)
+                add(*window, "code", window->GetPath());
+            add(projectSettingsWindow, "project settings", Singletons::project ? Singletons::project->path : "");
+            add(contentBrowserWindow, "content browser", contentBrowserWindow.currentDirectory);
+            add(logWindow, "log", "");
+            add(profilerWindow, "profiler", "");
+            return windows;
+            });
+        // Opens a file like a double click in the content browser: scenes, assets, scripts and shaders
+        editor.set_function("Open", [this](const std::string& path) {
+            if (!std::filesystem::exists(Loader::AssetLoader::GetFullPath(path)))
+                throw std::runtime_error(path + " doesn't exist in the asset directory");
+            auto error = OpenInAssetEditor(path);
+            if (!error.empty())
+                throw std::runtime_error(error);
+            });
+        // Shows a window and gives it the focus, found by its name or path
+        editor.set_function("Focus", [this](const std::string& nameOrPath) {
+            std::vector<std::pair<UI::Window*, std::string>> windows;
+            for (const auto& window : sceneWindows)
+                windows.emplace_back(window.get(), UI::SceneWindow::GetScenePath(window->scene));
+            for (const auto& window : assetEditorWindows)
+                windows.emplace_back(window.get(), window->GetAssetPath());
+            for (const auto& window : codeEditorWindows)
+                windows.emplace_back(window.get(), window->GetPath());
+            windows.emplace_back(&projectSettingsWindow, "");
+            windows.emplace_back(&contentBrowserWindow, "");
+            windows.emplace_back(&logWindow, "");
+            windows.emplace_back(&profilerWindow, "");
+            for (auto& [window, path] : windows) {
+                if (window->name != nameOrPath && path != nameOrPath)
+                    continue;
+                window->show = true;
+                window->requestFocus = true;
+                return;
+            }
+            throw std::runtime_error("There is no window " + nameOrPath + ", Editor.Windows() lists them");
+            });
+        // The text of an open code window, also while it isn't saved
+        editor.set_function("GetText", [this](const std::string& path) -> std::string {
+            for (const auto& window : codeEditorWindows)
+                if (window->GetPath() == path)
+                    return window->GetText();
+            throw std::runtime_error(path + " isn't open in a code window, Editor.Open(path) opens it");
+            });
+        // Replaces the text of a code window, opened if needed, as one undo step there. The user saves it
+        editor.set_function("SetText", [this](const std::string& path, const std::string& text) {
+            auto find = [&]() {
+                return std::find_if(codeEditorWindows.begin(), codeEditorWindows.end(),
+                    [&](const auto& window) { return window->GetPath() == path; });
+                };
+            if (find() == codeEditorWindows.end())
+                OpenInAssetEditor(path);
+            auto window = find();
+            if (window == codeEditorWindows.end())
+                throw std::runtime_error(path + " can't be opened in a code window");
+            (*window)->SetText(text);
+            });
+
+    }
+
+    void App::SwitchProject() {
+
+        WaitForRender();
+        auto path = *nextProject;
+        UnloadContent();
+
+        sceneWindows.clear();
+        assetEditorWindows.clear();
+        codeEditorWindows.clear();
+        activeAssetEditorWindow.reset();
+        waitToLoadScenes.clear();
+        userOpenedScenes.clear();
+        unsavedWindows.clear();
+        activeCodeEditorWindow.reset();
+        emptyStateScenes.clear();
+        quitAfterUnsavedChanges = false;
+        quitConfirmed = false;
+        activeSceneIdx = 0;
+        drawerDockNodeID = 0;
+        systemUiScale = 0.0f;
+        fontRasterSize = 0.0f;
+        emptyStateVisible = false;
+        resetDockspaceLayout = false;
+        dockLoadingScenes = false;
+        restoringScenes = true;
+        playingMaximized = false;
+        projectHub.reset();
+        projectSettingsWindow.history.Clear();
+        projectSettingsWindow.hasUnsavedChanges = false;
+        projectSettingsWindow.show = false;
+        commandPalette = UI::CommandPalette();
+        nextProject.reset();
+        projectSwitchRequested = false;
+
+        // The project replaces the one the editor started with, without one the project hub opens
+        for (size_t i = 0; i < args.size(); i++) {
+            if (args[i] == "--project" && i + 1 < args.size()) {
+                args.erase(args.begin() + i, args.begin() + i + 2);
+                break;
+            }
+        }
+        if (!path.empty()) {
+            args.push_back("--project");
+            args.push_back(path);
+        }
+
+        switchingProject = true;
+        LoadContent();
+        switchingProject = false;
+
     }
 
     void App::UnloadContent() {
@@ -134,13 +405,20 @@ namespace Atlas::Editor {
         Serialization::SerializeConfig();
         ContentDiscovery::Shutdown();
 
+        bridge.reset();
         Singletons::Destruct();
 
-        ImPlot::DestroyContext();
+        ResourceManager<Scene::Scene>::Unsubscribe(ResourceTopic::ResourceCreate, sceneCreateSubscription);
+        Events::EventManager::DropEventDelegate.Unsubscribe(dropSubscription);
+
+        ImGui::DestroyContext();
 
     }
 
     void App::Update(float deltaTime) {
+
+        if (projectSwitchRequested)
+            SwitchProject();
 
         const ImGuiIO& io = ImGui::GetIO();
 
@@ -153,6 +431,12 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
         Singletons::blockingOperation->Update();
+
+        // Commands wait while playing starts or stops
+        if (bridge && !Singletons::blockingOperation->block) {
+            sectionScope.Next("Bridge commands");
+            bridge->Update();
+        }
 
         if (Singletons::blockingOperation->block)
             return;
@@ -176,12 +460,21 @@ namespace Atlas::Editor {
             UI::ContentBrowserWindow::contentToEditPath.clear();
         }
 
+        // Windows with unsaved changes stay open until the user decided about them
+        for (const auto& assetEditorWindow : assetEditorWindows) {
+            if (!assetEditorWindow->show && assetEditorWindow->hasUnsavedChanges) {
+                assetEditorWindow->show = true;
+                AddUnsavedWindow(assetEditorWindow);
+            }
+        }
         std::erase_if(assetEditorWindows, [](const auto& window) { return !window->show; });
         if (activeAssetEditorWindow && !activeAssetEditorWindow->show)
             activeAssetEditorWindow = nullptr;
         for (const auto& assetEditorWindow : assetEditorWindows)
-            if (assetEditorWindow->inFocus)
+            if (assetEditorWindow->inFocus) {
                 activeAssetEditorWindow = assetEditorWindow;
+                activeCodeEditorWindow = nullptr;
+            }
         // Drags outside of viewports, e.g. on a slider, must not turn the next camera that gets the focus
         auto mouseMovedCamera = false;
         for (const auto& assetEditorWindow : assetEditorWindows) {
@@ -200,6 +493,12 @@ namespace Atlas::Editor {
         for (size_t i = 0; i < waitToLoadScenes.size(); i++) {
             if (waitToLoadScenes[i].IsLoaded()) {
                 std::swap(waitToLoadScenes[i], waitToLoadScenes.back());
+
+                // Projects saved before they had the scene settings take them from their first scene
+                auto& project = Singletons::project;
+                if (project->AdoptSceneSettings(*waitToLoadScenes.back().Get()))
+                    project->Save();
+                project->ApplyTo(*waitToLoadScenes.back().Get());
 
                 // After the scene is loaded we can retrieve the window configuration and deserialize it
                 sceneWindows.emplace_back(Serialization::DeserializeSceneWindow(waitToLoadScenes.back()));
@@ -257,8 +556,7 @@ namespace Atlas::Editor {
             // Windows with unsaved changes stay open until the user decided about them
             if (!sceneWindow->show && sceneWindow->hasUnsavedChanges) {
                 sceneWindow->show = true;
-                if (std::find(unsavedSceneWindows.begin(), unsavedSceneWindows.end(), sceneWindow) == unsavedSceneWindows.end())
-                    unsavedSceneWindows.push_back(sceneWindow);
+                AddUnsavedWindow(sceneWindow);
             }
 
             // Delete closed windows
@@ -274,6 +572,7 @@ namespace Atlas::Editor {
             if (sceneWindow->inFocus) {
                 activeSceneIdx = sceneCounter;
                 activeAssetEditorWindow = nullptr;
+                activeCodeEditorWindow = nullptr;
             }
 
             sceneCounter++;
@@ -383,6 +682,15 @@ namespace Atlas::Editor {
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
+        if (!Singletons::project) {
+            if (auto path = projectHub->Render(window.GetSDLWindow()))
+                OpenProject(*path);
+            Notifications::Display();
+            ImGui::Render();
+            Singletons::imguiWrapper->Render(true);
+            return;
+        }
+
         // ImGui::ShowDemoWindow();
         // ImPlot::ShowDemoWindow();
 
@@ -449,11 +757,15 @@ namespace Atlas::Editor {
                 const char* saveShortcut = "Ctrl+S";
 #endif
                 if (ImGui::BeginMenu("File")) {
-                    /*
-                    ImGui::MenuItem("Open project", nullptr, &openProject);
-                    ImGui::MenuItem("Save project", nullptr, &saveProject);
+                    if (ImGui::MenuItem("New project..."))
+                        projectHub->OpenNewProjectPopup();
+                    if (ImGui::MenuItem("Open project..."))
+                        OpenProject("");
+                    ImGui::SetItemTooltip("Closes the project and shows the project hub");
+                    ImGui::MenuItem("Project settings", nullptr, &projectSettingsWindow.show);
+                    if (ImGui::MenuItem("Save project", nullptr, false, projectSettingsWindow.hasUnsavedChanges))
+                        projectSettingsWindow.Save(Singletons::project);
                     ImGui::Separator();
-                    */
                     ImGui::MenuItem("New scene...", nullptr, &newScene);
                     RenderRecentScenesMenu();
                     ImGui::MenuItem("Save scene", saveShortcut, &saveScene, activeSceneWindow != nullptr);
@@ -482,7 +794,6 @@ namespace Atlas::Editor {
                     ImGui::MenuItem("Content browser", "Ctrl+B", &contentBrowserWindow.show);
                     ImGui::MenuItem("Log", "Ctrl+J", &logWindow.show);
                     ImGui::MenuItem("Profiler", nullptr, &profilerWindow.show);
-                    ImGui::MenuItem("Engine settings", nullptr, &settingsWindow.show);
                     ImGui::MenuItem("Geometry brush", nullptr, &geometryBrushWindow.show);
 
                     ImGui::SeparatorText("Appearance");
@@ -535,18 +846,37 @@ namespace Atlas::Editor {
 
             sectionScope.Next("Scene windows");
             for (auto& sceneWindow : sceneWindows) {
-                DockNextToScenes(*sceneWindow);
+                DockAsTab(*sceneWindow);
                 sceneWindow->Render();
             }
 
             sectionScope.Next("Asset editor windows");
+            for (auto& codeEditorWindow : codeEditorWindows) {
+                DockAsTab(*codeEditorWindow);
+                codeEditorWindow->Render();
+            }
+            for (auto& codeEditorWindow : codeEditorWindows) {
+                if (!codeEditorWindow->show && codeEditorWindow->hasUnsavedChanges) {
+                    codeEditorWindow->show = true;
+                    AddUnsavedWindow(codeEditorWindow);
+                }
+                if (codeEditorWindow->inFocus) {
+                    activeCodeEditorWindow = codeEditorWindow;
+                    activeAssetEditorWindow = nullptr;
+                }
+            }
+            std::erase_if(codeEditorWindows, [](const auto& window) { return !window->show; });
+            if (activeCodeEditorWindow && !activeCodeEditorWindow->show)
+                activeCodeEditorWindow = nullptr;
+
             for (auto& assetEditorWindow : assetEditorWindows) {
-                DockNextToScenes(*assetEditorWindow);
+                DockAsTab(*assetEditorWindow);
                 assetEditorWindow->Render();
             }
 
             // This does active changes to the scene, render after scene windows
             sectionScope.Next("Geometry brush window");
+            DockAsTab(geometryBrushWindow);
             geometryBrushWindow.Render(activeSceneWindow);
 
             UpdateDrawers();
@@ -561,7 +891,9 @@ namespace Atlas::Editor {
             DockPinnedDrawer(profilerWindow);
             profilerWindow.Render();
             sectionScope.Next("Settings window");
-            settingsWindow.Render();
+            sectionScope.Next("Project settings window");
+            DockAsTab(projectSettingsWindow);
+            projectSettingsWindow.Render(Singletons::project);
 
             ImGui::End();
         }
@@ -589,6 +921,8 @@ namespace Atlas::Editor {
 
         Notifications::Display();
         UI::PopupPanels::Render();
+        if (auto created = projectHub->RenderNewProjectPopup(window.GetSDLWindow()))
+            OpenProject(*created);
         RenderUnsavedChangesPopup();
         commandPalette.Render();
 
@@ -602,6 +936,9 @@ namespace Atlas::Editor {
         sectionScope.Next("ImGui render");
         ImGui::Render();
         Singletons::imguiWrapper->Render(true);
+
+        if (bridge)
+            bridge->AfterRender();
 
     }
 
@@ -809,6 +1146,16 @@ namespace Atlas::Editor {
 
     void App::Undo() {
 
+        if (activeCodeEditorWindow) {
+            activeCodeEditorWindow->Undo();
+            return;
+        }
+
+        if (projectSettingsWindow.inFocus) {
+            projectSettingsWindow.history.Undo();
+            return;
+        }
+
         if (activeAssetEditorWindow) {
             activeAssetEditorWindow->Undo();
             return;
@@ -821,6 +1168,16 @@ namespace Atlas::Editor {
     }
 
     void App::Redo() {
+
+        if (activeCodeEditorWindow) {
+            activeCodeEditorWindow->Redo();
+            return;
+        }
+
+        if (projectSettingsWindow.inFocus) {
+            projectSettingsWindow.history.Redo();
+            return;
+        }
 
         if (activeAssetEditorWindow) {
             activeAssetEditorWindow->Redo();
@@ -835,6 +1192,8 @@ namespace Atlas::Editor {
 
     bool App::CanUndo() const {
 
+        if (activeCodeEditorWindow)
+            return activeCodeEditorWindow->CanUndo();
         auto history = GetActiveHistory();
         return history && history->CanUndo();
 
@@ -842,12 +1201,17 @@ namespace Atlas::Editor {
 
     bool App::CanRedo() const {
 
+        if (activeCodeEditorWindow)
+            return activeCodeEditorWindow->CanRedo();
         auto history = GetActiveHistory();
         return history && history->CanRedo();
 
     }
 
     const UndoHistory* App::GetActiveHistory() const {
+
+        if (projectSettingsWindow.inFocus)
+            return &projectSettingsWindow.history;
 
         if (activeAssetEditorWindow)
             return &activeAssetEditorWindow->history;
@@ -881,8 +1245,17 @@ namespace Atlas::Editor {
             };
 
         // File
+        commandPalette.Register({ .category = "File", .name = "New project...",
+            .action = [this]() { projectHub->OpenNewProjectPopup(); } });
+        commandPalette.Register({ .category = "File", .name = "Open project...",
+            .action = [this]() { OpenProject(""); } });
+        commandPalette.Register({ .category = "File", .name = "Export Lua annotations",
+            .action = [this]() { ExportLuaAnnotations(); } });
         commandPalette.Register({ .category = "File", .name = "New scene...",
             .action = []() { UI::PopupPanels::isNewScenePopupVisible = true; } });
+        commandPalette.Register({ .category = "File", .name = "Save project",
+            .action = [this]() { projectSettingsWindow.Save(Singletons::project); },
+            .isEnabled = [this]() { return projectSettingsWindow.hasUnsavedChanges; } });
         commandPalette.Register({ .category = "File", .name = "Save scene", .shortcut = "Ctrl+S",
             .action = [this]() { GetActiveSceneWindow()->SaveScene(); }, .isEnabled = canEdit });
 
@@ -902,7 +1275,7 @@ namespace Atlas::Editor {
         registerPin("log", &logWindow);
         registerWindow("profiler", &profilerWindow.show);
         registerPin("profiler", &profilerWindow);
-        registerWindow("engine settings", &settingsWindow.show);
+        registerWindow("project settings", &projectSettingsWindow.show);
         registerWindow("geometry brush", &geometryBrushWindow.show);
         commandPalette.Register({ .category = "Window", .name = "Reset layout",
             .action = [this]() { resetDockspaceLayout = true; } });
@@ -1065,10 +1438,20 @@ namespace Atlas::Editor {
         commandPalette.Register({ .category = "Material graph", .name = "Toggle maximized", .shortcut = "F11",
             .action = [materialEditor]() { materialEditor()->graphPanel.ToggleMaximized(); }, .isEnabled = hasMaterialGraph });
 
+        // Code window in front
+        auto hasCodeWindow = [this]() { return activeCodeEditorWindow != nullptr; };
+        commandPalette.Register({ .category = "Code", .name = "Save file", .shortcut = "Ctrl+S",
+            .action = [this]() { activeCodeEditorWindow->Save(); }, .isEnabled = hasCodeWindow });
+        commandPalette.Register({ .category = "Code", .name = "Find in file", .shortcut = "Ctrl+F",
+            .action = [this]() { activeCodeEditorWindow->OpenSearch(false); }, .isEnabled = hasCodeWindow });
+        commandPalette.Register({ .category = "Code", .name = "Replace in file", .shortcut = "Ctrl+H",
+            .action = [this]() { activeCodeEditorWindow->OpenSearch(true); }, .isEnabled = hasCodeWindow });
+
         // Asset editor in front
         auto hasAssetEditor = [this]() { return activeAssetEditorWindow != nullptr; };
         commandPalette.Register({ .category = "Asset editor", .name = "Save asset", .shortcut = "Ctrl+S",
-            .action = [this]() { activeAssetEditorWindow->Save(); }, .isEnabled = hasAssetEditor });
+            .action = [this]() { activeAssetEditorWindow->Save(); activeAssetEditorWindow->hasUnsavedChanges = false; },
+            .isEnabled = hasAssetEditor });
         commandPalette.Register({ .category = "Asset editor", .name = "Focus asset", .shortcut = "F",
             .action = [this]() { activeAssetEditorWindow->FocusAsset(); }, .isEnabled = hasAssetEditor });
         commandPalette.Register({ .category = "Asset editor", .name = "Toggle grid", .shortcut = "G",
@@ -1621,25 +2004,81 @@ namespace Atlas::Editor {
         if (quitConfirmed)
             return true;
 
-        for (const auto& sceneWindow : sceneWindows)
-            if (sceneWindow->hasUnsavedChanges && std::find(unsavedSceneWindows.begin(),
-                unsavedSceneWindows.end(), sceneWindow) == unsavedSceneWindows.end())
-                unsavedSceneWindows.push_back(sceneWindow);
+        for (const auto& window : sceneWindows)
+            if (window->hasUnsavedChanges)
+                AddUnsavedWindow(window);
+        for (const auto& window : assetEditorWindows)
+            if (window->hasUnsavedChanges)
+                AddUnsavedWindow(window);
+        for (const auto& window : codeEditorWindows)
+            if (window->hasUnsavedChanges)
+                AddUnsavedWindow(window);
 
-        quitAfterUnsavedChanges = !unsavedSceneWindows.empty();
-        return unsavedSceneWindows.empty();
+        auto unsavedProject = Singletons::project && projectSettingsWindow.hasUnsavedChanges;
+        quitAfterUnsavedChanges = !unsavedWindows.empty() || unsavedProject;
+        return !quitAfterUnsavedChanges;
+
+    }
+
+    void App::AddUnsavedWindow(const Ref<UI::Window>& window) {
+
+        if (std::find(unsavedWindows.begin(), unsavedWindows.end(), window) == unsavedWindows.end())
+            unsavedWindows.push_back(window);
+
+    }
+
+    bool App::IsWindowOpen(const Ref<UI::Window>& window) const {
+
+        auto contains = [&](const auto& windows) {
+            return std::any_of(windows.begin(), windows.end(), [&](const auto& open) { return open == window; });
+            };
+        return contains(sceneWindows) || contains(assetEditorWindows) || contains(codeEditorWindows);
+
+    }
+
+    void App::SaveWindow(const Ref<UI::Window>& window) {
+
+        if (auto sceneWindow = std::dynamic_pointer_cast<UI::SceneWindow>(window)) {
+            // The scene of a playing window is the state of the game
+            if (sceneWindow->isPlaying)
+                sceneWindow->StopPlaying();
+            sceneWindow->SaveScene();
+        }
+        else if (auto assetEditorWindow = std::dynamic_pointer_cast<UI::AssetEditorWindow>(window)) {
+            assetEditorWindow->Save();
+        }
+        else if (auto codeEditorWindow = std::dynamic_pointer_cast<UI::CodeEditorWindow>(window)) {
+            codeEditorWindow->Save();
+        }
+
+    }
+
+    std::pair<std::string, std::string> App::GetWindowFile(const Ref<UI::Window>& window) const {
+
+        if (auto sceneWindow = std::dynamic_pointer_cast<UI::SceneWindow>(window)) {
+            auto path = UI::SceneWindow::GetScenePath(sceneWindow->scene);
+            return { Common::Path::GetFileNameWithoutExtension(path), path };
+        }
+        if (auto assetEditorWindow = std::dynamic_pointer_cast<UI::AssetEditorWindow>(window))
+            return { window->name, assetEditorWindow->GetAssetPath() };
+        if (auto codeEditorWindow = std::dynamic_pointer_cast<UI::CodeEditorWindow>(window))
+            return { window->name, codeEditorWindow->GetPath() };
+        return { window->name, "" };
 
     }
 
     void App::RenderUnsavedChangesPopup() {
 
         // Windows can close in other ways in the meantime, e.g. after a save
-        std::erase_if(unsavedSceneWindows, [&](const auto& sceneWindow) {
-            return !sceneWindow->hasUnsavedChanges ||
-                std::find(sceneWindows.begin(), sceneWindows.end(), sceneWindow) == sceneWindows.end();
-            });
-        if (unsavedSceneWindows.empty()) {
-            if (quitAfterUnsavedChanges) {
+        std::erase_if(unsavedWindows, [&](const auto& window) { return !window->hasUnsavedChanges || !IsWindowOpen(window); });
+        // The project is only asked about when the editor closes
+        auto unsavedProject = quitAfterUnsavedChanges && Singletons::project && projectSettingsWindow.hasUnsavedChanges;
+        if (unsavedWindows.empty() && !unsavedProject) {
+            if (quitAfterUnsavedChanges && nextProject) {
+                quitAfterUnsavedChanges = false;
+                projectSwitchRequested = true;
+            }
+            else if (quitAfterUnsavedChanges) {
                 quitConfirmed = true;
                 Exit();
             }
@@ -1654,47 +2093,92 @@ namespace Atlas::Editor {
         if (!ImGui::IsPopupOpen(popupName))
             ImGui::OpenPopup(popupName);
 
+        // Laid out like the other dialogs: centered with a fixed width, the question first and the actions at the bottom
         auto viewport = ImGui::GetMainViewport();
+        auto width = std::clamp(viewport->Size.x * 0.3f, 420.0f, 560.0f);
         ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+        ImGui::SetNextWindowSizeConstraints(ImVec2(width, 0.0f), ImVec2(width, FLT_MAX));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 16.0f));
+        auto open = ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+        ImGui::PopStyleVar();
+        if (!open)
             return;
 
-        ImGui::TextUnformatted("Save the changes before closing?");
+        // The scenes, assets, code and the project with their files
+        std::vector<std::pair<std::string, std::string>> unsaved;
+        for (const auto& window : unsavedWindows)
+            unsaved.push_back(GetWindowFile(window));
+        if (unsavedProject)
+            unsaved.emplace_back("the project " + Singletons::project->name, Singletons::project->path);
+        auto files = std::to_string(unsavedWindows.size()) + (unsavedWindows.size() == 1 ? " file" : " files");
+        auto heading = unsaved.size() == 1 ? "Save the changes to " + unsaved.front().first + "?" :
+            "Save the changes to " + files + (unsavedProject ? " and the project?" : "?");
+        ImGui::SetWindowFontScale(1.25f);
+        ImGui::TextWrapped("%s", heading.c_str());
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::Spacing();
-        for (const auto& sceneWindow : unsavedSceneWindows)
-            ImGui::BulletText("%s", UI::SceneWindow::GetSceneLabel(sceneWindow->scene).c_str());
+        auto consequence = !quitAfterUnsavedChanges ? "The window closes afterwards." :
+            nextProject ? "The editor opens the other project afterwards." : "The editor closes afterwards.";
+        ImGui::PushStyleColor(ImGuiCol_Text, Theme::TextMuted());
+        ImGui::TextWrapped("%s Changes which aren't saved are lost.", consequence);
+        ImGui::PopStyleColor();
+
+        // A single one is named in the question already
+        if (unsaved.size() > 1) {
+            ImGui::Spacing();
+            for (const auto& [label, file] : unsaved) {
+                ImGui::Bullet();
+                ImGui::TextUnformatted(label.c_str());
+                ImGui::SameLine();
+                ImGui::TextColored(Theme::TextMuted(), "%s", file.c_str());
+            }
+        }
+
+        ImGui::Spacing();
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
 
-        bool cancel = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
-        ImGui::SameLine();
-        bool discard = ImGui::Button("Don't save");
+        // The destructive action stands apart on the left, saving is the rightmost and the default with Enter
+        auto& style = ImGui::GetStyle();
+        auto buttonWidth = std::max({ ImGui::CalcTextSize("Save").x, ImGui::CalcTextSize("Cancel").x,
+            ImGui::CalcTextSize("Don't save").x }) + 4.0f * style.FramePadding.x;
+        Theme::PushDangerButton();
+        bool discard = ImGui::Button("Don't save", ImVec2(buttonWidth, 0.0f));
+        Theme::PopDangerButton();
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 2.0f * buttonWidth - style.ItemSpacing.x);
+        bool cancel = ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
         ImGui::SameLine();
         Theme::PushPrimaryButton();
-        bool save = ImGui::Button("Save");
+        bool save = ImGui::Button("Save", ImVec2(buttonWidth, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false);
         Theme::PopPrimaryButton();
 
         if (save || discard) {
-            for (const auto& sceneWindow : unsavedSceneWindows) {
-                if (save) {
-                    // The scene of a playing window is the state of the game
-                    if (sceneWindow->isPlaying)
-                        sceneWindow->StopPlaying();
-                    sceneWindow->SaveScene();
-                }
+            for (const auto& window : unsavedWindows) {
+                if (save)
+                    SaveWindow(window);
                 // Saves of scenes run as blocking operations, which finish before the window is deleted. Quitting
                 // keeps the windows, such that they open again with the next start
-                sceneWindow->hasUnsavedChanges = false;
+                window->hasUnsavedChanges = false;
                 if (!quitAfterUnsavedChanges)
-                    sceneWindow->show = false;
+                    window->show = false;
             }
         }
 
+        if (unsavedProject && save)
+            projectSettingsWindow.Save(Singletons::project);
+        // The changes of a discarded project are lost with the editor
+        if (unsavedProject && discard)
+            projectSettingsWindow.hasUnsavedChanges = false;
+
         if (save || discard || cancel) {
-            unsavedSceneWindows.clear();
-            if (cancel)
+            unsavedWindows.clear();
+            // A cancelled quit doesn't switch the project either
+            if (cancel) {
                 quitAfterUnsavedChanges = false;
+                nextProject.reset();
+            }
             ImGui::CloseCurrentPopup();
         }
 
@@ -1796,7 +2280,7 @@ namespace Atlas::Editor {
 
         ImGui::DockBuilderFinish(dsID);
 
-        settingsWindow.show = false;
+        projectSettingsWindow.show = false;
         // Pinned drawers keep their place in the new layout
         for (auto& drawer : drawers)
             drawer.window->show = drawer.window->requestDocking = drawer.window->pinned;
@@ -1811,9 +2295,15 @@ namespace Atlas::Editor {
 
     }
 
-    void App::OpenInAssetEditor(const std::string& path) {
+    std::string App::OpenInAssetEditor(const std::string& path) {
 
-        auto type = Content::contentTypeMapping.at(Common::Path::GetFileType(path));
+        auto noEditor = "There is no editor for " + Common::Path::GetFileName(path);
+        auto mapping = Content::contentTypeMapping.find(Common::Path::GetFileType(path));
+        if (mapping == Content::contentTypeMapping.end()) {
+            Notifications::Push({ .message = noEditor, .type = NotificationType::Warning });
+            return noEditor;
+        }
+        auto type = mapping->second;
         if (type == ContentType::Animation) {
             // Animations play in the mesh editor focused last
             Ref<UI::MeshEditorWindow> assetEditorWindow;
@@ -1823,34 +2313,50 @@ namespace Atlas::Editor {
                     assetEditorWindow = candidate;
             }
             auto animation = FileImporter::ImportFile<Animation::Animation>(path);
-            if (!assetEditorWindow || !assetEditorWindow->Play(animation))
-                Notifications::Push({ .message = "Open a skinned mesh to play the animation on", .type = NotificationType::Error });
-            return;
+            if (!assetEditorWindow || !assetEditorWindow->Play(animation)) {
+                std::string error = "Open a skinned mesh to play the animation on";
+                Notifications::Push({ .message = error, .type = NotificationType::Error });
+                return error;
+            }
+            return {};
         }
 
         if (type == ContentType::Prefab) {
             for (const auto& sceneWindow : sceneWindows) {
                 if (sceneWindow->prefabPath == path)
-                    return;
+                    return {};
             }
 
             auto scene = DataCreator::CreateScene(Common::Path::GetFileName(path), vec3(-2048.0f), vec3(2048.0f), 8);
+            Singletons::project->ApplyTo(*scene);
             auto sceneWindow = CreateRef<UI::SceneWindow>(ResourceHandle<Scene::Scene>(scene), true);
             sceneWindow->OpenPrefab(path);
             OpenAsTab(*sceneWindow);
             sceneWindows.push_back(sceneWindow);
-            return;
+            return {};
+        }
+
+        if (type == ContentType::Script || type == ContentType::Shader) {
+            auto opened = std::find_if(codeEditorWindows.begin(), codeEditorWindows.end(),
+                [&](const auto& window) { return window->GetPath() == path; });
+            if (opened != codeEditorWindows.end()) {
+                (*opened)->requestFocus = true;
+                return {};
+            }
+            codeEditorWindows.push_back(CreateRef<UI::CodeEditorWindow>(path));
+            OpenAsTab(*codeEditorWindows.back());
+            return {};
         }
 
         // Scenes open as a scene tab, like a double click in the content browser
         if (type == ContentType::Scene) {
             FileImporter::ImportFile<Scene::Scene>(path);
-            return;
+            return {};
         }
 
         if (type != ContentType::Material && type != ContentType::MaterialGraph && type != ContentType::Mesh) {
-            Notifications::Push({ .message = "There is no editor for " + Common::Path::GetFileName(path), .type = NotificationType::Warning });
-            return;
+            Notifications::Push({ .message = noEditor, .type = NotificationType::Warning });
+            return noEditor;
         }
 
         auto iter = std::find_if(assetEditorWindows.begin(), assetEditorWindows.end(),
@@ -1858,7 +2364,7 @@ namespace Atlas::Editor {
         if (iter != assetEditorWindows.end()) {
             (*iter)->requestFocus = true;
             activeAssetEditorWindow = *iter;
-            return;
+            return {};
         }
 
         if (type == ContentType::Material)
@@ -1870,6 +2376,28 @@ namespace Atlas::Editor {
         // Docks next to the window which is still the active one
         OpenAsTab(*assetEditorWindows.back());
         activeAssetEditorWindow = assetEditorWindows.back();
+        return {};
+
+    }
+
+    void App::DockAsTab(UI::Window& window) {
+
+        if (window.show && !window.wasShown) {
+            // The first frame shows the windows of the saved layout, they are docked there already or floating
+            auto restored = ImGui::GetFrameCount() <= 1;
+            auto imguiWindow = ImGui::FindWindowByName(window.GetNameID());
+            auto settings = ImGui::FindWindowSettingsByID(ImHashStr(window.GetNameID()));
+            auto dockId = imguiWindow ? imguiWindow->DockId : settings ? settings->DockId : 0;
+            if (!restored || !dockId) {
+                window.requestDocking = true;
+                if (!window.dockNodeID)
+                    window.dockNodeID = GetActiveDockNodeID();
+            }
+            if (!restored)
+                window.requestFocus = true;
+        }
+        window.wasShown = window.show;
+        DockNextToScenes(window);
 
     }
 
@@ -1922,7 +2450,7 @@ namespace Atlas::Editor {
 
     void App::SubscribeToResourceEvents() {
 
-        ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
+        sceneCreateSubscription = ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
                 waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
                 if (!restoringScenes)
@@ -1932,7 +2460,7 @@ namespace Atlas::Editor {
             });
 
         // Also kind of a resource event
-        Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
+        dropSubscription = Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
             if (!event.file.empty()) {
                 contentBrowserWindow.show = true;
                 auto destinationDirectory = Common::Path::GetAbsolute(contentBrowserWindow.currentDirectory);
