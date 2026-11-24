@@ -239,6 +239,10 @@ namespace Atlas {
             // Halts scripts, physics and players of a running simulation while keeping their state
             bool paused = false;
 
+            // The shape of the image the scene is shown in, the main camera takes it unless it keeps its aspect ratio.
+            // With zero the cameras keep theirs
+            float viewAspectRatio = 0.0f;
+
             // Bodies with a mesh shape wait for it instead of building it during the update. They exist a few
             // frames later, so this is for scenes where nothing simulates yet, e.g. in the editor
             bool buildMeshShapesInBackground = false;

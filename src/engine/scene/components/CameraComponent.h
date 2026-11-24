@@ -38,6 +38,12 @@ namespace Atlas {
 
                 std::array<vec3, 8> GetFrustumCorners(float nearPlane, float farPlane) const;
 
+                /**
+                 * The size of the image in an area of the given size: the whole area, or with a constrained aspect ratio
+                 * the largest part of that shape, the rest are bars
+                 */
+                ivec2 GetImageSize(ivec2 size) const;
+
                 void UpdateFrustum();
 
                 vec3 location = vec3{ 0.0f };
@@ -47,6 +53,9 @@ namespace Atlas {
 
                 float fieldOfView = 45.0f;
                 float aspectRatio = 2.0f;
+                // Keeps the aspect ratio with bars, otherwise applications give the camera the shape of the image. The
+                // image has another size when they change, so that's not something to animate
+                bool constrainAspectRatio = false;
                 float nearPlane = 1.0;
                 float farPlane = 400.0f;
 

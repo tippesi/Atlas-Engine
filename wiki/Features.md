@@ -138,7 +138,9 @@ tool isn't listed here, or a listed file doesn't exist.
 
 ## Cameras and post processing
 
-- **Cameras** (view, FOV, main camera): `CameraComponent`, `Scene::GetMainCamera`.
+- **Cameras** (view, FOV, main camera, aspect ratio, letterbox, black bars): `CameraComponent`, `Scene::GetMainCamera`.
+  Applications give the main camera the shape of the window or viewport (`Scene::viewAspectRatio`); with `constrainAspectRatio` it keeps its
+  `aspectRatio` and `GetImageSize` gives the part of the window between the bars (editor viewport, game window).
 - **Moving along curves** (spline, curve, camera path, rail, track, flight, dolly, keyframes): `SplineComponent` with
   `SplineControlPoint` (transform and time), `SplineType` (linear, Catmull-Rom, Hermite), `SplineBakeMode` (equal or
   distance spacing for a constant speed), `GetInterpolated` returns a `SplinePoint` (position, rotation, tangent). Lua

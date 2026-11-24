@@ -94,6 +94,8 @@ namespace Atlas::Editor::UI {
 
         sceneHierarchyPanel.Update(scene.Get());
 
+        scene->viewAspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
+
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
             if (mainScript && !scene->paused) {
@@ -112,9 +114,6 @@ namespace Atlas::Editor::UI {
             }
         }
         else {
-            auto& camera = cameraEntity.GetComponent<CameraComponent>();
-            camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
-
             ApplyBrush();
             ApplyNavigationTools();
         }
@@ -1292,6 +1291,9 @@ namespace Atlas::Editor::UI {
         camera.exposure = sceneCamera.exposure;
         camera.thirdPerson = sceneCamera.thirdPerson;
         camera.thirdPersonDistance = sceneCamera.thirdPersonDistance;
+        // The view shows the bars of the camera as well
+        camera.aspectRatio = sceneCamera.aspectRatio;
+        camera.constrainAspectRatio = sceneCamera.constrainAspectRatio;
 
         viewedCameraEntity = entity;
 
@@ -1345,6 +1347,8 @@ namespace Atlas::Editor::UI {
         camera.exposure = editorCameraBackup.exposure;
         camera.thirdPerson = editorCameraBackup.thirdPerson;
         camera.thirdPersonDistance = editorCameraBackup.thirdPersonDistance;
+        camera.aspectRatio = editorCameraBackup.aspectRatio;
+        camera.constrainAspectRatio = editorCameraBackup.constrainAspectRatio;
 
         viewedCameraEntity = Scene::Entity();
 

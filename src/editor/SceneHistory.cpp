@@ -660,7 +660,8 @@ namespace Atlas::Editor {
                 j["shadow"].erase("views");
                 j["shadow"].erase("center");
             }
-            if (key == "camera")
+            // Applications give cameras the shape of the viewport unless they keep their aspect ratio
+            if (key == "camera" && !j.value("constrainAspectRatio", false))
                 j.erase("aspectRatio");
             return j;
             };

@@ -639,6 +639,7 @@ namespace Atlas::Scripting::Bindings {
             "exposure", &CameraComponent::exposure,
             "fieldOfView", &CameraComponent::fieldOfView,
             "aspectRatio", &CameraComponent::aspectRatio,
+            "constrainAspectRatio", &CameraComponent::constrainAspectRatio,
             "nearPlane", &CameraComponent::nearPlane,
             "farPlane", &CameraComponent::farPlane,
             "thirdPerson", &CameraComponent::thirdPerson,

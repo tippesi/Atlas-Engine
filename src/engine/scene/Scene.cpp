@@ -765,11 +765,13 @@ namespace Atlas {
                         transformMatrix = transform->globalMatrix;
                     }
 
-                    camera.Update(transformMatrix);
-
                     if (camera.isMain && !mainCameraEntity.IsValid()) {
                         mainCameraEntity = { entity, &entityManager };
                     }
+                    if (entity == mainCameraEntity && viewAspectRatio > 0.0f && !camera.constrainAspectRatio)
+                        camera.aspectRatio = viewAspectRatio;
+
+                    camera.Update(transformMatrix);
                 }
                 });
 

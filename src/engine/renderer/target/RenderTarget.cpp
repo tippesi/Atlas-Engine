@@ -34,7 +34,7 @@ namespace Atlas::Renderer {
     }
 
     RenderTarget::RenderTarget(int32_t width, int32_t height) : 
-        width(glm::max(4, width)), height(glm::max(4, height)) {
+        width(glm::max(minSize, width)), height(glm::max(minSize, height)) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -87,8 +87,8 @@ namespace Atlas::Renderer {
 
     void RenderTarget::Resize(int32_t width, int32_t height) {
 
-        this->width = glm::max(4, width);
-        this->height = glm::max(4, height);
+        this->width = glm::max(minSize, width);
+        this->height = glm::max(minSize, height);
 
         // Need to at least have a size of 2x2 pixels
         scaledWidth = glm::max(2, int32_t(scalingFactor * width));

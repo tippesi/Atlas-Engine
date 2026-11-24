@@ -39,7 +39,9 @@ namespace Atlas::Editor::UI {
 
         void Render(Ref<Scene::Scene>& scene);
 
-        void RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size);
+        // Renders the scene if it's visible and shows its image in the rest of the current window, between bars if its
+        // camera keeps its aspect ratio
+        void RenderImage(const Ref<Scene::Scene>& scene, bool isVisible);
 
         // Ground grid on the y = 0 plane around the camera
         void RenderGrid(const Scene::Components::CameraComponent& camera);
@@ -83,6 +85,8 @@ namespace Atlas::Editor::UI {
         ImVec4 frameColor = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
     private:
+        void RenderScene(const Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size);
+
         void RenderVisualization(float exposure);
 
         void CreateRendering();

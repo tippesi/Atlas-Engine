@@ -139,6 +139,9 @@ namespace Atlas::Editor {
         if (!sceneWindow->scene.IsLoaded())
             return;
 
+        // The window opens with its own camera again
+        sceneWindow->ReturnToEditorCamera();
+
         json camera;
         std::set<ECS::Entity> insertedEntites;
         Scene::EntityToJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), insertedEntites);

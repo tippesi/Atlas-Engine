@@ -158,6 +158,21 @@ namespace Atlas {
 
             }
 
+            ivec2 CameraComponent::GetImageSize(ivec2 size) const {
+
+                if (!constrainAspectRatio || aspectRatio <= 0.0f || size.x <= 0 || size.y <= 0)
+                    return size;
+
+                // Rounded ratios like 1.78 would get bars of a pixel in an image of their shape
+                if (std::abs(aspectRatio * float(size.y) / float(size.x) - 1.0f) < 0.005f)
+                    return size;
+
+                auto width = std::min(size.x, int32_t(float(size.y) * aspectRatio + 0.5f));
+                auto height = std::min(size.y, int32_t(float(size.x) / aspectRatio + 0.5f));
+                return ivec2(width, height);
+
+            }
+
             void CameraComponent::UpdateFrustum() {
 
                 auto corners = GetFrustumCorners(nearPlane, farPlane);

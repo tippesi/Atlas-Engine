@@ -131,6 +131,9 @@ namespace Atlas::Renderer {
     class RenderTarget {
 
     public:
+        // Smaller sizes are raised to it
+        static constexpr int32_t minSize = 4;
+
         /**
          * Constructs a RenderTarget object.
          */

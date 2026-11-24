@@ -301,6 +301,7 @@ namespace Atlas::Scene::Components {
             {"exposure", p.exposure},
             {"fieldOfView", p.fieldOfView},
             {"aspectRatio", p.aspectRatio},
+            {"constrainAspectRatio", p.constrainAspectRatio},
             {"nearPlane", p.nearPlane},
             {"farPlane", p.farPlane},
             {"thirdPerson", p.thirdPerson},
@@ -317,6 +318,7 @@ namespace Atlas::Scene::Components {
         j.at("exposure").get_to(p.exposure);
         j.at("fieldOfView").get_to(p.fieldOfView);
         j.at("aspectRatio").get_to(p.aspectRatio);
+        try_get_json(j, "constrainAspectRatio", p.constrainAspectRatio);
         j.at("nearPlane").get_to(p.nearPlane);
         j.at("farPlane").get_to(p.farPlane);
         j.at("thirdPerson").get_to(p.thirdPerson);

@@ -49,8 +49,14 @@ namespace Atlas::Editor::UI {
         if (Widgets::BeginProperties("CameraLens")) {
             Widgets::PropertyLabel("Field of view");
             ImGui::DragFloat("##Field of view", &cameraComponent.fieldOfView, 0.1f, 1.0f, 180.0f);
+            Widgets::PropertyLabel("Constrain aspect ratio",
+                "Keeps the aspect ratio with black bars, otherwise the camera takes the shape of the viewport");
+            ImGui::Checkbox("##Constrain aspect ratio", &cameraComponent.constrainAspectRatio);
+            // Without the constraint the viewport overwrites it
+            ImGui::BeginDisabled(!cameraComponent.constrainAspectRatio);
             Widgets::PropertyLabel("Aspect ratio");
-            ImGui::DragFloat("##Aspect ratio", &cameraComponent.aspectRatio, 0.01f, 0.01f, 4.0f);
+            ImGui::DragFloat("##Aspect ratio", &cameraComponent.aspectRatio, 0.01f, 0.01f, 4.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::EndDisabled();
 
             Widgets::PropertyLabel("Near plane");
             ImGui::DragFloat("##Near plane", &cameraComponent.nearPlane, 0.01f, 0.01f, 10.0f);

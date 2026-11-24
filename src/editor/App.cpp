@@ -980,11 +980,7 @@ namespace Atlas::Editor {
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
         ImGui::Begin("RenderWindow", nullptr, window_flags);
 
-        auto renderArea = ImGui::GetContentRegionAvail();
-        activeSceneWindow->viewportPanel.RenderScene(activeSceneWindow->scene.Get(),
-            ivec2(0), ivec2(int32_t(renderArea.x), int32_t(renderArea.y)));
-        auto set = Singletons::imguiWrapper->GetTextureId(&activeSceneWindow->viewportPanel.viewportTexture);
-        ImGui::Image(set, renderArea);
+        activeSceneWindow->viewportPanel.RenderImage(activeSceneWindow->scene.Get(), true);
 
         if (activeSceneWindow->perfOverlayMaximized) {
             auto gpuProfilerData = GPUProfiler::GetQueriesAverage(32, GPUProfiler::OrderBy::MAX_TIME);

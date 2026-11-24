@@ -57,17 +57,7 @@ namespace Atlas::Editor::UI {
         auto region = ImGui::GetContentRegionAvail();
         auto windowPos = ImGui::GetWindowPos();
 
-        auto pos = ivec2(int32_t(windowPos.x), int32_t(windowPos.y));
-        auto size = ivec2(int32_t(region.x), int32_t(region.y));
-        if (isVisible)
-            RenderScene(scene, pos, size);
-        else
-            primitiveBatchWrapper.Clear();
-
-        if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            auto set = Singletons::imguiWrapper->GetTextureId(&viewportTexture);
-            ImGui::Image(set, region);
-        }
+        RenderImage(scene, isVisible);
 
         if (drawOverlayFunc && !isBlocked)
             drawOverlayFunc();
@@ -91,7 +81,34 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size) {
+    void ViewportPanel::RenderImage(const Ref<Scene::Scene>& scene, bool isVisible) {
+
+        auto region = ImGui::GetContentRegionAvail();
+        auto start = ImGui::GetCursorScreenPos();
+
+        // A camera which keeps its aspect ratio gets black bars, the viewport only covers its image
+        auto regionSize = ivec2(int32_t(region.x), int32_t(region.y));
+        auto size = scene && scene->HasMainCamera() ? scene->GetMainCamera().GetImageSize(regionSize) : regionSize;
+        auto pos = ivec2(int32_t(start.x), int32_t(start.y)) + (regionSize - size) / 2;
+        if (size != regionSize) {
+            ImGui::GetWindowDrawList()->AddRectFilled(start, ImVec2(start.x + region.x, start.y + region.y),
+                IM_COL32(0, 0, 0, 255));
+        }
+
+        if (isVisible)
+            RenderScene(scene, pos, size);
+        else
+            primitiveBatchWrapper.Clear();
+
+        if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            auto set = Singletons::imguiWrapper->GetTextureId(&viewportTexture);
+            ImGui::SetCursorScreenPos(ImVec2(float(pos.x), float(pos.y)));
+            ImGui::Image(set, ImVec2(float(size.x), float(size.y)));
+        }
+
+    }
+
+    void ViewportPanel::RenderScene(const Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size) {
 
         bool validSize = size.x > 0 && size.y > 0;
 
