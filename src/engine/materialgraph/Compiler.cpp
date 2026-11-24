@@ -14,11 +14,36 @@ namespace Atlas::MaterialGraph {
 
         auto compiled = CreateRef<CompiledGraph>();
 
-        State state = { .graph = graph, .compiled = *compiled };
+        // Also with errors, nodes using the subgraph keep their pins
+        if (IsSubgraph(graph)) {
+            compiled->subgraphNodes = graph.nodes;
+            compiled->subgraphLinks = graph.links;
+        }
 
-        ValidateGraph(state);
+        Expansion expansion;
+        const auto& expanded = Expand(graph, expansion, *compiled);
+
+        State state = { .graph = expanded, .compiled = *compiled, .expansion = expansion };
+        if (compiled->IsSubgraph())
+            CheckSubgraph(state);
+        else
+            GenerateShaders(state);
+
+        MapToSource(expansion, *compiled);
+
+        return compiled;
+
+    }
+
+    void Compiler::GenerateShaders(State& state) {
+
+        const auto& graph = state.graph;
+        auto compiled = &state.compiled;
+
+        if (compiled->errors.empty())
+            ValidateGraph(state);
         if (!compiled->errors.empty())
-            return compiled;
+            return;
 
         const Node* vertexOutput = nullptr;
         const Node* surfaceOutput = nullptr;
@@ -127,11 +152,11 @@ namespace Atlas::MaterialGraph {
         }
 
         if (!compiled->errors.empty())
-            return compiled;
+            return;
 
         compiled->valid = true;
         if (!usesVertexStage && !compiled->hasSurface)
-            return compiled;
+            return;
 
         auto define = [](const char* macro, bool enable = true) {
             return enable ? "#define " + std::string(macro) + "\n" : std::string();
@@ -216,24 +241,286 @@ namespace Atlas::MaterialGraph {
         registerFile(compiled->hitFile, "_hit.rchit", compiled->hitCode);
         registerFile(compiled->hitOpacityFile, "_opacity.rahit", compiled->hitOpacityCode);
 
-        return compiled;
+    }
+
+    void Compiler::CheckSubgraph(State& state) {
+
+        auto& compiled = state.compiled;
+
+        if (compiled.errors.empty())
+            ValidateGraph(state);
+        if (!compiled.errors.empty())
+            return;
+
+        Function function = { .stage = AllStages, .inputName = "surfaceIn" };
+        for (auto output : NodeLibrary::GetSubgraphPins(state.graph.nodes, NodeLibrary::subgraphOutputType)) {
+            const auto& input = NodeLibrary::Find(*output)->inputs.front();
+            EmitInput(state, function, *output, input, input.type);
+            compiled.nodeStages[output->id] = AllStages;
+        }
+
+        // The stages nodes are available in, the graphs using the subgraph decide which ones they end up in
+        for (auto& [nodeId, stages] : compiled.nodeStages)
+            stages &= NodeLibrary::Find(*state.graph.GetNode(nodeId))->stages;
+
+        compiled.valid = compiled.errors.empty();
+
+    }
+
+    bool Compiler::IsSubgraph(const Graph& graph) {
+
+        return std::any_of(graph.nodes.begin(), graph.nodes.end(), [](const Node& node) {
+            return node.type == NodeLibrary::subgraphInputType || node.type == NodeLibrary::subgraphOutputType;
+            });
+
+    }
+
+    void Compiler::ValidateSubgraphPins(const Graph& graph, CompiledGraph& compiled) {
+
+        auto outputCount = 0;
+        for (const auto& node : graph.nodes) {
+            if (node.type == NodeLibrary::vertexOutputType || node.type == NodeLibrary::surfaceOutputType)
+                Error(compiled, node.id, "A graph with subgraph inputs or outputs can't have the outputs of a material");
+            outputCount += node.type == NodeLibrary::subgraphOutputType ? 1 : 0;
+        }
+        if (!outputCount)
+            Error(compiled, 0, "A subgraph needs an output");
+
+        for (const auto& pinType : { NodeLibrary::subgraphInputType, NodeLibrary::subgraphOutputType }) {
+            std::unordered_set<std::string> names;
+            for (auto pin : NodeLibrary::GetSubgraphPins(graph.nodes, pinType)) {
+                if (pin->name.empty())
+                    Error(compiled, pin->id, "The pin of a subgraph needs a name");
+                else if (!names.insert(pin->name).second)
+                    Error(compiled, pin->id, "The pin " + pin->name + " exists twice");
+                if (pin->pinType == ValueType::Generic)
+                    Error(compiled, pin->id, "The pin " + pin->name + " needs a type");
+            }
+        }
+
+    }
+
+    const Graph& Compiler::Expand(const Graph& graph, Expansion& expansion, CompiledGraph& compiled) {
+
+        if (IsSubgraph(graph))
+            ValidateSubgraphPins(graph, compiled);
+
+        std::vector<uint32_t> subgraphNodes;
+        for (const auto& node : graph.nodes) {
+            if (node.type == NodeLibrary::subgraphType)
+                subgraphNodes.push_back(node.id);
+        }
+        if (subgraphNodes.empty())
+            return graph;
+
+        auto& expanded = expansion.graph;
+        expanded.name = graph.name;
+        expanded.nodes = graph.nodes;
+        expanded.links = graph.links;
+        expanded.nextNodeId = graph.nextNodeId;
+        for (const auto& node : graph.nodes)
+            expanded.nextNodeId = std::max(expanded.nextNodeId, node.id + 1);
+
+        // The nodes change their order when clicking them, the new ids must not depend on it
+        std::sort(subgraphNodes.begin(), subgraphNodes.end());
+
+        std::vector<const Graph*> parents = { &graph };
+        for (auto nodeId : subgraphNodes)
+            ExpandNode(nodeId, expansion, compiled, parents);
+
+        return expanded;
+
+    }
+
+    void Compiler::ExpandNode(uint32_t nodeId, Expansion& expansion, CompiledGraph& compiled, std::vector<const Graph*>& parents) {
+
+        auto& graph = expansion.graph;
+
+        const auto subgraph = graph.GetNode(nodeId)->subgraph;
+        if (subgraph.IsLoaded() && std::find(parents.begin(), parents.end(), subgraph.Get().get()) != parents.end()) {
+            Error(compiled, nodeId, "The subgraph " + GetSubgraphName(subgraph) + " contains itself");
+            return;
+        }
+
+        auto inlined = InlineSubgraph(graph, nodeId);
+        for (const auto& error : inlined.errors)
+            Error(compiled, nodeId, error);
+        if (!inlined.errors.empty())
+            return;
+
+        auto origin = expansion.origins.contains(nodeId) ? expansion.origins[nodeId] : Expansion::Origin{ .nodeId = nodeId };
+        origin.path += (origin.path.empty() ? "" : " / ") + GetSubgraphName(subgraph);
+        for (auto id : inlined.nodes)
+            expansion.origins[id] = origin;
+        expansion.outputs[nodeId] = inlined.outputs;
+
+        parents.push_back(subgraph.Get().get());
+        for (auto id : inlined.nodes) {
+            if (graph.GetNode(id)->type == NodeLibrary::subgraphType)
+                ExpandNode(id, expansion, compiled, parents);
+        }
+        parents.pop_back();
+
+    }
+
+    Compiler::InlinedSubgraph Compiler::InlineSubgraph(Graph& graph, uint32_t nodeId) {
+
+        InlinedSubgraph inlined;
+
+        const auto node = *graph.GetNode(nodeId);
+        auto name = GetSubgraphName(node.subgraph);
+
+        auto compiled = node.subgraph.IsLoaded() ? node.subgraph->GetCompiled() : nullptr;
+        if (!node.subgraph.IsValid())
+            inlined.errors.push_back("The node has no subgraph");
+        else if (!node.subgraph.IsLoaded())
+            inlined.errors.push_back("The subgraph " + name + " couldn't be loaded");
+        else if (!compiled || !compiled->IsSubgraph())
+            inlined.errors.push_back("The graph " + name + " has no inputs or outputs of a subgraph");
+        else if (!compiled->valid)
+            inlined.errors.push_back("The subgraph " + name + " has errors: " + (compiled->errors.empty() ? std::string() :
+                compiled->errors.front().message));
+        if (!inlined.errors.empty())
+            return inlined;
+
+        auto hasPin = [&](const std::string& pinType, const std::string& pin) {
+            auto pins = NodeLibrary::GetSubgraphPins(compiled->subgraphNodes, pinType);
+            return std::any_of(pins.begin(), pins.end(), [&](const Node* pinNode) { return pinNode->name == pin; });
+            };
+        for (const auto& link : graph.links) {
+            if (link.toNode == nodeId && !hasPin(NodeLibrary::subgraphInputType, link.toPin))
+                inlined.errors.push_back("The subgraph " + name + " has no input " + link.toPin);
+            if (link.fromNode == nodeId && !hasPin(NodeLibrary::subgraphOutputType, link.fromPin))
+                inlined.errors.push_back("The subgraph " + name + " has no output " + link.fromPin);
+        }
+        if (!inlined.errors.empty())
+            return inlined;
+
+        // In the order of their ids, the nodes change their order when clicking them
+        std::vector<const Node*> subgraphNodes;
+        for (const auto& subgraphNode : compiled->subgraphNodes)
+            subgraphNodes.push_back(&subgraphNode);
+        std::sort(subgraphNodes.begin(), subgraphNodes.end(), [](const Node* a, const Node* b) { return a->id < b->id; });
+
+        std::unordered_map<uint32_t, uint32_t> ids;
+        std::unordered_set<uint32_t> outputNodes;
+        for (auto subgraphNode : subgraphNodes) {
+            auto copy = *subgraphNode;
+            copy.id = graph.nextNodeId++;
+            ids[subgraphNode->id] = copy.id;
+            inlined.nodes.push_back(copy.id);
+
+            if (copy.type == NodeLibrary::subgraphInputType) {
+                inlined.inputs[copy.name] = copy.id;
+            }
+            else if (copy.type == NodeLibrary::subgraphOutputType) {
+                // Both only convert to the type of the pin
+                inlined.outputs[copy.name] = copy.id;
+                outputNodes.insert(copy.id);
+                copy.type = NodeLibrary::subgraphInputType;
+                if (auto value = copy.inputValues.find("Value"); value != copy.inputValues.end())
+                    copy.inputValues = { { NodeLibrary::subgraphDefaultPin, value->second } };
+                NodeLibrary::UpdateDefinition(copy);
+            }
+
+            graph.nodes.push_back(copy);
+        }
+
+        // The links and values of the node replace the defaults of the inputs
+        std::unordered_set<uint32_t> linkedInputs;
+        for (auto& link : graph.links) {
+            if (link.toNode == nodeId) {
+                link.toNode = inlined.inputs[link.toPin];
+                link.toPin = NodeLibrary::subgraphDefaultPin;
+                linkedInputs.insert(link.toNode);
+            }
+            if (link.fromNode == nodeId) {
+                link.fromNode = inlined.outputs[link.fromPin];
+                link.fromPin = "Value";
+            }
+        }
+        for (const auto& [pin, value] : node.inputValues) {
+            if (inlined.inputs.contains(pin))
+                graph.GetNode(inlined.inputs[pin])->inputValues[NodeLibrary::subgraphDefaultPin] = value;
+        }
+
+        for (auto link : compiled->subgraphLinks) {
+            if (!ids.contains(link.fromNode) || !ids.contains(link.toNode) || linkedInputs.contains(ids[link.toNode]))
+                continue;
+            link.fromNode = ids[link.fromNode];
+            link.toNode = ids[link.toNode];
+            if (outputNodes.contains(link.toNode))
+                link.toPin = NodeLibrary::subgraphDefaultPin;
+            graph.links.push_back(link);
+        }
+
+        std::erase_if(graph.nodes, [&](const Node& item) { return item.id == nodeId; });
+
+        return inlined;
+
+    }
+
+    std::string Compiler::GetSubgraphName(const ResourceHandle<Graph>& subgraph) {
+
+        if (subgraph.IsValid() && !subgraph.IsGenerated())
+            return subgraph.GetResource()->GetFileName();
+
+        return subgraph.IsLoaded() ? subgraph->name : "";
+
+    }
+
+    void Compiler::MapToSource(const Expansion& expansion, CompiledGraph& compiled) {
+
+        if (expansion.origins.empty())
+            return;
+
+        auto errors = std::move(compiled.errors);
+        compiled.errors.clear();
+        for (const auto& error : errors) {
+            auto iter = expansion.origins.find(error.nodeId);
+            if (iter == expansion.origins.end())
+                Error(compiled, error.nodeId, error.message);
+            else
+                Error(compiled, iter->second.nodeId, iter->second.path + ": " + error.message);
+        }
+
+        for (const auto& [nodeId, origin] : expansion.origins) {
+            auto iter = compiled.nodeStages.find(nodeId);
+            if (iter == compiled.nodeStages.end())
+                continue;
+            auto stages = iter->second;
+            compiled.nodeStages.erase(iter);
+            compiled.nodeStages[origin.nodeId] |= stages;
+        }
+
+        for (auto& parameter : compiled.parameters) {
+            auto iter = expansion.origins.find(parameter.nodeId);
+            if (iter != expansion.origins.end())
+                parameter.nodeId = iter->second.nodeId;
+        }
 
     }
 
     EvaluationShader Compiler::CompileBake(const Graph& graph) {
 
         CompiledGraph compiled;
-        State state = { .graph = graph, .compiled = compiled };
+        Expansion expansion;
+        const auto& expanded = Expand(graph, expansion, compiled);
 
-        ValidateGraph(state);
-        if (!compiled.errors.empty())
+        State state = { .graph = expanded, .compiled = compiled, .expansion = expansion };
+
+        if (compiled.errors.empty())
+            ValidateGraph(state);
+        if (!compiled.errors.empty()) {
+            MapToSource(expansion, compiled);
             return { .errors = compiled.errors };
+        }
 
         AddEvaluationParameters(state);
 
-        auto surfaceOutput = std::find_if(graph.nodes.begin(), graph.nodes.end(),
+        auto surfaceOutput = std::find_if(state.graph.nodes.begin(), state.graph.nodes.end(),
             [](const Node& node) { return node.type == NodeLibrary::surfaceOutputType; });
-        if (surfaceOutput == graph.nodes.end())
+        if (surfaceOutput == state.graph.nodes.end())
             return { .errors = { { 0, "The graph has no surface output" } } };
 
         std::vector<std::string> pins;
@@ -242,6 +529,7 @@ namespace Atlas::MaterialGraph {
 
         std::vector<uint32_t> usedVaryings;
         auto code = GetSurfaceFunction(state, *surfaceOutput, pins, usedVaryings, AllStages);
+        MapToSource(expansion, compiled);
 
         return FinishEvaluation(compiled, code, "");
 
@@ -250,19 +538,46 @@ namespace Atlas::MaterialGraph {
     EvaluationShader Compiler::CompilePreview(const Graph& graph, uint32_t nodeId) {
 
         CompiledGraph compiled;
-        State state = { .graph = graph, .compiled = compiled };
+        Expansion expansion;
+        const auto& expanded = Expand(graph, expansion, compiled);
 
-        ValidateGraph(state);
-        if (!compiled.errors.empty())
+        State state = { .graph = expanded, .compiled = compiled, .expansion = expansion };
+
+        if (compiled.errors.empty())
+            ValidateGraph(state);
+        if (!compiled.errors.empty()) {
+            MapToSource(expansion, compiled);
             return { .errors = compiled.errors };
+        }
 
         AddEvaluationParameters(state);
 
-        auto node = graph.GetNode(nodeId);
+        // The first used output of a subgraph stands for the node
+        if (auto outputs = expansion.outputs.find(nodeId); outputs != expansion.outputs.end()) {
+            auto definition = NodeLibrary::Find(*graph.GetNode(nodeId));
+            if (definition->outputs.empty())
+                return { .errors = { { nodeId, "The node has no value" } } };
+
+            auto pin = definition->outputs.front().name;
+            for (const auto& output : definition->outputs) {
+                auto isLinked = std::any_of(graph.links.begin(), graph.links.end(),
+                    [&](const Link& link) { return link.fromNode == nodeId && link.fromPin == output.name; });
+                if (isLinked) {
+                    pin = output.name;
+                    break;
+                }
+            }
+            nodeId = outputs->second.contains(pin) ? outputs->second[pin] : 0;
+        }
+
+        auto node = state.graph.GetNode(nodeId);
         if (!node)
             return { .errors = { { nodeId, "The node doesn't exist" } } };
 
-        return FinishEvaluation(compiled, GetPreviewFunction(state, *node), "#define EVALUATE_PREVIEW\n");
+        auto code = GetPreviewFunction(state, *node);
+        MapToSource(expansion, compiled);
+
+        return FinishEvaluation(compiled, code, "#define EVALUATE_PREVIEW\n");
 
     }
 
@@ -329,12 +644,25 @@ namespace Atlas::MaterialGraph {
         Function function = { .stage = AllStages, .inputName = "surfaceIn", .previewNode = node.id };
 
         std::string value;
+        // Tangent space normals are shown like in a normal map
+        auto toColor = [](const std::string& color, bool isNormal) {
+            return isNormal ? "0.5 * (" + color + ") + 0.5" : color;
+            };
+
         if (definition->kind == NodeKind::VertexOutput) {
             value = EmitInput(state, function, node, *definition->FindInput(NodeLibrary::positionOffsetPin), ValueType::Vec3);
         }
+        else if (definition->kind == NodeKind::SubgraphInput || definition->kind == NodeKind::SubgraphOutput) {
+            const auto& input = definition->inputs.front();
+            if (input.type == ValueType::Texture)
+                value = "MaterialGraphSampleTexture(" + EmitInput(state, function, node, input, input.type) + ", surfaceIn.texCoord).rgb";
+            else
+                value = Convert(EmitInput(state, function, node, input, input.type), input.type, ValueType::Vec3);
+            value = toColor(value, node.name == NodeLibrary::normalPin);
+        }
         else {
             if (definition->outputs.empty()) {
-                Error(state, node.id, "The node has no value");
+                Error(state.compiled, node.id, "The node has no value");
                 return "";
             }
 
@@ -363,19 +691,23 @@ namespace Atlas::MaterialGraph {
             else
                 value = Convert(variable, type, ValueType::Vec3);
 
-            // Tangent space normals are shown like in a normal map
-            if (definition->category == "Normal" || output->name == "Normal")
-                value = "0.5 * (" + value + ") + 0.5";
+            value = toColor(value, definition->category == "Normal" || output->name == "Normal");
         }
 
         return function.functions + signature + "\n" + function.code + "\n    return vec4(" + value + ", 1.0);\n\n}\n\n";
 
     }
 
-    void Compiler::Error(State& state, uint32_t nodeId, const std::string& message) {
+    const std::string& Compiler::GetPinLabel(const Node& node, const std::string& pin) {
+
+        return node.type == NodeLibrary::subgraphInputType ? node.name : pin;
+
+    }
+
+    void Compiler::Error(CompiledGraph& compiled, uint32_t nodeId, const std::string& message) {
 
         // A node might be emitted for several functions, which would report the same error again
-        auto& errors = state.compiled.errors;
+        auto& errors = compiled.errors;
         auto exists = std::any_of(errors.begin(), errors.end(),
             [&](const auto& error) { return error.nodeId == nodeId && error.message == message; });
         if (!exists)
@@ -393,7 +725,7 @@ namespace Atlas::MaterialGraph {
         for (const auto& node : graph.nodes) {
             auto definition = NodeLibrary::Find(node);
             if (!definition) {
-                Error(state, node.id, "Unknown node type " + node.type);
+                Error(state.compiled, node.id, "Unknown node type " + node.type);
                 continue;
             }
 
@@ -403,47 +735,47 @@ namespace Atlas::MaterialGraph {
             if (node.type == NodeLibrary::codeType) {
                 auto isNumber = [](ValueType type) { return type != ValueType::Texture && type != ValueType::Generic; };
                 if (!isNumber(node.codeOutputType))
-                    Error(state, node.id, "The result needs a number or vector type");
+                    Error(state.compiled, node.id, "The result needs a number or vector type");
 
                 std::unordered_set<std::string> inputNames;
                 for (const auto& input : node.codeInputs) {
                     auto isName = !input.name.empty() && !std::isdigit(static_cast<unsigned char>(input.name.front())) &&
                         std::all_of(input.name.begin(), input.name.end(), [](char c) { return std::isalnum(static_cast<unsigned char>(c)) || c == '_'; });
                     if (!isName)
-                        Error(state, node.id, "The input " + input.name + " needs a name of letters, digits and underscores");
+                        Error(state.compiled, node.id, "The input " + input.name + " needs a name of letters, digits and underscores");
                     if (!inputNames.insert(input.name).second)
-                        Error(state, node.id, "The input " + input.name + " exists twice");
+                        Error(state.compiled, node.id, "The input " + input.name + " exists twice");
                     if (!isNumber(input.type))
-                        Error(state, node.id, "The input " + input.name + " needs a number or vector type");
+                        Error(state.compiled, node.id, "The input " + input.name + " needs a number or vector type");
                 }
                 if (node.code.find("return") == std::string::npos)
-                    Error(state, node.id, "The code has to return the result");
+                    Error(state.compiled, node.id, "The code has to return the result");
             }
 
             if (definition->kind != NodeKind::Parameter)
                 continue;
 
             if (node.name.empty()) {
-                Error(state, node.id, "A parameter needs a name");
+                Error(state.compiled, node.id, "A parameter needs a name");
                 continue;
             }
 
             auto [iter, inserted] = parameterNames.try_emplace(node.name, &node);
             if (!inserted && iter->second->type != node.type)
-                Error(state, node.id, "The parameter " + node.name + " already exists with another type");
+                Error(state.compiled, node.id, "The parameter " + node.name + " already exists with another type");
         }
 
         if (vertexOutputs > 1)
-            Error(state, 0, "A graph can only have one vertex output");
+            Error(state.compiled, 0, "A graph can only have one vertex output");
         if (surfaceOutputs > 1)
-            Error(state, 0, "A graph can only have one surface output");
+            Error(state.compiled, 0, "A graph can only have one surface output");
 
         std::unordered_set<std::string> connectedInputs;
         for (const auto& link : graph.links) {
             auto from = graph.GetNode(link.fromNode);
             auto to = graph.GetNode(link.toNode);
             if (!from || !to) {
-                Error(state, 0, "A link references a node which doesn't exist");
+                Error(state.compiled, 0, "A link references a node which doesn't exist");
                 continue;
             }
 
@@ -455,17 +787,17 @@ namespace Atlas::MaterialGraph {
             auto output = fromDefinition->FindOutput(link.fromPin);
             auto input = toDefinition->FindInput(link.toPin);
             if (!output)
-                Error(state, from->id, "The node has no output " + link.fromPin);
+                Error(state.compiled, from->id, "The node has no output " + link.fromPin);
             if (!input)
-                Error(state, to->id, "The node has no input " + link.toPin);
+                Error(state.compiled, to->id, "The node has no input " + link.toPin);
             if (!output || !input)
                 continue;
 
             if ((output->type == ValueType::Texture) != (input->type == ValueType::Texture))
-                Error(state, to->id, "The input " + link.toPin + " can't be connected to " + link.fromPin);
+                Error(state.compiled, to->id, "The input " + GetPinLabel(*to, link.toPin) + " can't be connected to " + GetPinLabel(*from, link.fromPin));
 
             if (!connectedInputs.insert(std::to_string(link.toNode) + "/" + link.toPin).second)
-                Error(state, to->id, "The input " + link.toPin + " has several links");
+                Error(state.compiled, to->id, "The input " + GetPinLabel(*to, link.toPin) + " has several links");
         }
 
     }
@@ -502,8 +834,11 @@ namespace Atlas::MaterialGraph {
                 continue;
 
             auto from = state.graph.GetNode(link->fromNode);
-            auto fromDefinition = NodeLibrary::Find(*from);
-            auto output = fromDefinition->FindOutput(link->fromPin);
+            auto fromDefinition = from ? NodeLibrary::Find(*from) : nullptr;
+            auto output = fromDefinition ? fromDefinition->FindOutput(link->fromPin) : nullptr;
+            // Types are also asked for graphs with errors
+            if (!output)
+                continue;
 
             auto linkType = output->type;
             if (linkType == ValueType::Generic)
@@ -516,6 +851,22 @@ namespace Atlas::MaterialGraph {
 
         state.genericTypes[node.id] = type;
         return type;
+
+    }
+
+    ValueType Compiler::GetOutputType(const Graph& graph, uint32_t nodeId, const std::string& pin) {
+
+        auto node = graph.GetNode(nodeId);
+        auto definition = node ? NodeLibrary::Find(*node) : nullptr;
+        auto output = definition ? definition->FindOutput(pin) : nullptr;
+        if (!output)
+            return ValueType::Float;
+
+        CompiledGraph compiled;
+        Expansion expansion;
+        State state = { .graph = graph, .compiled = compiled, .expansion = expansion };
+
+        return GetOutputType(state, *node, *output);
 
     }
 
@@ -538,12 +889,12 @@ namespace Atlas::MaterialGraph {
         auto definition = NodeLibrary::Find(node);
 
         if (std::find(function.visiting.begin(), function.visiting.end(), node.id) != function.visiting.end()) {
-            Error(state, node.id, "The node is part of a cycle");
+            Error(state.compiled, node.id, "The node is part of a cycle");
             return;
         }
 
         if (!(definition->stages & function.stage)) {
-            Error(state, node.id, function.stage == VertexStage ? "The node isn't available in the vertex stage" :
+            Error(state.compiled, node.id, function.stage == VertexStage ? "The node isn't available in the vertex stage" :
                 "The node isn't available in the surface stage");
             return;
         }
@@ -588,7 +939,7 @@ namespace Atlas::MaterialGraph {
                 auto iter = state.varyings.find(node.id);
                 if (iter == state.varyings.end()) {
                     if (int32_t(state.varyings.size()) >= maxVaryings) {
-                        Error(state, node.id, "A graph can hand at most " + std::to_string(maxVaryings) + " values to the surface");
+                        Error(state.compiled, node.id, "A graph can hand at most " + std::to_string(maxVaryings) + " values to the surface");
                         break;
                     }
                     iter = state.varyings.emplace(node.id, int32_t(state.varyings.size())).first;
@@ -602,6 +953,13 @@ namespace Atlas::MaterialGraph {
         case NodeKind::StaticSwitch: {
             auto type = GetOutputType(state, node, definition->outputs.front());
             addVariable("Result", type, EmitInput(state, function, node, *GetStaticSwitchInput(node, *definition), type));
+            break;
+        }
+        case NodeKind::SubgraphInput: {
+            // Only converts to the type of the pin, which doesn't need a variable
+            const auto& input = definition->inputs.front();
+            auto value = EmitInput(state, function, node, input, input.type);
+            function.variables[node.id]["Value"] = value;
             break;
         }
         case NodeKind::Reroute:
@@ -645,7 +1003,10 @@ namespace Atlas::MaterialGraph {
         auto link = state.graph.GetInputLink(node.id, input.name);
         if (!link) {
             if (targetType == ValueType::Texture) {
-                Error(state, node.id, "The input " + input.name + " needs a texture parameter");
+                // A subgraph on its own doesn't get its textures yet, the graphs using it have to connect them
+                auto isOpenInput = node.type == NodeLibrary::subgraphInputType && !state.expansion.origins.contains(node.id);
+                if (!isOpenInput)
+                    Error(state.compiled, node.id, "The input " + GetPinLabel(node, input.name) + " needs a texture parameter");
                 return "0u";
             }
 
@@ -847,6 +1208,7 @@ namespace Atlas::MaterialGraph {
             return definition->valueType != ValueType::Texture;
         case NodeKind::StaticSwitch:
         case NodeKind::Reroute:
+        case NodeKind::SubgraphInput:
         case NodeKind::Expression: {
             auto output = definition->FindOutput(link->fromPin);
             if (!(definition->stages & VertexStage) || output->expression.find("$IN") != std::string::npos)
@@ -887,7 +1249,7 @@ namespace Atlas::MaterialGraph {
         const InputDefinition* fromInput = nullptr;
         if (definition->kind == NodeKind::StaticSwitch)
             fromInput = GetStaticSwitchInput(*from, *definition);
-        else if (definition->kind == NodeKind::Reroute && !definition->inputs.empty())
+        else if (definition->kind == NodeKind::Reroute || definition->kind == NodeKind::SubgraphInput)
             fromInput = &definition->inputs.front();
         if (!fromInput)
             return false;

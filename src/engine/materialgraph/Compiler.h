@@ -27,6 +27,21 @@ namespace Atlas::MaterialGraph {
         // The value of a node, the first used output of nodes with several
         static EvaluationShader CompilePreview(const Graph& graph, uint32_t nodeId);
 
+        // The type of the value of an output, generic outputs take the one of their inputs
+        static ValueType GetOutputType(const Graph& graph, uint32_t nodeId, const std::string& pin);
+
+        // The nodes which replaced a subgraph node
+        struct InlinedSubgraph {
+            std::vector<uint32_t> nodes;
+            // Nodes with the values of the pins, they only convert to the types of the pins
+            std::unordered_map<std::string, uint32_t> inputs;
+            std::unordered_map<std::string, uint32_t> outputs;
+            std::vector<std::string> errors;
+        };
+
+        // Replaces a subgraph node with the nodes of its subgraph, nested subgraph nodes stay. With errors nothing changes
+        static InlinedSubgraph InlineSubgraph(Graph& graph, uint32_t nodeId);
+
         // The largest number of values handed from the vertex to the surface stage
         static constexpr int32_t maxVaryings = 4;
         // Location of the first value handed from the vertex to the surface stage, after lodVS of the geometry shaders
@@ -52,18 +67,60 @@ namespace Atlas::MaterialGraph {
             std::string previewPin;
         };
 
+        // A graph with the nodes of its subgraphs in place of the nodes using them
+        struct Expansion {
+            struct Origin {
+                // The node of the graph which the node comes from
+                uint32_t nodeId = 0;
+                // Names of the subgraphs down to the node
+                std::string path;
+            };
+
+            Graph graph;
+            // Only of nodes from subgraphs
+            std::unordered_map<uint32_t, Origin> origins;
+            // Nodes with the values of the outputs of subgraph nodes
+            std::unordered_map<uint32_t, std::unordered_map<std::string, uint32_t>> outputs;
+        };
+
         struct State {
+            // Without subgraph nodes
             const Graph& graph;
             CompiledGraph& compiled;
+            const Expansion& expansion;
             std::unordered_map<uint32_t, ValueType> genericTypes;
             // Index of the nodes handing values to the surface
             std::unordered_map<uint32_t, int32_t> varyings;
             std::map<std::string, size_t> parameterIndices;
         };
 
-        static void Error(State& state, uint32_t nodeId, const std::string& message);
+        static void Error(CompiledGraph& compiled, uint32_t nodeId, const std::string& message);
+
+        static bool IsSubgraph(const Graph& graph);
+
+        // The inputs and outputs of a graph which is a subgraph
+        static void ValidateSubgraphPins(const Graph& graph, CompiledGraph& compiled);
+
+        // The graph without subgraph nodes, which is the graph itself if it has none
+        static const Graph& Expand(const Graph& graph, Expansion& expansion, CompiledGraph& compiled);
+
+        // Replaces a subgraph node and the ones nested in it. The parents are the graphs it is part of
+        static void ExpandNode(uint32_t nodeId, Expansion& expansion, CompiledGraph& compiled, std::vector<const Graph*>& parents);
+
+        static std::string GetSubgraphName(const ResourceHandle<Graph>& subgraph);
+
+        // Errors, stages and parameters of nodes from subgraphs belong to the subgraph node of the graph
+        static void MapToSource(const Expansion& expansion, CompiledGraph& compiled);
+
+        static void GenerateShaders(State& state);
+
+        // Subgraphs don't have shaders of their own, this only finds errors and the parameters
+        static void CheckSubgraph(State& state);
 
         static void ValidateGraph(State& state);
+
+        // Pins of nodes from subgraphs go by the name nodes using the subgraph show
+        static const std::string& GetPinLabel(const Node& node, const std::string& pin);
 
         static const InputDefinition* GetStaticSwitchInput(const Node& node, const NodeDefinition& definition);
 

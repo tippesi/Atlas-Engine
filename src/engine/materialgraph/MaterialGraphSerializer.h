@@ -9,6 +9,10 @@ namespace Atlas::MaterialGraph {
 
     void from_json(const json& j, CodeInput& p);
 
+    void to_json(json& j, const SubgraphPin& p);
+
+    void from_json(const json& j, SubgraphPin& p);
+
     void to_json(json& j, const Node& p);
 
     void from_json(const json& j, Node& p);

@@ -5,10 +5,17 @@
 #include "materialgraph/MaterialGraph.h"
 #include "materialgraph/MaterialGraphSerializer.h"
 #include "materialgraph/NodeLibrary.h"
+#include "loader/AssetLoader.h"
+#include "loader/MaterialGraphLoader.h"
 #include "loader/ShaderLoader.h"
 #include "mesh/MeshSerializer.h"
+#include "resource/ResourceManager.h"
 
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <string>
+#include <thread>
 
 using namespace Atlas;
 using namespace Atlas::MaterialGraph;
@@ -994,7 +1001,7 @@ static uint32_t AddCode(TestGraph& test, const std::string& code, std::vector<Co
     node.code = code;
     node.codeInputs = std::move(inputs);
     node.codeOutputType = output;
-    NodeLibrary::UpdateCodeDefinition(node);
+    NodeLibrary::UpdateDefinition(node);
     return node.id;
 
 }
@@ -1140,5 +1147,908 @@ TEST(MaterialGraphEvaluation, CodeNodesAreDefinedInEvaluations) {
         ASSERT_NE(caller, std::string::npos) << file;
         EXPECT_LT(definition, caller) << file;
     }
+
+}
+
+// A subgraph which scales a color and adds a glow parameter
+class TestSubgraph {
+
+public:
+    TestSubgraph() : graph(CreateRef<Graph>()), handle(graph) {}
+
+    uint32_t AddPin(const std::string& nodeType, const std::string& name, ValueType type) {
+
+        auto& node = graph->AddNode(nodeType);
+        node.name = name;
+        node.pinType = type;
+        NodeLibrary::UpdateDefinition(node);
+        return node.id;
+
+    }
+
+    uint32_t AddInput(const std::string& name, ValueType type) {
+
+        return AddPin(NodeLibrary::subgraphInputType, name, type);
+
+    }
+
+    uint32_t AddOutput(const std::string& name, ValueType type) {
+
+        return AddPin(NodeLibrary::subgraphOutputType, name, type);
+
+    }
+
+    uint32_t Add(const std::string& type, const std::string& name = "") {
+
+        auto& node = graph->AddNode(type);
+        node.name = name;
+        return node.id;
+
+    }
+
+    void Link(uint32_t from, const std::string& fromPin, uint32_t to, const std::string& toPin) {
+
+        EXPECT_TRUE(graph->Connect(from, fromPin, to, toPin)) << fromPin << " -> " << toPin;
+
+    }
+
+    // Multiplies an input with a constant
+    static TestSubgraph CreateScale(ValueType type = ValueType::Vec3) {
+
+        TestSubgraph test;
+        auto input = test.AddInput("Color", type);
+        auto output = test.AddOutput("Result", type);
+        auto multiply = test.Add("Multiply");
+        test.Link(input, "Value", multiply, "A");
+        test.graph->GetNode(multiply)->inputValues["B"] = vec4(0.25f);
+        test.Link(multiply, "Result", output, "Value");
+        EXPECT_TRUE(test.graph->Compile()->valid);
+        return test;
+
+    }
+
+    Ref<Graph> graph;
+    ResourceHandle<Graph> handle;
+
+};
+
+static uint32_t AddSubgraph(Graph& graph, const ResourceHandle<Graph>& subgraph) {
+
+    auto id = graph.AddNode(NodeLibrary::subgraphType).id;
+    graph.SetSubgraph(id, subgraph);
+    return id;
+
+}
+
+TEST(MaterialGraphSubgraphs, GenerateTheCodeOfTheirNodes) {
+
+    auto scale = TestSubgraph::CreateScale();
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto subgraph = AddSubgraph(test.graph, scale.handle);
+    test.Link(color, "Value", subgraph, "Color");
+    test.LinkSurface(subgraph, NodeLibrary::baseColorPin, "Result");
+    auto compiled = test.Compile();
+
+    TestGraph reference;
+    auto referenceColor = reference.Add("Color parameter", "Tint");
+    auto multiply = reference.Add("Multiply");
+    reference.graph.GetNode(multiply)->inputValues["B"] = vec4(0.25f);
+    reference.Link(referenceColor, "Value", multiply, "A");
+    reference.LinkSurface(multiply, NodeLibrary::baseColorPin, "Result");
+    auto compiledReference = reference.Compile();
+
+    ASSERT_TRUE(compiled->valid) << (compiled->errors.empty() ? "" : compiled->errors.front().message);
+    ASSERT_TRUE(compiledReference->valid);
+    // Graphs generating the same code share their pipelines
+    EXPECT_EQ(compiled->mainFragmentCode, compiledReference->mainFragmentCode);
+    EXPECT_EQ(compiled->hash, compiledReference->hash);
+
+    auto bake = Compiler::CompileBake(test.graph);
+    auto referenceBake = Compiler::CompileBake(reference.graph);
+    ASSERT_TRUE(bake.valid);
+    EXPECT_EQ(bake.fragmentFile, referenceBake.fragmentFile);
+
+}
+
+TEST(MaterialGraphSubgraphs, ConvertToTheTypesOfTheirPins) {
+
+    auto scale = TestSubgraph::CreateScale(ValueType::Float);
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto subgraph = AddSubgraph(test.graph, scale.handle);
+    test.Link(color, "Value", subgraph, "Color");
+    test.LinkSurface(subgraph, NodeLibrary::baseColorPin, "Result");
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid);
+    // The color is reduced to a number before the multiplication, the result is a color again
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "float multiplyResult = tintParameter.x * 0.25")) << compiled->mainFragmentCode;
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "surfaceOut.baseColor = vec3(multiplyResult)")) << compiled->mainFragmentCode;
+
+}
+
+TEST(MaterialGraphSubgraphs, InputsHaveDefaults) {
+
+    auto scale = TestSubgraph::CreateScale();
+    auto input = NodeLibrary::GetSubgraphPins(scale.graph->nodes, NodeLibrary::subgraphInputType).front()->id;
+    scale.graph->GetNode(input)->inputValues["Default"] = vec4(0.5f, 0.75f, 1.0f, 0.0f);
+    scale.graph->Compile();
+
+    TestGraph test;
+    auto subgraph = AddSubgraph(test.graph, scale.handle);
+    test.LinkSurface(subgraph, NodeLibrary::baseColorPin, "Result");
+    EXPECT_TRUE(Contains(test.Compile()->mainFragmentCode, "vec3(0.5, 0.75, 1.0)"));
+
+    // The value of the node replaces it
+    test.graph.GetNode(subgraph)->inputValues["Color"] = vec4(0.125f);
+    EXPECT_TRUE(Contains(test.Compile()->mainFragmentCode, "vec3(0.125, 0.125, 0.125)"));
+
+    // Nodes of the subgraph as the default, the node has no value of its own then
+    test.graph.GetNode(subgraph)->inputValues.clear();
+    auto normal = scale.Add("World normal");
+    scale.Link(normal, "Value", input, "Default");
+    scale.graph->Compile();
+    auto compiled = test.Compile();
+    ASSERT_TRUE(compiled->valid);
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "worldNormalValue * ")) << compiled->mainFragmentCode;
+    EXPECT_FALSE(NodeLibrary::Find(*test.graph.GetNode(subgraph))->FindInput("Color")->defaultExpression.empty());
+
+    // A link replaces all of them
+    auto color = test.Add("Color parameter", "Tint");
+    test.Link(color, "Value", subgraph, "Color");
+    compiled = test.Compile();
+    ASSERT_TRUE(compiled->valid);
+    EXPECT_FALSE(Contains(compiled->mainFragmentCode, "worldNormalValue"));
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "tintParameter * "));
+
+}
+
+TEST(MaterialGraphSubgraphs, EachUseHasItsOwnTextures) {
+
+    // One texture comes from the node, the other one is a parameter all uses share
+    TestSubgraph sampler;
+    auto texture = sampler.AddInput("Map", ValueType::Texture);
+    auto output = sampler.AddOutput("Color", ValueType::Vec3);
+    auto detail = sampler.Add("Texture parameter", "Detail");
+    auto sample = sampler.Add("Sample texture");
+    auto sampleDetail = sampler.Add("Sample texture");
+    auto multiply = sampler.Add("Multiply");
+    sampler.Link(texture, "Value", sample, "Texture");
+    sampler.Link(detail, "Value", sampleDetail, "Texture");
+    sampler.Link(sample, "Color", multiply, "A");
+    sampler.Link(sampleDetail, "Color", multiply, "B");
+    sampler.Link(multiply, "Result", output, "Value");
+    auto compiledSubgraph = sampler.graph->Compile();
+    ASSERT_TRUE(compiledSubgraph->valid) << compiledSubgraph->errors.front().message;
+    ASSERT_EQ(compiledSubgraph->parameters.size(), size_t(1));
+
+    TestGraph test;
+    auto first = test.Add("Texture parameter", "First");
+    auto second = test.Add("Texture parameter", "Second");
+    auto firstUse = AddSubgraph(test.graph, sampler.handle);
+    auto secondUse = AddSubgraph(test.graph, sampler.handle);
+    test.Link(first, "Value", firstUse, "Map");
+    test.Link(second, "Value", secondUse, "Map");
+    test.LinkSurface(firstUse, NodeLibrary::baseColorPin, "Color");
+    test.LinkSurface(secondUse, NodeLibrary::emissivePin, "Color");
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    ASSERT_EQ(compiled->parameters.size(), size_t(3));
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "firstParameter"));
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "secondParameter"));
+    for (const auto& parameter : compiled->parameters) {
+        EXPECT_EQ(parameter.type, ValueType::Texture);
+        // Parameters of subgraphs belong to a node using it, the editor shows that one
+        EXPECT_NE(test.graph.GetNode(parameter.nodeId), nullptr) << parameter.name;
+    }
+
+    // Without a texture the node is reported by the name of its pin
+    test.graph.Disconnect(secondUse, "Map");
+    compiled = test.Compile();
+    EXPECT_FALSE(compiled->valid);
+    ASSERT_FALSE(compiled->errors.empty());
+    EXPECT_EQ(compiled->errors.front().nodeId, secondUse);
+    EXPECT_TRUE(test.HasError(*compiled, "The input Map needs a texture parameter"));
+
+    // Values don't connect to textures
+    auto color = test.Add("Color");
+    EXPECT_FALSE(test.graph.Connect(color, "Value", secondUse, "Map"));
+
+}
+
+TEST(MaterialGraphSubgraphs, ContainOtherSubgraphs) {
+
+    auto scale = TestSubgraph::CreateScale();
+
+    TestSubgraph outer;
+    auto input = outer.AddInput("In", ValueType::Vec3);
+    auto output = outer.AddOutput("Out", ValueType::Vec3);
+    auto first = AddSubgraph(*outer.graph, scale.handle);
+    auto second = AddSubgraph(*outer.graph, scale.handle);
+    auto glow = outer.Add("Float parameter", "Glow");
+    auto add = outer.Add("Add");
+    outer.Link(input, "Value", first, "Color");
+    outer.Link(first, "Result", second, "Color");
+    outer.Link(second, "Result", add, "A");
+    outer.Link(glow, "Value", add, "B");
+    outer.Link(add, "Result", output, "Value");
+    ASSERT_TRUE(outer.graph->Compile()->valid);
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto subgraph = AddSubgraph(test.graph, outer.handle);
+    test.Link(color, "Value", subgraph, "In");
+    test.LinkSurface(subgraph, NodeLibrary::emissivePin, "Out");
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "multiplyResult2 = multiplyResult * ")) << compiled->mainFragmentCode;
+    ASSERT_TRUE(compiled->nodeStages.contains(subgraph));
+    EXPECT_TRUE(compiled->nodeStages.at(subgraph) & SurfaceStage);
+    for (const auto& [nodeId, stages] : compiled->nodeStages)
+        EXPECT_NE(test.graph.GetNode(nodeId), nullptr) << "Only nodes of the graph itself have stages";
+
+    EXPECT_TRUE(test.graph.Uses(*scale.graph));
+    EXPECT_FALSE(scale.graph->Uses(test.graph));
+
+    // Previews show subgraphs by their first used output
+    EXPECT_TRUE(Compiler::CompilePreview(test.graph, subgraph).valid);
+    EXPECT_TRUE(Compiler::CompilePreview(*outer.graph, first).valid);
+    EXPECT_TRUE(Compiler::CompilePreview(*outer.graph, input).valid);
+    EXPECT_TRUE(Compiler::CompilePreview(*outer.graph, output).valid);
+
+}
+
+TEST(MaterialGraphSubgraphs, LinksFollowRenamedPins) {
+
+    TestSubgraph swap;
+    auto a = swap.AddInput("A", ValueType::Vec3);
+    auto b = swap.AddInput("B", ValueType::Vec3);
+    auto output = swap.AddOutput("Result", ValueType::Vec3);
+    auto subtract = swap.Add("Subtract");
+    swap.Link(a, "Value", subtract, "A");
+    swap.Link(b, "Value", subtract, "B");
+    swap.Link(subtract, "Result", output, "Value");
+    ASSERT_TRUE(swap.graph->Compile()->valid);
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto subgraph = AddSubgraph(test.graph, swap.handle);
+    test.Link(color, "Value", subgraph, "A");
+    test.graph.GetNode(subgraph)->inputValues["B"] = vec4(0.5f);
+    test.LinkSurface(subgraph, NodeLibrary::baseColorPin, "Result");
+    auto code = test.Compile()->mainFragmentCode;
+
+    // Names that are swapped are the hardest case
+    swap.graph->GetNode(a)->name = "B";
+    swap.graph->GetNode(b)->name = "A";
+    swap.graph->GetNode(output)->name = "Difference";
+    ASSERT_TRUE(swap.graph->Compile()->valid);
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    EXPECT_EQ(compiled->mainFragmentCode, code);
+    EXPECT_NE(test.graph.GetInputLink(subgraph, "B"), nullptr);
+    EXPECT_EQ(test.graph.GetInputLink(subgraph, "A"), nullptr);
+    EXPECT_EQ(test.graph.GetInputLink(test.surfaceOutput, NodeLibrary::baseColorPin)->fromPin, "Difference");
+
+    // Links to a removed pin are kept and reported until they are removed
+    swap.graph->RemoveNode(a);
+    ASSERT_TRUE(swap.graph->Compile()->valid);
+    compiled = test.Compile();
+    EXPECT_FALSE(compiled->valid);
+    EXPECT_TRUE(test.HasError(*compiled, "has no input B"));
+    EXPECT_NE(NodeLibrary::Find(*test.graph.GetNode(subgraph))->FindInput("B"), nullptr);
+
+    test.graph.Disconnect(subgraph, "B");
+    EXPECT_TRUE(test.Compile()->valid);
+    EXPECT_EQ(NodeLibrary::Find(*test.graph.GetNode(subgraph))->FindInput("B"), nullptr);
+
+}
+
+TEST(MaterialGraphSubgraphs, ErrorsBelongToTheNodeUsingThem) {
+
+    // Pixel data isn't available for vertices, which only the graph using the subgraph can know
+    TestSubgraph screen;
+    auto output = screen.AddOutput("Position", ValueType::Vec3);
+    auto position = screen.Add("Screen position");
+    screen.Link(position, "Value", output, "Value");
+    ASSERT_TRUE(screen.graph->Compile()->valid);
+
+    TestGraph test;
+    auto subgraph = AddSubgraph(test.graph, screen.handle);
+    test.LinkOffset(subgraph, "Position");
+    auto compiled = test.Compile();
+
+    EXPECT_FALSE(compiled->valid);
+    ASSERT_EQ(compiled->errors.size(), size_t(1));
+    EXPECT_EQ(compiled->errors.front().nodeId, subgraph);
+    EXPECT_TRUE(test.HasError(*compiled, "isn't available in the vertex stage"));
+
+    // Errors of the subgraph itself are reported as well
+    screen.graph->GetNode(output)->name = "";
+    EXPECT_FALSE(screen.graph->Compile()->valid);
+    compiled = test.Compile();
+    EXPECT_FALSE(compiled->valid);
+    EXPECT_TRUE(test.HasError(*compiled, "has errors: The pin of a subgraph needs a name"));
+
+    // Subgraphs are no materials and materials no subgraphs
+    TestSubgraph invalid;
+    invalid.AddInput("A", ValueType::Float);
+    EXPECT_TRUE(test.HasError(*invalid.graph->Compile(), "needs an output"));
+    invalid.AddOutput("B", ValueType::Float);
+    invalid.Add(NodeLibrary::surfaceOutputType);
+    EXPECT_TRUE(test.HasError(*invalid.graph->Compile(), "can't have the outputs of a material"));
+
+    TestGraph material;
+    material.graph.Compile();
+    TestGraph user;
+    auto handle = ResourceHandle<Graph>(CreateRef<Graph>(material.graph));
+    AddSubgraph(user.graph, handle);
+    EXPECT_TRUE(user.HasError(*user.Compile(), "has no inputs or outputs of a subgraph"));
+    AddSubgraph(user.graph, ResourceHandle<Graph>());
+    EXPECT_TRUE(user.HasError(*user.Compile(), "The node has no subgraph"));
+
+}
+
+TEST(MaterialGraphSubgraphs, CantContainThemselves) {
+
+    auto first = TestSubgraph::CreateScale();
+    auto second = TestSubgraph::CreateScale();
+
+    AddSubgraph(*first.graph, second.handle);
+    EXPECT_TRUE(first.graph->Compile()->valid);
+
+    AddSubgraph(*second.graph, first.handle);
+    auto compiled = second.graph->Compile();
+    EXPECT_FALSE(compiled->valid);
+    ASSERT_FALSE(compiled->errors.empty());
+    EXPECT_TRUE(Contains(compiled->errors.front().message, "contains itself")) << compiled->errors.front().message;
+
+    EXPECT_TRUE(first.graph->Uses(*second.graph));
+    EXPECT_TRUE(second.graph->Uses(*first.graph));
+    TestGraph other;
+    EXPECT_FALSE(first.graph->Uses(other.graph));
+
+    // The handles would keep each other alive
+    first.graph->nodes.clear();
+    first.graph->Compile();
+    second.graph->nodes.clear();
+    second.graph->Compile();
+
+}
+
+TEST(MaterialGraphSubgraphs, KeepUniformOpacityAndUnusedWind) {
+
+    TestSubgraph passThrough;
+    auto input = passThrough.AddInput("In", ValueType::Float);
+    auto output = passThrough.AddOutput("Out", ValueType::Float);
+    passThrough.Link(input, "Value", output, "Value");
+    ASSERT_TRUE(passThrough.graph->Compile()->valid);
+
+    TestGraph test;
+    auto alpha = test.Add("Float parameter", "Alpha");
+    auto opacity = AddSubgraph(test.graph, passThrough.handle);
+    test.Link(alpha, "Value", opacity, "In");
+    test.LinkSurface(opacity, NodeLibrary::opacityPin, "Out");
+    // Only leads to a zero
+    auto wind = AddSubgraph(test.graph, passThrough.handle);
+    test.LinkOffset(wind, "Out");
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    EXPECT_TRUE(compiled->hasUniformOpacity);
+    EXPECT_FALSE(compiled->hasVertexOffset);
+
+}
+
+TEST(MaterialGraphSubgraphs, RoundTrip) {
+
+    auto scale = TestSubgraph::CreateScale();
+
+    // Removing the node with the largest id must not free the id for another pin
+    auto removed = scale.AddInput("Removed", ValueType::Float);
+    scale.graph->RemoveNode(removed);
+    auto nextNodeId = scale.graph->nextNodeId;
+
+    json j;
+    to_json(j, *scale.graph);
+    Graph loaded;
+    from_json(json::parse(j.dump()), loaded);
+
+    EXPECT_EQ(loaded.nextNodeId, nextNodeId);
+    auto compiled = loaded.Compile();
+    ASSERT_TRUE(compiled->valid);
+    EXPECT_TRUE(compiled->IsSubgraph());
+    auto pins = NodeLibrary::GetSubgraphPins(loaded.nodes, NodeLibrary::subgraphInputType);
+    ASSERT_EQ(pins.size(), size_t(1));
+    EXPECT_EQ(pins.front()->name, "Color");
+    EXPECT_EQ(pins.front()->pinType, ValueType::Vec3);
+
+    // Files from before have no next id
+    j.erase("nextNodeId");
+    from_json(j, loaded);
+    EXPECT_GT(loaded.nextNodeId, loaded.nodes.back().id);
+
+    auto defaultSubgraph = Graph::CreateDefaultSubgraph();
+    EXPECT_TRUE(defaultSubgraph->GetCompiled()->valid);
+    EXPECT_TRUE(defaultSubgraph->GetCompiled()->IsSubgraph());
+
+}
+
+TEST(MaterialGraphSubgraphs, LoadFromFiles) {
+
+    namespace fs = std::filesystem;
+
+    auto previousDirectory = Loader::AssetLoader::GetAssetDirectory();
+    auto directory = fs::temp_directory_path() / "atlasSubgraphTest";
+    fs::remove_all(directory);
+    fs::create_directories(directory);
+    Loader::AssetLoader::SetAssetDirectory(directory.generic_string());
+
+    auto scale = TestSubgraph::CreateScale();
+    Loader::MaterialGraphLoader::SaveGraph(scale.graph, "scale.aematsubgraph");
+
+    auto subgraph = ResourceManager<Graph>::GetOrLoadResourceWithLoader("scale.aematsubgraph", ResourceOrigin::User,
+        Loader::MaterialGraphLoader::LoadGraph);
+    ASSERT_TRUE(subgraph.IsLoaded());
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto id = AddSubgraph(test.graph, subgraph);
+    test.Link(color, "Value", id, "Color");
+    test.LinkSurface(id, NodeLibrary::baseColorPin, "Result");
+    auto code = test.Compile()->mainFragmentCode;
+
+    auto saveGraph = [](const Graph& graph, const std::string& file) {
+        Loader::MaterialGraphLoader::SaveGraph(CreateRef<Graph>(graph), file);
+        };
+    saveGraph(test.graph, "user.aematgraph");
+
+    auto user = ResourceManager<Graph>::GetOrLoadResourceWithLoader("user.aematgraph", ResourceOrigin::User,
+        Loader::MaterialGraphLoader::LoadGraph);
+    ASSERT_TRUE(user.IsLoaded());
+    ASSERT_TRUE(user->GetCompiled()->valid);
+    EXPECT_EQ(user->GetCompiled()->mainFragmentCode, code);
+
+    // Changes of the subgraph reach the loaded graphs using it
+    subgraph->GetNode(NodeLibrary::GetSubgraphPins(subgraph->nodes, NodeLibrary::subgraphInputType).front()->id)->name = "Tint";
+    subgraph->Compile();
+    auto users = subgraph->CompileUsers();
+    ASSERT_EQ(users.size(), size_t(1));
+    EXPECT_EQ(users.front().GetResource()->path, "user.aematgraph");
+    EXPECT_TRUE(user->GetCompiled()->valid);
+    EXPECT_NE(user->GetInputLink(id, "Tint"), nullptr);
+
+    // A missing file is an error, but the path and the links aren't lost
+    saveGraph(test.graph, "missing.aematgraph");
+    auto content = json::parse(std::ifstream(directory / "missing.aematgraph"));
+    for (auto& node : content["nodes"]) {
+        if (node.contains("subgraphPath"))
+            node["subgraphPath"] = "notThere.aematsubgraph";
+    }
+    std::ofstream(directory / "missing.aematgraph") << content.dump();
+    auto missing = Loader::MaterialGraphLoader::LoadGraph("missing.aematgraph");
+    EXPECT_FALSE(missing->GetCompiled()->valid);
+    EXPECT_TRUE(test.HasError(*missing->GetCompiled(), "couldn't be loaded"));
+    saveGraph(*missing, "missing.aematgraph");
+    auto saved = json::parse(std::ifstream(directory / "missing.aematgraph"));
+    EXPECT_EQ(saved["links"], content["links"]);
+    EXPECT_TRUE(Contains(saved.dump(), "notThere.aematsubgraph"));
+
+    // Files containing each other fail instead of waiting for each other
+    auto addSubgraphTo = [&](const std::string& file, const std::string& subgraphFile) {
+        json j = json::parse(std::ifstream(directory / "scale.aematsubgraph"));
+        j["nodes"].push_back({ { "id", 100 }, { "type", "Subgraph" }, { "position", vec2(0.0f) }, { "value", vec4(0.0f) },
+            { "subgraphPath", subgraphFile } });
+        std::ofstream(directory / file) << j.dump();
+        };
+    addSubgraphTo("a.aematsubgraph", "b.aematsubgraph");
+    addSubgraphTo("b.aematsubgraph", "a.aematsubgraph");
+    addSubgraphTo("outer.aematsubgraph", "a.aematsubgraph");
+    EXPECT_THROW(Loader::MaterialGraphLoader::LoadGraph("a.aematsubgraph"), ResourceLoadException);
+    auto outer = Loader::MaterialGraphLoader::LoadGraph("outer.aematsubgraph");
+    EXPECT_FALSE(outer->GetCompiled()->valid);
+
+    // Graphs loading at the same time wait for the subgraph they share
+    auto shared = TestSubgraph::CreateScale();
+    Loader::MaterialGraphLoader::SaveGraph(shared.graph, "shared.aematsubgraph");
+    auto content2 = json::parse(std::ifstream(directory / "user.aematgraph"));
+    std::vector<std::thread> threads;
+    std::vector<ResourceHandle<Graph>> loadedGraphs(16);
+    for (size_t i = 0; i < loadedGraphs.size(); i++) {
+        auto file = "user" + std::to_string(i) + ".aematgraph";
+        for (auto& node : content2["nodes"]) {
+            if (node.contains("subgraphPath"))
+                node["subgraphPath"] = "shared.aematsubgraph";
+        }
+        std::ofstream(directory / file) << content2.dump();
+        threads.emplace_back([&loadedGraphs, file, i]() {
+            loadedGraphs[i] = ResourceManager<Graph>::GetOrLoadResourceWithLoader(file, ResourceOrigin::User,
+                Loader::MaterialGraphLoader::LoadGraph);
+            });
+    }
+    for (auto& thread : threads)
+        thread.join();
+    for (const auto& graph : loadedGraphs) {
+        ASSERT_TRUE(graph.IsLoaded());
+        EXPECT_TRUE(graph->GetCompiled()->valid);
+    }
+
+    Loader::AssetLoader::SetAssetDirectory(previousDirectory.empty() ? "." : previousDirectory);
+    fs::remove_all(directory);
+
+}
+
+TEST(MaterialGraphSubgraphs, ExtractAndDissolveKeepTheCode) {
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto strength = test.Add("Float parameter", "Strength");
+    auto scale = test.Add("Multiply");
+    auto fresnel = test.Add("Fresnel");
+    auto glow = test.Add("Multiply");
+    test.Link(color, "Value", scale, "A");
+    test.Link(strength, "Value", scale, "B");
+    test.Link(scale, "Result", glow, "A");
+    test.Link(fresnel, "Result", glow, "B");
+    test.LinkSurface(scale, NodeLibrary::baseColorPin, "Result");
+    test.LinkSurface(glow, NodeLibrary::emissivePin, "Result");
+    auto reference = test.Compile();
+    ASSERT_TRUE(reference->valid);
+
+    std::vector<Link> inputLinks, outputLinks;
+    std::unordered_set<uint32_t> ids = { scale, fresnel, glow };
+    auto subgraph = test.graph.ExtractSubgraph(ids, inputLinks, outputLinks);
+    ASSERT_TRUE(subgraph->GetCompiled()->valid) << subgraph->GetCompiled()->errors.front().message;
+    EXPECT_EQ(inputLinks.size(), size_t(2));
+    EXPECT_EQ(outputLinks.size(), size_t(2));
+
+    auto inputs = NodeLibrary::GetSubgraphPins(subgraph->nodes, NodeLibrary::subgraphInputType);
+    ASSERT_EQ(inputs.size(), size_t(2));
+    EXPECT_EQ(inputs[0]->name, "Tint");
+    EXPECT_EQ(inputs[0]->pinType, ValueType::Vec3);
+    EXPECT_EQ(inputs[1]->name, "Strength");
+    EXPECT_EQ(inputs[1]->pinType, ValueType::Float);
+    auto outputs = NodeLibrary::GetSubgraphPins(subgraph->nodes, NodeLibrary::subgraphOutputType);
+    ASSERT_EQ(outputs.size(), size_t(2));
+    EXPECT_EQ(outputs[0]->name, NodeLibrary::baseColorPin);
+    EXPECT_EQ(outputs[1]->name, NodeLibrary::emissivePin);
+
+    auto node = test.graph.ReplaceWithSubgraph(ids, ResourceHandle<Graph>(subgraph), inputLinks, outputLinks);
+    EXPECT_EQ(test.graph.GetNode(scale), nullptr);
+    auto compiled = test.Compile();
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    EXPECT_EQ(compiled->mainFragmentCode, reference->mainFragmentCode);
+
+    auto added = test.graph.DissolveSubgraph(node);
+    EXPECT_EQ(added.size(), size_t(3));
+    EXPECT_EQ(test.graph.GetNode(node), nullptr);
+    compiled = test.Compile();
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    EXPECT_EQ(compiled->mainFragmentCode, reference->mainFragmentCode);
+
+}
+
+TEST(MaterialGraphSubgraphs, DissolveKeepsConversionsAndValues) {
+
+    auto scale = TestSubgraph::CreateScale(ValueType::Float);
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto converted = AddSubgraph(test.graph, scale.handle);
+    auto valued = AddSubgraph(test.graph, scale.handle);
+    test.Link(color, "Value", converted, "Color");
+    test.graph.GetNode(valued)->inputValues["Color"] = vec4(0.5f);
+    test.LinkSurface(converted, NodeLibrary::baseColorPin, "Result");
+    test.LinkSurface(valued, NodeLibrary::roughnessPin, "Result");
+    ASSERT_TRUE(test.Compile()->valid);
+
+    test.graph.DissolveSubgraph(converted);
+    test.graph.DissolveSubgraph(valued);
+    auto compiled = test.Compile();
+
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    EXPECT_FALSE(test.graph.Uses(*scale.graph));
+    // Only the red channel gets into the multiplication, as before
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "(tintParameter.x)")) << compiled->mainFragmentCode;
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "floatValue * 0.25")) << compiled->mainFragmentCode;
+
+}
+
+TEST(MaterialGraphSubgraphs, PreviewsShowTheirOutputs) {
+
+    TestSubgraph sampler;
+    auto texture = sampler.AddInput("Map", ValueType::Texture);
+    auto baseColor = sampler.AddOutput(NodeLibrary::baseColorPin, ValueType::Vec3);
+    auto roughness = sampler.AddOutput(NodeLibrary::roughnessPin, ValueType::Float);
+    auto sample = sampler.Add("Sample texture");
+    sampler.Link(texture, "Value", sample, "Texture");
+    sampler.Link(sample, "Color", baseColor, "Value");
+    sampler.Link(sample, "Red", roughness, "Value");
+    ASSERT_TRUE(sampler.graph->Compile()->valid);
+
+    auto preview = Graph::CreateSubgraphPreview(sampler.handle);
+    auto compiled = preview->GetCompiled();
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "surfaceOut.baseColor = sampleTextureColor")) << compiled->mainFragmentCode;
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "surfaceOut.roughness = sampleTextureRed")) << compiled->mainFragmentCode;
+
+    // Nothing is named like a pin of a material
+    auto scale = TestSubgraph::CreateScale();
+    compiled = Graph::CreateSubgraphPreview(scale.handle)->GetCompiled();
+    ASSERT_TRUE(compiled->valid);
+    EXPECT_TRUE(Contains(compiled->mainFragmentCode, "surfaceOut.baseColor = multiplyResult"));
+
+}
+
+TEST(MaterialGraphSubgraphs, DissolveChangesNothingWithErrors) {
+
+    // The defaults of two inputs are each other, the output doesn't need them
+    TestSubgraph cycle;
+    auto a = cycle.AddInput("A", ValueType::Float);
+    auto b = cycle.AddInput("B", ValueType::Float);
+    auto output = cycle.AddOutput("Result", ValueType::Float);
+    auto unused = cycle.Add("Multiply");
+    cycle.Link(a, "Value", b, "Default");
+    cycle.Link(b, "Value", a, "Default");
+    cycle.Link(a, "Value", unused, "A");
+    cycle.graph->GetNode(output)->inputValues["Value"] = vec4(0.5f);
+    ASSERT_TRUE(cycle.graph->Compile()->valid);
+
+    TestGraph test;
+    auto node = AddSubgraph(test.graph, cycle.handle);
+    test.LinkSurface(node, NodeLibrary::roughnessPin, "Result");
+    auto before = test.Compile();
+    ASSERT_TRUE(before->valid);
+    test.graph.DissolveSubgraph(node);
+    EXPECT_EQ(test.graph.GetNode(node), nullptr);
+    auto after = test.Compile();
+    ASSERT_TRUE(after->valid) << after->errors.front().message;
+    EXPECT_TRUE(Contains(after->mainFragmentCode, "0.5")) << after->mainFragmentCode;
+
+    // The output needs the cycle
+    cycle.Link(a, "Value", output, "Value");
+    EXPECT_FALSE(cycle.graph->Compile()->valid);
+    auto invalid = AddSubgraph(test.graph, cycle.handle);
+    auto nodeCount = test.graph.nodes.size();
+    EXPECT_TRUE(test.graph.DissolveSubgraph(invalid).empty());
+    EXPECT_NE(test.graph.GetNode(invalid), nullptr);
+    EXPECT_EQ(test.graph.nodes.size(), nodeCount);
+
+}
+
+TEST(MaterialGraphSubgraphs, DissolveOfPassedOnValues) {
+
+    auto passThrough = ResourceHandle<Graph>(Graph::CreateDefaultSubgraph());
+
+    TestGraph test;
+    auto color = test.Add("Color parameter", "Tint");
+    auto node = AddSubgraph(test.graph, passThrough);
+    test.Link(color, "Value", node, "Value");
+    test.LinkSurface(node, NodeLibrary::baseColorPin, "Result");
+    auto before = test.Compile();
+
+    EXPECT_TRUE(test.graph.DissolveSubgraph(node).empty());
+    EXPECT_EQ(test.graph.GetNode(node), nullptr);
+    ASSERT_NE(test.graph.GetInputLink(test.surfaceOutput, NodeLibrary::baseColorPin), nullptr);
+    EXPECT_EQ(test.graph.GetInputLink(test.surfaceOutput, NodeLibrary::baseColorPin)->fromNode, color);
+    EXPECT_EQ(test.Compile()->mainFragmentCode, before->mainFragmentCode);
+
+}
+
+TEST(MaterialGraphSubgraphs, DissolveKeepsTheTypesOfDefaults) {
+
+    // The order of the links must not matter
+    for (auto defaultFirst : { true, false }) {
+        TestSubgraph subgraph;
+        auto a = subgraph.AddInput("A", ValueType::Vec3);
+        auto b = subgraph.AddInput("B", ValueType::Float);
+        auto output = subgraph.AddOutput("Result", ValueType::Vec3);
+        auto add = subgraph.Add("Add");
+        auto multiply = subgraph.Add("Multiply");
+        subgraph.graph->GetNode(add)->inputValues["B"] = vec4(0.125f);
+        subgraph.graph->GetNode(multiply)->inputValues["B"] = vec4(2.0f);
+        auto linkDefault = [&]() { subgraph.Link(add, "Result", b, "Default"); };
+        auto linkInput = [&]() { subgraph.Link(a, "Value", add, "A"); };
+        auto linkMultiply = [&]() { subgraph.Link(b, "Value", multiply, "A"); };
+        if (defaultFirst) {
+            linkMultiply();
+            linkDefault();
+            linkInput();
+        }
+        else {
+            linkInput();
+            linkDefault();
+            linkMultiply();
+        }
+        subgraph.Link(multiply, "Result", output, "Value");
+        ASSERT_TRUE(subgraph.graph->Compile()->valid);
+
+        TestGraph test;
+        auto color = test.Add("Color parameter", "Tint");
+        auto node = AddSubgraph(test.graph, subgraph.handle);
+        test.Link(color, "Value", node, "A");
+        test.LinkSurface(node, NodeLibrary::baseColorPin, "Result");
+        ASSERT_TRUE(Contains(test.Compile()->mainFragmentCode, "float multiplyResult"));
+
+        test.graph.DissolveSubgraph(node);
+        auto compiled = test.Compile();
+        ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+        EXPECT_TRUE(Contains(compiled->mainFragmentCode, "float multiplyResult")) << compiled->mainFragmentCode;
+    }
+
+}
+
+TEST(MaterialGraphSubgraphs, ClicksDontChangeTheLayoutOfEvaluations) {
+
+    auto createParameter = [](const std::string& name, const std::string& type) {
+        TestSubgraph test;
+        auto output = test.AddOutput("Result", ValueType::Vec3);
+        auto parameter = test.Add(type, name);
+        test.Link(parameter, "Value", output, "Value");
+        EXPECT_TRUE(test.graph->Compile()->valid);
+        return test;
+        };
+    auto first = createParameter("First", "Vector 3 parameter");
+    auto second = createParameter("Second", "Float parameter");
+
+    TestGraph test;
+    auto firstNode = AddSubgraph(test.graph, first.handle);
+    auto secondNode = AddSubgraph(test.graph, second.handle);
+    test.LinkSurface(firstNode, NodeLibrary::baseColorPin, "Result");
+    test.LinkSurface(secondNode, NodeLibrary::emissivePin, "Result");
+
+    auto getLayout = [&]() {
+        std::string layout;
+        for (const auto& parameter : Compiler::CompilePreview(test.graph, firstNode).parameters)
+            layout += parameter.name + "@" + std::to_string(parameter.offset) + " ";
+        return layout;
+        };
+
+    // A clicked node moves to the end
+    auto layout = getLayout();
+    auto iter = std::find_if(test.graph.nodes.begin(), test.graph.nodes.end(), [&](const Node& node) { return node.id == firstNode; });
+    std::rotate(iter, iter + 1, test.graph.nodes.end());
+    EXPECT_EQ(getLayout(), layout);
+    EXPECT_FALSE(layout.empty());
+
+}
+
+TEST(MaterialGraphSubgraphs, EvaluationErrorsBelongToTheNodeUsingThem) {
+
+    TestSubgraph sampler;
+    auto map = sampler.AddInput("Map", ValueType::Texture);
+    auto output = sampler.AddOutput("Color", ValueType::Vec3);
+    auto sample = sampler.Add("Sample texture");
+    sampler.Link(map, "Value", sample, "Texture");
+    sampler.Link(sample, "Color", output, "Value");
+    ASSERT_TRUE(sampler.graph->Compile()->valid);
+    sampler.graph->name = "sampler";
+
+    TestGraph test;
+    auto node = AddSubgraph(test.graph, sampler.handle);
+    test.LinkSurface(node, NodeLibrary::baseColorPin, "Color");
+
+    for (const auto& shader : { Compiler::CompileBake(test.graph), Compiler::CompilePreview(test.graph, node) }) {
+        EXPECT_FALSE(shader.valid);
+        ASSERT_FALSE(shader.errors.empty());
+        EXPECT_EQ(shader.errors.front().nodeId, node);
+        EXPECT_TRUE(Contains(shader.errors.front().message, "sampler: The input Map")) << shader.errors.front().message;
+    }
+
+}
+
+TEST(MaterialGraphSubgraphs, RenamedPinsReplaceRemovedOnes) {
+
+    TestSubgraph subgraph;
+    auto a = subgraph.AddInput("A", ValueType::Vec3);
+    auto b = subgraph.AddInput("B", ValueType::Vec3);
+    auto output = subgraph.AddOutput("Result", ValueType::Vec3);
+    auto add = subgraph.Add("Add");
+    subgraph.Link(a, "Value", add, "A");
+    subgraph.Link(b, "Value", add, "B");
+    subgraph.Link(add, "Result", output, "Value");
+    ASSERT_TRUE(subgraph.graph->Compile()->valid);
+
+    TestGraph test;
+    auto first = test.Add("Color parameter", "First");
+    auto second = test.Add("Color parameter", "Second");
+    auto node = AddSubgraph(test.graph, subgraph.handle);
+    test.Link(first, "Value", node, "A");
+    test.Link(second, "Value", node, "B");
+    test.LinkSurface(node, NodeLibrary::baseColorPin, "Result");
+    ASSERT_TRUE(test.Compile()->valid);
+
+    subgraph.graph->RemoveNode(b);
+    subgraph.graph->GetNode(a)->name = "B";
+    // Two pins of the same name are an error, nothing is followed until it is gone
+    auto duplicate = subgraph.AddInput("B", ValueType::Vec3);
+    EXPECT_FALSE(subgraph.graph->Compile()->valid);
+    EXPECT_FALSE(test.Compile()->valid);
+    EXPECT_NE(test.graph.GetInputLink(node, "A"), nullptr);
+    subgraph.graph->RemoveNode(duplicate);
+    ASSERT_TRUE(subgraph.graph->Compile()->valid);
+
+    auto compiled = test.Compile();
+    ASSERT_TRUE(compiled->valid) << compiled->errors.front().message;
+    ASSERT_NE(test.graph.GetInputLink(node, "B"), nullptr);
+    EXPECT_EQ(test.graph.GetInputLink(node, "B")->fromNode, first);
+    EXPECT_EQ(std::count_if(test.graph.links.begin(), test.graph.links.end(), [&](const Link& link) { return link.toNode == node; }), 1);
+
+    // Values of pins another subgraph doesn't have aren't kept
+    test.graph.GetNode(node)->inputValues["B"] = vec4(1.0f);
+    auto scale = TestSubgraph::CreateScale();
+    test.graph.SetSubgraph(node, scale.handle);
+    EXPECT_TRUE(test.graph.GetNode(node)->inputValues.empty());
+
+}
+
+TEST(MaterialGraphSubgraphs, ExtractNextToUnknownNodes) {
+
+    TestGraph test;
+    auto unknown = test.Add("Float");
+    auto multiply = test.Add("Multiply");
+    test.Link(unknown, "Value", multiply, "A");
+    test.LinkSurface(multiply, NodeLibrary::roughnessPin, "Result");
+    test.graph.GetNode(unknown)->type = "From a newer version";
+
+    std::vector<Link> inputLinks, outputLinks;
+    auto subgraph = test.graph.ExtractSubgraph({ multiply }, inputLinks, outputLinks);
+    EXPECT_EQ(inputLinks.size(), size_t(1));
+    EXPECT_EQ(outputLinks.size(), size_t(1));
+
+    // Nodes without any link to other ones have no pins
+    auto alone = test.Add("Float");
+    inputLinks.clear();
+    outputLinks.clear();
+    EXPECT_FALSE(test.graph.ExtractSubgraph({ alone }, inputLinks, outputLinks)->GetCompiled()->IsSubgraph());
+
+}
+
+TEST(MaterialGraphSubgraphs, VertexValuesHaveAPreview) {
+
+    TestSubgraph wind;
+    auto output = wind.AddOutput("Offset", ValueType::Vec3);
+    auto direction = wind.Add("World to object direction");
+    wind.Link(direction, "Result", output, "Value");
+    ASSERT_TRUE(wind.graph->Compile()->valid);
+
+    auto compiled = Graph::CreateSubgraphPreview(wind.handle)->GetCompiled();
+    EXPECT_TRUE(compiled->valid) << (compiled->errors.empty() ? "" : compiled->errors.front().message);
+
+    // The texture of an input next to a parameter of the same name
+    TestSubgraph sampler;
+    auto map = sampler.AddInput("Map", ValueType::Texture);
+    auto scale = sampler.Add("Float parameter", "Map");
+    auto color = sampler.AddOutput("Color", ValueType::Vec3);
+    auto sample = sampler.Add("Sample texture");
+    auto multiply = sampler.Add("Multiply");
+    sampler.Link(map, "Value", sample, "Texture");
+    sampler.Link(sample, "Color", multiply, "A");
+    sampler.Link(scale, "Value", multiply, "B");
+    sampler.Link(multiply, "Result", color, "Value");
+    ASSERT_TRUE(sampler.graph->Compile()->valid);
+    compiled = Graph::CreateSubgraphPreview(sampler.handle)->GetCompiled();
+    EXPECT_TRUE(compiled->valid) << (compiled->errors.empty() ? "" : compiled->errors.front().message);
+
+}
+
+TEST(MaterialGraphSubgraphs, CompilingWithoutChangesWritesNothing) {
+
+    auto scale = TestSubgraph::CreateScale();
+
+    TestGraph test;
+    auto node = AddSubgraph(test.graph, scale.handle);
+    test.LinkSurface(node, NodeLibrary::baseColorPin, "Result");
+    test.Compile();
+
+    auto definition = test.graph.GetNode(node)->definition;
+    test.Compile();
+    EXPECT_EQ(test.graph.GetNode(node)->definition, definition);
 
 }

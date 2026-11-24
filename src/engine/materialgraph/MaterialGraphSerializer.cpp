@@ -1,6 +1,7 @@
 #include "MaterialGraphSerializer.h"
 #include "NodeLibrary.h"
 
+#include "../loader/MaterialGraphLoader.h"
 #include "../resource/ResourceManager.h"
 #include "../streaming/TextureStreaming.h"
 
@@ -16,6 +17,19 @@ namespace Atlas::MaterialGraph {
 
         j.at(0).get_to(p.name);
         p.type = NodeLibrary::FindType(j.at(1).get<std::string>());
+
+    }
+
+    void to_json(json& j, const SubgraphPin& p) {
+
+        j = json::array({ p.id, p.name });
+
+    }
+
+    void from_json(const json& j, SubgraphPin& p) {
+
+        j.at(0).get_to(p.id);
+        j.at(1).get_to(p.name);
 
     }
 
@@ -56,6 +70,15 @@ namespace Atlas::MaterialGraph {
             j["codeInputs"] = p.codeInputs;
         }
 
+        if (p.type == NodeLibrary::subgraphInputType || p.type == NodeLibrary::subgraphOutputType)
+            j["pinType"] = NodeLibrary::GetTypeName(p.pinType);
+
+        if (p.type == NodeLibrary::subgraphType) {
+            if (p.subgraph.IsValid() && !p.subgraph.IsGenerated())
+                j["subgraphPath"] = p.subgraph.GetResource()->path;
+            j["subgraphPins"] = p.subgraphPins;
+        }
+
     }
 
     void from_json(const json& j, Node& p) {
@@ -87,8 +110,17 @@ namespace Atlas::MaterialGraph {
             try_get_json(j, "codeOutputType", outputType);
             try_get_json(j, "codeInputs", p.codeInputs);
             p.codeOutputType = NodeLibrary::FindType(outputType);
-            NodeLibrary::UpdateCodeDefinition(p);
         }
+
+        if (j.contains("pinType"))
+            p.pinType = NodeLibrary::FindType(j["pinType"].get<std::string>());
+
+        // The pins of the node depend on the subgraph, so it is loaded right away like graphs are for materials
+        p.subgraph = j.contains("subgraphPath") ? ResourceManager<Graph>::GetOrLoadResourceWithLoader(j["subgraphPath"],
+            ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph) : ResourceHandle<Graph>();
+        try_get_json(j, "subgraphPins", p.subgraphPins);
+
+        NodeLibrary::UpdateDefinition(p);
 
     }
 
@@ -119,6 +151,7 @@ namespace Atlas::MaterialGraph {
             {"maxDisplacement", p.maxDisplacement},
             {"blendMode", int32_t(p.blendMode)},
             {"twoSided", p.twoSided},
+            {"nextNodeId", p.nextNodeId},
             {"nodes", p.nodes},
             {"links", p.links},
         };
@@ -138,7 +171,9 @@ namespace Atlas::MaterialGraph {
         p.blendMode = MaterialBlendMode(blendMode);
         try_get_json(j, "twoSided", p.twoSided);
 
+        // Ids aren't used again, the pins of subgraphs are told apart by them
         p.nextNodeId = 1;
+        try_get_json(j, "nextNodeId", p.nextNodeId);
         for (const auto& node : p.nodes)
             p.nextNodeId = std::max(p.nextNodeId, node.id + 1);
 

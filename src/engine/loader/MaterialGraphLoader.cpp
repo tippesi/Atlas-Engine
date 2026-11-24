@@ -5,6 +5,10 @@
 #include "../materialgraph/MaterialGraphSerializer.h"
 #include "../resource/Resource.h"
 
+#include <filesystem>
+#include <unordered_set>
+#include <vector>
+
 namespace Atlas::Loader {
 
     Ref<MaterialGraph::Graph> MaterialGraphLoader::LoadGraph(const std::string& filename) {
@@ -25,6 +29,8 @@ namespace Atlas::Loader {
 
         AssetReferences::ResolveReferences(j, AssetReferences::Type::MaterialGraph, filename);
 
+        CheckSubgraphCycle(j, filename);
+
         auto graph = CreateRef<MaterialGraph::Graph>();
         from_json(j, *graph);
 
@@ -44,6 +50,51 @@ namespace Atlas::Loader {
 
         if (!AssetLoader::WriteJson(filename, j, JsonFormat::Indented))
             Log::Error("Couldn't write material graph file " + filename);
+
+    }
+
+    void MaterialGraphLoader::CheckSubgraphCycle(const json& j, const std::string& filename) {
+
+        auto getFullPath = [](const std::string& path) {
+            return std::filesystem::path(AssetLoader::GetFullPath(path)).lexically_normal().generic_string();
+            };
+
+        std::vector<std::string> pending;
+        auto addSubgraphs = [&](const json& graph) {
+            if (!graph.contains("nodes"))
+                return;
+            for (const auto& node : graph["nodes"]) {
+                if (node.contains("subgraphPath"))
+                    pending.push_back(node["subgraphPath"]);
+            }
+            };
+
+        auto fullPath = getFullPath(filename);
+        std::unordered_set<std::string> visited;
+
+        addSubgraphs(j);
+        while (!pending.empty()) {
+            auto path = pending.back();
+            pending.pop_back();
+
+            auto subgraphPath = getFullPath(path);
+            if (subgraphPath == fullPath)
+                throw ResourceLoadException(filename, "The material graph contains itself as a subgraph");
+            if (!visited.insert(subgraphPath).second)
+                continue;
+
+            AssetLoader::UnpackFile(path);
+            auto fileStream = AssetLoader::ReadFile(AssetLoader::GetFullPath(path), std::ios::in | std::ios::binary);
+            if (!fileStream.is_open())
+                continue;
+
+            auto subgraph = json::parse(AssetLoader::GetFileContent(fileStream), nullptr, false);
+            if (subgraph.is_discarded())
+                continue;
+
+            AssetReferences::ResolveReferences(subgraph, AssetReferences::Type::MaterialGraph, path);
+            addSubgraphs(subgraph);
+        }
 
     }
 

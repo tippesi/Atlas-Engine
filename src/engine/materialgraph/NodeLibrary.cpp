@@ -8,8 +8,14 @@
 namespace Atlas::MaterialGraph {
 
     const std::string NodeLibrary::codeType = "Code";
+    const std::string NodeLibrary::subgraphType = "Subgraph";
+    const std::string NodeLibrary::subgraphInputType = "Subgraph input";
+    const std::string NodeLibrary::subgraphOutputType = "Subgraph output";
     const std::string NodeLibrary::vertexOutputType = "Vertex output";
     const std::string NodeLibrary::surfaceOutputType = "Surface output";
+
+    const std::string NodeLibrary::subgraphDefaultPin = "Default";
+    const std::string NodeLibrary::subgraphDefaultExpression = "$SUBGRAPH";
 
     const std::string NodeLibrary::positionOffsetPin = "Position offset";
     const std::string NodeLibrary::vertexNormalPin = "Normal";
@@ -57,7 +63,7 @@ namespace Atlas::MaterialGraph {
 
     const NodeDefinition* NodeLibrary::Find(const Node& node) {
 
-        return node.codeDefinition ? node.codeDefinition.get() : Find(node.type);
+        return node.definition ? node.definition.get() : Find(node.type);
 
     }
 
@@ -80,6 +86,74 @@ namespace Atlas::MaterialGraph {
             if (GetTypeName(type) == name)
                 return type;
         return ValueType::Generic;
+
+    }
+
+    void NodeLibrary::UpdateDefinition(Node& node) {
+
+        if (node.type == codeType) {
+            UpdateCodeDefinition(node);
+        }
+        else if (node.type == subgraphType) {
+            UpdateSubgraphDefinition(node);
+        }
+        else if (node.type == subgraphInputType || node.type == subgraphOutputType) {
+            auto definition = CreateRef<NodeDefinition>(*Find(node.type));
+            for (auto& input : definition->inputs)
+                input.type = node.pinType;
+            for (auto& output : definition->outputs)
+                output.type = node.pinType;
+            node.definition = definition;
+        }
+
+    }
+
+    std::vector<const Node*> NodeLibrary::GetSubgraphPins(const std::vector<Node>& nodes, const std::string& pinType) {
+
+        std::vector<const Node*> pins;
+        for (const auto& node : nodes) {
+            if (node.type == pinType)
+                pins.push_back(&node);
+        }
+
+        // The nodes change their order when clicking them
+        std::sort(pins.begin(), pins.end(), [](const Node* a, const Node* b) {
+            return a->order != b->order ? a->order < b->order : a->id < b->id;
+            });
+
+        return pins;
+
+    }
+
+    void NodeLibrary::UpdateSubgraphDefinition(Node& node) {
+
+        auto compiled = node.subgraph.IsLoaded() ? node.subgraph->GetCompiled() : nullptr;
+
+        // Without its subgraph or while that has errors the node keeps the pins it had
+        if (!compiled || !compiled->IsSubgraph() || (!compiled->valid && node.definition))
+            return;
+
+        auto definition = CreateRef<NodeDefinition>(*Find(subgraphType));
+
+        for (auto pin : GetSubgraphPins(compiled->subgraphNodes, subgraphInputType)) {
+            InputDefinition input = { .name = pin->name, .type = pin->pinType };
+
+            auto value = pin->inputValues.find(subgraphDefaultPin);
+            if (value != pin->inputValues.end())
+                input.defaultValue = value->second;
+
+            auto isLinked = std::any_of(compiled->subgraphLinks.begin(), compiled->subgraphLinks.end(),
+                [&](const Link& link) { return link.toNode == pin->id; });
+            if (isLinked)
+                input.defaultExpression = subgraphDefaultExpression;
+
+            definition->inputs.push_back(input);
+        }
+
+        for (auto pin : GetSubgraphPins(compiled->subgraphNodes, subgraphOutputType))
+            definition->outputs.push_back({ .name = pin->name, .type = pin->pinType });
+
+        node.definition = definition;
 
     }
 
@@ -107,7 +181,7 @@ namespace Atlas::MaterialGraph {
         definition->functions = "#ifndef " + name + "_DEFINED\n#define " + name + "_DEFINED\n" +
             GetTypeName(node.codeOutputType) + " " + name + "(" + GetCodeParameters(node) + ") {\n" + node.code + "\n}\n#endif\n";
 
-        node.codeDefinition = definition;
+        node.definition = definition;
 
     }
 
@@ -378,6 +452,16 @@ namespace Atlas::MaterialGraph {
             .kind = NodeKind::Frame });
         definitions.push_back({ .type = "Reroute", .category = "Utility", .tooltip = "A point on a link to lead it around other nodes",
             .kind = NodeKind::Reroute, .inputs = { { "Value", G } }, .outputs = { { "Value", G, "$0" } } });
+
+        definitions.push_back({ .type = subgraphType, .category = "Subgraph",
+            .tooltip = "The nodes of another graph, which can be used in any number of graphs",
+            .kind = NodeKind::Subgraph });
+        definitions.push_back({ .type = subgraphInputType, .category = "Subgraph",
+            .tooltip = "A value which nodes using this subgraph hand to it. The default is used while they aren't connected",
+            .kind = NodeKind::SubgraphInput, .inputs = { { subgraphDefaultPin, F } }, .outputs = { { "Value", F, "$0" } } });
+        definitions.push_back({ .type = subgraphOutputType, .category = "Subgraph",
+            .tooltip = "A value which nodes using this subgraph get from it",
+            .kind = NodeKind::SubgraphOutput, .inputs = { { "Value", F } } });
 
         definitions.push_back({ .type = vertexOutputType, .category = "Output", .tooltip = "Moves the vertices of the mesh. Without a link "
             "the vertices are the ones of the mesh",

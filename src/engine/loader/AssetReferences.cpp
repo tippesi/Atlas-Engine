@@ -77,7 +77,7 @@ namespace Atlas {
         static const auto creationShapeReference = json::json_pointer("/creationSettings/shape");
         static const auto compoundChildrenReference = json::json_pointer("/compoundSettings/children");
         static const auto layerReferences = MakePointers({ "/resourcePath" });
-        static const auto graphNodeReferences = MakePointers({ "/texturePath" });
+        static const auto graphNodeReferences = MakePointers({ "/texturePath", "/subgraphPath" });
 
         // Calls func with every value that references a resource
         template<class Func>

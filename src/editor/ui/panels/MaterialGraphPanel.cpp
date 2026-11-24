@@ -129,7 +129,7 @@ namespace Atlas::Editor::UI {
         // Edited code is compiled once the editor loses the focus or shows another node
         if (editedCodeNode && (codeNodeEditor.IsDeactivatedAfterEdit() || shownCodeNode != editedCodeNode)) {
             if (auto node = graph.GetNode(editedCodeNode))
-                NodeLibrary::UpdateCodeDefinition(*node);
+                NodeLibrary::UpdateDefinition(*node);
             compileRequested = true;
             editedCodeNode = 0;
         }
@@ -519,7 +519,7 @@ namespace Atlas::Editor::UI {
                     auto position = selected->position - vec2(nodeWidth + 60.0f, -60.0f * float(selected->codeInputs.size() - 1));
                     auto inputNodeId = graph.AddNode(inputDefinition.type, position).id;
                     selected = graph.GetNode(codeNodeId);
-                    NodeLibrary::UpdateCodeDefinition(*selected);
+                    NodeLibrary::UpdateDefinition(*selected);
                     graph.Connect(inputNodeId, inputDefinition.outputs.front().name, codeNodeId, name);
                     codeChanged = true;
                 }
@@ -562,7 +562,7 @@ namespace Atlas::Editor::UI {
         }
 
         if (codeChanged) {
-            NodeLibrary::UpdateCodeDefinition(*selected);
+            NodeLibrary::UpdateDefinition(*selected);
             compileRequested = true;
         }
 

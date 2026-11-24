@@ -347,7 +347,7 @@ namespace Atlas::Bridge {
                 for (const auto& input : node->codeInputs)
                     checkType(input.type, "the input " + input.name);
             }
-            NodeLibrary::UpdateCodeDefinition(*node);
+            NodeLibrary::UpdateDefinition(*node);
             definition = NodeLibrary::Find(*node);
         }
 

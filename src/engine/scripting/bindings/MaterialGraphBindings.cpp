@@ -145,7 +145,7 @@ namespace Atlas::Scripting::Bindings {
                 [](Graph& graph, uint32_t id, const vec2& value) {
                     ChangeGraphNode(graph, id, [&](Node& node) { node.value = vec4(value, 0.0f, 0.0f); });
                 }),
-            // The name of a parameter or the text of a comment
+            // The name of a parameter or a pin of a subgraph, the text of a comment
             "SetName", [](Graph& graph, uint32_t id, const std::string& name) {
                 ChangeGraphNode(graph, id, [&](Node& node) { node.name = name; });
             },
@@ -156,12 +156,36 @@ namespace Atlas::Scripting::Bindings {
             "SetCode", [](Graph& graph, uint32_t id, const std::string& code) {
                 ChangeGraphNode(graph, id, [&](Node& node) {
                     node.code = code;
-                    MaterialGraph::NodeLibrary::UpdateCodeDefinition(node);
+                    MaterialGraph::NodeLibrary::UpdateDefinition(node);
                     });
             },
-            // Generates the shaders, returns the errors as { node, message }
+            // The graph of a subgraph node
+            "SetSubgraph", [](Graph& graph, uint32_t id, const ResourceHandle<Graph>& subgraph) {
+                if (GetGraphNode(graph, id).type != MaterialGraph::NodeLibrary::subgraphType)
+                    throw std::runtime_error("Node " + std::to_string(id) + " isn't a subgraph node");
+                if (subgraph.IsLoaded() && (subgraph.Get().get() == &graph || subgraph->Uses(graph)))
+                    throw std::runtime_error("The subgraph would contain itself");
+                graph.SetSubgraph(id, subgraph);
+                graph.revision++;
+            },
+            // The type of a subgraph input or output: float, vec2, vec3, vec4 or texture. Its name is set by SetName
+            "SetPinType", [](Graph& graph, uint32_t id, const std::string& type) {
+                auto pinType = MaterialGraph::NodeLibrary::FindType(type);
+                if (pinType == MaterialGraph::ValueType::Generic)
+                    throw std::runtime_error("Unknown type " + type + ", use float, vec2, vec3, vec4 or texture");
+                const auto& nodeType = GetGraphNode(graph, id).type;
+                if (nodeType != MaterialGraph::NodeLibrary::subgraphInputType && nodeType != MaterialGraph::NodeLibrary::subgraphOutputType)
+                    throw std::runtime_error("Node " + std::to_string(id) + " isn't an input or output of a subgraph");
+                ChangeGraphNode(graph, id, [&](Node& node) {
+                    node.pinType = pinType;
+                    MaterialGraph::NodeLibrary::UpdateDefinition(node);
+                    });
+            },
+            // Generates the shaders of the graph and of loaded graphs using it, returns the errors as { node, message }
             "Compile", [](Graph& graph, sol::this_state state) {
                 auto compiled = graph.Compile();
+                if (compiled->IsSubgraph())
+                    graph.CompileUsers();
                 sol::state_view lua(state);
                 sol::table errors = lua.create_table();
                 for (const auto& error : compiled->errors)

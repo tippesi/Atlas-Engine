@@ -25,6 +25,12 @@ namespace Atlas::MaterialGraph {
         StaticSwitch,
         // Passes the value on, keeps links tidy in the editor
         Reroute,
+        // Stands for the nodes of another graph, the compiler replaces it with them
+        Subgraph,
+        // A value a subgraph gets from the node using it
+        SubgraphInput,
+        // A value a subgraph hands to the node using it
+        SubgraphOutput,
         // Only a box around nodes in the editor
         Frame
     };
@@ -35,6 +41,8 @@ namespace Atlas::MaterialGraph {
         vec4 defaultValue = vec4(0.0f);
         // Used instead of the inline value if nothing is connected, e.g. the texture coordinates of the mesh
         std::string defaultExpression;
+
+        bool operator==(const InputDefinition& that) const = default;
     };
 
     struct OutputDefinition {
@@ -42,6 +50,8 @@ namespace Atlas::MaterialGraph {
         ValueType type = ValueType::Float;
         // $0, $1, ... are the inputs, $IN the input structure of the stage
         std::string expression;
+
+        bool operator==(const OutputDefinition& that) const = default;
     };
 
     struct NodeDefinition {
@@ -74,11 +84,14 @@ namespace Atlas::MaterialGraph {
     public:
         static const NodeDefinition* Find(const std::string& type);
 
-        // Code nodes have their own pins, all other nodes the ones of their type
+        // Code and subgraph nodes have their own pins, all other nodes the ones of their type
         static const NodeDefinition* Find(const Node& node);
 
-        // Creates the pins and the function of a code node from its code, inputs and output type
-        static void UpdateCodeDefinition(Node& node);
+        // Creates the own pins of a node, e.g. after the code, the type or the subgraph of the node changed
+        static void UpdateDefinition(Node& node);
+
+        // The inputs or outputs of a subgraph in the order nodes using it show them
+        static std::vector<const Node*> GetSubgraphPins(const std::vector<Node>& nodes, const std::string& pinType);
 
         // The parameters of the function of a code node, e.g. "vec3 color, float strength"
         static std::string GetCodeParameters(const Node& node);
@@ -93,6 +106,14 @@ namespace Atlas::MaterialGraph {
         static const std::vector<NodeDefinition>& GetDefinitions();
 
         static const std::string codeType;
+        static const std::string subgraphType;
+        static const std::string subgraphInputType;
+        static const std::string subgraphOutputType;
+
+        // The pin of a subgraph input with the value while nodes using the subgraph aren't connected
+        static const std::string subgraphDefaultPin;
+        // Stands for defaults which come from nodes of the subgraph
+        static const std::string subgraphDefaultExpression;
         static const std::string vertexOutputType;
         static const std::string surfaceOutputType;
 
@@ -115,6 +136,11 @@ namespace Atlas::MaterialGraph {
 
     private:
         static std::vector<NodeDefinition> CreateDefinitions();
+
+        // The function of a code node from its code, inputs and output type
+        static void UpdateCodeDefinition(Node& node);
+
+        static void UpdateSubgraphDefinition(Node& node);
 
     };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../System.h"
+#include "../common/SerializationHelper.h"
 #include "../materialgraph/MaterialGraph.h"
 
 #include <string>
@@ -14,6 +15,10 @@ namespace Atlas::Loader {
         static Ref<MaterialGraph::Graph> LoadGraph(const std::string& filename);
 
         static void SaveGraph(const Ref<MaterialGraph::Graph>& graph, const std::string& filename);
+
+    private:
+        // Graphs containing each other would wait for each other while loading
+        static void CheckSubgraphCycle(const json& j, const std::string& filename);
 
     };
 

@@ -10,6 +10,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Atlas {
@@ -45,6 +46,8 @@ namespace Atlas::MaterialGraph {
 
     struct NodeDefinition;
 
+    class Graph;
+
     // Fallback of a texture parameter without a texture
     enum class DefaultTexture {
         White = 0,
@@ -55,6 +58,15 @@ namespace Atlas::MaterialGraph {
     struct CodeInput {
         std::string name;
         ValueType type = ValueType::Float;
+    };
+
+    // A pin of a subgraph as the nodes using it know it
+    struct SubgraphPin {
+        // Id of the input or output node in the subgraph
+        uint32_t id = 0;
+        std::string name;
+
+        bool operator==(const SubgraphPin& that) const = default;
     };
 
     struct Node {
@@ -70,13 +82,14 @@ namespace Atlas::MaterialGraph {
         // Constant or default of a parameter. Texture parameters: coordinate scale in x, fallback in y. Vertex output:
         // whether it derives normals in x, sampling distance in y
         vec4 value = vec4(0.0f);
-        // Name of a parameter or the text of a comment
+        // Name of a parameter or a pin of a subgraph, the text of a comment
         std::string name;
         ResourceHandle<Texture::Texture2D> texture;
 
         // Parameters only, without limits if x isn't smaller than y
         vec2 range = vec2(0.0f);
         std::string group;
+        // Parameters and the pins of a subgraph
         int32_t order = 0;
 
         // Size of frames, in the units of the canvas
@@ -86,8 +99,16 @@ namespace Atlas::MaterialGraph {
         std::string code;
         std::vector<CodeInput> codeInputs;
         ValueType codeOutputType = ValueType::Float;
-        // Pins of a code node, NodeLibrary::UpdateCodeDefinition replaces it after the code or its pins changed
-        Ref<const NodeDefinition> codeDefinition;
+
+        // Inputs and outputs of a subgraph: the type of the pin
+        ValueType pinType = ValueType::Float;
+
+        // Subgraph nodes: the graph and its pins when the node was last updated, which keeps links of renamed pins
+        ResourceHandle<Graph> subgraph;
+        std::vector<SubgraphPin> subgraphPins;
+
+        // Own pins of code and subgraph nodes, NodeLibrary::UpdateDefinition replaces it after they changed
+        Ref<const NodeDefinition> definition;
     };
 
     struct Link {
@@ -174,8 +195,15 @@ namespace Atlas::MaterialGraph {
 
         std::unordered_map<uint32_t, uint32_t> nodeStages;
 
+        // Only for subgraphs: the graph as it was compiled. Graphs using it read this one, which nobody edits
+        std::vector<Node> subgraphNodes;
+        std::vector<Link> subgraphLinks;
+
         // Hash of the generated code, graphs generating the same code share pipelines
         Hash hash = 0;
+
+        // Subgraphs have inputs and outputs for other graphs instead of the outputs of a material
+        bool IsSubgraph() const { return !subgraphNodes.empty(); }
 
         bool UsesShadowPipeline() const { return !shadowVertexFile.empty(); }
 
@@ -248,6 +276,13 @@ namespace Atlas::MaterialGraph {
         // Only consists of the two output nodes
         static Ref<Graph> CreateDefault();
 
+        // Has an input which is passed to an output
+        static Ref<Graph> CreateDefaultSubgraph();
+
+        // A material showing the outputs of a subgraph. Outputs named like a pin of the surface or vertex output are
+        // connected to it, otherwise the first one is the base color
+        static Ref<Graph> CreateSubgraphPreview(const ResourceHandle<Graph>& subgraph);
+
         Node& AddNode(const std::string& type, vec2 position = vec2(0.0f));
 
         void RemoveNode(uint32_t id);
@@ -262,6 +297,28 @@ namespace Atlas::MaterialGraph {
         void Disconnect(uint32_t toNode, const std::string& toPin);
 
         const Link* GetInputLink(uint32_t toNode, const std::string& toPin) const;
+
+        // Links stay on the pins of the same name
+        void SetSubgraph(uint32_t nodeId, const ResourceHandle<Graph>& subgraph);
+
+        // A subgraph of some nodes. The links are the ones a node using it needs to replace these nodes, its own
+        // end of them is open
+        Ref<Graph> ExtractSubgraph(const std::unordered_set<uint32_t>& nodeIds, std::vector<Link>& inputLinks,
+            std::vector<Link>& outputLinks) const;
+
+        // Replaces nodes with a node using their extracted subgraph, returns the id of the node
+        uint32_t ReplaceWithSubgraph(const std::unordered_set<uint32_t>& nodeIds, const ResourceHandle<Graph>& subgraph,
+            const std::vector<Link>& inputLinks, const std::vector<Link>& outputLinks);
+
+        // Replaces a subgraph node with the nodes of its subgraph and returns the ones it added. The node stays if the
+        // subgraph has errors
+        std::vector<uint32_t> DissolveSubgraph(uint32_t nodeId);
+
+        // Whether the graph contains the other one as a subgraph, directly or through other subgraphs
+        bool Uses(const Graph& subgraph) const;
+
+        // Compiles all loaded graphs using this one as a subgraph and returns them, main thread only
+        std::vector<ResourceHandle<Graph>> CompileUsers() const;
 
         // The value of an input of the surface output without a link, the default of the pin without a surface output
         vec4 GetSurfaceValue(const std::string& pin) const;
@@ -298,6 +355,14 @@ namespace Atlas::MaterialGraph {
         uint32_t revision = 0;
 
     private:
+        // Updates the pins of subgraph nodes, links follow renamed pins
+        void UpdateSubgraphNodes();
+
+        void UpdateSubgraphPins(Node& node, const CompiledGraph& compiledSubgraph);
+
+        // Connects what used the pin of a dissolved subgraph directly to the value of the pin
+        void DissolvePin(uint32_t pinId, const std::unordered_map<uint32_t, ValueType>& sourceTypes);
+
         mutable std::mutex compiledMutex;
         Ref<const CompiledGraph> compiled;
 
