@@ -110,7 +110,7 @@ struct Texture {
 struct PackedRaytraceMaterial {
     uint baseColor;
     uint emissiveRedGreen;
-    uint emissiveBlue;
+    uint emissiveBlueThickness;
     uint opacityRoughnessMetalnessAo;
     uint reflectanceNormalScaleFlags;
     uint tiling;
@@ -179,6 +179,8 @@ struct RaytraceMaterial {
     // Absorbed inside refracting surfaces, 0 doesn't absorb
     uint attenuationColor;
     float attenuationDistance;
+    // Of two sided refracting surfaces, which are thin slabs, 0 for the others
+    float thickness;
 
 };
 

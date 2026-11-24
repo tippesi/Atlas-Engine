@@ -118,6 +118,7 @@ Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMater
     mat.refractiveIndex = rayMat.refractiveIndex;
     mat.attenuationColor = unpackColorVector(int(rayMat.attenuationColor)).rgb;
     mat.attenuationDistance = rayMat.attenuationDistance;
+    mat.thickness = rayMat.thickness;
 
     return mat;
 }
@@ -189,8 +190,8 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     bool twoSided = rayMat.twoSided > 0 || mat.transmissive;
     backfaceHit = twoSided || rayMat.cullBackFaces == 0 ? false : flipNormal;
     triangleNormal *= flipNormal && twoSided ? -1.0 : 1.0;
-    // Rays leave refracting surfaces through their back faces
-    mat.refractiveIndex = flipNormal ? 1.0 / mat.refractiveIndex : mat.refractiveIndex;
+    // Rays leave refracting volumes through their back faces, thin surfaces are entered from both sides
+    mat.refractiveIndex = flipNormal && mat.thickness == 0.0 ? 1.0 / mat.refractiveIndex : mat.refractiveIndex;
 
     vec3 geometryNormal = triangleNormal;
 
@@ -235,8 +236,10 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
         mat.transmissive = graphSurface.transmission > 0.0;
         // Rays leave refracting surfaces through their back faces, the material decides whether it refracts at all
         if (rayMat.refractiveIndex != 1.0) {
-            mat.refractiveIndex = flipNormal ? 1.0 / graphSurface.refractiveIndex : graphSurface.refractiveIndex;
+            mat.refractiveIndex = flipNormal && mat.thickness == 0.0 ? 1.0 / graphSurface.refractiveIndex : graphSurface.refractiveIndex;
             mat.opacity = graphSurface.opacity;
+            // Without a thickness the surface would be a volume, the refractive index is the one of a thin surface
+            mat.thickness = mat.thickness > 0.0 ? max(graphSurface.thickness, 0.001) : 0.0;
         }
         mat.attenuationColor = graphSurface.attenuationColor;
         mat.attenuationDistance = graphSurface.attenuationDistance;

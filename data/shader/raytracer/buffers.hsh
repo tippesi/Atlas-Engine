@@ -47,7 +47,9 @@ RaytraceMaterial GetRaytraceMaterial(int index) {
     vec2 emissiveRedGreen = unpackHalf2x16(packed.emissiveRedGreen);
     material.emissR = emissiveRedGreen.x;
     material.emissG = emissiveRedGreen.y;
-    material.emissB = unpackHalf2x16(packed.emissiveBlue).x;
+    vec2 emissiveBlueThickness = unpackHalf2x16(packed.emissiveBlueThickness);
+    material.emissB = emissiveBlueThickness.x;
+    material.thickness = emissiveBlueThickness.y;
 
     vec4 opacityRoughnessMetalnessAo = unpackUnorm4x8(packed.opacityRoughnessMetalnessAo);
     material.opacity = opacityRoughnessMetalnessAo.x;

@@ -206,7 +206,7 @@ namespace Atlas {
             return GPUPackedMaterial {
                 .baseColor = uint32_t(Common::Packing::PackUnsignedVector3x10_1x2(vec4(::Helper::Math::Saturate(material.baseColor), 0.0f))),
                 .emissiveRedGreen = glm::packHalf2x16(vec2(material.emissiveColor.r, material.emissiveColor.g)),
-                .emissiveBlue = glm::packHalf2x16(vec2(material.emissiveColor.b, 0.0f)),
+                .emissiveBlueThickness = glm::packHalf2x16(vec2(material.emissiveColor.b, material.thickness)),
                 .opacityRoughnessMetalnessAo = glm::packUnorm4x8(vec4(material.opacity, material.roughness, material.metalness, material.ao)),
                 .reflectanceNormalScaleFlags = (glm::packUnorm4x8(vec4(material.reflectance, material.normalScale, 0.0f, 0.0f)) & 0xFFFFu) |
                     (flags << 16u) | (material.blendMode << 24u),
@@ -410,6 +410,7 @@ namespace Atlas {
                         auto refractiveIndex = hasGraph ? graph->GetSurfaceValue(NodeLibrary::refractiveIndexPin).x : material->refractiveIndex;
                         auto attenuationDistance = hasGraph ? graph->GetSurfaceValue(NodeLibrary::attenuationDistancePin).x :
                             material->attenuationDistance;
+                        auto thickness = hasGraph ? graph->GetSurfaceValue(NodeLibrary::thicknessPin).x : material->thickness;
 
                         gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
                         gpuMaterial.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(
@@ -424,6 +425,9 @@ namespace Atlas {
                         gpuMaterial.attenuationColor = Common::Packing::PackUnsignedVector3x10_1x2(
                             vec4(Helper::Math::Saturate(attenuationColor), 0.0f));
                         gpuMaterial.attenuationDistance = material->Refracts() ? attenuationDistance : 0.0f;
+                        // Rays enter two sided surfaces from both sides, they can't be volumes. A graph with a linked
+                        // thickness gives it per hit
+                        gpuMaterial.thickness = material->Refracts() && material->IsTwoSided() ? std::max(thickness, 0.001f) : 0.0f;
 
                         gpuMaterial.roughness = material->roughness;
                         gpuMaterial.metalness = material->metalness;

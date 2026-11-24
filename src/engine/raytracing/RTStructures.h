@@ -154,13 +154,15 @@ namespace Atlas {
         // RGB packed as 10:10:10, absorbed inside refracting surfaces, see Material::attenuationDistance
         uint32_t attenuationColor = 0;
         float attenuationDistance = 0.0f;
+        // Of two sided refracting surfaces, which are thin slabs, 0 for the others
+        float thickness = 0.0f;
     };
 
     // GPUMaterial as the buffer holds it, see raytracer/buffers.hsh. Colors are 10:10:10, emission, tiling and coordinates halves
     struct alignas(16) GPUPackedMaterial {
         uint32_t baseColor = 0;
         uint32_t emissiveRedGreen = 0;
-        uint32_t emissiveBlue = 0;
+        uint32_t emissiveBlueThickness = 0;
         // Unorm 4x8
         uint32_t opacityRoughnessMetalnessAo = 0;
         // Unorm 8 each, then the flags of the material and its blend mode

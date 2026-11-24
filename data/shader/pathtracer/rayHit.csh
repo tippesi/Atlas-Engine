@@ -390,6 +390,11 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
         // What alpha blended surfaces reflect doesn't pass them, cut out ones only have holes
         brdfSample.reflectance = vec3(1.0 - opacity) *
             (mat.blendMode == blendModeAlpha ? vec3(1.0) - EvaluateIndirectSpecularBRDF(surface) : vec3(1.0));
+        // Thin surfaces absorb the light on its way through their slab
+        if (mat.thickness > 0.0) {
+            float cosineInside = sqrt(max(1.0 - (1.0 - sqr(surface.NdotV)) / sqr(mat.refractiveIndex), 0.01));
+            brdfSample.reflectance *= GetAbsorption(mat.attenuationColor, mat.attenuationDistance, mat.thickness / cosineInside);
+        }
         transmitted = true;
         passedThrough = true;
     }
@@ -446,7 +451,8 @@ float CheckVisibility(Surface surface, float lightDistance) {
 }
 
 // Refracting surfaces bend the ray where it enters and leaves them, it's reflected beyond the critical angle. Rough ones
-// refract it through a normal of their microfacets
+// refract it through a normal of their microfacets. Thin ones are slabs, the ray leaves them right away through the
+// parallel side
 vec3 RefractThrough(Surface surface, vec3 direction, float raySeed, inout float seed) {
 
     if (surface.material.refractiveIndex == 1.0)
@@ -459,6 +465,13 @@ vec3 RefractThrough(Surface surface, vec3 direction, float raySeed, inout float 
         facingNormal = dot(microfacetNormal, direction) < 0.0 ? microfacetNormal : facingNormal;
     }
     vec3 refracted = refract(direction, facingNormal, 1.0 / surface.material.refractiveIndex);
-    return dot(refracted, refracted) > 0.0 ? refracted : reflect(direction, facingNormal);
+    if (dot(refracted, refracted) == 0.0)
+        return reflect(direction, facingNormal);
+    if (surface.material.thickness == 0.0)
+        return refracted;
+
+    vec3 sideNormal = dot(direction, surface.N) < 0.0 ? surface.N : -surface.N;
+    vec3 leaving = refract(refracted, sideNormal, surface.material.refractiveIndex);
+    return dot(leaving, leaving) > 0.0 ? leaving : direction;
 
 }

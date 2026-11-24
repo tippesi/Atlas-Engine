@@ -54,6 +54,8 @@ struct Material {
     float refractiveIndex;
     vec3 attenuationColor;
     float attenuationDistance;
+    // Of thin refracting surfaces in ray tracing, they are slabs instead of volumes, see RaytraceMaterial
+    float thickness;
 };
 
 // The part of the light which passes the distance inside an absorbing medium
