@@ -339,11 +339,13 @@ namespace Atlas {
 
                     for (auto& subData : data.subData) {
                         auto range = subData.GetLod(lod);
+                        // Materials which failed to load, e.g. a missing file, are opaque
+                        const auto& material = subData.material;
                         geometryRegions.emplace_back(Graphics::ASGeometryRegion{
                             .indexCount = range.indicesCount,
                             .indexOffset = range.indicesOffset,
-                            .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f &&
-                                !subData.material->HasGraph() && !subData.material->IsTranslucent()
+                            .opaque = !material.IsLoaded() || (!material->opacityMap.IsValid() && material->opacity == 1.0f &&
+                                !material->HasGraph() && !material->IsTranslucent())
                             });
                     }
 

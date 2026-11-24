@@ -174,9 +174,10 @@ namespace Atlas {
                     }
 
                     triangles[k].materialIdx = sub.materialIdx;
-                    // A negative opacity reads the material, closest hits pass through translucent surfaces
-                    triangles[k].opacity = sub.material->opacityMap.IsValid() || sub.material->IsTranslucent() ?
-                        -1.0f : sub.material->opacity;
+                    // A negative opacity reads the material, closest hits pass through translucent surfaces.
+                    // Materials which failed to load, e.g. a missing file, are opaque
+                    triangles[k].opacity = !sub.material.IsLoaded() ? 1.0f :
+                        sub.material->opacityMap.IsValid() || sub.material->IsTranslucent() ? -1.0f : sub.material->opacity;
 
                 }
 

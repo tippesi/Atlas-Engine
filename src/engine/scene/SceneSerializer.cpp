@@ -421,7 +421,7 @@ namespace Atlas::Scene {
                         !IsValidSection(section.key, indices, values.size(), entities.size()))
                         return;
                     for (size_t i = 0; i < indices.size(); i++)
-                        entities[indices[i]].AddComponent<T>(std::move(values[i]));
+                        entities[indices[i]].template AddComponent<T>(std::move(values[i]));
                     return;
                 }
             }
@@ -431,7 +431,7 @@ namespace Atlas::Scene {
                 return;
             for (size_t i = 0; i < indices.size(); i++) {
                 T comp = values[i];
-                entities[indices[i]].AddComponent<T>(std::move(comp));
+                entities[indices[i]].template AddComponent<T>(std::move(comp));
             }
         });
 
