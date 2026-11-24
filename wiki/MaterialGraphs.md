@@ -88,6 +88,27 @@ A graph is its own resource, any number of materials can reference it. Pipelines
 belong to each material. When other materials use the graph, the editor shows them above the canvas, since changing nodes changes
 all of them. `Make a copy for this material` gives the material its own graph file.
 
+## Subgraphs
+
+A subgraph (`.aematsubgraph`) is a graph other graphs use as a node, any number of times and also in other subgraphs. Its pins
+are `Subgraph input` and `Subgraph output` nodes with a name, a type and an order, it has no outputs of a material. The compiler
+puts the nodes of the subgraph in place of the `Subgraph` node, so it costs the same as copies of these nodes: nothing at
+runtime is different, and two uses calculate everything twice.
+
+- `Create subgraph` in the context menu of selected nodes (Ctrl+Shift+G) moves them into a new file next to the graph, `Dissolve
+  subgraph` puts them back. The content browser creates empty ones. Add existing ones from the node menu or drop them on the canvas,
+  a double click on the node opens the subgraph. Changes reach all loaded graphs which use it, the other ones when they load.
+- **Inputs** which aren't connected take the value typed into the node, or what is connected to `Default` in the subgraph (the node
+  has no value of its own then), e.g. `Texture coordinates`. Renaming a pin keeps the links, also in graphs which aren't loaded.
+- **Textures** per use: give the subgraph an input of the type `Texture` and connect a `Texture parameter` of the graph to it. Each
+  use can get another one, and each material selects its own. Connect a `Texture parameter` to the `Default` of the input to have one
+  without a connection.
+- **Parameters** in a subgraph appear in the materials. The same name is the same parameter, also in several uses: what should
+  differ per use has to be an input. Static switches in a subgraph are the same for all uses.
+- The editor of a subgraph shows outputs named like a pin of a material (`Base color`, `Roughness`, ...) on the preview, otherwise the
+  first output as the base color.
+- Errors in a subgraph show up at the node using it, with the names of the subgraphs down to the error.
+
 ## Parameters
 
 Parameter nodes have a range (materials get a slider), a group (a heading in the material) and an order, all in the inspector next

@@ -20,7 +20,7 @@ namespace Atlas::Editor::UI {
     public:
         explicit MaterialEditorWindow(ResourceHandle<Material> material, bool show);
 
-        // Edits a graph with a material which only exists for the preview
+        // Edits a graph or a subgraph with a material which only exists for the preview
         explicit MaterialEditorWindow(ResourceHandle<MaterialGraph::Graph> graph, bool show);
 
         ~MaterialEditorWindow() override;
@@ -28,6 +28,9 @@ namespace Atlas::Editor::UI {
         void Save() override;
 
         std::string GetAssetPath() const override;
+
+        // The edited graph. For a subgraph the material has a graph of its own which shows it
+        const ResourceHandle<MaterialGraph::Graph>& GetGraph() const;
 
         ResourceHandle<Material> material;
 
@@ -77,19 +80,25 @@ namespace Atlas::Editor::UI {
 
         void RenderSharedGraphWarning();
 
-        // Finds the other materials with the graph, also the ones which aren't loaded
+        // Finds the other materials and graphs with the graph, also the ones which aren't loaded
         void FindOtherUsers();
+
+        // Meshes get the new pipelines of the edited graph, graphs using a subgraph follow once the mouse is released
+        void OnGraphCompiled();
+
+        void CompileGraphUsers();
 
         void MakeGraphUnique();
 
         struct GraphUsers {
             // Only valid when finished
             std::vector<std::string> materials;
+            std::vector<std::string> graphs;
             std::atomic_bool finished = false;
         };
 
-        // Other meshes with this graph get the new pipelines as well
-        void UpdateMeshesOfGraph();
+        // Other meshes with this graph or the graphs using it get the new pipelines as well
+        void UpdateMeshesOfGraph(const std::vector<ResourceHandle<MaterialGraph::Graph>>& users = {});
 
         // Own copy of a mesh, the material replaces the one of the file
         ResourceHandle<Mesh::Mesh> previewMesh;
@@ -97,6 +106,10 @@ namespace Atlas::Editor::UI {
 
         // Editing a graph without a material of its own, which isn't saved then
         ResourceHandle<MaterialGraph::Graph> editedGraph;
+        bool isSubgraph = false;
+        bool areUsersOutdated = false;
+        // The last state compiled here, other windows compile the graph when a subgraph of it changes
+        Ref<const MaterialGraph::CompiledGraph> lastCompiled;
         // Revision of the graph when it was compiled here, scripts count it up
         uint32_t compiledRevision = 0;
 

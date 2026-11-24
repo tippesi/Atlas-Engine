@@ -13,6 +13,7 @@ namespace Atlas::Editor {
         { "usda", ContentType::MeshSource },
         { "aematerial", ContentType::Material },
         { "aematgraph", ContentType::MaterialGraph },
+        { "aematsubgraph", ContentType::MaterialSubgraph },
         { "aeterrain", ContentType::Terrain },
         { "aescene", ContentType::Scene },
         { "lua", ContentType::Script },

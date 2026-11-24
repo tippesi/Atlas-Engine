@@ -1,11 +1,15 @@
 #include "MaterialGraphPanel.h"
 
+#include "../../ContentDiscovery.h"
+#include "../../FileImporter.h"
 #include "../../Theme.h"
 #include "../../Notifications.h"
 #include "../../Singletons.h"
 #include "../Widgets.h"
+#include "../windows/ContentBrowserWindow.h"
 
 #include "loader/AssetLoader.h"
+#include "loader/MaterialGraphLoader.h"
 #include "materialgraph/MaterialGraphSerializer.h"
 
 #include <imgui_stdlib.h>
@@ -13,6 +17,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <map>
 
 namespace Atlas::Editor::UI {
@@ -29,6 +34,11 @@ namespace Atlas::Editor::UI {
         auto& graph = *graphHandle.Get();
         auto compiled = graph.GetCompiled();
         currentGraph = &graph;
+
+        if (compiled != lastCompiled) {
+            lastCompiled = compiled;
+            previews.Invalidate();
+        }
 
         ImGui::PushID(GetNameID());
 
@@ -91,8 +101,24 @@ namespace Atlas::Editor::UI {
         if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::GetIO().WantTextInput)
             HandleShortcuts(graphHandle);
 
+        // Subgraphs are added where they are dropped
+        if (ImGui::BeginDragDropTargetCustom(ImRect(canvasOrigin, canvasMax), ImGui::GetID("Canvas drop target"))) {
+            auto payload = ImGui::GetDragDropPayload();
+            if (payload->IsDataType("ContentBrowserResource")) {
+                auto path = std::string(reinterpret_cast<const char*>(payload->Data));
+                auto isSubgraph = Common::Path::GetFileType(path) == "aematsubgraph";
+                if (isSubgraph && ImGui::AcceptDragDropPayload("ContentBrowserResource")) {
+                    pendingPin = PinRef();
+                    addPosition = ToCanvas(ImGui::GetMousePos());
+                    AddSubgraph(graph, path);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
         RenderNodeMenu(graph);
         RenderAddMenu(graph);
+        RenderSubgraphPopup(graphHandle);
 
         ImGui::EndChild();
 
@@ -146,7 +172,6 @@ namespace Atlas::Editor::UI {
 
         if (compileRequested) {
             graph.Compile();
-            previews.Invalidate();
             compileRequested = false;
             modified = true;
             return true;
@@ -245,9 +270,9 @@ namespace Atlas::Editor::UI {
             return;
 
         // Header in the color of the node on the canvas: back to the overview, the name and the type of the node
-        auto isNamed = (definition->kind == NodeKind::Parameter || definition->kind == NodeKind::Frame) && !selected->name.empty();
-        auto title = isNamed ? selected->name : selected->type;
-        auto subtitle = isNamed ? selected->type : definition->category;
+        auto nodeName = definition->kind == NodeKind::Frame ? selected->name : GetNodeName(*selected, definition);
+        auto title = nodeName.empty() ? selected->type : nodeName;
+        auto subtitle = nodeName.empty() ? definition->category : selected->type;
         {
             auto drawList = ImGui::GetWindowDrawList();
             const float inset = 4.0f;
@@ -414,6 +439,67 @@ namespace Atlas::Editor::UI {
             if (ImGui::IsItemDeactivatedAfterEdit())
                 compileRequested = true;
             ImGui::EndDisabled();
+        }
+
+        if (definition->kind == NodeKind::Subgraph) {
+            Widgets::PropertyLabel("Subgraph", "The graph whose nodes this node stands for");
+            auto isOpenable = selected->subgraph.IsValid() && !selected->subgraph.IsGenerated();
+            auto buttonWidth = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x;
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - (isOpenable ? buttonWidth : 0.0f));
+            if (ImGui::BeginCombo("##Subgraph", isOpenable ? selected->subgraph.GetResource()->GetFileName().c_str() : "None")) {
+                for (const auto& content : ContentDiscovery::GetContent(ContentType::MaterialSubgraph)) {
+                    auto isCurrent = isOpenable && selected->subgraph.GetResource()->path == content.assetPath;
+                    if (ImGui::Selectable(content.name.c_str(), isCurrent) && !isCurrent) {
+                        auto subgraph = FileImporter::ImportFile<Graph>(content.assetPath);
+                        if (CanUseSubgraph(graph, subgraph)) {
+                            graph.SetSubgraph(selected->id, subgraph);
+                            definition = NodeLibrary::Find(*selected);
+                            compileRequested = true;
+                        }
+                    }
+                    ImGui::SetItemTooltip("%s", content.assetPath.c_str());
+                }
+                ImGui::EndCombo();
+            }
+            if (isOpenable) {
+                ImGui::SameLine();
+                if (InspectorIconButton("Open subgraph", IconType::OpenInNew, "Opens the subgraph (double click on the node)"))
+                    ContentBrowserWindow::contentToEditPath = selected->subgraph.GetResource()->path;
+            }
+        }
+
+        if (definition->kind == NodeKind::SubgraphInput || definition->kind == NodeKind::SubgraphOutput) {
+            Widgets::PropertyLabel("Name", "Nodes using the subgraph show the pin with this name. Their links stay when it changes");
+            ImGui::InputText("##Name", &selected->name);
+            if (ImGui::IsItemDeactivatedAfterEdit())
+                compileRequested = true;
+
+            const char* types[] = { "Float", "Vector 2", "Vector 3", "Vector 4", "Texture" };
+            auto type = int32_t(selected->pinType);
+            Widgets::PropertyLabel("Type", "Values are converted to it");
+            if (ImGui::Combo("##Type", &type, types, IM_ARRAYSIZE(types))) {
+                selected->pinType = ValueType(type);
+                NodeLibrary::UpdateDefinition(*selected);
+                definition = NodeLibrary::Find(*selected);
+                // Textures only connect to textures
+                auto isTexture = selected->pinType == ValueType::Texture;
+                std::erase_if(graph.links, [&](const Link& link) {
+                    if (link.fromNode != selected->id && link.toNode != selected->id)
+                        return false;
+                    auto from = graph.GetNode(link.fromNode);
+                    auto to = graph.GetNode(link.toNode);
+                    auto output = from && NodeLibrary::Find(*from) ? NodeLibrary::Find(*from)->FindOutput(link.fromPin) : nullptr;
+                    auto input = to && NodeLibrary::Find(*to) ? NodeLibrary::Find(*to)->FindInput(link.toPin) : nullptr;
+                    return (output && (output->type == ValueType::Texture) != isTexture) ||
+                        (input && (input->type == ValueType::Texture) != isTexture);
+                    });
+                compileRequested = true;
+            }
+
+            Widgets::PropertyLabel("Order", "Nodes using the subgraph show smaller numbers first");
+            ImGui::DragInt("##Order", &selected->order, 0.1f);
+            if (ImGui::IsItemDeactivatedAfterEdit())
+                compileRequested = true;
         }
 
         auto isCode = selected->type == NodeLibrary::codeType;
@@ -588,8 +674,23 @@ namespace Atlas::Editor::UI {
             pan = vec2(canvasSize.x, canvasSize.y) * 0.5f / zoom - center;
             };
 
+        auto isSubgraph = compiled && compiled->IsSubgraph();
+        if (isSubgraph && Widgets::SectionHeader("Pins", ImGuiTreeNodeFlags_DefaultOpen)) {
+            for (const auto& pinType : { NodeLibrary::subgraphInputType, NodeLibrary::subgraphOutputType }) {
+                for (auto pin : NodeLibrary::GetSubgraphPins(graph.nodes, pinType)) {
+                    ImGui::PushID(int32_t(pin->id));
+                    auto text = (pinType == NodeLibrary::subgraphInputType ? "Input: " : "Output: ") + pin->name;
+                    if (ImGui::Selectable(text.c_str()))
+                        showNode(pin->id);
+                    ImGui::SetItemTooltip("%s, show the node", GetValueName(pin->pinType));
+                    ImGui::PopID();
+                }
+            }
+            ImGui::Spacing();
+        }
+
         // What the compiled graph does, the toolbar only names the kind of graph
-        if (Widgets::SectionHeader("Output", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (!isSubgraph && Widgets::SectionHeader("Output", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::PushTextWrapPos();
             if (!compiled)
                 ImGui::TextColored(Theme::TextMuted(), "Not compiled yet");
@@ -759,6 +860,26 @@ namespace Atlas::Editor::UI {
             }
         }
 
+        // Materials show these as well, they are part of the subgraphs
+        std::vector<const Parameter*> subgraphParameters;
+        if (compiled) {
+            for (const auto& parameter : compiled->parameters) {
+                auto node = graph.GetNode(parameter.nodeId);
+                if (node && node->type == NodeLibrary::subgraphType)
+                    subgraphParameters.push_back(&parameter);
+            }
+        }
+        if (!subgraphParameters.empty()) {
+            auto title = "Parameters of subgraphs (" + std::to_string(subgraphParameters.size()) + ")###Subgraph parameters";
+            if (Widgets::SectionHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                for (auto parameter : subgraphParameters) {
+                    if (ImGui::Selectable(parameter->name.c_str()))
+                        showNode(parameter->nodeId);
+                    ImGui::SetItemTooltip("Show the subgraph it comes from");
+                }
+            }
+        }
+
         ImGui::Spacing();
         ImGui::TextColored(Theme::TextMuted(0.7f), "Select a node to see its properties");
 
@@ -776,7 +897,7 @@ namespace Atlas::Editor::UI {
         if (definition.kind == NodeKind::Parameter)
             return definition.valueType == ValueType::Texture;
 
-        return definition.kind == NodeKind::SurfaceOutput || definition.category == "Texture" || definition.category == "Procedural" ||
+        return definition.kind == NodeKind::SurfaceOutput || definition.kind == NodeKind::Subgraph || definition.category == "Texture" || definition.category == "Procedural" ||
             definition.category == "Normal" || definition.category == "Coordinates" || definition.category == "Logic";
 
     }
@@ -872,7 +993,7 @@ namespace Atlas::Editor::UI {
             }
 
             auto scaledRow = rowHeight * zoom;
-            layout.headerHeight = scaledRow * (definition && definition->kind == NodeKind::Parameter ? 1.75f : 1.15f);
+            layout.headerHeight = scaledRow * (definition && !GetNodeName(node, definition).empty() ? 1.75f : 1.15f);
 
             if (definition) {
                 if (definition->kind == NodeKind::Comment)
@@ -1092,13 +1213,15 @@ namespace Atlas::Editor::UI {
             if (showDetails) {
                 drawList->AddText(font, fontSize, ImVec2(textX, layout.min.y + 3.0f * zoom), textColor, node.type.c_str());
 
-                if (definition && definition->kind == NodeKind::Parameter)
-                    drawList->AddText(font, fontSize, ImVec2(textX, layout.min.y + rowHeight * 0.8f * zoom), mutedColor, node.name.c_str());
+                auto nodeName = GetNodeName(node, definition);
+                if (!nodeName.empty())
+                    drawList->AddText(font, fontSize, ImVec2(textX, layout.min.y + rowHeight * 0.8f * zoom), mutedColor, nodeName.c_str());
             }
             else {
-                // Parameters are told apart by their name
+                // Parameters and subgraphs are told apart by their name
                 auto clip = ImVec4(layout.min.x, layout.min.y, layout.max.x, layout.max.y);
-                const auto& title = definition && definition->kind == NodeKind::Parameter && !node.name.empty() ? node.name : node.type;
+                auto nodeName = GetNodeName(node, definition);
+                auto title = nodeName.empty() ? node.type : nodeName;
                 drawList->AddText(font, std::max(fontSize, 11.0f), ImVec2(layout.min.x + 3.0f, layout.min.y + 1.0f), textColor, title.c_str(), nullptr, 0.0f, &clip);
                 if (ImGui::IsMouseHoveringRect(layout.min, layout.max) && ImGui::IsWindowHovered())
                     ImGui::SetTooltip("%s", title == node.type ? node.type.c_str() : (node.type + ": " + title).c_str());
@@ -1236,13 +1359,16 @@ namespace Atlas::Editor::UI {
         ImGui::PushID(input.name.c_str());
 
         if (input.type == ValueType::Texture) {
-            ImGui::TextColored(Theme::Warning(), "connect a texture");
+            if (node.type == NodeLibrary::subgraphInputType || !input.defaultExpression.empty())
+                ImGui::TextColored(Theme::TextMuted(), input.defaultExpression.empty() ? "none" : "of the subgraph");
+            else
+                ImGui::TextColored(Theme::Warning(), "connect a texture");
             ImGui::PopID();
             return false;
         }
 
         if (!input.defaultExpression.empty()) {
-            ImGui::TextColored(Theme::TextMuted(), "of the mesh");
+            ImGui::TextColored(Theme::TextMuted(), node.type == NodeLibrary::subgraphType ? "of the subgraph" : "of the mesh");
             ImGui::PopID();
             return false;
         }
@@ -1252,8 +1378,9 @@ namespace Atlas::Editor::UI {
         if (iter != node.inputValues.end())
             value = iter->second;
 
-        auto isColor = input.type == ValueType::Vec3 && (input.name.find("olor") != std::string::npos ||
-            input.name == NodeLibrary::emissivePin);
+        const auto& inputName = node.type == NodeLibrary::subgraphInputType ? node.name : input.name;
+        auto isColor = input.type == ValueType::Vec3 && (inputName.find("olor") != std::string::npos ||
+            inputName == NodeLibrary::emissivePin);
 
         int32_t components = 1;
         switch (input.type) {
@@ -1387,6 +1514,15 @@ namespace Atlas::Editor::UI {
             ImGui::TextColored(Theme::Error(), "%d %s", int32_t(compiled->errors.size()), compiled->errors.size() == 1 ? "error" : "errors");
             ImGui::SameLine();
             ImGui::TextColored(Theme::TextMuted(), "%s", compiled->errors.empty() ? "" : compiled->errors.front().message.c_str());
+            return;
+        }
+
+        if (compiled->IsSubgraph()) {
+            auto getCount = [&](const std::string& pinType) { return int32_t(NodeLibrary::GetSubgraphPins(graph.nodes, pinType).size()); };
+            ImGui::TextUnformatted("Subgraph");
+            ImGui::SameLine();
+            ImGui::TextColored(Theme::TextMuted(), "· %d inputs, %d outputs, %d parameters", getCount(NodeLibrary::subgraphInputType),
+                getCount(NodeLibrary::subgraphOutputType), int32_t(compiled->parameters.size()));
             return;
         }
 
@@ -1694,6 +1830,11 @@ namespace Atlas::Editor::UI {
                 InsertReroute(graph, *link, ToCanvas(mouse) - vec2(rerouteSize * 0.5f));
                 return;
             }
+            auto clicked = graph.GetNode(FindNode(graph, mouse));
+            if (clicked && clicked->subgraph.IsValid() && !clicked->subgraph.IsGenerated()) {
+                ContentBrowserWindow::contentToEditPath = clicked->subgraph.GetResource()->path;
+                return;
+            }
         }
 
         // Alt click removes a link
@@ -1790,8 +1931,12 @@ namespace Atlas::Editor::UI {
             Paste(graph);
         if (ImGui::IsKeyPressed(ImGuiKey_D, false))
             DuplicateSelection(graph);
-        if (ImGui::IsKeyPressed(ImGuiKey_G, false))
-            FrameSelection(graph);
+        if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
+            if (io.KeyShift)
+                RequestSubgraph();
+            else
+                FrameSelection(graph);
+        }
 
     }
 
@@ -1806,6 +1951,21 @@ namespace Atlas::Editor::UI {
             CopySelection(graph);
         if (ImGui::MenuItem("Frame selection", "Ctrl+G"))
             FrameSelection(graph);
+        if (ImGui::MenuItem("Create subgraph", "Ctrl+Shift+G"))
+            RequestSubgraph();
+        ImGui::SetItemTooltip("Moves the nodes into a graph of their own, which other graphs can use as well");
+        if (HasSelectedSubgraph(graph)) {
+            if (ImGui::MenuItem("Open subgraph")) {
+                for (auto id : selection) {
+                    auto node = graph.GetNode(id);
+                    if (node && node->subgraph.IsValid() && !node->subgraph.IsGenerated())
+                        ContentBrowserWindow::contentToEditPath = node->subgraph.GetResource()->path;
+                }
+            }
+            if (ImGui::MenuItem("Dissolve subgraph"))
+                DissolveSelection(graph);
+            ImGui::SetItemTooltip("Replaces the node with the nodes of the subgraph, the subgraph itself stays");
+        }
         if (ImGui::MenuItem("Disconnect")) {
             std::erase_if(graph.links, [&](const Link& link) {
                 return selection.contains(link.fromNode) || selection.contains(link.toNode);
@@ -1857,7 +2017,24 @@ namespace Atlas::Editor::UI {
             };
         auto search = toLower(addSearch);
 
+        auto hasKind = [&](NodeKind kind) {
+            return std::any_of(graph.nodes.begin(), graph.nodes.end(), [&](const Node& node) {
+                auto nodeDefinition = NodeLibrary::Find(node);
+                return nodeDefinition && nodeDefinition->kind == kind;
+                });
+            };
+        auto isMaterial = hasKind(NodeKind::VertexOutput) || hasKind(NodeKind::SurfaceOutput);
+        auto isSubgraph = hasKind(NodeKind::SubgraphInput) || hasKind(NodeKind::SubgraphOutput);
+
         auto canAdd = [&](const NodeDefinition& definition) {
+            // Subgraphs are listed by their files
+            if (definition.kind == NodeKind::Subgraph)
+                return false;
+            // A graph either is a material or a subgraph
+            if (isMaterial && (definition.kind == NodeKind::SubgraphInput || definition.kind == NodeKind::SubgraphOutput))
+                return false;
+            if (isSubgraph && (definition.kind == NodeKind::VertexOutput || definition.kind == NodeKind::SurfaceOutput))
+                return false;
             // The outputs exist in every graph, there can only be one of them
             if (definition.kind == NodeKind::VertexOutput || definition.kind == NodeKind::SurfaceOutput) {
                 auto exists = std::any_of(graph.nodes.begin(), graph.nodes.end(), [&](const Node& node) { return node.type == definition.type; });
@@ -1872,6 +2049,10 @@ namespace Atlas::Editor::UI {
         struct Row {
             std::string category;
             const NodeDefinition* definition = nullptr;
+            std::string subgraphName;
+            std::string subgraphPath;
+
+            bool IsCategory() const { return !definition && subgraphPath.empty(); }
         };
 
         std::vector<Row> rows;
@@ -1894,6 +2075,27 @@ namespace Atlas::Editor::UI {
                 rows.push_back({ category, &definition });
         }
 
+        // Files of the project, a dropped link finds a fitting pin once the subgraph is loaded
+        const std::string subgraphCategory = "Subgraph";
+        std::vector<Row> subgraphRows;
+        for (const auto& content : ContentDiscovery::GetContent(ContentType::MaterialSubgraph)) {
+            auto name = std::filesystem::path(content.assetPath).stem().string();
+            if (search.empty() || toLower(name).find(search) != std::string::npos)
+                subgraphRows.push_back({ .category = subgraphCategory, .subgraphName = name, .subgraphPath = content.assetPath });
+        }
+        if (!subgraphRows.empty()) {
+            if (search.empty()) {
+                auto hasCategory = std::any_of(rows.begin(), rows.end(), [&](const Row& row) { return row.category == subgraphCategory; });
+                if (!hasCategory)
+                    rows.push_back({ subgraphCategory });
+            }
+            if (!search.empty() || openAddCategories.contains(subgraphCategory)) {
+                auto position = std::find_if(rows.rbegin(), rows.rend(), [&](const Row& row) { return row.category == subgraphCategory; });
+                rows.insert(position.base(), subgraphRows.begin(), subgraphRows.end());
+            }
+        }
+
+        std::string selectedSubgraph;
         const NodeDefinition* selected = nullptr;
         auto rowMoved = false;
         if (!rows.empty()) {
@@ -1910,6 +2112,8 @@ namespace Atlas::Editor::UI {
             if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter)) {
                 if (row.definition)
                     selected = row.definition;
+                else if (!row.IsCategory())
+                    selectedSubgraph = row.subgraphPath;
                 else if (isCategoryOpen)
                     openAddCategories.erase(row.category);
                 else
@@ -1917,11 +2121,11 @@ namespace Atlas::Editor::UI {
             }
 
             // The arrows move the cursor of the search text as long as there is one
-            if (search.empty() && ImGui::IsKeyPressed(ImGuiKey_RightArrow) && !row.definition)
+            if (search.empty() && ImGui::IsKeyPressed(ImGuiKey_RightArrow) && row.IsCategory())
                 openAddCategories.insert(row.category);
             if (search.empty() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-                if (row.definition) {
-                    while (rows[addRow].definition)
+                if (!row.IsCategory()) {
+                    while (!rows[addRow].IsCategory())
                         addRow--;
                     rowMoved = true;
                 }
@@ -1937,12 +2141,21 @@ namespace Atlas::Editor::UI {
             const auto& row = rows[i];
             auto isCurrent = i == addRow;
 
-            if (row.definition) {
+            if (!row.IsCategory()) {
                 if (search.empty())
                     ImGui::Indent();
-                if (ImGui::Selectable(row.definition->type.c_str(), isCurrent))
-                    selected = row.definition;
-                ImGui::SetItemTooltip("%s", row.definition->tooltip.c_str());
+                ImGui::PushID(i);
+                if (row.definition) {
+                    if (ImGui::Selectable(row.definition->type.c_str(), isCurrent))
+                        selected = row.definition;
+                    ImGui::SetItemTooltip("%s", row.definition->tooltip.c_str());
+                }
+                else {
+                    if (ImGui::Selectable(row.subgraphName.c_str(), isCurrent))
+                        selectedSubgraph = row.subgraphPath;
+                    ImGui::SetItemTooltip("%s", row.subgraphPath.c_str());
+                }
+                ImGui::PopID();
                 if (search.empty())
                     ImGui::Unindent();
             }
@@ -1966,6 +2179,10 @@ namespace Atlas::Editor::UI {
 
         if (selected) {
             AddNode(graph, *selected);
+            ImGui::CloseCurrentPopup();
+        }
+        else if (!selectedSubgraph.empty()) {
+            AddSubgraph(graph, selectedSubgraph);
             ImGui::CloseCurrentPopup();
         }
 
@@ -2072,14 +2289,24 @@ namespace Atlas::Editor::UI {
             node.size = vec2(520.0f, 360.0f);
         }
 
-        // Parameters need a name, which is unique for new nodes
-        if (definition.kind == NodeKind::Parameter) {
-            int32_t index = 1;
-            std::string name;
-            do {
-                name = "Parameter " + std::to_string(index++);
-            } while (std::any_of(graph.nodes.begin(), graph.nodes.end(), [&](const Node& other) { return other.name == name; }));
-            graph.GetNode(nodeId)->name = name;
+        // Parameters and the pins of subgraphs need a name, which is unique for new nodes
+        auto isPin = definition.kind == NodeKind::SubgraphInput || definition.kind == NodeKind::SubgraphOutput;
+        if (definition.kind == NodeKind::Parameter || isPin) {
+            const std::string prefix = definition.kind == NodeKind::SubgraphInput ? "Input " :
+                definition.kind == NodeKind::SubgraphOutput ? "Output " : "Parameter ";
+            graph.GetNode(nodeId)->name = GetUniqueName(graph, prefix + "1");
+        }
+
+        // A new pin takes the type of the value it is connected to
+        if (isPin && pendingPin.IsValid()) {
+            auto& pin = *graph.GetNode(nodeId);
+            auto other = graph.GetNode(pendingPin.node);
+            auto otherDefinition = other ? NodeLibrary::Find(*other) : nullptr;
+            auto input = otherDefinition && !pendingPin.isOutput ? otherDefinition->FindInput(pendingPin.pin) : nullptr;
+            auto type = pendingPin.isOutput ? Compiler::GetOutputType(graph, pendingPin.node, pendingPin.pin) :
+                input ? input->type : ValueType::Float;
+            pin.pinType = type == ValueType::Generic ? ValueType::Float : type;
+            NodeLibrary::UpdateDefinition(pin);
         }
 
         if (pendingPin.IsValid()) {
@@ -2096,6 +2323,225 @@ namespace Atlas::Editor::UI {
         selection.insert(nodeId);
 
         compileRequested = true;
+
+    }
+
+    std::string MaterialGraphPanel::GetNodeName(const Node& node, const NodeDefinition* definition) {
+
+        if (!definition)
+            return "";
+
+        switch (definition->kind) {
+        case NodeKind::Parameter:
+        case NodeKind::SubgraphInput:
+        case NodeKind::SubgraphOutput:
+            return node.name;
+        case NodeKind::Subgraph:
+            return node.subgraph.IsValid() && !node.subgraph.IsGenerated() ?
+                std::filesystem::path(node.subgraph.GetResource()->path).stem().string() : "";
+        default:
+            return "";
+        }
+
+    }
+
+    std::string MaterialGraphPanel::GetUniqueName(const Graph& graph, const std::string& name) {
+
+        auto isTaken = [&](const std::string& candidate) {
+            return std::any_of(graph.nodes.begin(), graph.nodes.end(), [&](const Node& node) { return node.name == candidate; });
+            };
+        if (!isTaken(name))
+            return name;
+
+        // Counts up the number at the end of the name
+        auto prefix = name.substr(0, name.find_last_not_of("0123456789") + 1);
+        if (prefix.size() == name.size())
+            prefix += " ";
+        int32_t index = 1;
+        while (isTaken(prefix + std::to_string(index)))
+            index++;
+        return prefix + std::to_string(index);
+
+    }
+
+    bool MaterialGraphPanel::CanUseSubgraph(const Graph& graph, const ResourceHandle<Graph>& subgraph) const {
+
+        std::string error;
+        auto compiled = subgraph.IsLoaded() ? subgraph->GetCompiled() : nullptr;
+        if (!compiled)
+            error = "The subgraph couldn't be loaded";
+        else if (!compiled->IsSubgraph())
+            error = subgraph.GetResource()->GetFileName() + " has no inputs or outputs of a subgraph";
+        else if (subgraph.Get().get() == &graph || subgraph->Uses(graph))
+            error = "A subgraph can't contain itself";
+
+        if (!error.empty())
+            Notifications::Push({ .message = error, .type = NotificationType::Error });
+        return error.empty();
+
+    }
+
+    void MaterialGraphPanel::AddSubgraph(Graph& graph, const std::string& path) {
+
+        auto subgraph = FileImporter::ImportFile<Graph>(path);
+        if (!CanUseSubgraph(graph, subgraph)) {
+            pendingPin = PinRef();
+            return;
+        }
+
+        auto nodeId = graph.AddNode(NodeLibrary::subgraphType, addPosition).id;
+        graph.SetSubgraph(nodeId, subgraph);
+
+        if (pendingPin.IsValid()) {
+            if (auto pin = FindPendingPartner(graph, *NodeLibrary::Find(*graph.GetNode(nodeId)))) {
+                // Connecting doesn't change the definition, so the name stays valid
+                if (pendingPin.isOutput)
+                    graph.Connect(pendingPin.node, pendingPin.pin, nodeId, *pin);
+                else
+                    graph.Connect(nodeId, *pin, pendingPin.node, pendingPin.pin);
+            }
+            pendingPin = PinRef();
+        }
+
+        selection.clear();
+        selection.insert(nodeId);
+
+        compileRequested = true;
+
+    }
+
+    void MaterialGraphPanel::RequestSubgraph() {
+
+        // Popups are opened by the window showing them
+        openSubgraphPopup = true;
+
+    }
+
+    std::unordered_set<uint32_t> MaterialGraphPanel::GetSubgraphSelection(const Graph& graph) const {
+
+        // The outputs and pins of the graph itself stay where they are
+        std::unordered_set<uint32_t> nodeIds;
+        auto hasValue = false;
+        for (auto id : selection) {
+            auto node = graph.GetNode(id);
+            auto definition = node ? NodeLibrary::Find(*node) : nullptr;
+            if (!definition || definition->kind == NodeKind::VertexOutput || definition->kind == NodeKind::SurfaceOutput ||
+                definition->kind == NodeKind::SubgraphInput || definition->kind == NodeKind::SubgraphOutput)
+                continue;
+            nodeIds.insert(id);
+            hasValue |= definition->kind != NodeKind::Comment && definition->kind != NodeKind::Frame;
+        }
+
+        return hasValue ? nodeIds : std::unordered_set<uint32_t>();
+
+    }
+
+    bool MaterialGraphPanel::CanCreateSubgraph(const ResourceHandle<Graph>& graph) const {
+
+        return graph.IsLoaded() && !graph.IsGenerated() && !GetSubgraphSelection(*graph.Get()).empty();
+
+    }
+
+    bool MaterialGraphPanel::HasSelectedSubgraph(const Graph& graph) const {
+
+        return std::any_of(selection.begin(), selection.end(), [&](uint32_t id) {
+            auto node = graph.GetNode(id);
+            return node && node->type == NodeLibrary::subgraphType;
+            });
+
+    }
+
+    void MaterialGraphPanel::DissolveSelection(Graph& graph) {
+
+        std::unordered_set<uint32_t> added;
+        auto dissolved = false;
+        for (auto id : selection) {
+            auto node = graph.GetNode(id);
+            if (!node || node->type != NodeLibrary::subgraphType)
+                continue;
+
+            for (auto nodeId : graph.DissolveSubgraph(id))
+                added.insert(nodeId);
+            // A subgraph which only passes values on adds no nodes
+            if (graph.GetNode(id))
+                Notifications::Push({ .message = "The subgraph can't be dissolved while it has errors", .type = NotificationType::Error });
+            else
+                dissolved = true;
+        }
+
+        if (!dissolved)
+            return;
+
+        selection = added;
+        compileRequested = true;
+
+    }
+
+    void MaterialGraphPanel::RenderSubgraphPopup(const ResourceHandle<Graph>& graphHandle) {
+
+        if (openSubgraphPopup) {
+            openSubgraphPopup = false;
+            if (!CanCreateSubgraph(graphHandle)) {
+                Notifications::Push({ .message = "Select the nodes for the subgraph first", .type = NotificationType::Warning });
+                return;
+            }
+            subgraphName = std::filesystem::path(graphHandle.GetResource()->path).stem().string() + "_part";
+            ImGui::OpenPopup("Create subgraph");
+        }
+
+        if (!ImGui::BeginPopup("Create subgraph"))
+            return;
+
+        ImGui::TextUnformatted("Name of the subgraph");
+        if (ImGui::IsWindowAppearing())
+            ImGui::SetKeyboardFocusHere();
+        ImGui::SetNextItemWidth(260.0f);
+        auto confirmed = ImGui::InputText("##Name", &subgraphName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
+        auto directory = std::filesystem::path(graphHandle.GetResource()->path).parent_path();
+        auto path = (directory / (subgraphName + ".aematsubgraph")).generic_string();
+        auto exists = std::filesystem::exists(Loader::AssetLoader::GetFullPath(path));
+        if (exists)
+            ImGui::TextColored(Theme::Warning(), "This file already exists");
+
+        ImGui::BeginDisabled(subgraphName.empty() || exists);
+        confirmed |= ImGui::Button("Create");
+        ImGui::EndDisabled();
+
+        if (confirmed && !subgraphName.empty() && !exists) {
+            auto& graph = *graphHandle.Get();
+
+            auto nodeIds = GetSubgraphSelection(graph);
+
+            std::vector<Link> inputLinks, outputLinks;
+            auto subgraph = graph.ExtractSubgraph(nodeIds, inputLinks, outputLinks);
+            auto compiled = subgraph->GetCompiled();
+            if (!compiled->IsSubgraph()) {
+                Notifications::Push({ .message = "No subgraph created: the nodes aren't connected to any other ones",
+                    .type = NotificationType::Error });
+            }
+            else if (compiled->valid) {
+                subgraph->name = subgraphName;
+                Loader::MaterialGraphLoader::SaveGraph(subgraph, path);
+
+                // A deleted file of the same name might still be loaded
+                auto alreadyExisted = false;
+                auto handle = ResourceManager<Graph>::AddResource(path, ResourceOrigin::User, subgraph, alreadyExisted);
+                if (alreadyExisted)
+                    handle.GetResource()->Swap(subgraph);
+
+                selection = { graph.ReplaceWithSubgraph(nodeIds, handle, inputLinks, outputLinks) };
+                compileRequested = true;
+                Notifications::Push({ .message = "Created material subgraph " + subgraphName });
+            }
+            else {
+                Notifications::Push({ .message = "No subgraph created: " + (compiled->errors.empty() ? std::string("it has errors") :
+                    compiled->errors.front().message), .type = NotificationType::Error });
+            }
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
 
     }
 
@@ -2118,6 +2564,13 @@ namespace Atlas::Editor::UI {
 
         if (!(getStages(*pendingDefinition, pendingPin.isOutput) & getStages(definition, !pendingPin.isOutput)))
             return nullptr;
+
+        // New pins of a subgraph take the type of the link
+        if (definition.kind == NodeKind::SubgraphInput || definition.kind == NodeKind::SubgraphOutput) {
+            if (pendingPin.isOutput)
+                return definition.inputs.empty() ? nullptr : &definition.inputs.front().name;
+            return definition.outputs.empty() ? nullptr : &definition.outputs.front().name;
+        }
 
         auto pendingType = pendingPin.isOutput ? pendingDefinition->FindOutput(pendingPin.pin)->type :
             pendingDefinition->FindInput(pendingPin.pin)->type;
@@ -2294,9 +2747,21 @@ namespace Atlas::Editor::UI {
         // Near the mouse, a duplicate shouldn't hide the original
         auto target = ImGui::IsWindowHovered() ? ToCanvas(ImGui::GetMousePos()) : center + vec2(40.0f);
 
+        // A graph either is a material or a subgraph, and a subgraph can't contain itself
+        auto compiled = graph.GetCompiled();
+        auto isSubgraph = compiled && compiled->IsSubgraph();
+        std::erase_if(nodes, [&](const Node& node) {
+            if (node.type == NodeLibrary::subgraphInputType || node.type == NodeLibrary::subgraphOutputType)
+                return !isSubgraph;
+            return node.type == NodeLibrary::subgraphType && node.subgraph.IsLoaded() && !CanUseSubgraph(graph, node.subgraph);
+            });
+
         std::unordered_map<uint32_t, uint32_t> idMap;
         selection.clear();
         for (auto& node : nodes) {
+            if (node.type == NodeLibrary::subgraphInputType || node.type == NodeLibrary::subgraphOutputType)
+                node.name = GetUniqueName(graph, node.name);
+
             auto oldId = node.id;
             node.id = graph.nextNodeId++;
             node.position += target - center;
@@ -2306,6 +2771,8 @@ namespace Atlas::Editor::UI {
         }
 
         for (auto link : links) {
+            if (!idMap.contains(link.fromNode) || !idMap.contains(link.toNode))
+                continue;
             link.fromNode = idMap[link.fromNode];
             link.toNode = idMap[link.toNode];
             graph.links.push_back(link);

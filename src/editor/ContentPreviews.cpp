@@ -183,6 +183,7 @@ namespace Atlas::Editor {
         case ContentType::Mesh:
         case ContentType::Material:
         case ContentType::MaterialGraph:
+        case ContentType::MaterialSubgraph:
         case ContentType::Prefab: return true;
         default: return false;
         }
@@ -192,7 +193,7 @@ namespace Atlas::Editor {
     bool ContentPreviews::IsRendered(ContentType type) {
 
         return type == ContentType::Mesh || type == ContentType::Material ||
-            type == ContentType::MaterialGraph || type == ContentType::Prefab;
+            type == ContentType::MaterialGraph || type == ContentType::MaterialSubgraph || type == ContentType::Prefab;
 
     }
 
@@ -358,7 +359,8 @@ namespace Atlas::Editor {
         case ContentType::Mesh: return icons->GetTintable(IconType::Mesh);
         case ContentType::MeshSource: return icons->GetTintable(IconType::MeshSource);
         case ContentType::Material: return icons->GetTintable(IconType::Material);
-        case ContentType::MaterialGraph: return icons->GetTintable(IconType::MaterialGraph);
+        case ContentType::MaterialGraph:
+        case ContentType::MaterialSubgraph: return icons->GetTintable(IconType::MaterialGraph);
         case ContentType::Scene: return icons->GetTintable(IconType::Scene);
         case ContentType::Font: return icons->GetTintable(IconType::Font);
         case ContentType::Prefab: return icons->GetTintable(IconType::Prefab);
@@ -727,6 +729,15 @@ namespace Atlas::Editor {
             job.graph = ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoaderAsync(job.assetPath,
                 ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph);
             return job.graph.IsValid();
+        case ContentType::MaterialSubgraph: {
+            // The preview is made of the outputs of the subgraph, so it is needed right away
+            auto subgraph = ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoader(job.assetPath,
+                ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph);
+            if (!subgraph.IsLoaded())
+                return false;
+            job.graph = ResourceHandle<MaterialGraph::Graph>(MaterialGraph::Graph::CreateSubgraphPreview(subgraph));
+            return true;
+        }
         case ContentType::Prefab:
             return true;
         default:
@@ -786,9 +797,9 @@ namespace Atlas::Editor {
             if (job.mesh->data.IsSkinned())
                 entity.AddComponent<AnimationComponent>();
         }
-        else if (job.type == ContentType::Material || job.type == ContentType::MaterialGraph) {
+        else if (job.type == ContentType::Material || job.graph.IsValid()) {
             // Graphs are shown with a material which only exists for the preview
-            if (job.type == ContentType::MaterialGraph) {
+            if (job.graph.IsValid()) {
                 job.material = ResourceHandle<Material>(CreateRef<Material>());
                 job.material->graph = job.graph;
             }
@@ -855,7 +866,7 @@ namespace Atlas::Editor {
             // The sphere of materials fills the preview, other content fits in with its bounding sphere
             auto center = 0.5f * (bounds.min + bounds.max);
             auto radius = glm::max(0.5f * glm::length(bounds.max - bounds.min), 0.01f);
-            if (job.type == ContentType::Material || job.type == ContentType::MaterialGraph)
+            if (job.type == ContentType::Material || job.graph.IsValid())
                 radius = 1.05f;
 
             auto& camera = renderCamera.GetComponent<CameraComponent>();

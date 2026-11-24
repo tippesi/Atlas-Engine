@@ -256,8 +256,12 @@ tool isn't listed here, or a listed file doesn't exist.
   `Object to world position`/`World to object position` (instance rotation and scale) and the `direction` nodes.
   `Texture coordinates 2` reads the second UV set of a mesh in the vertex stage (`MeshData::texCoords1`, imported
   from the second UV channel, e.g. Pivot Painter data).
+- **Material subgraphs** (reusable node groups, material functions, shared nodes): `.aematsubgraph` graphs with `Subgraph input` and
+  `Subgraph output` nodes, used by `Subgraph` nodes (`Graph::SetSubgraph`, `ExtractSubgraph`, `DissolveSubgraph`, `CompileUsers`),
+  the compiler expands them (`Compiler::Expand`). Lua `SetSubgraph`, `SetPinType`, bridge `materialGraph` node keys `subgraph`,
+  `pinType`, editor `Create subgraph` and `Dissolve subgraph`.
 - **Code node in material graphs** (custom GLSL, custom expression, shader snippet): node type `Code` with the body of
-  a GLSL function, own inputs and result type (`Node::code`, `NodeLibrary::UpdateCodeDefinition`), edited in the
+  a GLSL function, own inputs and result type (`Node::code`, `NodeLibrary::UpdateDefinition`), edited in the
   inspector of `MaterialGraphPanel`, bridge `materialGraph` node keys `code`, `codeInputs` (`[name, type]` pairs),
   `codeOutputType` (types `float`, `vec2`, `vec3`, `vec4`).
 - **Impostors** (billboards, far LOD): `mesh/Impostor`, baked by `tools/ImpostorTool` with

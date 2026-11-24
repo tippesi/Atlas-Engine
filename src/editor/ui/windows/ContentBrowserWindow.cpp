@@ -495,6 +495,14 @@ namespace Atlas::Editor::UI {
                         .type = ContentType::MaterialGraph,
                         });
                 }
+                if (ImGui::MenuItem("Material subgraph")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::MaterialSubgraph,
+                        });
+                }
                 if (ImGui::MenuItem("Script")) {
                     isEditing = true;
                     files.push_back(Content{
@@ -638,8 +646,8 @@ namespace Atlas::Editor::UI {
                     FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
                 else if (contentType == ContentType::Mesh || contentType == ContentType::Animation ||
                     contentType == ContentType::Material || contentType == ContentType::Prefab ||
-                    contentType == ContentType::MaterialGraph || contentType == ContentType::Script ||
-                    contentType == ContentType::Shader)
+                    contentType == ContentType::MaterialGraph || contentType == ContentType::MaterialSubgraph ||
+                    contentType == ContentType::Script || contentType == ContentType::Shader)
                     contentToEditPath = assetRelativePath;
             }
         }
@@ -664,8 +672,8 @@ namespace Atlas::Editor::UI {
             }
 
             auto hasAssetEditor = contentType == ContentType::Mesh || contentType == ContentType::Material ||
-                contentType == ContentType::MaterialGraph || contentType == ContentType::Prefab ||
-                contentType == ContentType::Script || contentType == ContentType::Shader;
+                contentType == ContentType::MaterialGraph || contentType == ContentType::MaterialSubgraph ||
+                contentType == ContentType::Prefab || contentType == ContentType::Script || contentType == ContentType::Shader;
             if (!isDirectory && hasAssetEditor && singleSelect && ImGui::MenuItem("Open"))
                 contentToEditPath = assetRelativePath;
             if (!isDirectory && contentType == ContentType::Scene && singleSelect && ImGui::MenuItem("Open"))
@@ -1033,6 +1041,7 @@ namespace Atlas::Editor::UI {
         case ContentType::EnvironmentTexture: return "Environment texture";
         case ContentType::Animation: return "Animation";
         case ContentType::MaterialGraph: return "Material graph";
+        case ContentType::MaterialSubgraph: return "Material subgraph";
         default: return "File";
         }
 
@@ -1137,6 +1146,12 @@ namespace Atlas::Editor::UI {
         if (type == ContentType::MaterialGraph) {
             path.replace_extension("aematgraph");
             Loader::MaterialGraphLoader::SaveGraph(MaterialGraph::Graph::CreateDefault(), path.string());
+            return;
+        }
+
+        if (type == ContentType::MaterialSubgraph) {
+            path.replace_extension("aematsubgraph");
+            Loader::MaterialGraphLoader::SaveGraph(MaterialGraph::Graph::CreateDefaultSubgraph(), path.string());
             return;
         }
 

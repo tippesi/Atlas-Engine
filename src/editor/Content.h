@@ -21,6 +21,7 @@ namespace Atlas::Editor {
         Animation,
         MaterialGraph,
         Shader,
+        MaterialSubgraph,
         None
     };
 

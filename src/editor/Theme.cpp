@@ -326,6 +326,7 @@ namespace Atlas::Editor {
         case Editor::ContentType::EnvironmentTexture: color = Rgb(230, 146, 64); break;
         case Editor::ContentType::Material: color = Rgb(102, 187, 92); break;
         case Editor::ContentType::MaterialGraph: color = Rgb(56, 178, 150); break;
+        case Editor::ContentType::MaterialSubgraph: color = Rgb(60, 150, 170); break;
         case Editor::ContentType::Mesh: color = Rgb(64, 172, 226); break;
         case Editor::ContentType::MeshSource: color = Rgb(112, 146, 186); break;
         case Editor::ContentType::Prefab: color = Rgb(92, 120, 240); break;
@@ -427,6 +428,7 @@ namespace Atlas::Editor {
         else if (name == "Procedural") color = vec3(0.26f, 0.54f, 0.34f);
         else if (name == "Normal") color = vec3(0.34f, 0.36f, 0.72f);
         else if (name == "Logic") color = vec3(0.66f, 0.3f, 0.52f);
+        else if (name == "Subgraph") color = vec3(0.16f, 0.5f, 0.58f);
         else if (name == "Output") color = vec3(0.72f, 0.42f, 0.14f);
 
         // The text on top stays readable in both modes

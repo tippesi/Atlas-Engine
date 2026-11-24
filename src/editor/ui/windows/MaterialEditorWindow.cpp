@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <sstream>
 
 namespace Atlas::Editor::UI {
@@ -37,7 +38,10 @@ namespace Atlas::Editor::UI {
         AssetEditorWindow(graph.IsValid() ? graph.GetResource()->GetFileName() : "No graph", show),
         material(ResourceHandle<Material>(CreateRef<Material>())), editedGraph(graph) {
 
-        material->graph = graph;
+        auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
+        isSubgraph = compiled && compiled->IsSubgraph();
+
+        material->graph = isSubgraph ? ResourceHandle<MaterialGraph::Graph>(MaterialGraph::Graph::CreateSubgraphPreview(graph)) : graph;
         Init();
 
     }
@@ -85,13 +89,14 @@ namespace Atlas::Editor::UI {
         if (!material.IsLoaded())
             return;
 
-        if (material->HasGraph() && !material->graph.IsGenerated()) {
-            Loader::MaterialGraphLoader::SaveGraph(material->graph.Get(), material->graph.GetResource()->path);
+        const auto& graph = GetGraph();
+        if (graph.IsLoaded() && !graph.IsGenerated()) {
+            Loader::MaterialGraphLoader::SaveGraph(graph.Get(), graph.GetResource()->path);
             graphPanel.modified = false;
         }
 
         if (material.IsGenerated()) {
-            Notifications::Push({ .message = "Saved material graph " + editedGraph.GetResource()->GetFileName() });
+            Notifications::Push({ .message = (isSubgraph ? "Saved material subgraph " : "Saved material graph ") + editedGraph.GetResource()->GetFileName() });
             return;
         }
 
@@ -106,6 +111,12 @@ namespace Atlas::Editor::UI {
             return editedGraph.GetResource()->path;
 
         return material.IsValid() ? material.GetResource()->path : "";
+
+    }
+
+    const ResourceHandle<MaterialGraph::Graph>& MaterialEditorWindow::GetGraph() const {
+
+        return isSubgraph ? editedGraph : material->graph;
 
     }
 
@@ -134,17 +145,17 @@ namespace Atlas::Editor::UI {
         // Path tracing doesn't run graphs, the preview would only show the values for ray tracing
         viewportPanel.allowPathTracing = !material->HasGraph();
 
-        if (Widgets::SectionHeader("Material graph", ImGuiTreeNodeFlags_DefaultOpen))
+        if (Widgets::SectionHeader(isSubgraph ? "Material subgraph" : "Material graph", ImGuiTreeNodeFlags_DefaultOpen))
             RenderGraphSection();
 
         auto compiled = material->HasGraph() ? material->graph->GetCompiled() : nullptr;
         auto replacesSurface = compiled && compiled->valid && compiled->hasSurface;
 
-        if (replacesSurface && Widgets::SectionHeader("Bake for ray tracing", ImGuiTreeNodeFlags_DefaultOpen))
+        if (replacesSurface && !isSubgraph && Widgets::SectionHeader("Bake for ray tracing", ImGuiTreeNodeFlags_DefaultOpen))
             RenderBakeSection(*compiled);
 
         // A graph describing the surface replaces all properties, the bake writes them for GPUs without ray tracing pipelines
-        if (!replacesSurface && Widgets::SectionHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (!replacesSurface && !isSubgraph && Widgets::SectionHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
             materialPanel.Render(Singletons::imguiWrapper, material.Get(), [&](ResourceHandle<Texture::Texture2D> texture) {
                 return textureSelectionPanel.Render(texture);
                 });
@@ -158,12 +169,23 @@ namespace Atlas::Editor::UI {
 
     void MaterialEditorWindow::RenderPanels() {
 
+        // Renamed pins of a subgraph change the links of this graph, the step to undo is in the window of the subgraph
+        auto compiled = material.IsLoaded() && material->HasGraph() ? GetGraph()->GetCompiled() : nullptr;
+        if (lastCompiled && compiled != lastCompiled)
+            AcceptState();
+        lastCompiled = compiled;
+
         // Changes from scripts are compiled like the ones of the panel, the history notices them by the state
-        if (material.IsLoaded() && material->HasGraph() && material->graph->revision != compiledRevision) {
-            compiledRevision = material->graph->revision;
-            material->graph->Compile();
+        if (material.IsLoaded() && material->HasGraph() && GetGraph()->revision != compiledRevision) {
+            compiledRevision = GetGraph()->revision;
+            GetGraph().Get()->Compile();
+            OnGraphCompiled();
             changedOutside = true;
         }
+
+        // A dragged value compiles in every frame, which is too much for all users
+        if (areUsersOutdated && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            CompileGraphUsers();
 
         ImGui::Begin(graphPanelWindow.GetNameID());
 
@@ -210,8 +232,8 @@ namespace Atlas::Editor::UI {
 
         RenderSharedGraphWarning();
 
-        if (graphPanel.Render(material->graph, editedGraph.IsValid() ? nullptr : material.Get().get()))
-            UpdateMeshesOfGraph();
+        if (graphPanel.Render(GetGraph(), editedGraph.IsValid() ? nullptr : material.Get().get()))
+            OnGraphCompiled();
 
     }
 
@@ -223,7 +245,8 @@ namespace Atlas::Editor::UI {
         // The button below replaces graphUsers
         auto currentUsers = graphUsers;
 
-        const auto& users = currentUsers->materials;
+        auto users = currentUsers->graphs;
+        users.insert(users.end(), currentUsers->materials.begin(), currentUsers->materials.end());
         if (users.empty())
             return;
 
@@ -234,7 +257,13 @@ namespace Atlas::Editor::UI {
         if (users.size() > maxNames)
             names += " and " + std::to_string(users.size() - maxNames) + " more";
 
-        auto text = (editedGraph.IsValid() ? "Used by " + std::to_string(users.size()) + (users.size() == 1 ? " material: " : " materials: ") :
+        auto graphCount = currentUsers->graphs.size();
+        auto materialCount = currentUsers->materials.size();
+        auto graphText = graphCount ? std::to_string(graphCount) + (graphCount == 1 ? " graph" : " graphs") : std::string();
+        auto materialText = materialCount ? std::to_string(materialCount) + (materialCount == 1 ? " material" : " materials") : std::string();
+        auto userText = graphText + (graphCount && materialCount ? " and " : "") + materialText;
+
+        auto text = (editedGraph.IsValid() ? "Used by " + userText + ": " :
             std::to_string(users.size()) + (users.size() == 1 ? " other material uses" : " other materials use") + " this graph: ") + names +
             ". Changing nodes changes all of them. Parameter values belong to each material.";
 
@@ -260,29 +289,57 @@ namespace Atlas::Editor::UI {
 
         graphUsers = CreateRef<GraphUsers>();
 
-        if (!material.IsLoaded() || !material->graph.IsValid() || material->graph.IsGenerated())
+        const auto& graph = GetGraph();
+        if (!material.IsLoaded() || !graph.IsLoaded() || graph.IsGenerated())
             return;
 
-        auto graphPath = material->graph.GetResource()->path;
+        auto graphPath = graph.GetResource()->path;
         auto ownPath = material.IsGenerated() ? std::string() : material.GetResource()->path;
 
         // Materials which are changed and aren't saved yet only know the current state
+        std::vector<std::string> loadedGraphs;
+        if (isSubgraph) {
+            for (const auto& loadedGraph : ResourceManager<MaterialGraph::Graph>::GetResources()) {
+                if (loadedGraph.IsLoaded() && !loadedGraph.IsGenerated() && loadedGraph->Uses(*graph.Get()))
+                    loadedGraphs.push_back(loadedGraph.GetResource()->path);
+            }
+        }
+
         std::vector<std::string> loaded;
         for (const auto& loadedMaterial : ResourceManager<Material>::GetResources()) {
             if (!loadedMaterial.IsLoaded() || loadedMaterial.IsGenerated() || loadedMaterial.GetResource()->path == ownPath)
                 continue;
-            if (loadedMaterial->graph.IsValid() && !loadedMaterial->graph.IsGenerated() && loadedMaterial->graph.GetResource()->path == graphPath)
+            if (!loadedMaterial->graph.IsValid() || loadedMaterial->graph.IsGenerated())
+                continue;
+            const auto& path = loadedMaterial->graph.GetResource()->path;
+            if (path == graphPath || std::find(loadedGraphs.begin(), loadedGraphs.end(), path) != loadedGraphs.end())
                 loaded.push_back(loadedMaterial.GetResource()->path);
         }
 
-        JobSystem::Execute(graphUsersJob, [users = graphUsers, graphPath, ownPath, loaded = std::move(loaded)](JobData&) {
+        JobSystem::Execute(graphUsersJob, [users = graphUsers, graphPath, ownPath, isSubgraph = isSubgraph, loaded = std::move(loaded),
+            loadedGraphs = std::move(loadedGraphs)](JobData&) {
             namespace fs = std::filesystem;
 
             auto root = fs::path(Loader::AssetLoader::GetAssetDirectory());
-            auto fileName = fs::path(graphPath).filename().string();
             auto materials = loaded;
+            auto graphs = loadedGraphs;
+
+            auto readText = [](const fs::path& path) {
+                std::ifstream file(path);
+                std::stringstream content;
+                content << file.rdbuf();
+                return content.str();
+                };
+            // References inside of packages are relative to the file
+            auto resolve = [](const std::string& relative, const std::string& reference) {
+                auto path = reference.starts_with(".") ? fs::path(relative).parent_path() / reference : fs::path(reference);
+                return path.lexically_normal().generic_string();
+                };
 
             std::error_code error;
+            std::vector<fs::path> materialFiles;
+            // Subgraphs of each graph
+            std::map<std::string, std::vector<std::string>> subgraphs;
             for (auto iter = fs::recursive_directory_iterator(root, fs::directory_options::skip_permission_denied, error);
                 !error && iter != fs::recursive_directory_iterator(); iter.increment(error)) {
                 const auto& path = iter->path();
@@ -294,16 +351,53 @@ namespace Atlas::Editor::UI {
                     continue;
                 }
 
-                if (path.extension() != ".aematerial")
+                if (path.extension() == ".aematerial")
+                    materialFiles.push_back(path);
+                // Only subgraphs are used by other graphs
+                if (!isSubgraph || (path.extension() != ".aematgraph" && path.extension() != ".aematsubgraph"))
                     continue;
 
-                std::ifstream file(path);
-                std::stringstream content;
-                content << file.rdbuf();
-                auto text = content.str();
+                auto text = readText(path);
+                if (text.find("subgraphPath") == std::string::npos)
+                    continue;
+                auto j = json::parse(text, nullptr, false);
+                if (j.is_discarded() || !j.contains("nodes"))
+                    continue;
+
+                auto relative = fs::relative(path, root, error).generic_string();
+                for (const auto& node : j["nodes"]) {
+                    if (node.contains("subgraphPath"))
+                        subgraphs[relative].push_back(resolve(relative, node["subgraphPath"]));
+                }
+            }
+
+            // Graphs using the edited one through other subgraphs are found after these
+            for (auto found = true; found;) {
+                found = false;
+                for (const auto& [path, references] : subgraphs) {
+                    if (path == graphPath || std::find(graphs.begin(), graphs.end(), path) != graphs.end())
+                        continue;
+                    auto usesGraph = std::any_of(references.begin(), references.end(), [&](const std::string& reference) {
+                        return reference == graphPath || std::find(graphs.begin(), graphs.end(), reference) != graphs.end();
+                        });
+                    if (usesGraph) {
+                        graphs.push_back(path);
+                        found = true;
+                    }
+                }
+            }
+
+            auto usedGraphs = graphs;
+            usedGraphs.push_back(graphPath);
+
+            for (const auto& path : materialFiles) {
+                auto text = readText(path);
 
                 // Most materials don't have a graph, parsing them isn't needed
-                if (text.find(fileName) == std::string::npos)
+                auto mentionsGraph = std::any_of(usedGraphs.begin(), usedGraphs.end(), [&](const std::string& usedGraph) {
+                    return text.find(fs::path(usedGraph).filename().string()) != std::string::npos;
+                    });
+                if (!mentionsGraph)
                     continue;
 
                 auto relative = fs::relative(path, root, error).generic_string();
@@ -314,14 +408,13 @@ namespace Atlas::Editor::UI {
                 if (j.is_discarded() || !j.contains("graphPath"))
                     continue;
 
-                auto reference = j["graphPath"].get<std::string>();
-                // References inside of packages are relative to the file
-                auto resolved = reference.starts_with(".") ? fs::path(relative).parent_path() / reference : fs::path(reference);
-                if (resolved.lexically_normal().generic_string() == graphPath)
+                auto resolved = resolve(relative, j["graphPath"]);
+                if (std::find(usedGraphs.begin(), usedGraphs.end(), resolved) != usedGraphs.end())
                     materials.push_back(relative);
             }
 
             users->materials = std::move(materials);
+            users->graphs = std::move(graphs);
             users->finished = true;
             });
 
@@ -408,7 +501,7 @@ namespace Atlas::Editor::UI {
         json j;
         j["material"] = *material.Get();
         if (material->HasGraph())
-            j["graph"] = *material->graph.Get();
+            j["graph"] = *GetGraph().Get();
         return j;
 
     }
@@ -426,8 +519,11 @@ namespace Atlas::Editor::UI {
             AttachGraph(restoredGraph);
 
         if (j.contains("graph") && material->HasGraph()) {
-            j["graph"].get_to(*material->graph.Get());
-            graphPanel.OnGraphRestored(*material->graph.Get());
+            auto& editedData = *GetGraph().Get();
+            j["graph"].get_to(editedData);
+            // Pins renamed since then are followed right away, the history compares the result
+            editedData.Compile();
+            graphPanel.OnGraphRestored(editedData);
         }
 
     }
@@ -443,6 +539,7 @@ namespace Atlas::Editor::UI {
             material->graph->blockingPipelineUsers++;
 
         graphPanel.Reset();
+        lastCompiled = nullptr;
 
         UpdateMeshesOfGraph();
         FindOtherUsers();
@@ -471,16 +568,25 @@ namespace Atlas::Editor::UI {
         if (!material->HasGraph())
             return;
 
-        auto compiled = material->graph->GetCompiled();
+        auto compiled = GetGraph()->GetCompiled();
         if (!compiled)
             return;
+
+        if (isSubgraph) {
+            ImGui::PushTextWrapPos();
+            ImGui::TextColored(Theme::TextMuted(), "The preview shows the outputs named like the pins of a material, otherwise "
+                "the first one as the base color");
+            ImGui::PopTextWrapPos();
+        }
 
         for (const auto& error : compiled->errors)
             Widgets::Callout(error.message.c_str(), Theme::Error());
 
-        if (!compiled->parameters.empty()) {
-            ImGui::SeparatorText("Parameters");
-            parametersPanel.RenderParameters(*material.Get(), *compiled);
+        // The values for the preview of a subgraph, textures of its inputs are parameters there
+        auto parameterGraph = material->graph->GetCompiled();
+        if (parameterGraph && !parameterGraph->parameters.empty()) {
+            ImGui::SeparatorText(isSubgraph ? "Parameters of the preview" : "Parameters");
+            parametersPanel.RenderParameters(*material.Get(), *parameterGraph);
         }
 
     }
@@ -575,7 +681,28 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void MaterialEditorWindow::UpdateMeshesOfGraph() {
+    void MaterialEditorWindow::OnGraphCompiled() {
+
+        lastCompiled = GetGraph()->GetCompiled();
+
+        // The outputs might be other ones now
+        if (isSubgraph) {
+            *material->graph.Get() = *MaterialGraph::Graph::CreateSubgraphPreview(editedGraph);
+            areUsersOutdated = true;
+        }
+
+        UpdateMeshesOfGraph();
+
+    }
+
+    void MaterialEditorWindow::CompileGraphUsers() {
+
+        areUsersOutdated = false;
+        UpdateMeshesOfGraph(GetGraph()->CompileUsers());
+
+    }
+
+    void MaterialEditorWindow::UpdateMeshesOfGraph(const std::vector<ResourceHandle<MaterialGraph::Graph>>& users) {
 
         for (const auto& mesh : ResourceManager<Mesh::Mesh>::GetResources()) {
             if (!mesh.IsLoaded())
@@ -583,7 +710,8 @@ namespace Atlas::Editor::UI {
 
             auto usesGraph = false;
             for (const auto& meshMaterial : mesh->data.materials)
-                usesGraph |= meshMaterial.IsLoaded() && meshMaterial->graph == material->graph;
+                usesGraph |= meshMaterial.IsLoaded() && (meshMaterial->graph == material->graph ||
+                    std::find(users.begin(), users.end(), meshMaterial->graph) != users.end());
 
             if (usesGraph)
                 mesh->UpdatePipelines();

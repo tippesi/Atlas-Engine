@@ -190,6 +190,13 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void AssetEditorWindow::AcceptState() {
+
+        if (!lastState.is_null())
+            lastState = SaveState();
+
+    }
+
     void AssetEditorWindow::UpdateHistory() {
 
         auto interactionFinished = history.IsInteractionFinished();

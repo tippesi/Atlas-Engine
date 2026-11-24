@@ -1431,28 +1431,36 @@ namespace Atlas::Editor {
         commandPalette.Register({ .category = "Material graph", .name = "Frame all nodes", .shortcut = "F",
             .action = [materialEditor]() { materialEditor()->graphPanel.FrameAll(); }, .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Arrange nodes",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Arrange(*window->material->graph.Get()); },
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Arrange(*window->GetGraph().Get()); },
             .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Show generated code",
             .action = [materialEditor]() { materialEditor()->graphPanel.ShowGeneratedCode(); }, .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Select all nodes", .shortcut = "Ctrl+A",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.SelectAll(*window->material->graph.Get()); },
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.SelectAll(*window->GetGraph().Get()); },
             .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Delete selected nodes", .shortcut = "Del",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.DeleteSelection(*window->material->graph.Get()); },
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.DeleteSelection(*window->GetGraph().Get()); },
             .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Copy selected nodes", .shortcut = "Ctrl+C",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.CopySelection(*window->material->graph.Get()); },
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.CopySelection(*window->GetGraph().Get()); },
             .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Paste nodes", .shortcut = "Ctrl+V",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Paste(*window->material->graph.Get()); },
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.Paste(*window->GetGraph().Get()); },
             .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Duplicate selected nodes", .shortcut = "Ctrl+D",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.DuplicateSelection(*window->material->graph.Get()); },
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.DuplicateSelection(*window->GetGraph().Get()); },
             .isEnabled = hasMaterialGraph });
         commandPalette.Register({ .category = "Material graph", .name = "Frame selected nodes", .shortcut = "Ctrl+G",
-            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.FrameSelection(*window->material->graph.Get()); },
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.FrameSelection(*window->GetGraph().Get()); },
             .isEnabled = hasMaterialGraph });
+        commandPalette.Register({ .category = "Material graph", .name = "Create subgraph from selection", .shortcut = "Ctrl+Shift+G",
+            .action = [materialEditor]() { materialEditor()->graphPanel.RequestSubgraph(); },
+            .isEnabled = [materialEditor, hasMaterialGraph]() {
+                return hasMaterialGraph() && materialEditor()->graphPanel.CanCreateSubgraph(materialEditor()->GetGraph()); } });
+        commandPalette.Register({ .category = "Material graph", .name = "Dissolve selected subgraphs",
+            .action = [materialEditor]() { auto window = materialEditor(); window->graphPanel.DissolveSelection(*window->GetGraph().Get()); },
+            .isEnabled = [materialEditor, hasMaterialGraph]() {
+                return hasMaterialGraph() && materialEditor()->graphPanel.HasSelectedSubgraph(*materialEditor()->GetGraph().Get()); } });
         commandPalette.Register({ .category = "Material graph", .name = "Toggle maximized", .shortcut = "F11",
             .action = [materialEditor]() { materialEditor()->graphPanel.ToggleMaximized(); }, .isEnabled = hasMaterialGraph });
 
@@ -2372,7 +2380,8 @@ namespace Atlas::Editor {
             return {};
         }
 
-        if (type != ContentType::Material && type != ContentType::MaterialGraph && type != ContentType::Mesh) {
+        auto isGraph = type == ContentType::MaterialGraph || type == ContentType::MaterialSubgraph;
+        if (type != ContentType::Material && !isGraph && type != ContentType::Mesh) {
             Notifications::Push({ .message = noEditor, .type = NotificationType::Warning });
             return noEditor;
         }
@@ -2387,7 +2396,7 @@ namespace Atlas::Editor {
 
         if (type == ContentType::Material)
             assetEditorWindows.push_back(CreateRef<UI::MaterialEditorWindow>(FileImporter::ImportFile<Material>(path), true));
-        else if (type == ContentType::MaterialGraph)
+        else if (isGraph)
             assetEditorWindows.push_back(CreateRef<UI::MaterialEditorWindow>(FileImporter::ImportFile<MaterialGraph::Graph>(path), true));
         else
             assetEditorWindows.push_back(CreateRef<UI::MeshEditorWindow>(FileImporter::ImportFile<Mesh::Mesh>(path), true));

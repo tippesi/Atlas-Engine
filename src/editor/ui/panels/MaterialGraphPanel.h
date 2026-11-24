@@ -57,6 +57,16 @@ namespace Atlas::Editor::UI {
 
         void Paste(MaterialGraph::Graph& graph);
 
+        // Asks for the name of a subgraph which replaces the selected nodes
+        void RequestSubgraph();
+
+        bool CanCreateSubgraph(const ResourceHandle<MaterialGraph::Graph>& graph) const;
+
+        bool HasSelectedSubgraph(const MaterialGraph::Graph& graph) const;
+
+        // Replaces selected subgraph nodes with the nodes of their subgraphs
+        void DissolveSelection(MaterialGraph::Graph& graph);
+
         void ToggleMaximized();
 
         // Whether nodes changed since the last save
@@ -160,6 +170,23 @@ namespace Atlas::Editor::UI {
 
         void RenderAddMenu(MaterialGraph::Graph& graph);
 
+        // The name of a new subgraph
+        void RenderSubgraphPopup(const ResourceHandle<MaterialGraph::Graph>& graph);
+
+        // Adds a node using the subgraph of a file, connected to the dropped link
+        void AddSubgraph(MaterialGraph::Graph& graph, const std::string& path);
+
+        // The selected nodes which can become a subgraph, empty if none of them has a value
+        std::unordered_set<uint32_t> GetSubgraphSelection(const MaterialGraph::Graph& graph) const;
+
+        static std::string GetUniqueName(const MaterialGraph::Graph& graph, const std::string& name);
+
+        // Reports why if the graph can't use the subgraph
+        bool CanUseSubgraph(const MaterialGraph::Graph& graph, const ResourceHandle<MaterialGraph::Graph>& subgraph) const;
+
+        // Parameters and the pins of subgraphs have a name of their own, subgraph nodes the one of their file
+        static std::string GetNodeName(const MaterialGraph::Node& node, const MaterialGraph::NodeDefinition* definition);
+
         PinRef FindPin(const MaterialGraph::Graph& graph, ImVec2 position) const;
 
         uint32_t FindNode(const MaterialGraph::Graph& graph, ImVec2 position) const;
@@ -213,6 +240,11 @@ namespace Atlas::Editor::UI {
         std::unordered_set<std::string> openAddCategories;
 
         bool openAddMenu = false;
+        bool openSubgraphPopup = false;
+        std::string subgraphName;
+
+        // Other graphs compile this one when their changes reach it
+        Ref<const MaterialGraph::CompiledGraph> lastCompiled;
         bool frameRequested = true;
         bool frameOnlySelection = false;
         bool showCode = false;

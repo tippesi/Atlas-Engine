@@ -160,6 +160,13 @@ namespace Atlas::Editor::UI {
             */
 
             auto resources = ResourceManager<T>::GetResources();
+            // Subgraphs only work as a part of other graphs
+            if constexpr (std::is_same_v<T, MaterialGraph::Graph>) {
+                std::erase_if(resources, [](const auto& graph) {
+                    auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
+                    return compiled && compiled->IsSubgraph();
+                    });
+            }
             handle = popup.Render(resources);
 
             ImGui::PopID();
