@@ -334,7 +334,7 @@ namespace Atlas::Bridge {
         auto extension = options.file.extension().string();
         if (extension == ".aemesh")
             return InspectMesh(options);
-        if (extension == ".aematgraph")
+        if (extension == ".aematgraph" || extension == ".aematsubgraph")
             return InspectMaterialGraph(options.file, options.filters, options.code, options.output);
         if (extension == ".aescene" || extension == ".aeprefab" || extension == ".json")
             return InspectScene(options);

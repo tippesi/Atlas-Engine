@@ -35,7 +35,7 @@ AtlasBridge eval "<lua>" [--play 3] [--scene <scene>]  # the value of Lua in the
 AtlasBridge wait <command> | status | cancel | stop     # --server <dir> --detach --timeout <s> --no-wait-gpu
 AtlasBridge check <job.json> ...          # mistakes in jobs without loading anything
 AtlasBridge inspect <scene|prefab|mesh|model> [--filter <pattern>] [--assembly <pattern>] [--limit n] [--out f]
-AtlasBridge inspect <graph.aematgraph> [--filter <pattern>] [--code] [--out f] | inspect nodes [--filter <pattern>]
+AtlasBridge inspect <graph.aematgraph|.aematsubgraph> [--filter <pattern>] [--code] [--out f] | inspect nodes [--filter <pattern>]
 AtlasBridge diff <a> <b> [--threshold 8] [--out sheet.jpg]   # images or directories, numbers per image
 AtlasBridge compose <out.jpg> [--width 1536] [--columns n] [--title t] <image | label=image | dir | pattern> ...
 AtlasBridge bench <bench.json>            # A/B timings of builds or shader directories
@@ -276,6 +276,12 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
              { "key": "glow", "type": "Float parameter", "name": "Glow", "value": 8, "range": [0, 30], "group": "Light" },
              { "node": "Surface output", "inputs": { "Emissive": "glow", "Roughness": 0.8, "Opacity": null } },
              { "node": "#12", "remove": true } ] }
+{ "op": "materialGraph", "graph": "x/graphs/glow.aematsubgraph", "create": true,
+  "nodes": [ { "key": "in", "type": "Subgraph input", "name": "Map", "pinType": "texture" },
+             { "key": "sample", "type": "Sample texture", "inputs": { "Texture": "in" } },
+             { "type": "Subgraph output", "name": "Color", "pinType": "vec3", "inputs": { "Value": "sample.Color" } } ] }
+{ "op": "materialGraph", "graph": "x/graphs/fire.aematgraph",
+  "nodes": [ { "key": "glow", "type": "Subgraph", "subgraph": "x/graphs/glow.aematsubgraph", "inputs": { "Map": "Albedo" } } ] }
 { "op": "assignMaterialGraph", "materials": "x/materials/M_Fire_*.aematerial", "graph": "x/graphs/fire.aematgraph",
   "values": { "Glow": 8, "Tint": [1, 0.4, 0.4] }, "textures": { "Albedo": "x/t.png" }, "reset": ["Bend"] }
 { "op": "terrainCopy", "path": "terrains/x/x.aeterrain" }   { "op": "shoreLine", "oceanHeight": 0, "resolution": 2048, "calm": [ { "center": [x, z], "radius": 60, "falloff": 20 } ] }
@@ -291,7 +297,9 @@ match unless `"all": true`; `position` is world space, `localPosition`/`rotation
   `"key.Pin"` for nodes with several outputs), a number or array as the value of the input, `null` disconnects. The
   graph has to compile. Loaded materials show the change right away, the file is saved with the materials (`.backup`
   once). `inspect nodes` lists the node types with their pins, `inspect <graph>` the nodes with their
-  links and stages.
+  links and stages. Files ending in `.aematsubgraph` are subgraphs: their pins are `Subgraph input` and `Subgraph output`
+  nodes (`name`, `pinType`, `order`), a `Subgraph` node uses one (`subgraph`). A changed subgraph reaches the graphs using it, the edit
+  fails if it breaks a graph which is loaded or edited by the job (others aren't checked).
 - `assignMaterialGraph` sets the graph of materials (`null` removes it, without `graph` they keep theirs) and their
   parameter `values` and `textures`; values of parameters the graph doesn't have are dropped, `reset` (`true` or names)
   goes back to the defaults. Numbers set all components, arrays the first ones; colors are sRGB. Saved like `material`.

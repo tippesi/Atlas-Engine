@@ -1439,7 +1439,7 @@ namespace Atlas::Bridge {
                 throw std::runtime_error("compressTextures: " + directory.get<std::string>() + " isn't a directory");
             for (const auto& file : fs::recursive_directory_iterator(root, fs::directory_options::follow_directory_symlink)) {
                 auto extension = file.path().extension();
-                if (!file.is_regular_file() || (extension != ".aematerial" && extension != ".aematgraph"))
+                if (!file.is_regular_file() || (extension != ".aematerial" && extension != ".aematgraph" && extension != ".aematsubgraph"))
                     continue;
                 std::ifstream input(file.path());
                 auto material = json::parse(input);
@@ -1586,21 +1586,27 @@ namespace Atlas::Bridge {
 
     }
 
+    static ResourceHandle<MaterialGraph::Graph> GetGraphOfEdit(EditContext& context, const std::string& path);
+
     static json EditMaterialGraphFile(EditContext& context, const json& operation) {
 
         // The file is written once the checks passed, graphs the engine already loaded follow the edit right away
         auto& edits = context.state.graphEdits;
-        auto result = EditMaterialGraph(operation, edits);
-        auto path = result["graph"].get<std::string>();
+        auto path = ToAssetPath(operation.at("graph").get<std::string>());
         auto graph = ResourceManager<MaterialGraph::Graph>::GetResource(path);
         if (graph.IsLoaded()) {
-            *graph.Get() = *CreateGraph(edits.documents.at(path));
+            for (const auto& user : ResourceManager<MaterialGraph::Graph>::GetResources()) {
+                if (user.IsLoaded() && user->Uses(*graph.Get()) && fs::exists(GetAssetDirectory() / user.GetResource()->path))
+                    ReadMaterialGraph(user.GetResource()->path, edits);
+            }
+        }
 
-            std::set<const Material*> materials;
-            for (const auto& material : ResourceManager<Material>::GetResources())
-                if (material.IsLoaded() && material->graph.GetResource() == graph.GetResource())
-                    materials.insert(material.Get().get());
-            UpdatePipelinesOfMaterials(materials);
+        auto result = EditMaterialGraph(operation, edits);
+        if (graph.IsLoaded()) {
+            *graph.Get() = *CreateGraph(edits.documents.at(path), [&](const std::string& subgraph) { return GetGraphOfEdit(context, subgraph); });
+
+            // Loaded graphs with the changed one as a subgraph follow as well
+            UpdatePipelinesOfMaterials(CompileUsersOfGraph(graph));
         }
 
         return json::array({ result });
@@ -1614,7 +1620,7 @@ namespace Atlas::Bridge {
         const auto& edits = context.state.graphEdits;
         if (edits.changed.contains(path))
             return graph.IsLoaded() ? graph : ResourceManager<MaterialGraph::Graph>::AddResource(path, ResourceOrigin::User,
-                CreateGraph(edits.documents.at(path)));
+                CreateGraph(edits.documents.at(path), [&](const std::string& subgraph) { return GetGraphOfEdit(context, subgraph); }));
 
         // A graph created by a dry run stays loaded without a file
         if (!fs::exists(GetAssetDirectory() / path))
@@ -1650,6 +1656,8 @@ namespace Atlas::Bridge {
                 auto graphPath = graph.GetResource()->path;
                 if (!compiled->errors.empty())
                     throw std::runtime_error("the graph " + graphPath + " doesn't compile");
+                if (compiled->IsSubgraph())
+                    throw std::runtime_error(graphPath + " is a subgraph, it only works as a part of other graphs");
                 CheckGraphValues(operation, *compiled, graphPath);
             }
             else if (operation.contains("values") || operation.contains("textures")) {

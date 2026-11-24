@@ -763,6 +763,24 @@ namespace Atlas::Bridge {
 
     }
 
+    std::set<const Material*> CompileUsersOfGraph(const ResourceHandle<MaterialGraph::Graph>& graph) {
+
+        auto graphs = graph->CompileUsers();
+        graphs.push_back(graph);
+
+        std::set<const Material*> materials;
+        for (const auto& material : ResourceManager<Material>::GetResources()) {
+            if (!material.IsLoaded())
+                continue;
+            auto usesGraph = std::any_of(graphs.begin(), graphs.end(), [&](const auto& candidate) {
+                return material->graph.GetResource() == candidate.GetResource(); });
+            if (usesGraph)
+                materials.insert(material.Get().get());
+        }
+        return materials;
+
+    }
+
     int32_t ApplyMaterialPatches(const json& patches, std::set<std::string>& patchedPaths) {
 
         int32_t count = 0;
@@ -796,15 +814,14 @@ namespace Atlas::Bridge {
             if (!fs::exists(GetAssetDirectory() / path))
                 continue;
 
-            if (fs::path(path).extension() == ".aematgraph") {
+            auto extension = fs::path(path).extension();
+            if (extension == ".aematgraph" || extension == ".aematsubgraph") {
                 auto graph = ResourceManager<MaterialGraph::Graph>::GetResource(path);
                 if (!graph.IsLoaded())
                     continue;
 
                 *graph.Get() = *Loader::MaterialGraphLoader::LoadGraph(path);
-                for (const auto& material : ResourceManager<Material>::GetResources())
-                    if (material.IsLoaded() && material->graph.GetResource() == graph.GetResource())
-                        reloaded.insert(material.Get().get());
+                reloaded.merge(CompileUsersOfGraph(graph));
                 continue;
             }
 
@@ -842,10 +859,12 @@ namespace Atlas::Bridge {
         if (query.contains("directory")) {
             auto directory = Loader::AssetLoader::GetFullPath(query["directory"].get<std::string>());
             for (const auto& file : fs::directory_iterator(directory)) {
-                if (file.path().extension() != ".aematgraph")
+                auto isSubgraph = file.path().extension() == ".aematsubgraph";
+                if (file.path().extension() != ".aematgraph" && !isSubgraph)
                     continue;
                 auto path = query["directory"].get<std::string>() + "/" + file.path().filename().string();
-                graphs.push_back(Loader::MaterialGraphLoader::LoadGraph(path));
+                auto graph = Loader::MaterialGraphLoader::LoadGraph(path);
+                graphs.push_back(isSubgraph ? Graph::CreateSubgraphPreview(ResourceHandle<Graph>(graph)) : graph);
                 names.push_back(file.path().filename().string());
             }
         }
@@ -854,8 +873,9 @@ namespace Atlas::Bridge {
         if (query.value("library", true)) {
             const std::vector<std::string> sources = { "Float", "Vector 2", "Vector 3", "Vector 4" };
             for (const auto& definition : NodeLibrary::GetDefinitions()) {
+                // Subgraphs are replaced by their nodes before any code is generated
                 if (definition.kind == NodeKind::VertexOutput || definition.kind == NodeKind::SurfaceOutput ||
-                    definition.kind == NodeKind::Comment)
+                    definition.kind == NodeKind::Comment || definition.category == "Subgraph")
                     continue;
 
                 auto isGeneric = std::any_of(definition.inputs.begin(), definition.inputs.end(),

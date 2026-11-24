@@ -150,7 +150,53 @@ namespace Atlas::Bridge {
 
     }
 
-    static GraphDocument ReadDocument(const std::string& path) {
+    // Subgraph nodes are told apart by their file
+    static std::string GetLabel(const Node& node, const GraphDocument& document) {
+
+        auto iter = document.subgraphPaths.find(node.id);
+        return GetLabel(node) + (iter != document.subgraphPaths.end() ? " " + iter->second : "");
+
+    }
+
+    static GraphDocument& GetDocument(const std::string& path, std::map<std::string, GraphDocument>& documents,
+        const std::set<std::string>& parents = {});
+
+    // Whether a document contains the other one as a subgraph, directly or through other subgraphs. The documents tell
+    // it by their paths, an edited graph is a copy
+    static bool UsesSubgraph(const std::string& path, const std::string& subgraphPath, std::map<std::string, GraphDocument>& documents) {
+
+        auto iter = documents.find(path);
+        if (iter == documents.end())
+            return false;
+
+        const auto& used = iter->second.subgraphPaths;
+        return std::any_of(used.begin(), used.end(), [&](const auto& entry) {
+            return entry.second == subgraphPath || UsesSubgraph(entry.second, subgraphPath, documents); });
+
+    }
+
+    static void SetSubgraph(GraphDocument& document, const std::string& documentPath, uint32_t id, const std::string& path,
+        std::map<std::string, GraphDocument>& documents) {
+
+        auto subgraph = path == documentPath ? nullptr : GetDocument(path, documents).graph;
+        if (!subgraph || UsesSubgraph(path, documentPath, documents))
+            throw std::runtime_error(documentPath + " would contain itself with the subgraph " + path);
+
+        auto compiled = subgraph->GetCompiled();
+        if (!compiled->IsSubgraph())
+            throw std::runtime_error(path + " has no inputs or outputs of a subgraph");
+
+        document.graph->SetSubgraph(id, ResourceHandle<Graph>(subgraph));
+        document.subgraphPaths[id] = path;
+
+    }
+
+    // The parents are the documents which are read at the moment, down to this one
+    static GraphDocument ReadDocument(const std::string& path, std::map<std::string, GraphDocument>& documents,
+        std::set<std::string> parents) {
+
+        if (!parents.insert(path).second)
+            throw std::runtime_error("the graph " + path + " contains itself as a subgraph");
 
         std::ifstream stream(GetAssetDirectory() / path);
         if (!stream.is_open())
@@ -161,23 +207,36 @@ namespace Atlas::Bridge {
 
         GraphDocument document;
         for (auto& node : j.at("nodes")) {
-            if (!node.contains("texturePath"))
-                continue;
-            document.texturePaths[node.at("id").get<uint32_t>()] = node["texturePath"].get<std::string>();
+            auto id = node.at("id").get<uint32_t>();
+            if (node.contains("texturePath"))
+                document.texturePaths[id] = node["texturePath"].get<std::string>();
+            if (node.contains("subgraphPath"))
+                document.subgraphPaths[id] = node["subgraphPath"].get<std::string>();
             node.erase("texturePath");
+            node.erase("subgraphPath");
         }
 
         document.graph = CreateRef<Graph>();
         from_json(j, *document.graph);
+
+        // The pins the nodes were saved with stay, links follow the ones renamed since then
+        for (const auto& [id, subgraphPath] : document.subgraphPaths) {
+            // Compiling reports a missing file, which an operation can replace
+            if (fs::exists(GetAssetDirectory() / subgraphPath) || documents.contains(subgraphPath))
+                document.graph->GetNode(id)->subgraph = ResourceHandle<Graph>(GetDocument(subgraphPath, documents, parents).graph);
+        }
+        document.graph->Compile();
+
         return document;
 
     }
 
-    static GraphDocument& GetDocument(const std::string& path, std::map<std::string, GraphDocument>& documents) {
+    static GraphDocument& GetDocument(const std::string& path, std::map<std::string, GraphDocument>& documents,
+        const std::set<std::string>& parents) {
 
         auto iter = documents.find(path);
         if (iter == documents.end())
-            iter = documents.emplace(path, ReadDocument(path)).first;
+            iter = documents.emplace(path, ReadDocument(path, documents, parents)).first;
         return iter->second;
 
     }
@@ -190,6 +249,9 @@ namespace Atlas::Bridge {
             auto iter = document.texturePaths.find(node["id"].get<uint32_t>());
             if (iter != document.texturePaths.end())
                 node["texturePath"] = iter->second;
+            auto subgraph = document.subgraphPaths.find(node["id"].get<uint32_t>());
+            if (subgraph != document.subgraphPaths.end())
+                node["subgraphPath"] = subgraph->second;
         }
 
         AssetReferences::MakeReferences(j, AssetReferences::Type::MaterialGraph, path);
@@ -294,10 +356,34 @@ namespace Atlas::Bridge {
 
     }
 
+    // The pins of a node decide which links are possible, so they are set on all nodes before the first link
+    static void ApplyNodePins(GraphDocument& document, const std::string& path, uint32_t id, const json& entry,
+        std::map<std::string, GraphDocument>& documents) {
+
+        auto& graph = *document.graph;
+        auto node = graph.GetNode(id);
+
+        if (entry.contains("pinType")) {
+            if (node->type != NodeLibrary::subgraphInputType && node->type != NodeLibrary::subgraphOutputType)
+                throw std::runtime_error(GetLabel(*node) + " isn't an input or output of a subgraph, only those have a pin type");
+            node->pinType = NodeLibrary::FindType(entry["pinType"].get<std::string>());
+            if (node->pinType == ValueType::Generic)
+                throw std::runtime_error(GetLabel(*node) + ": the pin type is one of float, vec2, vec3, vec4, texture");
+            NodeLibrary::UpdateDefinition(*node);
+        }
+
+        if (entry.contains("subgraph")) {
+            if (node->type != NodeLibrary::subgraphType)
+                throw std::runtime_error(GetLabel(*node) + " isn't a subgraph node, only those have a subgraph");
+            SetSubgraph(document, path, id, ToAssetPath(entry["subgraph"].get<std::string>()), documents);
+        }
+
+    }
+
     static void ApplyNodeEntry(Graph& graph, GraphDocument& document, const std::map<std::string, uint32_t>& keys, uint32_t id, const json& entry) {
 
         static const std::set<std::string> known = { "key", "type", "node", "remove", "name", "value", "position", "size", "range", "group",
-            "order", "texture", "inputs", "code", "codeInputs", "codeOutputType" };
+            "order", "texture", "inputs", "code", "codeInputs", "codeOutputType", "pinType", "subgraph" };
         CheckKeys(entry, known, "materialGraph node " + entry.dump());
 
         auto node = graph.GetNode(id);
@@ -490,13 +576,67 @@ namespace Atlas::Bridge {
 
     }
 
+    // Documents read earlier use a changed subgraph from now on. Each one compiles after the subgraphs it uses
+    static void UpdateDocumentUsers(const std::string& path, MaterialGraphEdits& edits) {
+
+        auto& documents = edits.documents;
+        edits.broken.erase(path);
+
+        std::set<std::string> pending;
+        for (const auto& [userPath, _] : documents) {
+            if (UsesSubgraph(userPath, path, documents))
+                pending.insert(userPath);
+        }
+
+        while (!pending.empty()) {
+            auto next = std::find_if(pending.begin(), pending.end(), [&](const std::string& userPath) {
+                return std::none_of(pending.begin(), pending.end(), [&](const std::string& other) {
+                    return UsesSubgraph(userPath, other, documents); });
+                });
+            auto userPath = *next;
+            pending.erase(next);
+
+            auto& user = documents.at(userPath);
+            auto wasValid = user.graph->GetCompiled()->errors.empty();
+            for (const auto& [id, subgraphPath] : user.subgraphPaths) {
+                if (documents.contains(subgraphPath))
+                    user.graph->GetNode(id)->subgraph = ResourceHandle<Graph>(documents.at(subgraphPath).graph);
+            }
+
+            auto compiled = user.graph->Compile();
+            if (compiled->errors.empty())
+                edits.broken.erase(userPath);
+            else if (wasValid)
+                edits.broken[userPath] = "changing " + path + " breaks " + userPath + ":" + FormatErrors(*user.graph, *compiled);
+        }
+
+    }
+
+    // Operations can break graphs for later ones to repair, at the end all of them have to compile again
+    static void CheckBrokenGraphs(const MaterialGraphEdits& edits) {
+
+        std::string text;
+        for (const auto& [_, message] : edits.broken)
+            text += (text.empty() ? "" : "\n") + message;
+        if (!text.empty())
+            throw std::runtime_error(text);
+
+    }
+
+    void ReadMaterialGraph(const std::string& path, MaterialGraphEdits& edits) {
+
+        GetDocument(path, edits.documents);
+
+    }
+
     json EditMaterialGraph(const json& operation, MaterialGraphEdits& edits) {
 
         CheckKeys(operation, { "op", "graph", "create", "from", "overwrite", "name", "maxDisplacement", "nodes" }, "materialGraph");
 
         auto path = ToAssetPath(operation.at("graph").get<std::string>());
-        if (fs::path(path).extension() != ".aematgraph")
-            throw std::runtime_error(path + " isn't a .aematgraph file");
+        auto isSubgraph = fs::path(path).extension() == ".aematsubgraph";
+        if (fs::path(path).extension() != ".aematgraph" && !isSubgraph)
+            throw std::runtime_error(path + " isn't a .aematgraph or .aematsubgraph file");
 
         auto& documents = edits.documents;
         auto create = operation.value("create", false) || operation.contains("from");
@@ -514,7 +654,8 @@ namespace Atlas::Bridge {
             document.graph->name = fs::path(path).stem().string();
         }
         else if (create) {
-            document.graph = Graph::CreateDefault();
+            // The inputs and outputs of a subgraph are nodes of the operation
+            document.graph = isSubgraph ? CreateRef<Graph>() : Graph::CreateDefault();
             document.graph->name = fs::path(path).stem().string();
         }
         else {
@@ -563,6 +704,11 @@ namespace Atlas::Bridge {
             entryNodes.push_back(id);
         }
 
+        for (size_t i = 0; i < entries.size(); i++) {
+            if (graph.GetNode(entryNodes[i]))
+                ApplyNodePins(document, path, entryNodes[i], entries[i], documents);
+        }
+
         int32_t removed = 0;
         for (size_t i = 0; i < entries.size(); i++) {
             auto id = entryNodes[i];
@@ -572,6 +718,7 @@ namespace Atlas::Bridge {
             if (entries[i].value("remove", false)) {
                 graph.RemoveNode(id);
                 document.texturePaths.erase(id);
+                document.subgraphPaths.erase(id);
                 removed++;
                 continue;
             }
@@ -582,9 +729,14 @@ namespace Atlas::Bridge {
         auto compiled = graph.Compile();
         if (!compiled->errors.empty())
             throw std::runtime_error(path + " doesn't compile:" + FormatErrors(graph, *compiled));
+        if (compiled->IsSubgraph() != isSubgraph)
+            throw std::runtime_error(isSubgraph ? path + " needs a 'Subgraph output'" :
+                path + " has inputs or outputs of a subgraph, these belong into a .aematsubgraph file");
 
         documents[path] = document;
         edits.changed.insert(path);
+
+        UpdateDocumentUsers(path, edits);
 
         json nodes = json::object();
         for (const auto& [key, id] : keys)
@@ -596,6 +748,8 @@ namespace Atlas::Bridge {
     }
 
     json SaveMaterialGraphs(MaterialGraphEdits& edits) {
+
+        CheckBrokenGraphs(edits);
 
         json saved = json::array();
         for (const auto& path : edits.changed) {
@@ -620,7 +774,7 @@ namespace Atlas::Bridge {
 
     }
 
-    Ref<Graph> CreateGraph(const GraphDocument& document) {
+    Ref<Graph> CreateGraph(const GraphDocument& document, const std::function<ResourceHandle<Graph>(const std::string&)>& getSubgraph) {
 
         // Parameters take their default textures from the nodes, so the graph is compiled with them
         auto graph = CreateRef<Graph>(*document.graph);
@@ -628,6 +782,10 @@ namespace Atlas::Bridge {
             if (auto node = graph->GetNode(id))
                 node->texture = ResourceManager<Texture::Texture2D>::GetOrLoadResourceWithLoaderAsync(path,
                     Streaming::TextureStreaming::LoadTexture, false, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+        }
+        for (const auto& [id, path] : document.subgraphPaths) {
+            if (auto node = graph->GetNode(id))
+                node->subgraph = getSubgraph(path);
         }
         graph->Compile();
 
@@ -770,6 +928,8 @@ namespace Atlas::Bridge {
                     auto compiled = GetCompiledGraph(graphPath, edits);
                     if (!compiled->errors.empty())
                         throw std::runtime_error("the graph " + graphPath + " doesn't compile");
+                    if (compiled->IsSubgraph())
+                        throw std::runtime_error(graphPath + " is a subgraph, it only works as a part of other graphs");
                     CheckGraphValues(operation, *compiled, graphPath);
                 }
                 // A failing operation ends the edit, only valid ones assign their graph for the next ones
@@ -779,6 +939,13 @@ namespace Atlas::Bridge {
             catch (const std::exception& e) {
                 issues.push_back("ERROR: " + where + ": " + e.what());
             }
+        }
+
+        try {
+            CheckBrokenGraphs(edits);
+        }
+        catch (const std::exception& e) {
+            issues.push_back("ERROR: " + std::string(e.what()));
         }
 
     }
@@ -800,7 +967,8 @@ namespace Atlas::Bridge {
         auto relative = file.lexically_normal().lexically_relative(GetAssetDirectory());
         auto path = !relative.empty() && relative.native()[0] != '.' ? relative.generic_string() : file.generic_string();
 
-        auto document = ReadDocument(path);
+        std::map<std::string, GraphDocument> documents;
+        auto document = GetDocument(path, documents);
         auto& graph = *document.graph;
         auto compiled = graph.Compile();
 
@@ -812,6 +980,15 @@ namespace Atlas::Bridge {
         }
         else {
             std::vector<std::string> parts;
+            if (compiled->IsSubgraph()) {
+                for (const auto& pinType : { NodeLibrary::subgraphInputType, NodeLibrary::subgraphOutputType }) {
+                    std::string pins;
+                    for (auto pin : NodeLibrary::GetSubgraphPins(graph.nodes, pinType))
+                        pins += (pins.empty() ? "" : ", ") + pin->name + " " + GetTypeName(pin->pinType);
+                    parts.push_back((pinType == NodeLibrary::subgraphInputType ? "subgraph with inputs: " : "outputs: ") +
+                        (pins.empty() ? std::string("none") : pins));
+                }
+            }
             if (compiled->hasVertexOffset)
                 parts.push_back("moves vertices");
             if (compiled->hasSurface)
@@ -852,7 +1029,7 @@ namespace Atlas::Bridge {
                 continue;
 
             auto definition = NodeLibrary::Find(node);
-            auto line = "    " + GetLabel(node);
+            auto line = "    " + GetLabel(node, document);
             if (definition && (definition->kind == NodeKind::Constant || (definition->kind == NodeKind::Parameter && definition->valueType != ValueType::Texture)))
                 line += " = " + FormatValue(node.value, GetComponentCount(definition->valueType));
             if (auto texture = document.texturePaths.find(node.id); texture != document.texturePaths.end())

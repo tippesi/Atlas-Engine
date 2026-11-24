@@ -4,16 +4,19 @@
 
 #include "materialgraph/MaterialGraph.h"
 
+#include <functional>
 #include <map>
 #include <set>
 
 namespace Atlas::Bridge {
 
-    // A graph file as the operations of a job edit it. Textures aren't loaded, the nodes keep their paths
+    // A graph file as the operations of a job edit it. Textures aren't loaded, the nodes keep their paths. Subgraphs
+    // are documents as well
     struct GraphDocument {
 
         Ref<MaterialGraph::Graph> graph;
         std::map<uint32_t, std::string> texturePaths;
+        std::map<uint32_t, std::string> subgraphPaths;
 
     };
 
@@ -23,10 +26,15 @@ namespace Atlas::Bridge {
         std::map<std::string, GraphDocument> documents;
         // Documents to write, the files still have the state from before the job
         std::set<std::string> changed;
+        // Errors of documents which compiled until a subgraph of them changed
+        std::map<std::string, std::string> broken;
         // Graphs earlier assignMaterialGraph operations put on materials, empty if they removed it (only check uses it)
         std::map<std::string, std::string> assigned;
 
     };
+
+    // Graphs read before an edit follow it, saving fails if it breaks them
+    void ReadMaterialGraph(const std::string& path, MaterialGraphEdits& edits);
 
     // The materialGraph edit operation: creates or changes a graph document and compiles it, compile errors fail it
     json EditMaterialGraph(const json& operation, MaterialGraphEdits& edits);
@@ -34,8 +42,9 @@ namespace Atlas::Bridge {
     // Writes the changed graphs, a .backup of an existing file is kept
     json SaveMaterialGraphs(MaterialGraphEdits& edits);
 
-    // The graph of a document as the engine uses it, with its textures
-    Ref<MaterialGraph::Graph> CreateGraph(const GraphDocument& document);
+    // The graph of a document as the engine uses it, with its textures and subgraphs
+    Ref<MaterialGraph::Graph> CreateGraph(const GraphDocument& document,
+        const std::function<ResourceHandle<MaterialGraph::Graph>(const std::string&)>& getSubgraph);
 
     // Material files of a path or a list of paths, wildcards are allowed in the file names. Fails if nothing matches
     std::vector<std::string> FindMaterialFiles(const json& patterns);
