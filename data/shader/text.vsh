@@ -49,13 +49,13 @@ layout(push_constant) uniform constants {
 } pushConstants;
 #endif
 
+#ifdef TEXT_3D
 vec3 RotateByQuaternion(vec4 rotation, vec3 vector) {
 
     return vector + 2.0 * cross(rotation.xyz, cross(rotation.xyz, vector) + rotation.w * vector);
 
 }
 
-#ifdef TEXT_3D
 // The world position of a point of the text rectangle, x goes right and y down from its corner
 vec3 GetWorldPosition(vec3 origin, vec4 rotation, vec2 position) {
 

@@ -354,7 +354,7 @@ void main() {
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * PushConstants.invResolution + velocity;
 
-// Maybe we might want to filter the current input pixel
+    // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
 
     vec3 historyColor = history.rgb;
