@@ -283,6 +283,15 @@ namespace Atlas::Editor {
             if (!error.empty())
                 throw std::runtime_error(error);
             });
+        // Shows a directory of the asset directory in the content browser, like a click on the folder
+        editor.set_function("Browse", [this](const std::string& path) {
+            auto fullPath = Loader::AssetLoader::GetFullPath(path);
+            if (!std::filesystem::is_directory(fullPath))
+                throw std::runtime_error(path + " isn't a directory in the asset directory");
+            contentBrowserWindow.currentDirectory = Common::Path::Normalize(fullPath);
+            contentBrowserWindow.show = true;
+            contentBrowserWindow.requestFocus = true;
+            });
         // Shows a window and gives it the focus, found by its name or path
         editor.set_function("Focus", [this](const std::string& nameOrPath) {
             std::vector<std::pair<UI::Window*, std::string>> windows;
