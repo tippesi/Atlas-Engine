@@ -325,6 +325,22 @@ namespace Atlas::Editor {
                 throw std::runtime_error(path + " can't be opened in a code window");
             (*window)->SetText(text);
             });
+        // Like the play and stop buttons of the active scene window, they take effect in the next frame
+        editor.set_function("Play", [this]() {
+            auto sceneWindow = GetActiveSceneWindow();
+            if (!sceneWindow || !sceneWindow->scene.IsLoaded())
+                throw std::runtime_error("There is no loaded scene window, Editor.Focus(path) activates one");
+            if (sceneWindow->isPlaying)
+                throw std::runtime_error(sceneWindow->name + " is already playing");
+            if (!sceneWindow->StartPlaying())
+                throw std::runtime_error(sceneWindow->name + " can't play, it has no main camera or another operation is running");
+            });
+        editor.set_function("Stop", [this]() {
+            auto sceneWindow = GetActiveSceneWindow();
+            if (!sceneWindow || !sceneWindow->isPlaying)
+                throw std::runtime_error("The active scene window isn't playing");
+            sceneWindow->StopPlaying();
+            });
 
     }
 
@@ -643,27 +659,32 @@ namespace Atlas::Editor {
 
         graphicsDevice->WaitForPreviousFrameSubmission();
 
-        auto waitForSceneUpdates = [&]() {
+        auto forEachScene = [&](const auto& function) {
 
             for (const auto& sceneWindow : sceneWindows) {
                 if (sceneWindow->scene.IsLoaded())
-                    sceneWindow->scene->WaitForAsyncWorkCompletion();
+                    function(*sceneWindow->scene.Get());
             }
 
             // The preview scenes of asset editors are updated even if their viewport isn't rendered
             for (const auto& assetEditorWindow : assetEditorWindows) {
                 if (assetEditorWindow->scene)
-                    assetEditorWindow->scene->WaitForAsyncWorkCompletion();
+                    function(*assetEditorWindow->scene);
             }
 
         };
 
-        // Playing scenes were updated in Update(), the panels below change what their jobs read
-        waitForSceneUpdates();
-
-        if (window.IsOccluded())
+        // Playing scenes were updated in Update(), the panels below change what their jobs read. Their render lists
+        // are still to be rendered in this frame, they are only dropped when nothing is rendered
+        auto occluded = window.IsOccluded();
+        forEachScene([&](Scene::Scene& scene) {
+            if (occluded)
+                scene.WaitForAsyncWorkCompletion();
+            else
+                scene.renderState.WaitForJobs();
+            });
+        if (occluded)
             return;
-
 
         auto& config = Singletons::config;
 
@@ -930,9 +951,10 @@ namespace Atlas::Editor {
         sectionScope.Next("Content previews");
         Singletons::contentPreviews->Update();
 
-        // Inactive viewports can still have scene jobs that enqueue GPU work
+        // Inactive viewports can still have scene jobs that enqueue GPU work, scenes which weren't rendered drop their
+        // render lists
         sectionScope.Next("Wait for scene updates");
-        waitForSceneUpdates();
+        forEachScene([](Scene::Scene& scene) { scene.WaitForAsyncWorkCompletion(); });
         sectionScope.Next("ImGui render");
         ImGui::Render();
         Singletons::imguiWrapper->Render(true);

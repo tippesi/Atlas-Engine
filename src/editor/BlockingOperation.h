@@ -2,9 +2,9 @@
 
 #include "jobsystem/JobSystem.h"
 
+#include <functional>
 #include <string>
 #include <vector>
-#include <atomic>
 
 namespace Atlas::Editor {
 
@@ -19,17 +19,23 @@ namespace Atlas::Editor {
         }
 
         void Update() {
-            if (blockers.empty() || !job.HasFinished())
+            if (!job.HasFinished())
                 return;
 
-            block = true;
-            JobSystem::Execute(job, [blockers = std::move(blockers), &block = block](JobData&) {
+            // The frame the operation finishes in has updated nothing, so it isn't rendered either
+            block = !blockers.empty();
+            if (!block)
+                return;
+
+            JobSystem::Execute(job, [blockers = std::move(blockers)](JobData&) {
                 for (const auto& blocker : blockers)
                     blocker();
-                block = false;
                 });
             blockers.clear();
         }
+
+        // Whether an operation runs or starts with the next update
+        bool IsPending() const { return block || !blockers.empty(); }
 
         // For callers which destroy what the operations reference before the next update
         void Finish() {
@@ -37,12 +43,13 @@ namespace Atlas::Editor {
             for (const auto& blocker : blockers)
                 blocker();
             blockers.clear();
+            block = false;
         }
 
         JobGroup job { "Blocking operation" };
         std::vector<std::function<void()>> blockers;
         std::string blockText;
-        std::atomic_bool block = false;
+        bool block = false;
 
     };
 

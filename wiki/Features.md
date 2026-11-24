@@ -341,7 +341,7 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Logging**: `Log` (C++ and Lua, `Log.GetLatest(count)` reads the newest entries, `Log::printToConsole` switches
   the console output), editor `LogWindow`.
 - **Editor from Lua** (agent, MCP, windows, tabs, focus, code window text): the table `Editor` of the editor's MCP
-  `lua` tool (`App::AddEditorFunctions`): `Windows`, `Open`, `Focus`, `GetText`, `SetText`.
+  `lua` tool (`App::AddEditorFunctions`): `Windows`, `Open`, `Focus`, `GetText`, `SetText`, `Play`, `Stop`.
 - **Running engine applications** (who uses the GPU, process list, busy, wait for the GPU): bridge `InstanceRegistry`,
   the bridge and games linking the bridge library register themselves with what they do (not the editor and
   demo); bridge `status`, every scene load waits until no other application is busy (`--no-wait-gpu`, job key

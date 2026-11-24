@@ -32,7 +32,8 @@ namespace Atlas::Editor::UI {
 
         void PushEntityIntoSceneHierarchy(Scene::Entity entity, bool changeSelection = true);
 
-        void StartPlaying();
+        // Returns whether the scene starts to play, it needs a main camera
+        bool StartPlaying();
 
         void TogglePause();
 

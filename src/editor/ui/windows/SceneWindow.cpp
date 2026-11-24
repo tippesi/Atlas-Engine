@@ -65,7 +65,8 @@ namespace Atlas::Editor::UI {
 
         scene->buildMeshShapesInBackground = true;
 
-        if (!cameraEntity.IsValid()) {
+        // Playing removes the editor camera until the scene state is restored
+        if (!cameraEntity.IsValid() && !isPlaying) {
             // Scenes opened for the first time start with the view of their camera, later on the window config has the last view
             auto startLocation = vec3(0.0f);
             auto startRotation = vec2(0.0f);
@@ -869,27 +870,31 @@ namespace Atlas::Editor::UI {
         }
     }
 
-    void SceneWindow::StartPlaying() {
+    bool SceneWindow::StartPlaying() {
+
+        // Playing starts with the next update
+        if (isPlaying || Singletons::blockingOperation->IsPending())
+            return false;
+
+        bool hasMainPlayingCamera = false;
+        auto cameraSubset = scene->GetSubset<CameraComponent>();
+        for (auto entity : cameraSubset) {
+            if (entity == cameraEntity)
+                continue;
+
+            const auto& comp = cameraSubset.Get(entity);
+            hasMainPlayingCamera |= comp.isMain;
+        }
+
+        if (!hasMainPlayingCamera) {
+            Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .type = NotificationType::Warning });
+            return false;
+        }
 
         // Steps which weren't applied yet would change the scene while playing
         requestedHistorySteps = 0;
 
         Singletons::blockingOperation->Block("Preparing to play. Please wait...", [&]() {
-            bool hasMainPlayingCamera = false;
-            auto cameraSubset = scene->GetSubset<CameraComponent>();
-            for (auto entity : cameraSubset) {
-                if (entity == cameraEntity)
-                    continue;
-
-                const auto& comp = cameraSubset.Get(entity);
-                hasMainPlayingCamera |= comp.isMain;
-            }
-
-            if (!hasMainPlayingCamera) {
-                Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .type = NotificationType::Warning });
-                return;
-            }
-
             SaveSceneState();
 
             scene->physicsWorld->pauseSimulation = false;
@@ -914,6 +919,8 @@ namespace Atlas::Editor::UI {
                 Notifications::Push({ "To stop playing, press Ctrl + Q" });
             }
             });        
+
+        return true;
 
     }
 
@@ -955,8 +962,12 @@ namespace Atlas::Editor::UI {
 
         auto backupScene = Scene::Scene::Restore(sceneState);
         scene.GetResource()->Swap(backupScene);
+        // Entities selected while playing belong to the replaced scene
+        sceneHierarchyPanel.ClearSelection();
 
         cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
+        if (ECS::Entity(viewedCameraEntity) != ECS::EntityConfig::InvalidEntity)
+            viewedCameraEntity = Scene::Entity(viewedCameraEntity, &scene->entityManager);
 
         sceneState.clear();
         cameraState.clear();

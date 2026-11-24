@@ -31,7 +31,8 @@ namespace Atlas::Editor {
                 "error, the call fails with it. Project is the open project (Project.settings, Project:ApplySettings(), "
                 "Project:Save()), changes of it are applied and one undo step in the project settings, the user saves them. "
                 "Editor has the windows: Editor.Windows(), Editor.Open(path), Editor.Focus(nameOrPath), Editor.GetText(path) "
-                "and Editor.SetText(path, text) of code windows (one undo step there, saved by the user). An open material "
+                "and Editor.SetText(path, text) of code windows (one undo step there, saved by the user), Editor.Play() and Editor.Stop() "
+                "like the buttons of the active scene window (in the next frame). An open material "
                 "graph editor shows graph changes of the script with an undo step. " + Bridge::McpTools::GetLuaHelp() + "\nUse Bridge functions for bulk changes, "
                 "a loop over a million entities with SetPosition stays one cheap undo step.",
             .inputSchema = Bridge::McpTools::ObjectSchema({
