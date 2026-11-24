@@ -167,10 +167,6 @@ namespace Atlas::Editor::UI {
             ImGui::Checkbox("##Occlusion culling", &project.settings.occlusionCulling);
             ImGui::SetItemTooltip("Skips meshes hidden behind others");
             } });
-        settings.push_back({ rendering, "Screen space refraction", "translucency glass water refraction quality", [](Project& project) {
-            ImGui::Checkbox("##Screen space refraction", &project.settings.screenSpaceRefraction);
-            ImGui::SetItemTooltip("Refracting surfaces trace the background through their back faces, otherwise it's only displaced");
-            } });
         settings.push_back({ rendering, "Mesh LOD error scale", "level of detail lod quality pixel error", [](Project& project) {
             ImGui::DragFloat("##Mesh LOD error scale", &project.settings.meshLodErrorScale, 0.05f, 0.0f, 16.0f);
             ImGui::SetItemTooltip("Larger values switch meshes to coarser levels of detail earlier");

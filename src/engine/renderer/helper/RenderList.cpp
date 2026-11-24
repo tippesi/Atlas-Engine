@@ -439,8 +439,9 @@ namespace Atlas {
                         else
                             instance.reversedWindingLodCounts[lod] = 1;
                         instance.reversedWindingCount = i < defaultWindingEntityCount ? 0 : 1;
-                        auto distance = glm::distance2(meshPool.Get(entities[i]).aabb.GetCenter(), cameraLocation);
-                        translucentInstances.push_back({ meshId, instance, isSoftBody, distance });
+                        const auto& aabb = meshPool.Get(entities[i]).aabb;
+                        auto distance = glm::distance2(aabb.GetCenter(), cameraLocation);
+                        translucentInstances.push_back({ meshId, instance, isSoftBody, distance, aabb });
                     }
 
                     if (useIndices) {

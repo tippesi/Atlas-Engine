@@ -543,7 +543,6 @@ namespace Atlas::Scene {
         j["postProcessing"] = scene->postProcessing;
         j["wind"] = scene->wind;
         j["occlusionCulling"] = scene->occlusionCulling;
-        j["screenSpaceRefraction"] = scene->screenSpaceRefraction;
         j["meshLodErrorScale"] = scene->meshLodErrorScale;
         j["binaryColumns"] = scene->binaryColumns;
 
@@ -602,7 +601,6 @@ namespace Atlas::Scene {
         readSettings("postProcessing", scene->postProcessing);
         readSettings("wind", scene->wind);
         readSettings("occlusionCulling", scene->occlusionCulling);
-        readSettings("screenSpaceRefraction", scene->screenSpaceRefraction);
         readSettings("meshLodErrorScale", scene->meshLodErrorScale);
         readSettings("binaryColumns", scene->binaryColumns);
 

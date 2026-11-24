@@ -52,6 +52,7 @@ namespace Atlas {
             MeshInstances instances;
             bool softBody;
             float distance;
+            Volume::AABB aabb;
         };
 
         enum class RenderPassType {

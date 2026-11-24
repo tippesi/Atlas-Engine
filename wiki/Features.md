@@ -180,16 +180,15 @@ tool isn't listed here, or a listed file doesn't exist.
   ones (`pathtracer/rayHit.csh`). `translucent/translucent.hsh` shades them in `deferred/geometry.fsh` with `TRANSLUCENT`: light
   tiles from the near plane (`deferred/lightCulling.csh` with `FROM_NEAR_PLANE`, `deferred/directLight.hsh` shared with
   `deferred/direct.csh`),
-  DDGI, froxel fog (`volumetric/froxelSlices.hsh`) and screen space refraction: the rays are refracted where they enter, leave closed meshes through their back faces
-  (`REFRACTION_BACK_FACES`, depth and normals) and are traced through the depth of a copy of the background with mips,
-  rays which leave the screen take the image where they leave it, rays hidden by surfaces in front of the refracting one
-  see the background straight behind it, rays which pass behind a surface end on it (surfaces are taken as thick), rays
-  behind the camera see the probe, in the outer 5 % of the screen the refraction fades out. What alpha blended surfaces reflect doesn't pass them (both renderers dim the
+  DDGI, froxel fog (`volumetric/froxelSlices.hsh`) and refraction as distortion (glass, water, lens): a copy of the background
+  with mips is displaced by the normal, by the refraction and the thickness, closed one sided meshes have the one to their own
+  back faces (`REFRACTION_BACK_FACES`, depth and instance), limited to 5 % of the height of the image and faded out in the
+  outer 5 % at each edge, surfaces in front of the refracting one stay in front. The background is copied again where
+  refracting surfaces cover other translucent ones (`PlanBackgroundCopies`), so those show through them. What alpha blended surfaces reflect doesn't pass them (both renderers dim the
   background by the integrated Fresnel term). Refracting surfaces without opacity are clear
-  glass. Rough ones blur the background by the cone of the refracted rays (narrower than the reflection lobe), the
-  distance to the hit and the magnification measured in the pixel quad (`GetRefractionMipLevel`); the path tracer
-  refracts through GGX sampled microfacets. `screenSpaceRefraction` (project and scene setting, Lua, project settings window) turns
-  it off for a displacement by the normal like behind thin glass. The closest alpha
+  glass. Rough ones blur the background by the cone of the refracted rays (narrower than the reflection lobe) and the
+  distance to the background (`GetRefractionMipLevel`); the path tracer
+  refracts through GGX sampled microfacets. The closest alpha
   blended surfaces are a front layer (`FRONT_LAYER`) the reflections start on (`RTReflectionRenderer::RenderReflectionData`
   with the ocean), the ones behind use the probe. Their coverage makes them reactive for the upscalers and blends their motion into the velocity.
 

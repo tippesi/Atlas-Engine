@@ -25,15 +25,18 @@ layout(set = 3, binding = 12) uniform sampler2D cloudMap;
 // Light tiles which reach from the near plane to the opaque surfaces, with the buckets of deferred/lightCulling.hsh
 const int lightBucketCount = 128;
 
+// Has to match TranslucentRenderer::maxRefractionDisplacement
+#define REFRACTION_MAX_DISPLACEMENT 0.05
+
 layout(std430, set = 3, binding = 13) readonly buffer TranslucentLightBuckets {
     int lightBuckets[];
 };
 
 layout(set = 3, binding = 14) uniform sampler2D refractionTexture;
 layout(set = 3, binding = 15) uniform sampler2D refractionDepthTexture;
-// The closest back faces of refracting surfaces with their normals pointing out of them
+// The closest back faces of closed refracting surfaces and the instances they belong to
 layout(set = 3, binding = 20) uniform sampler2D refractionBackDepthTexture;
-layout(set = 3, binding = 21) uniform sampler2D refractionBackNormalTexture;
+layout(set = 3, binding = 21) uniform usampler2D refractionBackInstanceTexture;
 #ifdef REFLECTION
 // Traced from the closest alpha blended surface, see the front layer of the translucent renderer
 layout(set = 3, binding = 16) uniform sampler2D reflectionTexture;
@@ -150,83 +153,6 @@ vec2 ProjectToTexCoord(vec3 viewPosition) {
 
 }
 
-bool IsOnScreen(vec2 texCoord) {
-
-    return all(greaterThanEqual(texCoord, vec2(0.0))) && all(lessThanEqual(texCoord, vec2(1.0)));
-
-}
-
-// Results of TraceBackground: the ray hit the background, left the screen or the distance without a hit (the image goes on
-// there like at its edge), was lost behind the camera, or ran behind a surface in front of the refracting one, which
-// hides the background there
-const int traceHit = 0;
-const int traceLeft = 1;
-const int traceLost = 2;
-const int traceOccluded = 3;
-
-// Marches the ray through the depth of the background copy with steps growing with the distance. The texture coordinate
-// is where the ray hit or left the screen, or where it ended. Surfaces closer than the refracting one at surfaceDepth
-// (view space) are in front of it, the ray is never behind them
-int TraceBackground(vec3 origin, vec3 direction, float maxDistance, float surfaceDepth, out vec2 hitTexCoord) {
-
-    const int stepCount = 24;
-    hitTexCoord = ProjectToTexCoord(origin);
-    float lastDistance = 0.0;
-    for (int i = 1; i <= stepCount; i++) {
-        float distance = maxDistance * sqr(float(i) / float(stepCount));
-        vec3 position = origin + direction * distance;
-        if (position.z >= 0.0)
-            return traceLost;
-
-        vec2 texCoord = ProjectToTexCoord(position);
-        if (!IsOnScreen(texCoord)) {
-            // Where the ray crosses the edge of the screen, the neighbors which still hit continue there
-            float near = lastDistance, far = distance;
-            for (int j = 0; j < 5; j++) {
-                float middle = 0.5 * (near + far);
-                vec2 middleTexCoord = ProjectToTexCoord(origin + direction * middle);
-                if (IsOnScreen(middleTexCoord)) {
-                    near = middle;
-                    hitTexCoord = middleTexCoord;
-                }
-                else {
-                    far = middle;
-                }
-            }
-            return traceLeft;
-        }
-
-        float backgroundViewDepth = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, texCoord, 0.0).r);
-        if (backgroundViewDepth > surfaceDepth)
-            return traceOccluded;
-
-        hitTexCoord = texCoord;
-        if (backgroundViewDepth > position.z) {
-            // Refine between the last two steps. Surfaces are taken as thick, a ray which passes behind one ends on it, what
-            // it would hit behind isn't on the screen
-            float near = lastDistance, far = distance;
-            for (int j = 0; j < 4; j++) {
-                float middle = 0.5 * (near + far);
-                vec3 middlePosition = origin + direction * middle;
-                vec2 middleTexCoord = ProjectToTexCoord(middlePosition);
-                float middleViewDepth = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, middleTexCoord, 0.0).r);
-                if (middleViewDepth > middlePosition.z && middleViewDepth <= surfaceDepth) {
-                    far = middle;
-                    hitTexCoord = middleTexCoord;
-                }
-                else {
-                    near = middle;
-                }
-            }
-            return traceHit;
-        }
-        lastDistance = distance;
-    }
-
-    return traceLeft;
-
-}
-
 // The angle of the cone rough surfaces scatter refracted rays into. A microfacet tilted by an angle only turns the ray by
 // the fraction 1 - 1 / n of it, at both sides of the surface
 float GetRefractionSpread(float roughness, float refractiveIndex) {
@@ -235,96 +161,55 @@ float GetRefractionSpread(float roughness, float refractiveIndex) {
 
 }
 
-// The mip of the background which blurs it like the cone of the refracted rays where they hit it, far from the surface
+// The mip of the background which blurs it like the cone of the refracted rays where they reach it, far from the surface
 // the blur is larger
-float GetRefractionMipLevel(float spread, vec3 surfacePosition, vec2 hitTexCoord) {
+float GetRefractionMipLevel(float spread, vec3 surfacePosition, vec2 backgroundTexCoord) {
 
-    vec3 hitPosition = ConvertDepthToViewSpace(textureLod(refractionDepthTexture, hitTexCoord, 0.0).r, hitTexCoord);
-    float radius = spread * distance(hitPosition, surfacePosition);
-    float pixels = radius * abs(globalData.pMatrix[1][1]) * float(textureSize(refractionTexture, 0).y) / max(-hitPosition.z, 0.001);
+    vec3 position = ConvertDepthToViewSpace(textureLod(refractionDepthTexture, backgroundTexCoord, 0.0).r, backgroundTexCoord);
+    float radius = spread * distance(position, surfacePosition);
+    float pixels = radius * abs(globalData.pMatrix[1][1]) * float(textureSize(refractionTexture, 0).y) / max(-position.z, 0.001);
     return clamp(log2(max(pixels, 1.0)), 0.0, float(translucentUniforms.refractionMipLevels - 1));
 
 }
 
-// The background seen through the surface. With SCREEN_SPACE_REFRACTION the ray is refracted where it enters, leaves
-// closed surfaces through their back faces and open ones after the thickness, where it's refracted again. Otherwise the
-// background is only displaced by the normal like behind thin glass. Rough surfaces blur the background
+// How far surfaces displace the background relative to their thickness. A sphere which displaces it by half of its thickness
+// or more turns it around in its center, the strength stays well below for any refractive index
+float GetDisplacementStrength(float refractiveIndex) {
+
+    const float maxStrength = 0.35;
+    return maxStrength * tanh((refractiveIndex - 1.0) / maxStrength);
+
+}
+
+// The background seen through the surface, displaced by the normal, more with the refraction and the distance the light
+// travels inside
 vec3 GetRefractedBackground(Surface surface, vec2 texCoord, float refractiveIndex, float thickness) {
 
-    // Toward the edges of the screen the refraction fades out, the background behind the surface continues to the edge
-    refractiveIndex = mix(1.0, refractiveIndex, EdgeFadeOut(texCoord, 0.1));
-    float spread = GetRefractionSpread(surface.material.roughness, refractiveIndex);
-#ifdef SCREEN_SPACE_REFRACTION
-    vec3 incident = normalize(surface.P);
-    vec3 normal = dot(surface.N, incident) < 0.0 ? surface.N : -surface.N;
-    vec3 inside = refract(incident, normal, 1.0 / refractiveIndex);
-
-    vec3 exitPosition = surface.P + inside * thickness;
-    vec3 exitDirection = refract(inside, normal, refractiveIndex);
+    // Closed surfaces are as thick as the distance to their own back faces, the closest ones can belong to another object
     float backDepth = textureLod(refractionBackDepthTexture, texCoord, 0.0).r;
-    float backViewDepth = ConvertDepthToViewSpaceDepth(backDepth);
-    bool closed = backDepth < 1.0 && backViewDepth < surface.P.z;
-    // The path of the ray inside the surface, which absorbs the light on it
-    float insideDistance = thickness;
-    if (closed) {
-        // The distance to the back face along the refracted ray, found in a few fixed point steps
-        float distance = length(ConvertDepthToViewSpace(backDepth, texCoord) - surface.P);
-        vec2 exitTexCoord = texCoord;
-        for (int i = 0; i < 3; i++) {
-            vec2 stepTexCoord = ProjectToTexCoord(surface.P + inside * distance);
-            float stepDepth = IsOnScreen(stepTexCoord) ? textureLod(refractionBackDepthTexture, stepTexCoord, 0.0).r : 1.0;
-            if (stepDepth >= 1.0)
-                break;
-            exitTexCoord = stepTexCoord;
-            distance = length(ConvertDepthToViewSpace(stepDepth, stepTexCoord) - surface.P);
-        }
+    uint backInstance = texelFetch(refractionBackInstanceTexture, ivec2(gl_FragCoord.xy), 0).r;
+    if (backInstance == GetRefractionInstance(PushConstants.instanceOffset) && ConvertDepthToViewSpaceDepth(backDepth) < surface.P.z)
+        thickness = distance(ConvertDepthToViewSpace(backDepth, texCoord), surface.P);
 
-        vec3 backNormal = DecodeNormal(textureLod(refractionBackNormalTexture, exitTexCoord, 0.0).rg);
-        exitPosition = surface.P + inside * distance;
-        insideDistance = distance;
-        exitDirection = refract(inside, -backNormal, refractiveIndex);
-        // Total internal reflection keeps the ray inside, it's approximated by the reflected direction
-        if (dot(exitDirection, exitDirection) == 0.0)
-            exitDirection = reflect(inside, -backNormal);
-    }
+    vec3 offsetPosition = surface.P - vec3(surface.N.xy * GetDisplacementStrength(refractiveIndex) * thickness, 0.0);
+    vec2 offset = ProjectToTexCoord(offsetPosition) - texCoord;
 
-    // Open surfaces like water planes are a slab of the thickness, the background inside it is seen directly
-    vec2 backgroundTexCoord;
-    int result = closed ? traceLost : TraceBackground(surface.P, inside, thickness, surface.P.z, backgroundTexCoord);
-    if (result == traceHit) {
-        float hitDepth = textureLod(refractionDepthTexture, backgroundTexCoord, 0.0).r;
-        insideDistance = distance(ConvertDepthToViewSpace(hitDepth, backgroundTexCoord), surface.P);
-    }
-    vec3 absorption = GetAbsorption(surface.material.attenuationColor, surface.material.attenuationDistance, insideDistance);
-    if (result != traceHit && result != traceOccluded)
-        result = TraceBackground(exitPosition, exitDirection, 64.0, surface.P.z, backgroundTexCoord);
-    // Where surfaces in front of this one hide the refracted background, the one straight behind is seen
-    if (result == traceOccluded)
-        backgroundTexCoord = texCoord;
-    bool seesBackground = result != traceLost;
+    // The background stays close to the surface, the limit is relative to the height of the image. Toward the edges of the
+    // screen there is nothing to displace into, the background continues to them
+    float aspectRatio = translucentUniforms.resolution.x / translucentUniforms.resolution.y;
+    float displacement = max(length(offset * vec2(aspectRatio, 1.0)), 1e-6);
+    offset *= REFRACTION_MAX_DISPLACEMENT * tanh(displacement / REFRACTION_MAX_DISPLACEMENT) / displacement;
+    offset *= EdgeFadeOut(texCoord, 0.1);
 
-    // Lenses magnify the background and its blur by how fast the hit moves between neighboring pixels, which is measured
-    // in the pixel quad. The smaller direction ignores jumps at the outlines of what is hit
-    vec2 hitPixel = backgroundTexCoord * translucentUniforms.resolution;
-    float magnification = clamp(min(length(dFdx(hitPixel)), length(dFdy(hitPixel))), 1.0, 16.0);
-    if (seesBackground)
-        return absorption * textureLod(refractionTexture, backgroundTexCoord,
-            GetRefractionMipLevel(spread * magnification, surface.P, backgroundTexCoord)).rgb;
-
-    // Rays behind the camera see the probe, its mips are filtered for the roughness of reflections
-    vec3 worldDirection = normalize(mat3(globalData.ivMatrix) * exitDirection);
-    float probeMipLevel = sqrt(spread) * float(translucentUniforms.specularProbeMipLevels - 1);
-    return absorption * textureLod(specularProbe, worldDirection, probeMipLevel).rgb;
-#else
-    vec3 offsetPosition = surface.P - vec3(surface.N.xy * (refractiveIndex - 1.0) * thickness, 0.0);
-    // Off screen the image goes on like at its edge
-    vec2 offsetTexCoord = clamp(ProjectToTexCoord(offsetPosition), vec2(0.0), vec2(1.0));
     // Surfaces in front of this one stay in front, they would bleed into it
+    vec2 offsetTexCoord = clamp(texCoord + offset, vec2(0.0), vec2(1.0));
     float backgroundViewDepth = ConvertDepthToViewSpaceDepth(textureLod(refractionDepthTexture, offsetTexCoord, 0.0).r);
-    vec2 refractedTexCoord = backgroundViewDepth < surface.P.z ? offsetTexCoord : texCoord;
+    vec2 backgroundTexCoord = backgroundViewDepth < surface.P.z ? offsetTexCoord : texCoord;
+
+    float spread = GetRefractionSpread(surface.material.roughness, refractiveIndex);
+    float mipLevel = GetRefractionMipLevel(spread, surface.P, backgroundTexCoord);
     vec3 absorption = GetAbsorption(surface.material.attenuationColor, surface.material.attenuationDistance, thickness);
-    return absorption * textureLod(refractionTexture, refractedTexCoord, GetRefractionMipLevel(spread, surface.P, refractedTexCoord)).rgb;
-#endif
+    return absorption * textureLod(refractionTexture, backgroundTexCoord, mipLevel).rgb;
 
 }
 

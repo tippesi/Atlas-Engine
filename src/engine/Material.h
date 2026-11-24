@@ -108,8 +108,9 @@ namespace Atlas {
 
         // Translucent materials are blended in a forward pass instead of being cut out, the opacity is their coverage
         MaterialBlendMode blendMode = MaterialBlendMode::None;
-        // Alpha blended surfaces with a thickness refract the background: closed meshes leave the rays through their back
-        // faces, open ones like water planes are a slab of the thickness in meters. Zero doesn't refract
+        // Alpha blended surfaces with a thickness refract the background: closed one sided meshes are as thick as the
+        // distance to their back faces, two sided ones are slabs of the thickness in meters, it also is the one of open
+        // meshes like water planes. Zero doesn't refract
         float refractiveIndex = 1.5f;
         float thickness = 0.0f;
         // Refracting surfaces absorb light inside them like the volume of glTF materials: after the attenuation distance in

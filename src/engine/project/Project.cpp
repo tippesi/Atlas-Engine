@@ -136,7 +136,6 @@ namespace Atlas {
     void Project::ApplyTo(Scene::Scene& scene) const {
 
         scene.occlusionCulling = settings.occlusionCulling;
-        scene.screenSpaceRefraction = settings.screenSpaceRefraction;
         scene.meshLodErrorScale = settings.meshLodErrorScale;
         scene.postProcessing.upscaler = settings.upscaler;
         scene.binaryColumns = settings.binarySceneColumns;
@@ -149,7 +148,6 @@ namespace Atlas {
             return false;
 
         settings.occlusionCulling = scene.occlusionCulling;
-        settings.screenSpaceRefraction = scene.screenSpaceRefraction;
         settings.meshLodErrorScale = scene.meshLodErrorScale;
         settings.upscaler = scene.postProcessing.upscaler;
         settings.binarySceneColumns = scene.binaryColumns;

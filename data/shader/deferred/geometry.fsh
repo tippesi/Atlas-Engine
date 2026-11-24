@@ -31,8 +31,8 @@ layout (location = 4) out vec2 velocityFS;
 vec3 baseColorFS;
 vec3 emissiveFS;
 #elif defined(REFRACTION_BACK_FACES)
-// The normal pointing out of the surface where refracted rays leave it, the depth is written as well
-layout (location = 0) out vec2 backNormalFS;
+// The distance to the back faces is the thickness of closed refracting surfaces
+layout (location = 0) out uint instanceFS;
 
 vec3 baseColorFS;
 vec2 normalFS;
@@ -302,8 +302,7 @@ void main() {
 #endif
 
 #ifdef REFRACTION_BACK_FACES
-    vec3 backNormal = DecodeNormal(normalFS);
-    backNormalFS = EncodeNormal(dot(backNormal, positionVS) < 0.0 ? -backNormal : backNormal);
+    instanceFS = GetRefractionInstance(PushConstants.instanceOffset);
 #endif
 
 #ifdef TRANSLUCENT

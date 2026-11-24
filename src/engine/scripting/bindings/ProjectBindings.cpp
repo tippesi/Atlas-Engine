@@ -11,7 +11,6 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<ProjectSettings>("ProjectSettings",
             "streaming", DependentMember<&ProjectSettings::streaming>(),
             "occlusionCulling", &ProjectSettings::occlusionCulling,
-            "screenSpaceRefraction", &ProjectSettings::screenSpaceRefraction,
             "upscaler", &ProjectSettings::upscaler,
             "meshLodErrorScale", &ProjectSettings::meshLodErrorScale,
             "binarySceneColumns", &ProjectSettings::binarySceneColumns

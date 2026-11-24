@@ -11,8 +11,7 @@ namespace Atlas {
 
         // Draws the translucent sub data of the main pass one instance after another from far to near, blended in a forward
         // pass after the ocean. The closest alpha blended surfaces are written into a front layer before, the reflections
-        // start on them (see RTReflectionRenderer::RenderReflectionData). Refracting surfaces trace the background in screen
-        // space, through their back faces
+        // start on them (see RTReflectionRenderer::RenderReflectionData). Refracting surfaces displace a copy of the background
         class TranslucentRenderer : public Renderer {
 
         public:
@@ -79,6 +78,10 @@ namespace Atlas {
             PipelineConfig GetPipelineConfig(Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const Ref<RenderTarget>& target,
                 DrawPass drawPass, bool backFaces, bool softBody, bool reversedWinding, bool& usesGraph);
 
+            // Finds the instances before which the background is copied again, such that refracting surfaces show the
+            // translucent ones behind them. The closest surfaces come first, the ones further away can show an older copy
+            void PlanBackgroundCopies(const Ref<Scene::Scene>& scene, RenderList* renderList, const RenderList::Pass& pass);
+
             // Calls drawSubData(instance, subData, mesh, backFaces) for the sub data drawn by the pass, in draw order
             template<class DrawSubData>
             void ForEachDraw(RenderList* renderList, const RenderList::Pass& pass, DrawPass drawPass, const DrawSubData& drawSubData);
@@ -96,7 +99,11 @@ namespace Atlas {
             // Returns whether the refraction textures were created again, they need to be written once then
             bool ResizeRefractionTextures(const Ref<RenderTarget>& target);
 
-            void CopyBackground(Ref<RenderTarget> target, Graphics::CommandList* commandList);
+            void CopyBackground(const Ref<RenderTarget>& target, Graphics::CommandList* commandList, bool copyDepth);
+
+            // Has to match REFRACTION_MAX_DISPLACEMENT in translucent/translucent.hsh, relative to the height of the image
+            static constexpr float maxRefractionDisplacement = 0.05f;
+            static constexpr size_t maxBackgroundCopies = 4;
 
             Graphics::RenderingDesc frontLayerRendering;
             Graphics::RenderingDesc translucentRendering;
@@ -104,15 +111,18 @@ namespace Atlas {
             // The background seen through refracting surfaces with mips for the rough ones, and its depth
             Texture::Texture2D refractionTexture;
             Texture::Texture2D refractionDepthTexture;
-            // The closest back faces of refracting surfaces with their normals, where the rays leave them
+            // The closest back faces of closed refracting surfaces and the instances they belong to
             Texture::Texture2D refractionBackDepthTexture;
-            Texture::Texture2D refractionBackNormalTexture;
+            Texture::Texture2D refractionBackInstanceTexture;
             Graphics::RenderingDesc refractionBackRendering;
+
+            // Indices of the translucent instances before which the background is copied again, from near to far
+            std::vector<size_t> backgroundCopies;
+            std::vector<vec4> refractingRectangles;
 
             // Macros of the scene features the blended pass reads, set for each frame
             std::vector<std::string> sceneMacros;
             Hash sceneMacrosHash = 0;
-            bool screenSpaceRefraction = false;
 
             PipelineConfig lightCullingPipelineConfig;
             Buffer::Buffer lightCullingBuffer;

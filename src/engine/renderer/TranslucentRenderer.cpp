@@ -108,23 +108,22 @@ namespace Atlas {
             sceneMacrosHash = 0;
             for (const auto& macro : sceneMacros)
                 HashCombine(sceneMacrosHash, macro);
-            screenSpaceRefraction = renderState->screenSpaceRefraction;
 
             CullLights(target, scene, commandList);
 
-            // Only refracting surfaces read the background, and with screen space refraction their back faces. New
-            // textures are written once
+            // Only refracting surfaces read the background and their back faces. New textures are written once
             auto refracts = false;
-            ForEachDraw(renderList, *mainPass, DrawPass::RefractionBackFaces, [&](const RenderList::TranslucentInstance&,
-                Mesh::MeshSubData&, Mesh::Mesh*, bool) { refracts = true; });
+            ForEachDraw(renderList, *mainPass, DrawPass::Blended, [&](const RenderList::TranslucentInstance&,
+                Mesh::MeshSubData& subData, Mesh::Mesh*, bool) { refracts |= subData.material->Refracts(); });
             auto resized = ResizeRefractionTextures(target);
-            if (resized || refracts)
-                CopyBackground(target, commandList);
-            if (resized || (refracts && screenSpaceRefraction)) {
+            backgroundCopies.clear();
+            if (resized || refracts) {
+                CopyBackground(target, commandList, true);
+                PlanBackgroundCopies(scene, renderList, *mainPass);
+
                 GPUProfiler::Scope backFacesScope("Refraction back faces");
                 commandList->BeginRendering(refractionBackRendering);
-                if (screenSpaceRefraction)
-                    Draw(DrawPass::RefractionBackFaces, target, scene, commandList, renderList, *mainPass, materialMap);
+                Draw(DrawPass::RefractionBackFaces, target, scene, commandList, renderList, *mainPass, materialMap);
                 commandList->EndRendering();
             }
 
@@ -174,7 +173,7 @@ namespace Atlas {
             refractionTexture.Bind(commandList, 3, 14);
             refractionDepthTexture.Bind(commandList, 3, 15);
             refractionBackDepthTexture.Bind(commandList, 3, 20);
-            refractionBackNormalTexture.Bind(commandList, 3, 21);
+            refractionBackInstanceTexture.Bind(commandList, 3, 21);
             if (reflections) {
                 auto reflectionDepthTexture = target->GetReflectionData(FULL_RES)->depthTexture;
                 target->reflectionTexture.Bind(commandList, 3, 16);
@@ -227,8 +226,6 @@ namespace Atlas {
             else {
                 macros.push_back("TRANSLUCENT");
                 macros.insert(macros.end(), sceneMacros.begin(), sceneMacros.end());
-                if (screenSpaceRefraction && material->Refracts())
-                    macros.push_back("SCREEN_SPACE_REFRACTION");
                 desc.attachmentFormats = Graphics::AttachmentFormats(translucentRendering);
                 desc.depthStencilInputInfo.depthWriteEnable = VK_FALSE;
 
@@ -290,13 +287,11 @@ namespace Atlas {
                             continue;
                         if (drawPass == DrawPass::FrontLayer && material->GetBlendMode() != MaterialBlendMode::Alpha)
                             continue;
-                        if (drawPass == DrawPass::RefractionBackFaces && !material->Refracts())
+                        // Two sided refracting surfaces are thin slabs, their back faces don't end a volume
+                        if (drawPass == DrawPass::RefractionBackFaces && (!material->Refracts() || material->IsTwoSided()))
                             continue;
-                        if (drawPass == DrawPass::Blended && backFaces) {
-                            // Refracting front faces replace the background, back faces behind them would be overwritten
-                            if ((!material->IsTwoSided() && mesh->cullBackFaces) || material->Refracts())
-                                continue;
-                        }
+                        if (drawPass == DrawPass::Blended && backFaces && !material->IsTwoSided() && mesh->cullBackFaces)
+                            continue;
                         drawSubData(instance, subData, mesh, backFaces);
                     }
                 }
@@ -345,6 +340,19 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(cached->config);
                 if (!pipeline->isComplete)
                     return;
+
+                auto instanceIdx = size_t(&instance - pass.translucentInstances.data());
+                if (drawPass == DrawPass::Blended && !backgroundCopies.empty() && instanceIdx >= backgroundCopies.back()) {
+                    backgroundCopies.pop_back();
+                    commandList->EndRendering();
+                    CopyBackground(target, commandList, false);
+                    auto continuedRendering = translucentRendering;
+                    continuedRendering.colorAttachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                    commandList->BeginRendering(continuedRendering);
+                    currentPipeline = nullptr;
+                    currentMesh = nullptr;
+                }
+
                 if (pipeline.get() != currentPipeline) {
                     commandList->BindPipeline(pipeline);
                     currentPipeline = pipeline.get();
@@ -452,11 +460,11 @@ namespace Atlas {
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             refractionBackDepthTexture = Texture::Texture2D(depthImage->width, depthImage->height, VK_FORMAT_D32_SFLOAT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
-            refractionBackNormalTexture = Texture::Texture2D(depthImage->width, depthImage->height, VK_FORMAT_R16G16_SFLOAT,
+            refractionBackInstanceTexture = Texture::Texture2D(depthImage->width, depthImage->height, VK_FORMAT_R16_UINT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             refractionBackRendering = Graphics::RenderingDesc {
                 .colorAttachments = {
-                    {.image = refractionBackNormalTexture.image, .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR},
+                    {.image = refractionBackInstanceTexture.image, .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR}
                 },
                 .depthAttachment = {.image = refractionBackDepthTexture.image, .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR}
             };
@@ -464,30 +472,84 @@ namespace Atlas {
 
         }
 
-        void TranslucentRenderer::CopyBackground(Ref<RenderTarget> target, Graphics::CommandList* commandList) {
+        void TranslucentRenderer::PlanBackgroundCopies(const Ref<Scene::Scene>& scene, RenderList* renderList,
+            const RenderList::Pass& pass) {
+
+            refractingRectangles.clear();
+
+            const auto& camera = scene->renderState.camera;
+            auto viewProjectionMatrix = camera.projectionMatrix * camera.viewMatrix;
+            // Minimum and maximum on the screen, boxes around the near plane cover all of it
+            auto getRectangle = [&](const Volume::AABB& aabb) {
+                auto rectangle = vec4(vec2(std::numeric_limits<float>::max()), vec2(std::numeric_limits<float>::lowest()));
+                for (int32_t i = 0; i < 8; i++) {
+                    auto corner = glm::mix(aabb.min, aabb.max, glm::bvec3(i & 1, i & 2, i & 4));
+                    auto projected = viewProjectionMatrix * vec4(corner, 1.0f);
+                    if (projected.w < camera.nearPlane)
+                        return vec4(-1.0f, -1.0f, 1.0f, 1.0f);
+                    auto position = vec2(projected) / projected.w;
+                    rectangle = vec4(glm::min(vec2(rectangle), position), glm::max(vec2(rectangle.z, rectangle.w), position));
+                }
+                return rectangle;
+            };
+            auto overlaps = [](vec4 rectangle0, vec4 rectangle1) {
+                return rectangle0.x < rectangle1.z && rectangle1.x < rectangle0.z &&
+                    rectangle0.y < rectangle1.w && rectangle1.y < rectangle0.w;
+            };
+
+            // From near to far: an instance behind refracting ones needs a copy after it, which then serves all of them
+            auto displacement = 2.0f * maxRefractionDisplacement * vec2(1.0f / camera.aspectRatio, 1.0f);
+            for (auto i = pass.translucentInstances.size(); i-- > 0 && backgroundCopies.size() < maxBackgroundCopies;) {
+                const auto& instance = pass.translucentInstances[i];
+                auto meshIt = renderList->meshIdToMeshMap.find(instance.meshId);
+                if (meshIt == renderList->meshIdToMeshMap.end() || !meshIt->second->IsGeometryResident())
+                    continue;
+
+                auto rectangle = getRectangle(instance.aabb);
+                if (std::any_of(refractingRectangles.begin(), refractingRectangles.end(),
+                    [&](vec4 refracting) { return overlaps(rectangle, refracting); })) {
+                    backgroundCopies.push_back(i + 1);
+                    refractingRectangles.clear();
+                }
+
+                const auto& subData = meshIt->second->data.subData;
+                if (std::any_of(subData.begin(), subData.end(), [](const Mesh::MeshSubData& subData) {
+                    return subData.material.IsLoaded() && subData.material->Refracts(); })) {
+                    refractingRectangles.push_back(rectangle + vec4(-displacement, displacement));
+                }
+            }
+
+        }
+
+        void TranslucentRenderer::CopyBackground(const Ref<RenderTarget>& target, Graphics::CommandList* commandList, bool copyDepth) {
 
             GPUProfiler::Scope gpuScope("Background copy");
 
             auto lightingImage = target->lightingTexture.image;
             auto depthImage = target->GetData(FULL_RES)->depthTexture->image;
 
-            Graphics::ImageBarrier preCopyBarriers[] = {
+            std::vector<Graphics::ImageBarrier> preCopyBarriers = {
                 {lightingImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                 {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                {refractionDepthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
             };
+            if (copyDepth) {
+                preCopyBarriers.push_back({depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT});
+                preCopyBarriers.push_back({refractionDepthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT});
+            }
             commandList->PipelineBarrier(preCopyBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             commandList->CopyImage(lightingImage, refractionTexture.image);
-            commandList->CopyImage(depthImage, refractionDepthTexture.image);
+            if (copyDepth)
+                commandList->CopyImage(depthImage, refractionDepthTexture.image);
             commandList->GenerateMipMaps(refractionTexture.image);
 
-            Graphics::ImageBarrier postCopyBarriers[] = {
+            std::vector<Graphics::ImageBarrier> postCopyBarriers = {
                 {lightingImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {refractionDepthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
+            if (copyDepth) {
+                postCopyBarriers.push_back({depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+                postCopyBarriers.push_back({refractionDepthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+            }
             commandList->PipelineBarrier(postCopyBarriers, {}, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
         }

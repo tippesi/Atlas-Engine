@@ -28,16 +28,19 @@ bridge (`src/bridge/README.md`) checks them.
   temporal accumulation average to a gray partial shadow (no color); shadow rays multiply the transmittance, additive
   surfaces cast none. `Mesh::UpdatePipelines` builds the acceleration structures again when the materials let rays
   through differently (blend mode, opacity, opacity map, graph) and creates the translucent pipelines again
-  (`MeshSubData::translucentPipelines`), call it after changing those. Both the path tracer and the screen space
-  refraction of the forward pass refract closed meshes like solid glass (a glass ball inverts the image). Open meshes
-  differ: the forward pass treats them as a slab of the `thickness`, the path tracer as the surface of a medium the ray
-  stays in. The screen space refraction only sees what is on screen and in front of the back faces, nested refracting
-  surfaces only refract at the closest one. Without `screenSpaceRefraction` the back faces aren't drawn and the
-  background is only displaced by `(refractiveIndex - 1) * thickness` along the normal. Only the closest alpha blended
-  surface of a pixel gets traced reflections, the separate reflection data stays on while
-  `GPUScene::HasTranslucentMeshes()`, so the reflection history and the `REFLECTION` pipelines don't change with the
-  view. Refraction samples a copy of the background taken before the pass, refracting glass behind refracting glass
-  isn't in it.
+  (`MeshSubData::translucentPipelines`), call it after changing those. The forward pass only distorts the background
+  like other engines, so nothing outside the screen is needed (traced screen space refraction left the screen too often,
+  the misses had no good source indoors): it is displaced along the normal by the thickness and a strength which saturates
+  with the refractive index (`GetDisplacementStrength`, with `n - 1` spheres turn the image around above an index of 1.5),
+  limited on the screen. Closed one sided meshes are as thick as the distance to their own back faces, the instance in
+  `refractionBackInstanceTexture` tells whether they are. Two sided refracting surfaces are slabs of the `thickness` in both
+  renderers (`RaytraceMaterial::thickness`), open one sided ones have it in the forward pass while the path tracer takes
+  them as the surface of a medium the ray stays in. The refracting surfaces replace the background by a copy of it. An
+  instance which covers other translucent ones needs a copy with them, `PlanBackgroundCopies` places up to
+  `maxBackgroundCopies` further ones by the screen rectangles of the instances, the closest first; the surfaces of one
+  instance don't show through each other. Only the closest alpha blended surface of a pixel gets traced reflections, the
+  separate reflection data stays on while `GPUScene::HasTranslucentMeshes()`, so the reflection history and the
+  `REFLECTION` pipelines don't change with the view.
 - Ocean: `scene->ocean` is saved with the scene (`ocean` key, `ocean/OceanSerializer`); an ocean is constructed from its LoD count, size, translation (the water level is its y) and simulation resolution, the other members are patched afterwards.
 - Time: renderers and shaders animate with the scene time (`Scene::GetTime()`/`GetDeltaTime()`, `globalData.time`), which stands still while `Scene::paused` is set. `Clock` is the real application time, use it only for UI and profiling.
 - Animation level of detail: skinned meshes beyond `Mesh::animationLodDistance` update their pose every few frames (up to `animationMaxInterval`, out of view twice as rarely), skipped frames add up their delta time. `AnimationComponent::IsPoseUpdated()` tells whether the pose changed; joint attachments, the octree bounds and the ray tracing skinning only do work when it did.

@@ -1,5 +1,5 @@
 // Translucent surfaces are blended (TRANSLUCENT), write the closest one for the reflections (FRONT_LAYER) or the back
-// faces where refracted rays leave them (REFRACTION_BACK_FACES) instead of being cut out
+// faces of closed refracting ones (REFRACTION_BACK_FACES) instead of being cut out
 #if defined(TRANSLUCENT) || defined(FRONT_LAYER) || defined(REFRACTION_BACK_FACES)
 #define TRANSLUCENT_PASS
 #endif
@@ -49,6 +49,15 @@ layout(push_constant) uniform constants {
     uint materialGraphOffset;
 #endif
 } PushConstants;
+
+#ifdef TRANSLUCENT_PASS
+// Identifies the instance of a draw in all passes of a frame, each has its own offset. 0 is no instance
+uint GetRefractionInstance(uint instanceOffset) {
+
+    return instanceOffset % 65535u + 1u;
+
+}
+#endif
 
 #ifdef DRAW_DATA
 layout(std430, set = 3, binding = 10) readonly buffer GeometryDraws {
