@@ -2,6 +2,8 @@
 #include "scene/SceneSerializer.h"
 
 #include "../Widgets.h"
+#include "../../tools/AssetPlacer.h"
+#include "../../tools/ResourcePayloadHelper.h"
 
 #include "Clock.h"
 
@@ -390,7 +392,7 @@ namespace Atlas::Editor::UI {
                 *selectionChanged = true;
             }
 
-            if (auto droppedEntity = AcceptEntityDrop(scene); droppedEntity.IsValid())
+            if (auto droppedEntity = AcceptDrop(scene, row.entity); droppedEntity.IsValid())
                 MoveEntities(scene, row.entity, droppedEntity);
         }
 
@@ -404,7 +406,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    Scene::Entity SceneHierarchyPanel::AcceptEntityDrop(const Ref<Scene::Scene>& scene) {
+    Scene::Entity SceneHierarchyPanel::AcceptDrop(const Ref<Scene::Scene>& scene, Scene::Entity entity) {
 
         Scene::Entity droppedEntity;
         if (!ImGui::BeginDragDropTarget())
@@ -416,6 +418,10 @@ namespace Atlas::Editor::UI {
             auto payload = ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name());
             if (payload && static_cast<Scene::Entity*>(payload->Data)->GetScene() == scene.get())
                 droppedEntity = *static_cast<Scene::Entity*>(payload->Data);
+        }
+        else if (auto path = ResourcePayloadHelper::GetPath(); AssetPlacer::CanPlace(path) &&
+            ImGui::AcceptDragDropPayload("ContentBrowserResource")) {
+            assetDrop = { .path = path, .parent = entity };
         }
 
         ImGui::EndDragDropTarget();
@@ -549,7 +555,7 @@ namespace Atlas::Editor::UI {
             ImGui::EndDragDropSource();
         }
 
-        droppedEntity = AcceptEntityDrop(scene);
+        droppedEntity = AcceptDrop(scene, entity);
 
         if (ImGui::BeginPopupContextItem()) {
             auto getShortcut = [](const char* command) { return Singletons::commandPalette->GetShortcutText(command); };
@@ -725,22 +731,7 @@ namespace Atlas::Editor::UI {
 
     void SceneHierarchyPanel::RenderExtendedItem(const std::string& name, IconType iconType, bool* selected, bool* selectionChanged) {
 
-        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
-
-        nodeFlags |= *selected ? ImGuiTreeNodeFlags_Selected : 0;
-        ImGui::TreeNodeEx(name.c_str(), nodeFlags);
-
-        // A leaf has no arrow, the icon takes its place
-        auto iconSize = ImGui::GetFontSize();
-        auto iconPos = ImGui::GetItemRectMin();
-        iconPos.x += ImGui::GetStyle().FramePadding.x;
-        iconPos.y += ImGui::GetStyle().FramePadding.y;
-        auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->Get(iconType));
-        ImGui::GetWindowDrawList()->AddImage(set, iconPos, ImVec2(iconPos.x + iconSize, iconPos.y + iconSize),
-            ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.75f)));
-
-        if (ImGui::IsItemClicked()) {
+        if (Widgets::IconListItem(name.c_str(), Singletons::icons->Get(iconType), *selected)) {
             ClearSelection();
             *selected = true;
             *selectionChanged = true;

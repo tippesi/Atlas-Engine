@@ -93,6 +93,13 @@ namespace Atlas::Editor::UI {
         };
         CreateRequest createRequest;
 
+        // An asset of the content browser which was dropped on an entity, the scene window places it as its child
+        struct AssetDrop {
+            std::string path;
+            Scene::Entity parent;
+        };
+        AssetDrop assetDrop;
+
         // Menu items for all entity templates, returns true if one was chosen
         bool RenderCreateMenuItems(Scene::Entity parent);
 
@@ -131,8 +138,8 @@ namespace Atlas::Editor::UI {
         // Open entities whose rows were scrolled out stay visible at the top of the tree
         void RenderStickyRows(Ref<Scene::Scene>& scene, bool* selectionChanged);
 
-        // The entity dropped on the last item, invalid without a drop
-        Scene::Entity AcceptEntityDrop(const Ref<Scene::Scene>& scene);
+        // The entity dropped on the last item, the row of an entity, invalid without one. Also takes assets
+        Scene::Entity AcceptDrop(const Ref<Scene::Scene>& scene, Scene::Entity entity);
 
         // Moves the dropped entity, or the selection if it's part of it, below the parent
         void MoveEntities(Ref<Scene::Scene>& scene, Scene::Entity parent, Scene::Entity droppedEntity);

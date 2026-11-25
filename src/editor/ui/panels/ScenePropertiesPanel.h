@@ -29,7 +29,8 @@ namespace Atlas::Editor::UI {
             if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered() && !ImGui::IsWindowFocused())
                 ImGui::SetWindowFocus();
 
-            isFocused = ImGui::IsWindowFocused();
+            // Popups of combos belong to the panel
+            isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 
             // Labels are on the right side of the widgets, they get a fixed room to not be cut off in narrow panels
             ImGui::PushItemWidth(-std::min(150.0f, ImGui::GetContentRegionAvail().x * 0.5f));

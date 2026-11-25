@@ -54,8 +54,12 @@ namespace Atlas::Editor::UI {
         bool ToolbarButton(const char* id, IconType iconType, bool selected, bool enabled, const char* tooltip,
             ImVec2 uvMin = ImVec2(0.15f, 0.15f), ImVec2 uvMax = ImVec2(0.85f, 0.85f));
 
-        // The "Visualization settings" popup of the eye button: what the window shows over the image, then the visualization
-        void RenderVisualizationPopup(const std::function<void()>& renderOverlaySettings);
+        // The "Visualization settings" popup of the eye button, a table with the columns of the window first, they
+        // start with ImGui::TableNextColumn() and set their item width. Ends with EndVisualizationPopup() when it returns true
+        bool BeginVisualizationPopup(int32_t windowColumns);
+
+        // Adds the column of what the viewport shows of the renderer: the final image, the G-buffer or an effect alone
+        void EndVisualizationPopup();
 
         static constexpr float toolbarMargin = 8.0f;
         static constexpr float toolbarGroupPadding = 3.0f;
@@ -79,7 +83,8 @@ namespace Atlas::Editor::UI {
         // Drawn over the image of each frame like the primitive batches, e.g. the icons of entities
         std::vector<Renderer::Sprite> sprites;
         // Sprites behind the scene are faded instead of hidden
-        float occludedSpriteAlpha = 0.35f;
+        // Of icons and lines behind surfaces, lines are dashed there as well
+        float occludedAlpha = 0.35f;
 
         ViewportVisualization visualization = Lit;
 

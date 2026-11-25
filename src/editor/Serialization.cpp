@@ -183,13 +183,13 @@ namespace Atlas::Editor {
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "showGrid", sceneWindow->showGrid },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
-            { "depthTestBoundingVolumes", sceneWindow->overlays.depthTest },
+            { "fadeHiddenLines", sceneWindow->overlays.fadeHiddenLines },
             { "showPhysics", sceneWindow->showPhysics },
             { "depthTestPhysics", sceneWindow->depthTestPhysics },
             { "overlays", sceneWindow->overlays.shownKinds },
             { "overlayDistance", sceneWindow->overlays.distance },
             { "iconSize", sceneWindow->overlays.iconSize },
-            { "occludedIconAlpha", sceneWindow->viewportPanel.occludedSpriteAlpha },
+            { "occludedIconAlpha", sceneWindow->viewportPanel.occludedAlpha },
             { "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings },
             { "playMaximized", sceneWindow->playMaximized },
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
@@ -250,13 +250,13 @@ namespace Atlas::Editor {
         try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
         try_get_json(j, "showGrid", sceneWindow->showGrid);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
-        try_get_json(j, "depthTestBoundingVolumes", sceneWindow->overlays.depthTest);
+        try_get_json(j, "fadeHiddenLines", sceneWindow->overlays.fadeHiddenLines);
         try_get_json(j, "showPhysics", sceneWindow->showPhysics);
         try_get_json(j, "depthTestPhysics", sceneWindow->depthTestPhysics);
         try_get_json(j, "overlays", sceneWindow->overlays.shownKinds);
         try_get_json(j, "overlayDistance", sceneWindow->overlays.distance);
         try_get_json(j, "iconSize", sceneWindow->overlays.iconSize);
-        try_get_json(j, "occludedIconAlpha", sceneWindow->viewportPanel.occludedSpriteAlpha);
+        try_get_json(j, "occludedIconAlpha", sceneWindow->viewportPanel.occludedAlpha);
         try_get_json(j, "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings);
         try_get_json(j, "playMaximized", sceneWindow->playMaximized);
         try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);

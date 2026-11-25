@@ -14,8 +14,9 @@ namespace Atlas::Editor {
     class SceneHistory {
 
     public:
-        // Compares the selected entities and the scene settings with their last state once an interaction finished
-        void Update(const Ref<Scene::Scene>& scene, const std::unordered_set<ECS::Entity>& selectedEntities);
+        // Compares the selected entities and the scene settings with their last state once an interaction finished.
+        // Returns whether they changed
+        bool Update(const Ref<Scene::Scene>& scene, const std::unordered_set<ECS::Entity>& selectedEntities);
 
         // Structural changes save the hierarchies below the roots before and after the change
         void BeginChange(const Ref<Scene::Scene>& scene, const std::vector<Scene::Entity>& roots);

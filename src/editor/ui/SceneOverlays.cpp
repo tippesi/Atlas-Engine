@@ -11,9 +11,19 @@
 
 namespace Atlas::Editor::UI {
 
+    const vec3 SceneOverlays::playerColor = vec3(0.4f, 0.9f, 1.0f);
+    const vec3 SceneOverlays::cameraColor = vec3(1.0f, 0.5f, 1.0f);
+    const vec3 SceneOverlays::audioColor = vec3(0.4f, 1.0f, 0.4f);
+    const vec3 SceneOverlays::fogColor = vec3(0.6f, 0.8f, 1.0f);
+    const vec3 SceneOverlays::textColor = vec3(0.6f, 0.7f, 1.0f);
+    const vec3 SceneOverlays::bodyColor = vec3(0.0f, 1.0f, 1.0f);
+    const vec3 SceneOverlays::splineColor = vec3(1.0f, 0.55f, 0.15f);
+    const vec3 SceneOverlays::shadowColor = vec3(1.0f, 0.35f, 0.35f);
+    const vec3 SceneOverlays::irradianceColor = vec3(0.3f, 1.0f, 0.6f);
+
     void SceneOverlays::Render(const View& view) {
 
-        auto batch = view.viewportPanel.primitiveBatchWrapper.GetBatch(depthTest);
+        auto batch = view.viewportPanel.primitiveBatchWrapper.GetBatch(fadeHiddenLines);
 
         auto renderSubset = [&](auto subset, Kinds entityKinds) {
             if (!(shownKinds & entityKinds))
@@ -21,7 +31,7 @@ namespace Atlas::Editor::UI {
             for (auto ecsEntity : subset) {
                 Scene::Entity entity(ecsEntity, &view.scene.entityManager);
                 if (IsInRange(view, entity, GetPosition(view.scene, entity)))
-                    RenderEntity(view.scene, *batch, entity, entityKinds, false);
+                    RenderEntity(view.scene, *batch, entity, entityKinds, false, view.location);
             }
         };
 
@@ -36,7 +46,7 @@ namespace Atlas::Editor::UI {
         const auto& volume = view.scene.irradianceVolume;
         if ((shownKinds & IrradianceVolumeBit) && volume && volume->enable) {
             for (int32_t i = 0; i < volume->cascadeCount; i++)
-                batch->AddLineAABB(volume->cascades[i].aabb, vec3(0.3f, 1.0f, 0.6f) * (1.0f - 0.25f * float(i)));
+                batch->AddLineAABB(volume->cascades[i].aabb, irradianceColor * (1.0f - 0.25f * float(i)));
         }
 
         icons.clear();
@@ -50,15 +60,32 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneOverlays::RenderSelected(Scene::Scene& scene, ViewportPanel& viewportPanel, Scene::Entity entity) {
+    void SceneOverlays::RenderSelection(Scene::Scene& scene, ViewportPanel& viewportPanel, vec3 viewLocation,
+        const std::unordered_set<ECS::Entity>& selection) {
 
-        if (entity.IsValid())
-            RenderEntity(scene, *viewportPanel.primitiveBatchWrapper.GetBatch(depthTest), entity, ~0u, true);
+        auto batch = viewportPanel.primitiveBatchWrapper.GetBatch(fadeHiddenLines);
+
+        std::vector<Physics::BodyID> bodyIds;
+        for (auto ecsEntity : selection) {
+            Scene::Entity entity(ecsEntity, &scene.entityManager);
+            if (!entity.IsValid())
+                continue;
+
+            RenderEntity(scene, *batch, entity, ~0u, true, viewLocation);
+            if (auto rigidBody = entity.TryGetComponent<RigidBodyComponent>())
+                bodyIds.push_back(rigidBody->bodyId);
+            if (auto player = entity.TryGetComponent<PlayerComponent>())
+                bodyIds.push_back(player->GetBodyID());
+        }
+
+        // Triggers and other colliders have nothing else to see
+        if (scene.physicsWorld && !bodyIds.empty())
+            scene.physicsWorld->DebugDrawBodies(batch.get(), bodyIds, viewLocation, distance);
 
     }
 
     void SceneOverlays::RenderEntity(Scene::Scene& scene, Renderer::PrimitiveBatch& batch, Scene::Entity entity,
-        Kinds entityKinds, bool selected) const {
+        Kinds entityKinds, bool selected, vec3 viewLocation) const {
 
         // Ranges of entities which aren't selected stay in the background, only their circle on the ground is drawn
         auto brightness = selected ? 1.0f : 0.55f;
@@ -71,7 +98,8 @@ namespace Atlas::Editor::UI {
 
         if (selected && entity.HasComponent<MeshComponent>()) {
             const auto& meshComponent = entity.GetComponent<MeshComponent>();
-            batch.AddLineAABB(meshComponent.aabb, vec3(1.0f, 1.0f, 0.0f));
+            auto accent = Theme::Accent();
+            batch.AddLineAABB(meshComponent.aabb, vec3(accent.x, accent.y, accent.z));
         }
         if ((entityKinds & AudioRangesBit) && entity.HasComponent<AudioComponent>()) {
             const auto& audioComponent = entity.GetComponent<AudioComponent>();
@@ -79,22 +107,22 @@ namespace Atlas::Editor::UI {
 
             // After this the audio will be cutoff
             float radius = powf(audioComponent.falloffFactor / audioComponent.cutoff, 1.0f / audioComponent.falloffPower);
-            addRange(position, radius, vec3(0.0f, 1.0f, 0.0f) * brightness);
+            addRange(position, radius, audioColor * brightness);
         }
         if ((entityKinds & AudioRangesBit) && entity.HasComponent<AudioVolumeComponent>()) {
             const auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
-            batch.AddLineAABB(audioVolumeComponent.GetTransformedAABB(), vec3(0.0f, 1.0f, 0.0f) * brightness);
+            batch.AddLineAABB(audioVolumeComponent.GetTransformedAABB(), audioColor * brightness);
         }
         if ((entityKinds & FogVolumesBit) && entity.HasComponent<FogVolumeComponent>()) {
             auto aabb = Volume::AABB(vec3(-1.0f), vec3(1.0f)).Transform(scene.GetGlobalMatrix(entity));
-            batch.AddLineAABB(aabb, vec3(0.6f, 0.8f, 1.0f) * brightness);
+            batch.AddLineAABB(aabb, fogColor * brightness);
         }
         if ((entityKinds & CameraFrustumsBit) && entity.HasComponent<CameraComponent>()) {
             const auto& cameraComponent = entity.GetComponent<CameraComponent>();
             // The far plane of other cameras would cross the whole view, their direction and field of view are enough
             auto frustum = selected ? cameraComponent.frustum : Volume::Frustum(cameraComponent.GetFrustumCorners(
                 cameraComponent.nearPlane, std::min(cameraComponent.farPlane, cameraComponent.nearPlane + 2.0f)));
-            batch.AddLineFrustum(frustum, vec3(1.0f, 0.0f, 1.0f) * brightness);
+            batch.AddLineFrustum(frustum, cameraColor * brightness);
         }
         if (entity.HasComponent<LightComponent>()) {
             const auto& lightComponent = entity.GetComponent<LightComponent>();
@@ -110,21 +138,23 @@ namespace Atlas::Editor::UI {
                         properties.spot.outerConeAngle, lightColor);
                     batch.AddLineCone(properties.spot.position, properties.spot.direction, properties.spot.radius,
                         properties.spot.innerConeAngle, lightColor * 0.6f);
+                    batch.AddLineArrow(properties.spot.position, properties.spot.position + properties.spot.direction *
+                        std::min(properties.spot.radius, 1.0f), lightColor);
                 }
                 else {
                     auto position = vec3(scene.GetGlobalMatrix(entity)[3]);
-                    batch.AddLine(position, position + properties.directional.direction * 3.0f, lightColor, lightColor);
+                    batch.AddLineArrow(position, position + properties.directional.direction * 3.0f, lightColor);
                 }
             }
 
             if (selected && lightComponent.shadow) {
                 for (const auto& component : lightComponent.shadow->views)
-                    batch.AddLineFrustum(Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f));
+                    batch.AddLineFrustum(Volume::Frustum(component.frustumMatrix), shadowColor);
             }
         }
         if ((entityKinds & TextRectanglesBit) && entity.HasComponent<TextComponent>()) {
             const auto& textComponent = entity.GetComponent<TextComponent>();
-            batch.AddLineRectangle(textComponent.GetRectangle(), vec3(0.0f, 0.0f, 1.0f));
+            batch.AddLineRectangle(textComponent.GetRectangle(), textColor * brightness);
         }
         if ((entityKinds & SplinesBit) && entity.HasComponent<SplineComponent>()) {
             const auto& splineComponent = entity.GetComponent<SplineComponent>();
@@ -134,8 +164,12 @@ namespace Atlas::Editor::UI {
             SplinePoint lastSplinePoint = splineComponent.GetInterpolatedFromIndex(0, 0.0f);
             lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));
 
+            // Control points are about 1 % of the view distance large
+            auto addPoint = [&](vec3 position) {
+                batch.AddLineSphere(position, 0.006f * glm::distance(position, viewLocation), splineColor);
+            };
             if (!splineComponent.controlPoints.empty())
-                batch.AddLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f));
+                addPoint(lastSplinePoint.position);
 
             const int32_t linesPerSegment = 20;
             for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()) - 1; i++) {
@@ -144,13 +178,12 @@ namespace Atlas::Editor::UI {
                     auto splinePoint = splineComponent.GetInterpolatedFromIndex(i, t);
                     splinePoint.position = vec3(globalMatrix * vec4(splinePoint.position, 1.0f));
 
-                    batch.AddLine(lastSplinePoint.position, splinePoint.position,
-                        vec3(1.0f, 0.15f, 0.0f), vec3(1.0f, 0.15f, 0.0f));
+                    batch.AddLine(lastSplinePoint.position, splinePoint.position, splineColor, splineColor);
 
                     lastSplinePoint = splinePoint;
                 }
 
-                batch.AddLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f));
+                addPoint(lastSplinePoint.position);
             }
         }
 
@@ -304,17 +337,17 @@ namespace Atlas::Editor::UI {
         }
         // Players often carry their camera
         if (entity.HasComponent<PlayerComponent>())
-            return { IconType::Player, vec3(0.4f, 0.9f, 1.0f) };
+            return { IconType::Player, playerColor };
         if (entity.HasComponent<CameraComponent>())
-            return { IconType::Camera, vec3(1.0f, 0.5f, 1.0f) };
+            return { IconType::Camera, cameraColor };
         if (entity.HasComponent<AudioComponent>() || entity.HasComponent<AudioVolumeComponent>())
-            return { IconType::Audio, vec3(0.4f, 1.0f, 0.4f) };
+            return { IconType::Audio, audioColor };
         if (entity.HasComponent<FogVolumeComponent>())
-            return { IconType::Fog, vec3(0.6f, 0.8f, 1.0f) };
+            return { IconType::Fog, fogColor };
         if (entity.HasComponent<TextComponent>())
-            return { IconType::Font, vec3(0.6f, 0.7f, 1.0f) };
+            return { IconType::Font, textColor };
         if (entity.HasComponent<RigidBodyComponent>())
-            return { IconType::Trigger, vec3(0.0f, 1.0f, 1.0f) };
+            return { IconType::Trigger, bodyColor };
         return { IconType::Document, vec3(0.9f) };
 
     }
@@ -369,9 +402,11 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneOverlays::RenderKindSettings() {
+    void SceneOverlays::RenderKindSettings(Group group) {
 
         for (const auto& kind : kinds) {
+            if (kind.group != group)
+                continue;
             ImGui::CheckboxFlags(kind.label, &shownKinds, kind.bit);
             if (kind.tooltip)
                 ImGui::SetItemTooltip("%s", kind.tooltip);
@@ -381,14 +416,15 @@ namespace Atlas::Editor::UI {
 
     void SceneOverlays::RenderSettings(ViewportPanel& viewportPanel) {
 
-        ImGui::Checkbox("Depth test bounding volumes", &depthTest);
-        ImGui::DragFloat("Overlay distance", &distance, 1.0f, 1.0f, 10000.0f, "%.0f m");
-        ImGui::SetItemTooltip("Selected entities show their overlays at any distance");
+        ImGui::Checkbox("Fade lines behind surfaces", &fadeHiddenLines);
+        ImGui::SetItemTooltip("Dashed and faded, otherwise they are drawn over everything");
+        ImGui::DragFloat("Distance", &distance, 1.0f, 1.0f, 10000.0f, "%.0f m");
+        ImGui::SetItemTooltip("Of the overlays, selected entities show theirs at any distance");
         ImGui::BeginDisabled(!(shownKinds & EntityIconsBit));
         ImGui::DragFloat("Icon size", &iconSize, 0.5f, 8.0f, 128.0f, "%.0f px");
-        ImGui::SliderFloat("Hidden icon opacity", &viewportPanel.occludedSpriteAlpha, 0.0f, 1.0f);
-        ImGui::SetItemTooltip("Icons behind surfaces, e.g. lights inside lamps, are faded");
         ImGui::EndDisabled();
+        ImGui::SliderFloat("Opacity behind surfaces", &viewportPanel.occludedAlpha, 0.0f, 1.0f);
+        ImGui::SetItemTooltip("Of icons and lines behind surfaces, e.g. lights inside lamps");
 
     }
 

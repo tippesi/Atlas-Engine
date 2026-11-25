@@ -262,14 +262,14 @@ namespace Atlas::Editor::UI {
         auto& context = *ImGui::GetCurrentContext();
         auto propertiesWindow = ImGui::FindWindowByName(scenePropertiesPanel.GetNameID());
         bool propertiesEdited = context.ActiveIdHasBeenEditedThisFrame && context.ActiveIdWindow &&
-            context.ActiveIdWindow->RootWindow == propertiesWindow;
+            context.ActiveIdWindow->RootWindowPopupTree == propertiesWindow;
         if (!isPlaying && (propertiesEdited || sceneHierarchyPanel.sceneChanged))
             hasUnsavedChanges = true;
         sceneHierarchyPanel.sceneChanged = false;
 
         // Only the window the user works in has edits, an interaction which moved the focus away still has to finish
         if (!isPlaying && scene.IsLoaded() && (inFocus || history.history.IsInteracting()))
-            history.Update(scene.Get(), sceneHierarchyPanel.selectedEntities);
+            hasUnsavedChanges |= history.Update(scene.Get(), sceneHierarchyPanel.selectedEntities);
         if (scene.IsLoaded())
             scenePropertiesPanel.navigationPanel.Update(scene->navigation);
         sectionScope.Next("Overlays");
@@ -285,14 +285,17 @@ namespace Atlas::Editor::UI {
             CreateEntityFromTemplate(request.type, request.parent);
         }
 
+        if (!isPlaying && scene.IsLoaded() && cameraEntity.IsValid())
+            PlaceDroppedAssets();
+
         if (scene.IsLoaded() && !isPlaying && cameraEntity.IsValid())
             overlays.Render({ *scene.Get(), viewportPanel, cameraEntity.GetComponent<CameraComponent>(), cameraEntity,
                 GetViewLocation(), sceneHierarchyPanel.selectedEntities });
         else
             overlays.ClearIcons();
 
-        for (auto entity : sceneHierarchyPanel.selectedEntities)
-            overlays.RenderSelected(*scene.Get(), viewportPanel, Scene::Entity(entity, &scene->entityManager));
+        if (scene.IsLoaded())
+            overlays.RenderSelection(*scene.Get(), viewportPanel, GetViewLocation(), sceneHierarchyPanel.selectedEntities);
 
         if (scene.IsLoaded() && sceneHierarchyPanel.selectedEntity.IsValid())
             scenePropertiesPanel.entityPropertiesPanel.softBodyComponentPanel.RenderOverlay(scene.Get(),
@@ -324,19 +327,7 @@ namespace Atlas::Editor::UI {
             scene->paused ? Theme::Warning() : Theme::Success();
         viewportPanel.Render(refScene);
 
-        auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
-        if (!path.empty()) {
-            history.BeginChange(scene.Get(), {});
-            auto entity = Serializer::DeserializePrefab(scene.Get(), path);
-            PushEntityIntoSceneHierarchy(entity);
-            history.EndChange("Add " + Common::Path::GetFileNameWithoutExtension(path), { entity });
-            hasUnsavedChanges = true;
-        }
-
         End();
-
-        
-        
 
         lockSelection = false;
 
@@ -450,19 +441,6 @@ namespace Atlas::Editor::UI {
 
             ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
 
-            ImGui::SeparatorText("Levels of detail");
-            auto getLodLabel = [](int32_t lod) { return lod < 0 ? std::string("Automatic") : "LOD " + std::to_string(lod); };
-            if (ImGui::BeginCombo("Shown level##Mesh LODs", getLodLabel(scene->forcedMeshLod).c_str())) {
-                for (int32_t lod = -1; lod < Mesh::MeshData::maxLodCount; lod++) {
-                    if (ImGui::Selectable(getLodLabel(lod).c_str(), lod == scene->forcedMeshLod))
-                        scene->forcedMeshLod = lod;
-                }
-                ImGui::EndCombo();
-            }
-            ImGui::SetItemTooltip("Shows all meshes in this level or their coarsest one");
-            ImGui::Checkbox("Color by level##Mesh LODs", &scene->debugMeshLods);
-            ImGui::SetItemTooltip("White, green, blue, yellow and red from the full detail on");
-
             ImGui::SeparatorText("Path tracer samples");
             // ImGui::Checkbox("Realtime", &viewportPanel.mainRenderer->pathTracingRenderer.realTime);
             ImGui::DragInt("Sample count", &viewportPanel.mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
@@ -485,30 +463,68 @@ namespace Atlas::Editor::UI {
         if (viewportPanel.renderTarget->GetScalingFactor() != resolutionScale)
             viewportPanel.renderTarget->SetScalingFactor(resolutionScale);
 
-        viewportPanel.RenderVisualizationPopup([&]() {
+        if (viewportPanel.BeginVisualizationPopup(2)) {
+            // Drag fields would take a share of the column width, which is measured from them
+            auto itemWidth = ImGui::GetFontSize() * 7.0f;
+
+            ImGui::TableNextColumn();
+            ImGui::PushItemWidth(itemWidth);
+            ImGui::SeparatorText("Scene");
             ImGui::Checkbox(Singletons::commandPalette->GetTooltip("Grid", "Viewport: Toggle grid").c_str(), &showGrid);
-            overlays.RenderKindSettings();
+            overlays.RenderKindSettings(SceneOverlays::Group::Scene);
             ImGui::Checkbox("Navigation mesh", &scenePropertiesPanel.navigationPanel.showMesh);
-            ImGui::Checkbox("Physics", &showPhysics);
+
+            ImGui::SeparatorText("Entities");
+            overlays.RenderKindSettings(SceneOverlays::Group::Entities);
+
+            ImGui::SeparatorText("Lighting");
+            overlays.RenderKindSettings(SceneOverlays::Group::Lighting);
+            if (scene->irradianceVolume) {
+                ImGui::Checkbox("Irradiance probes", &scene->irradianceVolume->debug);
+                ImGui::SetItemTooltip("The probes of the DDGI volume with the light they caught");
+            }
+
+            ImGui::SeparatorText("Overlays");
+            overlays.RenderSettings(viewportPanel);
+            ImGui::PopItemWidth();
+
+            ImGui::TableNextColumn();
+            ImGui::PushItemWidth(itemWidth);
+            ImGui::SeparatorText("Geometry");
+            auto getLodLabel = [](int32_t lod) { return lod < 0 ? std::string("Automatic") : "LOD " + std::to_string(lod); };
+            if (ImGui::BeginCombo("Mesh LOD", getLodLabel(scene->forcedMeshLod).c_str())) {
+                for (int32_t lod = -1; lod < Mesh::MeshData::maxLodCount; lod++) {
+                    if (ImGui::Selectable(getLodLabel(lod).c_str(), lod == scene->forcedMeshLod))
+                        scene->forcedMeshLod = lod;
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::SetItemTooltip("Shows all meshes in this level or their coarsest one");
+            ImGui::Checkbox("Color meshes by LOD", &scene->debugMeshLods);
+            ImGui::SetItemTooltip("White, green, blue, yellow and red from the full detail on");
+            if (scene->terrain.IsLoaded())
+                ImGui::Checkbox("Terrain wireframe", &scene->terrain->wireframe);
+            if (scene->ocean)
+                ImGui::Checkbox("Ocean wireframe", &scene->ocean->wireframe);
+
+            ImGui::SeparatorText("Physics");
+            ImGui::Checkbox(Singletons::commandPalette->GetTooltip("Bodies", "Viewport: Toggle physics").c_str(), &showPhysics);
             ImGui::SetItemTooltip("Static bodies are gray, dynamic green (dark when sleeping), kinematic orange, "
                 "triggers cyan, fluids blue, contacts red and constraints magenta");
+            ImGui::BeginDisabled(!showPhysics);
+            auto& settings = physicsDebugDrawSettings;
+            ImGui::Checkbox("Shapes", &settings.drawShapes);
+            ImGui::Checkbox("Bounds", &settings.drawBounds);
+            ImGui::Checkbox("Static bodies", &settings.drawStaticBodies);
+            ImGui::Checkbox("Contacts", &settings.drawContacts);
+            ImGui::Checkbox("Constraints", &settings.drawConstraints);
+            ImGui::Checkbox("Fade behind surfaces##Physics", &depthTestPhysics);
+            ImGui::DragFloat("Distance##Physics", &settings.distance, 1.0f, 1.0f, 10000.0f, "%.0f m");
+            ImGui::EndDisabled();
+            ImGui::PopItemWidth();
 
-            if (ImGui::TreeNode("Overlay settings")) {
-                overlays.RenderSettings(viewportPanel);
-                ImGui::TreePop();
-            }
-            if (showPhysics && ImGui::TreeNode("Physics settings")) {
-                auto& settings = physicsDebugDrawSettings;
-                ImGui::Checkbox("Depth test physics", &depthTestPhysics);
-                ImGui::Checkbox("Shapes", &settings.drawShapes);
-                ImGui::Checkbox("Bounds", &settings.drawBounds);
-                ImGui::Checkbox("Static bodies", &settings.drawStaticBodies);
-                ImGui::Checkbox("Contacts", &settings.drawContacts);
-                ImGui::Checkbox("Constraints", &settings.drawConstraints);
-                ImGui::DragFloat("Distance", &settings.distance, 1.0f, 1.0f, 10000.0f);
-                ImGui::TreePop();
-            }
-            });
+            viewportPanel.EndVisualizationPopup();
+        }
 
         // Short hint after the camera speed was changed with the mouse wheel
         auto timeSinceSpeedChange = Clock::Get() - cameraSpeedChangeTime;
@@ -644,6 +660,9 @@ namespace Atlas::Editor::UI {
             cameraMovementSpeed = std::clamp(cameraMovementSpeed * std::pow(1.25f, wheelIO.MouseWheel), 0.1f, 500.0f);
             cameraSpeedChangeTime = Clock::Get();
         }
+
+        if (!isPlaying && cameraEntity.IsValid())
+            AcceptAssetDrop();
 
         guizmo.needEnabled = false;
         auto selectedEntity = sceneHierarchyPanel.selectedEntity;
@@ -1182,6 +1201,58 @@ namespace Atlas::Editor::UI {
         sceneHierarchyPanel.SelectEntity(entity);
 
         return entity;
+
+    }
+
+    void SceneWindow::AcceptAssetDrop() {
+
+        const auto& viewport = viewportPanel.viewport;
+        ImRect area(float(viewport->x), float(viewport->y), float(viewport->x + viewport->width), float(viewport->y + viewport->height));
+        if (!ImGui::IsDragDropActive())
+            assetPlacer.EndPreview();
+        if (!ImGui::BeginDragDropTargetCustom(area, ImGui::GetID("Asset drop target")))
+            return;
+
+        auto path = ResourcePayloadHelper::GetPath();
+        if (AssetPlacer::CanPlace(path)) {
+            auto payload = ImGui::AcceptDragDropPayload("ContentBrowserResource",
+                ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+            auto mousePosition = ImGui::GetMousePos();
+            Volume::Ray ray(viewport, cameraEntity.GetComponent<CameraComponent>(), vec2(mousePosition.x, mousePosition.y));
+            auto surface = AssetPlacer::FindSurface(*scene.Get(), ray, guizmo.alignToSurface);
+
+            if (payload && payload->IsDelivery())
+                assetPlacer.Place(path, surface, Scene::Entity());
+            else if (payload)
+                assetPlacer.RenderPreview(*viewportPanel.primitiveBatchWrapper.GetBatch(false), path, surface);
+        }
+
+        ImGui::EndDragDropTarget();
+
+    }
+
+    void SceneWindow::PlaceDroppedAssets() {
+
+        // Assets dropped on an entity of the hierarchy are placed in the center of the view
+        auto& drop = sceneHierarchyPanel.assetDrop;
+        if (!drop.path.empty()) {
+            const auto& camera = cameraEntity.GetComponent<CameraComponent>();
+            auto surface = AssetPlacer::FindSurface(*scene.Get(), Volume::Ray(camera.location, camera.direction), guizmo.alignToSurface);
+            assetPlacer.Place(drop.path, surface, drop.parent);
+            drop = {};
+        }
+
+        while (auto name = assetPlacer.GetNextName()) {
+            history.BeginChange(scene.Get(), {});
+            auto entity = assetPlacer.CreateNext(scene.Get());
+            if (!entity.IsValid()) {
+                history.EndChange("Add " + *name, {});
+                continue;
+            }
+            history.EndChange("Add " + *name, { entity });
+            sceneHierarchyPanel.SelectEntity(entity);
+            hasUnsavedChanges = true;
+        }
 
     }
 

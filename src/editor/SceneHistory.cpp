@@ -11,11 +11,12 @@ namespace Atlas::Editor {
 
     using namespace Scene::Components;
 
-    void SceneHistory::Update(const Ref<Scene::Scene>& scene, const std::unordered_set<ECS::Entity>& selectedEntities) {
+    bool SceneHistory::Update(const Ref<Scene::Scene>& scene, const std::unordered_set<ECS::Entity>& selectedEntities) {
 
         this->scene = scene;
 
         auto interactionFinished = history.IsInteractionFinished();
+        auto settingsChanged = false;
 
         if (interactionFinished && !settingsState.is_null()) {
             auto settings = SaveSettings();
@@ -27,6 +28,7 @@ namespace Atlas::Editor {
                     .redo = [this, settings]() { RestoreSettings(settings); }
                 });
                 settingsState = settings;
+                settingsChanged = true;
             }
         }
 
@@ -58,13 +60,14 @@ namespace Atlas::Editor {
         }
 
         if (changes.empty())
-            return;
+            return settingsChanged;
 
         auto nameComponent = changes.size() == 1 ? Scene::Entity(changes.front().entity, &scene->entityManager)
             .TryGetComponent<NameComponent>() : nullptr;
         auto name = changes.size() > 1 ? "Edit " + std::to_string(changes.size()) + " entities" :
             nameComponent ? "Edit " + nameComponent->name : std::string("Edit entity");
         PushEntityChanges(name, changes);
+        return true;
 
     }
 

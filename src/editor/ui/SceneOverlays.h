@@ -27,22 +27,30 @@ namespace Atlas::Editor::UI {
             TextRectanglesBit = (1 << 7)
         } KindBits;
 
+        // Sections of the viewport menu
+        enum class Group {
+            Scene,
+            Entities,
+            Lighting
+        };
+
         struct Kind {
             KindBits bit;
+            Group group;
             const char* label;
             const char* tooltip;
         };
 
         // In the order of the viewport menu and the commands
         static constexpr Kind kinds[] = {
-            { EntityIconsBit, "Entity icons", "Lights, cameras, players, audio, fog volumes, texts and bodies or scripts without a mesh, a right click selects them" },
-            { LightRangesBit, "Light ranges", "Point light ranges, spot light cones and directions of directional lights, in the color of the light" },
-            { CameraFrustumsBit, "Camera frustums", nullptr },
-            { AudioRangesBit, "Audio ranges and volumes", "Where audio sources are cut off and the bounds of audio volumes" },
-            { FogVolumesBit, "Fog volumes", nullptr },
-            { IrradianceVolumeBit, "Irradiance volume", "The cascades of the DDGI volume" },
-            { SplinesBit, "Splines", nullptr },
-            { TextRectanglesBit, "Text rectangles", nullptr },
+            { EntityIconsBit, Group::Scene, "Entity icons", "Lights, cameras, players, audio, fog volumes, texts and bodies or scripts without a mesh, a right click selects them" },
+            { LightRangesBit, Group::Lighting, "Light ranges", "Point light ranges, spot light cones and directions of directional lights, in the color of the light" },
+            { CameraFrustumsBit, Group::Entities, "Camera frustums", nullptr },
+            { AudioRangesBit, Group::Entities, "Audio ranges and volumes", "Where audio sources are cut off and the bounds of audio volumes" },
+            { FogVolumesBit, Group::Entities, "Fog volumes", nullptr },
+            { IrradianceVolumeBit, Group::Lighting, "Irradiance volume", "The cascades of the DDGI volume" },
+            { SplinesBit, Group::Entities, "Splines", nullptr },
+            { TextRectanglesBit, Group::Entities, "Text rectangles", nullptr },
         };
 
         struct View {
@@ -59,8 +67,9 @@ namespace Atlas::Editor::UI {
         // The shown kinds of the entities around the camera
         void Render(const View& view);
 
-        // All shapes of a selected entity with its bounds and shadow frustums
-        void RenderSelected(Scene::Scene& scene, ViewportPanel& viewportPanel, Scene::Entity entity);
+        // All shapes of the selected entities, also of their bodies, with their bounds and shadow frustums
+        void RenderSelection(Scene::Scene& scene, ViewportPanel& viewportPanel, vec3 viewLocation,
+            const std::unordered_set<ECS::Entity>& selection);
 
         // The icon under the mouse is highlighted, without one it's none. Draws the name of its entity and the number
         // of the icons merged into others
@@ -72,8 +81,8 @@ namespace Atlas::Editor::UI {
         // Nothing is shown, e.g. while playing
         void ClearIcons() { icons.clear(); hoveredEntity = ECS::EntityConfig::InvalidEntity; }
 
-        // Checkboxes of the kinds
-        void RenderKindSettings();
+        // Checkboxes of the kinds in a group
+        void RenderKindSettings(Group group);
 
         void RenderSettings(ViewportPanel& viewportPanel);
 
@@ -81,7 +90,8 @@ namespace Atlas::Editor::UI {
         float distance = 150.0f;
         // In interface pixels, icons further away get smaller
         float iconSize = 40.0f;
-        bool depthTest = false;
+        // Otherwise lines are drawn over everything
+        bool fadeHiddenLines = true;
 
     private:
         struct Icon {
@@ -96,7 +106,9 @@ namespace Atlas::Editor::UI {
             int32_t hiddenCount = 0;
         };
 
-        void RenderEntity(Scene::Scene& scene, Renderer::PrimitiveBatch& batch, Scene::Entity entity, Kinds entityKinds, bool selected) const;
+        // Markers like the points of splines keep their size on the screen, measured from the view location
+        void RenderEntity(Scene::Scene& scene, Renderer::PrimitiveBatch& batch, Scene::Entity entity, Kinds entityKinds,
+            bool selected, vec3 viewLocation) const;
 
         // Where the icon of an entity is, ranges are measured to it as well
         static vec3 GetPosition(Scene::Scene& scene, Scene::Entity entity);
@@ -119,6 +131,10 @@ namespace Atlas::Editor::UI {
 
         // Ranges and icons of lights show their color
         static vec3 GetLightColor(const LightComponent& light);
+
+        // Of the icons and the lines of a kind
+        static const vec3 playerColor, cameraColor, audioColor, fogColor, textColor, bodyColor, splineColor,
+            shadowColor, irradianceColor;
 
         // The ones of the last frame, sorted from back to front
         std::vector<Icon> icons;

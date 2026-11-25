@@ -93,7 +93,8 @@ namespace Atlas::Editor::UI {
         if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered() && !ImGui::IsWindowFocused())
             ImGui::SetWindowFocus();
 
-        propertiesPanel.isFocused = ImGui::IsWindowFocused();
+        // Popups of combos belong to the panel
+        propertiesPanel.isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 
         RenderProperties();
 
@@ -297,10 +298,13 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            viewportPanel.RenderVisualizationPopup([&]() {
+            if (viewportPanel.BeginVisualizationPopup(1)) {
+                ImGui::TableNextColumn();
+                ImGui::SeparatorText("Show");
                 ImGui::Checkbox(Singletons::commandPalette->GetTooltip("Grid", "Asset editor: Toggle grid").c_str(), &showGrid);
                 ImGui::Checkbox("Bounds", &showBounds);
-                });
+                viewportPanel.EndVisualizationPopup();
+            }
 
             // Don't leave the cursor on the toolbar line
             ImGui::NewLine();

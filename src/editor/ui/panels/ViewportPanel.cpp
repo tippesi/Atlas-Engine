@@ -140,19 +140,12 @@ namespace Atlas::Editor::UI {
                 renderTarget->Resize(viewportTexture.width, viewportTexture.height);
             }
 
-            Ref<Renderer::PrimitiveBatch> primitiveBatches[] = {
-                primitiveBatchWrapper.primitiveBatchDepthTest,
-                primitiveBatchWrapper.primitiveBatchNoDepthTest
-            };
-
             // Scenes without ray tracing data (yet) are rasterized
             if (config->pathTrace && allowPathTracing && scene->IsRtDataValid()) {
-                // Overlays like the grid, bounding volumes and brushes are visible when path tracing as well
-                mainRenderer->PathTraceScene(renderViewport, renderTarget, scene, &viewportTexture, primitiveBatches);
+                mainRenderer->PathTraceScene(renderViewport, renderTarget, scene, &viewportTexture);
             }
             else {
-                mainRenderer->RenderScene(renderViewport, renderTarget, scene,
-                    primitiveBatches, &viewportTexture);
+                mainRenderer->RenderScene(renderViewport, renderTarget, scene, {}, &viewportTexture);
 
                 if (visualization != Lit) {
                     float exposure = 1.0f;
@@ -163,9 +156,15 @@ namespace Atlas::Editor::UI {
                 }
             }
 
-            // The depth of the rendered frame is in the history after the target was swapped
-            mainRenderer->spriteRenderer.Render(&viewportTexture, renderTarget->GetHistoryData(Renderer::FULL_RES)->depthTexture.get(),
-                scene->renderState.camera, sprites, occludedSpriteAlpha);
+            // The depth of the rendered frame is in the history after the target was swapped. Overlays like the grid,
+            // bounding volumes and brushes are drawn over the image, also when path tracing
+            auto depthTexture = renderTarget->GetHistoryData(Renderer::FULL_RES)->depthTexture.get();
+            const auto& camera = scene->renderState.camera;
+            for (const auto& batch : { primitiveBatchWrapper.primitiveBatchDepthTest, primitiveBatchWrapper.primitiveBatchNoDepthTest }) {
+                batch->SetLineWidth(PrimitiveBatchWrapper::lineWidth * Singletons::imguiWrapper->GetScale());
+                mainRenderer->lineRenderer.Render(&viewportTexture, depthTexture, camera, *batch, occludedAlpha);
+            }
+            mainRenderer->spriteRenderer.Render(&viewportTexture, depthTexture, camera, sprites, occludedAlpha);
         }
 
         // Lines and sprites of frames that weren't rendered are dropped, otherwise they would pile up
@@ -264,44 +263,59 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::RenderVisualizationPopup(const std::function<void()>& renderOverlaySettings) {
+    bool ViewportPanel::BeginVisualizationPopup(int32_t windowColumns) {
 
+        // Below the toolbar on the right, it's wider than the space right of the button
+        ImGui::SetNextWindowPos(ImVec2(float(viewport->x + viewport->width) - toolbarMargin,
+            float(viewport->y) + toolbarMargin + ImGui::GetFrameHeight() + 2.0f * toolbarGroupPadding), ImGuiCond_Always,
+            ImVec2(1.0f, 0.0f));
         if (!ImGui::BeginPopup("Visualization settings"))
-            return;
+            return false;
 
-        ImGui::SeparatorText("Show");
-        renderOverlaySettings();
+        if (ImGui::BeginTable("Columns", windowColumns + 1, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit |
+            ImGuiTableFlags_NoSavedSettings))
+            return true;
 
-        auto menuItem = [&](const char* name, ViewportVisualization vis) {
-            bool selected = visualization == vis;
-            ImGui::MenuItem(name, nullptr, &selected);
-            if (selected)
-                visualization = vis;
+        ImGui::EndPopup();
+        return false;
+
+    }
+
+    void ViewportPanel::EndVisualizationPopup() {
+
+        ImGui::TableNextColumn();
+
+        auto option = [&](const char* name, ViewportVisualization option, const char* tooltip = nullptr) {
+            if (ImGui::RadioButton(name, visualization == option))
+                visualization = option;
+            if (tooltip)
+                ImGui::SetItemTooltip("%s", tooltip);
             };
 
-        ImGui::SeparatorText("Visualization");
+        ImGui::SeparatorText("View");
+        option("Lit", Lit, "The final image");
 
-        menuItem("Lit", ViewportVisualization::Lit);
+        ImGui::SeparatorText("Material");
+        option("Base color", GBufferBaseColor);
+        option("Roughness, metalness, AO", GBufferRoughnessMetalnessAo, "Roughness in red, metalness in green and ambient occlusion in blue");
+        option("Emissive", GBufferEmissive);
+        option("Normals", GBufferNormals, "With normal maps");
+        option("Geometry normals", GBufferGeometryNormals, "Of the triangles, without normal maps");
+        option("Material index", GBufferMaterialIdx);
 
-        if (ImGui::BeginMenu("GBuffer")) {
-            menuItem("Base color", ViewportVisualization::GBufferBaseColor);
-            menuItem("Roughness/Metalness/Ao", ViewportVisualization::GBufferRoughnessMetalnessAo);
-            menuItem("Emissive color", ViewportVisualization::GBufferEmissive);
-            menuItem("Depth", ViewportVisualization::GBufferDepth);
-            menuItem("Normals", ViewportVisualization::GBufferNormals);
-            menuItem("Geometry normals", ViewportVisualization::GBufferGeometryNormals);
-            menuItem("Velocity", ViewportVisualization::GBufferVelocity);
-            menuItem("Material index", ViewportVisualization::GBufferMaterialIdx);
-            menuItem("Stencil", ViewportVisualization::GBufferStencil);
-            ImGui::EndMenu();
-        }
+        ImGui::SeparatorText("Geometry");
+        option("Depth", GBufferDepth);
+        option("Velocity", GBufferVelocity, "Motion vectors of the upscaler, temporal effects and motion blur");
+        option("Stencil", GBufferStencil);
 
-        menuItem("Volumetrics", ViewportVisualization::Volumetrics);
-        menuItem("Clouds", ViewportVisualization::Clouds);
-        menuItem("Reflections", ViewportVisualization::Reflections);
-        menuItem("SSS", ViewportVisualization::SSS);
-        menuItem("SSGI", ViewportVisualization::SSGI);
+        ImGui::SeparatorText("Lighting");
+        option("Global illumination", SSGI, "Indirect light of the screen-space or ray traced global illumination");
+        option("Reflections", Reflections);
+        option("Screen-space shadows", SSS);
+        option("Volumetric light", Volumetrics, "Fog and light shafts");
+        option("Clouds", Clouds);
 
+        ImGui::EndTable();
         ImGui::EndPopup();
 
     }

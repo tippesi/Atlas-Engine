@@ -31,6 +31,9 @@ namespace Atlas::Editor::UI {
         // Row of buttons where exactly one is selected, a more direct alternative to a combo with few items
         static bool SegmentedControl(const char* label, int32_t& selection, const char* const items[], int32_t itemCount);
 
+        // Full width row of a list with an icon in front of its label, e.g. to pick a page. Returns whether it was clicked
+        static bool IconListItem(const char* label, const Texture::Texture2D& icon, bool selected);
+
         // Full width slot for drag and drop. Muted when empty, outlined with the accent while dragging
         static bool DropSlot(const char* text, bool isEmpty);
 

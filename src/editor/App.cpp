@@ -560,7 +560,8 @@ namespace Atlas::Editor {
 
         auto& activeSceneWindow = workspace.sceneWindows[workspace.activeSceneIdx];
 
-        auto lockMovement = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_LeftSuper);
+        // The mouse also moves something else, e.g. an asset which is dragged into the viewport
+        auto lockMovement = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsDragDropActive();
 
         auto cameraEntity = activeSceneWindow->cameraEntity;
         if (cameraEntity.IsValid() && activeSceneWindow->viewportPanel.isFocused && !lockMovement &&

@@ -2,6 +2,7 @@
 
 #include "Window.h"
 
+#include "../../tools/AssetPlacer.h"
 #include "../../tools/Guizmo.h"
 #include "../SceneOverlays.h"
 #include "../panels/SceneHierarchyPanel.h"
@@ -173,6 +174,11 @@ namespace Atlas::Editor::UI {
         bool focusAfterUpdate = false;
 
     private:
+        // Assets dragged from the content browser are dropped on what is under the mouse
+        void AcceptAssetDrop();
+
+        void PlaceDroppedAssets();
+
         // Toolbar above the viewport with the camera popups and the camera speed hint
         void RenderViewportToolbar();
 
@@ -217,6 +223,8 @@ namespace Atlas::Editor::UI {
 
         // Moves the orthographic camera to its distance from a point
         void UpdateOrthographicCamera(vec3 focusPoint);
+
+        AssetPlacer assetPlacer;
 
         bool stepRequested = false;
         static constexpr float stepTime = 1.0f / 60.0f;

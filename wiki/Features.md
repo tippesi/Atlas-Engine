@@ -124,7 +124,8 @@ tool isn't listed here, or a listed file doesn't exist.
   maps of views whose casters didn't change (shadow cache, `RenderList::Pass::contentHash`), `Shadow::Update` draws
   them again.
 - **Sky** (day, night, time of day, sun position, skybox, HDR, sky probe): `lighting/Sky`, `Atmosphere`, `Skybox`,
-  `EnvironmentProbe`, Lua `Sky` (`scene.sky`), `Atmosphere`, `EnvironmentProbe`, `Cubemap`, ImGui `SkyPanel`.
+  `EnvironmentProbe`, Lua `Sky` (`scene.sky`), `Atmosphere`, `EnvironmentProbe`, `Cubemap`, ImGui `SkyPanel`. The
+  resolution of the sky probe is `Atmosphere::SetProbeResolution` (Lua `probeResolution`, 32 to 1024, saved with the scene).
 - **Clouds** (volumetric clouds, cloud shadows, overcast): `VolumetricClouds` (authoring parameters only),
   `VolumetricCloudsScattering`, ImGui `VolumetricCloudsPanel`; moved by the wind. Their shadow map (`clouds/shadow.hsh`) darkens the sun in the
   rasterizer, the ray traced effects and the path tracer. There is no weather system (rain,
@@ -162,7 +163,13 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Sprites** (billboards, icons, camera facing quads, atlas): `renderer/SpriteRenderer` draws `Sprite`s over a rendered
   texture, sized in world units or screen pixels, with an outline, faded or hidden behind the scene depth; the editor viewport draws
   `ViewportPanel::sprites`.
-- **Text** (3D text, labels, signs, fonts): `TextComponent` with a `Font` (Lua), `renderer/TextRenderer`.
+- **Debug lines over the image** (anti-aliased lines, wide lines, overlay lines, dashed hidden lines): `renderer/LineRenderer`
+  draws the lines of a `PrimitiveBatch` over a rendered texture as quads with a width in pixels, parts behind the scene
+  depth dashed and faded; they stay sharp with upscalers and TAA. The editor viewport draws its batches with it
+  (`PrimitiveBatchWrapper`), `PrimitiveBatch::AddLineArrow` draws directions.
+- **Text** (3D text, labels, signs, fonts): `TextComponent` with a `Font` (Lua), `renderer/TextRenderer`. Texts are
+  unlit and drawn after the lighting, before the clouds, which then get the half resolution depth again
+  (`GBufferRenderer::DownscaleDepthOnly`), so clouds don't cover texts in front of them.
 - **Decals** (projected textures, animated sprites): `Decal`, `renderer/DecalRenderer`.
 - **Culling** (frustum culling, occlusion culling, HiZ, GPU driven, render lists): `RenderList`, `scene/GPUScene`,
   `culling/` shaders (count, offsets, scatter of the instance indices, one region per mesh and view), `Scene::occlusionCulling`.
@@ -397,7 +404,11 @@ tracing surfaces in `raytracer/`, wind in `wind.hsh`.
   audio ranges, fog volumes, DDGI cascades, splines, picking icons): `SceneOverlays` of `SceneWindow`, saved with
   the window config; icons are Material Symbols of `Icons` drawn as sprites,
   a right click on one selects its entity, hovering shows its name, icons covered by a closer one are merged into it
-  with a count. The eye button of the viewport switches them, each kind is a command of the command palette (Lua
+  with a count. Selected rigid bodies, triggers and players show the outline of their physics shape
+  (`PhysicsWorld::DebugDrawBodies`, `SceneOverlays::RenderSelection`). The eye button of the viewport (`ViewportPanel::BeginVisualizationPopup`)
+  switches them in columns (scene, entities, lighting with the irradiance probes, geometry with mesh LODs and terrain and
+  ocean wireframes, physics) beside the view of the renderer (lit, G-buffer channels, global illumination, reflections,
+  screen-space shadows, volumetric light, clouds). Each kind is a command of the command palette (Lua
   `Editor.RunCommand(name)`, `Editor.Select(entities)`, `Editor.FocusSelection()`).
 - **Views and camera bookmarks** (top, front, right, orthographic, saved views): `SceneWindow` `SetViewRotation`,
   `SetOrthographic` (a narrow field of view from far away, not an orthographic projection), `bookmarks` 1 to 9, all in
@@ -411,6 +422,10 @@ tracing surfaces in `raytracer/`, wind in `wind.hsh`.
   `AssetReferenceIndex` reads the data files for the paths they contain. The content browser shows the users of a file
   before it's deleted (into the recycle bin), renaming files and folders can change them (Lua, JSON, glTF, terrains and
   binary files, not modules named without their extension) and what is loaded (`AssetRenamer`,
+- **Drag assets into the scene** (drop a mesh, place a model, prefab, audio, script or font in the viewport):
+  `AssetPlacer` of `SceneWindow` puts them where the mouse points (on what the ray hits, else the ground plane), with
+  a preview of the bounds while dragging; meshes stand on their bounds, texts face the camera, model files are imported
+  first. Dropped on a row of the hierarchy they become children of that entity. Each is one undo step.
   `ResourceManager::RenameResources`).
 - **Keyboard shortcuts** (key bindings, rebind, hotkeys): `CommandPalette` is the only place which handles the shortcuts
   of commands (`Command::shortcut`, `isFocused`, `whileTyping`, `GetShortcutText`, `GetTooltip` for labels), "Keyboard
@@ -418,10 +433,10 @@ tracing surfaces in `raytracer/`, wind in `wind.hsh`.
 - **Projects in the editor** (project hub, recent projects, open project, new project): `ProjectHubWindow` is shown
   without `--project` (recent projects in `RecentProjects`, new project from a template, add a folder), switching the
   project happens in the same process (`App::SwitchProject`, a new asset directory drops loaded resources and
-  pipelines through `AssetDirectoryChangeEventDelegate`). `ProjectSettingsWindow` edits the `.aeproject` with a search (streaming limits, upscaler, occlusion culling,
+  pipelines through `AssetDirectoryChangeEventDelegate`). `ProjectSettingsWindow` edits the `.aeproject` on pages of a list (`Widgets::IconListItem`) with a search over all of them (streaming limits, upscaler, occlusion culling,
   mesh LOD error scale, binary scene columns; scenes get them from the project), the editor state of a project is in
   its `.atlas/`, a missing start scene is created when the project opens.
-- **Tools**: `AssetReferenceIndex`, `AssetRenamer`, `UriHelper`, `TerrainGenerator`, `VegetationGenerator`, `Guizmo`, `PrimitiveBatchWrapper`, `CopyPasteHelper`
+- **Tools**: `AssetReferenceIndex`, `AssetRenamer`, `UriHelper`, `TerrainGenerator`, `VegetationGenerator`, `AssetPlacer`, `Guizmo`, `PrimitiveBatchWrapper`, `CopyPasteHelper`
   (entities and components), `FileSystemHelper`, `ResourcePayloadHelper` (drag and drop), `ToolSerializer`.
 - **UI building blocks**: `ui/Widgets` (`DragVec3`, `Callout`, `IconButton`, ...), `Theme` colors, commands in
   `EditorCommands`, undo in `SceneHistory`, `StatusBar` below the windows. Files are written with

@@ -398,6 +398,26 @@ namespace Atlas::Editor::UI {
 
     }
 
+    bool Widgets::IconListItem(const char* label, const Texture::Texture2D& icon, bool selected) {
+
+        auto flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth |
+            ImGuiTreeNodeFlags_FramePadding | (selected ? ImGuiTreeNodeFlags_Selected : 0);
+        ImGui::TreeNodeEx(label, flags);
+        auto clicked = ImGui::IsItemClicked();
+
+        // A leaf has no arrow, the icon takes its place
+        auto iconSize = ImGui::GetFontSize();
+        auto iconPos = ImGui::GetItemRectMin();
+        iconPos.x += ImGui::GetStyle().FramePadding.x;
+        iconPos.y += ImGui::GetStyle().FramePadding.y;
+        auto set = Singletons::imguiWrapper->GetTextureId(&icon);
+        ImGui::GetWindowDrawList()->AddImage(set, iconPos, ImVec2(iconPos.x + iconSize, iconPos.y + iconSize),
+            ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.75f)));
+
+        return clicked;
+
+    }
+
     bool Widgets::IconButton(const char* id, const Texture::Texture2D& icon, float size,
         const char* tooltip, float alpha) {
 

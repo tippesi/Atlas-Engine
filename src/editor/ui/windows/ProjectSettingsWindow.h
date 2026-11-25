@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include "../../Icons.h"
 #include "../../UndoHistory.h"
 
 #include <project/Project.h>
@@ -11,9 +12,9 @@
 
 namespace Atlas::Editor::UI {
 
-    // Settings stored in the .aeproject file, searchable by their name, category and keywords: the project, the
-    // rendering and files of its scenes and the streaming limits. Changes are applied right away and can be undone, the
-    // user saves them (Ctrl+S, File > Save project)
+    // Settings stored in the .aeproject file on pages of a list: the project and the files of its scenes, the rendering
+    // and the streaming limits. The search finds them by their name, section and keywords on all pages. Changes are applied
+    // right away and can be undone, the user saves them (Ctrl+S, File > Save project)
     class ProjectSettingsWindow : public Window {
 
     public:
@@ -33,7 +34,8 @@ namespace Atlas::Editor::UI {
 
     private:
         struct Setting {
-            const char* category;
+            const char* page;
+            const char* section;
             const char* name;
             // More words the search finds the setting with
             const char* keywords;
@@ -46,8 +48,15 @@ namespace Atlas::Editor::UI {
 
         bool Matches(const Setting& setting) const;
 
+        struct Page {
+            const char* name;
+            IconType icon;
+            std::vector<const char*> sections;
+        };
+
         std::vector<Setting> settings;
-        std::vector<const char*> categories;
+        std::vector<Page> pages;
+        int32_t selectedPage = 0;
 
         std::string search;
         Streaming::StreamingManager::Stats streamingStats;
