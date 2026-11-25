@@ -27,6 +27,12 @@ namespace Atlas {
 
             void AddLineSphere(vec3 center, float radius, vec3 color);
 
+            // Three circles around the axes, e.g. a range which shouldn't hide what is inside
+            void AddLineSphereRings(vec3 center, float radius, vec3 color);
+
+            // Horizontal circle
+            void AddLineCircle(vec3 center, float radius, vec3 color);
+
             void AddLineRectangle(const Volume::Rectangle& rectangle, vec3 color);
 
             // Three axis aligned lines through the position
@@ -34,6 +40,10 @@ namespace Atlas {
 
             // Upright cylinder standing on the base point, e.g. a stand-in for a character
             void AddLineCylinder(vec3 base, float height, float radius, vec3 color);
+
+            // Cone of a spot light: lines from the apex to a circle at the distance along the normalized direction,
+            // the angle is the half angle in radians
+            void AddLineCone(vec3 apex, vec3 direction, float length, float angle, vec3 color);
 
             // The world axes in red (x), green (y) and blue (z)
             void AddLineAxes(vec3 position, float length);

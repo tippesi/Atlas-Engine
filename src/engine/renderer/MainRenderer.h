@@ -32,6 +32,7 @@
 #include "VolumetricCloudRenderer.h"
 #include "VegetationRenderer.h"
 #include "TextureRenderer.h"
+#include "SpriteRenderer.h"
 #include "PathTracingRenderer.h"
 #include "FSR2Renderer.h"
 #include "UpscalerAddons.h"
@@ -66,6 +67,7 @@ namespace Atlas {
 
             TextRenderer textRenderer;
             TextureRenderer textureRenderer;
+            SpriteRenderer spriteRenderer;
             OceanRenderer oceanRenderer;
             AtmosphereRenderer atmosphereRenderer;
             PathTracingRenderer pathTracingRenderer;

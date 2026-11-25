@@ -1,4 +1,5 @@
 #include "PrimitiveBatch.h"
+#include "../common/MathHelper.h"
 
 #include <glm/gtc/constants.hpp>
 
@@ -80,6 +81,33 @@ namespace Atlas {
 
         }
 
+        void PrimitiveBatch::AddLineSphereRings(vec3 center, float radius, vec3 color) {
+
+            const int32_t segments = 48;
+            for (int32_t i = 0; i < segments; i++) {
+                auto a0 = float(i) / float(segments) * glm::two_pi<float>();
+                auto a1 = float(i + 1) / float(segments) * glm::two_pi<float>();
+                auto p0 = vec2(std::cos(a0), std::sin(a0)) * radius;
+                auto p1 = vec2(std::cos(a1), std::sin(a1)) * radius;
+                AddLine(center + vec3(p0.x, p0.y, 0.0f), center + vec3(p1.x, p1.y, 0.0f), color, color);
+                AddLine(center + vec3(p0.x, 0.0f, p0.y), center + vec3(p1.x, 0.0f, p1.y), color, color);
+                AddLine(center + vec3(0.0f, p0.x, p0.y), center + vec3(0.0f, p1.x, p1.y), color, color);
+            }
+
+        }
+
+        void PrimitiveBatch::AddLineCircle(vec3 center, float radius, vec3 color) {
+
+            const int32_t segments = 48;
+            for (int32_t i = 0; i < segments; i++) {
+                auto a0 = float(i) / float(segments) * glm::two_pi<float>();
+                auto a1 = float(i + 1) / float(segments) * glm::two_pi<float>();
+                AddLine(center + vec3(std::cos(a0), 0.0f, std::sin(a0)) * radius,
+                    center + vec3(std::cos(a1), 0.0f, std::sin(a1)) * radius, color, color);
+            }
+
+        }
+
         void PrimitiveBatch::AddLineRectangle(const Volume::Rectangle& rectangle, vec3 color) {
 
             auto point = rectangle.point;
@@ -119,6 +147,28 @@ namespace Atlas {
                 auto angle = float(i) * glm::half_pi<float>();
                 auto offset = vec3(std::cos(angle) * radius, 0.0f, std::sin(angle) * radius);
                 AddLine(base + offset, base + offset + vec3(0.0f, height, 0.0f), color, color);
+            }
+
+        }
+
+        void PrimitiveBatch::AddLineCone(vec3 apex, vec3 direction, float length, float angle, vec3 color) {
+
+            auto right = Helper::Math::NormalizeOrZero(glm::cross(direction, std::abs(direction.y) < 0.99f ?
+                vec3(0.0f, 1.0f, 0.0f) : vec3(1.0f, 0.0f, 0.0f)));
+            auto up = glm::cross(right, direction);
+
+            auto center = apex + direction * length * std::cos(angle);
+            auto radius = length * std::sin(angle);
+
+            const int32_t segments = 24;
+            for (int32_t i = 0; i < segments; i++) {
+                auto a0 = float(i) / float(segments) * glm::two_pi<float>();
+                auto a1 = float(i + 1) / float(segments) * glm::two_pi<float>();
+                auto p0 = center + (std::cos(a0) * right + std::sin(a0) * up) * radius;
+                auto p1 = center + (std::cos(a1) * right + std::sin(a1) * up) * radius;
+                AddLine(p0, p1, color, color);
+                if (i % 6 == 0)
+                    AddLine(apex, p0, color, color);
             }
 
         }

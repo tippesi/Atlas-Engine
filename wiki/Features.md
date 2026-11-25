@@ -157,7 +157,7 @@ tool isn't listed here, or a listed file doesn't exist.
 - **Renderer** (frame, passes, G-buffer, deferred): `renderer/MainRenderer` coordinates the renderers in `renderer/`,
   render targets in `renderer/target/`, pipelines from `pipeline/` (`PipelineManager` caches variants), Vulkan in
   `graphics/`, GPU buffers in `buffer/`, textures in `texture/`.
-- **Debug drawing** (lines, gizmos, shapes, wireframe): `renderer/PrimitiveBatch` (lines and shapes), editor
+- **Debug drawing** (lines, gizmos, shapes, wireframe, cones, ranges): `renderer/PrimitiveBatch` (lines and shapes), editor
   `PrimitiveBatchWrapper`, `Guizmo`; bridge overlays.
 - **Text** (3D text, labels, signs, fonts): `TextComponent` with a `Font` (Lua), `renderer/TextRenderer`.
 - **Decals** (projected textures, animated sprites): `Decal`, `renderer/DecalRenderer`.
@@ -168,6 +168,9 @@ tool isn't listed here, or a listed file doesn't exist.
   and shadow passes), the commands select the mesh with the first index and vertex offset, material and wind of a
   draw come from a device local buffer; graph, skinned and alpha tested shadow pipelines keep push constants.
 - **Geometry helpers** (cube, sphere, grid, quad): `GeometryHelper`; `CommonStructures` (GPU structs shared by
+- **Sprites** (billboards, icons, camera facing quads, atlas): `renderer/SpriteRenderer` draws `Sprite`s over a rendered
+  texture, sized in world units or screen pixels, with an outline, faded or hidden behind the scene depth; the editor viewport draws
+  `ViewportPanel::sprites`.
   renderers), `RayTracingHelper` (shared ray tracing passes), `DeferredShadowRays` (shadow rays traced in a pass of
   their own for RTGI and reflections), `SubDataDrawer` (draw loop of the opaque and shadow passes, sorted by pipeline).
 - **Path tracing** (reference render, ground truth): `renderer/PathTracingRenderer`.
