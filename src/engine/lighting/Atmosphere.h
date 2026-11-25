@@ -13,6 +13,11 @@ namespace Atlas {
         public:
             Atmosphere(float height = 100000.0f, int32_t probeResolution = 128);
 
+            // Width of a face of the probe, it's rendered again with the next frame
+            void SetProbeResolution(int32_t resolution);
+
+            int32_t GetProbeResolution() const;
+
             float height = 100000.0f;
 
             vec3 rayleighScatteringCoeff = vec3(5.5e-6f, 13.0e-6f, 22.4e-6f);

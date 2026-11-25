@@ -69,6 +69,7 @@ namespace Atlas::Scripting::Bindings {
             "sunDiskSize", &Lighting::Atmosphere::sunDiskSize,
             "directLight", &Lighting::Atmosphere::directLight,
             "indirectLight", &Lighting::Atmosphere::indirectLight,
+            "probeResolution", sol::property(&Lighting::Atmosphere::GetProbeResolution, &Lighting::Atmosphere::SetProbeResolution),
             "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 

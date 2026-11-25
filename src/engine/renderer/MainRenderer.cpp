@@ -369,6 +369,10 @@ namespace Atlas {
 				};
 
 				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+
+				// Texts aren't lit, so they are drawn after the lighting. The clouds read the depth at half resolution
+				if (!scene->renderState.texts.empty())
+					gBufferRenderer.DownscaleDepthOnly(target, commandList);
 			}
 
 			{

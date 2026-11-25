@@ -10,6 +10,19 @@ namespace Atlas {
 
         }
 
+        void Atmosphere::SetProbeResolution(int32_t resolution) {
+
+            if (resolution != GetProbeResolution())
+                probe = CreateRef<EnvironmentProbe>(resolution, probe->GetPosition());
+
+        }
+
+        int32_t Atmosphere::GetProbeResolution() const {
+
+            return probe->GetCubemap().width;
+
+        }
+
     }
 
 }

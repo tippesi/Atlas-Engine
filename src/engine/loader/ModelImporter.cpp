@@ -1473,7 +1473,7 @@ namespace Atlas {
             }
 
             // Missing or broken images are left out of the material
-            if (image->GetData().empty())
+            if (!image->HasData())
                 return nullptr;
 
             return image;

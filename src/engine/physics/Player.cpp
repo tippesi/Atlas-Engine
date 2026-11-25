@@ -244,6 +244,12 @@ namespace Atlas::Physics {
 
     }
 
+    JPH::BodyID Player::GetBodyID() const {
+
+        return IsValid() ? character->GetInnerBodyID() : JPH::BodyID();
+
+    }
+
     void Player::SetUserData(uint64_t userData) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

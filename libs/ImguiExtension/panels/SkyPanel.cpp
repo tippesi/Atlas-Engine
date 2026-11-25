@@ -46,6 +46,11 @@ namespace Atlas::ImguiExtension {
                 ImGui::SliderFloat("##Direct light", &atmosphere->directLight, 0.0f, 1.0f);
                 UIElements::PropertyLabel("Indirect light", "How much the sky lights the scene: ambient light, global illumination and sky reflections");
                 ImGui::SliderFloat("##Indirect light", &atmosphere->indirectLight, 0.0f, 2.0f);
+                const char* resolutions[] = { "32", "64", "128", "256", "512", "1024" };
+                auto resolutionIdx = glm::clamp(int32_t(std::log2(float(atmosphere->GetProbeResolution()))) - 5, 0, 5);
+                UIElements::PropertyLabel("Probe resolution", "Width of a cubemap face of the sky which lights the scene, sharper sky reflections need more. Reflections use up to 512");
+                if (ImGui::Combo("##Probe resolution", &resolutionIdx, resolutions, IM_ARRAYSIZE(resolutions)))
+                    atmosphere->SetProbeResolution(32 << resolutionIdx);
                 UIElements::EndProperties();
             }
 

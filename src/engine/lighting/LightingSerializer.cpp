@@ -38,15 +38,12 @@ namespace Atlas::Lighting {
             {"sunDiskSize", p.sunDiskSize},
             {"directLight", p.directLight},
             {"indirectLight", p.indirectLight},
-            {"probeResolution", p.probe->GetCubemap().width}
+            {"probeResolution", p.GetProbeResolution()}
         };
     }
 
     void from_json(const json& j, Atmosphere& p) {
-        // Only a new probe resolution needs a new atmosphere, everything else is changed in place
-        auto probeResolution = j["probeResolution"].get<int32_t>();
-        if (!p.probe || p.probe->GetCubemap().width != probeResolution)
-            p = Atmosphere(j["height"].get<float>(), probeResolution);
+        p.SetProbeResolution(j["probeResolution"].get<int32_t>());
 
         j.at("height").get_to(p.height);
 

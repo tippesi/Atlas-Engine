@@ -203,6 +203,11 @@ namespace Atlas {
             // Draws the bodies, contacts and constraints with lines, contacts are drawn from the next update on
             void DebugDraw(Renderer::PrimitiveBatch* primitiveBatch, const DebugDrawSettings& settings);
 
+            // The shapes of single bodies in the colors of DebugDraw, e.g. of selected ones. Bodies larger than the box
+            // around the center, e.g. the terrain, are cut to it
+            void DebugDrawBodies(Renderer::PrimitiveBatch* primitiveBatch, const std::vector<BodyID>& bodyIds,
+                vec3 center, float distance);
+
             void OptimizeBroadphase();
 
             void SaveState();
@@ -276,6 +281,13 @@ namespace Atlas {
             };
 
             const DebugWireframe& GetDebugWireframe(const JPH::Shape* shape);
+
+            void RemoveUnusedDebugWireframes();
+
+            vec3 GetDebugColor(const JPH::Body& body) const;
+
+            // Bodies smaller than the box come from the cache, only large ones like the terrain are cut to the box
+            void DebugDrawShape(Renderer::PrimitiveBatch* primitiveBatch, const JPH::Body& body, const JPH::AABox& drawBox);
 
             std::unordered_map<const JPH::Shape*, DebugWireframe> debugWireframes;
             uint32_t debugFrame = 0;

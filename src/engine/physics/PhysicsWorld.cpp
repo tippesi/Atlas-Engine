@@ -1094,6 +1094,81 @@ namespace Atlas {
 
         }
 
+        void PhysicsWorld::RemoveUnusedDebugWireframes() {
+
+            std::erase_if(debugWireframes, [&](const auto& item) { return debugFrame - item.second.lastFrame > 300; });
+
+        }
+
+        vec3 PhysicsWorld::GetDebugColor(const JPH::Body& body) const {
+
+            if (body.IsSensor())
+                return fluidBodies.contains(body.GetID()) ? vec3(0.2f, 0.4f, 1.0f) : vec3(0.0f, 1.0f, 1.0f);
+            if (body.IsStatic())
+                return vec3(0.5f);
+            if (body.IsKinematic())
+                return vec3(1.0f, 0.5f, 0.0f);
+            return body.IsActive() ? vec3(0.0f, 1.0f, 0.0f) : vec3(0.0f, 0.4f, 0.0f);
+
+        }
+
+        void PhysicsWorld::DebugDrawShape(Renderer::PrimitiveBatch* primitiveBatch, const JPH::Body& body,
+            const JPH::AABox& drawBox) {
+
+            auto color = GetDebugColor(body);
+
+            if ((body.GetWorldSpaceBounds().GetExtent() - drawBox.GetExtent()).ReduceMax() >= 0.0f) {
+                // Triangles are only available for leaf shapes, the engine shapes are at least scaled
+                JPH::AllHitCollisionCollector<JPH::TransformedShapeCollector> collector;
+                body.GetTransformedShape().CollectTransformedShapes(drawBox, collector);
+
+                JPH::Shape::GetTrianglesContext context;
+                std::vector<JPH::Float3> vertices(3 * 256);
+                for (const auto& transformedShape : collector.mHits) {
+                    transformedShape.GetTrianglesStart(context, drawBox, JPH::RVec3::sZero());
+
+                    int32_t count = 0;
+                    while ((count = transformedShape.GetTrianglesNext(context, 256, vertices.data())) > 0) {
+                        for (int32_t i = 0; i < count; i++) {
+                            auto v0 = JPHVecToVec(JPH::Vec3(vertices[3 * i]));
+                            auto v1 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 1]));
+                            auto v2 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 2]));
+
+                            primitiveBatch->AddLine(v0, v1, color, color);
+                            primitiveBatch->AddLine(v1, v2, color, color);
+                            primitiveBatch->AddLine(v2, v0, color, color);
+                        }
+                    }
+                }
+                return;
+            }
+
+            const auto& wireframe = GetDebugWireframe(body.GetShape());
+            auto transform = body.GetCenterOfMassTransform();
+            for (size_t i = 0; i + 1 < wireframe.lines.size(); i += 2) {
+                auto v0 = JPHVecToVec(transform * VecToJPHVec(wireframe.lines[i]));
+                auto v1 = JPHVecToVec(transform * VecToJPHVec(wireframe.lines[i + 1]));
+                primitiveBatch->AddLine(v0, v1, color, color);
+            }
+
+        }
+
+        void PhysicsWorld::DebugDrawBodies(Renderer::PrimitiveBatch* primitiveBatch, const std::vector<BodyID>& bodyIds,
+            vec3 center, float distance) {
+
+            auto extent = JPH::Vec3::sReplicate(distance);
+            JPH::AABox drawBox(VecToJPHVec(center) - extent, VecToJPHVec(center) + extent);
+
+            debugFrame++;
+            for (auto bodyId : bodyIds) {
+                JPH::BodyLockRead lock(system->GetBodyLockInterface(), bodyId);
+                if (lock.Succeeded())
+                    DebugDrawShape(primitiveBatch, lock.GetBody(), drawBox);
+            }
+            RemoveUnusedDebugWireframes();
+
+        }
+
         void PhysicsWorld::DebugDraw(Renderer::PrimitiveBatch* primitiveBatch, const DebugDrawSettings& settings) {
 
             contactListener->recordPersistedContacts = settings.drawContacts;
@@ -1104,22 +1179,10 @@ namespace Atlas {
             auto extent = JPH::Vec3::sReplicate(settings.distance);
             JPH::AABox drawBox(center - extent, center + extent);
 
-            auto bodyColor = [&](const JPH::Body& body) {
-                if (body.IsSensor())
-                    return fluidBodies.contains(body.GetID()) ? vec3(0.2f, 0.4f, 1.0f) : vec3(0.0f, 1.0f, 1.0f);
-                if (body.IsStatic())
-                    return vec3(0.5f);
-                if (body.IsKinematic())
-                    return vec3(1.0f, 0.5f, 0.0f);
-                return body.IsActive() ? vec3(0.0f, 1.0f, 0.0f) : vec3(0.0f, 0.4f, 0.0f);
-            };
-
             if (settings.drawShapes || settings.drawBounds) {
                 JPH::AllHitCollisionCollector<JPH::CollideShapeBodyCollector> bodyCollector;
                 system->GetBroadPhaseQuery().CollideAABox(drawBox, bodyCollector);
 
-                JPH::Shape::GetTrianglesContext context;
-                std::vector<JPH::Float3> vertices(3 * 256);
                 debugFrame++;
 
                 for (auto bodyId : bodyCollector.mHits) {
@@ -1133,49 +1196,16 @@ namespace Atlas {
 
                     auto bounds = body.GetWorldSpaceBounds();
 
-                    auto color = bodyColor(body);
+                    auto color = GetDebugColor(body);
                     if (settings.drawBounds)
                         primitiveBatch->AddLineAABB(Volume::AABB(JPHVecToVec(bounds.mMin), JPHVecToVec(bounds.mMax)), color);
 
-                    if (!settings.drawShapes)
-                        continue;
-
-                    // Bodies smaller than the box come from the cache, only large ones like the terrain are cut to the box
-                    if ((bounds.GetExtent() - extent).ReduceMax() < 0.0f) {
-                        const auto& wireframe = GetDebugWireframe(body.GetShape());
-                        auto transform = body.GetCenterOfMassTransform();
-                        for (size_t i = 0; i + 1 < wireframe.lines.size(); i += 2) {
-                            auto v0 = JPHVecToVec(transform * VecToJPHVec(wireframe.lines[i]));
-                            auto v1 = JPHVecToVec(transform * VecToJPHVec(wireframe.lines[i + 1]));
-                            primitiveBatch->AddLine(v0, v1, color, color);
-                        }
-                        continue;
-                    }
-
-                    // Triangles are only available for leaf shapes, the engine shapes are at least scaled
-                    JPH::AllHitCollisionCollector<JPH::TransformedShapeCollector> collector;
-                    body.GetTransformedShape().CollectTransformedShapes(drawBox, collector);
-
-                    for (const auto& transformedShape : collector.mHits) {
-                        transformedShape.GetTrianglesStart(context, drawBox, JPH::RVec3::sZero());
-
-                        int32_t count = 0;
-                        while ((count = transformedShape.GetTrianglesNext(context, 256, vertices.data())) > 0) {
-                            for (int32_t i = 0; i < count; i++) {
-                                auto v0 = JPHVecToVec(JPH::Vec3(vertices[3 * i]));
-                                auto v1 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 1]));
-                                auto v2 = JPHVecToVec(JPH::Vec3(vertices[3 * i + 2]));
-
-                                primitiveBatch->AddLine(v0, v1, color, color);
-                                primitiveBatch->AddLine(v1, v2, color, color);
-                                primitiveBatch->AddLine(v2, v0, color, color);
-                            }
-                        }
-                    }
+                    if (settings.drawShapes)
+                        DebugDrawShape(primitiveBatch, body, drawBox);
                 }
             }
 
-            std::erase_if(debugWireframes, [&](const auto& item) { return debugFrame - item.second.lastFrame > 300; });
+            RemoveUnusedDebugWireframes();
 
             if (settings.drawContacts) {
                 for (const auto& [_, contactPair] : contactPairs) {
