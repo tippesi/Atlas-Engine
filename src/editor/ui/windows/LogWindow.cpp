@@ -1,4 +1,9 @@
 #include "LogWindow.h"
+#include "ContentBrowserWindow.h"
+#include "../../Content.h"
+#include "../../ContentDiscovery.h"
+#include "common/Path.h"
+#include "loader/AssetLoader.h"
 
 #include "Clock.h"
 #include "../../Singletons.h"
@@ -9,6 +14,8 @@
 #include <imgui_internal.h>
 
 #include <algorithm>
+#include <cctype>
+#include <charconv>
 
 namespace Atlas::Editor::UI {
 
@@ -159,8 +166,36 @@ namespace Atlas::Editor::UI {
                     entry.type == Atlas::Log::Type::TYPE_ERROR ? errorColor : textColor;
 
                 const char* text = entry.message.c_str() + line.offset;
+                const char* textEnd = text + line.length;
                 ImGui::PushStyleColor(ImGuiCol_Text, messageColor);
-                ImGui::TextUnformatted(text, text + line.length);
+                if (line.linkLength > 0) {
+                    const char* link = entry.message.c_str() + line.linkStart;
+                    const char* linkEnd = link + line.linkLength;
+
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, ImGui::GetStyle().ItemSpacing.y));
+                    ImGui::TextUnformatted(text, link);
+                    ImGui::SameLine();
+                    ImGui::PushStyleColor(ImGuiCol_Text, Theme::Accent());
+                    ImGui::TextUnformatted(link, linkEnd);
+                    ImGui::PopStyleColor();
+
+                    // The row below it is the hovered item
+                    auto min = ImGui::GetItemRectMin();
+                    auto max = ImGui::GetItemRectMax();
+                    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseHoveringRect(min, max)) {
+                        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+                        ImGui::GetWindowDrawList()->AddLine(ImVec2(min.x, max.y), max, ImGui::GetColorU32(Theme::Accent()));
+                        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsMouseDragPastThreshold(ImGuiMouseButton_Left))
+                            OpenLink(std::string(link, linkEnd));
+                    }
+
+                    ImGui::SameLine();
+                    ImGui::TextUnformatted(linkEnd, textEnd);
+                    ImGui::PopStyleVar();
+                }
+                else {
+                    ImGui::TextUnformatted(text, textEnd);
+                }
                 ImGui::PopStyleColor();
 
                 ImGui::PopID();
@@ -311,6 +346,7 @@ namespace Atlas::Editor::UI {
                 .first = lineInMessage == 0,
                 .id = ImHashData(key, sizeof(key))
             });
+            FindLink(message, lines.back());
 
             if (newLine == std::string::npos)
                 break;
@@ -318,6 +354,75 @@ namespace Atlas::Editor::UI {
             offset = uint32_t(newLine + 1);
             lineInMessage++;
         }
+
+    }
+
+    void LogWindow::FindLink(const std::string& message, Line& line) {
+
+        auto isDigit = [](char c) { return c >= '0' && c <= '9'; };
+        // Lua puts code without a name into brackets, shader errors a file into quotes
+        auto isPathCharacter = [](char c) {
+            return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-' || c == '.' || c == '/' || c == '\\';
+            };
+
+        line.linkStart = line.linkLength = 0;
+        auto end = line.offset + line.length;
+
+        for (auto colon = message.find(':', line.offset); colon < end; colon = message.find(':', colon + 1)) {
+            auto numberEnd = colon + 1;
+            while (numberEnd < end && isDigit(message[numberEnd]))
+                numberEnd++;
+
+            auto start = colon;
+            while (start > line.offset && isPathCharacter(message[start - 1]))
+                start--;
+
+            auto type = Content::contentTypeMapping.find(Common::Path::GetFileType(message.substr(start, colon - start)));
+            if (numberEnd == colon + 1 || type == Content::contentTypeMapping.end() ||
+                (type->second != ContentType::Script && type->second != ContentType::Shader))
+                continue;
+
+            line.linkStart = uint32_t(start);
+            line.linkLength = uint32_t(numberEnd - start);
+            return;
+        }
+
+    }
+
+    void LogWindow::OpenLink(const std::string& link) {
+
+        auto colon = link.rfind(':');
+        auto path = Common::Path::Normalize(link.substr(0, colon));
+        // Lua shortens long names to their end
+        if (path.starts_with("..."))
+            path = path.substr(3);
+
+        if (!Loader::AssetLoader::FileExists(path)) {
+            auto lowerPath = path;
+            std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+
+            std::string foundPath;
+            for (auto type : { ContentType::Script, ContentType::Shader }) {
+                for (const auto& content : ContentDiscovery::GetContent(type)) {
+                    auto assetPath = content.assetPath;
+                    std::transform(assetPath.begin(), assetPath.end(), assetPath.begin(), ::tolower);
+                    if (foundPath.empty() && assetPath.ends_with(lowerPath))
+                        foundPath = content.assetPath;
+                }
+            }
+            path = foundPath;
+        }
+
+        if (path.empty()) {
+            Notifications::Push({ .message = "There is no file for " + link, .type = NotificationType::Warning });
+            return;
+        }
+
+        // Line zero shows the beginning
+        int32_t line = 0;
+        std::from_chars(link.data() + colon + 1, link.data() + link.size(), line);
+        ContentBrowserWindow::contentToEditPath = path;
+        ContentBrowserWindow::contentToEditLine = line;
 
     }
 

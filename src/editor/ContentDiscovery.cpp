@@ -12,14 +12,18 @@ namespace Atlas::Editor {
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::content = CreateRef<DiscoveredContent>();
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::nextContent = CreateRef<DiscoveredContent>();
 	JobGroup ContentDiscovery::contentDiscoveryJob { "Content discovery" };
+	bool ContentDiscovery::hasNextContent = false;
 
 	std::atomic_bool ContentDiscovery::execute = false;
+	std::atomic_size_t ContentDiscovery::startedCount = 0;
+	size_t ContentDiscovery::finishedCount = 0;
 	const float ContentDiscovery::discoverFrequency = 3.0f;
 	float ContentDiscovery::lastDiscoveryTime = -ContentDiscovery::discoverFrequency;
 
-	void ContentDiscovery::Execute() {
+	size_t ContentDiscovery::Execute() {
 
 		execute = true;
+		return startedCount + 1;
 
 	}
 
@@ -63,14 +67,25 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::Update() {
 
+		if (!contentDiscoveryJob.HasFinished())
+			return;
+
+		if (hasNextContent) {
+			// Swap here to not immediately release the memory of content (causes stutter due to freeing memory)
+			std::swap(content, nextContent);
+			hasNextContent = false;
+			finishedCount = startedCount;
+		}
+
 		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency || !content
 			|| content->contentDirectories.empty() || execute;
 
-		if (contentDiscoveryJob.HasFinished() && canRediscover) {
-			// Swap here to not immediately release the memory of content (causes stutter due to freeing memory)		
-			std::swap(content, nextContent);
-
+		if (canRediscover) {
 			lastDiscoveryTime = Clock::Get();
+			// Changes from here on need another discovery
+			execute = false;
+			startedCount++;
+			hasNextContent = true;
 			JobSystem::Execute(contentDiscoveryJob, [&](JobData&) {
 				// Now release the swapped memory here in the job async
 				nextContent.reset();
@@ -104,14 +119,20 @@ namespace Atlas::Editor {
 
 		auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
-		for (const auto& dirEntry : std::filesystem::directory_iterator(directory->path, std::filesystem::directory_options::skip_permission_denied)) {
+		// Directories can be renamed or deleted in the meantime
+		std::error_code directoryError;
+		auto iterator = std::filesystem::directory_iterator(directory->path,
+			std::filesystem::directory_options::skip_permission_denied, directoryError);
+		for (; !directoryError && iterator != std::filesystem::directory_iterator(); iterator.increment(directoryError)) {
+			const auto& dirEntry = *iterator;
+			std::error_code errorCode;
 			auto path = Common::Path::Normalize(dirEntry.path().string());
 			auto assetPath = Common::Path::GetRelative(dataDirectory, path);
 			if (assetPath.starts_with('/'))
 				assetPath.erase(assetPath.begin());
 			assetPath = Common::Path::Normalize(assetPath);
 
-			if (dirEntry.is_directory()) {
+			if (dirEntry.is_directory(errorCode)) {
 				auto dirname = Common::Path::GetFileName(dirEntry.path().string());
 				std::transform(dirname.begin(), dirname.end(), dirname.begin(), ::tolower);
 
@@ -137,7 +158,6 @@ namespace Atlas::Editor {
 				continue;
 
 			auto contentType = Content::contentTypeMapping.at(fileType);
-			std::error_code errorCode;
 			auto fileSize = dirEntry.file_size(errorCode);
 			if (errorCode)
 				fileSize = 0;

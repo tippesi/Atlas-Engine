@@ -43,6 +43,13 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void CodeEditorWindow::SetPath(const std::string& newPath) {
+
+        path = newPath;
+        name = Common::Path::GetFileName(newPath);
+
+    }
+
     void CodeEditorWindow::Render() {
 
         SetTitle(name, path);
@@ -50,29 +57,30 @@ namespace Atlas::Editor::UI {
             return;
 
         inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-        auto controlDown = ImGui::GetIO().KeyCtrl || ImGui::GetIO().KeySuper;
-        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false))
-            Save();
 
         // A small toolbar, the shortcuts stand in the tooltips
         const auto& icons = Singletons::icons;
         ImGui::BeginDisabled(!hasUnsavedChanges);
-        if (Widgets::ToolbarIconButton("Save", icons->Get(IconType::Save), "Save (Ctrl+S)"))
+        if (Widgets::ToolbarIconButton("Save", icons->Get(IconType::Save),
+            Singletons::commandPalette->GetTooltip("Save", "Code: Save file").c_str()))
             Save();
         ImGui::EndDisabled();
         ImGui::SameLine();
         ImGui::BeginDisabled(!codeEditor.CanUndo());
-        if (Widgets::ToolbarIconButton("Undo", icons->Get(IconType::Undo), "Undo (Ctrl+Z)"))
+        if (Widgets::ToolbarIconButton("Undo", icons->Get(IconType::Undo),
+            Singletons::commandPalette->GetTooltip("Undo", "Code: Undo").c_str()))
             codeEditor.Undo();
         ImGui::EndDisabled();
         ImGui::SameLine();
         ImGui::BeginDisabled(!codeEditor.CanRedo());
-        if (Widgets::ToolbarIconButton("Redo", icons->Get(IconType::Redo), "Redo (Ctrl+Y)"))
+        if (Widgets::ToolbarIconButton("Redo", icons->Get(IconType::Redo),
+            Singletons::commandPalette->GetTooltip("Redo", "Code: Redo").c_str()))
             codeEditor.Redo();
         ImGui::EndDisabled();
         ImGui::SameLine();
-        if (Widgets::ToolbarIconButton("Find", icons->Get(IconType::Search), "Find (Ctrl+F), replace (Ctrl+H)"))
-            codeEditor.OpenSearch(false);
+        if (Widgets::ToolbarIconButton("Find", icons->Get(IconType::Search),
+            Singletons::commandPalette->GetTooltip("Find", "Code: Find").c_str()))
+            codeEditor.OpenSearch();
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
         ImGui::TextColored(Theme::TextMuted(), "%s", path.c_str());
@@ -95,11 +103,6 @@ namespace Atlas::Editor::UI {
 
     bool CodeEditorWindow::Save() {
 
-        auto stream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-        if (!stream.is_open()) {
-            Notifications::Push({ .message = "Couldn't write " + path, .type = NotificationType::Error });
-            return false;
-        }
         std::string file;
         if (windowsLineEndings) {
             file.reserve(text.size() + text.size() / 32);
@@ -107,7 +110,10 @@ namespace Atlas::Editor::UI {
                 file += c == '\n' ? std::string("\r\n") : std::string(1, c);
         }
         const auto& content = windowsLineEndings ? file : text;
-        stream.write(content.data(), std::streamsize(content.size()));
+        if (!Loader::AssetLoader::WriteFileAtomically(path, content.data(), content.size())) {
+            Notifications::Push({ .message = "Couldn't write " + path, .type = NotificationType::Error });
+            return false;
+        }
         hasUnsavedChanges = false;
 
         if (codeEditor.language == CodeLanguage::GLSL)

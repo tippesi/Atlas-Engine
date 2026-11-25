@@ -83,6 +83,10 @@ namespace Atlas::Editor::UI {
             Widgets::EndProperties();
         }
 
+        editedPosition = glm::notEqual(localPosition, position);
+        editedRotation = glm::notEqual(localRotation, rotation);
+        editedScale = glm::notEqual(localScale, scale);
+
         // Only recompose when a local change happened
         if (localPosition != position || localScale != scale ||
             localRotation != rotation) {
@@ -96,6 +100,31 @@ namespace Atlas::Editor::UI {
         ImGui::PopID();
 
         return false;
+
+    }
+
+    void TransformComponentPanel::ClearEdit() {
+
+        editedPosition = editedRotation = editedScale = glm::bvec3(false);
+
+    }
+
+    void TransformComponentPanel::ApplyEdit(const std::vector<Scene::Entity>& entities) {
+
+        if (!glm::any(editedPosition) && !glm::any(editedRotation) && !glm::any(editedScale))
+            return;
+
+        for (auto entity : entities) {
+            auto transform = entity.TryGetComponent<TransformComponent>();
+            if (!transform)
+                continue;
+
+            auto decomposition = transform->Decompose();
+            decomposition.translation = glm::mix(decomposition.translation, position, editedPosition);
+            decomposition.rotation = glm::mix(decomposition.rotation, rotation, editedRotation);
+            decomposition.scale = glm::mix(decomposition.scale, scale, editedScale);
+            transform->Set(decomposition.Compose());
+        }
 
     }
 

@@ -29,10 +29,6 @@ namespace Atlas::Editor {
     class FileImporter {
 
     public:
-        static void ImportFiles(const std::vector<std::string>& filenames);
-
-        static void ImportFile(const std::string& filename);
-
         template<class T>
         static ResourceHandle<T> ImportFile(const std::string& filename);
 

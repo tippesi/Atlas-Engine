@@ -1,6 +1,8 @@
 #include "CommandPalette.h"
 
-#include <imgui.h>
+#include "../../Singletons.h"
+
+#include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
 #include <algorithm>
@@ -11,6 +13,184 @@ namespace Atlas::Editor::UI {
     void CommandPalette::Register(const Command& command) {
 
         commands.push_back(command);
+
+    }
+
+    const Command* CommandPalette::Find(const std::string& name) const {
+
+        for (const auto& command : commands)
+            if (command.name == name || GetName(command) == name)
+                return &command;
+
+        return nullptr;
+
+    }
+
+    void CommandPalette::HandleShortcuts() {
+
+        // Without a new frame, e.g. while the window is covered, the keys are still the ones of the last one
+        auto isNewFrame = handledFrame != ImGui::GetFrameCount();
+        handledFrame = ImGui::GetFrameCount();
+
+        const auto& io = ImGui::GetIO();
+        if (!isNewFrame || recordedFrame == ImGui::GetFrameCount() || ImGui::GetTopMostPopupModal())
+            return;
+        recordedCommand.clear();
+
+        for (const auto& command : commands) {
+            if (io.WantTextInput && !command.whileTyping)
+                continue;
+
+            auto isPressed = [&](ImGuiKeyChord shortcut) {
+                return shortcut && ImGui::IsKeyChordPressed(shortcut, command.repeat ? ImGuiInputFlags_Repeat : ImGuiInputFlags_None);
+                };
+            auto isCustom = Singletons::config->shortcuts.contains(GetName(command));
+            if (!isPressed(GetShortcut(command)) && (isCustom || !isPressed(command.alternative)))
+                continue;
+
+            if ((command.isFocused && !command.isFocused()) || (command.isEnabled && !command.isEnabled()))
+                continue;
+
+            command.action();
+            return;
+        }
+
+    }
+
+    void CommandPalette::RenderShortcuts() {
+
+        auto& shortcuts = Singletons::config->shortcuts;
+
+        if (!recordedCommand.empty()) {
+            recordedFrame = ImGui::GetFrameCount();
+            if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+                recordedCommand.clear();
+            }
+            else {
+                for (auto key = int32_t(ImGuiKey_Tab); key <= int32_t(ImGuiKey_KeypadEqual); key++) {
+                    auto isModifier = key >= ImGuiKey_LeftCtrl && key <= ImGuiKey_RightSuper;
+                    if (isModifier || !ImGui::IsKeyPressed(ImGuiKey(key), false))
+                        continue;
+                    shortcuts[recordedCommand] = ImGuiKeyChord(key) | ImGui::GetIO().KeyMods;
+                    recordedCommand.clear();
+                    break;
+                }
+            }
+        }
+
+        // Commands of a category aren't necessarily registered next to each other
+        std::vector<std::string> categories;
+        std::vector<const Command*> sortedCommands;
+        for (const auto& command : commands) {
+            if (std::find(categories.begin(), categories.end(), command.category) == categories.end())
+                categories.push_back(command.category);
+        }
+        for (const auto& category : categories)
+            for (const auto& command : commands)
+                if (command.category == category)
+                    sortedCommands.push_back(&command);
+
+        std::string category;
+        auto tableOpen = false;
+        for (auto sortedCommand : sortedCommands) {
+            const auto& command = *sortedCommand;
+            auto name = GetName(command);
+            auto shortcut = GetShortcut(command);
+            auto isCustom = shortcuts.contains(name);
+
+            if (command.category != category) {
+                if (tableOpen)
+                    ImGui::EndTable();
+                category = command.category;
+                ImGui::SeparatorText(category.c_str());
+                tableOpen = ImGui::BeginTable(category.c_str(), 3, ImGuiTableFlags_SizingFixedFit);
+                if (tableOpen) {
+                    ImGui::TableSetupColumn("Command", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Shortcut", ImGuiTableColumnFlags_WidthFixed, 10.0f * ImGui::GetFontSize());
+                    ImGui::TableSetupColumn("Reset", ImGuiTableColumnFlags_WidthFixed, 6.0f * ImGui::GetFontSize());
+                }
+            }
+            if (!tableOpen)
+                continue;
+
+            ImGui::PushID(name.c_str());
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(command.name.c_str());
+
+            ImGui::TableNextColumn();
+            auto isRecorded = recordedCommand == name;
+            auto label = isRecorded ? std::string("Press keys...") : GetShortcutName(shortcut);
+            if (!isRecorded && !isCustom && command.alternative)
+                label += " / " + GetShortcutName(command.alternative);
+            if (ImGui::Button((label + "##Shortcut").c_str(), ImVec2(-FLT_MIN, 0.0f))) {
+                recordedCommand = isRecorded ? std::string() : name;
+                recordedFrame = ImGui::GetFrameCount();
+            }
+
+            // The same keys in another window are fine
+            std::string others;
+            for (const auto& other : commands)
+                if (shortcut && &other != &command && GetShortcut(other) == shortcut)
+                    others += (others.empty() ? "" : "\n") + GetName(other);
+            if (!others.empty())
+                ImGui::SetItemTooltip("Also used by\n%s", others.c_str());
+
+            ImGui::TableNextColumn();
+            if (isCustom && ImGui::SmallButton("Reset"))
+                shortcuts.erase(name);
+            if (isCustom && shortcut)
+                ImGui::SameLine();
+            if (shortcut && ImGui::SmallButton("Clear"))
+                shortcuts[name] = ImGuiKey_None;
+            ImGui::PopID();
+        }
+        if (tableOpen)
+            ImGui::EndTable();
+
+    }
+
+    std::string CommandPalette::GetShortcutText(const std::string& name) const {
+
+        auto command = Find(name);
+        return command ? GetShortcutName(GetShortcut(*command)) : std::string();
+
+    }
+
+    std::string CommandPalette::GetTooltip(const std::string& text, const std::string& name) const {
+
+        auto shortcut = GetShortcutText(name);
+        return shortcut.empty() ? text : text + " (" + shortcut + ")";
+
+    }
+
+    ImGuiKeyChord CommandPalette::GetShortcut(const Command& command) {
+
+        const auto& shortcuts = Singletons::config->shortcuts;
+        auto custom = shortcuts.find(GetName(command));
+        return custom != shortcuts.end() ? custom->second : command.shortcut;
+
+    }
+
+    ImGuiKeyChord CommandPalette::ParseShortcut(const std::string& name) {
+
+        for (auto key = int32_t(ImGuiKey_NamedKey_BEGIN); key < int32_t(ImGuiKey_NamedKey_END); key++) {
+            if (!name.ends_with(ImGui::GetKeyName(ImGuiKey(key))))
+                continue;
+            // All combinations of the modifier bits, their names depend on the system
+            for (auto modifiers = 0; modifiers <= ImGuiMod_Mask_; modifiers += ImGuiMod_Ctrl)
+                if (GetShortcutName(key | modifiers) == name)
+                    return key | modifiers;
+        }
+
+        return ImGuiKey_None;
+
+    }
+
+    std::string CommandPalette::GetShortcutName(ImGuiKeyChord shortcut) {
+
+        return shortcut ? ImGui::GetKeyChordName(shortcut) : std::string();
 
     }
 
@@ -114,7 +294,7 @@ namespace Atlas::Editor::UI {
             ImGui::SameLine();
             ImGui::TextUnformatted(command.name.c_str());
 
-            std::string rightText = command.shortcut;
+            auto rightText = GetShortcutName(GetShortcut(command));
             if (checked)
                 rightText = rightText.empty() ? "On" : rightText + "   On";
             if (!rightText.empty()) {

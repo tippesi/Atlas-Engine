@@ -1,4 +1,5 @@
 #include "SceneHistory.h"
+#include "tools/AssetRenamer.h"
 
 #include "scene/SceneSerializer.h"
 
@@ -220,7 +221,7 @@ namespace Atlas::Editor {
                 Scene::Entity entity(Resolve(change.entity), &scene->entityManager);
                 if (!entity.IsValid())
                     continue;
-                RestoreComponents(entity, undo ? change.before : change.after);
+                RestoreComponents(entity, SaveComponents(entity), undo ? change.before : change.after);
                 changedEntities.push_back(entity);
             }
             };
@@ -279,7 +280,7 @@ namespace Atlas::Editor {
         // Changes the script made before are taken back, the hierarchy is saved as it was before the command
         auto restoreBefore = [&](auto&& self, Scene::Entity current) -> void {
             if (auto before = scriptChange.entitiesBefore.find(current); before != scriptChange.entitiesBefore.end())
-                RestoreComponents(current, before->second);
+                RestoreComponents(current, SaveComponents(current), before->second);
             for (const auto& [transformEntity, matrix] : scriptChange.transforms)
                 if (transformEntity == current && current.HasComponent<TransformComponent>())
                     current.GetComponent<TransformComponent>().Set(matrix);
@@ -389,7 +390,7 @@ namespace Atlas::Editor {
                 Scene::Entity entity(Resolve(entityChange.entity), &scene->entityManager);
                 if (!entity.IsValid())
                     continue;
-                RestoreComponents(entity, undo ? entityChange.before : entityChange.after);
+                RestoreComponents(entity, SaveComponents(entity), undo ? entityChange.before : entityChange.after);
                 changedEntities.push_back(entity);
             }
             };
@@ -548,7 +549,7 @@ namespace Atlas::Editor {
         auto components = j;
         components.erase("id");
         components.erase("entities");
-        Scene::EntityFromJson(components, entity, scene.get(), false);
+        Scene::EntityFromJson(AssetRenamer::UpdatePaths(components), entity, scene.get(), false);
 
         // Children need their components before the parent adds its hierarchy, see EntityFromJson
         if (j.contains("entities")) {
@@ -566,6 +567,83 @@ namespace Atlas::Editor {
 
     }
 
+    json SceneHistory::GetComponents(const Ref<Scene::Scene>& scene, Scene::Entity entity) {
+
+        this->scene = scene;
+        return SaveComponents(entity);
+
+    }
+
+    void SceneHistory::ApplyChanges(const Ref<Scene::Scene>& scene, Scene::Entity source, const json& before,
+        const std::vector<Scene::Entity>& entities) {
+
+        this->scene = scene;
+        auto after = SaveComponents(source);
+
+        auto belongsToEntity = [](const std::string& key) {
+            return key == "root" || key == "name" || key == "transform" || key == "hierarchy";
+            };
+
+        std::vector<std::string> changed, removed;
+        for (const auto& [key, value] : after.items())
+            if (!belongsToEntity(key) && (!before.contains(key) || !IsSameComponent(key, before[key], value)))
+                changed.push_back(key);
+        for (const auto& [key, value] : before.items())
+            if (!belongsToEntity(key) && !after.contains(key))
+                removed.push_back(key);
+
+        if (changed.empty() && removed.empty())
+            return;
+
+        for (auto entity : entities) {
+            auto current = SaveComponents(entity);
+            auto components = current;
+            for (const auto& key : changed) {
+                if (!before.contains(key)) {
+                    if (!components.contains(key))
+                        components[key] = after[key];
+                }
+                else if (components.contains(key)) {
+                    ApplyDifference(before[key], after[key], components[key]);
+                }
+            }
+            for (const auto& key : removed)
+                components.erase(key);
+            RestoreComponents(entity, current, components);
+        }
+
+    }
+
+    void SceneHistory::ApplyDifference(const json& before, const json& after, json& target) {
+
+        if (before == after)
+            return;
+
+        if (before.is_object() && after.is_object() && target.is_object()) {
+            for (const auto& [key, value] : after.items()) {
+                if (before.contains(key) && target.contains(key))
+                    ApplyDifference(before[key], value, target[key]);
+                else if (!before.contains(key))
+                    target[key] = value;
+            }
+            for (const auto& [key, value] : before.items())
+                if (!after.contains(key))
+                    target.erase(key);
+            return;
+        }
+
+        // Elements of lists with another length don't correspond to each other
+        if (before.is_array() && after.is_array() && target.is_array() &&
+            before.size() == after.size() && before.size() == target.size()) {
+            for (size_t i = 0; i < after.size(); i++)
+                ApplyDifference(before[i], after[i], target[i]);
+            return;
+        }
+
+        target = after;
+
+    }
+
     json SceneHistory::SaveComponents(Scene::Entity entity) {
 
         json j;
@@ -577,9 +655,9 @@ namespace Atlas::Editor {
 
     }
 
-    void SceneHistory::RestoreComponents(Scene::Entity entity, const json& j) {
+    void SceneHistory::RestoreComponents(Scene::Entity entity, const json& current, const json& state) {
 
-        auto current = SaveComponents(entity);
+        auto j = AssetRenamer::UpdatePaths(state);
 
         for (const auto& [key, value] : current.items()) {
             if (key == "root" || (j.contains(key) && IsSameComponent(key, j[key], value)))
@@ -711,7 +789,9 @@ namespace Atlas::Editor {
 
     }
 
-    void SceneHistory::RestoreSettings(const json& j) {
+    void SceneHistory::RestoreSettings(const json& state) {
+
+        auto j = AssetRenamer::UpdatePaths(state);
 
         // Only changed settings are restored, e.g. the irradiance volume would need to be rebuilt
         auto current = SaveSettings();

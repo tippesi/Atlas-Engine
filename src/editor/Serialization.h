@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "ui/windows/SceneWindow.h"
 #include "ui/windows/ContentBrowserWindow.h"
@@ -39,9 +41,14 @@ namespace Atlas::Editor {
 
         static void TryWriteToFile(const std::string& filename, json& j);
 
-        static std::string TryReadFromFile(const std::string& filename);
+        // Empty if the file doesn't exist or is damaged, the defaults are used then
+        static json TryReadJson(const std::string& filename);
 
         static std::string configPath;
+        // What the config files contain, the state is saved regularly and most of it doesn't change
+        static std::unordered_map<std::string, json> writtenConfigs;
+        // The last save of them failed
+        static std::unordered_set<std::string> failedConfigs;
 
     };
 

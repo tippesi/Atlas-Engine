@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "scene/Scene.h"
+#include "SceneHistory.h"
 
 #include "components/NameComponentPanel.h"
 #include "components/TransformComponentPanel.h"
@@ -35,6 +36,9 @@ namespace Atlas::Editor::UI {
     struct EntityProperties {
         Scene::Entity entity;
         Scene::Entity editorCameraEntity;
+        // The rest of the selection gets the same changes
+        std::vector<Scene::Entity> otherEntities;
+        SceneHistory* history = nullptr;
     };
 
     class EntityPropertiesPanel : public Panel {
@@ -67,6 +71,20 @@ namespace Atlas::Editor::UI {
         HierarchyComponentPanel hierarchyComponentPanel;
 
     private:
+        // The components of the entity before an interaction which changes several entities
+        struct MultiEdit {
+            Scene::Entity entity;
+            std::vector<Scene::Entity> others;
+            json before;
+        };
+
+        void RenderComponents(Ref<Scene::Scene>& scene, Scene::Entity entity);
+
+        // The other entities get the changes
+        void FinishMultiEdit(Ref<Scene::Scene>& scene, SceneHistory& history);
+
+        std::optional<MultiEdit> multiEdit;
+
         std::function<void()> pendingRemoval;
         std::string componentSearch;
 

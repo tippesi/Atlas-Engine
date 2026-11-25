@@ -12,6 +12,22 @@
 
 namespace Atlas::Editor::UI {
 
+    CodeEditor* CodeEditor::focusedEditor = nullptr;
+    int32_t CodeEditor::focusedFrame = 0;
+
+    CodeEditor::~CodeEditor() {
+
+        if (focusedEditor == this)
+            focusedEditor = nullptr;
+
+    }
+
+    CodeEditor* CodeEditor::GetFocused() {
+
+        return focusedFrame == ImGui::GetFrameCount() ? focusedEditor : nullptr;
+
+    }
+
     bool CodeEditor::Render(const char* id, std::string& text, ImVec2 size) {
 
         return RenderEditor(id, text, readOnly ? nullptr : &text, size);
@@ -32,6 +48,15 @@ namespace Atlas::Editor::UI {
         undoStack.clear();
         redoStack.clear();
         Tokenize();
+
+    }
+
+    void CodeEditor::GoToLine(int32_t line) {
+
+        line = std::clamp(line - 1, 0, int32_t(lineStarts.size()) - 1);
+        anchor = GetLineEnd(line);
+        cursor = lineStarts[line];
+        scrollToCursor = true;
 
     }
 
@@ -131,7 +156,14 @@ namespace Atlas::Editor::UI {
             Restore(undoStack, redoStack);
         if (editedText && action == Action::Redo)
             Restore(redoStack, undoStack);
+        if ((action == Action::FindNext || action == Action::FindPrevious) && !searchText.empty())
+            FindNext(action == Action::FindNext);
         if (action == Action::Search || action == Action::Replace) {
+            // A selection within a line is searched for
+            auto selectionStart = std::min(cursor, anchor);
+            auto selectionEnd = std::max(cursor, anchor);
+            if (selectionStart != selectionEnd && content.find('\n', selectionStart) >= size_t(selectionEnd))
+                searchText = content.substr(selectionStart, selectionEnd - selectionStart);
             searchOpen = true;
             searchFocusRequested = true;
             replaceOpen = action == Action::Replace && editedText;
@@ -172,6 +204,8 @@ namespace Atlas::Editor::UI {
                 ImGui::SetNextFrameWantCaptureKeyboard(true);
                 io.WantCaptureKeyboard = true;
                 HandleKeyboard(editedText != nullptr, inner.GetHeight());
+                focusedEditor = this;
+                focusedFrame = ImGui::GetFrameCount();
             }
             if (wasFocused && !focused && editedWhileFocused) {
                 deactivatedAfterEdit = true;
@@ -506,17 +540,6 @@ namespace Atlas::Editor::UI {
             anchor = cursor;
             searchOpen = false;
         }
-        else if (shortcut && (ImGui::IsKeyPressed(ImGuiKey_F) || ImGui::IsKeyPressed(ImGuiKey_H))) {
-            // A selection within a line is searched for
-            if (hasSelection && content.find('\n', selectionStart) >= size_t(selectionEnd))
-                searchText = content.substr(selectionStart, selectionEnd - selectionStart);
-            searchOpen = true;
-            searchFocusRequested = true;
-            replaceOpen = canEdit && ImGui::IsKeyPressed(ImGuiKey_H);
-        }
-        else if (ImGui::IsKeyPressed(ImGuiKey_F3) && !searchText.empty()) {
-            FindNext(!shift);
-        }
         else if (shortcut && ImGui::IsKeyPressed(ImGuiKey_A)) {
             anchor = 0;
             cursor = int32_t(content.size());
@@ -536,10 +559,6 @@ namespace Atlas::Editor::UI {
             std::erase(value, '\r');
             Replace(selectionStart, selectionEnd, value, false);
         }
-        else if (shortcut && ImGui::IsKeyPressed(ImGuiKey_Z))
-            shift ? Restore(redoStack, undoStack) : Restore(undoStack, redoStack);
-        else if (shortcut && ImGui::IsKeyPressed(ImGuiKey_Y))
-            Restore(redoStack, undoStack);
         else if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter)) {
             // The new line keeps the indentation
             auto indentation = lineStart;
@@ -945,10 +964,12 @@ namespace Atlas::Editor::UI {
         ImGui::AlignTextToFramePadding();
         ImGui::TextColored(Theme::TextMuted(), "%s", countText.c_str());
         ImGui::SameLine();
-        if (Widgets::ToolbarIconButton("Previous match", Singletons::icons->Get(IconType::ArrowUp), "Previous match (Shift+F3)"))
+        if (Widgets::ToolbarIconButton("Previous match", Singletons::icons->Get(IconType::ArrowUp),
+            Singletons::commandPalette->GetTooltip("Previous match", "Code: Find previous").c_str()))
             FindNext(false);
         ImGui::SameLine();
-        if (Widgets::ToolbarIconButton("Next match", Singletons::icons->Get(IconType::ArrowDown), "Next match (F3)"))
+        if (Widgets::ToolbarIconButton("Next match", Singletons::icons->Get(IconType::ArrowDown),
+            Singletons::commandPalette->GetTooltip("Next match", "Code: Find next").c_str()))
             FindNext(true);
         if (canEdit) {
             ImGui::SameLine();
@@ -957,7 +978,7 @@ namespace Atlas::Editor::UI {
             auto toggled = ImGui::Button("Replace");
             if (replaceOpen)
                 Theme::PopPrimaryButton();
-            ImGui::SetItemTooltip("Replace (Ctrl+H)");
+            ImGui::SetItemTooltip("%s", Singletons::commandPalette->GetTooltip("Replace", "Code: Replace").c_str());
             if (toggled)
                 replaceOpen = !replaceOpen;
         }

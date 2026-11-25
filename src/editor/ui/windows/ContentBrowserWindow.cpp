@@ -7,6 +7,8 @@
 #include "Theme.h"
 #include "tools/CopyPasteHelper.h"
 #include "tools/FileSystemHelper.h"
+#include "tools/AssetReferenceIndex.h"
+#include "tools/AssetRenamer.h"
 
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
@@ -14,6 +16,7 @@
 #include "loader/AssetLoader.h"
 
 #include <filesystem>
+#include <set>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
@@ -36,9 +39,11 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::Update() {
 
+        AssetReferenceIndex::Update();
+
         // A search runs on the medium pool next to long jobs (e.g. navigation tiles), the window doesn't wait for it.
         // The next search starts once the last one has finished
-        if (!show || isEditing || !searchAndFilterJob.HasFinished())
+        if (!show || isEditing || renameState != RenameState::Asking || !searchAndFilterJob.HasFinished())
             return;
 
         auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
@@ -156,13 +161,17 @@ namespace Atlas::Editor::UI {
                         auto nameComponent = entity.TryGetComponent<NameComponent>();
                         auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
-                        auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
-                        auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory) + "/";
-                        if (assetPath.starts_with('/'))
-                            assetPath.erase(assetPath.begin());
+                        auto target = std::filesystem::path(currentDirectory) / (entityName + ".aeprefab");
+                        FileSystemHelper::WriteOrAsk(target, [sceneHandle, entity](const std::filesystem::path& target) {
+                            auto assetPath = Common::Path::GetRelative(Loader::AssetLoader::GetDataDirectory(),
+                                Common::Path::Normalize(target.string()));
+                            if (assetPath.starts_with('/'))
+                                assetPath.erase(assetPath.begin());
 
-                        auto entityPath = assetPath + entityName + ".aeprefab";
-                        Serializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
+                            if (!Serializer::SerializePrefab(sceneHandle.Get(), entity, assetPath))
+                                Notifications::Push({ .message = "Couldn't write " + assetPath, .type = NotificationType::Error });
+                            ContentDiscovery::Execute();
+                            });
                     }
                 }
             }
@@ -185,6 +194,8 @@ namespace Atlas::Editor::UI {
         ImGui::EndChild();
 
         RenderDeleteConfirmation();
+        RenderRenameConfirmation();
+        RenderReferences();
 
         End();
 
@@ -194,6 +205,8 @@ namespace Atlas::Editor::UI {
 
         const char* popupName = "Delete content?";
         if (openDeleteConfirmation) {
+            users.reset();
+            AssetReferenceIndex::Request();
             ImGui::OpenPopup(popupName);
             openDeleteConfirmation = false;
         }
@@ -216,9 +229,31 @@ namespace Atlas::Editor::UI {
                 ImGui::TextColored(Theme::TextMuted(), "and %d more", int32_t(pendingDeletePaths.size() - shownNames));
         }
 
+        FindUsersOnce([&]() {
+            std::set<std::string> uniqueUsers;
+            for (const auto& path : pendingDeletePaths)
+                for (const auto& user : AssetReferenceIndex::FindUsers(GetAssetPath(path)))
+                    uniqueUsers.insert(user);
+            // Users which are deleted as well don't miss anything
+            for (const auto& path : pendingDeletePaths) {
+                auto assetPath = GetAssetPath(path);
+                std::erase_if(uniqueUsers, [&](const std::string& user) { return user == assetPath || user.starts_with(assetPath + "/"); });
+            }
+            return std::vector<std::string>(uniqueUsers.begin(), uniqueUsers.end());
+            });
         ImGui::Spacing();
-        ImGui::TextColored(Theme::Warning(), pendingDeleteHasDirectory ? "Folders are deleted with everything in them. This can't be undone" :
-            "This can't be undone");
+        if (users && !users->empty())
+            ImGui::TextColored(Theme::Warning(), users->size() == 1 ? "Still used by %d file" : "Still used by %d files",
+                int32_t(users->size()));
+        RenderUserList();
+
+        ImGui::Spacing();
+        if (pendingDeleteHasDirectory)
+            ImGui::TextColored(Theme::Warning(), "Folders are deleted with everything in them");
+        if (FileSystemHelper::hasRecycleBin)
+            ImGui::TextColored(Theme::TextMuted(), "The files are moved to the recycle bin");
+        else
+            ImGui::TextColored(Theme::Warning(), "This can't be undone");
         ImGui::Spacing();
 
         auto buttonWidth = ImGui::CalcTextSize("Cancel").x * 2.5f;
@@ -239,6 +274,161 @@ namespace Atlas::Editor::UI {
         }
 
         ImGui::EndPopup();
+
+    }
+
+    std::string ContentBrowserWindow::GetAssetPath(const std::filesystem::path& path) {
+
+        auto assetPath = Common::Path::GetRelative(Loader::AssetLoader::GetDataDirectory(), Common::Path::Normalize(path.string()));
+        assetPath = Common::Path::Normalize(assetPath);
+        if (assetPath.starts_with('/'))
+            assetPath.erase(assetPath.begin());
+        return assetPath;
+
+    }
+
+    void ContentBrowserWindow::FindUsersOnce(const std::function<std::vector<std::string>()>& find) {
+
+        if (!users && AssetReferenceIndex::IsReady())
+            users = find();
+
+    }
+
+    void ContentBrowserWindow::RenderUserList() {
+
+        auto width = 30.0f * ImGui::GetFontSize();
+        if (!users) {
+            ImGui::TextColored(Theme::TextMuted(), "Looking for references...");
+            ImGui::ProgressBar(AssetReferenceIndex::GetProgress(), ImVec2(width, 0.0f));
+            return;
+        }
+
+        if (users->empty())
+            return;
+
+        auto rows = std::min(float(users->size()), 10.0f);
+        ImGui::BeginChild("Users", ImVec2(width, rows * ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().WindowPadding.y));
+        ImGuiListClipper clipper;
+        clipper.Begin(int32_t(users->size()));
+        while (clipper.Step()) {
+            for (int32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                if (ImGui::Selectable(users->at(i).c_str(), false, ImGuiSelectableFlags_NoAutoClosePopups)) {
+                    contentToShowPath = users->at(i);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+        ImGui::EndChild();
+
+    }
+
+    void ContentBrowserWindow::RenderReferences() {
+
+        const char* popupName = "References";
+        if (openReferences) {
+            users.reset();
+            AssetReferenceIndex::Request();
+            ImGui::OpenPopup(popupName);
+            openReferences = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+            return;
+
+        FindUsersOnce([&]() { return AssetReferenceIndex::FindUsers(referencedPath); });
+        if (users)
+            ImGui::Text(users->size() == 1 ? "%s is used by %d file" : "%s is used by %d files", referencedPath.c_str(), int32_t(users->size()));
+        RenderUserList();
+
+        ImGui::Spacing();
+        if (ImGui::Button("Close") || ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+
+    }
+
+    void ContentBrowserWindow::RenderRenameConfirmation() {
+
+        const char* popupName = "Update references?";
+        if (openRenameConfirmation) {
+            users.reset();
+            renameState = RenameState::Asking;
+            AssetReferenceIndex::Request();
+            ImGui::OpenPopup(popupName);
+            openRenameConfirmation = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+            return;
+
+        FindUsersOnce([&]() { return AssetReferenceIndex::FindUsers(GetAssetPath(renameSource), true); });
+
+        ImGui::Text("Rename %s to %s", renameSource.filename().string().c_str(), renameTarget.filename().string().c_str());
+        if (users && !users->empty())
+            ImGui::Text(users->size() == 1 ? "%d file uses it" : "%d files use it", int32_t(users->size()));
+        if (renameState != RenameState::OnlyRename)
+            RenderUserList();
+        ImGui::Spacing();
+
+        auto buttonWidth = ImGui::CalcTextSize("Rename and update").x * 1.3f;
+        if (renameState == RenameState::Asking) {
+            ImGui::BeginDisabled(!users);
+            if (ImGui::Button("Rename and update", ImVec2(buttonWidth, 0.0f)))
+                renameState = RenameState::UpdateUsers;
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            if (ImGui::Button("Only rename", ImVec2(buttonWidth, 0.0f)))
+                renameState = RenameState::OnlyRename;
+            ImGui::SameLine();
+            // Nothing to decide
+            if (users && users->empty())
+                renameState = RenameState::UpdateUsers;
+        }
+        else {
+            ImGui::TextColored(Theme::TextMuted(), "Waiting for background jobs...");
+        }
+        auto cancel = ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        // Jobs keep files open and read the paths of resources, some of them run for a while
+        auto renamed = renameState != RenameState::Asking && !cancel && JobSystem::GetPendingJobCount(JobPriority::Medium) == 0 &&
+            JobSystem::GetPendingJobCount(JobPriority::Low) == 0;
+        if (renamed)
+            RenameContent();
+        if (renamed || cancel) {
+            renameState = RenameState::Asking;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+
+    }
+
+    void ContentBrowserWindow::RenameContent() {
+
+        auto oldPath = GetAssetPath(renameSource);
+        auto newPath = GetAssetPath(renameTarget);
+        auto updateUsers = renameState == RenameState::UpdateUsers;
+
+        // Only short ones are left
+        JobSystem::WaitAll();
+
+        std::error_code error;
+        std::filesystem::rename(renameSource, renameTarget, error);
+        if (error) {
+            Notifications::Push({ .message = "Couldn't rename " + renameSource.filename().string() + ": " + error.message(),
+                .type = NotificationType::Error });
+            return;
+        }
+
+        AssetRenamer::RenameResources(oldPath, newPath);
+        if (onRename)
+            onRename(oldPath, newPath, updateUsers);
+        if (updateUsers)
+            AssetReferenceIndex::RenameInFiles(*users, oldPath, newPath);
+        ContentDiscovery::Execute();
 
     }
 
@@ -709,6 +899,11 @@ namespace Atlas::Editor::UI {
                 openDeleteConfirmation = true;
             }
 
+            if (singleSelect && ImGui::MenuItem("Find references")) {
+                referencedPath = assetRelativePath;
+                openReferences = true;
+            }
+
             ImGui::EndPopup();
         }
 
@@ -1042,6 +1237,7 @@ namespace Atlas::Editor::UI {
         case ContentType::Animation: return "Animation";
         case ContentType::MaterialGraph: return "Material graph";
         case ContentType::MaterialSubgraph: return "Material subgraph";
+        case ContentType::Impostor: return "Impostor";
         default: return "File";
         }
 
@@ -1117,48 +1313,72 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::ApplyEdit(ContentType type) {
 
+        if (editingString.empty())
+            return;
+
+        std::string extension;
+        if (editingType == EditingType::Rename)
+            extension = editingPath.extension().string();
+        else if (type == ContentType::Material)
+            extension = ".aematerial";
+        else if (type == ContentType::MaterialGraph)
+            extension = ".aematgraph";
+        else if (type == ContentType::MaterialSubgraph)
+            extension = ".aematsubgraph";
+        else if (type == ContentType::Script)
+            extension = ".lua";
+
+        // The extension doesn't have to be typed
+        auto name = editingString;
+        if (name.size() > extension.size() && Common::Path::ToLower(name).ends_with(Common::Path::ToLower(extension)))
+            name.resize(name.size() - extension.size());
+
+        auto directory = editingType == EditingType::Rename ? editingPath.parent_path() : editingPath;
+        auto path = directory / (name + extension);
+
+        // Only the case of a name can change without another file in the way
+        std::error_code error;
+        auto sameFile = editingType == EditingType::Rename && std::filesystem::equivalent(editingPath, path, error);
+        if (!sameFile && std::filesystem::exists(path, error)) {
+            Notifications::Push({ .message = path.filename().string() + " exists already", .type = NotificationType::Warning });
+            return;
+        }
+
         if (editingType == EditingType::Rename) {
-            auto newPath = editingPath;
-            newPath = newPath.replace_filename(editingString);
-            if (editingPath.has_extension())
-                newPath = newPath.replace_extension(editingPath.extension());
-            std::filesystem::rename(editingPath, newPath);
+            if (path == editingPath)
+                return;
+            renameSource = editingPath;
+            renameTarget = path;
+            openRenameConfirmation = true;
             return;
         }
 
         if (type == ContentType::None) {
-            auto dirPath = editingPath;
-            dirPath.append(editingString);
-            std::filesystem::create_directory(dirPath);
+            error.clear();
+            std::filesystem::create_directory(path, error);
+            if (error)
+                Notifications::Push({ .message = "Couldn't create " + path.filename().string() + ": " + error.message(),
+                    .type = NotificationType::Error });
             return;
         }
 
-        auto path = editingPath;
-        path.append(editingString);
-
         // All the file types with a loader
         if (type == ContentType::Material) {
-            path.replace_extension("aematerial");            
             Loader::MaterialLoader::SaveMaterial(CreateRef<Material>(), path.string());
             return;
         }
 
         if (type == ContentType::MaterialGraph) {
-            path.replace_extension("aematgraph");
             Loader::MaterialGraphLoader::SaveGraph(MaterialGraph::Graph::CreateDefault(), path.string());
             return;
         }
 
         if (type == ContentType::MaterialSubgraph) {
-            path.replace_extension("aematsubgraph");
             Loader::MaterialGraphLoader::SaveGraph(MaterialGraph::Graph::CreateDefaultSubgraph(), path.string());
             return;
         }
 
         // All the files with empty contents
-        if (type == ContentType::Script) {
-            path.replace_extension("lua");
-        }
         auto assetRelative = Common::Path::GetAbsolute(path.string());
         auto fileStream = Loader::AssetLoader::WriteFile(assetRelative, std::ios::out | std::ios::binary);
         if (!fileStream.is_open()) {

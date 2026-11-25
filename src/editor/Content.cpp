@@ -41,6 +41,7 @@ namespace Atlas::Editor {
         { "ktx2", ContentType::Texture },
         { "hdr", ContentType::EnvironmentTexture },
         { "aeanimation", ContentType::Animation },
+        { "aeimpostor", ContentType::Impostor },
     };
 
 }

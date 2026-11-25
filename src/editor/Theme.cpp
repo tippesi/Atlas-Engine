@@ -327,7 +327,8 @@ namespace Atlas::Editor {
         case Editor::ContentType::Material: color = Rgb(102, 187, 92); break;
         case Editor::ContentType::MaterialGraph: color = Rgb(56, 178, 150); break;
         case Editor::ContentType::MaterialSubgraph: color = Rgb(60, 150, 170); break;
-        case Editor::ContentType::Mesh: color = Rgb(64, 172, 226); break;
+        case Editor::ContentType::Mesh:
+        case Editor::ContentType::Impostor: color = Rgb(64, 172, 226); break;
         case Editor::ContentType::MeshSource: color = Rgb(112, 146, 186); break;
         case Editor::ContentType::Prefab: color = Rgb(92, 120, 240); break;
         case Editor::ContentType::Scene: color = Rgb(238, 186, 64); break;

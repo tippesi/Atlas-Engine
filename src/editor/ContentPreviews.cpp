@@ -33,7 +33,6 @@
 #include <filesystem>
 #include <fstream>
 #include <limits>
-#include <random>
 #include <set>
 
 namespace Atlas::Editor {
@@ -356,7 +355,8 @@ namespace Atlas::Editor {
 
         switch (contentType) {
         case ContentType::Audio: return icons->GetTintable(IconType::Audio);
-        case ContentType::Mesh: return icons->GetTintable(IconType::Mesh);
+        case ContentType::Mesh:
+        case ContentType::Impostor: return icons->GetTintable(IconType::Mesh);
         case ContentType::MeshSource: return icons->GetTintable(IconType::MeshSource);
         case ContentType::Material: return icons->GetTintable(IconType::Material);
         case ContentType::MaterialGraph:
@@ -1152,26 +1152,10 @@ namespace Atlas::Editor {
         for (const auto& dependency : dependencies)
             dependencyData += dependency + "\n" + std::to_string(GetLastWriteTime(dependency)) + "\n";
 
-        // Written aside and renamed, a preview is never read while it is written
-        auto writeFile = [](const std::string& path, const char* data, size_t size) {
-            auto tempPath = path + "." + std::to_string(std::random_device()());
-            auto stream = Loader::AssetLoader::WriteFile(tempPath, std::ios::out | std::ios::binary);
-            if (!stream.is_open())
-                return;
-
-            stream.write(data, std::streamsize(size));
-            stream.close();
-
-            std::error_code error;
-            if (!stream.fail())
-                std::filesystem::rename(Loader::AssetLoader::GetFullPath(tempPath), Loader::AssetLoader::GetFullPath(path), error);
-            if (stream.fail() || error)
-                Loader::AssetLoader::RemoveFile(tempPath);
-            };
-
+        // A preview is never read while it is written
         auto cachePath = GetCachePath(version);
-        writeFile(cachePath + ".dependencies", dependencyData.data(), dependencyData.size());
-        writeFile(cachePath, fileData.data(), fileData.size());
+        Loader::AssetLoader::WriteFileAtomically(cachePath + ".dependencies", dependencyData.data(), dependencyData.size());
+        Loader::AssetLoader::WriteFileAtomically(cachePath, reinterpret_cast<const char*>(fileData.data()), fileData.size());
 
     }
 

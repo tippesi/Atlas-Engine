@@ -6,6 +6,7 @@
 #include "Icons.h"
 #include "Config.h"
 #include "BlockingOperation.h"
+#include "ui/popups/CommandPalette.h"
 
 #include "project/Project.h"
 
@@ -23,6 +24,7 @@ namespace Atlas::Editor {
         static Ref<Icons> icons;
         static Ref<Config> config;
         static Ref<BlockingOperation> blockingOperation;
+        static Ref<UI::CommandPalette> commandPalette;
         // Shared by everything which shows content, e.g. the content browser and resource selections
         static Ref<ContentPreviews> contentPreviews;
         // Without a project the editor shows the project hub

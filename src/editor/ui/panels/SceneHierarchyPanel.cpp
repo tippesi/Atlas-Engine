@@ -80,7 +80,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::Render(Ref<Scene::Scene>& scene, bool inFocus) {
+    void SceneHierarchyPanel::Render(Ref<Scene::Scene>& scene) {
 
         const float padding = 8.0f;
 
@@ -163,20 +163,6 @@ namespace Atlas::Editor::UI {
             if (showSceneSettings)
                 RenderExtendedHierarchy(scene, &selectionChanged);
 
-            const auto& io = ImGui::GetIO();
-            bool controlDown;
-#ifdef AE_OS_MACOS
-            controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
-#else
-            controlDown = io.KeyCtrl;
-#endif
-            if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_D, false))
-                DuplicateSelectedEntity(scene);
-            if (inFocus && !io.WantCaptureKeyboard && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
-                DeleteSelectedEntities(scene);
-            if (inFocus && !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F2, false) && selectedEntity.IsValid())
-                StartRename(selectedEntity);
-
             if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !selectionChanged) {
                 ClearSelection();
             }
@@ -239,8 +225,8 @@ namespace Atlas::Editor::UI {
     void SceneHierarchyPanel::StartRename(Scene::Entity entity) {
 
         auto nameComponent = entity.TryGetComponent<NameComponent>();
-        // The root entity is found by its name, so it must not be renamed
-        if (!nameComponent || nameComponent->name == "Root")
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+        if (!nameComponent || (hierarchyComponent && hierarchyComponent->root))
             return;
 
         renamingEntity = entity;
@@ -480,7 +466,7 @@ namespace Atlas::Editor::UI {
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
-        bool rootNode = nodeName == "Root";
+        bool rootNode = hierarchyComponent && hierarchyComponent->root;
 
         auto nodeFlags = baseFlags;
         nodeFlags |= selectedEntities.contains(entity) ? ImGuiTreeNodeFlags_Selected : 0;
@@ -566,10 +552,11 @@ namespace Atlas::Editor::UI {
         droppedEntity = AcceptEntityDrop(scene);
 
         if (ImGui::BeginPopupContextItem()) {
-            if (ImGui::MenuItem("Focus", "F"))
+            auto getShortcut = [](const char* command) { return Singletons::commandPalette->GetShortcutText(command); };
+            if (ImGui::MenuItem("Focus", getShortcut("Viewport: Focus selection").c_str()))
                 focusRequested = true;
 
-            if (!rootNode && nameComponent && ImGui::MenuItem("Rename", "F2"))
+            if (!rootNode && nameComponent && ImGui::MenuItem("Rename", getShortcut("Hierarchy: Rename selected entity").c_str()))
                 StartRename(entity);
 
             ImGui::Separator();
@@ -579,11 +566,11 @@ namespace Atlas::Editor::UI {
                 ImGui::EndMenu();
             }
 
-            if (!rootNode && ImGui::MenuItem("Duplicate entity"))
+            if (!rootNode && ImGui::MenuItem("Duplicate entity", getShortcut("Hierarchy: Duplicate selection").c_str()))
                 duplicateEntity = true;
 
             // We shouldn't allow the user to delete the root entity
-            if (!rootNode && ImGui::MenuItem("Delete entity"))
+            if (!rootNode && ImGui::MenuItem("Delete entity", getShortcut("Hierarchy: Delete selection").c_str()))
                 deleteEntity = true;
 
             ImGui::EndPopup();
@@ -702,7 +689,7 @@ namespace Atlas::Editor::UI {
 
         // If the hierarchy is emtpy after movements or deletions, also remove the hierarchy
         hierarchyComponent = deleteEntity ? nullptr : entity.TryGetComponent<HierarchyComponent>();
-        if (hierarchyComponent && hierarchyComponent->GetChildren().empty()) {
+        if (!rootNode && hierarchyComponent && hierarchyComponent->GetChildren().empty()) {
             entity.RemoveComponent<HierarchyComponent>();
         }
 
@@ -805,7 +792,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::DeleteSelectedEntities(Ref<Scene::Scene>& scene) {
+    void SceneHierarchyPanel::DeleteSelectedEntities(const Ref<Scene::Scene>& scene) {
 
         sceneChanged |= !selectedEntities.empty();
 
@@ -830,7 +817,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::DuplicateSelectedEntity(Ref<Scene::Scene>& scene) {
+    void SceneHierarchyPanel::DuplicateSelectedEntity(const Ref<Scene::Scene>& scene) {
 
         sceneChanged |= !selectedEntities.empty();
 

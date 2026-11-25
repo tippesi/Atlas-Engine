@@ -8,6 +8,7 @@ namespace Atlas::Editor {
     Ref<Icons> Singletons::icons;
     Ref<Config> Singletons::config;
     Ref<BlockingOperation> Singletons::blockingOperation;
+    Ref<UI::CommandPalette> Singletons::commandPalette;
     Ref<ContentPreviews> Singletons::contentPreviews;
     Ref<Project> Singletons::project;
 
@@ -19,6 +20,7 @@ namespace Atlas::Editor {
         icons.reset();
         config.reset();
         blockingOperation.reset();
+        commandPalette.reset();
         project.reset();
 
     }

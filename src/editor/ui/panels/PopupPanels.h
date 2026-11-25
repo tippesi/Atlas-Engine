@@ -42,6 +42,9 @@ namespace Atlas::Editor::UI {
 
         static void RenderImportScenePopup();
 
+        // Asks before files are replaced, see FileSystemHelper::WriteOrAsk
+        static void RenderReplaceFilesPopup();
+
         static void RenderBlockingPopup();
 
     };

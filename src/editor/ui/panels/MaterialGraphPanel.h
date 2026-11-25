@@ -35,6 +35,9 @@ namespace Atlas::Editor::UI {
 
         void FrameAll();
 
+        // The selected nodes, all without a selection
+        void FrameView();
+
         void Arrange(MaterialGraph::Graph& graph);
 
         void OpenAddMenu();
@@ -164,8 +167,6 @@ namespace Atlas::Editor::UI {
 
         void HandleInteractions(MaterialGraph::Graph& graph);
 
-        void HandleShortcuts(const ResourceHandle<MaterialGraph::Graph>& graph);
-
         void RenderNodeMenu(MaterialGraph::Graph& graph);
 
         void RenderAddMenu(MaterialGraph::Graph& graph);
@@ -247,6 +248,7 @@ namespace Atlas::Editor::UI {
         Ref<const MaterialGraph::CompiledGraph> lastCompiled;
         bool frameRequested = true;
         bool frameOnlySelection = false;
+        bool isHovered = false;
         bool showCode = false;
         bool showInspector = true;
 

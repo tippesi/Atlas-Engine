@@ -37,6 +37,11 @@ namespace Atlas::Editor::UI {
     class CodeEditor {
 
     public:
+        ~CodeEditor();
+
+        // The one which had the keyboard focus in the last frame, nullptr if none had it
+        static CodeEditor* GetFocused();
+
         // Returns whether the text changed. A size of zero fills the available space on that axis
         bool Render(const char* id, std::string& text, ImVec2 size = ImVec2(0.0f, 0.0f));
 
@@ -46,18 +51,27 @@ namespace Atlas::Editor::UI {
         // True for one frame when the editor lost the focus after the text was changed
         bool IsDeactivatedAfterEdit() const;
 
-        // Actions of a toolbar, they happen in the next Render
+        // Actions of a toolbar or a shortcut, they happen in the next Render
         void Undo() { requestedAction = Action::Undo; }
 
         void Redo() { requestedAction = Action::Redo; }
 
-        void OpenSearch(bool replace) { requestedAction = replace ? Action::Replace : Action::Search; }
+        void OpenSearch() { requestedAction = Action::Search; }
+
+        void OpenReplace() { requestedAction = Action::Replace; }
+
+        void FindNextMatch() { requestedAction = Action::FindNext; }
+
+        void FindPreviousMatch() { requestedAction = Action::FindPrevious; }
 
         // Starts with a text before the editor is rendered, e.g. the file of a window, without undo steps
         void Reset(const std::string& text);
 
         // Replaces the whole text as one undo step, the caller changes its own copy of the text too
         void SetText(const std::string& text) { Replace(0, int32_t(content.size()), text, false); }
+
+        // Selects a line and scrolls to it, the first one is 1
+        void GoToLine(int32_t line);
 
         bool CanUndo() const { return !undoStack.empty(); }
 
@@ -79,8 +93,13 @@ namespace Atlas::Editor::UI {
             Undo,
             Redo,
             Search,
-            Replace
+            Replace,
+            FindNext,
+            FindPrevious
         };
+
+        static CodeEditor* focusedEditor;
+        static int32_t focusedFrame;
 
         void RenderSearch(bool canEdit);
 

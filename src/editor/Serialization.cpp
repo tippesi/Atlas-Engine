@@ -3,21 +3,25 @@
 #include "FileImporter.h"
 #include "Notifications.h"
 
+#include "common/Path.h"
 #include "common/SerializationHelper.h"
 #include "tools/ToolSerializer.h"
 #include "scene/SceneSerializer.h"
 #include "physics/PhysicsSerializer.h"
 
 #include "Log.h"
+#include "loader/AssetLoader.h"
 #include "profiler/HitchRecorder.h"
 
 #include <algorithm>
 #include <cctype>
-#include "loader/AssetLoader.h"
+#include <filesystem>
 
 namespace Atlas::Editor {
 
     std::string Serialization::configPath = ".config/";
+    std::unordered_map<std::string, json> Serialization::writtenConfigs;
+    std::unordered_set<std::string> Serialization::failedConfigs;
 
     void Serialization::SetConfigDirectory(const std::string& directory) {
 
@@ -51,6 +55,10 @@ namespace Atlas::Editor {
             { "maxHitches", hitchSettings.maxHitches }
         };
 
+        auto shortcuts = json::object();
+        for (const auto& [command, shortcut] : config->shortcuts)
+            shortcuts[command] = UI::CommandPalette::GetShortcutName(shortcut);
+
         json j = {
             { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
@@ -58,6 +66,7 @@ namespace Atlas::Editor {
             { "uiScale", config->uiScale },
             { "scenes", scenePaths },
             { "recentScenes", config->recentScenes },
+            { "shortcuts", shortcuts },
             { "statusBarDrawers", config->statusBarDrawers },
             { "hitches", hitches }
         };
@@ -68,12 +77,10 @@ namespace Atlas::Editor {
 
     void Serialization::DeserializeConfig() {
 
-       auto serialized = TryReadFromFile(configPath + "config.json");
+        auto j = TryReadJson(configPath + "config.json");
 
-        if (serialized.empty())
+        if (j.empty())
             return;
-
-        json j = json::parse(serialized);
 
         const auto& config = Singletons::config;
 
@@ -91,6 +98,10 @@ namespace Atlas::Editor {
             j.at("scenes").get_to(scenePaths);
         if (j.contains("recentScenes"))
             j.at("recentScenes").get_to(config->recentScenes);
+        if (j.contains("shortcuts")) {
+            for (const auto& [command, name] : j.at("shortcuts").items())
+                config->shortcuts[command] = UI::CommandPalette::ParseShortcut(name.get<std::string>());
+        }
         if (j.contains("statusBarDrawers"))
             j.at("statusBarDrawers").get_to(config->statusBarDrawers);
 
@@ -120,7 +131,7 @@ namespace Atlas::Editor {
 
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)
-            FileImporter::ImportFile(scenePath);
+            FileImporter::ImportFile<Scene::Scene>(scenePath);
 
     }
 
@@ -146,18 +157,39 @@ namespace Atlas::Editor {
         std::set<ECS::Entity> insertedEntites;
         Scene::EntityToJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), insertedEntites);
 
+        json bookmarks = json::array();
+        for (const auto& [index, bookmark] : sceneWindow->bookmarks)
+            bookmarks.push_back({ { "index", index }, { "location", bookmark.location }, { "rotation", bookmark.rotation } });
+
+        const auto& orthographicView = sceneWindow->orthographicView;
+
         json j = {
             { "resolutionScale", sceneWindow->resolutionScale },
             { "snappingEnabled", sceneWindow->guizmo.snappingEnabled },
             { "translationSnap", sceneWindow->guizmo.translationSnap },
             { "rotationSnap", sceneWindow->guizmo.rotationSnap },
             { "scaleSnap", sceneWindow->guizmo.scaleSnap },
+            { "guizmoMode", sceneWindow->guizmo.mode },
+            { "objectSpace", sceneWindow->guizmo.objectSpace },
+            { "alignToSurface", sceneWindow->guizmo.alignToSurface },
+            { "bookmarks", bookmarks },
+            { "orthographicView", {
+                { "active", orthographicView.active },
+                { "focusDistance", orthographicView.focusDistance },
+                { "fieldOfView", orthographicView.fieldOfView },
+                { "nearPlane", orthographicView.nearPlane },
+                { "farPlane", orthographicView.farPlane }
+            } },
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "showGrid", sceneWindow->showGrid },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
-            { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
+            { "depthTestBoundingVolumes", sceneWindow->overlays.depthTest },
             { "showPhysics", sceneWindow->showPhysics },
             { "depthTestPhysics", sceneWindow->depthTestPhysics },
+            { "overlays", sceneWindow->overlays.shownKinds },
+            { "overlayDistance", sceneWindow->overlays.distance },
+            { "iconSize", sceneWindow->overlays.iconSize },
+            { "occludedIconAlpha", sceneWindow->viewportPanel.occludedSpriteAlpha },
             { "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings },
             { "playMaximized", sceneWindow->playMaximized },
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
@@ -186,14 +218,12 @@ namespace Atlas::Editor {
         auto sceneWindow = CreateRef<UI::SceneWindow>(handle, true);
 
         // Configs written before they were named by the file are named by the scene, saving moves them over
-        auto serialized = TryReadFromFile(GetSceneWindowConfigFilename(handle));
-        if (serialized.empty())
-            serialized = TryReadFromFile(configPath + handle->name + "WindowConfig.json");
+        auto j = TryReadJson(GetSceneWindowConfigFilename(handle));
+        if (j.empty())
+            j = TryReadJson(configPath + handle->name + "WindowConfig.json");
 
-        if (serialized.empty())
+        if (j.empty())
             return sceneWindow;
-
-        json j = json::parse(serialized);
 
         json camera;
 
@@ -202,12 +232,31 @@ namespace Atlas::Editor {
         try_get_json(j, "translationSnap", sceneWindow->guizmo.translationSnap);
         try_get_json(j, "rotationSnap", sceneWindow->guizmo.rotationSnap);
         try_get_json(j, "scaleSnap", sceneWindow->guizmo.scaleSnap);
+        try_get_json(j, "guizmoMode", sceneWindow->guizmo.mode);
+        try_get_json(j, "objectSpace", sceneWindow->guizmo.objectSpace);
+        try_get_json(j, "alignToSurface", sceneWindow->guizmo.alignToSurface);
+        if (j.contains("bookmarks")) {
+            for (const auto& bookmark : j["bookmarks"])
+                sceneWindow->bookmarks[bookmark.at("index")] = { .location = bookmark.at("location"), .rotation = bookmark.at("rotation") };
+        }
+        if (j.contains("orthographicView")) {
+            auto& orthographicView = sceneWindow->orthographicView;
+            try_get_json(j["orthographicView"], "active", orthographicView.active);
+            try_get_json(j["orthographicView"], "focusDistance", orthographicView.focusDistance);
+            try_get_json(j["orthographicView"], "fieldOfView", orthographicView.fieldOfView);
+            try_get_json(j["orthographicView"], "nearPlane", orthographicView.nearPlane);
+            try_get_json(j["orthographicView"], "farPlane", orthographicView.farPlane);
+        }
         try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
         try_get_json(j, "showGrid", sceneWindow->showGrid);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
-        try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
+        try_get_json(j, "depthTestBoundingVolumes", sceneWindow->overlays.depthTest);
         try_get_json(j, "showPhysics", sceneWindow->showPhysics);
         try_get_json(j, "depthTestPhysics", sceneWindow->depthTestPhysics);
+        try_get_json(j, "overlays", sceneWindow->overlays.shownKinds);
+        try_get_json(j, "overlayDistance", sceneWindow->overlays.distance);
+        try_get_json(j, "iconSize", sceneWindow->overlays.iconSize);
+        try_get_json(j, "occludedIconAlpha", sceneWindow->viewportPanel.occludedSpriteAlpha);
         try_get_json(j, "physicsDebugDrawSettings", sceneWindow->physicsDebugDrawSettings);
         try_get_json(j, "playMaximized", sceneWindow->playMaximized);
         try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);
@@ -251,12 +300,10 @@ namespace Atlas::Editor {
 
     void Serialization::DeserializeContentBrowserWindow(UI::ContentBrowserWindow& contentBrowserWindow) {
 
-        auto serialized = TryReadFromFile(configPath + "contentBrowserWindowConfig.json");
+        auto j = TryReadJson(configPath + "contentBrowserWindowConfig.json");
 
-        if (serialized.empty())
+        if (j.empty())
             return;
-
-        json j = json::parse(serialized);
 
         if (j.contains("filterRecursively"))
             j.at("filterRecursively").get_to(contentBrowserWindow.filterRecursively);
@@ -266,7 +313,8 @@ namespace Atlas::Editor {
             j.at("contentFilter").get_to(contentBrowserWindow.contentFilter);
         // A filter showing all types of an older version shows the types added since then too
         auto filter = contentBrowserWindow.contentFilter;
-        if (filter == (1u << 11) - 1 || filter == (1u << 12) - 1 || filter == (1u << 13) - 1)
+        if (filter == (1u << 11) - 1 || filter == (1u << 12) - 1 || filter == (1u << 13) - 1 ||
+            filter == (1u << 15) - 1)
             contentBrowserWindow.contentFilter = UI::ContentBrowserWindow::AllBit;
         if (j.contains("iconSize"))
             j.at("iconSize").get_to(contentBrowserWindow.iconSize);
@@ -296,12 +344,10 @@ namespace Atlas::Editor {
 
     void Serialization::DeserializeDrawerWindow(UI::DrawerWindow& drawerWindow) {
 
-        auto serialized = TryReadFromFile(GetDrawerWindowConfigFilename(drawerWindow));
+        auto j = TryReadJson(GetDrawerWindowConfigFilename(drawerWindow));
 
-        if (serialized.empty())
+        if (j.empty())
             return;
-
-        json j = json::parse(serialized);
 
         if (j.contains("pinned"))
             j.at("pinned").get_to(drawerWindow.pinned);
@@ -322,30 +368,51 @@ namespace Atlas::Editor {
 
     void Serialization::TryWriteToFile(const std::string& filename, json& j) {
 
-        if (!Loader::AssetLoader::WriteJson(filename, j, Loader::JsonFormat::Compact)) {
-            Log::Error("Couldn't write config file");
+        auto written = writtenConfigs.find(filename);
+        if (written != writtenConfigs.end() && written->second == j)
+            return;
+
+        writtenConfigs[filename] = j;
+
+        if (Loader::AssetLoader::WriteJson(filename, j, Loader::JsonFormat::Compact)) {
+            failedConfigs.erase(filename);
+            return;
+        }
+
+        // It's tried again with the next save, the user knows already
+        writtenConfigs.erase(filename);
+        if (failedConfigs.insert(filename).second) {
+            Log::Error("Couldn't write config file " + filename);
             Notifications::Push({ .message = "Couldn't write the editor settings to " + filename, .type = NotificationType::Error });
         }
 
     }
 
-    std::string Serialization::TryReadFromFile(const std::string& filename) {
+    json Serialization::TryReadJson(const std::string& filename) {
 
         Loader::AssetLoader::UnpackFile(filename);
         auto path = Loader::AssetLoader::GetFullPath(filename);
 
         auto fileStream = Loader::AssetLoader::ReadFile(path, std::ios::in | std::ios::binary);
 
-        if (!fileStream.is_open()) {
-            return std::string();
-        }
+        if (!fileStream.is_open())
+            return json();
 
-        std::string content((std::istreambuf_iterator<char>(fileStream)),
-            std::istreambuf_iterator<char>());
+        auto j = json::parse(fileStream, nullptr, false);
+        if (!j.is_discarded())
+            return j;
 
+        // The next save doesn't overwrite what can still be recovered
         fileStream.close();
+        std::error_code error;
+        std::filesystem::rename(path, path + ".damaged", error);
 
-        return content;
+        auto message = "The editor settings in " + filename + " are damaged and kept as " +
+            Common::Path::GetFileName(filename) + ".damaged, the defaults are used";
+        Log::Warning(message);
+        Notifications::Push({ .message = message, .type = NotificationType::Warning });
+
+        return json();
 
     }
 

@@ -37,13 +37,15 @@ namespace Atlas::Editor::UI {
         bool wasShown = false;
 
     protected:
-        // The label and an id which stays when the label changes, e.g. the path of a file. Call before Begin
+        // The label and an id which stays when the label changes, e.g. the path of a file. Call before Begin, with
+        // another id (a renamed file) the window stays where it is
         void SetTitle(const std::string& label, const std::string& id);
 
         void DrawUnsavedMarker(bool visible);
 
         int32_t ID = GetID();
         std::string label;
+        std::string titleID;
 
         std::string nameID;
         std::string dockSpaceNameID;

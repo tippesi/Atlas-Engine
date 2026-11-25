@@ -22,23 +22,18 @@ namespace Atlas::Editor::UI {
 
         const std::string& GetPath() const { return path; }
 
+        // The file was renamed
+        void SetPath(const std::string& newPath);
+
         const std::string& GetText() const { return text; }
 
         // One undo step in the editor, the file is saved by the user
         void SetText(const std::string& newText);
 
-        void Undo() { codeEditor.Undo(); }
-
-        void Redo() { codeEditor.Redo(); }
-
-        bool CanUndo() const { return codeEditor.CanUndo(); }
-
-        bool CanRedo() const { return codeEditor.CanRedo(); }
-
-        void OpenSearch(bool replace) { codeEditor.OpenSearch(replace); }
-
         // Members of the bound types and tables for a context, e.g. after "sky." the fields of Atlas.Sky
         static std::vector<CodeCompletion> CompleteLua(const CodeCompletionContext& context);
+
+        CodeEditor codeEditor;
 
     private:
         // Functions, structs and blocks of the text and the includes, found again when the text changed
@@ -52,7 +47,6 @@ namespace Atlas::Editor::UI {
 
         std::string path;
         std::string text;
-        CodeEditor codeEditor;
         // The file uses Windows line endings, the editor works without the \r and saves them again
         bool windowsLineEndings = false;
 

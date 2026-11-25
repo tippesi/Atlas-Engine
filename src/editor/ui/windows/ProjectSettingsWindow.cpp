@@ -56,9 +56,6 @@ namespace Atlas::Editor::UI {
             return;
 
         inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-        auto controlDown = ImGui::GetIO().KeyCtrl || ImGui::GetIO().KeySuper;
-        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false))
-            Save(project);
         streamingStats = Streaming::StreamingManager::GetStats();
 
         ImGui::SetNextItemWidth(-1.0f);

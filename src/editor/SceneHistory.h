@@ -57,6 +57,17 @@ namespace Atlas::Editor {
 
         void Clear();
 
+        // The next state is no edit, e.g. after an asset was renamed
+        void ResetStates();
+
+        // The components of an entity, to find out what an edit changes
+        json GetComponents(const Ref<Scene::Scene>& scene, Scene::Entity entity);
+
+        // Changes the components of other entities like the ones of the source since before: the changed values of
+        // components both have, added and removed components. Names and transforms belong to each entity
+        void ApplyChanges(const Ref<Scene::Scene>& scene, Scene::Entity source, const json& before,
+            const std::vector<Scene::Entity>& entities);
+
         // The entities the last undo or redo changed
         std::vector<Scene::Entity> GetChangedEntities();
 
@@ -99,7 +110,10 @@ namespace Atlas::Editor {
 
         json SaveComponents(Scene::Entity entity);
 
-        void RestoreComponents(Scene::Entity entity, const json& j);
+        void RestoreComponents(Scene::Entity entity, const json& current, const json& state);
+
+        // Values which differ between before and after are set in the target, others keep their own ones
+        static void ApplyDifference(const json& before, const json& after, json& target);
 
         bool IsSameEntity(const json& a, const json& b);
 
@@ -112,9 +126,7 @@ namespace Atlas::Editor {
 
         bool IsSameSetting(const std::string& key, const json& a, const json& b);
 
-        void RestoreSettings(const json& j);
-
-        void ResetStates();
+        void RestoreSettings(const json& state);
 
         ECS::Entity Resolve(ECS::Entity entity);
 

@@ -188,7 +188,7 @@ namespace Atlas::Editor::UI {
 
     void MeshEditorWindow::RenderProperties() {
 
-        RenderHeading("Saves the mesh and its materials (Ctrl+S)");
+        RenderHeading("Saves the mesh and its materials");
 
         const auto& data = mesh->data;
         if (ImGui::BeginTable("Statistics", 2, ImGuiTableFlags_SizingStretchProp)) {
@@ -288,6 +288,7 @@ namespace Atlas::Editor::UI {
 
     void MeshEditorWindow::RenderViewportSettings() {
 
+        ImGui::SeparatorText("Overlays");
         ImGui::Checkbox("Show physics", &showPhysics);
         ImGui::Checkbox("Show simulation mesh", &softBodyComponentPanel.showSimulationMesh);
         ImGui::SetItemTooltip("The mesh soft bodies simulate, with a simulating preview its pinned vertices and pin bounds");

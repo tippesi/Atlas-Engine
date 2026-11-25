@@ -3,6 +3,7 @@
 #include "Window.h"
 
 #include "../../tools/Guizmo.h"
+#include "../SceneOverlays.h"
 #include "../panels/SceneHierarchyPanel.h"
 #include "../panels/ViewportPanel.h"
 #include "../panels/ScenePropertiesPanel.h"
@@ -11,9 +12,31 @@
 #include "scene/Scene.h"
 #include "scripting/LuaHost.h"
 
+#include <map>
 #include <memory>
+#include <optional>
 
 namespace Atlas::Editor::UI {
+
+    struct ViewDirection {
+        const char* label;
+        const char* name;
+        vec2 rotation;
+    };
+
+    struct CameraBookmark {
+        vec3 location = vec3(0.0f);
+        vec2 rotation = vec2(0.0f);
+    };
+
+    // The camera from before it became orthographic
+    struct OrthographicView {
+        bool active = false;
+        float focusDistance = 20.0f;
+        float fieldOfView = 47.0f;
+        float nearPlane = 1.0f;
+        float farPlane = 2000.0f;
+    };
 
     class SceneWindow : public Window {
 
@@ -32,8 +55,12 @@ namespace Atlas::Editor::UI {
 
         void PushEntityIntoSceneHierarchy(Scene::Entity entity, bool changeSelection = true);
 
-        // Returns whether the scene starts to play, it needs a main camera
-        bool StartPlaying();
+        // Starts where the editor camera is: a player is placed below it, without one the camera flies as while editing.
+        // Scenes without a main camera always start this way. Returns whether the scene starts to play
+        bool StartPlaying(bool fromView = false);
+
+        // Runs the paused scene for one step
+        void StepFrame();
 
         void TogglePause();
 
@@ -74,6 +101,20 @@ namespace Atlas::Editor::UI {
 
         void ReturnToEditorCamera();
 
+        // Looks at the selection, or the surface in the center of the view, along an axis
+        void SetViewRotation(vec2 rotation);
+
+        // Looks from far away with a small field of view, such that parallel lines nearly stay parallel. A real
+        // orthographic projection isn't supported by the renderers, e.g. their rays start at the camera
+        void SetOrthographic(bool orthographic);
+
+        // Where a camera with the usual field of view would be, distances are measured from there
+        vec3 GetViewLocation();
+
+        void SetBookmark(int32_t index);
+
+        void GoToBookmark(int32_t index);
+
         void ApplyBrush();
 
         // Draws the navigation mesh and the test path, right clicks set the points of the path
@@ -95,6 +136,15 @@ namespace Atlas::Editor::UI {
 
         Scene::Entity cameraEntity;
         Scene::Entity viewedCameraEntity;
+        // The flying camera while playing without a player
+        Scene::Entity playCameraEntity;
+
+        static const ViewDirection viewDirections[6];
+
+        std::map<int32_t, CameraBookmark> bookmarks;
+        static constexpr int32_t maxBookmarks = 9;
+
+        OrthographicView orthographicView;
 
         Guizmo guizmo;
 
@@ -103,10 +153,11 @@ namespace Atlas::Editor::UI {
 
         float resolutionScale = 0.75f;       
 
-        bool depthTestBoundingVolumes = false;
         bool showGrid = false;
         bool showPhysics = false;
         bool depthTestPhysics = true;
+
+        SceneOverlays overlays;
 
         Physics::DebugDrawSettings physicsDebugDrawSettings;
 
@@ -118,10 +169,10 @@ namespace Atlas::Editor::UI {
         bool isActiveWindow = false;
         bool lockSelection = false;
         bool brushActive = false;
+        // Entities which were just created have their place and bounds after the scene was updated
+        bool focusAfterUpdate = false;
 
     private:
-        void RenderEntityBoundingVolumes(Scene::Entity entity);
-
         // Toolbar above the viewport with the camera popups and the camera speed hint
         void RenderViewportToolbar();
 
@@ -144,6 +195,32 @@ namespace Atlas::Editor::UI {
 
         // Physics bodies, contacts and constraints around the main camera
         void RenderPhysics();
+
+        void NotifySaved(bool saved, const std::string& label);
+
+        // The first player with input, or the first one
+        Scene::Entity FindPlayer();
+
+        // The player or the flying camera of a scene that plays from the view
+        void PlaceInView(const CameraComponent& view, bool hasMainCamera);
+
+        // Bounds of the selected entities, small ones around entities without meshes
+        std::optional<Volume::AABB> GetSelectionBounds();
+
+        // The center of the selection, or the surface the camera looks at
+        vec3 GetFocusPoint();
+
+        float GetOrthographicDistance() const;
+
+        // Where the editor camera looks, it only updates itself with the scene
+        static vec3 DirectionFromRotation(vec2 rotation);
+
+        // Moves the orthographic camera to its distance from a point
+        void UpdateOrthographicCamera(vec3 focusPoint);
+
+        bool stepRequested = false;
+        static constexpr float stepTime = 1.0f / 60.0f;
+        static constexpr float orthographicFieldOfView = 4.0f;
 
         int32_t requestedHistorySteps = 0;
 
@@ -168,7 +245,6 @@ namespace Atlas::Editor::UI {
         ECS::Entity prefabRoot = ECS::EntityConfig::InvalidEntity;
         // Adding the prefab to the scene hierarchy clears the flag, the file keeps it
         bool prefabRootIsHierarchyRoot = false;
-        bool focusAfterUpdate = false;
 
         float terrainFlattenHeight = Terrain::Terrain::invalidHeight;
         bool terrainHeightsEdited = false;

@@ -65,7 +65,10 @@ namespace Atlas::Editor {
         Undo,
         Redo,
         Search,
-        Close
+        Close,
+        SpotLight,
+        Player,
+        Trigger
     };
 
     class Icons {
@@ -78,12 +81,13 @@ namespace Atlas::Editor {
         Texture::Texture2D& GetTintable(IconType type);
 
     private:
-        void LoadIcons();
+        static void LoadIcons(std::map<IconType, Texture::Texture2D>& icons, const std::string& suffix);
 
-        std::map<IconType, Texture::Texture2D> icons;
-        std::map<IconType, Texture::Texture2D> tintableIcons;
+        static const std::map<IconType, const char*> iconNames;
 
-        bool darkModeIcons = true;
+        std::map<IconType, Texture::Texture2D> whiteIcons;
+        // Loaded in the light mode
+        std::map<IconType, Texture::Texture2D> blackIcons;
 
     };
 

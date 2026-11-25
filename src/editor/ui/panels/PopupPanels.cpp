@@ -9,6 +9,7 @@
 #include "Notifications.h"
 #include "Theme.h"
 #include "../Widgets.h"
+#include "../../tools/FileSystemHelper.h"
 #include "loader/AssetLoader.h"
 #include "scene/SpacePartitioning.h"
 
@@ -26,7 +27,61 @@ namespace Atlas::Editor::UI {
 
         RenderNewScenePopup();
         RenderImportScenePopup();
+        RenderReplaceFilesPopup();
         RenderBlockingPopup();
+
+    }
+
+    void PopupPanels::RenderReplaceFilesPopup() {
+
+        auto& conflicts = FileSystemHelper::conflicts;
+        if (conflicts.empty())
+            return;
+
+        if (!ImGui::IsPopupOpen("Replace files?"))
+            ImGui::OpenPopup("Replace files?");
+
+        SetupDialog();
+
+        if (!ImGui::BeginPopupModal("Replace files?", nullptr, dialogFlags))
+            return;
+
+        if (conflicts.size() == 1)
+            ImGui::Text("%s exists already", conflicts.front().target.filename().string().c_str());
+        else
+            ImGui::Text("%d files exist already", int32_t(conflicts.size()));
+
+        const size_t shownNames = 6;
+        if (conflicts.size() > 1) {
+            for (size_t i = 0; i < std::min(shownNames, conflicts.size()); i++)
+                ImGui::TextColored(Theme::TextMuted(), "%s", conflicts[i].target.filename().string().c_str());
+            if (conflicts.size() > shownNames)
+                ImGui::TextColored(Theme::TextMuted(), "and %d more", int32_t(conflicts.size() - shownNames));
+        }
+
+        ImGui::Spacing();
+        ImGui::TextColored(Theme::Warning(), "Replacing can't be undone");
+        ImGui::Spacing();
+
+        auto buttonWidth = ImGui::CalcTextSize("Keep both").x * 1.75f;
+        auto replace = Widgets::DangerButton("Replace", ImVec2(buttonWidth, 0.0f));
+        ImGui::SameLine();
+        auto keepBoth = ImGui::Button("Keep both", ImVec2(buttonWidth, 0.0f));
+        // Nothing is lost by keeping both
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        auto cancel = ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        if (replace || keepBoth || cancel) {
+            auto decidedConflicts = std::move(conflicts);
+            conflicts.clear();
+            if (!cancel)
+                for (const auto& conflict : decidedConflicts)
+                    conflict.write(replace ? conflict.target : FileSystemHelper::GetFreePath(conflict.target));
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
 
     }
 

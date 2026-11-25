@@ -2,6 +2,10 @@
 
 #include "scene/Scene.h"
 
+#include <imgui.h>
+
+#include <map>
+
 namespace Atlas::Editor {
 
 	class Config {
@@ -17,6 +21,9 @@ namespace Atlas::Editor {
 
 		// Names of the drawers in the status bar, in their order
 		std::vector<std::string> statusBarDrawers = { "Content browser", "Log" };
+
+		// Changed shortcuts by the name of their command ("File: Save scene"), zero without one
+		std::map<std::string, ImGuiKeyChord> shortcuts;
 
 		// Most recently opened scene paths, newest first
 		std::vector<std::string> recentScenes;

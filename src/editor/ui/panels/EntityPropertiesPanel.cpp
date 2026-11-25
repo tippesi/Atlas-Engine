@@ -12,8 +12,42 @@ namespace Atlas::Editor::UI {
     void EntityPropertiesPanel::Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties) {
 
         auto entity = entityProperties.entity;
+        const auto& others = entityProperties.otherEntities;
+        if (multiEdit && (multiEdit->entity != entity || multiEdit->others != others))
+            FinishMultiEdit(scene, *entityProperties.history);
+
         if (!entity.IsValid())
             return;
+
+        if (others.empty()) {
+            RenderComponents(scene, entity);
+            return;
+        }
+
+        ImGui::TextColored(Theme::TextMuted(), "%d entities selected, changes apply to all of them", int32_t(others.size()) + 1);
+
+        if (!multiEdit)
+            multiEdit = MultiEdit { .entity = entity, .others = others, .before = entityProperties.history->GetComponents(scene, entity) };
+        transformComponentPanel.ClearEdit();
+        RenderComponents(scene, entity);
+        transformComponentPanel.ApplyEdit(others);
+
+        // Changes recreate components, e.g. bodies, which is too slow for many entities in each frame of a drag
+        if (!ImGui::IsAnyItemActive())
+            FinishMultiEdit(scene, *entityProperties.history);
+
+    }
+
+    void EntityPropertiesPanel::FinishMultiEdit(Ref<Scene::Scene>& scene, SceneHistory& history) {
+
+        std::erase_if(multiEdit->others, [](const Scene::Entity& entity) { return !entity.IsValid(); });
+        if (multiEdit->entity.IsValid())
+            history.ApplyChanges(scene, multiEdit->entity, multiEdit->before, multiEdit->others);
+        multiEdit.reset();
+
+    }
+
+    void EntityPropertiesPanel::RenderComponents(Ref<Scene::Scene>& scene, Scene::Entity entity) {
 
         auto nameComponent = entity.TryGetComponent<NameComponent>();
         if (nameComponent) {
@@ -26,7 +60,7 @@ namespace Atlas::Editor::UI {
         }
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
-        bool rootNode = nodeName == "Root";
+        bool rootNode = hierarchyComponent && hierarchyComponent->root;
 
         ImguiExtension::UIElements::PropertySearchBar("##Property search", propertySearch, focusSearch);
         // A hidden panel is shown in one of the next frames, the search bar gets the focus then
@@ -110,25 +144,14 @@ namespace Atlas::Editor::UI {
             }
 
             if (entity.HasComponent<PlayerComponent>()) {
-                auto comp = entity.GetComponent<PlayerComponent>();
-                RenderComponentPanel("Player", scene,
-                    entity, playerComponentPanel, comp);
+                auto settingsChanged = RenderComponentPanel("Player", scene,
+                    entity, playerComponentPanel, entity.GetComponent<PlayerComponent>());
                 // Recreating the player while playing would reset its state, e.g. crouching or touched triggers
-                if (scene->physicsWorld->pauseSimulation) {
+                if (settingsChanged && scene->physicsWorld->pauseSimulation) {
+                    auto comp = entity.GetComponent<PlayerComponent>();
                     entity.RemoveComponent<PlayerComponent>();
-                    entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                    entity.AddComponent<PlayerComponent>(comp);
                 }
-                auto& newComp = entity.GetComponent<PlayerComponent>();
-                newComp.slowVelocity = comp.slowVelocity;
-                newComp.fastVelocity = comp.fastVelocity;
-                newComp.jumpVelocity = comp.jumpVelocity;
-                newComp.acceleration = comp.acceleration;
-                newComp.deceleration = comp.deceleration;
-                newComp.allowInput = comp.allowInput;
-                newComp.stickToGroundDistance = comp.stickToGroundDistance;
-                newComp.walkStairStepUpDistance = comp.walkStairStepUpDistance;
-                newComp.crouchHeight = comp.crouchHeight;
-                newComp.crouchVelocity = comp.crouchVelocity;
             }
 
             if (entity.HasComponent<ConstraintComponent>()) {

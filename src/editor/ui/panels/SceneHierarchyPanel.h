@@ -37,11 +37,17 @@ namespace Atlas::Editor::UI {
 
         void Update(Ref<Scene::Scene>& scene);
 
-        void Render(Ref<Scene::Scene>& scene, bool inFocus);
+        void Render(Ref<Scene::Scene>& scene);
 
         void SelectEntity(Scene::Entity entity, bool keepSelection = false);
 
         void ClearSelection();
+
+        void StartRename(Scene::Entity entity);
+
+        void DeleteSelectedEntities(const Ref<Scene::Scene>& scene);
+
+        void DuplicateSelectedEntity(const Ref<Scene::Scene>& scene);
 
         // Opens the parents of the entity and scrolls to it in the next frame
         void RevealEntity(const Ref<Scene::Scene>& scene, Scene::Entity entity);
@@ -91,8 +97,6 @@ namespace Atlas::Editor::UI {
         bool RenderCreateMenuItems(Scene::Entity parent);
 
     private:
-        void StartRename(Scene::Entity entity);
-
         ECS::Entity revealEntity = ECS::EntityConfig::InvalidEntity;
         std::unordered_set<ECS::Entity> revealOpenSet;
 
@@ -138,10 +142,6 @@ namespace Atlas::Editor::UI {
         void RenderExtendedItem(const std::string& name, IconType iconType, bool* selected, bool* selectionChanged);
 
         void RenderFilterPopup();
-
-        void DeleteSelectedEntities(Ref<Scene::Scene>& scene);
-
-        void DuplicateSelectedEntity(Ref<Scene::Scene>& scene);
 
         bool SearchHierarchy(EntityData& data, ECS::Entity entity,
             std::unordered_set<ECS::Entity>& matchSet, std::string& nodeName, bool parentMatches);

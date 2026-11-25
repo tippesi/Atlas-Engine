@@ -16,6 +16,9 @@ namespace Atlas::Editor::UI {
     public:
         AssetEditorWindow(const std::string& name, bool show);
 
+        // The shortcuts of the viewport work
+        bool HasViewportFocus() const { return inFocus && AllowsViewportShortcuts(); }
+
         virtual ~AssetEditorWindow() = default;
 
         void Render();
@@ -47,6 +50,9 @@ namespace Atlas::Editor::UI {
         bool showBounds = false;
 
         UndoHistory history;
+
+        // The asset follows a change of another window, which has the step to undo it, or a renamed path
+        void AcceptState();
 
     protected:
         // Whether the asset is loaded and the preview can be created
@@ -96,9 +102,6 @@ namespace Atlas::Editor::UI {
 
         // Starts a new history, e.g. after another asset was chosen in the same window
         void ResetHistory();
-
-        // The asset follows a change of another window, which has the step to undo it
-        void AcceptState();
 
         // The asset was changed by something else than the window, e.g. a script, the next frame records it
         bool changedOutside = false;

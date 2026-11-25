@@ -94,40 +94,4 @@ namespace Atlas::Editor {
 
     }
 
-    bool UndoHistory::HandleShortcuts() {
-
-        auto direction = GetShortcutDirection();
-        if (direction < 0)
-            return Undo();
-        if (direction > 0)
-            return Redo();
-
-        return false;
-
-    }
-
-    int32_t UndoHistory::GetShortcutDirection() const {
-
-        // Text fields have their own undo
-        if (ImGui::GetIO().WantTextInput)
-            return 0;
-
-        bool controlDown;
-#ifdef AE_OS_MACOS
-        controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper);
-#else
-        controlDown = ImGui::GetIO().KeyCtrl;
-#endif
-        if (!controlDown)
-            return 0;
-
-        if (ImGui::IsKeyPressed(ImGuiKey_Z) && !ImGui::GetIO().KeyShift)
-            return -1;
-        if ((ImGui::IsKeyPressed(ImGuiKey_Z) && ImGui::GetIO().KeyShift) || ImGui::IsKeyPressed(ImGuiKey_Y))
-            return 1;
-
-        return 0;
-
-    }
-
 }

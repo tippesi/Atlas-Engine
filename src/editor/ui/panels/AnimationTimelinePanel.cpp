@@ -211,9 +211,8 @@ namespace Atlas::Editor::UI {
             ImGui::EndTable();
         }
 
-        auto deleteKeyPressed = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) &&
-            !ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete, false);
-        if (selectedKey.IsValid() && (deleteKeyRequested || deleteKeyPressed)) {
+        isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+        if (selectedKey.IsValid() && deleteKeyRequested) {
             RemoveKey(animation.channels[selectedKey.channel], selectedKey.type, selectedKey.key);
             selectedKey = KeyRef();
             modified = true;

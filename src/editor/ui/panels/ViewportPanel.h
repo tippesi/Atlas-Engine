@@ -54,8 +54,8 @@ namespace Atlas::Editor::UI {
         bool ToolbarButton(const char* id, IconType iconType, bool selected, bool enabled, const char* tooltip,
             ImVec2 uvMin = ImVec2(0.15f, 0.15f), ImVec2 uvMax = ImVec2(0.85f, 0.85f));
 
-        // Contents of a "Visualization settings" popup, which selects the visualization
-        void RenderVisualizationPopup();
+        // The "Visualization settings" popup of the eye button: what the window shows over the image, then the visualization
+        void RenderVisualizationPopup(const std::function<void()>& renderOverlaySettings);
 
         static constexpr float toolbarMargin = 8.0f;
         static constexpr float toolbarGroupPadding = 3.0f;
@@ -75,6 +75,11 @@ namespace Atlas::Editor::UI {
         bool allowPathTracing = true;
 
         PrimitiveBatchWrapper primitiveBatchWrapper;
+
+        // Drawn over the image of each frame like the primitive batches, e.g. the icons of entities
+        std::vector<Renderer::Sprite> sprites;
+        // Sprites behind the scene are faded instead of hidden
+        float occludedSpriteAlpha = 0.35f;
 
         ViewportVisualization visualization = Lit;
 

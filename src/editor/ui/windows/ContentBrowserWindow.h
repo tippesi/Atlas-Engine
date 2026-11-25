@@ -11,6 +11,8 @@
 
 #include <cctype>
 #include <filesystem>
+#include <functional>
+#include <optional>
 #include <tuple>
 
 namespace Atlas::Editor::UI {
@@ -19,6 +21,10 @@ namespace Atlas::Editor::UI {
 
     public:
         explicit ContentBrowserWindow(bool show);
+
+        // The old and the new path of content the user renamed, open windows follow it. They only change the references
+        // in their content if the ones in files change as well
+        std::function<void(const std::string& oldPath, const std::string& newPath, bool updateReferences)> onRename;
 
         ~ContentBrowserWindow() { JobSystem::Wait(searchAndFilterJob); }
 
@@ -65,6 +71,8 @@ namespace Atlas::Editor::UI {
         static inline std::string contentToShowPath = "";
         // Mesh, material, prefab or animation the user wants to open in its editor
         static inline std::string contentToEditPath = "";
+        // The line of a script or shader to show, the first one is 1
+        static inline int32_t contentToEditLine = 0;
 
     private:
         struct ContentCopy {
@@ -120,10 +128,44 @@ namespace Atlas::Editor::UI {
 
         void RenderDeleteConfirmation();
 
+        // Asks whether the files which use a renamed file are changed as well
+        void RenderRenameConfirmation();
+
+        // The files which use a file
+        void RenderReferences();
+
+        // A list of files, a click shows one. A progress bar until the references are known
+        void RenderUserList();
+
+        // Once the references are known
+        void FindUsersOnce(const std::function<std::vector<std::string>()>& find);
+
+        void RenameContent();
+
+        static std::string GetAssetPath(const std::filesystem::path& path);
+
         // Files and folders the user chose to delete, removed once confirmed
         std::vector<std::string> pendingDeletePaths;
         bool pendingDeleteHasDirectory = false;
         bool openDeleteConfirmation = false;
+
+        std::filesystem::path renameSource;
+        std::filesystem::path renameTarget;
+        bool openRenameConfirmation = false;
+
+        std::string referencedPath;
+        bool openReferences = false;
+
+        // The files which use what the open dialog is about
+        std::optional<std::vector<std::string>> users;
+
+        // The user decided about the rename, it waits for the jobs which read files
+        enum class RenameState {
+            Asking,
+            OnlyRename,
+            UpdateUsers
+        };
+        RenameState renameState = RenameState::Asking;
 
         std::string nextDirectory;
         std::string assetSearch;

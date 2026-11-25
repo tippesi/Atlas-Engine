@@ -5,6 +5,7 @@
 #include "../../DataCreator.h"
 #include "../../Singletons.h"
 #include "../../Theme.h"
+#include "../../tools/AssetRenamer.h"
 
 #include "Clock.h"
 
@@ -26,7 +27,7 @@ namespace Atlas::Editor::UI {
 
         // The asset identifies the window, the label gets room for the unsaved marker
         auto assetPath = GetAssetPath();
-        SetTitle(name, assetPath.empty() ? std::to_string(ID) : assetPath);
+        SetTitle(assetPath.empty() ? name : Common::Path::GetFileName(assetPath), assetPath.empty() ? std::to_string(ID) : assetPath);
 
         ImGui::SetNextWindowSize(ImVec2(1280, 720), ImGuiCond_FirstUseEver);
         if (!Begin())
@@ -98,27 +99,9 @@ namespace Atlas::Editor::UI {
 
         ImGui::End();
 
-        bool controlDown;
-#ifdef AE_OS_MACOS
-        controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
-#else
-        controlDown = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
-#endif
-        bool typing = ImGui::GetIO().WantTextInput;
-        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
-            Save();
-            hasUnsavedChanges = false;
-        }
-        if (inFocus && history.HandleShortcuts())
-            lastState = SaveState();
         // Only the window the user works in has edits, an interaction which moved the focus away still has to finish
         if (inFocus || history.IsInteracting() || lastState.is_null())
             UpdateHistory();
-        auto viewportShortcuts = inFocus && !controlDown && !typing && AllowsViewportShortcuts();
-        if (viewportShortcuts && ImGui::IsKeyPressed(ImGuiKey_F, false))
-            FocusAsset();
-        if (viewportShortcuts && ImGui::IsKeyPressed(ImGuiKey_G, false))
-            showGrid = !showGrid;
 
         {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
@@ -218,8 +201,8 @@ namespace Atlas::Editor::UI {
         hasUnsavedChanges = true;
         history.Push({
             .name = "Edit " + Common::Path::GetFileName(GetAssetPath()),
-            .undo = [this, before]() { RestoreState(before); },
-            .redo = [this, state]() { RestoreState(state); }
+            .undo = [this, before]() { RestoreState(AssetRenamer::UpdatePaths(before)); },
+            .redo = [this, state]() { RestoreState(AssetRenamer::UpdatePaths(state)); }
         });
         lastState = state;
 
@@ -244,7 +227,8 @@ namespace Atlas::Editor::UI {
         auto headingEnd = ImGui::GetCursorPos();
 
         ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionMax().x - saveWidth, headingStart.y));
-        if (Widgets::ToolbarIconButton("Save", Singletons::icons->Get(IconType::Save), saveTooltip)) {
+        if (Widgets::ToolbarIconButton("Save", Singletons::icons->Get(IconType::Save),
+            Singletons::commandPalette->GetTooltip(saveTooltip, "Asset editor: Save asset").c_str())) {
             Save();
             hasUnsavedChanges = false;
         }
@@ -295,13 +279,10 @@ namespace Atlas::Editor::UI {
                 "Viewport settings", uvMin, uvMax))
                 ImGui::OpenPopup("Viewport settings");
             if (viewportPanel.ToolbarButton("Visualization settings button", IconType::Visibility,
-                viewportPanel.visualization != ViewportVisualization::Lit, scene != nullptr, "Visualization", uvMin, uvMax))
+                viewportPanel.visualization != ViewportVisualization::Lit, scene != nullptr, "Show and visualization", uvMin, uvMax))
                 ImGui::OpenPopup("Visualization settings");
 
             if (ImGui::BeginPopup("Viewport settings")) {
-                ImGui::SeparatorText("Overlays");
-                ImGui::Checkbox("Show grid (G)", &showGrid);
-                ImGui::Checkbox("Show bounds", &showBounds);
                 RenderViewportSettings();
 
                 ImGui::SeparatorText("Camera");
@@ -316,7 +297,10 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            viewportPanel.RenderVisualizationPopup();
+            viewportPanel.RenderVisualizationPopup([&]() {
+                ImGui::Checkbox(Singletons::commandPalette->GetTooltip("Grid", "Asset editor: Toggle grid").c_str(), &showGrid);
+                ImGui::Checkbox("Bounds", &showBounds);
+                });
 
             // Don't leave the cursor on the toolbar line
             ImGui::NewLine();

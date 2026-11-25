@@ -57,7 +57,20 @@ namespace Atlas::Editor::UI {
 
     void Window::SetTitle(const std::string& label, const std::string& id) {
 
+        auto window = !titleID.empty() && titleID != id ? ImGui::FindWindowByName(GetNameID()) : nullptr;
+        if (window) {
+            if (window->DockId) {
+                ImGui::SetNextWindowDockID(window->DockId, ImGuiCond_Always);
+            }
+            else {
+                ImGui::SetNextWindowPos(window->Pos);
+                ImGui::SetNextWindowSize(window->Size);
+            }
+            requestFocus |= inFocus;
+        }
+
         this->label = label;
+        titleID = id;
         nameID = label + (hasUnsavedChanges ? "   ###" : "###") + id;
 
     }

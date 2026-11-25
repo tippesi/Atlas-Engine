@@ -22,6 +22,7 @@ namespace Atlas::Editor {
         MaterialGraph,
         Shader,
         MaterialSubgraph,
+        Impostor,
         None
     };
 

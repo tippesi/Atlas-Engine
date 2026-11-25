@@ -98,8 +98,8 @@ namespace Atlas::Editor::UI {
 
         drawList->PopClipRect();
 
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::GetIO().WantTextInput)
-            HandleShortcuts(graphHandle);
+        isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+        isHovered = ImGui::IsWindowHovered();
 
         // Subgraphs are added where they are dropped
         if (ImGui::BeginDragDropTargetCustom(ImRect(canvasOrigin, canvasMax), ImGui::GetID("Canvas drop target"))) {
@@ -932,7 +932,15 @@ namespace Atlas::Editor::UI {
 
         openAddMenu = true;
         pendingPin = PinRef();
-        addPosition = ToCanvas(ImVec2(canvasOrigin.x + canvasSize.x * 0.5f, canvasOrigin.y + canvasSize.y * 0.5f));
+        addPosition = ToCanvas(isHovered ? ImGui::GetMousePos() :
+            ImVec2(canvasOrigin.x + canvasSize.x * 0.5f, canvasOrigin.y + canvasSize.y * 0.5f));
+
+    }
+
+    void MaterialGraphPanel::FrameView() {
+
+        frameOnlySelection = !selection.empty();
+        FrameAll();
 
     }
 
@@ -1494,12 +1502,13 @@ namespace Atlas::Editor::UI {
             // The canvas gets its new size in the next frames
             stableCanvasFrames = -2;
         }
-        ImGui::SetItemTooltip(maximized ? "Shows the graph in the material editor again (F11)" :
-            "Shows the graph over the whole editor (F11)");
+        ImGui::SetItemTooltip("%s", Singletons::commandPalette->GetTooltip(maximized ? "Shows the graph in the material editor again" :
+            "Shows the graph over the whole editor", "Material graph: Toggle maximized").c_str());
         ImGui::SameLine();
         if (modified) {
             ImGui::TextColored(Theme::Warning(), "Unsaved");
-            ImGui::SetItemTooltip("Saving the material saves the graph as well (Ctrl+S)");
+            ImGui::SetItemTooltip("%s", Singletons::commandPalette->GetTooltip("Saving the material saves the graph as well",
+                "Asset editor: Save asset").c_str());
             ImGui::SameLine();
         }
         ImGui::TextDisabled("|");
@@ -1895,63 +1904,19 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void MaterialGraphPanel::HandleShortcuts(const ResourceHandle<Graph>& graphHandle) {
-
-        auto& graph = *graphHandle.Get();
-        auto& io = ImGui::GetIO();
-
-#ifdef AE_OS_MACOS
-        auto command = io.KeySuper;
-#else
-        auto command = io.KeyCtrl;
-#endif
-
-        if (ImGui::IsKeyPressed(ImGuiKey_Delete, false) || ImGui::IsKeyPressed(ImGuiKey_Backspace, false))
-            DeleteSelection(graph);
-        if (ImGui::IsKeyPressed(ImGuiKey_F, false) && !command) {
-            frameOnlySelection = !selection.empty();
-            FrameAll();
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_F11, false))
-            ToggleMaximized();
-        if (ImGui::IsKeyPressed(ImGuiKey_Space, false) && ImGui::IsWindowHovered()) {
-            pendingPin = PinRef();
-            addPosition = ToCanvas(ImGui::GetMousePos());
-            openAddMenu = true;
-        }
-
-        if (!command)
-            return;
-
-        if (ImGui::IsKeyPressed(ImGuiKey_A, false))
-            SelectAll(graph);
-        if (ImGui::IsKeyPressed(ImGuiKey_C, false))
-            CopySelection(graph);
-        if (ImGui::IsKeyPressed(ImGuiKey_V, false))
-            Paste(graph);
-        if (ImGui::IsKeyPressed(ImGuiKey_D, false))
-            DuplicateSelection(graph);
-        if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
-            if (io.KeyShift)
-                RequestSubgraph();
-            else
-                FrameSelection(graph);
-        }
-
-    }
-
     void MaterialGraphPanel::RenderNodeMenu(Graph& graph) {
 
         if (!ImGui::BeginPopup("NodeMenu"))
             return;
 
-        if (ImGui::MenuItem("Duplicate", "Ctrl+D"))
+        auto getShortcut = [](const char* command) { return Singletons::commandPalette->GetShortcutText(command); };
+        if (ImGui::MenuItem("Duplicate", getShortcut("Material graph: Duplicate selected nodes").c_str()))
             DuplicateSelection(graph);
-        if (ImGui::MenuItem("Copy", "Ctrl+C"))
+        if (ImGui::MenuItem("Copy", getShortcut("Material graph: Copy selected nodes").c_str()))
             CopySelection(graph);
-        if (ImGui::MenuItem("Frame selection", "Ctrl+G"))
+        if (ImGui::MenuItem("Frame selection", getShortcut("Material graph: Frame selected nodes").c_str()))
             FrameSelection(graph);
-        if (ImGui::MenuItem("Create subgraph", "Ctrl+Shift+G"))
+        if (ImGui::MenuItem("Create subgraph", getShortcut("Material graph: Create subgraph from selection").c_str()))
             RequestSubgraph();
         ImGui::SetItemTooltip("Moves the nodes into a graph of their own, which other graphs can use as well");
         if (HasSelectedSubgraph(graph)) {

@@ -348,9 +348,10 @@ tool isn't listed here, or a listed file doesn't exist.
   the running average, keeps their profile and the queries that took longer than on average, `Evaluate` merges those
   causes; "Hitches" tab of the `ProfilerPanel` (settings saved in the editor config), `--log-hitches`, bridge `hitches`.
 - **Logging**: `Log` (C++ and Lua, `Log.GetLatest(count)` reads the newest entries, `Log::printToConsole` switches
-  the console output), editor `LogWindow`.
-- **Editor from Lua** (agent, MCP, windows, tabs, focus, code window text): the table `Editor` of the editor's MCP
-  `lua` tool (`App::AddEditorFunctions`): `Windows`, `Open`, `Focus`, `GetText`, `SetText`, `Play`, `Stop`.
+  the console output), editor `LogWindow` (a click on a `file.lua:12` of a message opens the line, `contentToEditLine`).
+- **Editor from Lua** (agent, MCP, windows, tabs, focus, code window text, selection, commands): the table `Editor` of
+  the editor's MCP `lua` tool (`EditorFunctions`): `Windows`, `Open`, `Browse`, `Focus`, `GetText`, `SetText`, `Play`,
+  `Stop`, `Select`, `FocusSelection`, `RunCommand`.
 - **Running engine applications** (who uses the GPU, process list, busy, wait for the GPU): bridge `InstanceRegistry`,
   the bridge and games linking the bridge library register themselves with what they do (not the editor and
   demo); bridge `status`, every scene load waits until no other application is busy (`--no-wait-gpu`, job key
@@ -390,17 +391,41 @@ tracing surfaces in `raytracer/`, wind in `wind.hsh`.
 
 - **Windows**: `SceneWindow` (viewport, gizmos), `ContentBrowserWindow` (assets), `AssetEditorWindow` (an asset in its
   own scene), `MeshEditorWindow`, `MaterialEditorWindow`, `GeometryBrushWindow`, `ProfilerWindow`, `LogWindow`,
-  `ProjectSettingsWindow` (project settings), `DrawerWindow` (sliding panels), all derived from `Window`.
+  `ProjectSettingsWindow` (project settings), `DrawerWindow` (sliding panels), all derived from `Window`. `Workspace`
+  owns them, knows the one in front, opens files and keeps the windows in the layout.
+- **Viewport overlays** (visualization of volumes, gizmos, entity icons, light ranges, spot cones, camera frustums,
+  audio ranges, fog volumes, DDGI cascades, splines, picking icons): `SceneOverlays` of `SceneWindow`, saved with
+  the window config; icons are Material Symbols of `Icons` drawn as sprites,
+  a right click on one selects its entity, hovering shows its name, icons covered by a closer one are merged into it
+  with a count. The eye button of the viewport switches them, each kind is a command of the command palette (Lua
+  `Editor.RunCommand(name)`, `Editor.Select(entities)`, `Editor.FocusSelection()`).
+- **Views and camera bookmarks** (top, front, right, orthographic, saved views): `SceneWindow` `SetViewRotation`,
+  `SetOrthographic` (a narrow field of view from far away, not an orthographic projection), `bookmarks` 1 to 9, all in
+  the camera button of the viewport, the command palette and on the numpad and Ctrl + numbers, saved with the window.
+- **Playing in the editor** (play from view, single step, frame by frame): `SceneWindow::StartPlaying(fromView)` (Shift
+  and play, Ctrl+Shift+P) places the player or the camera at the view, scenes without a main camera play with a flying
+  one, `StepFrame` (F10) runs one frame of 1/60 s (the delta of `Update`, not `Clock.GetDelta`).
+- **Editing several entities** (multi edit, batch edit, change the selection): the entity properties apply changed
+  values, added and removed components to all selected entities in one undo step (`SceneHistory::ApplyChanges`).
+- **References between files** (find references, find usages, who uses a texture, rename assets, move assets):
+  `AssetReferenceIndex` reads the data files for the paths they contain. The content browser shows the users of a file
+  before it's deleted (into the recycle bin), renaming files and folders can change them (Lua, JSON, glTF, terrains and
+  binary files, not modules named without their extension) and what is loaded (`AssetRenamer`,
+  `ResourceManager::RenameResources`).
+- **Keyboard shortcuts** (key bindings, rebind, hotkeys): `CommandPalette` is the only place which handles the shortcuts
+  of commands (`Command::shortcut`, `isFocused`, `whileTyping`, `GetShortcutText`, `GetTooltip` for labels), "Keyboard
+  shortcuts" in the help menu changes them (`Config::shortcuts`).
 - **Projects in the editor** (project hub, recent projects, open project, new project): `ProjectHubWindow` is shown
   without `--project` (recent projects in `RecentProjects`, new project from a template, add a folder), switching the
   project happens in the same process (`App::SwitchProject`, a new asset directory drops loaded resources and
   pipelines through `AssetDirectoryChangeEventDelegate`). `ProjectSettingsWindow` edits the `.aeproject` with a search (streaming limits, upscaler, occlusion culling,
   mesh LOD error scale, binary scene columns; scenes get them from the project), the editor state of a project is in
   its `.atlas/`, a missing start scene is created when the project opens.
-- **Tools**: `TerrainGenerator`, `VegetationGenerator`, `Guizmo`, `PrimitiveBatchWrapper`, `CopyPasteHelper`
+- **Tools**: `AssetReferenceIndex`, `AssetRenamer`, `UriHelper`, `TerrainGenerator`, `VegetationGenerator`, `Guizmo`, `PrimitiveBatchWrapper`, `CopyPasteHelper`
   (entities and components), `FileSystemHelper`, `ResourcePayloadHelper` (drag and drop), `ToolSerializer`.
 - **UI building blocks**: `ui/Widgets` (`DragVec3`, `Callout`, `IconButton`, ...), `Theme` colors, commands in
-  `App::RegisterCommands`, undo in `SceneHistory`. Engine-aware ImGui panels in `libs/ImguiExtension` (`Panel` base,
+  `EditorCommands`, undo in `SceneHistory`, `StatusBar` below the windows. Files are written with
+  `AssetLoader::WriteFileAtomically`, over existing ones after `FileSystemHelper::WriteOrAsk`. Engine-aware ImGui panels in `libs/ImguiExtension` (`Panel` base,
   `StringHelper`), which games can use for debug UI.
 - **Property search** (filter, find setting, search components, property table): `ImguiExtension::UIElements`
   `BeginPropertySearch`/`EndPropertySearch` show the rows of `BeginProperties` tables whose label, tooltip,

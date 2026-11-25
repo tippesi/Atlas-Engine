@@ -16,19 +16,25 @@ namespace Atlas::Editor::UI {
 
 		Widgets::PropertySection("Shape");
 
-		RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);
+		// Components of scripts can have no settings yet
+		if (!playerComponent.creationSettings)
+			playerComponent.creationSettings = CreateRef<PlayerCreationSettings>();
+		if (!playerComponent.creationSettings->shape)
+			playerComponent.creationSettings->shape = ShapesManager::CreateShape(CapsuleShapeSettings{});
+
+		auto settingsChanged = RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);
 
 		Widgets::PropertySection("Player");
 
-		RenderPlayerSettings(entity, playerComponent);
+		settingsChanged |= RenderPlayerSettings(entity, playerComponent);
 
 		ImGui::PopID();
 
-		return false;
+		return settingsChanged;
 
 	}
 
-	void PlayerComponentPanel::RenderShapeSettings(Scene::Entity entity, PlayerComponent& playerComponent, 
+	bool PlayerComponentPanel::RenderShapeSettings(Scene::Entity entity, PlayerComponent& playerComponent,
 		Physics::PlayerCreationSettings& creationSettings) {
 
 		auto& shape = creationSettings.shape;
@@ -58,21 +64,27 @@ namespace Atlas::Editor::UI {
 				Notifications::Push({ .message = "Error creating player shape", .type = NotificationType::Error });
 			}
 			else {
-				playerComponent.SetShape(shape);
+				if (playerComponent.IsValid())
+					playerComponent.SetShape(shape);
+				return true;
 			}
 		}
 
+		return false;
+
 	}
 
-	void PlayerComponentPanel::RenderPlayerSettings(Scene::Entity, PlayerComponent& player) {
+	bool PlayerComponentPanel::RenderPlayerSettings(Scene::Entity, PlayerComponent& player) {
+
+		auto settingsChanged = false;
 
 		if (Widgets::BeginProperties("PlayerGeneral")) {
 			Widgets::PropertyLabel("Mass");
-			ImGui::DragFloat("##Mass", &player.creationSettings->mass, 0.5f, 1.0f, 1000.0f);
+			settingsChanged |= ImGui::DragFloat("##Mass", &player.creationSettings->mass, 0.5f, 1.0f, 1000.0f);
 			Widgets::PropertyLabel("Max strength");
-			ImGui::DragFloat("##Max strength", &player.creationSettings->maxStrength, 0.5f, 1.0f, 1000.0f);
+			settingsChanged |= ImGui::DragFloat("##Max strength", &player.creationSettings->maxStrength, 0.5f, 1.0f, 1000.0f);
 			Widgets::PropertyLabel("Can push bodies");
-			ImGui::Checkbox("##Can push bodies", &player.creationSettings->canPushBodies);
+			settingsChanged |= ImGui::Checkbox("##Can push bodies", &player.creationSettings->canPushBodies);
 			Widgets::EndProperties();
 		}
 
@@ -111,6 +123,8 @@ namespace Atlas::Editor::UI {
 			ImGui::Checkbox("##Allow input", &player.allowInput);
 			Widgets::EndProperties();
 		}
+
+		return settingsChanged;
 
 	}
 

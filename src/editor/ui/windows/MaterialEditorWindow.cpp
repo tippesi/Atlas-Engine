@@ -140,7 +140,7 @@ namespace Atlas::Editor::UI {
 
     void MaterialEditorWindow::RenderProperties() {
 
-        RenderHeading("Saves the material and its graph (Ctrl+S)");
+        RenderHeading("Saves the material and its graph");
 
         // Path tracing doesn't run graphs, the preview would only show the values for ray tracing
         viewportPanel.allowPathTracing = !material->HasGraph();

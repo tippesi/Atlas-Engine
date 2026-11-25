@@ -97,8 +97,10 @@ namespace Atlas::Editor::UI {
 
         if (isVisible)
             RenderScene(scene, pos, size);
-        else
+        else {
             primitiveBatchWrapper.Clear();
+            sprites.clear();
+        }
 
         if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             auto set = Singletons::imguiWrapper->GetTextureId(&viewportTexture);
@@ -160,10 +162,15 @@ namespace Atlas::Editor::UI {
                     RenderVisualization(exposure);
                 }
             }
+
+            // The depth of the rendered frame is in the history after the target was swapped
+            mainRenderer->spriteRenderer.Render(&viewportTexture, renderTarget->GetHistoryData(Renderer::FULL_RES)->depthTexture.get(),
+                scene->renderState.camera, sprites, occludedSpriteAlpha);
         }
 
-        // Lines of frames that weren't rendered are dropped, otherwise they would pile up
+        // Lines and sprites of frames that weren't rendered are dropped, otherwise they would pile up
         primitiveBatchWrapper.Clear();
+        sprites.clear();
 
     }
 
@@ -257,10 +264,13 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::RenderVisualizationPopup() {
+    void ViewportPanel::RenderVisualizationPopup(const std::function<void()>& renderOverlaySettings) {
 
         if (!ImGui::BeginPopup("Visualization settings"))
             return;
+
+        ImGui::SeparatorText("Show");
+        renderOverlaySettings();
 
         auto menuItem = [&](const char* name, ViewportVisualization vis) {
             bool selected = visualization == vis;

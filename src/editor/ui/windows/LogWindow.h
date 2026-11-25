@@ -33,6 +33,8 @@ namespace Atlas::Editor::UI {
             uint32_t offset;    // Text range within the message
             uint32_t length;
             bool first;         // First line of the message, shows the time stamp
+            uint32_t linkStart; // File and line number within the message, e.g. of a script error
+            uint32_t linkLength;
             ImGuiID id;         // Stable id for the selection
         };
 
@@ -43,6 +45,12 @@ namespace Atlas::Editor::UI {
         void RebuildLines();
 
         void AppendLines(size_t entryIdx);
+
+        // Finds a script or shader with a line number ("scripts/main.lua:12") in the line of a message
+        static void FindLink(const std::string& message, Line& line);
+
+        // Opens the file of the link in the code editor at its line
+        static void OpenLink(const std::string& link);
 
         const Atlas::Log::Entry& GetEntry(size_t entryIdx) const { return cachedEntries[entryIdx - cacheStartIdx]; }
 
