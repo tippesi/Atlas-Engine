@@ -184,6 +184,27 @@ namespace Atlas {
 
         }
 
+        void PrimitiveBatch::AddLineArrow(vec3 from, vec3 to, vec3 color) {
+
+            AddLine(from, to, color, color);
+
+            auto direction = to - from;
+            auto length = glm::length(direction);
+            if (length <= 0.0f)
+                return;
+            direction /= length;
+
+            auto right = Helper::Math::NormalizeOrZero(glm::cross(direction, std::abs(direction.y) < 0.99f ?
+                vec3(0.0f, 1.0f, 0.0f) : vec3(1.0f, 0.0f, 0.0f)));
+            auto up = glm::cross(right, direction);
+
+            auto headLength = 0.2f * length;
+            auto headBase = to - direction * headLength;
+            for (auto side : { right, -right, up, -up })
+                AddLine(to, headBase + side * 0.4f * headLength, color, color);
+
+        }
+
         size_t PrimitiveBatch::GetLineCount() const {
 
             return lineVertexData.size() / 2;

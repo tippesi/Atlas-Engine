@@ -61,6 +61,7 @@ namespace Atlas {
 			textRenderer.Init(device);
 			textureRenderer.Init(device);
 			spriteRenderer.Init(device);
+			lineRenderer.Init(device);
 
 		}
 

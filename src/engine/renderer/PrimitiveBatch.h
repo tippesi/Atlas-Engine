@@ -7,6 +7,7 @@
 #include "volume/Frustum.h"
 #include "volume/Rectangle.h"
 
+#include <span>
 #include <vector>
 
 namespace Atlas {
@@ -48,7 +49,14 @@ namespace Atlas {
             // The world axes in red (x), green (y) and blue (z)
             void AddLineAxes(vec3 position, float length);
 
+            // Line with a head of four lines at its end, a fifth of its length
+            void AddLineArrow(vec3 from, vec3 to, vec3 color);
+
             size_t GetLineCount() const;
+
+            // Two vertices and colors for each line
+            std::span<const vec3> GetLineVertices() const { return lineVertexData; }
+            std::span<const vec3> GetLineColors() const { return lineColorData; }
 
             void SetLineWidth(float width);
 
