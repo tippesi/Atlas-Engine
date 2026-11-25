@@ -29,10 +29,8 @@ namespace Atlas::Bridge {
         env["scene"] = scene;
         env.set_function("GetThisScene", [scene]() { return scene; });
 
-        // The scene belongs to the caller, Bridge only refers to it while the job runs
-        Ref<Scene::Scene> sceneRef(scene, [](Scene::Scene*) {});
         Scripting::Binder bridge(luaState.create_table(), "Bridge");
-        LuaEdit::AddFunctions(bridge, sceneRef, jobEditState ? *jobEditState : editState, hooks, [&report](const std::string& key, json value) {
+        LuaEdit::AddFunctions(bridge, scene, jobEditState ? *jobEditState : editState, hooks, [&report](const std::string& key, json value) {
             report.results[key] = std::move(value);
             report.Print("result " + key + " = " + report.results[key].dump());
             }, time);

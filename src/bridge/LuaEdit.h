@@ -44,8 +44,9 @@ namespace Atlas::Bridge {
 
         static sol::object FromJson(sol::state_view lua, const json& value);
 
-        // Fills the table Bridge, the hooks and the edit state have to outlive it
-        static void AddFunctions(Scripting::Binder& bridge, const Ref<Scene::Scene>& scene, EditState& state, const EditHooks& hooks,
+        // Fills the table Bridge, the scene, the edit state and what the hooks refer to have to outlive it. The hooks
+        // must not own the scene either
+        static void AddFunctions(Scripting::Binder& bridge, Scene::Scene* scenePointer, EditState& state, const EditHooks& hooks,
             const std::function<void(const std::string&, json)>& result, const std::function<float()>& time);
 
     private:

@@ -23,7 +23,7 @@ namespace Atlas::Bridge {
 
         auto start = std::chrono::steady_clock::now();
         Scripting::Binder bridge(lua.create_table(), "Bridge");
-        AddFunctions(bridge, scene, state, hooks, [this](const std::string& key, json value) { results[key] = std::move(value); },
+        AddFunctions(bridge, scenePointer, state, hooks, [this](const std::string& key, json value) { results[key] = std::move(value); },
             [start]() { return SecondsSince(start); });
         environment["Bridge"] = bridge.GetTable();
         if (hooks.extendEnvironment)
@@ -46,8 +46,11 @@ namespace Atlas::Bridge {
 
     }
 
-    void LuaEdit::AddFunctions(Scripting::Binder& bridge, const Ref<Scene::Scene>& scene, EditState& state, const EditHooks& hooks,
+    void LuaEdit::AddFunctions(Scripting::Binder& bridge, Scene::Scene* scenePointer, EditState& state, const EditHooks& hooks,
         const std::function<void(const std::string&, json)>& result, const std::function<float()>& time) {
+
+        // The functions live in the script state of the scene until Lua collects them, they must not keep the scene alive
+        Ref<Scene::Scene> scene(scenePointer, [](Scene::Scene*) {});
 
         auto notify = [](const std::function<void(Scene::Entity)>& hook, Scene::Entity entity) {
             if (hook)

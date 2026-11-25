@@ -58,6 +58,8 @@ namespace Atlas::Renderer {
 
         }
 
+        static inline int32_t ngxUserCount = 0;
+
         static NVSDK_NGX_PerfQuality_Value GetPerfQuality(float scale) {
 
             // Only selects the default preset, the render size comes from the render target
@@ -74,17 +76,21 @@ namespace Atlas::Renderer {
 
         this->device = device;
 
-        auto result = NVSDK_NGX_VULKAN_Init_with_ProjectID(Helpers::projectId, NVSDK_NGX_ENGINE_TYPE_CUSTOM, Helpers::engineVersion,
-            Helpers::GetDataPath(), device->instance->GetNativeInstance(), device->physicalDevice, device->device,
-            vkGetInstanceProcAddr, vkGetDeviceProcAddr, Helpers::GetFeatureInfo());
-        if (NVSDK_NGX_FAILED(result)) {
-            Log::Message("DLSS isn't available on this device (NGX result " + std::to_string(int32_t(result)) + ")");
-            return;
+        // NGX has one state per device, which all renderers share
+        if (Helpers::ngxUserCount == 0) {
+            auto result = NVSDK_NGX_VULKAN_Init_with_ProjectID(Helpers::projectId, NVSDK_NGX_ENGINE_TYPE_CUSTOM, Helpers::engineVersion,
+                Helpers::GetDataPath(), device->instance->GetNativeInstance(), device->physicalDevice, device->device,
+                vkGetInstanceProcAddr, vkGetDeviceProcAddr, Helpers::GetFeatureInfo());
+            if (NVSDK_NGX_FAILED(result)) {
+                Log::Message("DLSS isn't available on this device (NGX result " + std::to_string(int32_t(result)) + ")");
+                return;
+            }
         }
+        Helpers::ngxUserCount++;
         initialized = true;
 
         int32_t available = 0, needsUpdatedDriver = 0;
-        result = NVSDK_NGX_VULKAN_GetCapabilityParameters(&parameters);
+        auto result = NVSDK_NGX_VULKAN_GetCapabilityParameters(&parameters);
         if (NVSDK_NGX_SUCCEED(result)) {
             NVSDK_NGX_Parameter_GetI(parameters, NVSDK_NGX_Parameter_SuperSampling_Available, &available);
             NVSDK_NGX_Parameter_GetI(parameters, NVSDK_NGX_Parameter_SuperSampling_NeedsUpdatedDriver, &needsUpdatedDriver);
@@ -108,7 +114,9 @@ namespace Atlas::Renderer {
         DLSSRenderer::DestroyContext();
         if (parameters)
             NVSDK_NGX_VULKAN_DestroyParameters(parameters);
-        NVSDK_NGX_VULKAN_Shutdown1(device->device);
+
+        if (--Helpers::ngxUserCount == 0)
+            NVSDK_NGX_VULKAN_Shutdown1(device->device);
 
     }
 

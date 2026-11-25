@@ -153,17 +153,18 @@ namespace Atlas::Editor {
         auto& history = sceneWindow->history;
         auto journal = !sceneWindow->isPlaying;
 
+        // The window owns the scene, whose script state has the hooks
         Bridge::EditHooks hooks;
-        hooks.selection = [sceneWindow]() {
+        hooks.selection = [window = sceneWindow.get()]() {
             std::vector<Scene::Entity> entities;
-            for (auto ecsEntity : sceneWindow->sceneHierarchyPanel.selectedEntities)
-                entities.emplace_back(ecsEntity, &sceneWindow->scene->entityManager);
+            for (auto ecsEntity : window->sceneHierarchyPanel.selectedEntities)
+                entities.emplace_back(ecsEntity, &window->scene->entityManager);
             return entities;
             };
-        hooks.camera = [sceneWindow]() -> json {
-            if (!sceneWindow->cameraEntity.IsValid())
+        hooks.camera = [window = sceneWindow.get()]() -> json {
+            if (!window->cameraEntity.IsValid())
                 return nullptr;
-            const auto& camera = sceneWindow->cameraEntity.GetComponent<CameraComponent>();
+            const auto& camera = window->cameraEntity.GetComponent<CameraComponent>();
             auto location = camera.GetLocation();
             return { { "location", { location.x, location.y, location.z } },
                 { "direction", { camera.direction.x, camera.direction.y, camera.direction.z } } };
