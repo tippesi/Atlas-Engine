@@ -29,7 +29,7 @@ namespace Atlas::Physics {
 		Ref<Shape> shape;
 	};
 
-    class Player : JPH::CharacterContactListener {
+    class Player {
 
     public:
         Player() = default;
@@ -78,15 +78,29 @@ namespace Atlas::Physics {
 	protected:
 		void Init(PhysicsWorld* world, vec3 initialPosition, quat initialRotation);
 
-		virtual void OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::CharacterContact &inContact,
-			JPH::CharacterContactSettings &ioSettings) override;
-
 		Ref<JPH::CharacterVirtual> character = nullptr;
 
 		// How far sticking to the floor and walking up stairs moved the character in the last update
 		vec3 stepMovement = vec3(0.0f);
 
 		PhysicsWorld* world = nullptr;
+
+	private:
+		// The character keeps its address, the player itself moves in memory with its component
+		class ContactListener : public JPH::CharacterContactListener {
+
+		public:
+			explicit ContactListener(const Ref<PlayerCreationSettings>& settings) : settings(settings) {}
+
+			void OnContactAdded(const JPH::CharacterVirtual* inCharacter, const JPH::CharacterContact& inContact,
+				JPH::CharacterContactSettings& ioSettings) override;
+
+		private:
+			Ref<PlayerCreationSettings> settings;
+
+		};
+
+		Ref<ContactListener> contactListener = nullptr;
 
     };
 

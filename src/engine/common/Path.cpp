@@ -1,6 +1,7 @@
 #include "Path.h"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 
 #ifdef AE_OS_WINDOWS
@@ -123,6 +124,23 @@ namespace Atlas {
                 path.pop_back();
 
             return path;
+
+        }
+
+        std::string Path::ToLower(std::string path) {
+
+            std::transform(path.begin(), path.end(), path.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+            return path;
+
+        }
+
+        std::string Path::Rename(const std::string& path, const std::string& oldPath, const std::string& newPath) {
+
+            auto isInside = path.size() == oldPath.size() || (path.size() > oldPath.size() && path[oldPath.size()] == '/');
+            if (!isInside || ToLower(path.substr(0, oldPath.size())) != ToLower(oldPath))
+                return path;
+
+            return newPath + path.substr(oldPath.size());
 
         }
 

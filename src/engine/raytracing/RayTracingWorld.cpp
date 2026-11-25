@@ -1185,7 +1185,8 @@ namespace Atlas {
                     const auto& subData = subDatas[i];
                     auto& deformation = deformations[i];
 
-                    const auto& graph = subData.material->graph;
+                    // Materials which failed to load have no graph
+                    auto graph = subData.material.IsLoaded() ? subData.material->graph : ResourceHandle<MaterialGraph::Graph>();
                     auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
                     if (!compiled || !compiled->valid || compiled->deformFile.empty())
                         compiled = nullptr;
@@ -1250,6 +1251,7 @@ namespace Atlas {
                 for (size_t i = 0; i < mesh->data.subData.size(); i++) {
                     const auto& subData = mesh->data.subData[i];
                     const auto& deformation = deformations[i];
+                    auto materialLoaded = subData.material.IsLoaded();
                     auto [firstVertex, vertexCount] = deformMesh.subDataVertexRanges[i];
                     if (vertexCount == 0)
                         continue;
@@ -1267,8 +1269,8 @@ namespace Atlas {
                         .windTextureLod = mesh->windNoiseTextureLod,
                         .materialGraphOffset = deformation.materialGraphOffset,
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
-                        .uvTiling = subData.material->tiling,
-                        .uvAnimation = subData.material->uvAnimation,
+                        .uvTiling = materialLoaded ? subData.material->tiling : 1.0f,
+                        .uvAnimation = materialLoaded ? subData.material->uvAnimation : vec2(0.0f),
                         .hasTexCoords1 = mesh->data.texCoords1.ContainsData() ? 1u : 0u
                     });
                     variantConfigs.try_emplace(deformation.key, deformation.config);
@@ -1798,8 +1800,8 @@ namespace Atlas {
                 geometryRegions.emplace_back(Graphics::ASGeometryRegion{
                     .indexCount = subData.indicesCount,
                     .indexOffset = subData.indicesOffset,
-                    .opaque = !subData.material->opacityMap.IsValid() && subData.material->opacity == 1.0f &&
-                        !subData.material->HasGraph() && !subData.material->IsTranslucent()
+                    .opaque = !subData.material.IsLoaded() || (!subData.material->opacityMap.IsValid() &&
+                        subData.material->opacity == 1.0f && !subData.material->HasGraph() && !subData.material->IsTranslucent())
                     });
             }
 
@@ -1876,6 +1878,9 @@ namespace Atlas {
         bool RayTracingWorld::IsDeformedByMaterial(const ResourceHandle<Mesh::Mesh>& mesh) const {
 
             return std::any_of(mesh->data.subData.begin(), mesh->data.subData.end(), [](const auto& subData) {
+                if (!subData.material.IsLoaded())
+                    return false;
+
                 const auto& graph = subData.material->graph;
                 auto compiled = graph.IsLoaded() ? graph->GetCompiled() : nullptr;
                 return compiled && compiled->valid && !compiled->deformFile.empty();

@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <mutex>
 #include <atomic>
-#include <random>
 #include <filesystem>
 #include <functional>
 
@@ -458,18 +457,8 @@ namespace Atlas::Loader {
         if (fileData.empty())
             return fileData;
 
-        // Written aside and renamed, an import encoding the same image at the same time never reads a partial file
-        auto tempPath = cachePath + "." + std::to_string(std::random_device()());
-        auto stream = AssetLoader::WriteFile(tempPath, std::ios::out | std::ios::binary);
-        if (stream.is_open()) {
-            stream.write(fileData.data(), std::streamsize(fileData.size()));
-            stream.close();
-            std::error_code error;
-            if (!stream.fail())
-                std::filesystem::rename(AssetLoader::GetFullPath(tempPath), AssetLoader::GetFullPath(cachePath), error);
-            if (stream.fail() || error)
-                AssetLoader::RemoveFile(tempPath);
-        }
+        // An import encoding the same image at the same time never reads a partial file
+        AssetLoader::WriteFileAtomically(cachePath, fileData.data(), fileData.size());
 
         return fileData;
 

@@ -143,7 +143,8 @@ namespace Atlas {
 
         ResourceOrigin origin = System;
 
-        const std::string path;
+        // Only changes when the file is renamed, see ResourceManager::RenameResources
+        std::string path;
         bool permanent = false;
 
         bool errorOnLoad = false;

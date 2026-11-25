@@ -79,7 +79,7 @@ namespace Atlas::Scene::Components {
             scriptWasModifiedInLastUpdate = false;
             if (resource->WasModified()) {
                 // Do reload here, adjust modified time beforehand to be conservative
-                script->Reload();
+                script->Reload(script.GetResource()->path);
                 scriptWasModifiedInLastUpdate = true;
             }
         }
@@ -185,7 +185,7 @@ namespace Atlas::Scene::Components {
             scriptEnv.set_function("GetThisScene", [scene = this->scene]() { return scene; });
 
             // load script
-            state.script(script->code, scriptEnv);
+            state.script(script->code, scriptEnv, sol::script_default_on_error, "@" + script.GetResource()->path);
 
             // load the script functions
             sol::protected_function function = scriptEnv["Update"];

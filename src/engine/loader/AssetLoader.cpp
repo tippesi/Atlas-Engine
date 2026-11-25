@@ -7,6 +7,10 @@
 #include <nlohmann/json.hpp>
 #include <SDL3/SDL.h>
 
+#include <chrono>
+#include <filesystem>
+#include <random>
+#include <thread>
 #include <vector>
 #include <sys/stat.h>
 
@@ -142,23 +146,49 @@ namespace Atlas {
 
         }
 
-        bool AssetLoader::WriteJson(const std::string& filename, json& j, JsonFormat format) {
+        bool AssetLoader::WriteFileAtomically(const std::string& filename, const char* data, size_t size) {
 
-            auto stream = WriteFile(GetFullPath(filename), std::ios::out | std::ios::binary);
+            auto path = GetFullPath(filename);
+            auto tempPath = path + "." + std::to_string(std::random_device()());
+
+            auto stream = WriteFile(tempPath, std::ios::out | std::ios::binary);
             if (!stream.is_open())
                 return false;
+
+            stream.write(data, std::streamsize(size));
+            stream.close();
+
+            std::error_code error;
+            if (!stream.fail())
+                std::filesystem::rename(tempPath, path, error);
+
+            // Windows refuses to replace a file while it's read, e.g. by a job
+            const int32_t maxReplaceAttempts = 50;
+            for (int32_t attempt = 0; error && attempt < maxReplaceAttempts; attempt++) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                std::filesystem::rename(tempPath, path, error);
+            }
+
+            if (stream.fail() || error) {
+                RemoveFile(tempPath);
+                return false;
+            }
+
+            return true;
+
+        }
+
+        bool AssetLoader::WriteJson(const std::string& filename, json& j, JsonFormat format) {
 
             j["engineVersion"] = Engine::GetVersion();
 
             if (format == JsonFormat::MessagePack || format == JsonFormat::BJData) {
                 auto data = format == JsonFormat::MessagePack ? json::to_msgpack(j) : json::to_bjdata(j);
-                stream.write(reinterpret_cast<const char*>(data.data()), std::streamsize(data.size()));
-            }
-            else {
-                stream << (format == JsonFormat::Indented ? j.dump(2) : j.dump());
+                return WriteFileAtomically(filename, reinterpret_cast<const char*>(data.data()), data.size());
             }
 
-            return stream.good();
+            auto text = format == JsonFormat::Indented ? j.dump(2) : j.dump();
+            return WriteFileAtomically(filename, text.data(), text.size());
 
         }
 

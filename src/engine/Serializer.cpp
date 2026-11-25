@@ -20,7 +20,7 @@
 
 namespace Atlas {
 
-    void Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool saveDependencies, bool binaryJson,  bool formatJson) {
+    bool Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool saveDependencies, bool binaryJson,  bool formatJson) {
 
             JobGroup saveDependenciesGroup{ "Save scene dependencies", JobPriority::Medium };
             if (saveDependencies) {
@@ -42,10 +42,13 @@ namespace Atlas {
 
             auto format = binaryJson ? Loader::JsonFormat::MessagePack :
                 formatJson ? Loader::JsonFormat::Indented : Loader::JsonFormat::Compact;
-            if (!Loader::AssetLoader::WriteJson(filename, j, format))
+            auto written = Loader::AssetLoader::WriteJson(filename, j, format);
+            if (!written)
                 Log::Error("Couldn't write scene file " + filename);
 
             JobSystem::Wait(saveDependenciesGroup);
+
+            return written;
 
         }
 
@@ -92,7 +95,7 @@ namespace Atlas {
 
         }
 
-        void Serializer::SerializePrefab(Ref<Scene::Scene> scene, Scene::Entity entity, const std::string& filename, bool formatJson) {
+        bool Serializer::SerializePrefab(Ref<Scene::Scene> scene, Scene::Entity entity, const std::string& filename, bool formatJson) {
 
             json j;
 
@@ -108,8 +111,11 @@ namespace Atlas {
             Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Entity, filename);
 
             auto format = formatJson ? Loader::JsonFormat::Indented : Loader::JsonFormat::Compact;
-            if (!Loader::AssetLoader::WriteJson(filename, j, format))
+            auto written = Loader::AssetLoader::WriteJson(filename, j, format);
+            if (!written)
                 Log::Error("Couldn't write entity file " + filename);
+
+            return written;
 
         }
 

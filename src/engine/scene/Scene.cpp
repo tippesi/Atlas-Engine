@@ -418,7 +418,8 @@ namespace Atlas {
                         playerComponent.SetPosition(decomposition.translation - playerComponent.GetStepOffset());
                     }
 
-                    if (simulate)
+                    // Without a shape or with an invalid one there is no character to move
+                    if (simulate && playerComponent.IsValid())
                         playerComponent.Update(deltaTime);
 
                     auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
@@ -1666,18 +1667,19 @@ namespace Atlas {
                 auto creationSettings = otherComp.GetBodyCreationSettings();
                 const auto otherShape = creationSettings.shape;
                 // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
-                creationSettings.shape = CreateRef<Physics::Shape>();
-                *creationSettings.shape = *otherShape;
+                if (otherShape)
+                    creationSettings.shape = CreateRef<Physics::Shape>(*otherShape);
                 dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
             }
             if (srcEntity.HasComponent<SoftBodyComponent>()) {
                 dstEntity.AddComponent<SoftBodyComponent>(srcEntity.GetComponent<SoftBodyComponent>().settings);
             }
             if (srcEntity.HasComponent<PlayerComponent>()) {
-                auto otherComp = srcEntity.GetComponent<PlayerComponent>();
-                auto& comp = dstEntity.AddComponent<PlayerComponent>(otherComp);
+                auto comp = srcEntity.GetComponent<PlayerComponent>();
                 // Need to create a new creation settings, since right now the memory is shared between components
-                comp.creationSettings = CreateRef<Physics::PlayerCreationSettings>(*otherComp.creationSettings);
+                if (comp.creationSettings)
+                    comp.creationSettings = CreateRef<Physics::PlayerCreationSettings>(*comp.creationSettings);
+                dstEntity.AddComponent<PlayerComponent>(comp);
             }
             if (srcEntity.HasComponent<ConstraintComponent>()) {
                 auto otherComp = srcEntity.GetComponent<ConstraintComponent>();

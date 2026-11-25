@@ -1,5 +1,6 @@
 #include "SceneBindings.h"
 #include "MemberBindings.h"
+#include "../BindingRegistry.h"
 
 #include "Log.h"
 #include "scene/Scene.h"
@@ -438,10 +439,19 @@ namespace Atlas::Scripting::Bindings {
             "AddCameraComponent", &AddComponentRef<CameraComponent, float, float, float, float, vec3&, vec2&>,
             "AddFogVolumeComponent", &AddComponentRef<FogVolumeComponent>,
             "AddHierarchyComponent", &AddComponentRef<HierarchyComponent>,
-            "AddLightComponent", &AddComponentRef<LightComponent>,
+            "AddLightComponent", sol::overload(
+                &AddComponentRef<LightComponent>,
+                &AddComponentRef<LightComponent, LightType>,
+                &AddComponentRef<LightComponent, LightType, LightMobility>),
             "AddMeshComponent", &AddComponentRef<MeshComponent, ResourceHandle<Mesh::Mesh>&>,
             "AddNameComponent", &AddComponentRef<NameComponent, std::string>,
-            "AddPlayerComponent", &AddComponentRef<PlayerComponent>,
+            // A capsule with the scale of the entity, like a player added in the editor
+            "AddPlayerComponent", [](Scene::Entity& entity) {
+                auto transform = entity.TryGetComponent<TransformComponent>();
+                auto scale = transform ? transform->Decompose().scale : vec3(1.0f);
+                auto shape = Physics::ShapesManager::CreateShape(Physics::CapsuleShapeSettings{ .scale = scale });
+                return AddComponentRef<PlayerComponent>(entity, Physics::PlayerCreationSettings{ .shape = shape });
+                },
             "AddRigidBodyComponent", &AddComponentRef<RigidBodyComponent, Physics::BodyCreationSettings&>,
             "AddSoftBodyComponent", &AddComponentRef<SoftBodyComponent, Physics::SoftBodySettings&>,
             "AddConstraintComponent", sol::overload(
@@ -629,6 +639,7 @@ namespace Atlas::Scripting::Bindings {
             "stream", &AudioVolumeComponent::stream
         );
 
+        BindingRegistry::Describe("Atlas.CameraComponent.rotation", "Yaw and pitch in radians, (0, 0) looks along +z");
         ns->new_usertype<CameraComponent>("CameraComponent",
             "GetLocation", &CameraComponent::GetLocation,
             "GetLastLocation", &CameraComponent::GetLastLocation,

@@ -1,4 +1,6 @@
 #include "MathBindings.h"
+#include "../BindingRegistry.h"
+#include "../../common/MathHelper.h"
 
 #include <glm/gtx/polar_coordinates.hpp>
 
@@ -173,6 +175,7 @@ namespace Atlas::Scripting::Bindings {
 
         AddComponentAccess<mat3, true>(ns->lua_state());
         AddComponentAccess<mat4, true>(ns->lua_state());
+        BindingRegistry::Describe("Glm.Mat4", "Elements m[1] to m[16] column by column, m[13], m[14] and m[15] are the translation");
 
          auto quat_multiplication_overloads = sol::overload(
             [](const quat& v0, const quat& v1) { return v0 * v1; },
@@ -197,6 +200,27 @@ namespace Atlas::Scripting::Bindings {
             [](const vec3& v0, const vec3& v1) { return glm::dot(v0, v1); },
             [](const vec4& v0, const vec4& v1) { return glm::dot(v0, v1); }
         ));
+
+        ns->set_function("Length", sol::overload(
+            [](const vec2& vec) { return glm::length(vec); },
+            [](const vec3& vec) { return glm::length(vec); },
+            [](const vec4& vec) { return glm::length(vec); }
+        ));
+
+        ns->set_function("Distance", sol::overload(
+            [](const vec2& v0, const vec2& v1) { return glm::distance(v0, v1); },
+            [](const vec3& v0, const vec3& v1) { return glm::distance(v0, v1); },
+            [](const vec4& v0, const vec4& v1) { return glm::distance(v0, v1); }
+        ));
+
+        // Zero vectors stay zero
+        ns->set_function("Normalize", sol::overload(
+            [](const vec2& vec) { return Helper::Math::NormalizeOrZero(vec); },
+            [](const vec3& vec) { return Helper::Math::NormalizeOrZero(vec); },
+            [](const vec4& vec) { return Helper::Math::NormalizeOrZero(vec); }
+        ));
+
+        ns->set_function("Cross", [](const vec3& v0, const vec3& v1) { return glm::cross(v0, v1); });
 
         ns->set_function("Translate", sol::overload(
             [](const vec3& vec) { return glm::translate(vec); },
@@ -254,6 +278,14 @@ namespace Atlas::Scripting::Bindings {
         // Variants that write into an existing object instead of returning a new one
         // sol tries the overloads in order, the scripts use matrices and 3D vectors most
         GenerateArithmeticToBindings<mat4, vec3, vec2, vec4, mat3>(ns);
+
+        ns->set_function("NormalizeTo", sol::overload(
+            [](vec2& out, const vec2& vec) { out = Helper::Math::NormalizeOrZero(vec); },
+            [](vec3& out, const vec3& vec) { out = Helper::Math::NormalizeOrZero(vec); },
+            [](vec4& out, const vec4& vec) { out = Helper::Math::NormalizeOrZero(vec); }
+        ));
+
+        ns->set_function("CrossTo", [](vec3& out, const vec3& v0, const vec3& v1) { out = glm::cross(v0, v1); });
 
         ns->set_function("TranslateTo", sol::overload(
             [](mat4& out, const vec3& vec) { out = glm::translate(vec); },

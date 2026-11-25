@@ -121,7 +121,8 @@ namespace Atlas::ImguiExtension {
             ImGui::Checkbox("##Enable", &postProcessing.autoExposure.enable);
             ImGui::BeginDisabled(!postProcessing.autoExposure.enable);
             UIElements::PropertyLabel("Min luminance");
-            ImGui::DragFloat("##Min luminance", &postProcessing.autoExposure.luminanceMin, 0.0005f, 0.00001f, 1000.0f, "%.4f");
+            ImGui::DragFloat("##Min luminance", &postProcessing.autoExposure.luminanceMin, 0.0005f, 0.00001f, 1000.0f, "%.5f",
+                ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
             UIElements::PropertyLabel("Max luminance");
             ImGui::DragFloat("##Max luminance", &postProcessing.autoExposure.luminanceMax, 10.0f,
                 postProcessing.autoExposure.luminanceMin, 1000000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);

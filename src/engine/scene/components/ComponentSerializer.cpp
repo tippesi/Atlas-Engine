@@ -735,6 +735,7 @@ namespace Atlas::Scene::Components {
             {"crouchHeight", p.crouchHeight},
             {"crouchVelocity", p.crouchVelocity},
             {"walkStairStepUpDistance", p.walkStairStepUpDistance},
+            {"stickToGroundDistance", p.stickToGroundDistance},
         };
 
         if (p.creationSettings != nullptr)
@@ -751,6 +752,7 @@ namespace Atlas::Scene::Components {
         try_get_json(j, "crouchHeight", p.crouchHeight);
         try_get_json(j, "crouchVelocity", p.crouchVelocity);
         try_get_json(j, "walkStairStepUpDistance", p.walkStairStepUpDistance);
+        try_get_json(j, "stickToGroundDistance", p.stickToGroundDistance);
 
         if (j.contains("creationSettings")) {
             p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();

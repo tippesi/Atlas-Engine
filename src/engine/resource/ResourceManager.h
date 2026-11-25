@@ -279,6 +279,26 @@ namespace Atlas {
 
         }
 
+        // Gives the resource of a renamed file its new path, for a renamed directory all the resources in it.
+        // Jobs read the paths, none may run
+        static void RenameResources(const std::string& oldPath, const std::string& newPath) {
+
+            std::lock_guard lock(mutex);
+
+            std::vector<std::string> renamedPaths;
+            for (const auto& [path, _] : resources)
+                if (Common::Path::Rename(path, oldPath, newPath) != path)
+                    renamedPaths.push_back(path);
+
+            for (const auto& path : renamedPaths) {
+                auto resource = resources[path];
+                resources.erase(path);
+                resource->path = Common::Path::Rename(path, oldPath, newPath);
+                resources[resource->path] = resource;
+            }
+
+        }
+
         static std::vector<ResourceHandle<T>> GetResources() {
 
             std::vector<ResourceHandle<T>> resourceHandles;

@@ -85,8 +85,15 @@ namespace Atlas {
             static std::ofstream WriteFile(std::string filename, std::ios_base::openmode mode);
 
             /**
+             * Writes a file aside and renames it, such that the previous file stays complete until the new one is.
+             * @return False if the file couldn't be written, the previous one is unchanged then.
+             * @note Waits for up to a second while another part of the program reads the file.
+             */
+            static bool WriteFileAtomically(const std::string& filename, const char* data, size_t size);
+
+            /**
              * Writes json to a file of the asset directory, the engine version is added as "engineVersion".
-             * @return False if the file couldn't be opened.
+             * @return False if the file couldn't be written, the previous one is unchanged then.
              */
             static bool WriteJson(const std::string& filename, json& j, JsonFormat format);
 

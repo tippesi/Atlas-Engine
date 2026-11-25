@@ -239,7 +239,8 @@ namespace Atlas::Physics {
         character = CreateRef<JPH::CharacterVirtual>(settings, VecToJPHVec(initialPosition),
             QuatToJPHQuat(initialRotation), world->system.get());
 
-        character->SetListener(this);
+        contactListener = CreateRef<ContactListener>(creationSettings);
+        character->SetListener(contactListener.get());
 
     }
 
@@ -254,11 +255,11 @@ namespace Atlas::Physics {
 
     }
 
-    void Player::OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::CharacterContact &inContact,
-			JPH::CharacterContactSettings &ioSettings) {
+    void Player::ContactListener::OnContactAdded(const JPH::CharacterVirtual* inCharacter,
+        const JPH::CharacterContact& inContact, JPH::CharacterContactSettings& ioSettings) {
 
         ioSettings.mCanPushCharacter = false;
-        ioSettings.mCanReceiveImpulses = creationSettings->canPushBodies;
+        ioSettings.mCanReceiveImpulses = settings->canPushBodies;
 
     }
 
