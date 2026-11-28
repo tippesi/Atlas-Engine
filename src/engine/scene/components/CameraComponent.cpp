@@ -110,6 +110,12 @@ namespace Atlas {
 
             }
 
+            mat4 CameraComponent::GetLastViewMatrix() const {
+
+                return lastViewMatrix;
+
+            }
+
             vec3 CameraComponent::GetLocation() const {
 
                 return vec3(invViewMatrix[3]);
@@ -122,9 +128,9 @@ namespace Atlas {
 
             }
 
-            std::vector<vec3> CameraComponent::GetFrustumCorners(float nearPlane, float farPlane) const {
+            std::array<vec3, 8> CameraComponent::GetFrustumCorners(float nearPlane, float farPlane) const {
 
-                std::vector<vec3> corners;
+                std::array<vec3, 8> corners;
 
                 float radians = glm::radians(fieldOfView) / 2.0f;
                 float tang = tanf(radians);
@@ -138,17 +144,32 @@ namespace Atlas {
                 vec3 farPoint = cameraLocation + globalDirection * farPlane;
                 vec3 nearPoint = cameraLocation + globalDirection * nearPlane;
 
-                corners.push_back(farPoint + farHeight * globalUp - farWidth * globalRight);
-                corners.push_back(farPoint + farHeight * globalUp + farWidth * globalRight);
-                corners.push_back(farPoint - farHeight * globalUp - farWidth * globalRight);
-                corners.push_back(farPoint - farHeight * globalUp + farWidth * globalRight);
+                corners[0] = nearPoint + nearHeight * globalUp - nearWidth * globalRight;
+                corners[1] = nearPoint + nearHeight * globalUp + nearWidth * globalRight;
+                corners[2] = nearPoint - nearHeight * globalUp - nearWidth * globalRight;
+                corners[3] = nearPoint - nearHeight * globalUp + nearWidth * globalRight;
 
-                corners.push_back(nearPoint + nearHeight * globalUp - nearWidth * globalRight);
-                corners.push_back(nearPoint + nearHeight * globalUp + nearWidth * globalRight);
-                corners.push_back(nearPoint - nearHeight * globalUp - nearWidth * globalRight);
-                corners.push_back(nearPoint - nearHeight * globalUp + nearWidth * globalRight);
+                corners[4] = farPoint + farHeight * globalUp - farWidth * globalRight;
+                corners[5] = farPoint + farHeight * globalUp + farWidth * globalRight;
+                corners[6] = farPoint - farHeight * globalUp - farWidth * globalRight;
+                corners[7] = farPoint - farHeight * globalUp + farWidth * globalRight;
 
                 return corners;
+
+            }
+
+            ivec2 CameraComponent::GetImageSize(ivec2 size) const {
+
+                if (!constrainAspectRatio || aspectRatio <= 0.0f || size.x <= 0 || size.y <= 0)
+                    return size;
+
+                // Rounded ratios like 1.78 would get bars of a pixel in an image of their shape
+                if (std::abs(aspectRatio * float(size.y) / float(size.x) - 1.0f) < 0.005f)
+                    return size;
+
+                auto width = std::min(size.x, int32_t(float(size.y) * aspectRatio + 0.5f));
+                auto height = std::min(size.y, int32_t(float(size.x) / aspectRatio + 0.5f));
+                return ivec2(width, height);
 
             }
 

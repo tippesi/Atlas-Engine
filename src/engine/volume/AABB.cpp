@@ -1,5 +1,7 @@
 #include "AABB.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
     namespace Volume {
@@ -10,7 +12,7 @@ namespace Atlas {
 
         }
 
-        bool AABB::Intersects(AABB aabb) {
+        bool AABB::Intersects(AABB aabb) const {
 
             return aabb.min.x <= max.x && aabb.max.x >= min.x &&
                 aabb.min.y <= max.y && aabb.max.y >= min.y &&
@@ -18,7 +20,39 @@ namespace Atlas {
 
         }
 
-        bool AABB::IsInside(vec3 point) {
+        bool AABB::IntersectsTriangle(vec3 v0, vec3 v1, vec3 v2) const {
+
+            // Separating axis test with the box faces, the triangle normal and the edge cross products
+            auto center = GetCenter();
+            auto halfSize = GetSize() * 0.5f;
+            v0 -= center;
+            v1 -= center;
+            v2 -= center;
+            vec3 edges[3] = { v1 - v0, v2 - v1, v0 - v2 };
+
+            auto separated = [&](vec3 axis) {
+                if (glm::dot(axis, axis) < 1e-12f)
+                    return false;
+                auto p0 = glm::dot(v0, axis), p1 = glm::dot(v1, axis), p2 = glm::dot(v2, axis);
+                auto radius = glm::dot(halfSize, glm::abs(axis));
+                return std::min({ p0, p1, p2 }) > radius || std::max({ p0, p1, p2 }) < -radius;
+            };
+
+            for (int32_t i = 0; i < 3; i++) {
+                vec3 boxAxis(0.0f);
+                boxAxis[i] = 1.0f;
+                if (separated(boxAxis))
+                    return false;
+                for (const auto& edge : edges)
+                    if (separated(glm::cross(boxAxis, edge)))
+                        return false;
+            }
+
+            return !separated(glm::cross(edges[0], edges[1]));
+
+        }
+
+        bool AABB::IsInside(vec3 point) const {
 
             return point.x >= min.x && point.x <= max.x &&
                 point.y >= min.y && point.y <= max.y &&
@@ -26,13 +60,13 @@ namespace Atlas {
 
         }
 
-        bool AABB::IsInside(AABB aabb) {
+        bool AABB::IsInside(AABB aabb) const {
 
             return IsInside(aabb.min) && IsInside(aabb.max);
 
         }
 
-        AABB AABB::Transform(mat4 matrix) {
+        AABB AABB::Transform(mat4 matrix) const {
 
             vec3 cube[] = { vec3(min.x, min.y, min.z), vec3(min.x, min.y, max.z),
                 vec3(max.x, min.y, min.z), vec3(max.x, min.y, max.z),
@@ -59,13 +93,13 @@ namespace Atlas {
 
         }
 
-        AABB AABB::Translate(vec3 translation) {
+        AABB AABB::Translate(vec3 translation) const {
 
             return AABB(min + translation, max + translation);
 
         }
 
-        AABB AABB::Scale(float scale) {
+        AABB AABB::Scale(float scale) const {
 
             auto center = 0.5f * (min + max);
             auto scaledMin = center + scale * (min - center);
@@ -75,7 +109,7 @@ namespace Atlas {
 
         }
 
-        AABB AABB::Scale(vec3 scale) {
+        AABB AABB::Scale(vec3 scale) const {
 
             auto center = 0.5f * (min + max);
             auto scaledMin = center + scale * (min - center);
@@ -92,7 +126,7 @@ namespace Atlas {
 
         }
 
-        void AABB::Grow(glm::vec3 vector) {
+        void AABB::Grow(vec3 vector) {
 
             max = glm::max(vector, max);
             min = glm::min(vector, min);

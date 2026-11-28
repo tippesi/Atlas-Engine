@@ -1,4 +1,5 @@
 #include <structures.hsh>
+#include <../globals.hsh>
 #include <../common/random.hsh>
 #include <../common/PI.hsh>
 #include <../common/packing.hsh>
@@ -6,41 +7,52 @@
 #include <../common/octahedron.hsh>
 
 #define INF 1000000000000.0
-#define EPSILON 0.1
+#define EPSILON 0.001
 
 #define DIRECTIONAL_LIGHT 0
-#define TRIANGLE_LIGHT 1
+#define POINT_LIGHT 2
+#define SPOT_LIGHT 3
 
 #define INSTANCE_MASK_ALL (1 << 7)
 #define INSTANCE_MASK_SHADOW (1 << 6)
+// Meshes with only translucent materials, rays without TRANSLUCENT_HITS would see them as opaque without an opacity check
+#define INSTANCE_MASK_TRANSLUCENT (1 << 5)
+#define INSTANCE_MASK_TRANSLUCENT_SHADOW (1 << 4)
 
-Triangle UnpackTriangle(PackedTriangle triangle) {    
+// The instances of closest hits, and of shadow rays which pass translucent surfaces by their opacity
+#ifdef TRANSLUCENT_HITS
+#define INSTANCE_MASK_CLOSEST (INSTANCE_MASK_ALL | INSTANCE_MASK_TRANSLUCENT)
+#else
+#define INSTANCE_MASK_CLOSEST INSTANCE_MASK_ALL
+#endif
+#define INSTANCE_MASK_SHADOW_TRANSPARENCY (INSTANCE_MASK_SHADOW | INSTANCE_MASK_TRANSLUCENT_SHADOW)
+
+// The attributes of a triangle, GetTriangle of surface.hsh adds the positions where hits need them
+Triangle UnpackTriangle(PackedTriangle triangle) {
     Triangle tri;
 
-    tri.v0 = triangle.v0.xyz;
-    tri.v1 = triangle.v1.xyz;
-    tri.v2 = triangle.v2.xyz;
-    
-    tri.n0 = vec3(unpackUnitVector(floatBitsToInt(triangle.v0.w)));
-    tri.n1 = vec3(unpackUnitVector(floatBitsToInt(triangle.v1.w)));
-    tri.n2 = vec3(unpackUnitVector(floatBitsToInt(triangle.v2.w)));    
-    
-    tri.t = vec3(unpackUnitVector(floatBitsToInt(triangle.d1.x)));
-    tri.bt = vec3(unpackUnitVector(floatBitsToInt(triangle.d1.y)));
-    
-    tri.uv0 = unpackHalf2x16(floatBitsToUint(triangle.d0.x));
-    tri.uv1 = unpackHalf2x16(floatBitsToUint(triangle.d0.y));
-    tri.uv2 = unpackHalf2x16(floatBitsToUint(triangle.d0.z));
+    tri.n0= unpackUnitVector(int(triangle.normalsTangent.x)).xyz;
+    tri.n1 = unpackUnitVector(int(triangle.normalsTangent.y)).xyz;
+    tri.n2 = unpackUnitVector(int(triangle.normalsTangent.z)).xyz;
 
-    tri.color0 = unpackUnorm4x8(floatBitsToUint(triangle.d2.x));
-    tri.color1 = unpackUnorm4x8(floatBitsToUint(triangle.d2.y));
-    tri.color2 = unpackUnorm4x8(floatBitsToUint(triangle.d2.z));
-    
-    tri.materialIndex = floatBitsToInt(triangle.d0.w);
-    tri.endOfNode = triangle.d1.z > 0.0 ? true : false;
-    tri.opacity = triangle.d2.w;
-    
-    return tri;    
+    // The tangent frame of BLAS::BuildBuffers and deformTriangles.csh, the bitangent follows from the handedness
+    vec4 tangent = unpackUnitVector(int(triangle.normalsTangent.w));
+    tri.t = tangent.xyz;
+    tri.handedness = tangent.w;
+    tri.bt = tri.handedness * normalize(cross(tri.t, tri.n0 + tri.n1 + tri.n2));
+
+    tri.uv0 = unpackHalf2x16(triangle.texCoordsMaterialOpacity.x);
+    tri.uv1 = unpackHalf2x16(triangle.texCoordsMaterialOpacity.y);
+    tri.uv2 = unpackHalf2x16(triangle.texCoordsMaterialOpacity.z);
+
+    tri.color0 = unpackUnorm4x8(triangle.colors.x);
+    tri.color1 = unpackUnorm4x8(triangle.colors.y);
+    tri.color2 = unpackUnorm4x8(triangle.colors.z);
+
+    tri.materialIndex = int(triangle.texCoordsMaterialOpacity.w & 0xFFFFu);
+    tri.opacity = unpackHalf2x16(triangle.texCoordsMaterialOpacity.w >> 16u).x;
+
+    return tri;
 }
 
 Ray UnpackRay(PackedRay compressed) {
@@ -53,6 +65,9 @@ Ray UnpackRay(PackedRay compressed) {
     ray.hitID = floatBitsToInt(compressed.hit.y);
     ray.hitDistance = compressed.hit.x;
     ray.hitInstanceID = floatBitsToInt(compressed.hit.z);
+
+    ray.hitBarycentrics = unpackUnorm2x16(floatBitsToUint(compressed.direction.w));
+    ray.hitGeometryNormal = unpackUnitVector(floatBitsToInt(compressed.hit.w)).xyz;
 
     return ray;
 }
@@ -67,6 +82,9 @@ PackedRay PackRay(Ray ray) {
     compressed.hit.x = ray.hitDistance;
     compressed.hit.y = intBitsToFloat(ray.hitID);
     compressed.hit.z = intBitsToFloat(ray.hitInstanceID);
+
+    compressed.direction.w = uintBitsToFloat(packUnorm2x16(ray.hitBarycentrics));
+    compressed.hit.w = intBitsToFloat(packUnitVector(ray.hitGeometryNormal));
 
     
     return compressed;
@@ -102,18 +120,22 @@ Light UnpackLight(PackedLight compressed) {
     Light light;
 
     light.P = compressed.P.xyz;
-    light.N = compressed.N.xyz;
+    light.N = normalize(compressed.N.xyz);
 
-    light.radiance = compressed.color.rgb;
+    // The lights of ray tracing are built once, the pre-exposure follows the camera
+    light.radiance = compressed.color.rgb * globalData.preExposure;
 
-    uint data = floatBitsToUint(compressed.data.x);
-    light.type = ((data & 0xF0000000u) >> 28u);
+    uint data0 = floatBitsToUint(compressed.data.x);
+    uint data1 = floatBitsToUint(compressed.P.w);
 
-    light.triangleIdx = int(data & 0x0FFFFFFFu);
-    light.instanceIdx = floatBitsToInt(compressed.data.w);
+    light.type = data0 >> 28u;
+
+    light.castShadow = data1 > 0u;
 
     light.pdf = compressed.data.y;
-    light.area = compressed.data.z;
+    light.radius = compressed.N.w;
+    light.angleScale = compressed.data.z;
+    light.angleOffset = compressed.data.w;
     light.brightness = dot(light.radiance, vec3(0.33333));
 
     return light;

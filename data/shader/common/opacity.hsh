@@ -1,0 +1,2 @@
+// Surfaces with a lower opacity are cut out, the same in all passes
+const float opacityCutoff = 0.2;

@@ -6,44 +6,65 @@
 #include "physics/PhysicsSerializer.h"
 
 #include "loader/AssetLoader.h"
+#include "loader/AssetReferences.h"
 #include "loader/TerrainLoader.h"
 #include "loader/MeshLoader.h"
 #include "loader/MaterialLoader.h"
 
+#include "tools/TerrainTool.h"
+#include "common/SerializationContext.h"
+
+#include <cctype>
 #include <map>
+#include <optional>
 
 namespace Atlas {
 
-    void Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool saveDependencies, bool binaryJson,  bool formatJson) {
+    bool Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool saveDependencies, bool binaryJson,  bool formatJson) {
 
-            auto path = Loader::AssetLoader::GetFullPath(filename);
-            auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-            if (!fileStream.is_open()) {
-                Log::Error("Couldn't write scene file " + filename);
-                return;
+            JobGroup saveDependenciesGroup{ "Save scene dependencies", JobPriority::Medium };
+            if (saveDependencies) {
+                JobSystem::Execute(saveDependenciesGroup, [&](JobData&) {
+                    SaveDependencies(scene);
+                    });
             }
 
             json j;
-            Scene::SceneToJson(j, scene.get());
-
-            if (binaryJson) {
-                auto data = json::to_bjdata(j);
-                fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
+            {
+                std::optional<SerializationContext> context;
+                if (binaryJson)
+                    context.emplace();
+                Scene::SceneToJson(j, scene.get());
+                if (context)
+                    j["resources"] = std::move(context->paths);
             }
-            else {
-                fileStream << (formatJson ? j.dump(2) : j.dump());
-            }
+            Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Scene, filename);
 
-            if (saveDependencies) {
-                SaveDependencies(scene);
-            }
+            auto format = binaryJson ? Loader::JsonFormat::MessagePack :
+                formatJson ? Loader::JsonFormat::Indented : Loader::JsonFormat::Compact;
+            auto written = Loader::AssetLoader::WriteJson(filename, j, format);
+            if (!written)
+                Log::Error("Couldn't write scene file " + filename);
 
-            fileStream.close();
+            JobSystem::Wait(saveDependenciesGroup);
+
+            return written;
 
         }
 
         Ref<Scene::Scene> Serializer::DeserializeScene(const std::string& filename, bool binaryJson) {
+
+            // The meshes are requested while the scene is read, textures must not start between them
+            struct TextureLoadHold {
+                TextureLoadHold() {
+                    ResourceManager<Texture::Texture2D>::HoldAsyncLoads();
+                    ResourceManager<Mesh::Impostor>::HoldAsyncLoads();
+                }
+                ~TextureLoadHold() {
+                    ResourceManager<Texture::Texture2D>::ReleaseAsyncLoads();
+                    ResourceManager<Mesh::Impostor>::ReleaseAsyncLoads();
+                }
+            } textureLoadHold;
 
             Loader::AssetLoader::UnpackFile(filename);
             auto path = Loader::AssetLoader::GetFullPath(filename);
@@ -54,18 +75,18 @@ namespace Atlas {
                 throw ResourceLoadException(filename, "Couldn't open scene file stream");
             }
 
-            json j;
-            if (binaryJson) {
-                auto data = Loader::AssetLoader::GetFileContent(fileStream);
-                j = json::from_bjdata(data);
-            }
-            else {
-                std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                    std::istreambuf_iterator<char>());
-                j = json::parse(serialized);
-            }
-            
+            auto data = Loader::AssetLoader::GetFileContent(fileStream);
             fileStream.close();
+
+            // Older binary scenes are BJData and some are text, both start with '{', MessagePack never does.
+            // BJData follows with the type marker of the first key's length, text with its quote
+            auto isObject = data.size() > 1 && data[0] == '{';
+            auto isText = !binaryJson || (isObject && (data[1] == '"' || std::isspace(uint8_t(data[1]))));
+            auto j = isText ? json::parse(data) : isObject ? json::from_bjdata(data) : json::from_msgpack(data);
+            // The file content isn't needed anymore, large scenes would otherwise keep it while being created
+            data = std::vector<char>();
+
+            Loader::AssetReferences::ResolveReferences(j, Loader::AssetReferences::Type::Scene, filename);
 
             Ref<Scene::Scene> scene;
             Scene::SceneFromJson(j, scene);
@@ -74,15 +95,7 @@ namespace Atlas {
 
         }
 
-        void Serializer::SerializePrefab(Ref<Scene::Scene> scene, Scene::Entity entity, const std::string& filename, bool formatJson) {
-
-            auto path = Loader::AssetLoader::GetFullPath(filename);
-            auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-            if (!fileStream.is_open()) {
-                Log::Error("Couldn't write entity file " + filename);
-                return;
-            }
+        bool Serializer::SerializePrefab(Ref<Scene::Scene> scene, Scene::Entity entity, const std::string& filename, bool formatJson) {
 
             json j;
 
@@ -95,9 +108,14 @@ namespace Atlas {
                 j["body"] = rigidBody->GetBodyCreationSettings();
             }
 
-            fileStream << (formatJson ? j.dump(2) : j.dump());
+            Loader::AssetReferences::MakeReferences(j, Loader::AssetReferences::Type::Entity, filename);
 
-            fileStream.close();
+            auto format = formatJson ? Loader::JsonFormat::Indented : Loader::JsonFormat::Compact;
+            auto written = Loader::AssetLoader::WriteJson(filename, j, format);
+            if (!written)
+                Log::Error("Couldn't write entity file " + filename);
+
+            return written;
 
         }
 
@@ -112,16 +130,16 @@ namespace Atlas {
                 throw ResourceLoadException(filename, "Couldn't open entity file stream");
             }
 
-            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                std::istreambuf_iterator<char>());
+            auto data = Loader::AssetLoader::GetFileContent(fileStream);
 
             fileStream.close();
 
-            json j = json::parse(serialized);
+            json j = json::parse(data);
+            Loader::AssetReferences::ResolveReferences(j, Loader::AssetReferences::Type::Entity, filename);
 
             auto entity = scene->CreateEntity();
 
-            Scene::EntityFromJson(j, entity, scene.get());
+            Scene::EntityFromJson(j, entity, scene.get(), false);
 
             auto rigidBody = entity.TryGetComponent<RigidBodyComponent>();
             if (rigidBody)
@@ -147,36 +165,41 @@ namespace Atlas {
                 return mesh0->data.GetVertexCount() > mesh1->data.GetVertexCount();
             });
 
-            if (multithreaded) {
-                JobGroup group{ JobPriority::Medium };
+            JobGroup group{ "Serialize scene dependencies", JobPriority::Medium};
+            if (multithreaded) {                
                 JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), 
                     [&](JobData& data) {
                         auto& mesh = meshes[data.idx];
 
-                        if (!mesh.IsLoaded()) return;
+                        if (!mesh.IsLoaded() || mesh.IsGenerated()) return;
 
                         Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
                     });
+            }
 
-                JobSystem::Wait(group);
+            if (scene->terrain.IsLoaded() && !scene->terrain.IsGenerated()) {
+                // Make sure everything is there before saving
+                Tools::TerrainTool::LoadMissingCells(scene->terrain.Get(), scene->terrain.GetResource()->path);
+                Loader::TerrainLoader::SaveTerrain(scene->terrain.Get(), scene->terrain.GetResource()->path);
             }
 
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
-                if (!multithreaded)
+                if (!multithreaded && !mesh.IsGenerated())
                     Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
 
                 for (const auto& material : mesh->data.materials)
                     materials[material.GetID()] = material;
             }
 
+            JobSystem::Wait(group);
+
             for (const auto& [_, material] : materials) {
-                if (!material.IsLoaded()) continue;
+                if (!material.IsLoaded() || material.IsGenerated()) continue;
 
                 Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
             }
-
         }
 
 }

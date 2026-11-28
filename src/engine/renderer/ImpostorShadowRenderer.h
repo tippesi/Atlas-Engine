@@ -14,14 +14,14 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<Graphics::FrameBuffer>& frameBuffer,
-                Graphics::CommandList* commandList, RenderList::Pass* renderPass,
+            void Render(const Graphics::AttachmentFormats& attachmentFormats,
+                Graphics::CommandList* commandList, RenderList* renderList, const RenderList::Pass* renderPass,
                 mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation);
 
         private:
             Buffer::VertexArray vertexArray;
 
-            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer,
+            PipelineConfig GetPipelineConfig(const Graphics::AttachmentFormats& attachmentFormats,
                 bool interpolation, bool pixelDepthOffset);
 
         };

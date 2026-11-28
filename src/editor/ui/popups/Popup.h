@@ -15,7 +15,7 @@ namespace Atlas::Editor::UI {
 
         const char* GetNameID() const { return nameID.c_str(); }
 
-        void Open() { ImGui::OpenPopup(GetNameID()); }
+        void Open() { ImGui::OpenPopup(GetNameID()); wasJustOpened = true; }
 
         std::string name;
 
@@ -23,6 +23,8 @@ namespace Atlas::Editor::UI {
         size_t ID = GetID();
 
         std::string nameID;
+
+        bool wasJustOpened = false;
 
     private:
         static size_t GetID() {

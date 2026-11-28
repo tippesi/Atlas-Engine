@@ -26,7 +26,7 @@ namespace Atlas {
         static ResourceHandle<T> GetResource(const std::string& path) {
 
             CheckInitialization();
-            
+
             auto relativePath = GetAssetDirectoryPath(path);
             std::lock_guard lock(mutex);
             if (resources.contains(relativePath)) {
@@ -50,7 +50,7 @@ namespace Atlas {
         static ResourceHandle<T> GetOrLoadResource(const std::string& path, ResourceOrigin origin, Args&&... args) {
 
             static_assert(std::is_constructible<T, const std::string&, Args...>() ||
-                          std::is_constructible<T, Args...>(),
+                std::is_constructible<T, Args...>(),
                 "Resource class needs to implement constructor with provided argument type");
 
             CheckInitialization();
@@ -72,7 +72,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoader(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -80,7 +80,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path, ResourceOrigin origin,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoader(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -135,9 +135,9 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
                 auto resource = GetResourceInternal(relativePath);
-                JobSystem::Execute(resource->jobGroup, [resource, args...](JobData&) {
+                StartAsyncLoad(resource, [resource, args...]() {
                     resource->Load(args...);
-                });
+                    });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
                 handle = ResourceHandle<T>(resource);
             }
@@ -148,7 +148,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoaderAsync(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -156,7 +156,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoaderAsync(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -166,7 +166,7 @@ namespace Atlas {
         static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path,
             std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
 
-            return GetResourceWithLoaderAsync(path, System, loaderFunction, std::forward<Args>(args)...);
+            return GetOrLoadResourceWithLoaderAsync(path, System, loaderFunction, std::forward<Args>(args)...);
 
         }
 
@@ -180,9 +180,9 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
                 auto resource = GetResourceInternal(relativePath);
-                JobSystem::Execute(resource->jobGroup, [resource, loaderFunction, args...](JobData&) {
+                StartAsyncLoad(resource, [resource, loaderFunction, args...]() {
                     resource->LoadWithExternalLoader(loaderFunction, args...);
-                });
+                    });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
                 handle = ResourceHandle<T>(resource);
             }
@@ -191,10 +191,39 @@ namespace Atlas {
 
         }
 
+        // Priority of the jobs loading resources of this type asynchronously
+        static inline JobPriority loadPriority = JobPriority::Low;
+
+        // Called when an async load of this type is requested and when it's done, e.g. to hold the loads of other types
+        static inline std::function<void()> onAsyncLoadRequested;
+        static inline std::function<void()> onAsyncLoadFinished;
+
+        // The jobs of async loads of this type only start once all holds are released
+        static void HoldAsyncLoads() {
+
+            std::scoped_lock lock(asyncLoadMutex);
+            asyncLoadHolds++;
+
+        }
+
+        static void ReleaseAsyncLoads() {
+
+            std::vector<Ref<Resource<T>>> loads;
+            {
+                std::scoped_lock lock(asyncLoadMutex);
+                if (--asyncLoadHolds == 0)
+                    loads.swap(heldAsyncLoads);
+            }
+
+            for (const auto& resource : loads)
+                resource->StartHeldLoad();
+
+        }
+
         static ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource) {
 
             bool alreadyExisted;
-            AddResource(path, resource, alreadyExisted);
+            return AddResource(path, resource, alreadyExisted);
 
         }
 
@@ -206,7 +235,7 @@ namespace Atlas {
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(relativePath)) {
-                    auto &resource = resources[relativePath];
+                    auto& resource = resources[relativePath];
                     resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
                     alreadyExisted = true;
                     return ResourceHandle<T>(resource);
@@ -250,11 +279,47 @@ namespace Atlas {
 
         }
 
+        // Gives the resource of a renamed file its new path, for a renamed directory all the resources in it.
+        // Jobs read the paths, none may run
+        static void RenameResources(const std::string& oldPath, const std::string& newPath) {
+
+            std::lock_guard lock(mutex);
+
+            std::vector<std::string> renamedPaths;
+            for (const auto& [path, _] : resources)
+                if (Common::Path::Rename(path, oldPath, newPath) != path)
+                    renamedPaths.push_back(path);
+
+            for (const auto& path : renamedPaths) {
+                auto resource = resources[path];
+                resources.erase(path);
+                resource->path = Common::Path::Rename(path, oldPath, newPath);
+                resources[resource->path] = resource;
+            }
+
+        }
+
         static std::vector<ResourceHandle<T>> GetResources() {
 
             std::vector<ResourceHandle<T>> resourceHandles;
 
+            std::lock_guard lock(mutex);
             for (auto& [_, resource] : resources) {
+                resourceHandles.emplace_back(resource);
+            }
+
+            return resourceHandles;
+
+        }
+
+        static std::vector<ResourceHandle<T>> GetOwnedResources() {
+
+            std::vector<ResourceHandle<T>> resourceHandles;
+
+            std::lock_guard lock(mutex);
+            for (auto& [_, resource] : resources) {
+                if (resource.use_count() == 1)
+                    continue;
                 resourceHandles.emplace_back(resource);
             }
 
@@ -266,6 +331,7 @@ namespace Atlas {
 
             std::vector<ResourceHandle<T>> resourceHandles;
 
+            std::lock_guard lock(mutex);
             for (auto& [_, resource] : resources) {
                 if (resource->origin != origin)
                     continue;
@@ -284,7 +350,7 @@ namespace Atlas {
 
             subscribers->emplace_back(ResourceSubscriber<T>{
                 .ID = subscriberCount,
-                .function = function
+                    .function = function
             });
 
             return subscriberCount++;
@@ -300,7 +366,7 @@ namespace Atlas {
             auto item = std::find_if(subscribers->begin(), subscribers->end(),
                 [&](ResourceSubscriber<T> subscriber) {
                     return subscriber.ID == subscriptionID;
-            });
+                });
 
             if (item != subscribers->end()) {
                 subscribers->erase(item);
@@ -309,6 +375,39 @@ namespace Atlas {
         }
 
     private:
+        static void StartAsyncLoad(const Ref<Resource<T>>& resource, std::function<void()> load) {
+
+            resource->jobGroup.priority = loadPriority;
+
+            if (onAsyncLoadRequested)
+                onAsyncLoadRequested();
+
+            auto start = [resource, load = std::move(load)]() {
+                JobSystem::Execute(resource->jobGroup, [load](JobData&) {
+                    load();
+                    if (onAsyncLoadFinished)
+                        onAsyncLoadFinished();
+                    });
+                };
+
+            {
+                std::scoped_lock lock(asyncLoadMutex);
+                if (asyncLoadHolds > 0) {
+                    std::scoped_lock heldLoadLock(Resource<T>::heldLoadMutex);
+                    resource->heldLoad = start;
+                    heldAsyncLoads.push_back(resource);
+                    return;
+                }
+            }
+
+            start();
+
+        }
+
+        static inline std::mutex asyncLoadMutex;
+        static inline int32_t asyncLoadHolds = 0;
+        static inline std::vector<Ref<Resource<T>>> heldAsyncLoads;
+
         static std::mutex mutex;
         static std::mutex subscriberMutex;
 
@@ -321,6 +420,8 @@ namespace Atlas {
 
         static std::atomic_int subscriberCount;
 
+        static JobGroup deallocationJobs;
+
         static inline void CheckInitialization() {
 
             if (isInitialized) return;
@@ -330,6 +431,8 @@ namespace Atlas {
                 Events::EventManager::FrameEventDelegate.Subscribe(
                     ResourceManager<T>::UpdateHandler);
                 Events::EventManager::ShutdownEventDelegate.Subscribe(
+                    ResourceManager<T>::ShutdownHandler);
+                Events::EventManager::AssetDirectoryChangeEventDelegate.Subscribe(
                     ResourceManager<T>::ShutdownHandler);
             }
 
@@ -363,8 +466,9 @@ namespace Atlas {
 
             std::lock_guard lock(mutex);
 
-            for (auto it = resources.begin(); it != resources.end();) {
-                auto& resource = it->second;
+            // First loop to count and update the resources
+            size_t resourceUnloadCount = 0;
+            for (auto& [_, resource] : resources) {
                 // Just one reference (the resource manager), so start countdown for future deletion
                 // If resource is accessed in certain time frame we reset the counter
                 if (resource.use_count() == 1 && !resource->permanent) {
@@ -374,29 +478,55 @@ namespace Atlas {
                     resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
                 }
 
+                if (resource.use_count() == 1 && resource->framesToDeletion == 0) {
+                    resourceUnloadCount++;
+                }
+            }
+
+            std::vector<Ref<Resource<T>>> resourcesToUnload;
+            resourcesToUnload.reserve(resourceUnloadCount);
+
+            // Second loop for actual removal
+            for (auto it = resources.begin(); it != resources.end();) {
+                auto& resource = it->second;                
+
                 // Delete if all conditions are met
                 if (resource.use_count() == 1 && resource->framesToDeletion == 0) {
                     NotifyAllSubscribers(ResourceTopic::ResourceDestroy, resource);
                     AE_ASSERT(resource.use_count() == 1 &&
                         "Subscribers shouldn't claim ownership of to be deleted resources");
-                    resource->Unload();
+                    resourcesToUnload.push_back(resource);
                     it = resources.erase(it);
                 }
                 else {
                     ++it;
                 }
             }
+
+            // This is kind of fucked up, but we can avoid unwanted spikes when a bunch of data is suddenly needed anymore
+            // Also we shouldn't unload them multi-threaded, so not one job per resource.
+            if (!resourcesToUnload.empty()) {
+                JobSystem::Execute(deallocationJobs, [resourcesToUnload = std::move(resourcesToUnload)](JobData&) {
+                    for (auto& resource : resourcesToUnload)
+                        resource->Unload();
+                    });
+            }
         }
 
         static void ShutdownHandler() {
-         
-            for (const auto& [_, resource] : resources) {
-                if (!resource->future.valid())
-                    continue;
-                resource->future.wait();
-                resource->future.get();
-            }
 
+            // Waiting runs other jobs, which might add resources to the map
+            std::vector<Ref<Resource<T>>> loadingResources;
+            {
+                std::lock_guard lock(mutex);
+                for (const auto& [_, resource] : resources)
+                    if (!resource->jobGroup.HasFinished())
+                        loadingResources.push_back(resource);
+            }
+            for (const auto& resource : loadingResources)
+                JobSystem::Wait(resource->jobGroup);
+
+            std::lock_guard lock(mutex);
             resources.clear();
 
         }
@@ -448,5 +578,8 @@ namespace Atlas {
 
     template<typename T>
     std::atomic_int ResourceManager<T>::subscriberCount = 0;
+
+    template<typename T>
+    JobGroup ResourceManager<T>::deallocationJobs{ "Deallocate resources", JobPriority::Low };
 
 }

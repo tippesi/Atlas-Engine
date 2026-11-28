@@ -1,18 +1,100 @@
 #pragma once
 
-#include "Window.h"
+#include "DrawerWindow.h"
+#include "Log.h"
+
+#include <deque>
+#include <vector>
 
 namespace Atlas::Editor::UI {
 
-    class LogWindow : public Window {
+    class LogWindow : public DrawerWindow {
 
     public:
-        explicit LogWindow(bool show) : Window("Log", show) {}
+        explicit LogWindow(bool show) : DrawerWindow("Log", show) { height = 320.0f; }
+
+        // Keeps the entry counts up to date while the drawer is closed
+        void Update();
 
         void Render();
 
+        // Warnings and errors the user hasn't seen, because the log wasn't open
+        int32_t GetUnseenWarningCount() const { return unseenWarningCount; }
+        int32_t GetUnseenErrorCount() const { return unseenErrorCount; }
+
+        // First line of the newest warning or error
+        const std::string& GetLastProblem() const { return lastProblem; }
+        bool IsLastProblemError() const { return lastProblemIsError; }
+
     private:
+        // One displayed line. Multi-line messages are split, such that every line has the same height
+        struct Line {
+            size_t entryIdx;    // Global index of the log entry
+            uint32_t offset;    // Text range within the message
+            uint32_t length;
+            bool first;         // First line of the message, shows the time stamp
+            uint32_t linkStart; // File and line number within the message, e.g. of a script error
+            uint32_t linkLength;
+            ImGuiID id;         // Stable id for the selection
+        };
+
+        // Fetches new log entries and updates the lines incrementally. A full rebuild only happens
+        // when filters change or the cache is trimmed
+        void UpdateLines();
+
+        void RebuildLines();
+
+        void AppendLines(size_t entryIdx);
+
+        // Finds a script or shader with a line number ("scripts/main.lua:12") in the line of a message
+        static void FindLink(const std::string& message, Line& line);
+
+        // Opens the file of the link in the code editor at its line
+        static void OpenLink(const std::string& link);
+
+        const Atlas::Log::Entry& GetEntry(size_t entryIdx) const { return cachedEntries[entryIdx - cacheStartIdx]; }
+
+        void CopyLines(bool onlySelected);
+
+        bool RenderFilterToggle(const char* label, int32_t count, bool* enabled, ImVec4 color);
+
+        // Amount of entries kept, trimming happens in batches to avoid rebuilding the lines for every new entry
+        static constexpr size_t maxCachedEntries = 10000;
+        static constexpr size_t trimBatchSize = 1000;
+
+        std::deque<Atlas::Log::Entry> cachedEntries;
+        size_t cacheStartIdx = 0;
+        size_t fetchedEntryCount = 0;
+
+        std::vector<Line> lines;
+        bool linesDirty = true;
+
+        // Counts of the entries after the last clear, for the filter buttons
+        int32_t messageCount = 0;
+        int32_t warningCount = 0;
+        int32_t errorCount = 0;
+        int32_t unseenWarningCount = 0;
+        int32_t unseenErrorCount = 0;
+
+        std::string lastProblem;
+        bool lastProblemIsError = false;
+
         std::string logSearch;
+        std::string lowerSearch;
+        std::string lastFilterState;
+
+        bool showMessages = true;
+        bool showWarnings = true;
+        bool showErrors = true;
+        bool autoScroll = true;
+
+        // Entries before this index are hidden after clearing the log
+        size_t clearEntryIdx = 0;
+
+        size_t lastLineCount = 0;
+
+        // Selected lines, which can be copied
+        ImGuiSelectionBasicStorage selection;
 
     };
 

@@ -1,0 +1,31 @@
+#include <common.hsh>
+
+layout(std430, set = 1, binding = 20) readonly buffer Instances {
+    Instance instances[];
+};
+
+// Matrices of the last frame of the instances which moved
+layout(std430, set = 1, binding = 21) readonly buffer InstanceHistory {
+    mat3x4 instanceHistory[];
+};
+
+layout(std430, set = 1, binding = 22) readonly buffer InstanceIndices {
+    uint instanceIndices[];
+};
+
+layout(std430, set = 1, binding = 23) readonly buffer ImpostorInstanceIndices {
+    uint impostorInstanceIndices[];
+};
+
+mat4 GetInstanceMatrix(uint idx) {
+
+    return mat4(transpose(instances[idx].matrix));
+
+}
+
+mat4 GetLastInstanceMatrix(uint idx) {
+
+    uint historyIdx = instances[idx].historyIdx;
+    return historyIdx != INVALID_HISTORY_IDX ? mat4(transpose(instanceHistory[historyIdx])) : GetInstanceMatrix(idx);
+
+}

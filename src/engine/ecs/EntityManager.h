@@ -84,6 +84,13 @@ namespace Atlas {
             Entity Create();
 
             /**
+             * Creates a destroyed entity again with the same id.
+             * @param entity The destroyed entity.
+             * @return The entity or an invalid entity if its position is used by another entity.
+             */
+            Entity Create(Entity entity);
+
+            /**
              * Destroy an entity.
              * @param entity The entity to be destroyed.
              * @note A destroyed entity might be recycled later on.
@@ -200,7 +207,19 @@ namespace Atlas {
              * to create a copy instead of a reference. 
              */
             template<typename Comp>
-            std::vector<Comp>& GetComponents();
+            std::vector<Comp>& GetAll();
+
+            /*
+             * Returns the amount of components for a type Comp
+             */
+            template<typename Comp>
+            size_t GetCount();
+
+            /*
+             * Returns the pool for a component type
+             */
+            template<typename Comp>
+            Pool<Comp>& GetPool();
 
             template<typename Comp>
             size_t SubscribeToTopic(const Topic topic, std::function<void(const Entity, Comp&)> function);
@@ -219,11 +238,11 @@ namespace Atlas {
 
             void* userData;
 
-        private:
-            Pools pools;
-
             std::vector<Entity> entities;
             std::vector<Entity> destroyed;
+
+        private:
+            Pools pools;            
 
         };
 
@@ -296,9 +315,23 @@ namespace Atlas {
         }
 
         template<typename Comp>
-        std::vector<Comp>& EntityManager::GetComponents() {
+        std::vector<Comp>& EntityManager::GetAll() {
 
             return pools.Get<Comp>().GetAll();
+
+        }
+
+        template<typename Comp>
+        size_t EntityManager::GetCount() {
+
+            return pools.Get<Comp>().GetCount();
+
+        }
+
+        template<typename Comp>
+        Pool<Comp>& EntityManager::GetPool() {
+
+            return pools.Get<Comp>();
 
         }
 

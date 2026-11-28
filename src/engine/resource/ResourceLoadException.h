@@ -21,8 +21,8 @@ namespace Atlas {
         }
 
     private:
-        const std::string& resourceName;
-        const std::string& message;
+        const std::string resourceName;
+        const std::string message;
 
     };
 

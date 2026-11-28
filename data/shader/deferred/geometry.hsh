@@ -1,0 +1,71 @@
+// Translucent surfaces are blended (TRANSLUCENT), write the closest one for the reflections (FRONT_LAYER) or the back
+// faces of closed refracting ones (REFRACTION_BACK_FACES) instead of being cut out
+#if defined(TRANSLUCENT) || defined(FRONT_LAYER) || defined(REFRACTION_BACK_FACES)
+#define TRANSLUCENT_PASS
+#endif
+
+// Has to match OpaqueRenderer::DrawData, multi draws read it from a buffer instead of the push constants
+struct GeometryDraw {
+    uint invertUVs;
+    uint twoSided;
+    uint staticMesh;
+    uint materialIdx;
+    float normalScale;
+    float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
+    uint baseColorTextureIdx;
+    uint opacityTextureIdx;
+    uint normalTextureIdx;
+    uint roughnessTextureIdx;
+    uint metalnessTextureIdx;
+    uint aoTextureIdx;
+    uint heightTextureIdx;
+    uint emissiveTextureIdx;
+    // Level of detail of host culled draws, the commands of a GPU culled draw add their level
+    uint lod;
+};
+
+layout(push_constant) uniform constants {
+    GeometryDraw draw;
+    uint deformOffset;
+    uint jointCount;
+    uint instanceOffset;
+    // With DRAW_DATA the data of a draw is at firstDraw + gl_DrawID, the draws of a multi draw follow each other
+    uint firstDraw;
+#ifdef TRANSLUCENT_PASS
+    // See TranslucentRenderer::PushConstants, 1 without refraction
+    float refractiveIndex;
+    float thickness;
+    // Packed with packColorVector
+    uint attenuationColor;
+    float attenuationDistance;
+#endif
+#ifdef MATERIAL_GRAPH
+    uint materialGraphOffset;
+#endif
+} PushConstants;
+
+#ifdef TRANSLUCENT_PASS
+// Identifies the instance of a draw in all passes of a frame, each has its own offset. 0 is no instance
+uint GetRefractionInstance(uint instanceOffset) {
+
+    return instanceOffset % 65535u + 1u;
+
+}
+#endif
+
+#ifdef DRAW_DATA
+layout(std430, set = 3, binding = 10) readonly buffer GeometryDraws {
+    GeometryDraw geometryDraws[];
+};
+
+uint drawIdx;
+#define DrawValue(name) geometryDraws[drawIdx].name
+#else
+#define DrawValue(name) PushConstants.draw.name
+#endif

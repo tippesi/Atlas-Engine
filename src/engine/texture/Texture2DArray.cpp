@@ -7,11 +7,25 @@ namespace Atlas {
     namespace Texture {
 
         Texture2DArray::Texture2DArray(int32_t width, int32_t height, int32_t layers, VkFormat format,
-            Wrapping wrapping, Filtering filtering) {
+            Wrapping wrapping, Filtering filtering, bool dedicatedMemory, bool usedForRenderTarget) {
 
             this->format = format;
-            Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping, dedicatedMemory, usedForRenderTarget);
             RecreateSampler(filtering, wrapping);
+
+        }
+
+        Texture2DArray::Texture2DArray(const Ref<Loader::KtxImage>& image, Wrapping wrapping, Filtering filtering) {
+
+            format = image->format;
+
+            Reallocate(Graphics::ImageType::Image2DArray, image->width, image->height, image->layers,
+                filtering, wrapping, false, false, image->mipLevels);
+            RecreateSampler(filtering, wrapping);
+
+            std::vector<VkBufferImageCopy> copyRegions(image->copyRegions.begin(),
+                image->copyRegions.begin() + this->image->mipLevels);
+            this->image->SetData(image->data.data(), image->data.size(), copyRegions);
 
         }
 
@@ -59,7 +73,8 @@ namespace Atlas {
             if (width != this->width || height != this->height ||
                 layers != this->depth) {
 
-                Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping);
+                Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, 
+                    filtering, wrapping, dedicatedMemory, usedForRenderTarget);
 
             }
 

@@ -24,7 +24,10 @@ namespace Atlas::Scene {
                 String,
                 Double,
                 Integer,
-                Boolean
+                Boolean,
+                Vec2,
+                Vec3,
+                Vec4
             };
 
             class ScriptProperty {
@@ -43,6 +46,10 @@ namespace Atlas::Scene {
                 double doubleValue = 0.0;
                 int integerValue = 0;
                 bool booleanValue = false;
+
+                vec2 vec2Value = vec2(0.0f);
+                vec3 vec3Value = vec3(0.0f);
+                vec4 vec4Value = vec4(0.0f);
 
                 bool wasChanged = false;
 
@@ -84,11 +91,15 @@ namespace Atlas::Scene {
             bool environmentNeedsInitialization = true;
 
             std::optional<sol::protected_function> updateFunction;
+            std::optional<sol::protected_function> contactBeginFunction;
+            std::optional<sol::protected_function> contactEndFunction;
+            std::optional<sol::protected_function> triggerEnterFunction;
+            std::optional<sol::protected_function> triggerExitFunction;
             std::optional<sol::environment> scriptEnvironment;
 
             bool InitScriptEnvironment();
             std::map<std::string, ScriptProperty> GetPropertiesFromScript();
-            void GetOrUpdatePropertiesFromScript();
+            void GetOrUpdatePropertiesFromScript(bool update);
             void SetPropertyValuesInLuaState();
         };
 
@@ -96,7 +107,8 @@ namespace Atlas::Scene {
         void LuaScriptComponent::ScriptProperty::SetValue(const T value) {
 
             static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, double> || 
-                std::is_same_v<T, int32_t> || std::is_same_v<T, bool>, "Unsupported type");
+                std::is_same_v<T, int32_t> || std::is_same_v<T, bool> || std::is_same_v<T, vec2> ||
+                std::is_same_v<T, vec3> || std::is_same_v<T, vec4>, "Unsupported type");
 
             if constexpr (std::is_same_v<T, std::string>) {
                 stringValue = value;
@@ -114,6 +126,18 @@ namespace Atlas::Scene {
                 booleanValue = value;
                 type = PropertyType::Boolean;
             }
+            else if constexpr (std::is_same_v<T, vec2>) {
+                vec2Value = value;
+                type = PropertyType::Vec2;
+            }
+            else if constexpr (std::is_same_v<T, vec3>) {
+                vec3Value = value;
+                type = PropertyType::Vec3;
+            }
+            else if constexpr (std::is_same_v<T, vec4>) {
+                vec4Value = value;
+                type = PropertyType::Vec4;
+            }
 
             wasChanged = true;
         }
@@ -123,8 +147,9 @@ namespace Atlas::Scene {
 
             AE_ASSERT(type != PropertyType::Undefined && "This property was most likely not defined properly");
 
-            static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, double> || 
-                std::is_same_v<T, int32_t> || std::is_same_v<T, bool>, "Unsupported type");
+            static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, double> ||
+                std::is_same_v<T, int32_t> || std::is_same_v<T, bool> || std::is_same_v<T, vec2> ||
+                std::is_same_v<T, vec3> || std::is_same_v<T, vec4>, "Unsupported type");
 
             if constexpr (std::is_same_v<T, std::string>) {
                 return stringValue;
@@ -137,6 +162,15 @@ namespace Atlas::Scene {
             }
             else if constexpr (std::is_same_v<T, bool>) {
                 return booleanValue;
+            }
+            else if constexpr (std::is_same_v<T, vec2>) {
+                return vec2Value;
+            }
+            else if constexpr (std::is_same_v<T, vec3>) {
+                return vec3Value;
+            }
+            else if constexpr (std::is_same_v<T, vec4>) {
+                return vec4Value;
             }
             else {
                 

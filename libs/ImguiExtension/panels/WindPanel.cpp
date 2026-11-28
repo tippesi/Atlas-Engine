@@ -6,14 +6,19 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::Text("Noise texture");
+        UIElements::PropertySection("Noise texture");
 
         UIElements::TextureView(wrapper, &wind.noiseMap, 255.0f);
 
         ImGui::Separator();
 
-        ImGui::DragFloat2("Wind direction", glm::value_ptr(wind.direction), 0.01f, -1.0f, 1.0f);
-        ImGui::DragFloat("Wind speed", &wind.speed, 0.5f, 0.0f, 100.0f);
+        if (UIElements::BeginProperties("WindGeneral")) {
+            UIElements::PropertyLabel("Wind direction");
+            ImGui::DragFloat2("##Wind direction", glm::value_ptr(wind.direction), 0.01f, -1.0f, 1.0f);
+            UIElements::PropertyLabel("Wind speed");
+            ImGui::DragFloat("##Wind speed", &wind.speed, 0.5f, 0.0f, 100.0f);
+            UIElements::EndProperties();
+        }
 
         ImGui::PopID();
 

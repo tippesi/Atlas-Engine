@@ -3,92 +3,100 @@
 
 namespace Atlas::Editor {
 
+    // Each icon has a white file and a black one ending with _light
+    const std::map<IconType, const char*> Icons::iconNames = {
+        { IconType::Audio, "audio" },
+        { IconType::Camera, "camera" },
+        { IconType::Document, "document" },
+        { IconType::Folder, "folder" },
+        { IconType::Image, "image" },
+        { IconType::Mesh, "mesh" },
+        { IconType::Play, "play" },
+        { IconType::Stop, "stop" },
+        { IconType::Pause, "pause" },
+        { IconType::Scene, "scene" },
+        { IconType::Terrain, "terrain" },
+        { IconType::Settings, "settings" },
+        { IconType::Font, "font" },
+        { IconType::ArrowUp, "arrowUp" },
+        { IconType::ArrowDown, "arrowDown" },
+        { IconType::ArrowLeft, "arrowLeft" },
+        { IconType::ArrowRight, "arrowRight" },
+        { IconType::Prefab, "prefab" },
+        { IconType::Visibility, "visibility" },
+        { IconType::VisibilityOff, "visibility_off" },
+        { IconType::Move, "move" },
+        { IconType::Scale, "scale" },
+        { IconType::Rotate, "rotate" },
+        { IconType::MoreHorizontal, "moreHoriz" },
+        { IconType::MoreVertical, "moreVert" },
+        { IconType::Material, "material" },
+        { IconType::MeshSource, "meshSource" },
+        { IconType::EnvironmentImage, "environment" },
+        { IconType::Trash, "delete" },
+        { IconType::Filter, "filter" },
+        { IconType::OpenInNew, "openInNew" },
+        { IconType::Reset, "reset" },
+        { IconType::MaterialGraph, "materialGraph" },
+        { IconType::Ocean, "ocean" },
+        { IconType::Navigation, "navigation" },
+        { IconType::IrradianceVolume, "irradianceVolume" },
+        { IconType::GlobalIllumination, "globalIllumination" },
+        { IconType::Reflection, "reflection" },
+        { IconType::Shadow, "shadow" },
+        { IconType::Clouds, "clouds" },
+        { IconType::Fog, "fog" },
+        { IconType::Sky, "sky" },
+        { IconType::Wind, "wind" },
+        { IconType::PostProcessing, "postProcessing" },
+        { IconType::ViewList, "viewList" },
+        { IconType::ViewGrid, "viewGrid" },
+        { IconType::Log, "log" },
+        { IconType::Error, "error" },
+        { IconType::Warning, "warning" },
+        { IconType::Notifications, "notifications" },
+        { IconType::ScaleInverse, "scaleInverse" },
+        { IconType::Pin, "pin" },
+        { IconType::PinFilled, "pinFilled" },
+        { IconType::Profiler, "profiler" },
+        { IconType::Save, "save" },
+        { IconType::Undo, "undo" },
+        { IconType::Redo, "redo" },
+        { IconType::Search, "search" },
+        { IconType::Close, "cancel" },
+        { IconType::SpotLight, "spotLight" },
+        { IconType::Player, "player" },
+        { IconType::Trigger, "trigger" },
+    };
+
     Icons::Icons() {
 
-        LoadIcons();
+        LoadIcons(whiteIcons, ".png");
 
     }
 
-    Texture::Texture2D &Icons::Get(IconType type) {
+    Texture::Texture2D& Icons::GetTintable(IconType type) {
 
-        auto darkMode = Singletons::config->darkMode;
-
-        if (darkMode != darkModeIcons)
-            LoadIcons();
-
-        if (!icons.contains(type))
-            return icons[IconType::Document];
-
-        return icons[type];
+        return whiteIcons.contains(type) ? whiteIcons[type] : whiteIcons[IconType::Document];
 
     }
 
-    void Icons::LoadIcons() {
+    Texture::Texture2D& Icons::Get(IconType type) {
 
-        auto darkMode = Singletons::config->darkMode;
+        if (Singletons::config->darkMode)
+            return GetTintable(type);
 
-        if (darkMode) {
-            icons = std::map<IconType, Texture::Texture2D>{
-                { IconType::Audio, Texture::Texture2D("editor/icons/audio.png") },
-                { IconType::Camera, Texture::Texture2D("editor/icons/camera.png") },
-                { IconType::Document, Texture::Texture2D("editor/icons/document.png") },
-                { IconType::Folder, Texture::Texture2D("editor/icons/folder.png") },
-                { IconType::Image, Texture::Texture2D("editor/icons/image.png") },
-                { IconType::Mesh, Texture::Texture2D("editor/icons/mesh.png") },
-                { IconType::Play, Texture::Texture2D("editor/icons/play.png") },
-                { IconType::Stop, Texture::Texture2D("editor/icons/stop.png") },
-                { IconType::Scene, Texture::Texture2D("editor/icons/scene.png") },
-                { IconType::Terrain, Texture::Texture2D("editor/icons/terrain.png") },
-                { IconType::Settings, Texture::Texture2D("editor/icons/settings.png") },
-                { IconType::Font, Texture::Texture2D("editor/icons/font.png") },
-                { IconType::ArrowUp, Texture::Texture2D("editor/icons/arrowUp.png") },
-                { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft.png") },
-                { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight.png") },
-                { IconType::Prefab, Texture::Texture2D("editor/icons/prefab.png") },
-                { IconType::Eye, Texture::Texture2D("editor/icons/eye.png") },
-                { IconType::Move, Texture::Texture2D("editor/icons/move.png") },
-                { IconType::Scale, Texture::Texture2D("editor/icons/scale.png") },
-                { IconType::Rotate, Texture::Texture2D("editor/icons/rotate.png") },
-                { IconType::MoreHorizontal, Texture::Texture2D("editor/icons/moreHoriz.png") },
-                { IconType::MoreVertical, Texture::Texture2D("editor/icons/moreVert.png") },
-                { IconType::Material, Texture::Texture2D("editor/icons/material.png") },
-                { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource.png") },
-                { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
-                { IconType::Delete, Texture::Texture2D("editor/icons/delete.png") },
-            };
-        }
-        else {
-            icons = std::map<IconType, Texture::Texture2D>{
-                { IconType::Audio, Texture::Texture2D("editor/icons/audio_light.png") },
-                { IconType::Camera, Texture::Texture2D("editor/icons/camera_light.png") },
-                { IconType::Document, Texture::Texture2D("editor/icons/document_light.png") },
-                { IconType::Folder, Texture::Texture2D("editor/icons/folder_light.png") },
-                { IconType::Image, Texture::Texture2D("editor/icons/image_light.png") },
-                { IconType::Mesh, Texture::Texture2D("editor/icons/mesh_light.png") },
-                { IconType::Play, Texture::Texture2D("editor/icons/play_light.png") },
-                { IconType::Stop, Texture::Texture2D("editor/icons/stop_light.png") },
-                { IconType::Scene, Texture::Texture2D("editor/icons/scene_light.png") },
-                { IconType::Terrain, Texture::Texture2D("editor/icons/terrain_light.png") },
-                { IconType::Settings, Texture::Texture2D("editor/icons/settings_light.png") },
-                { IconType::Font, Texture::Texture2D("editor/icons/font_light.png") },
-                { IconType::ArrowUp, Texture::Texture2D("editor/icons/arrowUp_light.png") },
-                { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft_light.png") },
-                { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight_light.png") },
-                { IconType::Prefab, Texture::Texture2D("editor/icons/prefab_light.png") },
-                { IconType::Eye, Texture::Texture2D("editor/icons/eye_light.png") }, 
-                { IconType::Move, Texture::Texture2D("editor/icons/move_light.png") },
-                { IconType::Scale, Texture::Texture2D("editor/icons/scale_light.png") },
-                { IconType::Rotate, Texture::Texture2D("editor/icons/rotate_light.png") },
-                { IconType::MoreHorizontal, Texture::Texture2D("editor/icons/moreHoriz_light.png") },
-                { IconType::MoreVertical, Texture::Texture2D("editor/icons/moreVert_light.png") },
-                { IconType::Material, Texture::Texture2D("editor/icons/material_light.png") },
-                { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource_light.png") },
-                { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment_light.png") },
-                { IconType::Delete, Texture::Texture2D("editor/icons/delete_light.png") },
-            };
-        }
+        if (blackIcons.empty())
+            LoadIcons(blackIcons, "_light.png");
 
-        darkModeIcons = darkMode;
+        return blackIcons.contains(type) ? blackIcons[type] : blackIcons[IconType::Document];
+
+    }
+
+    void Icons::LoadIcons(std::map<IconType, Texture::Texture2D>& icons, const std::string& suffix) {
+
+        for (const auto& [type, name] : iconNames)
+            icons[type] = Texture::Texture2D("editor/icons/" + std::string(name) + suffix);
 
     }
 

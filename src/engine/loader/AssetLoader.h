@@ -10,9 +10,20 @@
 #include <unordered_set>
 #include <filesystem>
 
+#include <nlohmann/json_fwd.hpp>
+
+using json = nlohmann::json;
+
 namespace Atlas {
 
     namespace Loader {
+
+        enum class JsonFormat {
+            Compact = 0,
+            Indented,
+            MessagePack,
+            BJData
+        };
 
         /**
          * The asset loader is an abstraction for the operating system reads and writes to
@@ -43,6 +54,13 @@ namespace Atlas {
             static std::string GetAssetDirectory();
 
             /**
+             * Gets the data directory 
+             * @note This will be the asset directory for Windows, Linux and MacOS.
+             * For Android and iOS/iPadOS this will be the path to writable content.
+             */
+            static std::string GetDataDirectory();
+
+            /**
              * Check whether a file exists in the asset directory
              * @return True if file exists, false otherwise
              */
@@ -65,6 +83,19 @@ namespace Atlas {
              * <a href="http://www.cplusplus.com/reference/fstream/ofstream/">cplusplus.com</a> for more.
              */
             static std::ofstream WriteFile(std::string filename, std::ios_base::openmode mode);
+
+            /**
+             * Writes a file aside and renames it, such that the previous file stays complete until the new one is.
+             * @return False if the file couldn't be written, the previous one is unchanged then.
+             * @note Waits for up to a second while another part of the program reads the file.
+             */
+            static bool WriteFileAtomically(const std::string& filename, const char* data, size_t size);
+
+            /**
+             * Writes json to a file of the asset directory, the engine version is added as "engineVersion".
+             * @return False if the file couldn't be written, the previous one is unchanged then.
+             */
+            static bool WriteJson(const std::string& filename, json& j, JsonFormat format);
 
             /**
              * Removes a file from the asset directory.
@@ -141,17 +172,14 @@ namespace Atlas {
             static void SetReloadBehaviour(bool alwaysReload = false);
 
         private:
-            static std::string GetAssetPath(std::string path);
+            static std::string GetAssetPath(const std::string& path);
+            static std::string GetDataPath(const std::string& path);
+            static bool ExistsAtPath(const std::string& path);
 
             static std::string assetDirectory;
-
             static std::string dataDirectory;
 
             static std::mutex assetLoaderMutex;
-
-#ifdef AE_OS_ANDROID
-            static AAssetManager* manager;
-#endif
 
             static bool alwaysReload;
             static std::unordered_set<std::string> readFiles;

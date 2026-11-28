@@ -1,4 +1,5 @@
 #include "Mouse.h"
+#include "common/MathHelper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,12 +54,19 @@ namespace Atlas {
 
         void MouseHandler::Update(CameraComponent& camera, float deltaTime) {
 
-            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+            float progress = Helper::Math::Saturate(reactivity * deltaTime);
 
             interpolatedAngularVelocity = glm::mix(interpolatedAngularVelocity, angularVelocity, progress);
             camera.rotation += interpolatedAngularVelocity;
 
             angularVelocity = vec2(0.0f);
+
+        }
+
+        void MouseHandler::Reset() {
+
+            angularVelocity = vec2(0.0f);
+            interpolatedAngularVelocity = vec2(0.0f);
 
         }
 
@@ -71,14 +79,27 @@ namespace Atlas {
         void MouseHandler::HideMouse() {
 
             hideMouse = true;
-            SDL_ShowCursor(0);
+            SDL_HideCursor();
+            SetRelativeMouseMode(true);
 
         }
 
         void MouseHandler::ShowMouse() {
 
             hideMouse = false;
-            SDL_ShowCursor(1);
+            SDL_ShowCursor();
+            SetRelativeMouseMode(false);
+
+        }
+
+        void MouseHandler::SetRelativeMouseMode(bool enable) {
+
+            // Relative mode is per window in SDL3, apply it to all windows like before
+            int32_t windowCount = 0;
+            auto windows = SDL_GetWindows(&windowCount);
+            for (int32_t i = 0; i < windowCount; i++)
+                SDL_SetWindowRelativeMouseMode(windows[i], enable);
+            SDL_free(windows);
 
         }
 
@@ -99,7 +120,8 @@ namespace Atlas {
 
             if (hideMouse) {
 
-
+                // The hidden cursor is in relative mode, every motion turns the camera
+                angularVelocity += vec2(-event.dx, -event.dy) * sensibility * 0.001f;
 
             }
             else {
@@ -107,7 +129,7 @@ namespace Atlas {
                 if (!activationButtonDown)
                     return;
 
-                angularVelocity = glm::vec2(-((float)event.dx), -((float)event.dy)) * sensibility * 0.001f;
+                angularVelocity = vec2(-event.dx, -event.dy) * sensibility * 0.001f;
 
             }
 

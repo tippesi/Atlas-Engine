@@ -9,6 +9,7 @@ namespace Atlas {
 	namespace Scene {
 
         class Scene;
+        class SceneRenderState;
 
 		namespace Components {
 
@@ -18,7 +19,7 @@ namespace Atlas {
                 CameraComponent() = default;
                 CameraComponent(const CameraComponent& that) = default;
 
-                CameraComponent(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, glm::vec3 location = vec3(0.0f),
+                CameraComponent(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, vec3 location = vec3(0.0f),
                     vec2 rotation = vec2(0.0f));
 
                 void Jitter(vec2 jitter);
@@ -29,11 +30,19 @@ namespace Atlas {
 
                 mat4 GetLastJitteredMatrix() const;
 
+                mat4 GetLastViewMatrix() const;
+
                 vec3 GetLocation() const;
 
                 vec3 GetLastLocation() const;
 
-                std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane) const;
+                std::array<vec3, 8> GetFrustumCorners(float nearPlane, float farPlane) const;
+
+                /**
+                 * The size of the image in an area of the given size: the whole area, or with a constrained aspect ratio
+                 * the largest part of that shape, the rest are bars
+                 */
+                ivec2 GetImageSize(ivec2 size) const;
 
                 void UpdateFrustum();
 
@@ -44,6 +53,9 @@ namespace Atlas {
 
                 float fieldOfView = 45.0f;
                 float aspectRatio = 2.0f;
+                // Keeps the aspect ratio with bars, otherwise applications give the camera the shape of the image. The
+                // image has another size when they change, so that's not something to animate
+                bool constrainAspectRatio = false;
                 float nearPlane = 1.0;
                 float farPlane = 400.0f;
 
@@ -93,6 +105,7 @@ namespace Atlas {
                 mat4 lastViewMatrix = mat4{ 1.0f };
 
                 friend Scene;
+                friend SceneRenderState;
 
             };
 

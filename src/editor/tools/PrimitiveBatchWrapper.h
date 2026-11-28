@@ -1,26 +1,24 @@
 #pragma once
 
 #include "renderer/PrimitiveBatch.h"
-#include "volume/AABB.h"
-#include "volume/Frustum.h"
-#include "volume/Rectangle.h"
 
 namespace Atlas::Editor {
 
+    // Debug lines of the viewport, the ones with depth test are faded and dashed behind surfaces
     class PrimitiveBatchWrapper {
 
     public:
         PrimitiveBatchWrapper();
 
-        void RenderLineAABB(Volume::AABB aabb, vec3 color);
+        const Ref<Renderer::PrimitiveBatch>& GetBatch(bool depthTest) const;
 
-        void RenderLineFrustum(Volume::Frustum frustum, vec3 color);
+        void Clear();
 
-        void RenderLineSphere(vec3 point, float radius, vec3 color);
+        // In interface pixels, the viewport scales it to the pixels of its image
+        static constexpr float lineWidth = 1.5f;
 
-        void RenderLineRectangle(const Volume::Rectangle& rect, vec3 color);
-
-        Ref<Renderer::PrimitiveBatch> primitiveBatch;
+        Ref<Renderer::PrimitiveBatch> primitiveBatchNoDepthTest;
+        Ref<Renderer::PrimitiveBatch> primitiveBatchDepthTest;
 
     };
 

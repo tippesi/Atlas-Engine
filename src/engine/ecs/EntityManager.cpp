@@ -1,5 +1,6 @@
 #include "EntityManager.h"
 #include <cassert>
+#include <algorithm>
 
 namespace Atlas {
 
@@ -32,6 +33,26 @@ namespace Atlas {
 
         }
 
+        Entity EntityManager::Create(Entity entity) {
+
+            auto pos = EntityToPosition(entity);
+            if (pos >= entities.size() || entities[pos] != EntityConfig::InvalidEntity)
+                return EntityConfig::InvalidEntity;
+
+            // Restored entities were usually destroyed last
+            auto iter = std::find_if(destroyed.rbegin(), destroyed.rend(),
+                [&](Entity destroyedEntity) { return EntityToPosition(destroyedEntity) == pos; });
+            if (iter != destroyed.rend()) {
+                *iter = destroyed.back();
+                destroyed.pop_back();
+            }
+
+            entities[pos] = entity;
+
+            return entity;
+
+        }
+
         void EntityManager::Destroy(Entity entity) {
 
             auto pos = EntityToPosition(entity);
@@ -39,6 +60,8 @@ namespace Atlas {
             entities[pos] = EntityConfig::InvalidEntity;
 
             for (auto& poolData : pools.data) {
+                if (!poolData.storage)
+                    continue;
                 if (poolData.storage->Contains(entity))
                     poolData.storage->Erase(entity);
             }
@@ -52,7 +75,7 @@ namespace Atlas {
             entities.clear();
             destroyed.clear();
 
-            pools.data.clear();
+            pools.Clear();
 
         }
 

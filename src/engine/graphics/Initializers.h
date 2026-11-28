@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef AE_OS_APPLE_MOBILE
+#include <vulkan/vulkan.h>
+#else
 #include <volk.h>
+#endif
 
 namespace Atlas {
 
@@ -21,9 +25,6 @@ namespace Atlas {
 
             VkRenderPassCreateInfo2 InitRenderPassCreateInfo(uint32_t attachmentCount, VkAttachmentDescription2* attachmentDescription,
                 uint32_t subPassCount, VkSubpassDescription2* subPassDescription, VkRenderPassCreateFlags flags = 0);
-
-            VkFramebufferCreateInfo InitFramebufferCreateInfo(VkRenderPass renderPass, uint32_t attachmentCount,
-                uint32_t width, uint32_t height, uint32_t layers = 1);
 
             VkFenceCreateInfo InitFenceCreateInfo(VkFenceCreateFlags flags = 0);
 

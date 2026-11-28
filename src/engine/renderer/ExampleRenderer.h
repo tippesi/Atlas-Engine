@@ -22,10 +22,9 @@ namespace Atlas {
             Ref<Graphics::Pipeline> meshPipeline = nullptr;
             Ref<Graphics::Pipeline> computePipeline = nullptr;
             Ref<Graphics::Buffer> buffer = nullptr;
-            Ref<Graphics::FrameBuffer> mainFrameBuffer = nullptr;
 
             Ref<Graphics::MultiBuffer> uniformBuffer = nullptr;
-            Ref<Graphics::RenderPass> mainRenderPass = nullptr;
+            Graphics::RenderingDesc mainRendering;
             Ref<Graphics::Sampler> linearSampler = nullptr;
             Ref<Graphics::Image> destinationImage = nullptr;
 

@@ -1,8 +1,5 @@
 #pragma once
 
-#define AE_BUTTON_RELEASED 0
-#define AE_BUTTON_PRESSED 1
-
 #include "../System.h"
 
 #include "WindowEvent.h"
@@ -14,13 +11,13 @@
 #include "ControllerButtonEvent.h"
 #include "ControllerDeviceEvent.h"
 #include "TouchEvent.h"
+#include "AppEvent.h"
 #include "TextInputEvent.h"
 #include "AudioDeviceEvent.h"
 #include "DropEvent.h"
 #include "FrameEvent.h"
 
 #include <mutex>
-#include <unordered_map>
 
 namespace Atlas {
 
@@ -47,22 +44,18 @@ namespace Atlas {
             static EventDelegate<ControllerButtonEvent> ControllerButtonEventDelegate;
             static EventDelegate<ControllerDeviceEvent> ControllerDeviceEventDelegate;
             static EventDelegate<TouchEvent> TouchEventDelegate;
+            static EventDelegate<AppEvent> AppEventDelegate;
             static EventDelegate<TextInputEvent> TextInputEventDelegate;
             static EventDelegate<AudioDeviceEvent> AudioDeviceEventDelegate;
             static EventDelegate<DropEvent> DropEventDelegate;
             static EventDelegate<FrameEvent> FrameEventDelegate;
             static EventDelegate<> QuitEventDelegate; 
             static EventDelegate<> ShutdownEventDelegate;
+            // The asset directory changed, e.g. to another project: resources and pipelines of the old one are dropped
+            static EventDelegate<> AssetDirectoryChangeEventDelegate;
 
         private:
-            struct ControllerDevice {
-                SDL_Joystick *joystick;
-                SDL_GameController *controller;
-                SDL_Haptic *haptic;
-            };
-
             static std::mutex handlerMutex;
-            static std::unordered_map<int32_t, ControllerDevice> controllers;
 
         };
 

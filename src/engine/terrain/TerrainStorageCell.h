@@ -3,7 +3,10 @@
 #include "../System.h"
 #include "../Material.h"
 #include "../physics/ShapesManager.h"
+#include "../raytracing/BLAS.h"
+#include "../volume/AABB.h"
 
+#include <shared_mutex>
 #include <vector>
 
 namespace Atlas {
@@ -21,7 +24,13 @@ namespace Atlas {
         public:
             TerrainStorageCell(TerrainStorage* storage);
 
+            TerrainStorageCell(const TerrainStorageCell& that);
+
             bool IsLoaded();
+
+            void Unload();
+
+            void BuildBVH(float stretchFactor, float heightFactor);
 
             int32_t x = 0;
             int32_t y = 0;
@@ -29,17 +38,26 @@ namespace Atlas {
 
             vec2 position;
 
-            Physics::ShapeRef shape;
+            Volume::AABB aabb;
+            mat3x4 inverseMatrix;
 
+            Ref<RayTracing::BLAS> blas;
+
+            // Kept after an unload, height queries read it while cells are streamed on another thread
             std::vector<float> heightData;
+            std::shared_mutex heightDataMutex;
 
-            Texture::Texture2D heightField;
-            Texture::Texture2D normalMap;
-            Texture::Texture2D splatMap;
-            Texture::Texture2D diffuseMap;
+            std::vector<uint8_t> materialIdxData;
+            std::vector<uint8_t> normalData;
 
-        private:
-            TerrainStorage* const storage;
+            Ref<Texture::Texture2D> heightField = nullptr;
+            Ref<Texture::Texture2D> normalMap = nullptr;
+            Ref<Texture::Texture2D> splatMap = nullptr;
+
+            std::atomic_bool isLoaded = false;
+            std::atomic_bool loadRequested = false;
+
+            TerrainStorage* storage = nullptr;
 
         };
 

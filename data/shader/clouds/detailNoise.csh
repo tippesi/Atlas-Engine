@@ -2,7 +2,7 @@
 
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(set = 3, binding = 0, r16f) uniform image3D noiseImage;
+layout(set = 3, binding = 0, rgba16f) uniform image3D noiseImage;
 
 layout(push_constant) uniform constants {
     float seed;
@@ -15,19 +15,14 @@ void main() {
 
     vec3 pos = vec3(pixel) / vec3(size);
 
-    float baseScale = 3.0;
-    vec4 weights = vec4(1.0, 0.5, 0.25, 0.125);
+    // Four cells in the first octave still leave enough voxels per feature in a 32^3 texture
+    float baseScale = 4.0;
 
-    vec4 noise;
-    noise.r = Worley4Octaves(pos, 1.0 * baseScale, pushConstants.seed, weights);
-    noise.g = Worley4Octaves(pos, 2.0 * baseScale, pushConstants.seed, weights);
-    noise.b = Worley4Octaves(pos, 4.0 * baseScale, pushConstants.seed, weights);
-    noise.a = Worley4Octaves(pos, 8.0 * baseScale, pushConstants.seed, weights);
+    float worley0 = saturate(Worley(pos, baseScale, pushConstants.seed));
+    float worley1 = saturate(Worley(pos, baseScale * 2.0, pushConstants.seed));
+    float worley2 = saturate(Worley(pos, baseScale * 4.0, pushConstants.seed));
+    float worley3 = saturate(Worley(pos, baseScale * 8.0, pushConstants.seed));
 
-    float highFrequenyFBM = noise.r * 0.625
-                            + noise.g * 0.250
-                            + noise.b * 0.125;
-
-    imageStore(noiseImage, pixel, vec4(highFrequenyFBM, 0.0, 0.0, 0.0));
+    imageStore(noiseImage, pixel, vec4(worley0, worley1, worley2, worley3));
 
 }

@@ -4,6 +4,7 @@
 
 #include "Renderer.h"
 #include "helper/RayTracingHelper.h"
+#include "helper/DeferredShadowRays.h"
 
 namespace Atlas {
 
@@ -23,11 +24,12 @@ namespace Atlas {
                 float radianceLimit;
                 uint32_t frameSeed;
                 float bias;
+                int32_t sampleCount;
+                int32_t lightSampleCount;
                 int32_t textureLevel;
                 float roughnessCutoff;
                 int32_t halfRes;
                 ivec2 resolution;
-                Shadow shadow;
             };
 
             struct alignas(16) TemporalConstants {
@@ -38,8 +40,13 @@ namespace Atlas {
             };
 
             struct alignas(16) AtrousConstants {
-                int32_t stepSize;
                 float strength;
+            };
+
+            struct alignas(16) ResolveConstants {
+                ivec2 resolution;
+                int32_t sampleCount;
+                int32_t lightSampleCount;
             };
 
             Helper::RayTracingHelper helper;
@@ -48,11 +55,14 @@ namespace Atlas {
             Texture::Texture2D sobolSequenceTexture;
 
             PipelineConfig rtPipelineConfig;
+            PipelineConfig rtRayTracingPipelineConfig;
+            PipelineConfig rtResolvePipelineConfig;
             PipelineConfig temporalPipelineConfig;
             PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtUniformBuffer;
-            Ref<Graphics::Sampler> shadowSampler;
+
+            Helper::DeferredShadowRays shadowRays;
         };
 
     }

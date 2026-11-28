@@ -3,6 +3,8 @@
 #include "Engine.h"
 
 #include <vector>
+#include <thread>
+#include <semaphore>
 
 namespace Atlas {
 
@@ -55,10 +57,39 @@ namespace Atlas {
         virtual void Render(float deltaTime) = 0;
 
         /**
+         * Called when the window is closed or Exit() is called.
+         * @return False keeps the application running, e.g. to ask about unsaved changes first.
+         */
+        virtual bool AllowQuit() { return true; }
+
+        /**
          * Updates stuff in the class internally. Is being called from
          * the outside.
          */
         void Update();
+
+        /**
+         * Renders the frame and submits it, on the render thread if renderThread is set. Is being called
+         * from the outside.
+         * @return False once the graphics device is lost.
+         */
+        bool RenderFrame(float deltaTime);
+
+        /**
+         * Waits until the render thread finished the last frame. Update(float) has to call it before it changes
+         * anything rendering reads, at the latest before the scene update. Does nothing without a render thread.
+         */
+        void WaitForRender();
+
+        /**
+         * Returns renderThread as it was after LoadContent(), it can't be switched while a frame renders
+         */
+        bool UsesRenderThread();
+
+        /**
+         * Returns the exit code passed to Exit(), which main returns.
+         */
+        int32_t GetExitCode() const { return exitCode; }
 
         /**
          * Needs to be implemented by the user.
@@ -76,6 +107,13 @@ namespace Atlas {
          */
         std::vector<std::string> args;
 
+        /**
+         * Renders a frame on a separate thread while the next one is updated. Render(float) then only reads
+         * the extracted render state of the scene and data the update doesn't change before WaitForRender().
+         * @note Set it in LoadContent(), later changes have no effect.
+         */
+        bool renderThread = false;
+
     protected:
         /**
          * Returns the size of the screen.
@@ -85,8 +123,9 @@ namespace Atlas {
 
         /**
          * Closes the application.
+         * @param exitCode The code the application returns, e.g. to report a failure to a calling process.
          */
-        void Exit();
+        void Exit(int32_t exitCode = 0);
 
         Graphics::GraphicsDevice* graphicsDevice = nullptr;
 
@@ -95,6 +134,21 @@ namespace Atlas {
         Ref<Renderer::MainRenderer> mainRenderer = nullptr;
 
         std::vector<Display> displays;
+
+    private:
+        void RenderLoop();
+
+        int32_t exitCode = 0;
+
+        std::thread renderer;
+        std::binary_semaphore renderStart{ 0 };
+        std::binary_semaphore renderDone{ 0 };
+        float renderDeltaTime = 0.0f;
+        bool rendering = false;
+        bool renderFrameBegun = false;
+        bool usesRenderThread = false;
+        bool renderThreadKnown = false;
+        bool stopRendering = false;
 
     };
 

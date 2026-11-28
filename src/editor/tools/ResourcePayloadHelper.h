@@ -9,6 +9,14 @@ namespace Atlas::Editor {
 	class ResourcePayloadHelper {
 
 	public:
+        // The content which is dragged, empty if there is none
+        static std::string GetPath() {
+
+            auto payload = ImGui::GetDragDropPayload();
+            return payload && payload->IsDataType("ContentBrowserResource") ? static_cast<const char*>(payload->Data) : "";
+
+        }
+
 		template<class T>
 		static ResourceHandle<T> AcceptDropResource() {
 

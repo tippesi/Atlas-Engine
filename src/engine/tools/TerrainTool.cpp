@@ -1,74 +1,476 @@
 #include "TerrainTool.h"
+#include "common/MathHelper.h"
+#include "../terrain/TerrainManager.h"
 #include "../loader/AssetLoader.h"
 #include "../loader/ImageLoader.h"
+#include "../loader/TerrainLoader.h"
 #include "../Log.h"
 
-#include <stb_image_resize.h>
+#include <stb_image_resize2.h>
 
 #include <string>
 #include <sys/stat.h>
+#include <algorithm>
 
-namespace Atlas {
+namespace Atlas::Tools {
 
-    namespace Tools {
+    Ref<Terrain::Terrain> TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
+        int32_t patchSize, float resolution, float height, ResourceHandle<Material> material) {
 
-        Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>&heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-                                              int32_t patchSize, float resolution, float height, Ref<Material> material) {
+        // Check if everything is correct
+        int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
 
-            // Check if everything is correct
-            int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
+        if (heightImage.height != heightImage.width || heightImage.channels != 1) {
+            Log::Error("Some input value wasn't following the specifications while generating the terrain");
+            return nullptr;
+        }
 
-            if (heightImage.height != heightImage.width || heightImage.channels != 1) {
-                Log::Error("Some input value wasn't following the specifications while generating the terrain");
-                return nullptr;
+        auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
+
+        terrain->storage->WriteMaterial(0, material);
+
+        // Calculate the number of vertices per tile and resize the height data to map 1:1
+        int32_t tileResolution = 8 * patchSize;
+
+        int32_t totalResolution = tileResolution * maxNodesPerSide;
+
+        // We need to compute it here to preserve the wholes (image resize might smooth it out)
+        auto holeMap = CalculateHoleMap(totalResolution, heightImage);
+
+        Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
+        if (heightImage.width != totalResolution) {
+            stbir_resize(heightImage.GetData().data(), heightImage.width, heightImage.height,
+                heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
+                STBIR_1CHANNEL, STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
+        }
+        else {
+            heightMap.SetData(heightImage.GetData());
+        }
+
+        // We need some room in the bottom and right for overlapping vertices
+
+        tileResolution += 1;
+        int32_t tileResolutionSquared = tileResolution * tileResolution;
+
+        std::vector<uint16_t> cellHeightData(tileResolutionSquared);
+
+        // i is in x direction, j in y direction
+        for (int32_t i = 0; i < maxNodesPerSide; i++) {
+            for (int32_t j = 0; j < maxNodesPerSide; j++) {
+                auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
+
+                cell->storage = terrain->storage.get();
+
+                // Create the data structures for the cell
+                cell->heightData.resize(tileResolutionSquared);
+                cell->materialIdxData.resize(tileResolutionSquared);
+                cell->normalData.resize(tileResolutionSquared * 4);
+
+                cell->heightField = CreateRef<Texture::Texture2D>(tileResolution,
+                    tileResolution, VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge,
+                    Texture::Filtering::Nearest, false, false);
+                cell->normalMap = CreateRef<Texture::Texture2D>(tileResolution,
+                    tileResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                    Texture::Filtering::Linear, false, false);
+                cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution,
+                    tileResolution, VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge,
+                    Texture::Filtering::Nearest, false, false);
+
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y < tileResolution; y++) {
+                    for (int32_t x = 0; x < tileResolution; x++) {
+                        int32_t cellOffset = y * tileResolution + x;
+                        int32_t xImage = i * (tileResolution - 1) + x;
+                        int32_t yImage = j * (tileResolution - 1) + y;
+
+                        auto hole = holeMap.Sample(xImage, yImage).r > 0;
+                        auto sampledHeight = (uint16_t)heightMap.Sample(xImage, yImage).r;
+
+                        if (hole) {
+                            cell->heightData[cellOffset] = FLT_MAX;
+                            cellHeightData[cellOffset] = 65535;
+                        }
+                        else {
+                            cell->heightData[cellOffset] = (float)sampledHeight / 65534.0f;
+                            cellHeightData[cellOffset] = sampledHeight;
+                        }
+                        cell->materialIdxData[cellOffset] = 0;
+
+                    }
+                }
+
+                cell->heightField->SetData(cellHeightData);
+                cell->splatMap->SetData(cell->materialIdxData);
+
             }
+        }
 
-            auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
+        BakeTerrain(terrain);
 
-            terrain->storage.WriteMaterial(0, material);
+        return terrain;
 
-            // Calculate the number of vertices per tile and resize the height data to map 1:1
-            int32_t tileResolution = 8 * patchSize;
+    }
 
-            int32_t totalResolution = tileResolution * maxNodesPerSide;
+    Ref<Terrain::Terrain> TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
+        int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
+        float height, std::vector<ResourceHandle<Material>> materials) {
 
-            Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
+        // Check if everything is correct
+        int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
 
-            if (heightImage.width != totalResolution) {
-                stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
-                    heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
-                    1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
-            }
-            else {
-                heightMap.SetData(heightImage.GetData());
-            }
+        if (heightImage.height != heightImage.width || heightImage.channels != 1) {
+            Log::Error("Some input value wasn't following the specifications while generating the terrain");
+            return nullptr;
+        }
 
-            // We need some room in the bottom and right for overlapping vertices
+        auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
-            tileResolution += 1;
-            int32_t tileResolutionSquared = tileResolution * tileResolution;
+        int32_t count = 0;
+        for (auto& material : materials) {
+            terrain->storage->WriteMaterial(count++, material);
+        }
 
+        // Calculate the number of vertices per tile and resize the height data to map 1:1
+        int32_t tileResolution = 8 * patchSize;
+
+        int32_t totalResolution = tileResolution * maxNodesPerSide;
+
+        // We need to compute it here to preserve the wholes (image resize might smooth it out)
+        auto holeMap = CalculateHoleMap(totalResolution, heightImage);
+
+        Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
+        if (heightImage.width != totalResolution) {
+            stbir_resize(heightImage.GetData().data(), heightImage.width, heightImage.height,
+                heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
+                STBIR_1CHANNEL, STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
+        }
+        else {
+            heightMap.SetData(heightImage.GetData());
+        }
+
+        Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
+        if (splatImage.width != totalResolution) {
+            stbir_resize(splatImage.GetData().data(), splatImage.width, splatImage.height,
+                splatImage.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
+                STBIR_1CHANNEL, STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_POINT_SAMPLE);
+        }
+        else {
+            splatMap.SetData(splatImage.GetData());
+        }
+
+        // We need some room in the bottom and right for overlapping vertices
+        tileResolution += 1;
+        int32_t tileResolutionSquared = tileResolution * tileResolution;
+        int32_t totalNodeCount = maxNodesPerSide * maxNodesPerSide;
+
+        JobGroup leafCellGroup(JobPriority::High);
+
+        auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+        std::atomic_int32_t cellCounter = 0;
+
+        JobSystem::ExecuteMultiple(leafCellGroup, workerCount, [&](JobData&) {
             std::vector<uint16_t> cellHeightData(tileResolutionSquared);
+
+            int32_t idx = cellCounter++;
+            while (idx < totalNodeCount) {
+                int32_t j = idx / maxNodesPerSide;
+                int32_t i = idx % maxNodesPerSide;
+
+                auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
+
+                cell->storage = terrain->storage.get();
+
+                // Create the data structures for the cell
+                cell->heightData.resize(tileResolutionSquared);
+                cell->materialIdxData.resize(tileResolutionSquared);
+                cell->normalData.resize(tileResolutionSquared * 4);
+
+                cell->heightField = CreateRef<Texture::Texture2D>(tileResolution,
+                    tileResolution, VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge,
+                    Texture::Filtering::Nearest, false, false);
+                cell->normalMap = CreateRef<Texture::Texture2D>(tileResolution,
+                    tileResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                    Texture::Filtering::Linear, false, false);
+                cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution,
+                    tileResolution, VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge,
+                    Texture::Filtering::Nearest, false, false);
+
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y < tileResolution; y++) {
+                    for (int32_t x = 0; x < tileResolution; x++) {
+                        int32_t cellOffset = y * tileResolution + x;
+                        int32_t xImage = i * (tileResolution - 1) + x;
+                        int32_t yImage = j * (tileResolution - 1) + y;
+
+                        auto hole = holeMap.Sample(xImage, yImage).r > 0;
+                        auto sampledHeight = (uint16_t)heightMap.Sample(xImage, yImage).r;
+                        auto splat = (uint8_t)splatMap.Sample(xImage, yImage).r;
+
+                        if (hole) {
+                            cell->heightData[cellOffset] = FLT_MAX;
+                            cellHeightData[cellOffset] = 65535;
+                        }
+                        else {
+                            cell->heightData[cellOffset] = (float)sampledHeight / 65534.0f;
+                            cellHeightData[cellOffset] = sampledHeight;
+                        }
+                        cell->materialIdxData[cellOffset] = splat;
+
+                    }
+                }
+
+                cell->heightField->SetData(cellHeightData);
+                cell->splatMap->SetData(cell->materialIdxData);
+
+                idx = cellCounter++;
+            }
+            });
+
+        JobSystem::Wait(leafCellGroup);
+
+        BakeTerrain(terrain);
+
+        return terrain;
+
+    }
+
+    void TerrainTool::UpdateTerrain(const Ref<Terrain::Terrain>& terrain, Common::Image<uint8_t>& splatImage, 
+            std::vector<ResourceHandle<Material>> materials) {
+
+        int32_t maxNodesPerSide = (int32_t)powf(2.0f, float(terrain->LoDCount) - 1.0f) * terrain->rootNodeSideCount;
+
+        int32_t count = 0;
+        for (auto& material : materials) {
+            terrain->storage->WriteMaterial(count++, material);
+        }
+
+        // Calculate the number of vertices per tile and resize the height data to map 1:1
+        int32_t tileResolution = 8 * terrain->patchSizeFactor;
+        int32_t totalResolution = tileResolution * maxNodesPerSide;
+
+        Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
+        if (splatImage.width != totalResolution) {
+            stbir_resize(splatImage.GetData().data(), splatImage.width, splatImage.height,
+                splatImage.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
+                STBIR_1CHANNEL, STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
+        }
+        else {
+            splatMap.SetData(splatImage.GetData());
+        }
+
+        // We need some room in the bottom and right for overlapping vertices
+        tileResolution += 1;
+        int32_t tileResolutionSquared = tileResolution * tileResolution;
+        int32_t totalNodeCount = maxNodesPerSide * maxNodesPerSide;
+
+        JobGroup leafCellGroup(JobPriority::High);
+
+        auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+        std::atomic_int32_t cellCounter = 0;
+
+        JobSystem::ExecuteMultiple(leafCellGroup, workerCount, [&](JobData&) {
             std::vector<uint8_t> cellSplatData(tileResolutionSquared);
 
-            for (size_t i = 0; i < cellSplatData.size(); i++)
-                cellSplatData[i] = 0;
+            int32_t idx = cellCounter++;
+            while (idx < totalNodeCount) {
+                int32_t j = idx / maxNodesPerSide;
+                int32_t i = idx % maxNodesPerSide;
 
-            // i is in x direction, j in y direction
-            for (int32_t i = 0; i < maxNodesPerSide; i++) {
-                for (int32_t j = 0; j < maxNodesPerSide; j++) {
-                    auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
+                auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
 
-                    /*
-                    // Create the data structures for the cell
-                    cell->heightData.resize(tileResolutionSquared);
-                    cell->heightField = new Texture::Texture2D(tileResolution, 
-                        tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                    cell->normalMap = new Texture::Texture2D(tileResolution, 
-                        tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-                    cell->splatMap = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                     */
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y < tileResolution; y++) {
+                    for (int32_t x = 0; x < tileResolution; x++) {
+                        int32_t cellOffset = y * tileResolution + x;
+                        int32_t xImage = i * (tileResolution - 1) + x;
+                        int32_t yImage = j * (tileResolution - 1) + y;
+
+                        auto splat = (uint8_t)splatMap.Sample(xImage, yImage).r;
+                        cellSplatData[cellOffset] = splat;
+                    }
+                }
+
+                cell->splatMap->SetData(cellSplatData);
+
+                idx = cellCounter++;
+            }
+            });
+
+        JobSystem::Wait(leafCellGroup);
+
+        BakeTerrain(terrain);
+
+    }
+
+    void TerrainTool::BakeTerrain(const Ref<Terrain::Terrain>& terrain) {
+
+        // Generate one large heightmap (assumes all tiles have the same size)
+        int32_t tileResolution = 8 * terrain->patchSizeFactor;
+        int32_t tileResolutionSquared = tileResolution * tileResolution;
+        int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
+
+        int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
+
+        auto heightData = std::vector<uint16_t>((tileSideCount * tileResolution + 1)
+            * (tileSideCount * tileResolution + 1));
+        auto splatData = std::vector<uint8_t>(heightData.size());
+
+        int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());
+
+        auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+
+        JobGroup tileGroup(JobPriority::High);
+        std::atomic_int32_t tileCounter = 0;
+
+        int32_t totalTileCount = tileSideCount * tileSideCount;
+        JobSystem::ExecuteMultiple(tileGroup, workerCount, [&](JobData&) {
+            int32_t idx = tileCounter++;
+            while (idx < totalTileCount) {
+                int32_t j = idx / tileSideCount;
+                int32_t i = idx % tileSideCount;
+
+                auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
+
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y <= tileResolution; y++) {
+                    for (int32_t x = 0; x <= tileResolution; x++) {
+                        int32_t cellOffset = y * (tileResolution + 1) + x;
+                        int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
+                            i * tileResolution + x;
+                        heightData[imageOffset] = EncodeHeight(cell->heightData[cellOffset]);
+                        splatData[imageOffset] = cell->materialIdxData[cellOffset];
+                    }
+                }
+
+                idx = tileCounter++;
+            }
+            });
+
+        JobSystem::Wait(tileGroup);
+
+        tileResolution += 1;
+
+        // Calculate the normals
+        auto normalData = std::vector<uint8_t>(heightData.size() * 3);
+
+        GenerateNormalData(heightData, normalData, heightDataResolution,
+            heightDataResolution, terrain->heightScale);
+
+        auto currentResolution = heightDataResolution;
+
+        for (int32_t k = 0; k < terrain->LoDCount; k++) {
+
+            int32_t Lod = terrain->LoDCount - k - 1;
+
+            int32_t downsample = (int32_t)powf(2.0f, (float)k);
+            int32_t tileSideCountLod = tileSideCount / downsample;
+
+            std::vector<uint16_t> resizedHeightData(currentResolution * currentResolution);
+            std::vector<uint8_t> resizedSplatData(resizedHeightData.size() * 4);
+
+            auto resizedHeightDataResolution = (int32_t)sqrtf((float)resizedHeightData.size());
+
+            if (k == 0) {
+                resizedHeightData = heightData;
+                resizedSplatData = splatData;
+            }
+            else {
+                // Downsample data (we need to do it manually here)
+
+                for (int32_t y = 0; y < currentResolution; y++) {
+                    for (int32_t x = 0; x < currentResolution; x++) {
+                        auto offset0 = ivec2(x, y);
+                        auto offset1 = ivec2(x, y) * downsample;
+                        auto index0 = offset0.y * currentResolution + offset0.x;
+                        auto index1 = offset1.y * heightDataResolution + offset1.x;
+                        resizedHeightData[index0] = heightData[index1];
+                        resizedSplatData[index0] = splatData[index1];
+                    }
+                }
+
+            }
+
+            // We need to keep the normal maps at a higher resolution to make the terrain
+            // look realistic enough when having low triangle count in the distance
+            auto sizeFactor = glm::min(downsample, terrain->bakeResolution / (tileResolution - 1));
+            auto normalDataResolution = (tileResolution - 1) * sizeFactor + 3;
+
+            auto resizedNormalDataResolution = 0;
+            Common::Image<uint8_t> resizedNormalMap;
+
+            downsample /= sizeFactor;
+
+            if (downsample == 1) {
+                resizedNormalMap = Common::Image<uint8_t>(heightDataResolution,
+                    heightDataResolution, 3);
+                resizedNormalMap.SetData(normalData);
+                resizedNormalDataResolution = heightDataResolution;
+            }
+            else {
+                resizedNormalDataResolution = tileSideCountLod * (normalDataResolution - 3) + 1;
+                resizedNormalMap = Common::Image<uint8_t>(resizedNormalDataResolution,
+                    resizedNormalDataResolution, 3);
+                for (int32_t y = 0; y < resizedNormalDataResolution; y++) {
+                    for (int32_t x = 0; x < resizedNormalDataResolution; x++) {
+                        auto offset1 = ivec2(x, y) * downsample;
+                        auto index1 = offset1.y * heightDataResolution + offset1.x;
+                        resizedNormalMap.SetData(x, y, 0, normalData[index1 * 3]);
+                        resizedNormalMap.SetData(x, y, 1, normalData[index1 * 3 + 1]);
+                        resizedNormalMap.SetData(x, y, 2, normalData[index1 * 3 + 2]);
+                    }
+                }
+            }
+
+            JobGroup lodCellGroup(JobPriority::High);
+            std::atomic_int32_t cellCounter = 0;
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            int32_t totalTileCountLod = tileSideCountLod * tileSideCountLod;
+            JobSystem::ExecuteMultiple(lodCellGroup, workerCount, [&](JobData&) {
+
+                // Iterate through all the LoD level and resize images according to the tile size
+                auto totalTileResolution = tileResolution * tileResolution;
+                auto totalNormalResolution = normalDataResolution * normalDataResolution;
+                std::vector<uint16_t> tileHeightData(totalTileResolution);
+
+                Graphics::MemoryTransferManager transferManager(device, device->memoryManager);
+
+                int32_t batchCount = 4;
+                int32_t transferCount = 0;
+                transferManager.BeginMultiTransfer();
+
+                int32_t idx = cellCounter++;
+                while (idx < totalTileCountLod) {
+                    if (transferCount % batchCount == 0 && transferCount > 0) {
+                        transferManager.EndMultiTransfer();
+                        transferManager.BeginMultiTransfer();
+                    }
+
+                    int32_t j = idx / tileSideCountLod;
+                    int32_t i = idx % tileSideCountLod;
+
+                    auto cell = terrain->storage->GetCell(i, j, Lod);
+                    // Ray tracing builds read the cell data in jobs
+                    std::unique_lock lock(cell->heightDataMutex);
+
+                    if (cell->heightData.size() != totalTileResolution)
+                        cell->heightData.resize(totalTileResolution);
+                    if (cell->materialIdxData.size() != totalTileResolution)
+                        cell->materialIdxData.resize(totalTileResolution);
+                    if (cell->normalData.size() != totalNormalResolution)
+                        cell->normalData.resize(totalNormalResolution * 4);
 
                     // Now copy a tile of the original image
                     // We make sure that every tile has the same size
@@ -79,865 +481,898 @@ namespace Atlas {
                             int32_t cellOffset = y * tileResolution + x;
                             int32_t xImage = i * (tileResolution - 1) + x;
                             int32_t yImage = j * (tileResolution - 1) + y;
+                            int32_t totalResolution = currentResolution;
 
-                            auto sample = (uint16_t)heightMap.Sample(xImage, yImage).r;
-                            
-                            cell->heightData[cellOffset] = (float)sample / 65535.0f;
-                            cellHeightData[cellOffset] = sample;
+                            auto imageOffset = yImage * totalResolution + xImage;
+                            bool hole = resizedHeightData[imageOffset] == 65535;
 
-                        }
-                    }
-
-                    cell->heightField.SetData(cellHeightData);
-                    cell->splatMap.SetData(cellSplatData);
-
-                }
-            }
-
-            BakeTerrain(terrain);
-
-            return terrain;
-
-        }
-
-        Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
-            int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
-            float height, std::vector<Ref<Material>> materials) {
-
-            // Check if everything is correct
-            int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
-
-            if (heightImage.height != heightImage.width || heightImage.channels != 1) {
-                Log::Error("Some input value wasn't following the specifications while generating the terrain");
-                return nullptr;
-            }
-
-            auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
-
-            int32_t count = 0;
-            for (auto& material : materials) {
-                terrain->storage.WriteMaterial(count++, material);
-            }
-
-            // Calculate the number of vertices per tile and resize the height data to map 1:1
-            int32_t tileResolution = 8 * patchSize;
-
-            int32_t totalResolution = tileResolution * maxNodesPerSide;
-
-            Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
-            Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
-
-            if (heightImage.width != totalResolution) {
-                stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
-                    heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
-                    1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
-                stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
-                    heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
-                    1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
-            }
-            else {
-                heightMap.SetData(heightImage.GetData());
-                splatMap.SetData(splatImage.GetData());
-            }
-
-            // We need some room in the bottom and right for overlapping vertices
-
-            tileResolution += 1;
-            int32_t tileResolutionSquared = tileResolution * tileResolution;
-
-            std::vector<uint16_t> cellHeightData(tileResolutionSquared);
-            std::vector<uint8_t> cellSplatData(tileResolutionSquared);
-
-            // i is in x direction, j in y direction
-            for (int32_t i = 0; i < maxNodesPerSide; i++) {
-                for (int32_t j = 0; j < maxNodesPerSide; j++) {
-                    auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
-
-                    /*
-                    // Create the data structures for the cell
-                    cell->heightData.resize(tileResolutionSquared);
-                    cell->heightField = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                    cell->normalMap = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-                    cell->splatMap = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                    */
-
-                    // Now copy a tile of the original image
-                    // We make sure that every tile has the same size
-                    // We also increased resolution to make sure that
-                    // adjacent cells connect to each other
-                    for (int32_t y = 0; y < tileResolution; y++) {
-                        for (int32_t x = 0; x < tileResolution; x++) {
-                            int32_t cellOffset = y * tileResolution + x;
-                            int32_t xImage = i * (tileResolution - 1) + x;
-                            int32_t yImage = j * (tileResolution - 1) + y;
-
-                            auto height = (uint16_t)heightMap.Sample(xImage, yImage).r;
-                            auto splat = (uint8_t)splatMap.Sample(xImage, yImage).r;
-
-                            cell->heightData[cellOffset] = (float)height / 65535.0f;
-                            cellHeightData[cellOffset] = height;
-                            cellSplatData[cellOffset] = splat;
-
-                        }
-                    }
-
-                    cell->heightField.SetData(cellHeightData);
-                    cell->splatMap.SetData(cellSplatData);
-
-                }
-            }
-
-            BakeTerrain(terrain);
-
-            return terrain;
-
-        }
-
-        void TerrainTool::BakeTerrain(Terrain::Terrain *terrain) {
-
-            // Generate one large heightmap (assumes all tiles have the same size)
-            int32_t tileResolution = 8 * terrain->patchSizeFactor;
-            int32_t tileResolutionSquared = tileResolution * tileResolution;
-            int32_t tileCount = terrain->storage.GetCellCount(terrain->LoDCount - 1);
-
-            int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
-
-            auto heightData = std::vector<uint16_t>((tileSideCount * tileResolution + 1)
-                * (tileSideCount * tileResolution + 1));
-            auto splatData = std::vector<uint8_t>(heightData.size());
-
-            int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());            
-
-            // i is in x direction, j in z direction
-            for (int32_t i = 0; i < tileSideCount; i++) {
-                for (int32_t j = 0; j < tileSideCount; j++) {
-                    auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
-                    auto cellSplatData = cell->splatMap.GetData<uint8_t>();
-
-                    // Now copy a tile of the original image
-                    // We make sure that every tile has the same size
-                    // We also increased resolution to make sure that
-                    // adjacent cells connect to each other
-                    for (int32_t y = 0; y <= tileResolution; y++) {
-                        for (int32_t x = 0; x <= tileResolution; x++) {
-                            int32_t cellOffset = y * (tileResolution + 1) + x;
-                            int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
-                                                  i * tileResolution + x;
-                            heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65535.0f);
-                            splatData[imageOffset] = cellSplatData[cellOffset];    
-                        }
-                    }
-                }
-            }
-
-            tileResolution += 1;
-
-            // Calculate the normals
-            auto normalData = std::vector<uint8_t>(heightData.size() * 3);
-
-            GenerateNormalData(heightData, normalData, heightDataResolution,
-                heightDataResolution, terrain->heightScale);
-
-            // Iterate through all the LoD level and resize images according to the tile size
-            std::vector<uint16_t> tileHeightData(tileResolution * tileResolution);
-            std::vector<uint8_t> tileSplatData(tileHeightData.size() * 4);
-
-            auto currentResolution = heightDataResolution;
-
-            for (int32_t k = 0; k < terrain->LoDCount; k++) {
-
-                int32_t Lod = terrain->LoDCount - k - 1;
-
-                int32_t downsample = (int32_t)powf(2.0f, (float)k);
-                int32_t tileSideCountLod = tileSideCount / downsample;
-
-                std::vector<uint16_t> resizedHeightData(currentResolution * currentResolution);                
-                std::vector<uint8_t> resizedSplatData(resizedHeightData.size() * 4);
-
-                auto resizedHeightDataResolution = (int32_t)sqrtf((float)resizedHeightData.size());
-
-                if (k == 0) {
-                    resizedHeightData = heightData;                    
-                    resizedSplatData = splatData;
-                }
-                else {
-                    // Downsample data (we need to do it manually here)
-
-                    for (int32_t y = 0; y < currentResolution; y++) {
-                        for (int32_t x = 0; x < currentResolution; x++) {
-                            auto offset0 = ivec2(x, y);
-                            auto offset1 = ivec2(x, y) * downsample;
-                            auto index0 = offset0.y * currentResolution + offset0.x;
-                            auto index1 = offset1.y * heightDataResolution + offset1.x;
-                            resizedHeightData[index0] = heightData[index1];
-                            resizedSplatData[index0] = splatData[index1];
-                        }
-                    }
-
-                }
-
-                //Common::Image8 img(resizedHeightDataResolution, resizedHeightDataResolution, 4);
-                //img.SetData(resizedSplatData);
-
-                //Loader::ImageLoader::SaveImage(img, "splat" + std::to_string(k) + ".png");
-
-                // We need to keep the normal maps at a higher resolution to make the terrain
-                // look realistic enough when having low triangle count in the distance
-                auto sizeFactor = glm::min(downsample, terrain->bakeResolution / (tileResolution - 1));
-                auto normalDataResolution = (tileResolution - 1) * sizeFactor + 3;
-
-                std::vector<uint8_t> tileNormalData(normalDataResolution * 
-                    normalDataResolution * 3);
-
-                auto resizedNormalDataResolution = 0;
-                Common::Image<uint8_t> resizedNormalMap;
-
-                downsample /= sizeFactor;
-
-                if (downsample == 1) {
-                    resizedNormalMap = Common::Image<uint8_t>(heightDataResolution,
-                        heightDataResolution, 3);
-                    resizedNormalMap.SetData(normalData);
-                    resizedNormalDataResolution = heightDataResolution;
-                }
-                else {
-                    resizedNormalDataResolution = tileSideCountLod * (normalDataResolution - 3) + 1;
-                    resizedNormalMap = Common::Image<uint8_t>(resizedNormalDataResolution,
-                        resizedNormalDataResolution, 3);
-                    for (int32_t y = 0; y < resizedNormalDataResolution; y++) {
-                        for (int32_t x = 0; x < resizedNormalDataResolution; x++) {
-                            auto offset1 = ivec2(x, y) * downsample;
-                            auto index1 = offset1.y * heightDataResolution + offset1.x;
-                            resizedNormalMap.SetData(x, y, 0, normalData[index1 * 3]);
-                            resizedNormalMap.SetData(x, y, 1, normalData[index1 * 3 + 1]);
-                            resizedNormalMap.SetData(x, y, 2, normalData[index1 * 3 + 2]);
-                        }
-                    }
-                }
-
-                // i is in x direction, j in y direction
-                for (int32_t i = 0; i < tileSideCountLod; i++) {
-                    for (int32_t j = 0; j < tileSideCountLod; j++) {
-                        auto cell = terrain->storage.GetCell(i, j, Lod);
-
-                        // Now copy a tile of the original image
-                        // We make sure that every tile has the same size
-                        // We also increased resolution to make sure that
-                        // adjacent cells connect to each other
-                        for (int32_t y = 0; y < tileResolution; y++) {
-                            for (int32_t x = 0; x < tileResolution; x++) {
-                                int32_t cellOffset = y * tileResolution + x;
-                                int32_t xImage = i * (tileResolution - 1) + x;
-                                int32_t yImage = j * (tileResolution - 1) + y;
-                                int32_t totalResolution = currentResolution;
-
-                                auto imageOffset = yImage * totalResolution + xImage;
-
-                                tileHeightData[cellOffset] = resizedHeightData[imageOffset];
-                                tileSplatData[cellOffset] = resizedSplatData[imageOffset];
+                            if (hole) {
+                                cell->heightData[cellOffset] = FLT_MAX;
                             }
-                        }
-                        
-                        for (int32_t y = -1; y < normalDataResolution - 1; y++) {
-                            for (int32_t x = -1; x < normalDataResolution - 1; x++) {
-
-                                int32_t cellOffset = (y + 1) * normalDataResolution + x + 1;
-                                int32_t xImage = i * (normalDataResolution - 3) + x;
-                                int32_t yImage = j * (normalDataResolution - 3) + y;
-                                
-                                auto sample = resizedNormalMap.Sample(xImage, yImage);
-
-                                tileNormalData[cellOffset * 3] = (uint8_t)sample.r;
-                                tileNormalData[cellOffset * 3 + 1] = (uint8_t)sample.g;
-                                tileNormalData[cellOffset * 3 + 2] = (uint8_t)sample.b;
+                            else {
+                                cell->heightData[cellOffset] = float(resizedHeightData[imageOffset]) / 65534.0f;
                             }
+                            tileHeightData[cellOffset] = resizedHeightData[imageOffset];
+                            cell->materialIdxData[cellOffset] = resizedSplatData[imageOffset];
                         }
-
-                        /*
-                        if (!cell->heightField) {
-                            cell->heightField = new Texture::Texture2D(tileResolution,
-                                tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                        }
-                        if (!cell->normalMap) {
-                            cell->normalMap = new Texture::Texture2D(normalDataResolution,
-                                normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-                        }
-                        if (!cell->splatMap) {
-                            cell->splatMap = new Texture::Texture2D(tileResolution,
-                                tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                        }
-
-                        if (cell->normalMap->width != normalDataResolution ||
-                            cell->normalMap->height != normalDataResolution) {
-                            delete cell->normalMap;
-                            cell->normalMap = new Texture::Texture2D(normalDataResolution,
-                                normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-                        }
-                        */
-                        
-                        cell->normalMap.SetData(tileNormalData);
-                        cell->heightField.SetData(tileHeightData);
-                        cell->splatMap.SetData(tileSplatData);
-
                     }
+
+                    for (int32_t y = -1; y < normalDataResolution - 1; y++) {
+                        for (int32_t x = -1; x < normalDataResolution - 1; x++) {
+
+                            int32_t cellOffset = (y + 1) * normalDataResolution + x + 1;
+                            int32_t xImage = i * (normalDataResolution - 3) + x;
+                            int32_t yImage = j * (normalDataResolution - 3) + y;
+
+                            auto sample = resizedNormalMap.Sample(xImage, yImage);
+
+                            cell->normalData[cellOffset * 4] = uint8_t(sample.r);
+                            cell->normalData[cellOffset * 4 + 1] = uint8_t(sample.g);
+                            cell->normalData[cellOffset * 4 + 2] = uint8_t(sample.b);
+                            cell->normalData[cellOffset * 4 + 3] = 0;
+                        }
+                    }
+
+                    if (!cell->heightField) {
+                        cell->heightField = CreateRef<Texture::Texture2D>(tileResolution,
+                            tileResolution, VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge,
+                            Texture::Filtering::Nearest, false, false);
+                    }
+                    if (!cell->normalMap) {
+                        cell->normalMap = CreateRef<Texture::Texture2D>(tileResolution,
+                            tileResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                            Texture::Filtering::Linear, false, false);
+                    }
+                    if (!cell->splatMap) {
+                        cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution,
+                            tileResolution, VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge,
+                            Texture::Filtering::Nearest, false, false);
+                    }
+
+                    if (cell->normalMap->width != normalDataResolution ||
+                        cell->normalMap->height != normalDataResolution) {
+                        cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution,
+                            normalDataResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                            Texture::Filtering::Linear, true, true);
+                    }
+
+                    cell->normalMap->SetData(cell->normalData, &transferManager);
+                    cell->heightField->SetData(tileHeightData, &transferManager);
+                    cell->splatMap->SetData(cell->materialIdxData, &transferManager);
+
+                    transferCount++;
+
+                    cell->isLoaded = true;
+
+                    idx = cellCounter++;
                 }
 
-                currentResolution = (currentResolution - 1) / 2 + 1;
+                transferManager.EndMultiTransfer();
+                });
 
-            }
+            JobSystem::Wait(lodCellGroup);
 
+            currentResolution = (currentResolution - 1) / 2 + 1;
 
         }
 
-        void TerrainTool::BrushHeight(Terrain::Terrain *terrain, Filter* filter, float scale, vec2 position) {
+    }
 
-            int32_t LoD = terrain->LoDCount - 1;
+    void TerrainTool::BrushHeight(const Ref<Terrain::Terrain>& terrain, Filter* filter, float scale, vec2 position) {
 
-            // Get the storage cells
-            auto middleMiddle = terrain->GetStorageCell(position.x, position.y, LoD);
+        position -= vec2(terrain->translation.x, terrain->translation.z);
 
-            if (middleMiddle == nullptr)
-                return;
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
-            auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-            auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-            auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-            auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-            auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-            auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-            auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+        auto center = cells[4];
 
-            Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
-                                           middleLeft, middleMiddle, middleRight,
-                                           bottomLeft, bottomMiddle, bottomRight};
+        // Now bring all height data into one array (we assume that all tiles have the same size)
+        int32_t width = center->heightField->width - 1;
+        int32_t height = center->heightField->height - 1;
 
-            // Now bring all height data into one array (we assume that all tiles have the same size)
-            int32_t width = middleMiddle->heightField.width - 1;
-            int32_t height = middleMiddle->heightField.height - 1;
+        std::vector<float> heights(width * height * 9);
+        auto& data = heights;
 
-            std::vector<float> heights(width * height * 9);
+        ExtractNearbyStorageData(terrain, cells, data, {});
 
-            auto data = heights.data();
+        // Apply the kernel on the whole data
+        position -= center->position;
 
-            for (int32_t i = 0; i < 3; i++) {
-                for (int32_t j = 0; j < 3; j++) {
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
-                    auto cell = cells[i * 3 + j];
+        x += width;
+        y += height;
 
-                    if (cell == nullptr)
-                        continue;
+        std::vector<std::vector<float>> weights;
+        std::vector<std::vector<ivec2>> offsets;
 
-                    for (int32_t k = 0; k < height + 1; k++) {
-                        for (int32_t l = 0; l < width + 1; l++) {
-                            int32_t x = j * width + l;
-                            int32_t y = i * height + k;
-                            // We don't want to update the last heights of the right and bottom cells
-                            if (x >= width * 3 || y >= height * 3)
-                                continue;
+        filter->Get(&weights, &offsets);
 
-                            int32_t dataOffset = y * 3 * width + x;
-                            int32_t cellOffset = k * (width + 1) + l;
-
-                            data[dataOffset] = cell->heightData[cellOffset];
-
-                        }
-                    }
-
-                }
+        for (uint32_t i = 0; i < uint32_t(weights.size()); i++) {
+            for (uint32_t j = 0; j < uint32_t(weights.size()); j++) {
+                auto index = GetNearbyDataIndex(x + offsets[i][j].x, y + offsets[i][j].y, width, height);
+                // Skip holes
+                if (index < 0 || data[index] == FLT_MAX)
+                    continue;
+                float value = data[index] + scale * weights[i][j] / terrain->heightScale;
+                data[index] = Helper::Math::Saturate(value);
             }
-
-            // Apply the kernel on the whole data
-            position -= middleMiddle->position;
-
-            int32_t x = (int32_t)floorf(position.x / terrain->resolution);
-            int32_t y = (int32_t)floorf(position.y / terrain->resolution);
-
-            x += width;
-            y += height;
-
-            std::vector<std::vector<float>> weights;
-            std::vector<std::vector<ivec2>> offsets;
-
-            filter->Get(&weights, &offsets);
-
-            for (uint32_t i = 0; i < uint32_t(weights.size()); i++) {
-                for (uint32_t j = 0; j < uint32_t(weights.size()); j++) {
-                    int32_t xTranslated = x + offsets[i][j].x;
-                    int32_t yTranslated = y + offsets[i][j].y;
-                    int32_t index = yTranslated * width * 3 + xTranslated;
-                    float value = data[index] + scale * weights[i][j] / terrain->heightScale;
-                    data[index] = glm::clamp(value, 0.0f, 1.0f);
-                }
-            }
-
-            width += 1;
-            height += 1;
-
-            std::vector<uint16_t> cellHeightData(width * height);
-
-            // Split the data up and update the height fields
-            for (int32_t i = 0; i < 3; i++) {
-                for (int32_t j = 0; j < 3; j++) {
-
-                    auto cell = cells[i * 3 + j];
-
-                    if (cell == nullptr)
-                        continue;
-
-                    for (int32_t k = 0; k < height; k++) {
-                        for (int32_t l = 0; l < width; l++) {
-                            x = j * (width - 1) + l;
-                            y = i * (height - 1) + k;
-                            // We don't want to update the last heights of the right and bottom cells
-                            if (x >= (width - 1) * 3 || y >= (height - 1) * 3)
-                                continue;
-
-                            int32_t dataOffset = y * 3 * (width - 1) + x;
-                            int32_t cellOffset = k * width + l;
-
-                            // Might fail because the outer right and bottom cells (globally) always have one row less
-                            // Needs some fix with the terrain generation. We need to make sure that all terrain tiles
-                            // have the same size.
-                            cell->heightData[cellOffset] = data[dataOffset];
-
-                        }
-                    }
-
-                    for (uint32_t k = 0; k < uint32_t(cellHeightData.size()); k++) {
-                        cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
-                    }
-
-                    cell->heightField.SetData(cellHeightData);
-
-                }
-
-            }
-
         }
 
-        void TerrainTool::SmoothHeight(Terrain::Terrain *terrain, int32_t size, int32_t contributingRadius,
-                                       float strength, vec2 position) {
+        ApplyDataToNearbyStorage(terrain, cells, data, {});
 
-            int32_t LoD = terrain->LoDCount - 1;
+    }
 
-            // Get the storage cells
-            auto middleMiddle = terrain->GetStorageCell(position.x, position.y, LoD);
+    void TerrainTool::SmoothHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
+        float strength, vec2 position) {
 
-            if (middleMiddle == nullptr)
-                return;
+        position -= vec2(terrain->translation.x, terrain->translation.z);
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
-            auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-            auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-            auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-            auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-            auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-            auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-            auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
 
-            Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
-                                           middleLeft, middleMiddle, middleRight,
-                                           bottomLeft, bottomMiddle, bottomRight};
+        auto center = cells[4];
 
-            // Now bring all height data into one array (we assume that all tiles have the same size)
-            int32_t width = middleMiddle->heightField.width - 1;
-            int32_t height = middleMiddle->heightField.height - 1;
+        // Now bring all height data into one array (we assume that all tiles have the same size)
+        int32_t width = center->heightField->width - 1;
+        int32_t height = center->heightField->height - 1;
 
-            std::vector<float> heights(width * height * 9);
+        std::vector<float> heights(width * height * 9);
+        std::fill(heights.begin(), heights.end(), -1.0f);
+        auto& data = heights;
 
-            std::fill(heights.begin(), heights.end(), -1.0f);
+        ExtractNearbyStorageData(terrain, cells, data, {});
 
-            auto data = heights.data();
+        // Apply the kernel on the whole data
+        position -= center->position;
 
-            for (int32_t i = 0; i < 3; i++) {
-                for (int32_t j = 0; j < 3; j++) {
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
-                    auto cell = cells[i * 3 + j];
+        x += width;
+        y += height;
 
-                    if (cell == nullptr)
-                        continue;
+        std::vector<float> heightsCopy(heights);
 
-                    for (int32_t k = 0; k < height + 1; k++) {
-                        for (int32_t l = 0; l < width + 1; l++) {
-                            int32_t x = j * width + l;
-                            int32_t y = i * height + k;
-                            // We don't want to update the last heights of the right and bottom cells
-                            if (x >= width * 3 || y >= height * 3)
-                                continue;
+        int32_t sizeRadius = (size - 1) / 2;
 
-                            int32_t dataOffset = y * 3 * width + x;
-                            int32_t cellOffset = k * (width + 1) + l;
+        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                float sum = 0.0f;
+                float contributing = 0.0f;
+                for (int32_t k = -contributingRadius; k <= contributingRadius; k++) {
+                    for (int32_t l = -contributingRadius; l <= contributingRadius; l++) {
+                        if (k == 0 && l == 0)
+                            continue;
+                        auto index = GetNearbyDataIndex(x + i + k, y + j + l, width, height);
 
-                            data[dataOffset] = cell->heightData[cellOffset];
+                        // When we're sampling at the edge of the terrain all
+                        // values need to be discarded
+                        if (index < 0 || heightsCopy[index] < 0.0f)
+                            continue;
+                        // Skip holes
+                        if (heightsCopy[index] == FLT_MAX)
+                            continue;
 
-                        }
+                        sum += heightsCopy[index];
+                        contributing += 1.0f;
                     }
-
                 }
+
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                // Holes and texels outside of the terrain keep their value, as do texels without valid neighbors
+                if (index < 0 || heightsCopy[index] < 0.0f || heightsCopy[index] == FLT_MAX || contributing == 0.0f)
+                    continue;
+
+                sum /= contributing;
+                data[index] = heightsCopy[index] - (heightsCopy[index] - sum) * strength;
             }
-
-            // Apply the kernel on the whole data
-            position -= middleMiddle->position;
-
-            int32_t x = (int32_t)floorf(position.x / terrain->resolution);
-            int32_t y = (int32_t)floorf(position.y /terrain->resolution);
-
-            x += width;
-            y += height;
-
-            std::vector<float> heightsCopy(heights);
-
-            int32_t sizeRadius = (size - 1) / 2;
-
-            for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
-                for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
-                    float sum = 0.0f;
-                    float contributing = 0.0f;
-                    for (int32_t k = -contributingRadius; k <= contributingRadius; k++) {
-                        for (int32_t l = -contributingRadius; l <= contributingRadius; l++) {
-                            if (k == 0 && l == 0)
-                                continue;
-                            int32_t xTranslated = x + i + k;
-                            int32_t yTranslated = y + j + l;
-                            int32_t index = yTranslated * width * 3 + xTranslated;
-
-                            // When we're sampling at the edge of the terrain all
-                            // values need to be discarded
-                            if (heightsCopy[index] < 0.0f)
-                                continue;
-                            sum += heightsCopy[index];
-                            contributing += 1.0f;
-                        }
-                    }
-
-                    sum /= contributing;
-
-                    int32_t xTranslated = x + i;
-                    int32_t yTranslated = y + j;
-                    int32_t index = yTranslated * width * 3 + xTranslated;
-                    data[index] = heightsCopy[index] - (heightsCopy[index] - sum) * strength;
-                }
-            }
-
-            width += 1;
-            height += 1;
-
-            std::vector<uint16_t> cellHeightData(width * height);
-
-            // Split the data up and update the height fields
-            for (int32_t i = 0; i < 3; i++) {
-                for (int32_t j = 0; j < 3; j++) {
-
-                    auto cell = cells[i * 3 + j];
-
-                    if (cell == nullptr)
-                        continue;
-
-                    for (int32_t k = 0; k < height; k++) {
-                        for (int32_t l = 0; l < width; l++) {
-                            x = j * (width - 1) + l;
-                            y = i * (height - 1) + k;
-                            // We don't want to update the last heights of the right and bottom cells
-                            if (x >= (width - 1) * 3 || y >= (height - 1) * 3)
-                                continue;
-
-                            int32_t dataOffset = y * 3 * (width - 1) + x;
-                            int32_t cellOffset = k * width + l;
-
-                            // Might fail because the outer right and bottom cells (globally) always have one row less
-                            // Needs some fix with the terrain generation. We need to make sure that all terrain tiles
-                            // have the same size.
-                            cell->heightData[cellOffset] = data[dataOffset];
-
-                        }
-                    }
-
-                    for (uint32_t k = 0; k < uint32_t(cellHeightData.size()); k++) {
-                        cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
-                    }
-
-                    cell->heightField.SetData(cellHeightData);
-
-                }
-            }
-
         }
 
-        void TerrainTool::BrushMaterial(Terrain::Terrain* terrain, vec2 position, float size, int32_t slot) {
+        ApplyDataToNearbyStorage(terrain, cells, data, {});
 
-            int32_t LoD = terrain->LoDCount - 1;
+    }
 
-            // Get the storage cells
-            auto middleMiddle = terrain->GetStorageCell(position.x, position.y, LoD);
+    void TerrainTool::FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, 
+        vec2 position, float flattenHeight, bool circularBrush, int32_t falloff) {
 
-            if (middleMiddle == nullptr)
-                return;
+        position -= vec2(terrain->translation.x, terrain->translation.z);
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
-            auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-            auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-            auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-            auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-            auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-            auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-            auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
 
-            Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
-                                                    middleLeft, middleMiddle, middleRight,
-                                                    bottomLeft, bottomMiddle, bottomRight};
+        auto center = cells[4];
 
-            std::vector<uint8_t> cellDatas[9];
+        // Now bring all height data into one array (we assume that all tiles have the same size)
+        int32_t width = center->heightField->width - 1;
+        int32_t height = center->heightField->height - 1;
 
-            // Now bring all height data into one array (we assume that all tiles have the same size)
-            int32_t width = middleMiddle->splatMap.width - 1;
-            int32_t height = middleMiddle->splatMap.height - 1;
+        std::vector<float> heights(width * height * 9);
+        std::fill(heights.begin(), heights.end(), -1.0f);
+        auto& data = heights;
 
-            std::vector<uint8_t> combinedSplatMap(width * height * 9);
+        ExtractNearbyStorageData(terrain, cells, data, {});
 
-            auto& data = combinedSplatMap;
+        // Apply the kernel on the whole data
+        position -= center->position;
 
-            for (int32_t i = 0; i < 3; i++) {
-                for (int32_t j = 0; j < 3; j++) {
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
-                    auto cell = cells[i * 3 + j];
+        x += width;
+        y += height;
 
-                    if (cell == nullptr)
-                        continue;
+        int32_t sizeRadius = (size - 1) / 2;
 
-                    cellDatas[i * 3 + j] = cell->splatMap.GetData<uint8_t>();
-                    auto& splatData = cellDatas[i * 3 + j];
-
-                    for (int32_t k = 0; k < height + 1; k++) {
-                        for (int32_t l = 0; l < width + 1; l++) {
-                            int32_t x = j * width + l;
-                            int32_t y = i * height + k;
-                            // We don't want to update the last heights of the right and bottom cells
-                            if (x >= width * 3 || y >= height * 3)
-                                continue;
-
-                            int32_t dataOffset = y * 3 * width + x;
-                            int32_t cellOffset = k * (width + 1) + l;
-
-                            data[dataOffset] = splatData[cellOffset];                              
-                            
-
-                        }
-
-                    }
-
-                }
-
+        strength = Helper::Math::Saturate(strength);
+        flattenHeight = Helper::Math::Saturate((flattenHeight - terrain->translation.y) / terrain->heightScale);
+        auto outerRadius = sizeRadius + std::max(falloff, 0);
+        for (int32_t i = -outerRadius; i <= outerRadius; i++) {
+            for (int32_t j = -outerRadius; j <= outerRadius; j++) {
+                auto distance = circularBrush ? sqrtf(float(i * i + j * j)) : float(std::max(std::abs(i), std::abs(j)));
+                if (distance > float(outerRadius))
+                    continue;
+                auto weight = 1.0f;
+                if (distance > float(sizeRadius))
+                    weight = 1.0f - glm::smoothstep(float(sizeRadius), float(outerRadius), distance);
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                // Skip holes
+                if (index < 0 || data[index] == FLT_MAX)
+                    continue;
+                data[index] = glm::mix(data[index], flattenHeight, strength * weight);
             }
+        }
 
-            // Apply the kernel on the whole data
-            position -= middleMiddle->position;
+        ApplyDataToNearbyStorage(terrain, cells, data, {});
 
-            int32_t x = (int32_t)floorf(position.x / terrain->resolution);
-            int32_t y = (int32_t)floorf(position.y / terrain->resolution);
+    }
 
-            x += width;
-            y += height;
+    void TerrainTool::FillHoles(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, bool circularBrush) {
 
-            auto offset = (size - 1) / 2;
+        position -= vec2(terrain->translation.x, terrain->translation.z);
 
-            for (uint32_t i = 0; i < size; i++) {
-                for (uint32_t j = 0; j < size; j++) {
-                    auto xTranslated = x - offset + i;
-                    auto yTranslated = y - offset + j;
-                    auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
+
+        auto center = cells[4];
+
+        int32_t width = center->heightField->width - 1;
+        int32_t height = center->heightField->height - 1;
+
+        std::vector<float> data(width * height * 9);
+        std::fill(data.begin(), data.end(), -1.0f);
+
+        ExtractNearbyStorageData(terrain, cells, data, {});
+
+        position -= center->position;
+
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution) + width;
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution) + height;
+        int32_t sizeRadius = (size - 1) / 2;
+
+        std::vector<int32_t> holes;
+        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+                    continue;
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                if (index >= 0 && data[index] == FLT_MAX)
+                    holes.push_back(index);
+            }
+        }
+
+        // Grows inwards from the edge of the holes, each pass fills the hole texels next to valid ones
+        while (!holes.empty()) {
+            std::vector<std::pair<int32_t, float>> filled;
+            std::vector<int32_t> remaining;
+            for (auto index : holes) {
+                float sum = 0.0f;
+                int32_t count = 0;
+                for (auto offset : { -1, 1, -width * 3, width * 3 }) {
+                    auto neighbor = index + offset;
+                    if (neighbor < 0 || neighbor >= int32_t(data.size()) || data[neighbor] == FLT_MAX || data[neighbor] < 0.0f)
+                        continue;
+                    sum += data[neighbor];
+                    count++;
+                }
+                if (count > 0)
+                    filled.emplace_back(index, sum / float(count));
+                else
+                    remaining.push_back(index);
+            }
+            if (filled.empty())
+                break;
+            for (const auto& [index, value] : filled)
+                data[index] = value;
+            holes = std::move(remaining);
+        }
+
+        ApplyDataToNearbyStorage(terrain, cells, data, {});
+
+    }
+
+    void TerrainTool::BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, 
+        int32_t size, bool circularBrush) {
+
+        position -= vec2(terrain->translation.x, terrain->translation.z);
+
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
+
+        auto center = cells[4];
+
+        // Now bring all height data into one array (we assume that all tiles have the same size)
+        int32_t width = center->splatMap->width - 1;
+        int32_t height = center->splatMap->height - 1;
+
+        std::vector<float> heights(width * height * 9);
+        std::fill(heights.begin(), heights.end(), -1.0f);
+        auto& data = heights;
+
+        ExtractNearbyStorageData(terrain, cells, data, {});
+
+        // Apply the kernel on the whole data
+        position -= center->position;
+
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution);
+
+        x += width;
+        y += height;
+
+        int32_t sizeRadius = (size - 1) / 2;
+
+        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+                    continue;
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                if (index >= 0)
+                    data[index] = FLT_MAX;
+            }
+        }
+
+        ApplyDataToNearbyStorage(terrain, cells, data, {});
+
+    }
+
+    void TerrainTool::BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, 
+        int32_t size, int32_t slot, bool circularBrush) {
+
+        position -= vec2(terrain->translation.x, terrain->translation.z);
+        
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
+
+        auto center = cells[4];
+
+        // Now bring all height data into one array (we assume that all tiles have the same size)
+        int32_t width = center->splatMap->width - 1;
+        int32_t height = center->splatMap->height - 1;
+
+        std::vector<uint8_t> combinedSplatMap(width * height * 9);
+
+        auto& data = combinedSplatMap;
+
+        ExtractNearbyStorageData(terrain, cells, {}, data);
+
+        // Apply the kernel on the whole data
+        position -= center->position;
+
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution);
+
+        x += width;
+        y += height;
+
+        int32_t sizeRadius = (size - 1) / 2;
+
+        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+                    continue;
+                auto index = GetNearbyDataIndex(x + i, y + j, width, height);
+                if (index >= 0)
                     data[index] = (uint8_t)slot;
+            }
+        }
+
+        ApplyDataToNearbyStorage(terrain, cells, {}, data);
+
+    }
+
+    Ref<Common::Image<uint8_t>> TerrainTool::GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, const std::string& filename,
+        float oceanHeight, int32_t resolution) {
+
+        int32_t tileResolution = 8 * terrain->patchSizeFactor;
+        int32_t tileResolutionSquared = tileResolution * tileResolution;
+        // The coarsest level of detail that still has the resolution of the map, the streaming may have unloaded its cells
+        int32_t LoD = 0;
+        while (LoD < terrain->LoDCount - 1 && (int32_t)sqrtf((float)terrain->storage->GetCellCount(LoD)) * tileResolution < resolution)
+            LoD++;
+
+        Terrain::TerrainManager::enable = false;
+        Terrain::TerrainManager::WaitForJobCompletion();
+        std::vector<Terrain::TerrainStorageCell*> missingCells;
+        for (auto& cell : terrain->storage->cells[LoD])
+            if (!cell.IsLoaded())
+                missingCells.push_back(&cell);
+        if (!missingCells.empty())
+            Loader::TerrainLoader::LoadStorageCells(terrain, missingCells, filename);
+        Terrain::TerrainManager::enable = true;
+
+        int32_t tileCount = terrain->storage->GetCellCount(LoD);
+
+        int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
+
+        auto heightData = std::vector<float>((tileSideCount * tileResolution + 1)
+            * (tileSideCount * tileResolution + 1));
+
+        int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());
+
+        // i is in x direction, j in z direction
+        for (int32_t i = 0; i < tileSideCount; i++) {
+            for (int32_t j = 0; j < tileSideCount; j++) {
+                auto cell = terrain->storage->GetCell(i, j, LoD);
+
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y <= tileResolution; y++) {
+                    for (int32_t x = 0; x <= tileResolution; x++) {
+                        int32_t cellOffset = y * (tileResolution + 1) + x;
+                        int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
+                            i * tileResolution + x;
+                        heightData[imageOffset] = cell->heightData[cellOffset] * terrain->heightScale;
+                    }
                 }
             }
+        }
 
-            width += 1;
-            height += 1;
+        std::vector<float> resizedHeightData(resolution * resolution);
 
-            // Split the data up and update the height fields
-            for (int32_t i = 0; i < 3; i++) {
-                for (int32_t j = 0; j < 3; j++) {
+        stbir_resize(heightData.data(), heightDataResolution, heightDataResolution,
+            heightDataResolution * 4, resizedHeightData.data(), resolution, resolution, resolution * 4,
+            STBIR_1CHANNEL, STBIR_TYPE_FLOAT, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
 
-                    auto cell = cells[i * 3 + j];
+        // Offset of every texel to its nearest land texel, propagated in a forward and a backward sweep
+        std::vector<ivec2> nearest(resolution * resolution);
+        for (int32_t i = 0; i < resolution * resolution; i++)
+            nearest[i] = resizedHeightData[i] >= oceanHeight ? ivec2(0) : ivec2(4 * resolution);
 
-                    if (cell == nullptr)
-                        continue;
+        auto lengthSquared = [](ivec2 v) { return v.x * v.x + v.y * v.y; };
+        auto propagate = [&](int32_t x, int32_t y, int32_t dx, int32_t dy) {
+            if (x + dx < 0 || x + dx >= resolution || y + dy < 0 || y + dy >= resolution)
+                return;
+            auto candidate = nearest[(y + dy) * resolution + x + dx] + ivec2(dx, dy);
+            auto& current = nearest[y * resolution + x];
+            if (lengthSquared(candidate) < lengthSquared(current))
+                current = candidate;
+        };
 
-                    auto& splatData = cellDatas[i * 3 + j];
+        for (int32_t y = 0; y < resolution; y++) {
+            for (int32_t x = 0; x < resolution; x++) {
+                propagate(x, y, -1, 0);
+                propagate(x, y, 0, -1);
+                propagate(x, y, -1, -1);
+                propagate(x, y, 1, -1);
+            }
+            for (int32_t x = resolution - 1; x >= 0; x--)
+                propagate(x, y, 1, 0);
+        }
+        for (int32_t y = resolution - 1; y >= 0; y--) {
+            for (int32_t x = resolution - 1; x >= 0; x--) {
+                propagate(x, y, 1, 0);
+                propagate(x, y, 0, 1);
+                propagate(x, y, -1, 1);
+                propagate(x, y, 1, 1);
+            }
+            for (int32_t x = 0; x < resolution; x++)
+                propagate(x, y, -1, 0);
+        }
 
-                    for (int32_t k = 0; k < height; k++) {
-                        for (int32_t l = 0; l < width; l++) {
-                            x = j * (width - 1) + l;
-                            y = i * (height - 1) + k;
+        // Distances are normalized to this many texels, beyond it there are no shore waves
+        const float window = 20.0f;
 
-                            // We don't want to update the last heights of the right and bottom cells
-                            if (x >= (width - 1) * 3 || y >= (height - 1) * 3)
-                                continue;
+        auto image = CreateRef<Common::Image<uint8_t>>(resolution, resolution, 4);
+        for (int32_t y = 0; y < resolution; y++) {
+            for (int32_t x = 0; x < resolution; x++) {
 
-                            int32_t dataOffset = y * 3 * (width - 1) + x;
-                            int32_t cellOffset = k * width + l;
+                auto offset = y * resolution + x;
+                auto direction = vec2(nearest[offset]);
 
-                            // Might fail because the outer right and bottom cells (globally) always have one row less
-                            // Needs some fix with the terrain generation. We need to make sure that all terrain tiles
-                            // have the same size.
-                            splatData[cellOffset] = data[dataOffset];                            
+                // On land the shore is the texel itself and has no direction
+                vec2 vector = glm::length(direction) > 0.0f ? 0.5f * glm::normalize(direction) + 0.5f : vec2(0.5f);
 
-                        }
-                    }
-
-                    cell->splatMap.SetData(splatData);
-
-                }
+                image->SetData(x, y, 0, (uint8_t)glm::clamp(resizedHeightData[offset] / terrain->heightScale * 255.0f, 0.0f, 255.0f));
+                image->SetData(x, y, 1, (uint8_t)(Helper::Math::Saturate(glm::length(direction) / (sqrtf(2.0f) * window)) * 255.0f));
+                image->SetData(x, y, 2, (uint8_t)(vector.x * 255.0f));
+                image->SetData(x, y, 3, (uint8_t)(vector.y * 255.0f));
 
             }
 
         }
 
-        Texture::Texture2D TerrainTool::GenerateTerrainOceanMap(Terrain::Terrain* terrain, float oceanHeight, int32_t resolution) {
+        Atlas::Filter filter;
+        filter.CalculateGaussianFilter(31.0f / 6.0f, 31);
 
-            int32_t tileResolution = 8 * terrain->patchSizeFactor;
-            int32_t tileResolutionSquared = tileResolution * tileResolution;
-            int32_t tileCount = terrain->storage.GetCellCount(terrain->LoDCount - 1);
+        image->ApplyFilter(filter);
 
-            int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
+        return image;
 
-            auto heightData = std::vector<float>((tileSideCount * tileResolution + 1)
-                * (tileSideCount * tileResolution + 1));
+    }
 
-            int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());
+    Ref<Common::Image<uint16_t>> TerrainTool::GenerateHeightMap(const Ref<Terrain::Terrain>& terrain) {
 
-            // i is in x direction, j in z direction
-            for (int32_t i = 0; i < tileSideCount; i++) {
-                for (int32_t j = 0; j < tileSideCount; j++) {
-                    auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
-                    auto cellSplatData = cell->splatMap.GetData<uint8_t>();
+        int32_t tileResolution = 8 * terrain->patchSizeFactor;
+        int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
 
-                    // Now copy a tile of the original image
-                    // We make sure that every tile has the same size
-                    // We also increased resolution to make sure that
-                    // adjacent cells connect to each other
-                    for (int32_t y = 0; y <= tileResolution; y++) {
-                        for (int32_t x = 0; x <= tileResolution; x++) {
-                            int32_t cellOffset = y * (tileResolution + 1) + x;
-                            int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
-                                i * tileResolution + x;
-                            heightData[imageOffset] = cell->heightData[cellOffset] * terrain->heightScale;
-                        }
+        int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
+
+        auto heightImage = CreateRef<Common::Image<uint16_t>>(tileSideCount * tileResolution,
+            tileSideCount * tileResolution, 1);
+        auto& heightData = heightImage->GetData();
+
+        int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());
+
+        // i is in x direction, j in z direction
+        for (int32_t i = 0; i < tileSideCount; i++) {
+            for (int32_t j = 0; j < tileSideCount; j++) {
+                auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
+
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y < tileResolution; y++) {
+                    for (int32_t x = 0; x < tileResolution; x++) {
+                        int32_t cellOffset = y * (tileResolution + 1) + x;
+                        int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
+                            i * tileResolution + x;
+                        heightData[imageOffset] = EncodeHeight(cell->heightData[cellOffset]);
                     }
                 }
             }
-
-            std::vector<float> resizedHeightData(resolution * resolution);
-
-            stbir_resize_float_generic(heightData.data(), heightDataResolution, heightDataResolution,
-                heightDataResolution * 4, resizedHeightData.data(), resolution, resolution, resolution * 4,
-                1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
-            
-            Common::Image<uint8_t> image(resolution, resolution, 4);
-            auto maxDistance = 2.0f * (float)heightDataResolution * (float)heightDataResolution;
-
-            for (int32_t y = 0; y < resolution; y++) {
-                for (int32_t x = 0; x < resolution; x++) {
-
-                    auto shoreDistance = maxDistance;
-                    vec3 shortest = vec3(0.0f);
-
-                    const int32_t window = 20;
-
-                    // i is in x direction, j in y direction
-                    for (int32_t j = 0; j < 2 * window + 1; j++) {
-                        for (int32_t i = 0; i < 2 * window + 1; i++) {
-                            ivec2 pixel = ivec2(x + i, y + j) - ivec2(window);
-
-                            if (pixel.x < 0 || pixel.x >= heightDataResolution ||
-                                pixel.y < 0 || pixel.y >= heightDataResolution)
-                                continue;
-
-                            auto heightOffset = pixel.y * heightDataResolution + pixel.x;
-                            auto height = heightData[heightOffset];
-
-                            if (height < oceanHeight)
-                                continue;
-
-                            auto offX = (float)(i - window);
-                            auto offY = (float)(j - window);
-
-                            auto distance = offX * offX + offY * offY;
-
-                            if (distance < shoreDistance) {
-                                shoreDistance = distance;
-                                shortest = vec3(offX, height, offY);
-                            }
-                        }
-                    }
-
-                    auto offset = y * resolution + x;
-
-                    vec2 vector = 0.5f * glm::normalize(vec2(shortest.x, shortest.z)) + 0.5f;
-
-                    image.SetData(x, y, 0, (uint8_t)(resizedHeightData[offset] / terrain->heightScale * 255.0f));
-                    image.SetData(x, y, 1, (uint8_t)glm::clamp(sqrtf(shoreDistance) /
-                        sqrtf(2.0f * (float)window * (float)window) * 255.0f, 0.0f, 255.0f));
-                    image.SetData(x, y, 2, (uint8_t)(vector.x * 255.0f));
-                    image.SetData(x, y, 3, (uint8_t)(vector.y * 255.0f));
-
-                }
-
-            }
-
-            Atlas::Filter filter;
-            filter.CalculateGaussianFilter(31.0f / 6.0f, 31);
-            
-            image.ApplyFilter(filter);
-
-            //Texture::Texture2D shoreTexture(resolution, resolution, AE_RGBA8,
-            //    GL_CLAMP_TO_BORDER, GL_LINEAR);
-
-            //shoreTexture.SetData(image.GetData());
-
-            return Texture::Texture2D();
-
         }
 
-        void TerrainTool::GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, int32_t width, int32_t height, float scale) {
+        return heightImage;
 
-            int32_t dataWidth = (int32_t)sqrtf((float)heightData.size());
+    }
 
-            for (int32_t x = 0; x < dataWidth; x++) {
-                for (int32_t y = 0; y < dataWidth; y++) {
+    Ref<Common::Image<uint8_t>> TerrainTool::GenerateSplatMap(const Ref<Terrain::Terrain>& terrain) {
 
-                    float heightL = GetHeight(heightData, dataWidth, x - 1, y, width, height) * scale;
-                    float heightR = GetHeight(heightData, dataWidth, x + 1, y, width, height) * scale;
-                    float heightD = GetHeight(heightData, dataWidth, x, y - 1, width, height) * scale;
-                    float heightU = GetHeight(heightData, dataWidth, x, y + 1, width, height) * scale;
+        int32_t tileResolution = 8 * terrain->patchSizeFactor;
+        int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
 
-                    auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f, 
+        int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
+
+        auto splatImage = CreateRef<Common::Image<uint8_t>>(tileSideCount * tileResolution,
+            tileSideCount * tileResolution, 1);
+        auto& splatData = splatImage->GetData();
+
+        int32_t splatDataResolution = (int32_t)sqrtf((float)splatData.size());
+
+        // i is in x direction, j in z direction
+        for (int32_t i = 0; i < tileSideCount; i++) {
+            for (int32_t j = 0; j < tileSideCount; j++) {
+                auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
+
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y < tileResolution; y++) {
+                    for (int32_t x = 0; x < tileResolution; x++) {
+                        int32_t cellOffset = y * (tileResolution + 1) + x;
+                        int32_t imageOffset = (j * tileResolution + y) * splatDataResolution +
+                            i * tileResolution + x;
+                        splatData[imageOffset] = uint8_t(cell->materialIdxData[cellOffset]);
+                    }
+                }
+            }
+        }
+
+        return splatImage;
+
+    }
+
+    void TerrainTool::LoadMissingCells(const Ref<Terrain::Terrain>& terrain, const std::string& filename) {
+
+        Terrain::TerrainManager::enable = false;
+        Terrain::TerrainManager::WaitForJobCompletion();
+
+        auto& storage = terrain->storage;
+
+        // Clear non-bvh queues
+        storage->GetRequestedCellsQueue();
+        storage->GetUnusedCellsQueue();
+
+        // Wait again if something came up (e.g. it launched while checking for completion)
+        Terrain::TerrainManager::WaitForJobCompletion();
+
+        std::vector<Terrain::TerrainStorageCell*> cells;
+        for (auto& lod : storage->cells) {
+            for (auto& cell : lod) {
+                if (cell.IsLoaded())
+                    continue;
+
+                cells.push_back(&cell);
+            }
+        }
+
+
+        Loader::TerrainLoader::LoadStorageCells(terrain, { cells }, filename);
+
+        Terrain::TerrainManager::enable = true;
+
+    }
+
+    void TerrainTool::GenerateNormalData(const std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, 
+        int32_t width, int32_t height, float scale) {
+
+        const int32_t batchSize = 128;
+
+        int32_t dataWidth = (int32_t)sqrtf((float)heightData.size());
+        int32_t totalSize = int32_t(heightData.size());
+
+        auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+
+        JobGroup normalMapGroup(JobPriority::High);
+        std::atomic_int32_t tileCounter = 0;
+
+        JobSystem::ExecuteMultiple(normalMapGroup, workerCount, [&](JobData&) {
+            int32_t idx = tileCounter.fetch_add(batchSize);
+            while (idx < totalSize) {
+                int32_t y = idx / dataWidth;
+                int32_t x = idx % dataWidth;
+
+                float heightC = GetHeight(heightData, dataWidth, x, y, width, height, scale);
+                // Holes point up, the filtered normals and the displacement of their rim would bend otherwise
+                auto normal = vec3(0.0f, 1.0f, 0.0f);
+                if (heightC != FLT_MAX) {
+                    float heightL = GetHeight(heightData, dataWidth, x - 1, y, width, height, scale);
+                    float heightR = GetHeight(heightData, dataWidth, x + 1, y, width, height, scale);
+                    float heightD = GetHeight(heightData, dataWidth, x, y - 1, width, height, scale);
+                    float heightU = GetHeight(heightData, dataWidth, x, y + 1, width, height, scale);
+
+                    heightL = heightL == FLT_MAX ? heightC : heightL;
+                    heightR = heightR == FLT_MAX ? heightC : heightR;
+                    heightD = heightD == FLT_MAX ? heightC : heightD;
+                    heightU = heightU == FLT_MAX ? heightC : heightU;
+
+                    normal = glm::normalize(vec3(heightL - heightR, 1.0f,
                         heightD - heightU));
+                }
 
-                    normal = (0.5f * normal + 0.5f) * 255.0f;
+                normal = (0.5f * normal + 0.5f) * 255.0f;
 
-                    normalData[3 * y * dataWidth + 3 * x] = (uint8_t)normal.x;
-                    normalData[3 * y * dataWidth + 3 * x + 1] = (uint8_t)normal.y;
-                    normalData[3 * y * dataWidth + 3 * x + 2] = (uint8_t)normal.z;
+                auto xOffset = 3 * x;
+                auto yOffset = 3 * y * dataWidth;
+
+                normalData[yOffset + xOffset] = (uint8_t)normal.x;
+                normalData[yOffset + xOffset + 1] = (uint8_t)normal.y;
+                normalData[yOffset + xOffset + 2] = (uint8_t)normal.z;
+
+                idx++;
+
+                if (idx % batchSize == 0) {
+                    idx = tileCounter.fetch_add(batchSize);
+                }
+            }
+            });
+
+        JobSystem::Wait(normalMapGroup);
+
+    }
+
+    float TerrainTool::GetHeight(const std::vector<uint16_t>& heightData, int32_t dataWidth,
+        int32_t x, int32_t y, int32_t width, int32_t height, float scale) {
+
+        x = x < 0 ? 0 : (x >= width ? width - 1 : x);
+        y = y < 0 ? 0 : (y >= height ? height - 1 : y);
+
+        uint16_t pixelHeight = heightData[y * dataWidth + x];
+        const float heightFactor = 1.0f / 65534.0f;
+        return pixelHeight < 65535 ? float(pixelHeight) * heightFactor * scale : FLT_MAX;
+
+    }
+
+    bool TerrainTool::GetNearbyStorageCells(const Ref<Terrain::Terrain>& terrain, 
+        vec2 position, Terrain::TerrainStorageCell** cells) {
+
+        const int32_t LoD = terrain->LoDCount - 1;
+
+        // Get the storage cells
+        auto center = terrain->GetStorageCell(position.x, position.y, LoD);
+        if (center == nullptr)
+            return false;
+
+        cells[0] = terrain->storage->GetCell(center->x - 1, center->y - 1, LoD);
+        cells[1] = terrain->storage->GetCell(center->x, center->y - 1, LoD);
+        cells[2] = terrain->storage->GetCell(center->x + 1, center->y - 1, LoD);
+        cells[3] = terrain->storage->GetCell(center->x - 1, center->y, LoD);
+        cells[4] = center;
+        cells[5] = terrain->storage->GetCell(center->x + 1, center->y, LoD);
+        cells[6] = terrain->storage->GetCell(center->x - 1, center->y + 1, LoD);
+        cells[7] = terrain->storage->GetCell(center->x, center->y + 1, LoD);
+        cells[8] = terrain->storage->GetCell(center->x + 1, center->y + 1, LoD);
+
+        return true;
+
+    }
+
+    void TerrainTool::ExtractNearbyStorageData(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells, 
+        std::span<float> heightData, std::span<uint8_t> splatData) {
+
+        // Now bring all height data into one array (we assume that all tiles have the same size)
+        auto center = cells[4];
+        int32_t width = center->splatMap->width - 1;
+        int32_t height = center->splatMap->height - 1;
+
+        for (int32_t i = 0; i < 3; i++) {
+            for (int32_t j = 0; j < 3; j++) {
+
+                auto cell = cells[i * 3 + j];
+                if (cell == nullptr)
+                    continue;
+
+                for (int32_t k = 0; k < height + 1; k++) {
+                    for (int32_t l = 0; l < width + 1; l++) {
+                        int32_t x = j * width + l;
+                        int32_t y = i * height + k;
+                        // We don't want to update the last heights of the right and bottom cells
+                        if (x >= width * 3 || y >= height * 3)
+                            continue;
+
+                        int32_t dataOffset = y * 3 * width + x;
+                        int32_t cellOffset = k * (width + 1) + l;
+
+                        if (!heightData.empty())
+                            heightData[dataOffset] = cell->heightData[cellOffset];
+                        if (!splatData.empty())
+                            splatData[dataOffset] = cell->materialIdxData[cellOffset];
+
+                    }
 
                 }
+
             }
 
         }
 
-        float TerrainTool::GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
-                                     int32_t x, int32_t y, int32_t width, int32_t height) {
+    }
 
-            x = x < 0 ? 0 : x;
-            x = x >= width ? width - 1 : x;
-            y = y < 0 ? 0 : y;
-            y = y >= height ? height - 1 : y;
+    int32_t TerrainTool::GetNearbyDataIndex(int32_t x, int32_t y, int32_t width, int32_t height) {
 
-            return (float)heightData[y * dataWidth + x] / 65535.0f;
+        if (x < 0 || y < 0 || x >= width * 3 || y >= height * 3)
+            return -1;
+        return y * width * 3 + x;
+
+    }
+
+    uint16_t TerrainTool::EncodeHeight(float height) {
+
+        // Cells which don't exist are below 0
+        return height == FLT_MAX ? 65535 : uint16_t(Helper::Math::Saturate(height) * 65534.0f);
+
+    }
+
+    void TerrainTool::ApplyDataToNearbyStorage(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+        std::span<float> heightData, std::span<uint8_t> splatData) {
+
+        auto center = cells[4];
+        int32_t width = center->splatMap->width;
+        int32_t height = center->splatMap->height;
+
+        std::vector<uint8_t> allNormalData;
+        std::vector<uint16_t> cellHeightData;
+        if (!heightData.empty()) {
+            cellHeightData.resize(width * height);
+
+            std::vector<uint16_t> allHeightData;
+            allHeightData.resize(heightData.size());
+            allNormalData.resize(heightData.size() * 3);
+            for (size_t i = 0; i < heightData.size(); i++)
+                allHeightData[i] = EncodeHeight(heightData[i]);
+
+            GenerateNormalData(allHeightData, allNormalData, (width - 1) * 3, (height - 1) * 3, terrain->heightScale);
+        }
+
+        auto device = Graphics::GraphicsDevice::DefaultDevice;
+        Graphics::MemoryTransferManager transferManager(device, device->memoryManager);
+
+        transferManager.BeginMultiTransfer();
+
+        // Split the data up and update the height fields
+        for (int32_t i = 0; i < 3; i++) {
+            for (int32_t j = 0; j < 3; j++) {
+
+                auto cell = cells[i * 3 + j];
+                if (cell == nullptr)
+                    continue;
+
+                // Ray tracing builds read the cell data in jobs, unloaded cells have no textures to update
+                std::unique_lock lock(cell->heightDataMutex);
+                if (!cell->IsLoaded())
+                    continue;
+
+                for (int32_t k = 0; k < height; k++) {
+                    for (int32_t l = 0; l < width; l++) {
+                        int32_t x = j * (width - 1) + l;
+                        int32_t y = i * (height - 1) + k;
+
+                        // We don't want to update the last heights of the right and bottom cells
+                        if (x >= (width - 1) * 3 || y >= (height - 1) * 3)
+                            continue;
+
+                        int32_t dataOffset = y * 3 * (width - 1) + x;
+                        int32_t cellOffset = k * width + l;
+                        // Normals have a +1 pixel on all borders (offset by one pixel, add 2 to the width)
+                        if (!heightData.empty()) {
+                            int32_t cellNormalOffset = (k + 1) * (width + 2) + (l + 1);
+                            cell->heightData[cellOffset] = heightData[dataOffset];
+
+                            cell->normalData[cellNormalOffset * 4 + 0] = allNormalData[dataOffset * 3 + 0];
+                            cell->normalData[cellNormalOffset * 4 + 1] = allNormalData[dataOffset * 3 + 1];
+                            cell->normalData[cellNormalOffset * 4 + 2] = allNormalData[dataOffset * 3 + 2];
+                        }
+                        if (!splatData.empty()) {
+                            cell->materialIdxData[cellOffset] = splatData[dataOffset];
+                        }
+
+                    }
+                }
+
+                if (!heightData.empty()) {
+                    // Need to only take the heights from the cell storage, since heights in allHeightData have border issues
+                    for (size_t k = 0; k < cell->heightData.size(); k++) {
+                        if (cell->heightData[k] == FLT_MAX) {
+                            cellHeightData[k] = 65535;
+                        }
+                        else {
+                            cellHeightData[k] = uint16_t(cell->heightData[k] * 65534.0f);
+                        }
+                    }
+
+                    cell->heightField->SetData(cellHeightData, &transferManager);
+                    cell->normalMap->SetData(cell->normalData, &transferManager);
+                }
+                if (!splatData.empty()) {
+                    cell->splatMap->SetData(cell->materialIdxData, &transferManager);
+                }
+
+            }
 
         }
+
+        transferManager.EndMultiTransfer();
+
+    }
+
+    Common::Image<uint8_t> TerrainTool::CalculateHoleMap(int32_t resolution, 
+        const Common::Image<uint16_t>& heightMap) {
+
+        Common::Image<uint8_t> holeMap(resolution, resolution, 1);
+        for (int32_t i = 0; i < resolution * resolution; i++) {
+            auto x = i % resolution;
+            auto y = i / resolution;
+
+            auto fx = float(x) / float(resolution);
+            auto fy = float(y) / float(resolution);
+
+            holeMap.SetData(x, y, 0, heightMap.Sample(fx, fy).r == 65535 ? 1 : 0);
+        }
+
+        return holeMap;
 
     }
 

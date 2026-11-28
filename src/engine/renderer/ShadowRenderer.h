@@ -2,11 +2,12 @@
 
 #include "../System.h"
 #include "helper/RenderList.h"
+#include "helper/SubDataDrawer.h"
 #include "Renderer.h"
 #include "ImpostorShadowRenderer.h"
 
 #include <mutex>
-#include <map>
+#include <set>
 #include <tuple>
 
 namespace Atlas {
@@ -23,30 +24,43 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList);
 
         private:
-            void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, Ref<RenderList::Pass> shadowPass);
+            void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+                RenderList* renderList, Ref<RenderList::Pass> shadowPass);
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
+            Graphics::RenderingDesc GetRendering(const LightComponent& light, uint32_t layer);
 
-            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData, Mesh::Mesh* mesh,
+                const Graphics::AttachmentFormats& attachmentFormats, const MaterialGraph::CompiledGraph* graph = nullptr);
 
-            using LightMap = std::map<Scene::Entity, Ref<Graphics::FrameBuffer>>;
-
-            struct alignas(16) PushConstants {
-                mat4 lightSpaceMatrix;
-                uint32_t vegetation;
-                uint32_t invertUVs;
+            // Have to match shadowMapping.hsh, the part of the push constants the draws of a multi draw read from a buffer
+            struct DrawData {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
-                uint32_t textureID;
+                float opacity;
             };
 
-            LightMap lightMap;
+            struct alignas(16) PushConstants {
+                mat4 lightSpaceMatrix;
+                uint32_t deformOffset;
+                uint32_t jointCount;
+                uint32_t instanceOffset;
+                uint32_t firstDraw;
+                uint32_t invertUVs;
+                uint32_t textureID;
+                uint32_t materialGraphOffset;
+                float uvAnimationX;
+                float uvAnimationY;
+                float uvTiling;
+                DrawData draw;
+            };
+
+            std::set<Scene::Entity> processedLights;
 
             ImpostorShadowRenderer impostorRenderer;
 
-            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+            Helper::SubDataDrawer drawer;
+
 
         };
 

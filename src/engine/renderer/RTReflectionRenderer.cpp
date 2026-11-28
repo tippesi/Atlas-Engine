@@ -9,7 +9,9 @@ namespace Atlas {
     namespace Renderer {
 
         void RTReflectionRenderer::Init(Graphics::GraphicsDevice* device) {
-            
+
+            this->device = device;
+
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
             scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
                 VK_FORMAT_R8G8B8A8_UNORM);
@@ -20,9 +22,19 @@ namespace Atlas {
                 VK_FORMAT_R8G8B8A8_UNORM);
             sobolSequenceTexture.SetData(noiseImage->GetData());
 
+            ssrPipelineConfig = PipelineConfig("reflection/ssr.csh");
             rtrPipelineConfig = PipelineConfig("reflection/rtreflection.csh");
+            rtrRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("reflection/rtreflection.rgen");
+            rtrResolvePipelineConfig = PipelineConfig("reflection/rtreflectionResolve.csh");
             upsamplePipelineConfig = PipelineConfig("reflection/upsample.csh");
             temporalPipelineConfig = PipelineConfig("reflection/temporal.csh");
+            reflectionDataPipelineConfig = PipelineConfig("reflection/reflectionData.csh");
+
+            auto samplerDesc = Graphics::SamplerDesc{
+                .filter = VK_FILTER_NEAREST,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+            };
+            nearestSampler = device->CreateSampler(samplerDesc);
 
             atrousPipelineConfig[0] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE1" });
             atrousPipelineConfig[1] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE2" });
@@ -30,62 +42,200 @@ namespace Atlas {
 
             rtrUniformBuffer = Buffer::UniformBuffer(sizeof(RTRUniforms));
 
-            auto samplerDesc = Graphics::SamplerDesc {
-                .filter = VK_FILTER_NEAREST,
-                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                .compareEnabled = true
-            };
-            shadowSampler = device->CreateSampler(samplerDesc);
+            shadowRays.Init();
+
+        }
+
+        void RTReflectionRenderer::RenderReflectionData(Ref<RenderTarget> target, Ref<Scene::Scene> scene, bool ocean,
+            const RenderTargetData* frontLayer, Graphics::CommandList* commandList) {
+
+            CPUProfiler::Scope profilerScope("Reflection data");
+            GPUProfiler::Scope gpuScope("Reflection data");
+
+            auto rt = target->GetData(FULL_RES);
+            auto reflectionRt = target->GetReflectionData(FULL_RES);
+            auto halfResReflectionRt = target->GetReflectionData(HALF_RES);
+
+            ivec2 res = ivec2(reflectionRt->depthTexture->width, reflectionRt->depthTexture->height);
+
+            ivec2 groupCount = res / 8;
+            groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
+            groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
+
+            reflectionDataPipelineConfig.ManageMacro("OCEAN", ocean);
+            reflectionDataPipelineConfig.ManageMacro("FRONT_LAYER", frontLayer != nullptr);
+            auto pipeline = PipelineManager::GetPipeline(reflectionDataPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            uint32_t oceanMaterialIdx = ocean ? scene->renderState.materialMap[scene->renderState.ocean.get()] : 0u;
+            commandList->PushConstants("constants", &oceanMaterialIdx);
+
+            commandList->BindImage(rt->depthTexture->image, nearestSampler, 3, 0);
+            commandList->BindImage(rt->normalTexture->image, nearestSampler, 3, 1);
+            commandList->BindImage(rt->geometryNormalTexture->image, nearestSampler, 3, 2);
+            commandList->BindImage(rt->roughnessMetallicAoTexture->image, nearestSampler, 3, 3);
+            commandList->BindImage(rt->velocityTexture->image, nearestSampler, 3, 4);
+            commandList->BindImage(rt->materialIdxTexture->image, nearestSampler, 3, 5);
+
+            // The ray origins on the ocean are written by the depth only pass
+            if (ocean) {
+                commandList->BindImage(target->oceanDepthTexture.image, nearestSampler, 3, 6);
+                commandList->BindImage(target->oceanNormalTexture.image, nearestSampler, 3, 7);
+                commandList->BindImage(target->oceanStencilTexture.image, nearestSampler, 3, 8);
+            }
+            if (frontLayer) {
+                commandList->BindImage(frontLayer->depthTexture->image, nearestSampler, 3, 22);
+                commandList->BindImage(frontLayer->normalTexture->image, nearestSampler, 3, 23);
+                commandList->BindImage(frontLayer->geometryNormalTexture->image, nearestSampler, 3, 24);
+                commandList->BindImage(frontLayer->roughnessMetallicAoTexture->image, nearestSampler, 3, 25);
+                commandList->BindImage(frontLayer->velocityTexture->image, nearestSampler, 3, 26);
+                commandList->BindImage(frontLayer->materialIdxTexture->image, nearestSampler, 3, 27);
+            }
+
+            reflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            halfResReflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+            commandList->BindImage(reflectionRt->depthTexture->image, 3, 9);
+            commandList->BindImage(reflectionRt->normalTexture->image, 3, 10);
+            commandList->BindImage(reflectionRt->geometryNormalTexture->image, 3, 11);
+            commandList->BindImage(reflectionRt->roughnessMetallicAoTexture->image, 3, 12);
+            commandList->BindImage(reflectionRt->velocityTexture->image, 3, 13);
+            commandList->BindImage(reflectionRt->materialIdxTexture->image, 3, 14);
+
+            commandList->BindImage(halfResReflectionRt->depthTexture->image, 3, 15);
+            commandList->BindImage(halfResReflectionRt->normalTexture->image, 3, 16);
+            commandList->BindImage(halfResReflectionRt->geometryNormalTexture->image, 3, 17);
+            commandList->BindImage(halfResReflectionRt->roughnessMetallicAoTexture->image, 3, 18);
+            commandList->BindImage(halfResReflectionRt->velocityTexture->image, 3, 19);
+            commandList->BindImage(halfResReflectionRt->materialIdxTexture->image, 3, 20);
+            commandList->BindImage(halfResReflectionRt->offsetTexture->image, 3, 21);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            reflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            halfResReflectionRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+            // Freshly created history data was never written, it can only be read after a transition
+            if (!target->HasHistory()) {
+                target->GetReflectionHistoryData(FULL_RES)->Transition(commandList,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                target->GetReflectionHistoryData(HALF_RES)->Transition(commandList,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            }
 
         }
 
         void RTReflectionRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
             
-            auto reflection = scene->reflection;
-            if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;
+            auto reflection = scene->renderState.reflection;
+            if (!reflection || !reflection->enable) return;
 
             if (reflection->halfResolution && !reflection->upsampleBeforeFiltering && target->GetReflectionResolution() == FULL_RES)
                 target->SetReflectionResolution(HALF_RES);
             else if ((!reflection->halfResolution || reflection->upsampleBeforeFiltering) && target->GetReflectionResolution() != FULL_RES)
                 target->SetReflectionResolution(FULL_RES);
 
-            helper.UpdateLights(scene, false);
+            helper.UpdateLights(scene);
 
             ivec2 rayRes = !reflection->halfResolution ? target->GetRelativeResolution(FULL_RES) : target->GetRelativeResolution(HALF_RES);
             ivec2 res = target->GetRelativeResolution(target->GetReflectionResolution());
 
-            Graphics::Profiler::BeginQuery("Render RT Reflections");
+            CPUProfiler::Scope profilerScope("Render RT Reflections");
+            GPUProfiler::Scope gpuScope("Render RT Reflections");
 
             if (target->historyReflectionTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED || 
-                target->historyReflectionMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                target->historyReflectionMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED ||
+                target->lightingTexture.image->layers == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->historyReflectionTexture.image, layout, access},
                     {target->historyReflectionMomentsTexture.image, layout, access},
+                    {target->lightingTexture.image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
-            }
-
-            Graphics::Profiler::BeginQuery("Trace rays");
-
-            // Try to get a shadow map
-            Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
-
-            auto downsampledRT = target->GetData(!reflection->halfResolution ? FULL_RES : HALF_RES);
+                commandList->PipelineBarrier(imageBarriers, {});
+            }           
 
             // Should be reflection resolution
-            auto depthTexture = downsampledRT->depthTexture;
-            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
-            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
-            auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
+            auto lightingTexture = &target->lightingTexture;
+
+            commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
+            commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
+
+            commandList->BindImage(lightingTexture->image, lightingTexture->sampler, 3, 9);
+
+            target->exposureTexture.Bind(commandList, 3, 11);
+
+            // The upsampling swaps the textures, so the last spatial filter pass always writes the reflection texture
+            auto upsample = reflection->upsampleBeforeFiltering && reflection->halfResolution;
+            Texture::Texture2D* reflectionTexture = upsample ? &target->swapReflectionTexture : &target->reflectionTexture;
+            Texture::Texture2D* swapReflectionTexture = upsample ? &target->reflectionTexture : &target->swapReflectionTexture;
+
+            static uint32_t frameCount = 0;
+            frameCount++;
+
+            auto radianceVolume = scene->renderState.irradianceVolume && scene->renderState.irradianceVolume->radiance;
+
+            RTRUniforms uniforms;
+            uniforms.radianceLimit = reflection->radianceLimit;
+            uniforms.bias = reflection->bias;
+            uniforms.roughnessCutoff = reflection->roughnessCutoff;
+            uniforms.frameSeed = frameCount;
+            uniforms.sampleCount = reflection->sampleCount;
+            uniforms.lightSampleCount = reflection->lightSampleCount;
+            uniforms.textureLevel = reflection->textureLevel;
+            uniforms.halfRes = reflection->halfResolution ? 1 : 0;
+            uniforms.resolution = rayRes;
+            uniforms.hiZLevelCount = target->GetData(target->GetReflectionResolution())->hiZLevelCount;
+
+            rtrUniformBuffer.SetData(&uniforms, 0);
+
+            ReflectionFrame frame = {
+                .reflection = reflection,
+                .rayRes = rayRes,
+                .res = res,
+                .reflectionTexture = reflectionTexture,
+                .swapReflectionTexture = swapReflectionTexture,
+                .upsample = upsample,
+                .radianceVolume = radianceVolume,
+                .frameCount = frameCount
+            };
+
+            if (reflection->ssr)
+                RenderSSR(frame, target, scene, commandList);
+
+            GPUProfiler::BeginQuery("Trace rays");
+            if (scene->IsRtDataValid() && reflection->rt)
+                TraceRays(frame, target, scene, commandList);
+
+            if (upsample)
+                Upsample(frame, target, commandList);
+
+            TemporalFilter(frame, target, commandList);
+            SpatialFilter(frame, target, commandList);
+
+            GPUProfiler::EndQuery();
+
+        }
+
+        void RTReflectionRenderer::RenderSSR(const ReflectionFrame& frame, Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+
+            const auto& reflection = frame.reflection;
+            auto rayRes = frame.rayRes;
+            auto upsample = frame.upsample;
+            auto& reflectionTexture = frame.reflectionTexture;
+            auto downsampledRT = target->GetReflectionData(!reflection->halfResolution ? FULL_RES : HALF_RES);
+
+            GPUProfiler::Scope sectionScope("SSR");
+
+            auto rt = target->GetReflectionData(FULL_RES);
+
+            auto depthTexture = rt->depthTexture;
+            auto normalTexture = reflection->useNormalMaps ? rt->normalTexture : rt->geometryNormalTexture;
+            auto geometryNormalTexture = rt->geometryNormalTexture;
+            auto roughnessTexture = rt->roughnessMetallicAoTexture;
             auto offsetTexture = downsampledRT->offsetTexture;
-            auto velocityTexture = downsampledRT->velocityTexture;
-            auto materialIdxTexture = downsampledRT->materialIdxTexture;
+            auto materialIdxTexture = rt->materialIdxTexture;
 
             // Bind the geometry normal texure and depth texture
             commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
@@ -94,264 +244,349 @@ namespace Atlas {
             commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
             commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
 
-            commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
-            commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
+            // The rays only hit the scene, not the ocean surface they might start from
+            auto hiZRT = target->GetData(target->GetReflectionResolution());
+            commandList->BindImage(hiZRT->hiZTexture->image, hiZRT->hiZTexture->sampler, 3, 12);
+            commandList->BindImage(hiZRT->depthTexture->image, hiZRT->depthTexture->sampler, 3, 13);
 
-            Texture::Texture2D* reflectionTexture = reflection->upsampleBeforeFiltering ? &target->swapReflectionTexture : &target->reflectionTexture;
-            Texture::Texture2D* swapReflectionTexture = reflection->upsampleBeforeFiltering ? &target->reflectionTexture : &target->swapReflectionTexture;
+            ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 4);
+            groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
 
-            // Cast rays and calculate radiance
-            {
-                static uint32_t frameCount = 0;
+            auto ddgiEnabled = scene->renderState.irradianceVolume != nullptr;
+            auto ddgiVisibility = ddgiEnabled && scene->renderState.irradianceVolume->visibility;
 
-                ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 4);
-                groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
+            ssrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
+            ssrPipelineConfig.ManageMacro("RT", reflection->rt);
+            ssrPipelineConfig.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility);
+            ssrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
+            ssrPipelineConfig.ManageMacro("UPSCALE", upsample);
+            ssrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
 
-                auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
-                auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+            auto pipeline = PipelineManager::GetPipeline(ssrPipelineConfig);
+            commandList->BindPipeline(pipeline);
 
-                rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
-                rtrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
-                rtrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
-                rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
+            commandList->ImageMemoryBarrier(reflectionTexture->image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-                auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
+            commandList->BindImage(reflectionTexture->image, 3, 0);
 
+            commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 10);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+        }
+
+        void RTReflectionRenderer::TraceRays(const ReflectionFrame& frame, Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+
+            const auto& reflection = frame.reflection;
+            auto rayRes = frame.rayRes;
+            auto upsample = frame.upsample;
+            auto radianceVolume = frame.radianceVolume;
+            auto& reflectionTexture = frame.reflectionTexture;
+            auto downsampledRT = target->GetReflectionData(!reflection->halfResolution ? FULL_RES : HALF_RES);
+
+            ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 4);
+            groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
+
+            auto clouds = scene->renderState.sky.clouds;
+
+            auto rt = reflection->upsampleBeforeFiltering ? target->GetReflectionData(FULL_RES) : downsampledRT;
+
+            auto depthTexture = rt->depthTexture;
+            auto normalTexture = reflection->useNormalMaps ? rt->normalTexture : rt->geometryNormalTexture;
+            auto geometryNormalTexture = rt->geometryNormalTexture;
+            auto roughnessTexture = rt->roughnessMetallicAoTexture;
+            auto offsetTexture = downsampledRT->offsetTexture;
+            auto materialIdxTexture = rt->materialIdxTexture;
+
+            // Bind the geometry normal texure and depth texture
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
+            commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
+
+            auto ddgiEnabled = scene->renderState.irradianceVolume != nullptr;
+            auto ddgiVisibility = ddgiEnabled && scene->renderState.irradianceVolume->visibility;
+
+            auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
+
+            // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+            auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+            auto& config = useRayTracingPipeline ? rtrRayTracingPipelineConfig : rtrPipelineConfig;
+
+            config.ManageMacro("SSR", reflection->ssr);
+            config.ManageMacro("IRRADIANCE_VOLUME", reflection->ddgi && ddgiEnabled);
+            config.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility);
+            config.ManageMacro("RADIANCE_VOLUME", radianceVolume);
+            config.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
+            config.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
+            config.ManageMacro("UPSCALE", upsample);
+            config.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
+            config.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && reflection->shaderExecutionReordering);
+
+            // The hit shader has a low occupancy with software ray tracing
+            auto deferredShadowRays = !device->support.hardwareRayTracing;
+            config.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
+
+            auto pipeline = useRayTracingPipeline ?
+                Helper::RayTracingHelper::GetRayTracingPipeline(config, scene) : PipelineManager::GetPipeline(config);
+            auto dimensions = useRayTracingPipeline ? ivec3(rayRes, 1) : ivec3(groupCount, 1);
+
+            auto sampleCount = size_t(rayRes.x) * size_t(rayRes.y) * size_t(reflection->sampleCount);
+            auto lightCount = sampleCount * size_t(reflection->lightSampleCount);
+            if (deferredShadowRays)
+                shadowRays.Prepare(commandList, sampleCount, lightCount);
+
+            commandList->ImageMemoryBarrier(reflectionTexture->image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+            helper.DispatchAndHit(scene, commandList, pipeline, dimensions,
+                [=]() {
+                    commandList->BindImage(reflectionTexture->image, 3, 0);
+
+                    if (cloudShadowEnabled && scene->renderState.HasMainLight()) {
+                        clouds->shadowTexture.Bind(commandList, 3, 9);
+                    }
+
+                    commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 10);
+
+                    if (deferredShadowRays)
+                        shadowRays.BindForTrace(commandList);
+                });
+
+            if (deferredShadowRays) {
+                GPUProfiler::EndAndBeginQuery("Shadow rays");
+
+                shadowRays.Trace(commandList);
                 commandList->ImageMemoryBarrier(reflectionTexture->image,
-                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                helper.DispatchAndHit(scene, commandList, pipeline, ivec3(groupCount, 1),
-                    [=]() {
-                        commandList->BindImage(reflectionTexture->image, 3, 0);
+                GPUProfiler::EndAndBeginQuery("Resolve");
 
-                        RTRUniforms uniforms;
-                        uniforms.radianceLimit = reflection->radianceLimit;
-                        uniforms.bias = reflection->bias;
-                        uniforms.roughnessCutoff = reflection->roughnessCutoff;
-                        uniforms.frameSeed = frameCount++;                        
-                        uniforms.textureLevel = reflection->textureLevel;
-                        uniforms.halfRes = target->GetReflectionResolution() == HALF_RES ? 1 : 0;
-                        uniforms.resolution = rayRes;
+                auto resolvePipeline = PipelineManager::GetPipeline(rtrResolvePipelineConfig);
+                commandList->BindPipeline(resolvePipeline);
 
-                        if (shadow && reflection->useShadowMap) {
-                            auto& shadowUniform = uniforms.shadow;
-                            shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
-                            shadowUniform.bias = shadow->bias;
-                            shadowUniform.edgeSoftness = shadow->edgeSoftness;
-                            shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
-                            shadowUniform.cascadeCount = shadow->viewCount;
-                            shadowUniform.resolution = vec2(shadow->resolution);
+                commandList->BindImage(reflectionTexture->image, 3, 0);
+                shadowRays.BindForResolve(commandList);
 
-                            commandList->BindImage(shadow->maps.image, shadowSampler, 3, 6);
-
-                            auto componentCount = shadow->viewCount;
-                            for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
-                                if (i < componentCount) {
-                                    auto cascade = &shadow->views[i];
-                                    auto frustum = Volume::Frustum(cascade->frustumMatrix);
-                                    auto corners = frustum.GetCorners();
-                                    auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                                        abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
-                                    shadowUniform.cascades[i].distance = cascade->farDistance;
-                                    shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                        cascade->viewMatrix;
-                                    shadowUniform.cascades[i].texelSize = texelSize;
-                                }
-                                else {
-                                    auto cascade = &shadow->views[componentCount - 1];
-                                    shadowUniform.cascades[i].distance = cascade->farDistance;
-                                }
-                            }
-                        }
-                        rtrUniformBuffer.SetData(&uniforms, 0);
-                        commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 9);
-
-                    });
-
-                commandList->ImageMemoryBarrier(reflectionTexture->image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-            }
-
-            if (reflection->upsampleBeforeFiltering) {
-                Graphics::Profiler::EndAndBeginQuery("Upscaling");
-
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
-
-                auto pipeline = PipelineManager::GetPipeline(upsamplePipelineConfig);
-                commandList->BindPipeline(pipeline);
-
-                imageBarriers = {
-                    {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                ResolveConstants constants = {
+                    .resolution = rayRes,
+                    .sampleCount = reflection->sampleCount,
+                    .lightSampleCount = reflection->lightSampleCount
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
-
-                commandList->BindImage(swapReflectionTexture->image, 3, 0);
-
-                commandList->BindImage(reflectionTexture->image, reflectionTexture->sampler, 3, 1);
-                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
+                commandList->PushConstants("constants", &constants);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                std::swap(reflectionTexture, swapReflectionTexture);
             }
 
-            // Now after a potential upsampling get the actual data for the filtering
-            downsampledRT = target->GetData(target->GetReflectionResolution());
-            auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
+            commandList->ImageMemoryBarrier(reflectionTexture->image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+        }
+
+        void RTReflectionRenderer::Upsample(ReflectionFrame& frame, Ref<RenderTarget> target, Graphics::CommandList* commandList) {
+
+            const auto& reflection = frame.reflection;
+            auto res = frame.res;
+            auto& reflectionTexture = frame.reflectionTexture;
+            auto& swapReflectionTexture = frame.swapReflectionTexture;
+            auto frameCount = frame.frameCount;
+            auto downsampledRT = target->GetReflectionData(!reflection->halfResolution ? FULL_RES : HALF_RES);
+
+            auto depthTexture = downsampledRT->depthTexture;
+            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
+            auto offsetTexture = downsampledRT->offsetTexture;
+
+            commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+
+            GPUProfiler::EndAndBeginQuery("Upscaling");
+
+            ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
+            groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
+
+            auto pipeline = PipelineManager::GetPipeline(upsamplePipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            UpscalingConstants constants = {
+               .frameCount = frameCount,
+            };
+            commandList->PushConstants("constants", &constants);
+
+            Graphics::ImageBarrier imageBarriers[] = {
+                {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, {});
+
+            commandList->BindImage(swapReflectionTexture->image, 3, 0);
+
+            commandList->BindImage(reflectionTexture->image, reflectionTexture->sampler, 3, 1);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            std::swap(reflectionTexture, swapReflectionTexture);
+
+        }
+
+        void RTReflectionRenderer::TemporalFilter(const ReflectionFrame& frame, Ref<RenderTarget> target, Graphics::CommandList* commandList) {
+
+            const auto& reflection = frame.reflection;
+            auto res = frame.res;
+            auto upsample = frame.upsample;
+            auto radianceVolume = frame.radianceVolume;
+            auto& reflectionTexture = frame.reflectionTexture;
+            auto& swapReflectionTexture = frame.swapReflectionTexture;
+
+            // After a potential upsampling the data of the reflection resolution is filtered
+            auto downsampledRT = target->GetReflectionData(target->GetReflectionResolution());
+            auto downsampledHistoryRT = target->GetReflectionHistoryData(target->GetReflectionResolution());
 
             // Should be reflection resolution
-            depthTexture = downsampledRT->depthTexture;
-            normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
-            geometryNormalTexture = downsampledRT->geometryNormalTexture;
-            roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
-            offsetTexture = downsampledRT->offsetTexture;
-            velocityTexture = downsampledRT->velocityTexture;
-            materialIdxTexture = downsampledRT->materialIdxTexture;
+            auto depthTexture = downsampledRT->depthTexture;
+            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
+            auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
+            auto materialIdxTexture = downsampledRT->materialIdxTexture;
+            auto velocityTexture = downsampledRT->velocityTexture;
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
-            auto historyNormalTexture = reflection->useNormalMaps ? downsampledHistoryRT->normalTexture : downsampledHistoryRT->geometryNormalTexture;
             auto historyGeometryNormalTexture = downsampledHistoryRT->geometryNormalTexture;
+            auto historyRoughnessTexture = downsampledHistoryRT->roughnessMetallicAoTexture;
 
-            Graphics::Profiler::EndAndBeginQuery("Temporal filter");
+            GPUProfiler::EndAndBeginQuery("Temporal filter");
 
-            {
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
+            ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
+            groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
 
-                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
-                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
+            temporalPipelineConfig.ManageMacro("UPSCALE", upsample);
 
-                auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
+            auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            // Note: We need to also denoise the radiance volume sampling, so increase cutoff value to one
+            TemporalConstants constants = {
+                .temporalWeight = reflection->temporalWeight,
+                .historyClipMax = reflection->historyClipMax,
+                .currentClipFactor = reflection->currentClipFactor,
+                .roughnessCutoff = radianceVolume ? 1.0f : reflection->roughnessCutoff,
+                .resetHistory = !target->HasHistory() ? 1 : 0,
+            };
+
+            commandList->PushConstants("constants", &constants);
+
+            Graphics::ImageBarrier imageBarriers[] = {
+                {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+            };
+            commandList->PipelineBarrier(imageBarriers, {});
+
+            commandList->BindImage(swapReflectionTexture->image, 3, 0);
+            commandList->BindImage(target->reflectionMomentsTexture.image, 3, 1);
+
+            commandList->BindImage(reflectionTexture->image, reflectionTexture->sampler, 3, 2);
+            commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 3);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
+            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 5);
+            commandList->BindImage(geometryNormalTexture->image, geometryNormalTexture->sampler, 3, 6);
+            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 7);
+
+            commandList->BindImage(target->historyReflectionTexture.image, target->historyReflectionTexture.sampler, 3, 8);
+            commandList->BindImage(target->historyReflectionMomentsTexture.image, target->historyReflectionMomentsTexture.sampler, 3, 9);
+            commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
+            commandList->BindImage(historyGeometryNormalTexture->image, historyGeometryNormalTexture->sampler, 3, 11);
+            commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
+            commandList->BindImage(historyRoughnessTexture->image, historyRoughnessTexture->sampler, 3, 13);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            // The temporal result becomes the history, the old history is free for the spatial filter
+            std::swap(*swapReflectionTexture, target->historyReflectionTexture);
+            std::swap(target->reflectionMomentsTexture, target->historyReflectionMomentsTexture);
+
+            Graphics::ImageBarrier historyBarriers[] = {
+                {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            };
+            commandList->PipelineBarrier(historyBarriers, {});
+
+        }
+
+        void RTReflectionRenderer::SpatialFilter(const ReflectionFrame& frame, Ref<RenderTarget> target, Graphics::CommandList* commandList) {
+
+            const auto& reflection = frame.reflection;
+            auto res = frame.res;
+            auto radianceVolume = frame.radianceVolume;
+            auto& reflectionTexture = frame.reflectionTexture;
+            auto& swapReflectionTexture = frame.swapReflectionTexture;
+            auto downsampledRT = target->GetReflectionData(target->GetReflectionResolution());
+            auto depthTexture = downsampledRT->depthTexture;
+            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
+            auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
+            auto materialIdxTexture = downsampledRT->materialIdxTexture;
+
+            GPUProfiler::EndAndBeginQuery("Spatial filter");
+
+            ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
+            groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
+
+            bool pingpong = false;
+
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
+            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 4);
+            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
+            commandList->BindImage(target->historyReflectionMomentsTexture.image, target->historyReflectionMomentsTexture.sampler, 3, 6);
+
+            for (int32_t i = 0; i < 3; i++) {
+                GPUProfiler::Scope sectionScope("Subpass " + std::to_string(i));
+
+                auto pipeline = PipelineManager::GetPipeline(atrousPipelineConfig[i]);
                 commandList->BindPipeline(pipeline);
 
-                TemporalConstants constants = {
-                    .temporalWeight = reflection->temporalWeight,
-                    .historyClipMax = reflection->historyClipMax,
-                    .currentClipFactor = reflection->currentClipFactor,
-                    .resetHistory = !target->HasHistory() ? 1 : 0
+                AtrousConstants constants = {
+                    .strength = reflection->spatialFilterStrength,
+                    .roughnessCutoff = radianceVolume ? 1.0f : reflection->roughnessCutoff,
                 };
-
                 commandList->PushConstants("constants", &constants);
 
-                imageBarriers = {
-                    {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                    {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
-                };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                if (pingpong) {
+                    Graphics::ImageBarrier imageBarriers[] = {
+                        {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    };
+                    commandList->BindImage(swapReflectionTexture->image, 3, 0);
+                    commandList->BindImage(reflectionTexture->image, reflectionTexture->sampler, 3, 1);
+                    commandList->PipelineBarrier(imageBarriers, {});
+                }
+                else {
+                    // The first pass reads the temporal result, which is the history now
+                    auto& input = i == 0 ? target->historyReflectionTexture : *swapReflectionTexture;
+                    Graphics::ImageBarrier imageBarriers[] = {
+                        {input.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {reflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    };
+                    commandList->BindImage(reflectionTexture->image, 3, 0);
+                    commandList->BindImage(input.image, input.sampler, 3, 1);
+                    commandList->PipelineBarrier(imageBarriers, {});
+                }
 
-                commandList->BindImage(swapReflectionTexture->image, 3, 0);
-                commandList->BindImage(target->reflectionMomentsTexture.image, 3, 1);
-
-                commandList->BindImage(reflectionTexture->image, reflectionTexture->sampler, 3, 2);
-                commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 3);
-                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
-                commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 5);
-                commandList->BindImage(geometryNormalTexture->image, geometryNormalTexture->sampler, 3, 6);
-                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 7);
-
-                commandList->BindImage(target->historyReflectionTexture.image, target->historyReflectionTexture.sampler, 3, 8);
-                commandList->BindImage(target->historyReflectionMomentsTexture.image, target->historyReflectionMomentsTexture.sampler, 3, 9);
-                commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
-                commandList->BindImage(historyGeometryNormalTexture->image, historyGeometryNormalTexture->sampler, 3, 11);
-                commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
+                pingpong = !pingpong;
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-            // Need barriers for all four images
-            imageBarriers = {
-                {swapReflectionTexture->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-            };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-            commandList->CopyImage(swapReflectionTexture->image, target->historyReflectionTexture.image);
-            commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
-
-            // Need barriers for all four images
-            imageBarriers = {
-                {swapReflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-            };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-            Graphics::Profiler::EndAndBeginQuery("Spatial filter");
-
-            {
-                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
-                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
-
-                bool pingpong = false;
-
-                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
-                commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 4);
-                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);                
-
-                for (int32_t i = 0; i < 3; i++) {
-                    Graphics::Profiler::BeginQuery("Subpass " + std::to_string(i));
-
-                    auto pipeline = PipelineManager::GetPipeline(atrousPipelineConfig[i]);
-                    commandList->BindPipeline(pipeline);
-
-                    AtrousConstants constants = {
-                        .stepSize = 1 << i,
-                        .strength = reflection->spatialFilterStrength
-                    };
-                    commandList->PushConstants("constants", &constants);
-
-                    if (pingpong) {
-                        imageBarriers = {
-                            {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                            {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                        };
-                        commandList->BindImage(swapReflectionTexture->image, 3, 0);
-                        commandList->BindImage(reflectionTexture->image, reflectionTexture->sampler, 3, 1);
-                    }
-                    else {
-                        imageBarriers = {
-                            {swapReflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                            {reflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                        };
-                        commandList->BindImage(reflectionTexture->image, 3, 0);
-                        commandList->BindImage(swapReflectionTexture->image, swapReflectionTexture->sampler, 3, 1);
-                    }
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
-
-                    pingpong = !pingpong;
-
-                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
-                    Graphics::Profiler::EndQuery();
-                }
-
-                // Transition to final layout, the loop won't do that
-                commandList->ImageMemoryBarrier(target->reflectionTexture.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-            }
-            
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
+            // Transition to final layout, the loop won't do that
+            commandList->ImageMemoryBarrier(target->reflectionTexture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
         }
 

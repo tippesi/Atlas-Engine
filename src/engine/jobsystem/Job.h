@@ -16,6 +16,9 @@ namespace Atlas {
 
     struct JobData {
         int32_t idx = 0;
+        int32_t workerIdx = 0;
+        JobPriority priority;
+
         void* userData = nullptr;
     };
 
@@ -27,6 +30,16 @@ namespace Atlas {
         std::function<void(JobData&)> function;
 
         void* userData = nullptr;
+        const char* name = nullptr;
+
+        inline JobData GetJobData(int32_t workerIdx = 0) const {
+            return JobData {
+                .idx = idx,
+                .workerIdx = 0,
+                .priority = priority,
+                .userData = userData
+            };
+        }
     };
 
 }

@@ -60,17 +60,18 @@ namespace Atlas {
 
         }
 
-        void VertexArray::Bind(Graphics::CommandList *commandList) {
+        void VertexArray::Bind(Graphics::CommandList *commandList, bool withOffsets) {
 
             if (hasIndexComponent) {
-                commandList->BindIndexBuffer(indexComponent.buffer, indexComponent.type);
+                commandList->BindIndexBuffer(indexComponent.buffer, indexComponent.type, withOffsets ? indexComponent.offset : 0);
             }
 
             if (batches.empty())
                 BuildBatches();
 
             for (auto& batch : batches) {
-                commandList->BindVertexBuffers(batch.buffers, batch.offset, batch.count);
+                commandList->BindVertexBuffers(batch.buffers, withOffsets ? batch.bufferOffsets : batch.zeroOffsets,
+                    batch.offset, batch.count);
             }
 
         }
@@ -117,6 +118,8 @@ namespace Atlas {
                 }
 
                 batch.buffers.push_back(vertexComponent.vertexBuffer.buffer);
+                batch.bufferOffsets.push_back(vertexComponent.vertexBuffer.offset);
+                batch.zeroOffsets.push_back(0);
                 bindingCount++;
             }
 

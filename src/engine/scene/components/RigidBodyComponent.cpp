@@ -9,9 +9,19 @@ namespace Atlas {
             RigidBodyComponent::RigidBodyComponent(Scene* scene, Entity entity, const RigidBodyComponent& that) {
 
                 if (this != &that) {
+                    // In case this contains a valid body -> destroy, since we assume to own the body
+                    if (world != nullptr && world->ContainsBody(*this)) {
+                        world->DestroyBody(*this);
+                    }
+
                     *this = that;
+
+                    // Reset body and create new settings
+                    this->bodyId = Physics::BodyID();
+                    this->creationSettings = CreateRef(that.GetBodyCreationSettings());
                 }
 
+                // In a copy constructor we want to enforce to create a new body
                 this->entity = entity;
 
             }
@@ -36,6 +46,8 @@ namespace Atlas {
                         return;
 
                 this->world = physicsWorld;
+                // Keep the layer in sync with the body, the settings might have been changed after construction
+                layer = creationSettings->objectLayer;
 
                 auto body = physicsWorld->CreateBody(*creationSettings, transformComponent.globalMatrix, entity);
 

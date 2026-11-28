@@ -12,10 +12,10 @@
 ## Introduction
 This is a cross platform toy engine developed in my spare time that is available on Linux, Windows and MacOS.
 >**Note:**
->The current version (0.2.0) contains many API changes and is still an active WIP
+>The current version (0.2.1) contains many API changes and is still an active WIP
 ## Requirements
 - Vulkan SDK
-- C++20 compatible compiler
+- C++23 compatible compiler
 - CMake
 - Vcpkg
 ## Set up
@@ -55,11 +55,11 @@ initialize the engine yourself
 - **ATLAS_IMGUI** Enables the [ImGui](https://github.com/ocornut/imgui) integration. Is enabled by default if the demo project is build.
 - **ATLAS_ASSIMP** Enables the [Assimp](https://github.com/assimp/assimp) integration. Is enabled by default.
 - **ATLAS_HEADLESS** Enables the headless support, which means no window needs to be created. Is disabled by default.
-- **ATLAS_BINDLESS** Enables support for bindless resources. Might be problematic on MacOS. Enabled by default.
 - **ATLAS_TESTS** Generates the testing project and allows to target it.
 - **ATLAS_BUNDLE** Allows the applications to be bundled and installed on MacOS. Disabled by default
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html).
+To let an agent (Claude Code, Codex, ChatGPT, ...) work in the scene open in the editor, see [Atlas Bridge](wiki/AtlasBridge.md).
 ## License
 The source code is licensed under the MIT license. The copyright notices of the dependencies can be found
 in the LICENSE.md file in the dependency directory. 

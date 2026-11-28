@@ -77,7 +77,19 @@ namespace Atlas {
 
             inline bool IsValid() const {
 
-                return entity != ECS::EntityConfig::InvalidEntity;
+                return entity != ECS::EntityConfig::InvalidEntity && entityManager->Valid(entity);
+
+            }
+
+            inline uint64_t GetID() const {
+
+                return uint64_t(entity);
+
+            }
+
+            inline uint32_t GetVersion() const {
+
+                return entityManager->Version(entity);
 
             }
 
@@ -86,6 +98,12 @@ namespace Atlas {
                 return static_cast<Scene*>(entityManager->userData);
 
             }
+
+            void MarkDirty() const;
+
+            // Moves the entity from its current parent to the given one, which gets a hierarchy if needed.
+            // An invalid parent makes it a top level entity. The local transform is kept
+            void SetParent(Entity parent);
 
             operator ECS::Entity() const { return entity; }
 

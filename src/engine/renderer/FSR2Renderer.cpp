@@ -2,7 +2,6 @@
 
 #include "graphics/Format.h"
 
-#include "Clock.h"
 #include "loader/ShaderLoader.h"
 
 #include <string.h>
@@ -241,7 +240,13 @@ namespace Atlas::Renderer {
 			return FFX_SURFACE_FORMAT_R16_SNORM;
 		case VK_FORMAT_R8_UNORM:
 			return FFX_SURFACE_FORMAT_R8_UNORM;
+		case VK_FORMAT_R8G8_UNORM:
+			return FFX_SURFACE_FORMAT_R8G8_UNORM;
 		case VK_FORMAT_R32_SFLOAT:
+			return FFX_SURFACE_FORMAT_R32_FLOAT;
+		case VK_FORMAT_D16_UNORM:
+			return FFX_SURFACE_FORMAT_R16_UNORM;
+		case VK_FORMAT_D32_SFLOAT:
 			return FFX_SURFACE_FORMAT_R32_FLOAT;
 		case VK_FORMAT_R8_UINT:
 			return FFX_SURFACE_FORMAT_R8_UINT;
@@ -403,6 +408,9 @@ namespace Atlas::Renderer {
 
 		auto mipLevels = createResourceDescription->resourceDescription.mipCount;
 
+		auto format = GetFormatFromSurfaceFormat(createResourceDescription->resourceDescription.format);
+		AE_ASSERT(format != VK_FORMAT_UNDEFINED && "Unsupported FSR2 resource format");
+
 		Graphics::ImageDesc desc = {
 			.usageFlags = GetImageUsageFlagsFromResourceUsage(createResourceDescription->usage),
 			.type = GetImageTypeFromResourceType(createResourceDescription->resourceDescription.type),
@@ -410,7 +418,7 @@ namespace Atlas::Renderer {
 			.height = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE1D ? 1 : createResourceDescription->resourceDescription.height,
 			.depth = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE3D ? createResourceDescription->resourceDescription.depth : 1,
 			.mipLevels = mipLevels,
-			.format = GetFormatFromSurfaceFormat(createResourceDescription->resourceDescription.format),
+			.format = format,
 			.mipMapping = mipLevels == 0 || mipLevels > 1,
 			.data = createResourceDescription->initData,
 		};
@@ -751,19 +759,9 @@ namespace Atlas::Renderer {
 			}
 		}
 
-		auto& shaderStageCreateInfo = variant->stageCreateInfos.front();
-
-		// set wave64 if possible
-		VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroupSizeCreateInfo = {};
-		if (canForceWave64) {
-			subgroupSizeCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO;
-			subgroupSizeCreateInfo.requiredSubgroupSize = 64;
-
-			shaderStageCreateInfo.pNext = &subgroupSizeCreateInfo;
-		}
-
 		Graphics::ComputePipelineDesc pipelineDesc = {
-			.shader = variant
+			.shader = variant,
+            .requiredSubgroupSize = canForceWave64 ? 64u : 0u
 		};
 		fsr2Pass.pipeline = fsr2Context->device->CreatePipeline(pipelineDesc);
 
@@ -783,8 +781,6 @@ namespace Atlas::Renderer {
 
 		this->device = device;
 
-		GenerateShaders();
-
 	}
 
 	FSR2Renderer::~FSR2Renderer() {
@@ -793,18 +789,22 @@ namespace Atlas::Renderer {
 
 	}
 
-	vec2 FSR2Renderer::GetJitter(const Ref<RenderTarget>& target, uint32_t index) const {
+	vec2 FSR2Renderer::GetJitter(const Ref<RenderTarget>& target, uint32_t frameIndex) const {
 
 		vec2 jitter;
 
 		const int32_t jitterPhaseCount = ffxFsr2GetJitterPhaseCount(target->GetScaledWidth(), target->GetWidth());
-		ffxFsr2GetJitterOffset(&jitter.x, &jitter.y, index, jitterPhaseCount);
+		ffxFsr2GetJitterOffset(&jitter.x, &jitter.y, frameIndex, jitterPhaseCount);
 
 		return vec2(2.0f * jitter.x / (float)target->GetScaledWidth(), 2.0f * jitter.y / (float)target->GetScaledHeight());
 
 	}
 
 	void FSR2Renderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
+
+		// Loaded on first use, most renderers never upscale with FSR2
+		if (shaders.empty())
+			GenerateShaders();
 
 		if (!initParams.callbacks.scratchBuffer ||
             initParams.displaySize.width != target->GetWidth() ||
@@ -815,11 +815,11 @@ namespace Atlas::Renderer {
 			CreateContext(target, device);
 		}
 
-		Graphics::Profiler::BeginQuery("FSR2");
+		GPUProfiler::Scope gpuScope("FSR2");
 
-		auto& postProcessing = scene->postProcessing;
+		auto& postProcessing = scene->renderState.postProcessing;
 		auto& sharpen = postProcessing.sharpen;
-		auto& camera = scene->GetMainCamera();
+		auto& camera = scene->renderState.camera;
 
 		auto targetData = target->GetData(FULL_RES);
 
@@ -829,19 +829,16 @@ namespace Atlas::Renderer {
 		auto depthImage = targetData->depthTexture->image;
 		auto outputImage = target->hdrTexture.image;
 
-		auto& taa = scene->postProcessing.taa;
-
-		std::vector<Graphics::BufferBarrier> bufferBarriers;
-		std::vector<Graphics::ImageBarrier> imageBarriers;
-		imageBarriers.push_back({ outputImage,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT });
-		commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+		Graphics::ImageBarrier imageBarriers[] = {{outputImage,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT}};
+		commandList->PipelineBarrier(imageBarriers, {});
 
 		FfxFsr2DispatchDescription dispatchParameters = {};
 		dispatchParameters.commandList = commandList;
 		dispatchParameters.color = GetResource(colorImage, L"FSR2_InputColor", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.depth = GetResource(depthImage, L"FSR2_InputDepth", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.motionVectors = GetResource(velocityImage, L"FSR2_InputMotionVectors", FFX_RESOURCE_STATE_COMPUTE_READ);
-		dispatchParameters.reactive = GetResource(reactiveMaskImage, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
+		if (!target->IsUsedForPathTracing())
+			dispatchParameters.reactive = GetResource(reactiveMaskImage, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.exposure = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_InputExposure", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.reactive = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.transparencyAndComposition = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyTransparencyAndCompositionMap", FFX_RESOURCE_STATE_COMPUTE_READ);
@@ -854,8 +851,8 @@ namespace Atlas::Renderer {
 		dispatchParameters.reset = !target->HasHistory();
 		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
-		dispatchParameters.frameTimeDelta = Clock::GetDelta() * 1000.0f;
-		dispatchParameters.preExposure = 1.0f;
+		dispatchParameters.frameTimeDelta = scene->renderState.deltaTime * 1000.0f;
+		dispatchParameters.preExposure = scene->renderState.preExposure;
 		dispatchParameters.renderSize.width = uint32_t(target->GetScaledWidth());
 		dispatchParameters.renderSize.height = uint32_t(target->GetScaledHeight());
 		dispatchParameters.cameraFar = camera.farPlane;
@@ -868,8 +865,6 @@ namespace Atlas::Renderer {
 		commandList->ImageMemoryBarrier(outputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-		Graphics::Profiler::EndQuery();
 
 	}
 
@@ -914,9 +909,8 @@ namespace Atlas::Renderer {
 
 	void FSR2Renderer::DestroyContext() {
 
-		device->WaitForIdle();
-
 		if (initParams.callbacks.scratchBuffer != nullptr) {
+			device->WaitForIdle();
 			ffxFsr2ContextDestroy(&context);
 			FSR2Context* fsr2Context = reinterpret_cast<FSR2Context*>(initParams.callbacks.scratchBuffer);
 			delete fsr2Context;

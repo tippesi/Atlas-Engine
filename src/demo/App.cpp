@@ -18,10 +18,15 @@ using namespace Atlas::Scene::Components;
 using namespace Atlas::Scene::Prefabs;
 using namespace Atlas::ImguiExtension;
 
+using Atlas::vec2;
+using Atlas::vec3;
+using Atlas::vec4;
+using Atlas::ivec3;
+using Atlas::mat4;
+
 void App::LoadContent() {
 
     renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
-    pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
@@ -32,11 +37,11 @@ void App::LoadContent() {
 
     font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
 
-    scene = Atlas::CreateRef<Atlas::Scene::Scene>("demoScene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
+    scene = Atlas::CreateRef<Atlas::Scene::Scene>("demoScene", vec3(-2048.0f), vec3(2048.0f));
 
     cameraEntity = scene->CreateEntity();
     auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
-        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+        vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
 
     mouseHandler = Atlas::Input::MouseHandler(1.5f, 8.0f);
     keyboardHandler = Atlas::Input::KeyboardHandler(7.0f, 5.0f);
@@ -70,18 +75,12 @@ void App::LoadContent() {
     directionalLightEntity = scene->CreateEntity();
     auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
-    directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f,
-        glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+    directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 1.0f);
+    directionalLight.color = vec3(255, 236, 209) / 255.0f;
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f, 4, 0.9f);
     directionalLight.isMain = true;
 
-    scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
-    scene->ao->rt = true;
-    // Use SSGI by default
-    scene->ao->enable = false;
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
-    scene->reflection->useShadowMap = true;
 
     scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
     scene->fog->enable = true;
@@ -100,7 +99,6 @@ void App::LoadContent() {
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
     scene->rtgi = Atlas::CreateRef<Atlas::Lighting::RTGI>();
     scene->rtgi->enable = graphicsDevice->support.hardwareRayTracing;
-    scene->rtgi->useShadowMap = true;
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
@@ -123,10 +121,13 @@ void App::UnloadContent() {
 }
 
 void App::Update(float deltaTime) {
+    
+    scene->WaitForAsyncWorkCompletion();
 
     if (sceneReload) {
         UnloadScene();
         LoadScene();
+        scene->WaitForAsyncWorkCompletion();
         sceneReload = false;
     }
 
@@ -175,13 +176,13 @@ void App::Update(float deltaTime) {
 
             if (meshComponent.mesh->name == "chromesphere") {
                 float height = (sinf(Atlas::Clock::Get() / 5.0f) + 1.0f) * 20.0f;
-                auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, height, .0f));
+                auto matrix = glm::translate(mat4(1.0f), vec3(0.0f, height, .0f));
 
                 transformComponent.Set(matrix);
             }
             else if (meshComponent.mesh->name == "metallicwall") {
-                auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, 0.0f, -2.0f));
-                matrix = glm::rotate(matrix, Atlas::Clock::Get() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+                auto matrix = glm::translate(mat4(1.0f), vec3(-50.0f, 0.0f, -2.0f));
+                matrix = glm::rotate(matrix, Atlas::Clock::Get() / 2.0f, vec3(0.0f, 1.0f, 0.0f));
 
                 transformComponent.Set(matrix);
             }
@@ -197,14 +198,14 @@ void App::Update(float deltaTime) {
             auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
             auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
 
-            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z));
+            auto matrix = glm::translate(mat4(1.0f), vec3(x, 100.0f, z));
 
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
             auto shapeSettings = Atlas::Physics::SphereShapeSettings{
                 .radius = meshes.back()->data.radius,
                 .density = sphereDensity,
-                .scale = glm::vec3(sphereScale),
+                .scale = vec3(sphereScale),
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(shapeSettings);
 
@@ -215,6 +216,18 @@ void App::Update(float deltaTime) {
             };
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
             rigidBodyComponent.SetRestitution(sphereRestitution);
+
+            if (attachLightToSphers) {
+                auto& lightComponent = entity.AddComponent<LightComponent>(Atlas::LightType::PointLight);
+
+                lightComponent.color.r = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.g = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.b = Atlas::Common::Random::SampleUniformFloat();
+
+                lightComponent.intensity = 30.0f;
+
+                lightComponent.properties.point.radius = 5.0f;
+            }
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -231,11 +244,11 @@ void App::Update(float deltaTime) {
             auto shapeSettings = Atlas::Physics::SphereShapeSettings{
                 .radius = meshes.back()->data.radius,
                 .density = sphereDensity,
-                .scale = glm::vec3(sphereScale),
+                .scale = vec3(sphereScale),
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(shapeSettings);
 
-            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
+            auto matrix = glm::translate(mat4(1.0f), vec3(camera.GetLocation() +
                 camera.direction * meshes.back()->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
@@ -248,14 +261,25 @@ void App::Update(float deltaTime) {
             };
             entity.AddComponent<RigidBodyComponent>(bodySettings);
 
+            if (attachLightToSphers) {
+                auto& lightComponent = entity.AddComponent<LightComponent>(Atlas::LightType::PointLight);
+
+                lightComponent.color.r = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.g = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.b = Atlas::Common::Random::SampleUniformFloat();
+
+                lightComponent.intensity = 30.0f;
+
+                lightComponent.properties.point.radius = 5.0f;
+            }
+
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
         }
 
     }
 
-    scene->Timestep(deltaTime);
-    scene->Update();
+    scene->Update(deltaTime);
 
     CheckLoadScene();
 
@@ -266,7 +290,6 @@ void App::Render(float deltaTime) {
     static bool firstFrame = true;
     static bool animateLight = false;
     static bool pathTrace = false;
-    static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
     static bool debugSSS = false;
@@ -280,8 +303,7 @@ void App::Render(float deltaTime) {
     graphicsDevice->WaitForPreviousFrameSubmission();
 
 #ifndef AE_HEADLESS
-    auto windowFlags = window.GetFlags();
-    if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+    if (window.IsOccluded()) {
         // If we take the early way out we need to make sure that stuff is completed (usually main renderer takes care of that)
         scene->WaitForAsyncWorkCompletion();
         return;
@@ -297,27 +319,24 @@ void App::Render(float deltaTime) {
 
     auto& directionalLight = directionalLightEntity.GetComponent<LightComponent>();
     if (animateLight) directionalLight.properties.directional.direction
-        = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
+        = vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
+
+    viewport->Set(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
     if (pathTrace) {
-        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
-        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
+        mainRenderer->PathTraceScene(viewport, renderTarget, scene);
     }
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
 
-        auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugRTGI || debugMotion;
+        auto debug = debugReflection || debugClouds || debugSSS || debugSSGI || debugRTGI || debugMotion;
 
         if (debug && graphicsDevice->swapChain->isComplete) {
             auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
             commandList->BeginCommands();
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
-            if (debugAo) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->aoTexture,
-                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
-            }
-            else if (debugReflection) {
+            if (debugReflection) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
                     0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
@@ -356,7 +375,6 @@ void App::Render(float deltaTime) {
         auto& camera = cameraEntity.GetComponent<CameraComponent>();
         auto& light = directionalLightEntity.GetComponent<LightComponent>();
         auto& volume = scene->irradianceVolume;
-        auto& ao = scene->ao;
         auto& fog = scene->fog;
         auto& reflection = scene->reflection;
         auto& clouds = scene->sky.clouds;
@@ -486,7 +504,6 @@ void App::Render(float deltaTime) {
                 bool pathTraceEnabled = pathTrace;
                 ImGui::Checkbox("Enable##Pathtrace", &pathTrace);
                 ImGui::SliderInt("Bounces##Pathtrace", &mainRenderer->pathTracingRenderer.bounces, 0, 100);
-                ImGui::Checkbox("Sample emissives##Pathtrace", &mainRenderer->pathTracingRenderer.sampleEmissives);
                 ImGui::Text("Realtime");
                 ImGui::Checkbox("Realtime##Pathtrace", &mainRenderer->pathTracingRenderer.realTime);
                 ImGui::SliderInt("Samples per frame##Pathtrace", &mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 100);
@@ -494,6 +511,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderInt("Max accumulated frames##Pathtrace", &mainRenderer->pathTracingRenderer.historyLengthMax, 1, 256);
                 ImGui::SliderFloat("Current clip##Pathtrace", &mainRenderer->pathTracingRenderer.currentClipFactor, 0.1f, 4.0f);
                 ImGui::SliderFloat("Max history clip##Pathtrace", &mainRenderer->pathTracingRenderer.historyClipMax, 0.0f, 1.0f);
+                ImGui::SliderFloat("Spatial filter strength##Pathtrace", &mainRenderer->pathTracingRenderer.spatialFilterStrength, 0.0f, 16.0f);
 
                 scene->rayTracingWorld->includeObjectHistory = pathTrace;
             }
@@ -542,15 +560,6 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);
                 sssPanel.Render(sss);
             }
-            if (ImGui::CollapsingHeader("Ambient Occlusion")) {
-                ImGui::Checkbox("Debug##Ao", &debugAo);
-                ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
-                ImGui::Checkbox("Enable raytracing (preview)##Ao", &ao->rt);
-                ImGui::Checkbox("Opacity check##Ao", &ao->opacityCheck);
-                ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
-                ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-                //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
-            }
             if (ImGui::CollapsingHeader("Reflection")) {
                 ImGui::Checkbox("Debug##Reflection", &debugReflection);
                 reflectionPanel.Render(reflection, renderTarget);
@@ -585,6 +594,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Sphere scale##PhysicsBody", &sphereScale, 1.0f, 10.0f);
                 ImGui::SliderFloat("Sphere density##PhysicsBody", &sphereDensity, 1.0f, 100.0f);
                 ImGui::SliderFloat("Sphere restitution##PhysicsBody", &sphereRestitution, 0.0f, 1.0f);
+                ImGui::Checkbox("Attach lights ##PhysicsBody", &attachLightToSphers);
                 ImGui::Text("Sphere emitter");
                 ImGui::Checkbox("Enable##PhysicsEmitter", &emitSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsEmitter", &emitSpawnRate, 0.001f, 1.0f);
@@ -613,7 +623,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Use F11 to hide/unhide the UI");
             }
             if (ImGui::CollapsingHeader("Profiler")) {
-                gpuProfilerPanel.Render();
+                profilerPanel.Render();
             }
         }
 
@@ -640,6 +650,7 @@ void App::Render(float deltaTime) {
         }
 
         recreateSwapchain = false;
+
     }
 
     if (slowMode) { using namespace std::chrono_literals; std::this_thread::sleep_for(60ms); }
@@ -650,6 +661,8 @@ void App::Render(float deltaTime) {
         Atlas::Clock::ResetAverage();
         firstFrame = false;
     }
+    
+    scene->WaitForAsyncWorkCompletion();
 
 }
 
@@ -684,7 +697,7 @@ void App::DisplayLoadingScreen(float deltaTime) {
 
     viewport->Set(0, 0, windowSize.x, windowSize.y);
     mainRenderer->textRenderer.Render(commandList, viewport, font,
-        "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
+        "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 
     commandList->EndRenderPass();
     commandList->EndCommands();
@@ -722,13 +735,13 @@ bool App::LoadScene() {
     Atlas::ResourceHandle<Atlas::Texture::Cubemap> sky;
     auto& directionalLight = directionalLightEntity.GetComponent<LightComponent>();
 
-    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 1.0f);
 
     auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
-    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
-    scene->sky.clouds->minHeight = 1400.0f;
-    scene->sky.clouds->maxHeight = 1700.0f;
+    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>(512, 128, 32);
+    scene->sky.clouds->baseAltitude = 1400.0f;
+    scene->sky.clouds->layerThickness = 1800.0f;
     scene->sky.clouds->castShadow = false;
 
     scene->sky.probe = nullptr;
@@ -737,20 +750,20 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
-    std::vector<glm::mat4> transforms;
+    std::vector<mat4> transforms;
     if (sceneSelection == CORNELL) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "cornell/CornellBox-Original.obj", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
+        transforms.push_back(glm::scale(mat4(1.0f), vec3(10.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 0.0f;
 
         // Setup camera
-        camera.location = glm::vec3(0.0f, 14.0f, 40.0f);
-        camera.rotation = glm::vec2(-3.14f, -0.1f);
+        camera.location = vec3(0.0f, 14.0f, 40.0f);
+        camera.rotation = vec2(-3.14f, -0.1f);
 
         scene->fog->enable = false;
         scene->fog->volumetricIntensity = 0.0f;
@@ -760,7 +773,7 @@ bool App::LoadScene() {
             "sponza/sponza.obj", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
+        transforms.push_back(glm::scale(mat4(1.0f), vec3(.05f)));
 
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "metallicwall.gltf", ModelImporter::ImportMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
@@ -769,12 +782,12 @@ bool App::LoadScene() {
         transforms.emplace_back(1.0f);
 
         // Other scene related settings apart from the mesh
-        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 0.33f);
         directionalLight.intensity = 100.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
@@ -785,14 +798,14 @@ bool App::LoadScene() {
             "bistro/mesh/exterior.obj", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.015f)));
+        transforms.push_back(glm::scale(mat4(1.0f), vec3(.015f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 100.0f;
 
         // Setup camera
-        camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);
-        camera.rotation = glm::vec2(3.14f / 2.0f, 0.0f);
+        camera.location = vec3(-21.0f, 8.0f, 1.0f);
+        camera.rotation = vec2(3.14f / 2.0f, 0.0f);
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
@@ -803,15 +816,15 @@ bool App::LoadScene() {
             "sanmiguel/san-miguel-low-poly.obj", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
+        transforms.push_back(glm::scale(mat4(1.0f), vec3(2.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 100.0f;
-        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, -1.0f);
+        directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, -1.0f);
 
         // Setup camera
-        camera.location = glm::vec3(45.0f, 26.0f, 17.0f);
-        camera.rotation = glm::vec2(-4.14f / 2.0f, -.6f);
+        camera.location = vec3(45.0f, 26.0f, 17.0f);
+        camera.rotation = vec2(-4.14f / 2.0f, -.6f);
         camera.exposure = 2.5f;
 
         scene->fog->enable = true;
@@ -833,8 +846,8 @@ bool App::LoadScene() {
         directionalLight.intensity = 10.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
         scene->fog->volumetricIntensity = 0.08f;
@@ -844,14 +857,14 @@ bool App::LoadScene() {
             "pica pica/mesh/scene.gltf", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.push_back(glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
+        transforms.push_back(glm::rotate(mat4(1.0f), -3.14f / 2.0f, vec3(1.0f, 0.0f, 0.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 10.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 1.0f;
 
         scene->fog->enable = true;
@@ -868,8 +881,8 @@ bool App::LoadScene() {
         directionalLight.intensity = 10.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
@@ -880,7 +893,7 @@ bool App::LoadScene() {
             "material demo/materials.obj", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.push_back(glm::scale(glm::vec3(8.0f)));
+        transforms.push_back(glm::scale(vec3(8.0f)));
 
         sky = Atlas::ResourceManager<Atlas::Texture::Cubemap>::GetOrLoadResourceAsync("environment.hdr");
         probe = Atlas::Lighting::EnvironmentProbe(sky);
@@ -890,8 +903,8 @@ bool App::LoadScene() {
         directionalLight.intensity = 10.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
@@ -900,8 +913,8 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
-        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
-        otherScene->Timestep(1.0f);
+        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("forest/forest.gltf", -vec3(2048.0f), vec3(2048.0f), 6, false, false, false, 2048);
+        otherScene->Update(1.0f);
 
         CopyActors(otherScene);
 
@@ -909,16 +922,16 @@ bool App::LoadScene() {
         directionalLight.intensity = 50.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
-        otherScene->Timestep(1.0f);
+        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("emeraldsquare/square.gltf", -vec3(2048.0f), vec3(2048.0f), 6, false, false, false, 2048);
+        otherScene->Update(1.0f);
 
         CopyActors(otherScene);
 
@@ -926,8 +939,8 @@ bool App::LoadScene() {
         directionalLight.intensity = 10.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
@@ -938,7 +951,7 @@ bool App::LoadScene() {
             "flying world/scene.gltf", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(glm::scale(glm::vec3(0.01f)));
+        transforms.emplace_back(glm::scale(vec3(0.01f)));
 
         // Metalness is set to 0.9f
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
@@ -947,14 +960,13 @@ bool App::LoadScene() {
         directionalLight.intensity = 50.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 1.0f;
 
-        scene->sky.clouds->minHeight = 700.0f;
-        scene->sky.clouds->maxHeight = 1000.0f;
+        scene->sky.clouds->baseAltitude = 700.0f;
+        scene->sky.clouds->layerThickness = 300.0f;
         scene->sky.clouds->densityMultiplier = 0.65f;
-        scene->sky.clouds->heightStretch = 1.0f;
 
         scene->fog->enable = true;
         scene->fog->volumetricIntensity = 0.08f;
@@ -964,30 +976,30 @@ bool App::LoadScene() {
             "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
+        transforms.emplace_back(glm::scale(vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
+        transforms.emplace_back(glm::scale(vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
+        transforms.emplace_back(glm::scale(vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelImporter::ImportMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
+        transforms.emplace_back(glm::scale(vec3(4.0f)));
 
         // Other scene related settings apart from the mesh
-        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.properties.directional.direction = vec3(0.0f, -1.0f, 0.33f);
         directionalLight.intensity = 100.0f;
 
         // Setup camera
-        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.location = vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
         scene->fog->volumetricIntensity = 0.28f;
@@ -1020,8 +1032,8 @@ bool App::LoadScene() {
                     auto y = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
                     auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
 
-                    auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::translate(glm::mat4(1.0f),
-                        glm::vec3(x, y, z)));
+                    auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::translate(mat4(1.0f),
+                        vec3(x, y, z)));
                     entities.push_back(entity);
                 }
             }
@@ -1031,8 +1043,7 @@ bool App::LoadScene() {
         }
     }
 
-    scene->Timestep(1.0f);
-    scene->Update();
+    scene->Update(1.0f);
 
     Atlas::Clock::ResetAverage();
 
@@ -1080,24 +1091,8 @@ void App::CheckLoadScene() {
 
     graphicsDevice->WaitForPreviousFrameSubmission();
 
-    static Atlas::JobGroup buildBvhGroup;
-
-    auto buildRTStructure = [&](Atlas::JobData) {
-        auto sceneMeshes = scene->GetMeshes();
-
-        for (const auto& mesh : sceneMeshes) {
-
-            if (mesh->IsBVHBuilt()) continue;
-
-            Atlas::JobSystem::Execute(buildBvhGroup, [mesh](Atlas::JobData&) { mesh->BuildBVH(); });
-            
-        }
-        };
-
-    Atlas::JobSystem::Execute(buildBvhGroup, buildRTStructure);   
-
-    auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
-        glm::vec3(-std::numeric_limits<float>::max()));
+    auto sceneAABB = Atlas::Volume::AABB(vec3(std::numeric_limits<float>::max()),
+        vec3(-std::numeric_limits<float>::max()));
 
     auto transformEntities = scene->GetSubset<MeshComponent>();
     for (auto entity : transformEntities) {
@@ -1113,71 +1108,69 @@ void App::CheckLoadScene() {
 
     if (sceneSelection == CORNELL) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.10f), glm::ivec3(20));
-        scene->irradianceVolume->sampleEmissives = true;
+            sceneAABB.Scale(1.10f), ivec3(20));
         scene->irradianceVolume->SetRayCount(512, 32);
     }
     else if (sceneSelection == SPONZA) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(0.9f), glm::ivec3(20));
+            sceneAABB.Scale(1.1f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
         scene->irradianceVolume->strength = 1.5f;
     }
     else if (sceneSelection == BISTRO) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(0.9f), glm::ivec3(20));
+            sceneAABB.Scale(0.9f), ivec3(20));
         scene->irradianceVolume->SetRayCount(32, 32);
         scene->irradianceVolume->strength = 1.5f;
     }
     else if (sceneSelection == SANMIGUEL) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == MEDIEVAL) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == PICAPICA) {
         for (auto& material : meshes.front()->data.materials) material->twoSided = false;
 
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == SUBWAY) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == MATERIALS) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == FOREST) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), ivec3(20));
         scene->irradianceVolume->SetRayCount(32, 32);
     }
     else if (sceneSelection == NEWSPONZA) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == EMERALDSQUARE) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == FLYINGWORLD) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
 
-    scene->irradianceVolume->useShadowMap = true;
     scene->irradianceVolume->visibility = false;
 
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
@@ -1226,7 +1219,6 @@ void App::CheckLoadScene() {
 void App::SetResolution(int32_t width, int32_t height) {
 
     renderTarget->Resize(width, height);
-    pathTraceTarget->Resize(width, height);
 
 }
 

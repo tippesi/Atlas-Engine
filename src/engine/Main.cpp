@@ -2,8 +2,12 @@
 #include "EngineInstance.h"
 #include "graphics/Instance.h"
 #include "common/Path.h"
+#include "profiler/CPUProfiler.h"
+#include "profiler/GPUProfiler.h"
 
-#if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
+#include <SDL3/SDL_main.h>
+
+#if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE) || defined(AE_OS_LINUX)
 #include <zconf.h>
 #endif
 
@@ -15,9 +19,12 @@
 extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {
+
+    Atlas::CPUProfiler::SetThreadName("Main");
     
     // Automatically change working directory to load
     // shaders properly.
+#if !defined(AE_OS_APPLE_MOBILE)
     if (argc > 0) {
         auto workingDir = Atlas::Common::Path::GetDirectory(argv[0]);
 #ifdef AE_OS_WINDOWS
@@ -26,18 +33,35 @@ int main(int argc, char* argv[]) {
         chdir(workingDir.c_str());
 #endif
     }
-
-#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
-    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
-    setenv("MVK_DEBUG", "0", 1);
-#elif defined(AE_OS_MACOS) && defined(AE_BINDLESS)
-    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
 #endif
-    
+
     // To test with swiftshader locally, put in the path of the *_icd.json (note: on Windows use backslashes)
     // SetEnvironmentVariable("VK_ICD_FILENAMES", "..\\vk_swiftshader_icd.json");
 
-    Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
+    auto engineConfig = Atlas::EngineInstance::engineConfig;
+    if (engineConfig.commandLineTool) {
+        if (auto exitCode = engineConfig.commandLineTool(std::vector<std::string>(argv, argv + argc)))
+            return *exitCode;
+    }
+
+    // Validation has to be known before the graphics instance is created, shaders can come from another directory
+    for (int32_t i = 1; i < argc; i++) {
+        if (std::string(argv[i]) == "--validation") {
+            engineConfig.deviceDesc.enableValidationLayers = true;
+            engineConfig.deviceDesc.enableExtendedValidation = true;
+        }
+        // The checkpoints are written by the queries of the GPU profiler, which release builds don't have otherwise
+        if (std::string(argv[i]) == "--crash-diagnostics") {
+            engineConfig.deviceDesc.enableCrashDiagnostics = true;
+            Atlas::GPUProfiler::enable = true;
+        }
+        if (std::string(argv[i]) == "--software-ray-tracing")
+            engineConfig.deviceDesc.enableHardwareRayTracing = false;
+        if (std::string(argv[i]) == "--shader-dir" && i + 1 < argc)
+            engineConfig.shaderDirectory = argv[i + 1];
+    }
+
+    Atlas::Engine::Init(engineConfig);
 
     auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
 
@@ -65,8 +89,9 @@ int main(int argc, char* argv[]) {
     bool quit = false;
 
     Atlas::Events::EventManager::QuitEventDelegate.Subscribe(
-        [&quit]() {
-            quit = true;
+        [&quit, &engineInstance]() {
+            if (engineInstance->AllowQuit())
+                quit = true;
     });
 
     engineInstance->LoadContent();
@@ -76,25 +101,29 @@ int main(int argc, char* argv[]) {
 
     while (!quit) {
 
-        Atlas::Engine::Update();
+        Atlas::Engine::Update(engineInstance->UsesRenderThread());
         
         auto deltaTime = Atlas::Clock::GetDelta();
 
         engineInstance->Update();
 
-        engineInstance->Update(deltaTime);
-        engineInstance->Render(deltaTime);
+        {
+            Atlas::CPUProfiler::Scope profilerScope("Update");
+            engineInstance->Update(deltaTime);
+        }
+        if (!engineInstance->RenderFrame(deltaTime))
+            break;
 
-        graphicsDevice->SubmitFrame();
-        
     }
 
+    engineInstance->WaitForRender();
     engineInstance->UnloadContent();
+    auto exitCode = graphicsDevice->isDeviceLost ? -1 : engineInstance->GetExitCode();
     delete engineInstance;
 
     Atlas::Engine::Shutdown();
     delete graphicsInstance;
 
-    return 0;
+    return exitCode;
 
 }

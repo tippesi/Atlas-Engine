@@ -9,12 +9,9 @@ namespace Atlas::Scripting {
     public:
         explicit Script(const std::string& filename);
 
-        void Reload();
+        void Reload(const std::string& filename);
 
         std::string code;
-
-    private:
-        std::string filename;
 
     };
 

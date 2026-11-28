@@ -1,10 +1,7 @@
 #include <structures.hsh>
+#include <../common/packing.hsh>
 
-#ifdef AE_BINDLESS
 #define MESH_COUNT 8192
-#else
-#define MESH_COUNT 1
-#endif
 
 layout(std430, set = 2, binding = 13) buffer ReadAtomic {
     uint readAtomic[];
@@ -23,22 +20,85 @@ layout (std430, set = 2, binding = 16) buffer RayPayloads {
 };
 
 layout (std430, set = 2, binding = 7) buffer Materials {
-    RaytraceMaterial materials[];
+    PackedRaytraceMaterial materials[];
 };
 
-layout(std430, set = 2, binding = 17) buffer RayBinCounters {
-    uint rayBinCounters[];
-};
+int UnpackTextureIndex(uint index) {
 
-layout(std430, set = 2, binding = 18) buffer RayBinOffsets {
-    uint rayBinOffsets[];
-};
+    return index == 0xFFFFu ? -1 : int(index);
+
+}
+
+// Only the words of the fields a caller reads are loaded
+RaytraceMaterial GetRaytraceMaterial(int index) {
+
+    // One array in one buffer, the index needs no nonuniform qualifier
+    PackedRaytraceMaterial packed = materials[index];
+
+    RaytraceMaterial material;
+    material.ID = int(packed.idGraphHitGroup & 0xFFFFu);
+    material.graphHitGroup = packed.idGraphHitGroup >> 16u;
+    material.graphParameterOffset = packed.graphParameterOffset;
+
+    vec3 baseColor = unpackColorVector(int(packed.baseColor)).rgb;
+    material.baseR = baseColor.r;
+    material.baseG = baseColor.g;
+    material.baseB = baseColor.b;
+    vec2 emissiveRedGreen = unpackHalf2x16(packed.emissiveRedGreen);
+    material.emissR = emissiveRedGreen.x;
+    material.emissG = emissiveRedGreen.y;
+    vec2 emissiveBlueThickness = unpackHalf2x16(packed.emissiveBlueThickness);
+    material.emissB = emissiveBlueThickness.x;
+    material.thickness = emissiveBlueThickness.y;
+
+    vec4 opacityRoughnessMetalnessAo = unpackUnorm4x8(packed.opacityRoughnessMetalnessAo);
+    material.opacity = opacityRoughnessMetalnessAo.x;
+    material.roughness = opacityRoughnessMetalnessAo.y;
+    material.metalness = opacityRoughnessMetalnessAo.z;
+    material.ao = opacityRoughnessMetalnessAo.w;
+
+    vec4 reflectanceNormalScale = unpackUnorm4x8(packed.reflectanceNormalScaleFlags);
+    material.reflectance = reflectanceNormalScale.x;
+    material.normalScale = reflectanceNormalScale.y;
+    uint flags = (packed.reflectanceNormalScaleFlags >> 16u) & 0xFFu;
+    material.invertUVs = int(flags & 1u);
+    material.twoSided = int((flags >> 1u) & 1u);
+    material.cullBackFaces = int((flags >> 2u) & 1u);
+    material.useVertexColors = int((flags >> 3u) & 1u);
+    material.blendMode = packed.reflectanceNormalScaleFlags >> 24u;
+
+    vec2 tiling = unpackHalf2x16(packed.tiling);
+    material.tiling = tiling.x;
+    material.terrainTiling = tiling.y;
+    vec2 uvAnimation = unpackHalf2x16(packed.uvAnimation);
+    material.uvAnimationX = uvAnimation.x;
+    material.uvAnimationY = uvAnimation.y;
+
+    material.baseColorTexture = UnpackTextureIndex(packed.textures[0] & 0xFFFFu);
+    material.opacityTexture = UnpackTextureIndex(packed.textures[0] >> 16u);
+    material.normalTexture = UnpackTextureIndex(packed.textures[1] & 0xFFFFu);
+    material.roughnessTexture = UnpackTextureIndex(packed.textures[1] >> 16u);
+    material.metalnessTexture = UnpackTextureIndex(packed.textures[2] & 0xFFFFu);
+    material.aoTexture = UnpackTextureIndex(packed.textures[2] >> 16u);
+    material.emissiveTexture = UnpackTextureIndex(packed.textures[3] & 0xFFFFu);
+    material.terrainNormalTexture = UnpackTextureIndex(packed.textures[3] >> 16u);
+
+    material.transmissionColor = packed.transmissionColor;
+    vec2 refractiveIndexAttenuationDistance = unpackHalf2x16(packed.refractiveIndexAttenuationDistance);
+    material.refractiveIndex = refractiveIndexAttenuationDistance.x;
+    material.attenuationDistance = refractiveIndexAttenuationDistance.y;
+    material.attenuationColor = packed.attenuationColor;
+
+    return material;
+
+}
 
 layout(std430, set = 2, binding = 21) buffer Instances {
     Instance bvhInstances[];
 };
 
-layout(std430, set = 2, binding = 27) buffer InstanceLastMatrices {
+// Binding 27 is reserved for the DDGI uniform buffer.
+layout(std430, set = 2, binding = 28) buffer InstanceLastMatrices {
     mat3x4 instanceLastMatrices[];
 };
 

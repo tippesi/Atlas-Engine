@@ -6,14 +6,17 @@ namespace Atlas {
 
     namespace Graphics {
 
-        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : device(device), geometries(desc.geometries),
-            buildRanges(desc.buildRanges), flags(desc.flags) {
+        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : isDynamic(desc.isDynamic), allowUpdate(desc.allowUpdate), device(device), 
+            geometries(desc.geometries), buildRanges(desc.buildRanges), flags(desc.flags)    {
 
             buildGeometryInfo = {};
             buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
             buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
             buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-            buildGeometryInfo.flags = desc.flags | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
+            // Hits read the triangle positions from the acceleration structure
+            buildGeometryInfo.flags = desc.flags | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_BIT_KHR |
+                (desc.allowUpdate ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR :
+                VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
             buildGeometryInfo.geometryCount = uint32_t(geometries.size());
             buildGeometryInfo.pGeometries = geometries.data();
 
@@ -32,13 +35,31 @@ namespace Atlas {
 
         }
 
+        void BLAS::SetVertexData(VkDeviceAddress vertexAddress, VkDeviceSize vertexStride) {
+
+            for (auto& geometry : geometries) {
+                geometry.geometry.triangles.vertexData.deviceAddress = vertexAddress;
+                geometry.geometry.triangles.vertexStride = vertexStride;
+            }
+
+        }
+
         BLAS::~BLAS() {
 
             vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
+            for (const auto& [replacedStructure, replacedBuffer] : replacedStructures)
+                vkDestroyAccelerationStructureKHR(device->device, replacedStructure, nullptr);
 
         }
 
         void BLAS::Allocate() {
+
+            // Rebuilds, e.g. of animated meshes every frame, reuse the acceleration structure. Compacted ones are too small
+            if (accelerationStructure != VK_NULL_HANDLE && buffer && buffer->size >= sizesInfo.accelerationStructureSize)
+                return;
+
+            if (accelerationStructure != VK_NULL_HANDLE)
+                replacedStructures.emplace_back(accelerationStructure, buffer);
 
             BufferDesc desc = {
                 .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
@@ -49,7 +70,6 @@ namespace Atlas {
             };
 
             buffer = device->CreateBuffer(desc);
-            bufferDeviceAddress = buffer->GetDeviceAddress();
 
             VkAccelerationStructureCreateInfoKHR createInfo = {};
             createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -58,6 +78,13 @@ namespace Atlas {
             createInfo.buffer = buffer->buffer;
 
             VK_CHECK(vkCreateAccelerationStructureKHR(device->device, &createInfo, nullptr, &accelerationStructure))
+
+            // TLAS instances must reference the acceleration structure address,
+            // which is not necessarily the address of its backing buffer.
+            VkAccelerationStructureDeviceAddressInfoKHR addressInfo = {};
+            addressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+            addressInfo.accelerationStructure = accelerationStructure;
+            deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(device->device, &addressInfo);
 
         }
 

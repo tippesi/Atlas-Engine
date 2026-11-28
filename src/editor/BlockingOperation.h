@@ -2,8 +2,9 @@
 
 #include "jobsystem/JobSystem.h"
 
+#include <functional>
 #include <string>
-#include <optional>
+#include <vector>
 
 namespace Atlas::Editor {
 
@@ -13,24 +14,40 @@ namespace Atlas::Editor {
         ~BlockingOperation() { JobSystem::Wait(job); }
 
         void Block(const std::string& text, std::function<void()> blocker) {
-            this->blocker = blocker;
+            blockers.push_back(blocker);
             blockText = text;
         }
 
         void Update() {
-            if (!blocker.has_value())
+            if (!job.HasFinished())
                 return;
-            
-            block = true;
-            JobSystem::Execute(job, [blocker = blocker, &block = block](JobData&) {
-                blocker.value()();
-                block = false;
+
+            // The frame the operation finishes in has updated nothing, so it isn't rendered either
+            block = !blockers.empty();
+            if (!block)
+                return;
+
+            JobSystem::Execute(job, [blockers = std::move(blockers)](JobData&) {
+                for (const auto& blocker : blockers)
+                    blocker();
                 });
-            blocker = {};
+            blockers.clear();
         }
 
-        JobGroup job;
-        std::optional<std::function<void()>> blocker;
+        // Whether an operation runs or starts with the next update
+        bool IsPending() const { return block || !blockers.empty(); }
+
+        // For callers which destroy what the operations reference before the next update
+        void Finish() {
+            JobSystem::Wait(job);
+            for (const auto& blocker : blockers)
+                blocker();
+            blockers.clear();
+            block = false;
+        }
+
+        JobGroup job { "Blocking operation" };
+        std::vector<std::function<void()>> blockers;
         std::string blockText;
         bool block = false;
 

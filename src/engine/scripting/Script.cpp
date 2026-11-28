@@ -5,13 +5,13 @@
 
 namespace Atlas::Scripting {
 
-    Script::Script(const std::string& filename) : filename(filename) {
+    Script::Script(const std::string& filename) {
 
-        Reload();
+        Reload(filename);
 
     }
 
-    void Script::Reload() {
+    void Script::Reload(const std::string& filename) {
 
         auto stream = Loader::AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 

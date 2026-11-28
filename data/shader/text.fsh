@@ -1,9 +1,11 @@
 #include <globals.hsh>
+#include <common/stencil.hsh>
 
 layout (location=0) out vec4 colorFS;
 
 #ifdef TEXT_3D
 layout (location=1) out vec2 velocityFS;
+layout (location=2) out uint stencilFS;
 #endif
 
 layout(location=0) in vec3 texCoordVS;
@@ -18,8 +20,9 @@ layout(set = 3, binding = 0) uniform sampler2DArray glyphsTexture;
 #ifdef TEXT_3D
 layout(push_constant) uniform constants {
     vec4 position;
-    vec4 right;
-    vec4 down;
+    vec4 rotation;
+    vec4 lastPosition;
+    vec4 lastRotation;
     vec4 characterColor;
     vec4 outlineColor;
     vec2 renderHalfSize;
@@ -71,6 +74,9 @@ void main() {
 #ifdef TEXT_3D
     if (colorFS.a < 0.5)
         discard;
+
+    // Text covers the features of the surfaces behind it, e.g. water
+    stencilFS = EncodeStencilFeatures(CreateStencilFeatures());
 
     vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
     vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;

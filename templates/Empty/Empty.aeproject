@@ -1,0 +1,6 @@
+{
+  "name": "Empty",
+  "assetDirectory": ".",
+  "mainScript": "Main.lua",
+  "startScene": "scenes/Main.aescene"
+}

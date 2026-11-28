@@ -24,13 +24,22 @@ namespace Atlas {
              * @return A pointer to a Terrain object.
              * @warning The input should correspond to the terrain specifications
              */
-            static Terrain::Terrain* GenerateTerrain(Common::Image<uint16_t>& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-                    int32_t patchSize, float resolution, float height, Ref<Material> material);
+            static Ref<Terrain::Terrain> GenerateTerrain(Common::Image<uint16_t>& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
+                int32_t patchSize, float resolution, float height, ResourceHandle<Material> material);
 
 
-            static Terrain::Terrain* GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
+            static Ref<Terrain::Terrain> GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
                 int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
-                float height, std::vector<Ref<Material>> materials);
+                float height, std::vector<ResourceHandle<Material>> materials);
+
+             /**
+             *
+             * @param terrain
+             * @warning All storage cells of the terrain and their heightData member must be loaded.
+             * It is assumed that all cells have textures of the same resolution.
+             */
+            static void UpdateTerrain(const Ref<Terrain::Terrain>& terrain, Common::Image<uint8_t>& splatImage, 
+                std::vector<ResourceHandle<Material>> materials);
 
             /**
              *
@@ -38,7 +47,7 @@ namespace Atlas {
              * @warning All storage cells of the terrain and their heightData member must be loaded.
              * It is assumed that all cells have textures of the same resolution.
              */
-            static void BakeTerrain(Terrain::Terrain* terrain);
+            static void BakeTerrain(const Ref<Terrain::Terrain>& terrain);
 
             /**
              *
@@ -50,7 +59,7 @@ namespace Atlas {
              * must be loaded. It is assumed that all cells have textures of the same resolution.
              * @note The kernel size needs to be smaller than 2 times the edge of a cell
              */
-            static void BrushHeight(Terrain::Terrain* terrain, Filter* filter, float strength, vec2 position);
+            static void BrushHeight(const Ref<Terrain::Terrain>& terrain, Filter* filter, float strength, vec2 position);
 
             /**
              *
@@ -60,20 +69,56 @@ namespace Atlas {
              * @param strength
              * @param position
              */
-            static void SmoothHeight(Terrain::Terrain* terrain, int32_t size, int32_t contributingRadius,
-                    float strength, vec2 position);
+            static void SmoothHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
+                float strength, vec2 position);
 
+            // Outside of the brush size the strength fades out smoothly over falloff texels
+            static void FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, 
+                vec2 position, float height, bool circularBrush = true, int32_t falloff = 0);
 
-            static void BrushMaterial(Terrain::Terrain* terrain, vec2 position, float size, int32_t slot);
+            // Closes the holes inside of the brush, they get the height of their neighbors outside of the holes
+            static void FillHoles(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, bool circularBrush = true);
 
-            static Texture::Texture2D GenerateTerrainOceanMap(Terrain::Terrain* terrain, float oceanHeight, int32_t resolution);
+            static void BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size,
+                bool circularBrush = true);
+
+            static void BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, int32_t slot,
+                bool circularBrush = true);
+
+            // Shore distance (g) and direction (ba) for the shore waves of the ocean, loaded as Terrain::shoreLine.
+            // The ocean height is relative to the terrain translation
+            static Ref<Common::Image<uint8_t>> GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, const std::string& filename,
+                float oceanHeight, int32_t resolution);
+
+            static Ref<Common::Image<uint16_t>> GenerateHeightMap(const Ref<Terrain::Terrain>& terrain);
+
+            static Ref<Common::Image<uint8_t>> GenerateSplatMap(const Ref<Terrain::Terrain>& terrain);
+
+            static void LoadMissingCells(const Ref<Terrain::Terrain>& terrain, const std::string& filename);
 
         private:
-            static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
+            static void GenerateNormalData(const std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
                                            int32_t width, int32_t height, float strength);
 
-            static float GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
-                    int32_t x, int32_t y, int32_t width, int32_t height);
+            static float GetHeight(const std::vector<uint16_t>& heightData, int32_t dataWidth,
+                    int32_t x, int32_t y, int32_t width, int32_t height, float scale);
+
+            static bool GetNearbyStorageCells(const Ref<Terrain::Terrain>& terrain, vec2 position,
+                Terrain::TerrainStorageCell** cells);
+
+            static void ExtractNearbyStorageData(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+                std::span<float> heightData, std::span<uint8_t> splatData);
+
+            // Index into the data of the 3x3 nearby cells, -1 outside of them
+            static int32_t GetNearbyDataIndex(int32_t x, int32_t y, int32_t width, int32_t height);
+
+            // Heights from 0 to 1 are stored up to 65534, 65535 marks a hole (FLT_MAX in the cell height data)
+            static uint16_t EncodeHeight(float height);
+
+            static void ApplyDataToNearbyStorage(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+                std::span<float> heightData, std::span<uint8_t> splatData);
+
+            static Common::Image<uint8_t> CalculateHoleMap(int32_t resolution, const Common::Image<uint16_t>& heightMap);
 
         };
 

@@ -22,11 +22,15 @@ namespace Atlas {
 
             void Erase(const Entity entity) override;
 
-            Comp& Get(const Entity entity);
+            inline Comp& Get(const Entity entity);
 
-            Comp* TryGet(const Entity entity);
+            inline Comp* TryGet(const Entity entity);
+
+            inline Comp& GetByIndex(const size_t idx);
 
             std::vector<Comp>& GetAll();
+
+            size_t GetCount() const;
 
             size_t Subscribe(const Topic topic, std::function<void(const Entity, Comp&)> function);
 
@@ -100,9 +104,23 @@ namespace Atlas {
         }
 
         template<typename Comp>
+        Comp& Pool<Comp>::GetByIndex(const size_t idx) {
+
+            return components[idx];
+
+        }
+
+        template<typename Comp>
         std::vector<Comp>& Pool<Comp>::GetAll() {
 
             return components;
+
+        }
+
+        template<typename Comp>
+        size_t Pool<Comp>::GetCount() const {
+
+            return components.size();
 
         }
 

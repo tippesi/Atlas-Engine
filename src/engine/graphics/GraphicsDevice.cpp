@@ -1,5 +1,6 @@
 #include "GraphicsDevice.h"
 #include "Instance.h"
+#include "../profiler/CPUProfiler.h"
 #include "StructureChainBuilder.h"
 #include "../EngineInstance.h"
 
@@ -7,6 +8,9 @@
 #include <map>
 #include <cassert>
 #include <set>
+#include <format>
+#include <mutex>
+#include <unordered_set>
 
 #include <vulkan/vulkan_beta.h>
 
@@ -16,7 +20,44 @@ namespace Atlas {
 
         GraphicsDevice* GraphicsDevice::DefaultDevice = nullptr;
 
-        GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
+        void FrameData::WaitAndReset(VkDevice device) {
+
+            if (submittedCommandLists.size() > 0) {
+                std::vector<VkFence> fences;
+                for (auto commandList : submittedCommandLists) {
+                    fences.push_back(commandList->fence);
+                }
+                auto result = vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 30000000000);
+                // Try to recover here
+                if (result == VK_TIMEOUT)
+                    vkDeviceWaitIdle(device);
+                VK_CHECK(result)
+                VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
+            }
+
+            for (auto commandList : submittedCommandLists) {
+                commandList->ResetDescriptors();
+                commandList->renderingInUse.reset();
+                commandList->pipelineInUse = nullptr;
+                commandList->wasSwapChainAccessed = false;
+                commandList->isLocked = false;
+            }
+            submittedCommandLists.clear();
+            submissions.clear();
+
+        }
+
+        void FrameData::RecreateSemaphore(VkDevice device) {
+
+            vkDestroySemaphore(device, semaphore, nullptr);
+
+            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+            VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
+
+        }
+
+        GraphicsDevice::GraphicsDevice(Surface* surface, const DeviceDesc& desc) :
+            surface(surface), desc(desc) {
 
             instance = Instance::DefaultInstance;
 
@@ -29,24 +70,41 @@ namespace Atlas {
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
                 VK_KHR_RAY_QUERY_EXTENSION_NAME,
+                VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
                 VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
                 VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
                 VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
-                VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
-#ifdef AE_BINDLESS
+                VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
+                VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+                VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME,
+                VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
-#endif
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
                 , VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 #endif
             };
 
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
+
+			// Request optional extensions from the device, e.g. for ML upscalers
+            std::vector<std::string> requestedExtensions;
+            if (desc.optionalExtensions)
+                requestedExtensions = desc.optionalExtensions(instance->instance, physicalDevice);
+            if (desc.enableCrashDiagnostics) {
+                requestedExtensions.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+                requestedExtensions.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+            }
+            for (const auto& extension : requestedExtensions) {
+                auto isEqual = [&](const char* name) { return extension == name; };
+                if (std::none_of(requiredExtensions.begin(), requiredExtensions.end(), isEqual) &&
+                    std::none_of(optionalExtensions.begin(), optionalExtensions.end(), isEqual))
+                    optionalExtensions.push_back(extension.c_str());
+            }
 
             auto availableOptionalExtension = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
             requiredExtensions.insert(requiredExtensions.end(), availableOptionalExtension.begin(),
@@ -59,7 +117,7 @@ namespace Atlas {
             BuildPhysicalDeviceFeatures(physicalDevice);
 
             // Uses the physical device structures generated above
-            CreateDevice(queueCreateInfos, requiredExtensions, enableValidationLayers);
+            CreateDevice(queueCreateInfos, requiredExtensions);
 
             for (auto& queueFamily : queueFamilyIndices.families) {
                 for (auto& queue : queueFamily.queues) {
@@ -108,16 +166,6 @@ namespace Atlas {
             for (auto& pipelineRef : pipelines.data) {
                 AE_ASSERT(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();
-            }
-
-            for (auto& frameBufferRef : frameBuffers.data) {
-                AE_ASSERT(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
-                frameBufferRef.reset();
-            }
-
-            for (auto& renderPassRef : renderPasses.data) {
-                AE_ASSERT(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
-                renderPassRef.reset();
             }
 
             for (auto& shaderRef : shaders.data) {
@@ -205,28 +253,6 @@ namespace Atlas {
 
         }
 
-        Ref<RenderPass> GraphicsDevice::CreateRenderPass(RenderPassDesc desc) {
-
-            auto renderPass = std::make_shared<RenderPass>(this, desc);
-
-            std::lock_guard<std::mutex> guard(renderPasses.mutex);
-            renderPasses.data.push_back(renderPass);
-
-            return renderPass;
-
-        }
-
-        Ref<FrameBuffer> GraphicsDevice::CreateFrameBuffer(FrameBufferDesc desc) {
-
-            auto frameBuffer = std::make_shared<FrameBuffer>(this, desc);
-
-            std::lock_guard<std::mutex> guard(frameBuffers.mutex);
-            frameBuffers.data.push_back(frameBuffer);
-
-            return frameBuffer;
-
-        }
-
         Ref<Shader> GraphicsDevice::CreateShader(ShaderDesc desc) {
 
             auto shader = std::make_shared<Shader>(this, desc);
@@ -260,6 +286,17 @@ namespace Atlas {
 
         }
 
+        Ref<Pipeline> GraphicsDevice::CreatePipeline(RayTracingPipelineDesc desc) {
+
+            auto pipeline = std::make_shared<Pipeline>(this, desc);
+
+            std::lock_guard<std::mutex> guard(pipelines.mutex);
+            pipelines.data.push_back(pipeline);
+
+            return pipeline;
+
+        }
+
         Ref<Buffer> GraphicsDevice::CreateBuffer(BufferDesc desc) {
 
             auto buffer = std::make_shared<Buffer>(this, desc);
@@ -275,7 +312,9 @@ namespace Atlas {
 
             auto multiBuffer = std::make_shared<MultiBuffer>(this, desc);
 
+            // Buffers created during a frame have to use the copy of this frame
             std::lock_guard<std::mutex> guard(multiBuffers.mutex);
+            multiBuffer->UpdateFrameIndex(frameIndex);
             multiBuffers.data.push_back(multiBuffer);
 
             return multiBuffer;
@@ -306,9 +345,30 @@ namespace Atlas {
 
         Ref<DescriptorSetLayout> GraphicsDevice::CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc) {
 
-            auto layout = std::make_shared<DescriptorSetLayout>(this, desc);
+            // Pipelines switching between shaders with a shared layout keep their bound sets
+            std::vector<const DescriptorSetBinding*> bindings;
+            for (uint32_t i = 0; i < desc.bindingCount; i++)
+                bindings.push_back(&desc.bindings[i]);
+            std::sort(bindings.begin(), bindings.end(), [](const auto* binding0, const auto* binding1) {
+                return binding0->bindingIdx < binding1->bindingIdx;
+                });
+
+            std::vector<uint64_t> key;
+            for (const auto* binding : bindings) {
+                key.push_back(binding->bindingIdx);
+                key.push_back(uint64_t(binding->descriptorType));
+                key.push_back(binding->descriptorCount);
+                key.push_back(binding->stageFlags);
+                key.push_back(binding->bindless ? 1 : 0);
+            }
 
             std::lock_guard<std::mutex> guard(descriptorSetLayouts.mutex);
+            auto& cached = descriptorSetLayoutCache[key];
+            if (auto layout = cached.lock())
+                return layout;
+
+            auto layout = std::make_shared<DescriptorSetLayout>(this, desc);
+            cached = layout;
             descriptorSetLayouts.data.push_back(layout);
 
             return layout;
@@ -371,12 +431,14 @@ namespace Atlas {
                 return commandList;
             }
             else {
-                auto currentFrameData = GetFrameData(frameIndex);
+                auto currentFrameIndex = frameIndex;
+                auto currentFrameData = GetFrameData(currentFrameIndex);
 
                 auto commandList = GetOrCreateCommandList(queueType, currentFrameData->commandListsMutex,
                     currentFrameData->commandLists, false);
 
                 commandList->isSubmitted = false;
+                commandList->frameIndex = currentFrameIndex;
                 commandList->dependencies.clear();
 
                 return commandList;
@@ -400,6 +462,9 @@ namespace Atlas {
 
             // Make sure only one command list at a time can be added
             std::lock_guard<std::mutex> lock(frame->submissionMutex);
+
+            AE_ASSERT(cmd->frameIndex == frameIndex && "Command list was submitted after its frame was completed."
+                && "Wait for the recording job before the frame is submitted");
 
             CommandListSubmission submission = {
                 .cmd = cmd,
@@ -434,7 +499,7 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(queue.queue, 1, &submit, cmd->fence))
             queue.Unlock();
 
-            VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 9999999999));
+            VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 30000000000));
             VK_CHECK(vkResetFences(device, 1, &cmd->fence));
 
             // Is submitted now and must be unlocked
@@ -462,12 +527,21 @@ namespace Atlas {
             JobSystem::Wait(submitFrameJob);
 
             // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
-            // Refrain from using complete frame async for now
-            JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
+            // Refrain from using complete frame async for now. Only SubmitFrame consumes the resize, it recreates the swap chain
+            int32_t width, height;
+            surface->GetExtent(width, height);
+            if (width == windowWidth && height == windowHeight) {
+                JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
+            }
+            else {
+                SubmitFrame();
+            }
 
         }
 
         void GraphicsDevice::SubmitFrame() {
+
+            CPUProfiler::Scope profilerScope("Submit frame");
 
             bool recreateSwapChain = false;
 
@@ -501,7 +575,10 @@ namespace Atlas {
 
             // Wait, reset and start with new semaphores
             auto nextFrame = GetFrameData(frameIndex + 1);
-            nextFrame->WaitAndReset(device);
+            {
+                CPUProfiler::Scope waitScope("Wait for frame");
+                nextFrame->WaitAndReset(device);
+            }
 
             {
                 // Lock the queue in shared mode such that flush can happen simultaneously, but waiting for idle is not possible
@@ -517,7 +594,7 @@ namespace Atlas {
                     //for (auto cmd : frameData->submittedCommandLists)
                     //    semaphores.push_back(cmd->semaphore);
                     if (frame->submittedCommandLists.size()) {
-                        semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
+                        semaphores.push_back(swapChain->GetPresentationSemaphore());
                     }
                     else {
                         semaphores.push_back(frame->semaphore);
@@ -547,12 +624,16 @@ namespace Atlas {
                 }
             }
 
+            CPUProfiler::Scope cleanupScope("Delete resources");
+
             // Delete data that is marked for deletion for this frame
             memoryManager->DeleteData();
             frameIndex++;
 
             // Do before update anything, don't want to do unnecessary work
             DestroyUnusedGraphicObjects();
+
+            cleanupScope.Next("Acquire image");
 
             // Update frame index of all objects in need
             memoryManager->UpdateFrameIndex(frameIndex);
@@ -610,6 +691,71 @@ namespace Atlas {
 
         }
 
+        void GraphicsDevice::HandleDeviceLost() {
+
+            if (!DefaultDevice || DefaultDevice->isDeviceLost.exchange(true))
+                return;
+
+            Log::Error("Graphics device lost on " + std::string(DefaultDevice->deviceProperties.properties.deviceName) +
+                " (driver " + std::string(DefaultDevice->driverProperties.driverInfo) + "), shutting down");
+            AE_LOG_STACKTRACE();
+            DefaultDevice->LogCrashDiagnostics();
+
+        }
+
+        const char* GraphicsDevice::GetCheckpointMarker(const std::string& name) {
+
+            // The elements of the set keep their addresses
+            static std::mutex mutex;
+            static std::unordered_set<std::string> names;
+
+            std::scoped_lock lock(mutex);
+            return names.insert(name).first->c_str();
+
+        }
+
+        void GraphicsDevice::LogCrashDiagnostics() {
+
+            if (support.diagnosticCheckpoints) {
+                for (const auto& family : queueFamilyIndices.families) {
+                    for (const auto& queue : family.queues) {
+                        uint32_t count = 0;
+                        vkGetQueueCheckpointDataNV(queue->queue, &count, nullptr);
+                        std::vector<VkCheckpointDataNV> checkpoints(count, { VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV });
+                        vkGetQueueCheckpointDataNV(queue->queue, &count, checkpoints.data());
+                        // The queries the queue began (top of pipe) and finished (bottom of pipe) last
+                        for (const auto& checkpoint : checkpoints) {
+                            auto stage = checkpoint.stage == VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT ? "began" :
+                                checkpoint.stage == VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT ? "finished" : "reached";
+                            auto marker = checkpoint.pCheckpointMarker ? static_cast<const char*>(checkpoint.pCheckpointMarker) : "nothing";
+                            Log::Error("Queue family " + std::to_string(family.index) + " " + stage + ": " + marker);
+                        }
+                    }
+                }
+            }
+
+            if (support.deviceFault) {
+                VkDeviceFaultCountsEXT counts = { VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT };
+                vkGetDeviceFaultInfoEXT(device, &counts, nullptr);
+                std::vector<VkDeviceFaultAddressInfoEXT> addressInfos(counts.addressInfoCount);
+                std::vector<VkDeviceFaultVendorInfoEXT> vendorInfos(counts.vendorInfoCount);
+                counts.vendorBinarySize = 0;
+                VkDeviceFaultInfoEXT info = { VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT };
+                info.pAddressInfos = addressInfos.data();
+                info.pVendorInfos = vendorInfos.data();
+                vkGetDeviceFaultInfoEXT(device, &counts, &info);
+
+                Log::Error("Device fault: " + std::string(info.description));
+                for (const auto& addressInfo : addressInfos)
+                    Log::Error(std::format("Fault address type {} at 0x{:x} (precision {})", int32_t(addressInfo.addressType),
+                        addressInfo.reportedAddress, addressInfo.addressPrecision));
+                for (const auto& vendorInfo : vendorInfos)
+                    Log::Error(std::format("Vendor fault {}: code {}, data {}", vendorInfo.description, vendorInfo.vendorFaultCode,
+                        vendorInfo.vendorFaultData));
+            }
+
+        }
+
         void GraphicsDevice::SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle) {
 
             if (!support.debugMarker)
@@ -654,8 +800,13 @@ namespace Atlas {
                     nextQueue = FindAndLockQueue(QueueType::PresentationQueue);
                 }
 
-                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue, nextQueue);
-                previousSemaphore = submission->cmd->GetSemaphore(nextQueue.queue);
+                auto signalSemaphore = nextSubmission == nullptr && swapChain->isComplete ?
+                    swapChain->GetPresentationSemaphore() :
+                    submission->cmd->GetSemaphore(nextQueue.queue);
+
+                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue,
+                    signalSemaphore);
+                previousSemaphore = signalSemaphore;
 
                 if (nextQueue.ref != queue.ref) {
                     queue.Unlock();
@@ -675,7 +826,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-            VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue) {
+            VkSemaphore previousFrameSemaphore, const QueueRef& queue, VkSemaphore signalSemaphore) {
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
@@ -684,7 +835,7 @@ namespace Atlas {
             std::vector<VkPipelineStageFlags> waitStages = { submission->waitStage };
 
             std::vector<VkSemaphore> waitSemaphores;
-            std::vector<VkSemaphore> submitSemaphores = { cmd->GetSemaphore(nextQueue.queue) };
+            std::vector<VkSemaphore> submitSemaphores = { signalSemaphore };
 
             // Leave out any dependencies if the swap chain isn't complete
             if (swapChain->isComplete) {
@@ -764,7 +915,7 @@ namespace Atlas {
             vkGetPhysicalDeviceFeatures(device, &physicalDeviceFeatures);
 
             // This property has to outweigh any other
-            if (physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 score += 10000;
             }
 
@@ -790,6 +941,21 @@ namespace Atlas {
                 }
 
                 if (!physicalDeviceFeatures.samplerAnisotropy) {
+                    return 0;
+                }
+
+                // Render passes are recorded with dynamic rendering
+                if (physicalDeviceProperties.apiVersion < VK_API_VERSION_1_3) {
+                    return 0;
+                }
+
+                VkPhysicalDeviceVulkan13Features features13 = {};
+                features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+                VkPhysicalDeviceFeatures2 features = {};
+                features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+                features.pNext = &features13;
+                vkGetPhysicalDeviceFeatures2(device, &features);
+                if (!features13.dynamicRendering) {
                     return 0;
                 }
             }
@@ -979,10 +1145,48 @@ namespace Atlas {
             availableFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             availableFeatures12 = {};
             availableFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            availableFeatures13 = {};
+            availableFeatures13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
-            // Point to the next features
-            availableFeatures.pNext = &availableFeatures11;
-            availableFeatures11.pNext = &availableFeatures12;
+            StructureChainBuilder featureBuilder(availableFeatures);
+            featureBuilder.Append(availableFeatures11);
+            featureBuilder.Append(availableFeatures12);
+            featureBuilder.Append(availableFeatures13);
+
+            availableRobustness2Features = {};
+            availableRobustness2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME))
+                featureBuilder.Append(availableRobustness2Features);
+
+            availableCooperativeMatrixFeatures = {};
+            availableCooperativeMatrixFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR;
+            if (supportedExtensions.contains(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME))
+                featureBuilder.Append(availableCooperativeMatrixFeatures);
+
+            availableFloat8Features = {};
+            availableFloat8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME))
+                featureBuilder.Append(availableFloat8Features);
+
+            availableRayTracingPipelineFeatures = {};
+            availableRayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+            if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+                featureBuilder.Append(availableRayTracingPipelineFeatures);
+
+            availableFaultFeatures = {};
+            availableFaultFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_DEVICE_FAULT_EXTENSION_NAME))
+                featureBuilder.Append(availableFaultFeatures);
+
+            availablePositionFetchFeatures = {};
+            availablePositionFetchFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
+            if (supportedExtensions.contains(VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME))
+                featureBuilder.Append(availablePositionFetchFeatures);
+
+            availableInvocationReorderFeatures = {};
+            availableInvocationReorderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT;
+            if (supportedExtensions.contains(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME))
+                featureBuilder.Append(availableInvocationReorderFeatures);
 
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
@@ -991,32 +1195,43 @@ namespace Atlas {
 
         void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
 
+            VkPhysicalDeviceProperties basicDeviceProperties = {};
+            vkGetPhysicalDeviceProperties(device, &basicDeviceProperties);
+
             StructureChainBuilder propertiesBuilder(deviceProperties);
 
+            driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+            invocationReorderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_EXT;
             subgroupSizeControlProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
 
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
             deviceProperties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
             deviceProperties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
+            deviceProperties13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
 
             propertiesBuilder.Append(deviceProperties11);
             propertiesBuilder.Append(deviceProperties12);
+            propertiesBuilder.Append(deviceProperties13);
 
+            if (supportedExtensions.contains(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME))
+                propertiesBuilder.Append(driverProperties);
             if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
                 propertiesBuilder.Append(rayTracingPipelineProperties);
+            if (supportedExtensions.contains(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME))
+                propertiesBuilder.Append(invocationReorderProperties);
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
                 propertiesBuilder.Append(accelerationStructureProperties);
             if (supportedExtensions.contains(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME))
                 propertiesBuilder.Append(subgroupSizeControlProperties);
 
-            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
+            vkGetPhysicalDeviceProperties2(device, &deviceProperties);
 
         }
 
         void GraphicsDevice::CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
-            const std::vector<const char*>& extensions, bool enableValidationLayers) {
+            const std::vector<const char*>& extensions) {
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1038,20 +1253,30 @@ namespace Atlas {
             VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
             rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
+            VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR positionFetchFeature = {
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR };
+
             VkPhysicalDeviceMemoryPriorityFeaturesEXT memoryPriorityFeature = {};
             memoryPriorityFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT;
 
             VkPhysicalDeviceRayTracingValidationFeaturesNV validationFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV };
 
+            VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT invocationReorderFeatures = {
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT };
+
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
+            VkPhysicalDeviceVulkan13Features features13 = {};
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
             features.features.tessellationShader = availableFeatures.features.tessellationShader;
-            features.features.multiDrawIndirect = availableFeatures.features.tessellationShader;
+            features.features.shaderClipDistance = availableFeatures.features.shaderClipDistance;
+            features.features.multiDrawIndirect = availableFeatures.features.multiDrawIndirect;
+            features.features.drawIndirectFirstInstance = availableFeatures.features.drawIndirectFirstInstance;
             features.features.depthBounds = availableFeatures.features.depthBounds;
             features.features.wideLines = availableFeatures.features.wideLines;
             features.features.samplerAnisotropy = availableFeatures.features.samplerAnisotropy;
@@ -1064,6 +1289,15 @@ namespace Atlas {
             features.features.shaderInt64 = availableFeatures.features.shaderInt64;
             features.features.shaderInt16 = availableFeatures.features.shaderInt16;
             features.features.independentBlend = availableFeatures.features.independentBlend;
+            features.features.textureCompressionBC = availableFeatures.features.textureCompressionBC;
+            features.features.textureCompressionASTC_LDR = availableFeatures.features.textureCompressionASTC_LDR;
+            features.features.textureCompressionETC2 = availableFeatures.features.textureCompressionETC2;
+
+            features11.storageBuffer16BitAccess = availableFeatures11.storageBuffer16BitAccess;
+            features11.storagePushConstant16 = availableFeatures11.storagePushConstant16;
+            features11.storageInputOutput16 = availableFeatures11.storageInputOutput16;
+            features11.uniformAndStorageBuffer16BitAccess = availableFeatures11.uniformAndStorageBuffer16BitAccess;
+            features11.shaderDrawParameters = availableFeatures11.shaderDrawParameters;
 
             features12.descriptorIndexing = availableFeatures12.descriptorIndexing;
             features12.shaderUniformBufferArrayNonUniformIndexing = availableFeatures12.shaderUniformBufferArrayNonUniformIndexing;
@@ -1079,24 +1313,81 @@ namespace Atlas {
             features12.hostQueryReset = availableFeatures12.hostQueryReset;
             features12.bufferDeviceAddress = availableFeatures12.bufferDeviceAddress;
             features12.shaderFloat16 = availableFeatures12.shaderFloat16;
+            features12.shaderInt8 = availableFeatures12.shaderInt8;
+            features12.storageBuffer8BitAccess = availableFeatures12.storageBuffer8BitAccess;
+            features12.uniformAndStorageBuffer8BitAccess = availableFeatures12.uniformAndStorageBuffer8BitAccess;
 
-            // Check for ray tracing extension support
-            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+            features13.synchronization2 = availableFeatures13.synchronization2;
+            features13.dynamicRendering = availableFeatures13.dynamicRendering;
+            features13.maintenance4 = availableFeatures13.maintenance4;
+            features13.subgroupSizeControl = availableFeatures13.subgroupSizeControl;
+            features13.computeFullSubgroups = availableFeatures13.computeFullSubgroups;
+            features13.shaderIntegerDotProduct = availableFeatures13.shaderIntegerDotProduct;
+
+            // Machine learning features, e.g. for upscalers, the extensions are only enabled on request
+            auto isEnabled = [&](const char* extension) {
+                return std::any_of(extensions.begin(), extensions.end(),
+                    [&](const char* name) { return std::string_view(name) == extension; });
+            };
+
+            auto cooperativeMatrixFeatures = availableCooperativeMatrixFeatures;
+            cooperativeMatrixFeatures.pNext = nullptr;
+            if (isEnabled(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME))
+                featureBuilder.Append(cooperativeMatrixFeatures);
+
+            auto float8Features = availableFloat8Features;
+            float8Features.pNext = nullptr;
+            if (isEnabled(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME))
+                featureBuilder.Append(float8Features);
+
+            // Crash diagnostics, their extensions are only enabled on request
+            support.diagnosticCheckpoints = isEnabled(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+            auto faultFeatures = availableFaultFeatures;
+            faultFeatures.pNext = nullptr;
+            if (isEnabled(VK_EXT_DEVICE_FAULT_EXTENSION_NAME) && faultFeatures.deviceFault) {
+                featureBuilder.Append(faultFeatures);
+                support.deviceFault = true;
+            }
+
+            // Check for ray tracing extension support. Hits read their positions from the acceleration structure, the
+            // triangles of a BLAS only hold the attributes (RTX 20 and RDNA 2 onwards support position fetch)
+            auto rayTracingExtensions = desc.enableHardwareRayTracing && supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
                 supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
                 supportedExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-                supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+                supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+            auto positionFetch = supportedExtensions.contains(VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME) &&
+                availablePositionFetchFeatures.rayTracingPositionFetch;
+            if (rayTracingExtensions && !positionFetch)
+                Log::Warning("The driver supports ray tracing without position fetch, ray tracing uses the software BVH");
+            if (rayTracingExtensions && positionFetch) {
 
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
+                accelerationStructureFeature.descriptorBindingAccelerationStructureUpdateAfterBind = VK_TRUE;
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
                 rayQueryFeature.rayQuery = VK_TRUE;
+
+                // DDGI launches its ray tracing pipeline with the ray count written on the GPU
+                rtPipelineFeature.rayTracingPipelineTraceRaysIndirect = availableRayTracingPipelineFeatures.rayTracingPipelineTraceRaysIndirect;
 
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
                 featureBuilder.Append(rayQueryFeature);
 
+                positionFetchFeature.rayTracingPositionFetch = VK_TRUE;
+                featureBuilder.Append(positionFetchFeature);
+
                 if (supportedExtensions.contains(VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME) && instance->validationLayersEnabled) {
                     validationFeatures.rayTracingValidation = VK_TRUE;
                     featureBuilder.Append(validationFeatures);
+                }
+
+                // Without reordering the ray tracing pipeline is slower than ray queries
+                if (availableInvocationReorderFeatures.rayTracingInvocationReorder &&
+                    rtPipelineFeature.rayTracingPipelineTraceRaysIndirect && invocationReorderProperties.rayTracingInvocationReorderReorderingHint ==
+                    VK_RAY_TRACING_INVOCATION_REORDER_MODE_REORDER_EXT) {
+                    invocationReorderFeatures.rayTracingInvocationReorder = VK_TRUE;
+                    featureBuilder.Append(invocationReorderFeatures);
+                    support.shaderExecutionReordering = true;
                 }
 
                 support.hardwareRayTracing = true;
@@ -1122,6 +1413,20 @@ namespace Atlas {
                 support.memoryPriority = true;
             }
 
+            VkPhysicalDeviceRobustness2FeaturesEXT robustness2Features = {};
+            robustness2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+
+            if (desc.enableRobustness && supportedExtensions.contains(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
+                // robustBufferAccess2 requires robustBufferAccess to be enabled as well
+                robustness2Features.robustBufferAccess2 = availableRobustness2Features.robustBufferAccess2 &&
+                    availableFeatures.features.robustBufferAccess;
+                robustness2Features.robustImageAccess2 = availableRobustness2Features.robustImageAccess2;
+                robustness2Features.nullDescriptor = availableRobustness2Features.nullDescriptor;
+                features.features.robustBufferAccess = robustness2Features.robustBufferAccess2;
+
+                featureBuilder.Append(robustness2Features);
+            }
+
             VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedStateFeatures = {};
             extendedStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
 
@@ -1133,16 +1438,31 @@ namespace Atlas {
                 support.extendedDynamicState = true;
             }
 
-#ifdef AE_BINDLESS
-            if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
-                availableFeatures12.descriptorBindingPartiallyBound && availableFeatures12.runtimeDescriptorArray) {
+            // Ray tracing accesses all buffer arrays and direct lighting all sampled image arrays in one stage
+            const uint32_t bindlessSampledImageCount = BINDLESS_TEXTURE_COUNT + BINDLESS_CUBEMAP_COUNT + BINDLESS_TEXTURE_ARRAY_COUNT;
+            const uint32_t bindlessStorageBufferCount = 3 * BINDLESS_BUFFER_COUNT;
 
-                features12.descriptorBindingPartiallyBound = VK_TRUE;
-                features12.runtimeDescriptorArray = VK_TRUE;
+            // E.g. MoltenVK without tier 2 argument buffers reports the features but can't hold these arrays
+            bool bindlessLimitsSupported =
+                deviceProperties12.maxPerStageDescriptorUpdateAfterBindSampledImages >= bindlessSampledImageCount &&
+                deviceProperties12.maxDescriptorSetUpdateAfterBindSampledImages >= bindlessSampledImageCount &&
+                deviceProperties12.maxPerStageDescriptorUpdateAfterBindStorageBuffers >= bindlessStorageBufferCount &&
+                deviceProperties12.maxDescriptorSetUpdateAfterBindStorageBuffers >= bindlessStorageBufferCount &&
+                deviceProperties12.maxPerStageUpdateAfterBindResources >= bindlessSampledImageCount + bindlessStorageBufferCount;
 
-                support.bindless = true;
-            }
-#endif
+            bool bindlessSupported = availableFeatures12.descriptorBindingPartiallyBound &&
+                availableFeatures12.runtimeDescriptorArray &&
+                availableFeatures12.descriptorBindingSampledImageUpdateAfterBind &&
+                availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind &&
+                availableFeatures12.shaderSampledImageArrayNonUniformIndexing && bindlessLimitsSupported;
+            // The draws of the GPU culling select their instances with the first instance, the levels of detail of a
+            // draw are one multi draw and the geometry shaders read the level from the draw index
+            AE_ASSERT(bindlessSupported && availableFeatures.features.drawIndirectFirstInstance &&
+                availableFeatures.features.multiDrawIndirect && availableFeatures11.shaderDrawParameters &&
+                "The device doesn't support bindless resources or multiple indirect draws with a first instance");
+
+            features12.descriptorBindingPartiallyBound = VK_TRUE;
+            features12.runtimeDescriptorArray = VK_TRUE;
 
             support.wideLines = features.features.wideLines;
 
@@ -1162,6 +1482,7 @@ namespace Atlas {
             featureBuilder.Append(features);
             featureBuilder.Append(features11);
             featureBuilder.Append(features12);
+            featureBuilder.Append(features13);
 
             VK_CHECK_MESSAGE(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Error creating graphics device")
 
@@ -1218,8 +1539,6 @@ namespace Atlas {
 
         void GraphicsDevice::DestroyUnusedGraphicObjects() {
 
-            DeleteOutdatedResources<RenderPass>(renderPasses);
-            DeleteOutdatedResources<FrameBuffer>(frameBuffers);
             DeleteOutdatedResources<Shader>(shaders);
             DeleteOutdatedResources<Pipeline>(pipelines);
             DeleteOutdatedResources<Buffer>(buffers);

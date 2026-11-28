@@ -62,7 +62,9 @@ namespace Atlas {
             createInfo.imageColorSpace = surfaceFormat.colorSpace;
             createInfo.imageExtent = extent;
             createInfo.imageArrayLayers = 1;
-            createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            // Readable where the surface allows it, e.g. for screenshots of the window with its UI
+            readable = (supportDetails.capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0;
+            createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (readable ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0);
             createInfo.preTransform = supportDetails.capabilities.currentTransform;
             createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
             createInfo.presentMode = presentMode;
@@ -135,10 +137,12 @@ namespace Atlas {
             imageLayouts.resize(imageCount);
             imageViews.resize(imageCount);
             frameBuffers.resize(imageCount);
+            presentationSemaphores.resize(imageCount);
 
             depthImageAllocations.resize(imageCount);
             depthImageViews.resize(imageCount);
             depthImageLayouts.resize(imageCount);
+            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
             for(size_t i = 0; i < images.size(); i++) {
                 VkImageViewCreateInfo imageViewCreateInfo{};
                 imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -178,6 +182,9 @@ namespace Atlas {
 
                 imageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
                 depthImageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
+
+                VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr,
+                    &presentationSemaphores[i]))
             }
 
             isComplete = true;
@@ -194,6 +201,10 @@ namespace Atlas {
 
             for (auto& imageView : imageViews) {
                 vkDestroyImageView(device->device, imageView, nullptr);
+            }
+
+            for (auto& semaphore : presentationSemaphores) {
+                vkDestroySemaphore(device->device, semaphore, nullptr);
             }
 
             for (auto& depthImageView : depthImageViews) {
@@ -252,6 +263,14 @@ namespace Atlas {
 
         }
 
+        VkSemaphore SwapChain::GetPresentationSemaphore() const {
+
+            AE_ASSERT(aquiredImageIndex < presentationSemaphores.size()
+                && "Acquired image index out of range");
+            return presentationSemaphores[aquiredImageIndex];
+
+        }
+
         VkSurfaceFormatKHR SwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats,
             ColorSpace preferredColorSpace) {
 
@@ -282,9 +301,9 @@ namespace Atlas {
                     }
                 }
 
-                if (preferHDRColorSpace && availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT ||
+                if (preferHDRColorSpace && (availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT ||
                     availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT ||
-                    availableFormat.colorSpace == VK_COLOR_SPACE_DOLBYVISION_EXT) {
+                    availableFormat.colorSpace == VK_COLOR_SPACE_DOLBYVISION_EXT)) {
                     // Try to find preferred space
                     if (availableFormat.colorSpace == preferredSpace && !foundSpaceIn16Bit) {
                         if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT) {
@@ -327,13 +346,9 @@ namespace Atlas {
         VkExtent2D SwapChain::ChooseExtent(VkSurfaceCapabilitiesKHR capabilities,
             int32_t desiredWidth, int32_t desiredHeight) {
 
-            if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-                return capabilities.currentExtent;
-            }
-
             VkExtent2D actualExtent = {
-                    static_cast<uint32_t>(desiredWidth),
-                    static_cast<uint32_t>(desiredHeight)
+                static_cast<uint32_t>(desiredWidth),
+                static_cast<uint32_t>(desiredHeight)
             };
 
             actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);

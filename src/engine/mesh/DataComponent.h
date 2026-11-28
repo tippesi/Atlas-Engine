@@ -160,6 +160,18 @@ namespace Atlas {
              *
              * @return
              */
+            typename std::vector<T>::iterator begin();
+
+            /**
+             *
+             * @return
+             */
+            typename std::vector<T>::iterator end();
+
+            /**
+             *
+             * @return
+             */
             typename std::vector<T>::const_iterator begin() const;
 
             /**
@@ -234,6 +246,7 @@ namespace Atlas {
                 switch(format) {
                     case ComponentFormat::Float: return VK_FORMAT_R32G32B32A32_SFLOAT;
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
+                    case ComponentFormat::UnsignedShort: return VK_FORMAT_R16G16B16A16_UINT;
                     case ComponentFormat::PackedNormal: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
                     case ComponentFormat::PackedColor: return VK_FORMAT_R8G8B8A8_UNORM;
                     default: AE_ASSERT(0 && "Invalid combination of formats"); 
@@ -366,6 +379,13 @@ namespace Atlas {
                                    [](auto x) { return uint16_t(x); });
                     std::memcpy(converted.data(), convertedData.data(), sizeInBytes);
                 }
+                if constexpr(std::is_same_v<T, vec4>) {
+                    std::vector<uint16_t> convertedData(data.size() * stride);
+                    float* floatData = static_cast<float*>(glm::value_ptr(data.front()));
+                    for (size_t i = 0; i < convertedData.size(); i++)
+                        convertedData[i] = uint16_t(floatData[i]);
+                    std::memcpy(converted.data(), convertedData.data(), sizeInBytes);
+                }
             }
             else if (format == ComponentFormat::Float) {
                 if constexpr(std::is_same_v<T, float> || std::is_same_v<T, vec2> ||
@@ -413,6 +433,20 @@ namespace Atlas {
         const T& DataComponent<T>::operator[](std::size_t idx) const {
 
             return data[idx];
+
+        }
+
+        template<class T>
+        typename std::vector<T>::iterator DataComponent<T>::begin() {
+
+            return data.begin();
+
+        }
+
+        template<class T>
+        typename std::vector<T>::iterator DataComponent<T>::end() {
+
+            return data.end();
 
         }
 

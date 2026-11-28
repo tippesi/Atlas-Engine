@@ -16,27 +16,22 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
-            void TraceAndUpdateProbes(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void TraceAndUpdateProbes(const Ref<RenderTarget>& renderTarget, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
-            void DebugProbes(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
+            void DebugProbes(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList,
                 std::unordered_map<void*, uint16_t>& materialMap);
 
-            // Used for debugging
-            Ref<Material> probeDebugMaterial;
-            Ref<Material> probeDebugActiveMaterial;
-            Ref<Material> probeDebugInactiveMaterial;
-            Ref<Material> probeDebugOffsetMaterial;
-
         private:
+            static mat3 GetRayRotation(uint32_t index);
+
             struct alignas(16) RayGenUniforms {
                 mat4 rotationMatrix;
             };
 
             struct alignas(16) RayHitUniforms {
                 float seed;
-                Shadow shadow;
             };
 
             struct alignas(16) ProbeDebugConstants {
@@ -47,6 +42,8 @@ namespace Atlas {
             };
 
             Buffer::Buffer rayHitBuffer;
+            Buffer::Buffer shadowRayBuffer;
+            Buffer::Buffer shadowRayCountBuffer;
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;
@@ -60,16 +57,15 @@ namespace Atlas {
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
+            PipelineConfig rayHitRayTracingPipelineConfig;
+            PipelineConfig rayShadowPipelineConfig;
 
             PipelineConfig probeStatePipelineConfig;
+
+            uint32_t rayRotationIndex = 0;
             PipelineConfig probeIrradianceUpdatePipelineConfig;
+            PipelineConfig probeRadianceUpdatePipelineConfig;
             PipelineConfig probeMomentsUpdatePipelineConfig;
-
-            PipelineConfig irradianceCopyEdgePipelineConfig;
-            PipelineConfig momentsCopyEdgePipelineConfig;
-
-            Ref<Graphics::Sampler> shadowSampler;
-
 
         };
 

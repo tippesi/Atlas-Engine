@@ -55,7 +55,7 @@ namespace Atlas {
                 if (!stream)
                     return;
 
-                if (scene->physicsWorld->pauseSimulation && !permanentPlay) {
+                if ((scene->physicsWorld->pauseSimulation || scene->paused) && !permanentPlay) {
                     stream->SetVolume(0.0f);
                     return;
                 }
@@ -67,32 +67,11 @@ namespace Atlas {
                 auto objectLocation = vec3(transformComponent.globalMatrix[3]);
                 auto lastObjectLocation = vec3(transformComponent.lastGlobalMatrix[3]);
 
-                auto distance = glm::max(epsilon, glm::distance(objectLocation, listenerLocation));
-
-                // Use quick paths for "normal" powers and do nothing for the power=1 case
-                auto powerDistance = distance;
-                if (falloffPower == 2.0f)
-                    powerDistance *= powerDistance;
-                else if (falloffPower == 3.0f)
-                    powerDistance *= powerDistance * powerDistance;
-                else if (falloffPower != 1.0f)
-                    powerDistance = powf(powerDistance, falloffPower);
-
-                float distanceVolume = glm::min(1.0f, falloffFactor / powerDistance);
-
-                auto audible = distanceVolume > cutoff;
+                auto audible = stream->Spatialize(objectLocation, listenerLocation, listenerRight, volume, falloffFactor,
+                    falloffPower, cutoff);
 
                 if (audible) {
-                    auto mix = 0.0f;
-
-                    if (distance == epsilon) {
-                        mix = 0.5f;
-                    }
-                    else {
-                        auto direction = glm::normalize(objectLocation - listenerLocation);
-                        mix = 0.5f * glm::dot(direction, -listenerRight) + 0.5f;
-                    }
-
+                    auto distance = glm::max(epsilon, glm::distance(objectLocation, listenerLocation));
                     auto lastDistance = glm::distance(lastObjectLocation, lastListenerLocation);
 
                     auto velocity = (lastDistance - distance) / std::max(deltaTime, epsilon);
@@ -106,15 +85,7 @@ namespace Atlas {
                     auto pitch = 1.0 + velocity / 333.3;
                     pitch = pitch >= 0.0 ? pitch : 0.0;
 
-                    stream->SetVolume(distanceVolume * volume);
-
-                    stream->SetChannelVolume(Audio::Channel::Left, mix);
-                    stream->SetChannelVolume(Audio::Channel::Right, 1.0f - mix);
-
                     stream->SetPitch(pitch);
-                }
-                else {
-                    stream->SetVolume(0.0f);
                 }
 
             }

@@ -8,16 +8,72 @@ namespace Atlas {
 
     enum InstanceCullMasks {
         MaskAll = 1 << 7,
-        MaskShadow = 1 << 6
+        MaskShadow = 1 << 6,
+        // Meshes with only translucent materials, only rays which pass them by their opacity trace them
+        MaskTranslucent = 1 << 5,
+        MaskTranslucentShadow = 1 << 4
     };
 
+    // The attributes of a triangle, has to match PackedTriangle in raytracer/structures.hsh. Hits take the positions from
+    // the acceleration structure or from GPUBVHTriangle
     struct GPUTriangle {
-        vec4 v0;
-        vec4 v1;
-        vec4 v2;
-        vec4 d0;
-        vec4 d1;
-        vec4 d2;
+        // 10:10:10 each, the tangent has the handedness of the bitangent in w
+        uint32_t normals[3] = {};
+        uint32_t tangent = 0;
+        // Halves
+        uint32_t texCoords[3] = {};
+        // The material index in the lower 16 bit, the opacity as a half in the upper, negative to read the material
+        uint32_t materialOpacity = 0;
+        // RGBA8
+        uint32_t colors[3] = {};
+        uint32_t padding0 = 0;
+    };
+
+    // The triangles of one software BLAS gathered from its deformed vertices, has to match raytracer/deformTriangles.csh
+    struct GPUDeformTriangleJob {
+        VkDeviceAddress triangleVertices = 0;
+        VkDeviceAddress positions = 0;
+        VkDeviceAddress normals = 0;
+        VkDeviceAddress triangles = 0;
+        VkDeviceAddress bvhTriangles = 0;
+        uint32_t firstGroup = 0;
+        uint32_t triangleCount = 0;
+    };
+
+    // Undeformed vertex of a mesh for the deformation pass, has to match raytracer/deform.csh
+    struct GPUDeformVertex {
+        // The packed normal is stored in w
+        vec4 position;
+        // Packed with the handedness in w
+        uint32_t tangent = 0;
+        uint32_t texCoord = 0;
+        uint32_t color = 0;
+        uint32_t weights = 0;
+        uint32_t joints01 = 0;
+        uint32_t joints23 = 0;
+        uint32_t texCoord1 = 0;
+        uint32_t padding0 = 0;
+    };
+
+    // One deformed vertex range of an instance, the buffers are accessed through their device addresses
+    struct GPUDeformJob {
+        mat3x4 matrix;
+        VkDeviceAddress sourceVertices = 0;
+        VkDeviceAddress positions = 0;
+        VkDeviceAddress normals = 0;
+        uint32_t firstGroup = 0;
+        uint32_t vertexOffset = 0;
+        uint32_t vertexCount = 0;
+        uint32_t deformOffset = 0;
+        float windBendScale = 0.0f;
+        float windWiggleScale = 0.0f;
+        float windTextureLod = 0.0f;
+        uint32_t materialGraphOffset = 0;
+        uint32_t invertUVs = 0;
+        float uvTiling = 1.0f;
+        vec2 uvAnimation = vec2(0.0f);
+        uint32_t hasTexCoords1 = 0;
+        uint32_t padding0 = 0;
     };
 
     struct GPUBVHTriangle {
@@ -48,7 +104,7 @@ namespace Atlas {
         int32_t valid = -1;
     };
 
-    struct GPUMaterial {
+    struct alignas(16) GPUMaterial {
         int32_t ID = 0;
 
         vec3 baseColor = vec3(1.0f);
@@ -64,6 +120,9 @@ namespace Atlas {
 
         float normalScale = 1.0f;
 
+        float tiling = 1.0f;
+        float terrainTiling = 1.0f;
+
         int32_t invertUVs = 0;
         int32_t twoSided = 0;
         int32_t cullBackFaces = 0;
@@ -75,6 +134,50 @@ namespace Atlas {
         int32_t roughnessTexture = -1;
         int32_t metalnessTexture = -1;
         int32_t aoTexture = -1;
+        int32_t emissiveTexture = -1;
+        int32_t terrainNormalTexture = -1;
+        // RGB packed as 10:10:10
+        uint32_t transmissionColor = 0;
+
+        // Hit group of a material graph in ray tracing pipelines (see RayTracingWorld::hitRecords), 0 without one
+        uint32_t graphHitGroup = 0;
+        uint32_t graphParameterOffset = 0;
+        float uvAnimationX = 0.0f;
+        float uvAnimationY = 0.0f;
+
+        // A MaterialBlendMode, rays pass through translucent surfaces except in the path tracer, shadow rays are dimmed by
+        // their opacity
+        uint32_t blendMode = 0;
+        // Of the inside of refracting surfaces, 1 for the others
+        float refractiveIndex = 1.0f;
+
+        // RGB packed as 10:10:10, absorbed inside refracting surfaces, see Material::attenuationDistance
+        uint32_t attenuationColor = 0;
+        float attenuationDistance = 0.0f;
+        // Of two sided refracting surfaces, which are thin slabs, 0 for the others
+        float thickness = 0.0f;
+    };
+
+    // GPUMaterial as the buffer holds it, see raytracer/buffers.hsh. Colors are 10:10:10, emission, tiling and coordinates halves
+    struct alignas(16) GPUPackedMaterial {
+        uint32_t baseColor = 0;
+        uint32_t emissiveRedGreen = 0;
+        uint32_t emissiveBlueThickness = 0;
+        // Unorm 4x8
+        uint32_t opacityRoughnessMetalnessAo = 0;
+        // Unorm 8 each, then the flags of the material and its blend mode
+        uint32_t reflectanceNormalScaleFlags = 0;
+        uint32_t tiling = 0;
+        uint32_t uvAnimation = 0;
+        // 16 bit bindless indices, 0xFFFF without a texture: base color and opacity, normal and roughness, metalness and
+        // ambient occlusion, emission and terrain normal
+        uint32_t textures[4] = {};
+        uint32_t transmissionColor = 0;
+        // 16 bit each
+        uint32_t idGraphHitGroup = 0;
+        uint32_t graphParameterOffset = 0;
+        uint32_t refractiveIndexAttenuationDistance = 0;
+        uint32_t attenuationColor = 0;
     };
 
     struct GPUAABB {
@@ -90,6 +193,11 @@ namespace Atlas {
 
         int32_t nextInstance;
         uint32_t mask;
+
+        // Normals and tangents of a deformed instance and the index buffer of its mesh, the lowest bit of the
+        // index address marks 16 bit indices
+        VkDeviceAddress deformedVertices = 0;
+        VkDeviceAddress meshIndices = 0;
     };
 
     struct GPUBVHNode {

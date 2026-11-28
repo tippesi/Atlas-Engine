@@ -1,0 +1,3 @@
+#pragma once
+
+#define AE_ENGINE_VERSION "@ATLAS_ENGINE_VERSION@"

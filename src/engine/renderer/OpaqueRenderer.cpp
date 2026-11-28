@@ -1,6 +1,7 @@
 #include "OpaqueRenderer.h"
 
 #include "../Clock.h"
+#include "../materialgraph/PipelineCache.h"
 
 #include <mutex>
 #include <tuple>
@@ -15,186 +16,228 @@ namespace Atlas {
 
         }
 
-        void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
-            RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
+        void OpaqueRenderer::Prepare(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
+            RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap) {
 
-            Graphics::Profiler::BeginQuery("Opaque geometry");
+            CPUProfiler::Scope profilerScope("Opaque geometry preparation");
 
-            auto mainPass = renderList->GetMainPass();
+            preparedPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
+            if (!preparedPass)
+                return;
+
+            auto createConfig = [&](Mesh::MeshSubData* subData, Mesh::Mesh* mesh, const MaterialGraph::CompiledGraph* graph) {
+                return GetPipelineConfigForSubData(subData, mesh, target, graph);
+            };
+            auto hasGraphPipeline = [](const MaterialGraph::CompiledGraph& graph) { return !graph.mainVertexFile.empty(); };
+            // Expensive fragment shaders after the cheap ones, which occlude parts of them. Pipelines which can discard
+            // fragments last, so the others keep the early depth test
+            auto getOrder = [](PipelineConfig& config, bool usesGraph) {
+                if (usesGraph || config.HasMacro("OPACITY_MAP") || config.HasMacro("VERTEX_COLORS"))
+                    return 2u;
+                return config.HasMacro("HEIGHT_MAP") ? 1u : 0u;
+            };
+            auto fillDrawData = [&](const Helper::SubDataDrawer::Entry& entry) {
+                return GetPushConstants(entry, false, scene.get(), materialMap).draw;
+            };
+
+            // The data of the draws after the occlusion test is uploaded here too, between the passes it would wait for them.
+            // Both drawers share the pipelines of the sub data, which Prepare can switch to finished graph pipelines
+            drawer.Prepare(renderList, *preparedPass, preparedPass->gpu.draws, true, &Mesh::MeshSubData::mainPipelines,
+                createConfig, hasGraphPipeline, getOrder);
+            lateDrawer.Prepare(renderList, *preparedPass, preparedPass->gpu.lateDraws, false, &Mesh::MeshSubData::mainPipelines,
+                createConfig, hasGraphPipeline, getOrder);
+            drawer.PrepareDrawData(commandList, &Mesh::MeshSubData::mainPipelines, fillDrawData);
+            lateDrawer.PrepareDrawData(commandList, &Mesh::MeshSubData::mainPipelines, fillDrawData);
+
+        }
+
+        void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
+            RenderList* renderList, std::unordered_map<void*, uint16_t>& materialMap, bool lateDraws) {
+
+            CPUProfiler::Scope profilerScope("Opaque geometry");
+            GPUProfiler::Scope gpuScope("Opaque geometry");
+
+            // The pass is kept until its last draws
+            auto mainPass = preparedPass;
             if (!mainPass)
                 return;
+            if (lateDraws || mainPass->gpu.lateDraws.empty())
+                preparedPass = nullptr;
+
+            auto sceneState = &scene->renderState;
 
             commandList->BindBuffer(mainPass->currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(mainPass->lastMatricesBuffer, 1, 2);
-            commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
+            commandList->BindBuffer(mainPass->currentJointMatricesBuffer, 1, 4);
+            commandList->BindBuffer(mainPass->lastJointMatricesBuffer, 1, 5);
+            if (mainPass->softBodyVertexOffsetsBuffer) {
+                commandList->BindBuffer(renderList->currentSoftBodyVerticesBuffer, 1, 24);
+                commandList->BindBuffer(renderList->lastSoftBodyVerticesBuffer, 1, 25);
+                commandList->BindBuffer(mainPass->softBodyVertexOffsetsBuffer, 1, 26);
+            }
 
             // Bind wind map
-            scene->wind.noiseMap.Bind(commandList, 3, 7);
+            scene->renderState.wind.noiseMap.Bind(commandList, 3, 8);
 
-            int32_t subDataCount = 0;
-            // Retrieve all possible materials;
-            for (const auto& [meshId, instances] : mainPass->meshToInstancesMap) {
-                if (!instances.count) continue;
+            if (!sceneState->materialGraphParameters.empty())
+                sceneState->materialGraphBuffer.Bind(commandList, 3, 9);
 
-                auto& mesh = mainPass->meshIdToMeshMap[meshId];
-                for (auto& subData : mesh->data.subData) {
-                    if (!subData.material.IsLoaded())
-                        continue;
+            PushConstants pushConstants;
+            auto fillPushConstants = [&](const Helper::SubDataDrawer::Entry& entry, const RenderList::MeshInstances& instances,
+                bool usesGraph) -> PushConstants& {
+                pushConstants = GetPushConstants(entry, usesGraph, scene.get(), materialMap);
+                pushConstants.deformOffset = uint32_t(instances.deformOffset);
+                pushConstants.instanceOffset = uint32_t(instances.offset);
+                return pushConstants;
+            };
 
-                    if (subDataCount < subDatas.size())
-                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
-                    else
-                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get() });
-                    subDataCount++;
-                }
-            }
+            // The level of detail is only read to color the levels
+            auto setLod = [&](uint32_t lod) {
+                if (pushConstants.draw.lod == lod)
+                    return false;
+                pushConstants.draw.lod = lod;
+                return true;
+            };
 
-            // Check whether materials have pipeline configs
-            for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, _, mesh] = subDatas[i];
-                const auto& material = subData->material;
-                if (subData->mainConfig.IsValid()) continue;
+            auto& passDrawer = lateDraws ? lateDrawer : drawer;
+            passDrawer.Draw(commandList, renderList, *mainPass, &Mesh::MeshSubData::mainPipelines, fillPushConstants, setLod, 10);
 
-                subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
-            }
+        }
 
-            // Sort materials by hash
-            std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
-                [](auto& subData0, auto& subData1) {
-                    return std::get<0>(subData0)->mainConfig.variantHash <
-                        std::get<0>(subData1)->mainConfig.variantHash;
-                });
+        OpaqueRenderer::PushConstants OpaqueRenderer::GetPushConstants(const Helper::SubDataDrawer::Entry& entry, bool usesGraph,
+            Scene::Scene* scene, std::unordered_map<void*, uint16_t>& materialMap) {
 
-            Hash prevMesh = 0;
-            Hash prevHash = 0;
-            Ref<Graphics::Pipeline> currentPipeline;
-            for (int32_t i = 0; i < subDataCount; i++) {
-                auto& [subData, meshID, mesh] = subDatas[i];
-                const auto& instances = mainPass->meshToInstancesMap[meshID];
+            const auto& sceneState = scene->renderState;
+            const auto& mesh = entry.mesh;
+            const auto& material = entry.subData->material;
 
-                const auto material = subData->material;
+            auto materialIt = materialMap.find(material.Get().get());
+            auto materialIdx = materialIt != materialMap.end() ? uint32_t(materialIt->second) : 0u;
+            auto textureIndices = materialIdx < sceneState.materialTextureIndices.size() ?
+                sceneState.materialTextureIndices[materialIdx] : Scene::MaterialTextureIndices();
 
-                // Overwrite material config frame buffer (and assume these have the same format)
-                subData->mainConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
-
-                if (subData->mainConfig.variantHash != prevHash) {
-                    currentPipeline = PipelineManager::GetPipeline(subData->mainConfig);
-                    commandList->BindPipeline(currentPipeline);
-                    prevHash = subData->mainConfig.variantHash;
-                }
-
-                if (meshID != prevMesh) {
-                    mesh->vertexArray.Bind(commandList);
-                    prevMesh = meshID;
-                }
-
-#if !defined(AE_BINDLESS) || defined(AE_OS_MACOS)
-                if (material->HasBaseColorMap())
-                    material->baseColorMap->Bind(commandList, 3, 0);
-                if (material->HasOpacityMap())
-                    material->opacityMap->Bind(commandList, 3, 1);
-                if (material->HasNormalMap())
-                    material->normalMap->Bind(commandList, 3, 2);
-                if (material->HasRoughnessMap())
-                    material->roughnessMap->Bind(commandList, 3, 3);
-                if (material->HasMetalnessMap())
-                    material->metalnessMap->Bind(commandList, 3, 4);
-                if (material->HasAoMap())
-                    material->aoMap->Bind(commandList, 3, 5);
-                if (material->HasDisplacementMap())
-                    material->displacementMap->Bind(commandList, 3, 6);
-#endif
-
-                auto pushConstants = PushConstants {
-                    .vegetation = mesh->vegetation ? 1u : 0u,
+            auto pushConstants = PushConstants {
+                .draw = {
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
-                    .twoSided = material->twoSided ? 1u : 0u,
+                    .twoSided = material->IsTwoSided() ? 1u : 0u,
                     .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
-                    .materialIdx = uint32_t(materialMap[material.Get().get()]),
+                    .materialIdx = materialIdx,
                     .normalScale = material->normalScale,
                     .displacementScale = material->displacementScale,
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .baseColorTextureIdx = material->HasBaseColorMap() ? scene->textureToBindlessIdx[material->baseColorMap.Get()] : 0,
-                    .opacityTextureIdx = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap.Get()] : 0,
-                    .normalTextureIdx = material->HasNormalMap() ? scene->textureToBindlessIdx[material->normalMap.Get()] : 0,
-                    .roughnessTextureIdx = material->HasRoughnessMap() ? scene->textureToBindlessIdx[material->roughnessMap.Get()] : 0,
-                    .metalnessTextureIdx = material->HasMetalnessMap() ? scene->textureToBindlessIdx[material->metalnessMap.Get()] : 0,
-                    .aoTextureIdx = material->HasAoMap() ? scene->textureToBindlessIdx[material->aoMap.Get()] : 0,
-                    .heightTextureIdx = material->HasDisplacementMap() ? scene->textureToBindlessIdx[material->displacementMap.Get()] : 0,
-                };
-                commandList->PushConstants("constants", &pushConstants);
+                    .uvAnimationX = material->uvAnimation.x,
+                    .uvAnimationY = material->uvAnimation.y,
+                    .uvTiling = material->tiling,
+                    .baseColorTextureIdx = textureIndices.baseColor,
+                    .opacityTextureIdx = textureIndices.opacity,
+                    .normalTextureIdx = textureIndices.normal,
+                    .roughnessTextureIdx = textureIndices.roughness,
+                    .metalnessTextureIdx = textureIndices.metalness,
+                    .aoTextureIdx = textureIndices.ao,
+                    .heightTextureIdx = textureIndices.height,
+                    .emissiveTextureIdx = textureIndices.emissive
+                },
+                .jointCount = uint32_t(mesh->data.skeleton.GetJointCount()),
+            };
 
-                commandList->DrawIndexed(subData->indicesCount, instances.count, subData->indicesOffset,
-                    0, instances.offset);
-
-                // Reset the frame buffer here to let it be able to be deleted
-                subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
-
+            if (usesGraph) {
+                auto graphData = sceneState.materialGraphMap.find(material.Get().get());
+                if (graphData != sceneState.materialGraphMap.end()) {
+                    pushConstants.draw.materialIdx = graphData->second.materialIdx;
+                    pushConstants.materialGraphOffset = graphData->second.parameterOffset;
+                }
             }
-
-            Graphics::Profiler::EndQuery();
+            return pushConstants;
 
         }
 
         PipelineConfig OpaqueRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh* mesh, const Ref<RenderTarget>& target) {
+            Mesh::Mesh* mesh, const Ref<RenderTarget>& target, const MaterialGraph::CompiledGraph* graph) {
 
             auto shaderConfig = ShaderConfig {
-                {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                {"deferred/geometry.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                {graph ? graph->mainVertexFile : "deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {graph ? graph->mainFragmentFile : "deferred/geometry.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                .frameBuffer = target->gBufferFrameBuffer,
+                .attachmentFormats = Graphics::AttachmentFormats(target->gBufferRendering),
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 
             auto material = subData->material;
 
-            if (material->twoSided || !mesh->cullBackFaces) {
+            if (material->IsTwoSided() || !mesh->cullBackFaces) {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 
             bool hasTangents = mesh->data.tangents.ContainsData();
             bool hasTexCoords = mesh->data.texCoords.ContainsData();
 
+            // The surface of a graph replaces all the maps
+            auto usesMaps = !graph || !graph->hasSurface;
+
             std::vector<std::string> macros;
-            if (material->HasBaseColorMap() && hasTexCoords) {
+            // Pipelines are rebound when the variant hash changes, which doesn't know about shaders
+            // Regular materials are sorted by it, so it has to stay as it is for them
+            if (graph) {
+                macros.push_back("MATERIAL_GRAPH_" + std::to_string(graph->hash));
+            }
+            if (usesMaps && material->HasBaseColorMap() && hasTexCoords) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            if (material->HasOpacityMap() && hasTexCoords) {
+            if (usesMaps && material->HasOpacityMap() && hasTexCoords) {
                 macros.push_back("OPACITY_MAP");
             }
-            if (material->HasNormalMap() && hasTangents && hasTexCoords) {
+            if (usesMaps && material->HasNormalMap() && hasTangents && hasTexCoords) {
                 macros.push_back("NORMAL_MAP");
             }
-            if (material->HasRoughnessMap() && hasTexCoords) {
+            if (usesMaps && material->HasRoughnessMap() && hasTexCoords) {
                 macros.push_back("ROUGHNESS_MAP");
             }
-            if (material->HasMetalnessMap() && hasTexCoords) {
+            if (usesMaps && material->HasMetalnessMap() && hasTexCoords) {
                 macros.push_back("METALNESS_MAP");
             }
-            if (material->HasAoMap() && hasTexCoords) {
+            if (usesMaps && material->HasAoMap() && hasTexCoords) {
                 macros.push_back("AO_MAP");
             }
-            if (material->HasDisplacementMap() && hasTangents && hasTexCoords) {
+            if (usesMaps && material->HasDisplacementMap() && hasTangents && hasTexCoords) {
                 macros.push_back("HEIGHT_MAP");
             }
+            if (usesMaps && material->HasEmissiveMap() && hasTexCoords) {
+                macros.push_back("EMISSIVE_MAP");
+            }
             // This is a check if we have any maps at all (no macros, no maps)
-            if (macros.size()) {
+            if (hasTexCoords) {
                 macros.push_back("TEX_COORDS");
             }
-            if (glm::length(material->emissiveColor) > 0.0f) {
+            if (hasTangents) {
+                macros.push_back("TANGENTS");
+            }
+            if (usesMaps && glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");
             }
             if (mesh->data.colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
             }
+            if (graph && mesh->data.texCoords1.ContainsData()) {
+                macros.push_back("TEX_COORDS_1");
+            }
+            if (mesh->data.IsSkinned()) {
+                macros.push_back("SKINNED");
+            }
+            if (mesh->vegetation) {
+                macros.push_back("VEGETATION");
+            }
 
-#if defined(AE_BINDLESS) && !defined(AE_OS_MACOS)
-            macros.push_back("BINDLESS_TEXTURES");
-#endif
+            if (!mesh->data.IsSkinned()) {
+                macros.push_back("INSTANCE_BUFFER");
+            }
+            // Draws of the GPU culling with the same pipeline and geometry buffers are merged into multi draws, the
+            // data of a draw comes from a buffer
+            if (!graph && !mesh->data.IsSkinned()) {
+                macros.push_back("DRAW_DATA");
+            }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

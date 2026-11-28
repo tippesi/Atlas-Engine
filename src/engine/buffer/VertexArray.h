@@ -54,7 +54,8 @@ namespace Atlas {
              */
             VertexBuffer GetComponent(uint32_t attribArray);
 
-            void Bind(Graphics::CommandList* commandList);
+            // Without the offsets of the buffers, draws select the vertices and indices in them (geometry pool)
+            void Bind(Graphics::CommandList* commandList, bool withOffsets = true);
 
             VkPipelineVertexInputStateCreateInfo GetVertexInputState();
 
@@ -73,6 +74,8 @@ namespace Atlas {
                 uint32_t offset;
                 uint32_t count;
                 std::vector<Ref<Graphics::Buffer>> buffers;
+                std::vector<VkDeviceSize> bufferOffsets;
+                std::vector<VkDeviceSize> zeroOffsets;
             };
 
             IndexBuffer indexComponent;

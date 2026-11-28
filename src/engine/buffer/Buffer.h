@@ -18,8 +18,8 @@ namespace Atlas {
             MultiBufferedBit = (1 << 3),
             HostAccessBit = (1 << 4),
             MemoryTransfersBit = (1 << 5),
-            DedicatedMemoryBit = (1 << 6),
-            HighPriorityMemoryBit = (1 << 7),
+            HighPriorityMemoryBit = (1 << 6),
+            DeviceAddressBit = (1 << 7),
         } BufferUsageBits;
 
         /**
@@ -146,6 +146,13 @@ namespace Atlas {
              * @return The offset in bytes
              */
             size_t GetAlignedOffset(size_t elementIndex);
+
+            /**
+             * Returns the aligned offset for dynamic uniform buffer binding
+             * @param elementIndex The offset in elements
+             * @return The offset in bytes
+             */
+            void Reset();
 
         protected:
             void Reallocate(void* data);

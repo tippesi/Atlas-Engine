@@ -3,6 +3,12 @@
 #include "DataCreator.h"
 #include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
+#include "ui/Widgets.h"
+#include "Theme.h"
+#include "tools/CopyPasteHelper.h"
+#include "tools/FileSystemHelper.h"
+#include "tools/AssetReferenceIndex.h"
+#include "tools/AssetRenamer.h"
 
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
@@ -10,106 +16,123 @@
 #include "loader/AssetLoader.h"
 
 #include <filesystem>
+#include <set>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
 #ifdef AE_OS_WINDOWS
+#define NOMINMAX
 #include <Windows.h>
 #include <shellapi.h>
 #endif
 
 namespace Atlas::Editor::UI {
 
-    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Content browser", show) {
+    ContentBrowserWindow::ContentBrowserWindow(bool show) : DrawerWindow("Content browser", show) {
 
-
+        selectionStorage.AdapterIndexToStorageId = [](ImGuiSelectionBasicStorage* self, int idx) {
+            (void)self;
+            return uint32_t(idx);
+        };
 
     }
 
     void ContentBrowserWindow::Update() {
 
-        if (!show)
+        AssetReferenceIndex::Update();
+
+        // A search runs on the medium pool next to long jobs (e.g. navigation tiles), the window doesn't wait for it.
+        // The next search starts once the last one has finished
+        if (!show || isEditing || renameState != RenameState::Asking || !searchAndFilterJob.HasFinished())
             return;
 
-        JobSystem::Execute(searchAndFilterJob, [&](JobData&) {
-            UpdateFilteredAndSortedDirEntries();
+        auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
+        if (!contentDirectory)
+            return;
+
+        // The job gets copies, the window changes the search while it runs
+        auto searchQuery = assetSearch;
+        std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
+        auto filter = contentFilter;
+        auto recursively = searchQuery.empty() ? filterRecursively && filter != ContentFilterBits::AllBit : searchRecursively;
+        auto listDirectories = searchQuery.empty() && !filterRecursively && filter == ContentFilterBits::AllBit;
+
+        JobSystem::Execute(searchAndFilterJob, [this, contentDirectory, searchQuery, filter, recursively, listDirectories](JobData&) {
+            foundFiles.clear();
+            SearchDirectory(contentDirectory, foundFiles, searchQuery, filter, recursively);
+            std::sort(foundFiles.begin(), foundFiles.end(), [](const auto& file0, const auto& file1) {
+                return file0.name < file1.name;
+                });
+
+            if (listDirectories)
+                foundDirectories = contentDirectory->directories;
+            else
+                foundDirectories.clear();
+            hasFoundEntries = true;
             });
 
     }
 
     void ContentBrowserWindow::Render() {
 
+        // A pinned browser can be behind another tab when a file should be shown
+        if (!contentToShowPath.empty())
+            ImGui::SetNextWindowFocus();
+
         if (!Begin())
             return;
 
-        ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
-        auto viewport = ImGui::GetWindowViewport();
+        const float minPanelWidth = 120.0f;
+        auto panelWidth = std::clamp(folderPanelWidth, minPanelWidth,
+            std::max(ImGui::GetWindowWidth() - 2.0f * minPanelWidth, minPanelWidth));
 
-        if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
-            ImGui::DockBuilderRemoveNode(dsID);
-            ImGui::DockBuilderAddNode(dsID, ImGuiDockNodeFlags_DockSpace);
+        ImGui::BeginChild("ResourceTypeSelection", ImVec2(panelWidth, 0.0f));
 
-            ImGui::DockBuilderSetNodeSize(dsID, viewport->Size);
-
-            uint32_t dockIdLeft, dockIdRight;
-            ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.05f, &dockIdLeft, &dockIdRight);
-
-            ImGuiDockNode* leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
-            ImGuiDockNode* rightNode = ImGui::DockBuilderGetNode(dockIdRight);
-            leftNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
-            rightNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
-
-            // we now dock our windows into the docking node we made above
-            ImGui::DockBuilderDockWindow("ResourceTypeSelection", dockIdLeft);
-            ImGui::DockBuilderDockWindow("ResourceTypeOverview", dockIdRight);
-            ImGui::DockBuilderFinish(dsID);
-
-            resetDockingLayout = false;
-        }
-
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
-
-        End();
-
-        ImGui::Begin("ResourceTypeSelection", nullptr);
-
-        ImGui::SetWindowFontScale(1.5f);
-
-        ImGui::Text("Filters");
-
-        ImGui::SetWindowFontScale(1.0f);
+        // Same height as the toolbar on the right side
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("Folders");
 
         ImGui::Separator();
-
-        const char* items[] = { "Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene",
-            "Script", "Font", "Prefab", "Texture", "Environment texture" };
-        for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
-            bool isSelected = selectedFilter == i;
-            ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
-            if (isSelected) {
-                selectedFilter = i;
-            }
-            else if (selectedFilter == i) {
-                selectedFilter = -1;
-            }
-        }
-
-        ImGui::End();
-
-        ImGui::Begin("ResourceTypeOverview", nullptr);
-
-        // Use a child as a dummy to create a drop target, since it doesn't work directly on a window
-        ImGui::BeginChild("ResourceTypeDropChild");
 
         RenderDirectoryControl();
 
+        ImGui::EndChild();
+
+        ImGui::SameLine(0.0f, 0.0f);
+
+        const float splitterWidth = 9.0f;
+        auto splitterPos = ImGui::GetCursorScreenPos();
+        auto splitterHeight = ImGui::GetContentRegionAvail().y;
+        ImGui::InvisibleButton("Folder splitter", ImVec2(splitterWidth, std::max(splitterHeight, 1.0f)));
+        if (ImGui::IsItemActive())
+            folderPanelWidth = panelWidth + ImGui::GetIO().MouseDelta.x;
+
+        auto splitterHighlighted = ImGui::IsItemActive() || ImGui::IsItemHovered();
+        if (splitterHighlighted)
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        auto splitterX = splitterPos.x + splitterWidth * 0.5f;
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(splitterX, splitterPos.y), ImVec2(splitterX, splitterPos.y + splitterHeight),
+            ImGui::GetColorU32(splitterHighlighted ? ImGuiCol_SeparatorActive : ImGuiCol_Separator), splitterHighlighted ? 2.0f : 1.0f);
+
+        ImGui::SameLine(0.0f, 0.0f);
+
+        ImGui::BeginChild("ResourceTypeOverview", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        RenderDirectoryContentControl();
+
         ImGui::Separator();
+
+        // Use a child as a dummy to create a drop target, since it doesn't work directly on a window
+        // While Ctrl is held the mouse wheel zooms the icons instead of scrolling
+        ImGui::BeginChild("ResourceTypeDropChild", ImVec2(0.0, 0.0), ImGuiChildFlags_None,
+            ImGui::GetIO().KeyCtrl ? ImGuiWindowFlags_NoScrollWithMouse : ImGuiWindowFlags_None);
 
         RenderDirectoryContent();
 
         ImGui::EndChild();
 
-        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)) {
             ImGui::SetWindowFocus();
         }
 
@@ -125,98 +148,449 @@ namespace Atlas::Editor::UI {
                     auto& config = Singletons::config;
                     auto& scenes = config->openedScenes;
 
-                    // There must be a scene, otherwise we want to get a fatal error
+                    // The same scene, not one with the same name. Prefab windows have scenes of their own which aren't opened
                     auto iter = std::find_if(scenes.begin(), scenes.end(),
-                        [&](const ResourceHandle<Scene::Scene>& item) -> bool {
-                            if (!item.IsLoaded())
-                                return false;
-                            return item->name == scene->name;
-                        });
-                    auto sceneHandle = *iter;
+                        [&](const ResourceHandle<Scene::Scene>& item) { return item.IsLoaded() && item.Get().get() == scene; });
+                    if (iter == scenes.end()) {
+                        Notifications::Push({ .message = "Only entities of opened scenes can be saved as prefabs",
+                            .type = NotificationType::Warning });
+                    }
+                    else {
+                        auto sceneHandle = *iter;
 
-                    auto nameComponent = entity.TryGetComponent<NameComponent>();
-                    auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
+                        auto nameComponent = entity.TryGetComponent<NameComponent>();
+                        auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
-                    auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
-                    auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory) + "/";
-                    if (assetPath.starts_with('/'))
-                        assetPath.erase(assetPath.begin());
+                        auto target = std::filesystem::path(currentDirectory) / (entityName + ".aeprefab");
+                        FileSystemHelper::WriteOrAsk(target, [sceneHandle, entity](const std::filesystem::path& target) {
+                            auto assetPath = Common::Path::GetRelative(Loader::AssetLoader::GetDataDirectory(),
+                                Common::Path::Normalize(target.string()));
+                            if (assetPath.starts_with('/'))
+                                assetPath.erase(assetPath.begin());
 
-                    auto entityPath = assetPath + entityName + ".aeprefab";
-                    Serializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
+                            if (!Serializer::SerializePrefab(sceneHandle.Get(), entity, assetPath))
+                                Notifications::Push({ .message = "Couldn't write " + assetPath, .type = NotificationType::Error });
+                            ContentDiscovery::Execute();
+                            });
+                    }
                 }
             }
 
             ImGui::EndDragDropTarget();
         }
 
-        ImGui::End();
+        hightlightPath.clear();
+
+        // We can only set this up for the next frame
+        if (!contentToShowPath.empty()) {
+            // We expect the content to show to be relative to the asset directory
+            currentDirectory =  Loader::AssetLoader::GetDataDirectory() + "/" 
+                + Common::Path::GetDirectory(contentToShowPath);
+            hightlightPath = contentToShowPath;
+            selectionStorage.Clear();
+        }
+        contentToShowPath.clear();
+
+        ImGui::EndChild();
+
+        RenderDeleteConfirmation();
+        RenderRenameConfirmation();
+        RenderReferences();
+
+        End();
+
+    }
+
+    void ContentBrowserWindow::RenderDeleteConfirmation() {
+
+        const char* popupName = "Delete content?";
+        if (openDeleteConfirmation) {
+            users.reset();
+            AssetReferenceIndex::Request();
+            ImGui::OpenPopup(popupName);
+            openDeleteConfirmation = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+            return;
+
+        if (pendingDeletePaths.size() == 1)
+            ImGui::Text("Delete %s?", std::filesystem::path(pendingDeletePaths.front()).filename().string().c_str());
+        else
+            ImGui::Text("Delete %d items?", int32_t(pendingDeletePaths.size()));
+
+        // A few names, such that a wrong selection is noticed
+        const size_t shownNames = 6;
+        if (pendingDeletePaths.size() > 1) {
+            for (size_t i = 0; i < std::min(shownNames, pendingDeletePaths.size()); i++)
+                ImGui::TextColored(Theme::TextMuted(), "%s", std::filesystem::path(pendingDeletePaths[i]).filename().string().c_str());
+            if (pendingDeletePaths.size() > shownNames)
+                ImGui::TextColored(Theme::TextMuted(), "and %d more", int32_t(pendingDeletePaths.size() - shownNames));
+        }
+
+        FindUsersOnce([&]() {
+            std::set<std::string> uniqueUsers;
+            for (const auto& path : pendingDeletePaths)
+                for (const auto& user : AssetReferenceIndex::FindUsers(GetAssetPath(path)))
+                    uniqueUsers.insert(user);
+            // Users which are deleted as well don't miss anything
+            for (const auto& path : pendingDeletePaths) {
+                auto assetPath = GetAssetPath(path);
+                std::erase_if(uniqueUsers, [&](const std::string& user) { return user == assetPath || user.starts_with(assetPath + "/"); });
+            }
+            return std::vector<std::string>(uniqueUsers.begin(), uniqueUsers.end());
+            });
+        ImGui::Spacing();
+        if (users && !users->empty())
+            ImGui::TextColored(Theme::Warning(), users->size() == 1 ? "Still used by %d file" : "Still used by %d files",
+                int32_t(users->size()));
+        RenderUserList();
+
+        ImGui::Spacing();
+        if (pendingDeleteHasDirectory)
+            ImGui::TextColored(Theme::Warning(), "Folders are deleted with everything in them");
+        if (FileSystemHelper::hasRecycleBin)
+            ImGui::TextColored(Theme::TextMuted(), "The files are moved to the recycle bin");
+        else
+            ImGui::TextColored(Theme::Warning(), "This can't be undone");
+        ImGui::Spacing();
+
+        auto buttonWidth = ImGui::CalcTextSize("Cancel").x * 2.5f;
+        auto confirm = Widgets::DangerButton("Delete", ImVec2(buttonWidth, 0.0f));
+        ImGui::SameLine();
+        // Cancel is the safe choice for keyboard navigation
+        auto cancel = ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f));
+        ImGui::SetItemDefaultFocus();
+        cancel |= ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        if (confirm) {
+            FileSystemHelper::Delete(pendingDeletePaths);
+            selectionStorage.Clear();
+        }
+        if (confirm || cancel) {
+            pendingDeletePaths.clear();
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+
+    }
+
+    std::string ContentBrowserWindow::GetAssetPath(const std::filesystem::path& path) {
+
+        auto assetPath = Common::Path::GetRelative(Loader::AssetLoader::GetDataDirectory(), Common::Path::Normalize(path.string()));
+        assetPath = Common::Path::Normalize(assetPath);
+        if (assetPath.starts_with('/'))
+            assetPath.erase(assetPath.begin());
+        return assetPath;
+
+    }
+
+    void ContentBrowserWindow::FindUsersOnce(const std::function<std::vector<std::string>()>& find) {
+
+        if (!users && AssetReferenceIndex::IsReady())
+            users = find();
+
+    }
+
+    void ContentBrowserWindow::RenderUserList() {
+
+        auto width = 30.0f * ImGui::GetFontSize();
+        if (!users) {
+            ImGui::TextColored(Theme::TextMuted(), "Looking for references...");
+            ImGui::ProgressBar(AssetReferenceIndex::GetProgress(), ImVec2(width, 0.0f));
+            return;
+        }
+
+        if (users->empty())
+            return;
+
+        auto rows = std::min(float(users->size()), 10.0f);
+        ImGui::BeginChild("Users", ImVec2(width, rows * ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().WindowPadding.y));
+        ImGuiListClipper clipper;
+        clipper.Begin(int32_t(users->size()));
+        while (clipper.Step()) {
+            for (int32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                if (ImGui::Selectable(users->at(i).c_str(), false, ImGuiSelectableFlags_NoAutoClosePopups)) {
+                    contentToShowPath = users->at(i);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+        ImGui::EndChild();
+
+    }
+
+    void ContentBrowserWindow::RenderReferences() {
+
+        const char* popupName = "References";
+        if (openReferences) {
+            users.reset();
+            AssetReferenceIndex::Request();
+            ImGui::OpenPopup(popupName);
+            openReferences = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+            return;
+
+        FindUsersOnce([&]() { return AssetReferenceIndex::FindUsers(referencedPath); });
+        if (users)
+            ImGui::Text(users->size() == 1 ? "%s is used by %d file" : "%s is used by %d files", referencedPath.c_str(), int32_t(users->size()));
+        RenderUserList();
+
+        ImGui::Spacing();
+        if (ImGui::Button("Close") || ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+
+    }
+
+    void ContentBrowserWindow::RenderRenameConfirmation() {
+
+        const char* popupName = "Update references?";
+        if (openRenameConfirmation) {
+            users.reset();
+            renameState = RenameState::Asking;
+            AssetReferenceIndex::Request();
+            ImGui::OpenPopup(popupName);
+            openRenameConfirmation = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+            return;
+
+        FindUsersOnce([&]() { return AssetReferenceIndex::FindUsers(GetAssetPath(renameSource), true); });
+
+        ImGui::Text("Rename %s to %s", renameSource.filename().string().c_str(), renameTarget.filename().string().c_str());
+        if (users && !users->empty())
+            ImGui::Text(users->size() == 1 ? "%d file uses it" : "%d files use it", int32_t(users->size()));
+        if (renameState != RenameState::OnlyRename)
+            RenderUserList();
+        ImGui::Spacing();
+
+        auto buttonWidth = ImGui::CalcTextSize("Rename and update").x * 1.3f;
+        if (renameState == RenameState::Asking) {
+            ImGui::BeginDisabled(!users);
+            if (ImGui::Button("Rename and update", ImVec2(buttonWidth, 0.0f)))
+                renameState = RenameState::UpdateUsers;
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            if (ImGui::Button("Only rename", ImVec2(buttonWidth, 0.0f)))
+                renameState = RenameState::OnlyRename;
+            ImGui::SameLine();
+            // Nothing to decide
+            if (users && users->empty())
+                renameState = RenameState::UpdateUsers;
+        }
+        else {
+            ImGui::TextColored(Theme::TextMuted(), "Waiting for background jobs...");
+        }
+        auto cancel = ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        // Jobs keep files open and read the paths of resources, some of them run for a while
+        auto renamed = renameState != RenameState::Asking && !cancel && JobSystem::GetPendingJobCount(JobPriority::Medium) == 0 &&
+            JobSystem::GetPendingJobCount(JobPriority::Low) == 0;
+        if (renamed)
+            RenameContent();
+        if (renamed || cancel) {
+            renameState = RenameState::Asking;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+
+    }
+
+    void ContentBrowserWindow::RenameContent() {
+
+        auto oldPath = GetAssetPath(renameSource);
+        auto newPath = GetAssetPath(renameTarget);
+        auto updateUsers = renameState == RenameState::UpdateUsers;
+
+        // Only short ones are left
+        JobSystem::WaitAll();
+
+        std::error_code error;
+        std::filesystem::rename(renameSource, renameTarget, error);
+        if (error) {
+            Notifications::Push({ .message = "Couldn't rename " + renameSource.filename().string() + ": " + error.message(),
+                .type = NotificationType::Error });
+            return;
+        }
+
+        AssetRenamer::RenameResources(oldPath, newPath);
+        if (onRename)
+            onRename(oldPath, newPath, updateUsers);
+        if (updateUsers)
+            AssetReferenceIndex::RenameInFiles(*users, oldPath, newPath);
+        ContentDiscovery::Execute();
 
     }
 
     void ContentBrowserWindow::RenderDirectoryControl() {
 
-        auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+        auto rootDirectory = ContentDiscovery::GetContent();
+        if (!rootDirectory)
+            return;
 
-        ImGui::SetWindowFontScale(1.5f);
+        for (const auto& directory : rootDirectory->directories)
+            RenderDirectoryEntry(directory);
+
+    }
+
+    void ContentBrowserWindow::RenderDirectoryContentControl() {
+
+        auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
         auto lineHeight = ImGui::GetTextLineHeight();
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&Singletons::icons->Get(IconType::ArrowLeft));
+
+        auto normalizedDataDirectory = Common::Path::Normalize(dataDirectory);
+        bool atRoot = Common::Path::Normalize(currentDirectory) == normalizedDataDirectory;
+
+        ImGui::BeginDisabled(atRoot);
+        if (Widgets::ToolbarIconButton("Back button", Singletons::icons->Get(IconType::ArrowLeft), "Go to parent folder")) {
+            auto parentPath = std::filesystem::path(currentDirectory).parent_path();
+            currentDirectory = Common::Path::Normalize(parentPath.string());
+        }
+        ImGui::EndDisabled();
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
-        if (ImGui::ImageButton(set, ImVec2(lineHeight, lineHeight), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0)) {
-            if (currentDirectory != assetDirectory) {
-                auto parentPath = std::filesystem::path(currentDirectory).parent_path();
-                currentDirectory = parentPath.string();
-            }
+        // Breadcrumbs: every part of the path can be clicked to jump there
+        auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory);
+        assetPath = Common::Path::Normalize(assetPath);
+
+        std::vector<std::string> segments;
+        size_t segmentStart = 0;
+        while (segmentStart <= assetPath.size()) {
+            auto segmentEnd = assetPath.find('/', segmentStart);
+            if (segmentEnd == std::string::npos)
+                segmentEnd = assetPath.size();
+            if (segmentEnd > segmentStart)
+                segments.push_back(assetPath.substr(segmentStart, segmentEnd - segmentStart));
+            segmentStart = segmentEnd + 1;
         }
 
+        std::string crumbTarget;
+        auto renderCrumb = [&](const std::string& label, const std::string& target, bool last, int32_t id) {
+            ImGui::PushID(id);
+            if (last) {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(label.c_str());
+            }
+            else if (ImGui::Button(label.c_str())) {
+                crumbTarget = target;
+            }
+            ImGui::PopID();
+            };
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, ImGui::GetStyle().ItemSpacing.y));
+
+        ImGui::SameLine();
+        renderCrumb("data", normalizedDataDirectory, segments.empty(), -1);
+
+        auto accumulatedPath = normalizedDataDirectory;
+        for (int32_t i = 0; i < int32_t(segments.size()); i++) {
+            accumulatedPath += "/" + segments[i];
+
+            ImGui::SameLine();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextDisabled("/");
+            ImGui::SameLine();
+            renderCrumb(segments[i], accumulatedPath, i == int32_t(segments.size()) - 1, i);
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
 
-        ImGui::SameLine();
+        if (!crumbTarget.empty())
+            currentDirectory = Common::Path::Normalize(crumbTarget);
 
-        // Being in a child window offsets everything, need to align the // slashes
-        ImGui::SetCursorPosY(-2.0f);
-
-        auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory);
-        assetPath = Common::Path::Normalize(assetPath);
-        if (assetPath.starts_with('/'))
-            assetPath.erase(assetPath.begin());
-
-        assetPath = "//:" + assetPath;
-        ImGui::Text("%s", assetPath.c_str());
-
-        ImGui::SameLine();
-
-        ImGui::SetWindowFontScale(1.0f);
-
-        ImGui::InputTextWithHint("Search", "Type to search for files", &assetSearch);
+        ImGui::SameLine(0.0f, 2.0f * padding);
 
         auto region = ImGui::GetContentRegionAvail();
-        auto& moreIcon = Singletons::icons->Get(IconType::Settings);
-        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moreIcon);
-
-        lineHeight = ImGui::GetTextLineHeight();
         auto buttonSize = ImVec2(lineHeight, lineHeight);
+        // A docked browser also has the button which turns it back into a drawer
+        auto buttonCount = pinned ? 4.0f : 3.0f;
 
-        auto uvMin = ImVec2(0.1f, 0.1f);
-        auto uvMax = ImVec2(0.9f, 0.9f);
+        // Wrap input text field into child, such that we can adjust the total size to not overlap anything
+        ImGui::BeginChild("Search field", ImVec2(std::max(region.x - buttonCount * (buttonSize.x + 2.0f * padding), 100.0f), lineHeight + 2.0f * padding));
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##Search", "Search files...", &assetSearch);
+        ImGui::EndChild();
 
-        ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-            ImGui::OpenPopup("Content browser settings");
-        }
-        ImGui::PopStyleColor();
+        region = ImGui::GetContentRegionAvail();
+        auto& viewIcon = Singletons::icons->Get(listView ? IconType::ViewGrid : IconType::ViewList);
 
-        if (ImGui::BeginPopup("Content browser settings")) {
-            auto& settings = Singletons::config->contentBrowserSettings;
+        ImGui::SetCursorPos(ImVec2(region.x - buttonCount * (buttonSize.x + 2.0f * padding), 0.0f));
+        if (Widgets::ToolbarIconButton("View button", viewIcon, listView ? "Show as tiles" : "Show as list"))
+            listView = !listView;
 
-            ImGui::Checkbox("Search recursively", &settings.searchRecursively);
-            ImGui::Checkbox("Filter recursively", &settings.filterRecursively);
+        // Mark the button while a filter hides content
+        bool filterActive = (contentFilter & ContentFilterBits::AllBit) != ContentFilterBits::AllBit;
+        ImGui::SetCursorPos(ImVec2(region.x - (buttonCount - 1.0f) * (buttonSize.x + 2.0f * padding), 0.0f));
+        if (Widgets::ToolbarIconButton("Filter button", Singletons::icons->Get(IconType::Filter),
+            filterActive ? "Filter content (active)" : "Filter content"))
+            ImGui::OpenPopup("Content browser filter settings");
+        if (filterActive)
+            Widgets::ActiveIndicator();
+
+        if (ImGui::BeginPopup("Content browser filter settings")) {
+            auto renderSingleBitOption = [&](const char* name, ContentFilterBits bit) {
+                // Filters can be combined, so they are checkboxes
+                bool isSet = contentFilter & bit;
+                if (ImGui::Checkbox(name, &isSet)) {
+                    contentFilter = isSet ? contentFilter | bit : contentFilter & ~bit;
+                }
+                };
+
+            ImGui::SeparatorText("Show content of type");
+
+            ContentFilter filtered = contentFilter & ContentFilterBits::AllBit;
+            bool isSet = filtered == ContentFilterBits::AllBit;
+
+            if (ImGui::Checkbox("All", &isSet)) {
+                contentFilter = isSet ? ContentFilterBits::AllBit : 0;
+            }
+            ImGui::Separator();
+            // The filter bits are in the order of the content types
+            for (int32_t i = 0; i < static_cast<int32_t>(ContentType::None); i++)
+                renderSingleBitOption(GetTypeName(static_cast<ContentType>(i)), static_cast<ContentFilterBits>(1 << i));
 
             ImGui::EndPopup();
+        }
+
+        region = ImGui::GetContentRegionAvail();
+        ImGui::SetCursorPos(ImVec2(region.x - (buttonCount - 2.0f) * (buttonSize.x + 2.0f * padding), 0.0f));
+        if (Widgets::ToolbarIconButton("Settings button", Singletons::icons->Get(IconType::Settings), "Content browser settings"))
+            ImGui::OpenPopup("Content browser settings");
+
+        if (ImGui::BeginPopup("Content browser settings")) {
+
+            ImGui::SeparatorText("Search");
+
+            ImGui::Checkbox("Search recursively", &searchRecursively);
+            ImGui::Checkbox("Filter recursively", &filterRecursively);
+
+            ImGui::SeparatorText("Display");
+            ImGui::Checkbox("Show previews", &showPreviews);
+            ImGui::SetItemTooltip("Shows textures, meshes, materials, prefabs, fonts and audio instead of the icons of their type");
+            ImGui::SliderFloat("Icon size", &iconSize, minIconSize, maxIconSize, "%.0f px");
+            ImGui::TextDisabled("Ctrl + mouse wheel over the content also changes the size");
+
+            ImGui::EndPopup();
+        }
+
+        if (pinned) {
+            ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
+            RenderPinButton();
         }
 
     }
@@ -224,150 +598,648 @@ namespace Atlas::Editor::UI {
     void ContentBrowserWindow::RenderDirectoryContent() {
 
         float totalWidth = ImGui::GetContentRegionAvail().x;
-        auto columnItemCount = int32_t(totalWidth / itemSize);
-        columnItemCount = columnItemCount <= 0 ? 1 : columnItemCount;
+        // Ctrl + mouse wheel zooms the icons
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::GetIO().KeyCtrl &&
+            ImGui::GetIO().MouseWheel != 0.0f) {
+            iconSize = std::clamp(iconSize + ImGui::GetIO().MouseWheel * 8.0f, minIconSize, maxIconSize);
+        }
 
-        ImGui::Columns(columnItemCount, nullptr, false);
+        auto columnCount = 1;
+        float columnSize = totalWidth;
+        gridStart = padding;
+
+        // Tiles fill the width with small gaps, the icon size is their smallest size
+        if (!listView) {
+            auto available = totalWidth - 2.0f * tileGap;
+            columnCount = std::max(1, int32_t((available + tileGap) / (iconSize + tileGap)));
+            tileSize = std::floor((available - tileGap * float(columnCount - 1)) / float(columnCount));
+            columnSize = tileSize + tileGap;
+            gridStart = tileGap;
+        }
 
         if (!std::filesystem::exists(currentDirectory)) {
             auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
-            Notifications::Push({ .message = message, .color = vec3(1.0f, 1.0f, 0.0f) });
-            currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+            Notifications::Push({ .message = message, .type = NotificationType::Warning });
+            currentDirectory = Loader::AssetLoader::GetDataDirectory();
         }
 
-        JobSystem::Wait(searchAndFilterJob);
+        if (searchAndFilterJob.HasFinished() && hasFoundEntries) {
+            directories.swap(foundDirectories);
+            files.swap(foundFiles);
+            hasFoundEntries = false;
+        }
 
-        auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+        auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
         nextDirectory = std::string();
 
+        auto entryCount = int32_t(directories.size()) + int32_t(files.size());
+        ImGuiMultiSelectIO* multiSelectionIO = ImGui::BeginMultiSelect(ImGuiMultiSelectFlags_BoxSelect2d |
+            ImGuiMultiSelectFlags_ClearOnClickVoid, selectionStorage.Size, entryCount);
+        selectionStorage.ApplyRequests(multiSelectionIO);
+
+        ImGui::SetCursorPosX(gridStart);
+
+        int32_t entryIdx = 0;
+        float columnHeight = 0.0f;
         for (const auto& directory : directories) {
-            RenderContentEntry(directory->path, directory->assetPath, ContentType::None);
+            // Ignore 'invisible' directories
+            if (directory->assetPath.at(0) == '.')
+                continue;
+
+            RenderContentEntry(directory->path, directory->assetPath, ContentType::None, 0, 0,
+                entryIdx++, columnCount, columnSize, columnHeight);
         }
 
         for (const auto& file : files) {
-            RenderContentEntry(file.path, file.assetPath, file.type);
+            RenderContentEntry(file.path, file.assetPath, file.type, file.size, file.lastWriteTime,
+                entryIdx++, columnCount, columnSize, columnHeight);
         }
+
+        multiSelectionIO = ImGui::EndMultiSelect();
+        selectionStorage.ApplyRequests(multiSelectionIO);
 
         if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
             if (ImGui::BeginMenu("Create")) {
+                auto path = Common::Path::GetAbsolute(currentDirectory);
                 if (ImGui::MenuItem("Folder")) {
-
+                    isEditing = true;
+                    directories.push_back(CreateRef<ContentDirectory>({
+                        .path = path,
+                        .assetPath = path,
+                        }));
+                }
+                if (ImGui::MenuItem("Material")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::Material,
+                        });
+                }
+                if (ImGui::MenuItem("Material graph")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::MaterialGraph,
+                        });
+                }
+                if (ImGui::MenuItem("Material subgraph")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::MaterialSubgraph,
+                        });
                 }
                 if (ImGui::MenuItem("Script")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::Script,
+                        });
+                }
 
+                if (isEditing) {
+                    editingChanged = true;
+                    editingPath = path;
+                    editingString.clear();
+                    editingType = EditingType::Create;
                 }
                 ImGui::EndMenu();
+            }
+
+            if (CopyPasteHelper::AcceptPaste<ContentCopy>() && ImGui::MenuItem("Paste")) {
+                ContentCopy copy;
+                CopyPasteHelper::Paste(copy);
+                FileSystemHelper::Copy(copy.paths, Common::Path::GetAbsolute(currentDirectory));
             }
 
             ImGui::EndPopup();
         }
 
-        if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
-            auto newPath = renamePath;
-            newPath = newPath.replace_filename(renameString);
-            if (renamePath.has_extension())
-                newPath = newPath.replace_extension(renamePath.extension());
-            std::filesystem::rename(renamePath, newPath);
-        }
-
         if (!nextDirectory.empty()) {
-            currentDirectory = nextDirectory;
+            currentDirectory = Common::Path::Normalize(nextDirectory);
         }
 
     }
 
-    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType) {
+    void ContentBrowserWindow::RenderDirectoryEntry(const Ref<ContentDirectory>& directory) {
+
+        // Ignore 'invisible' directories
+        if (directory->assetPath.at(0) == '.')
+            return;
+
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_AllowOverlap |
+            ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+
+        if (currentDirectory == directory->path)
+            nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+        auto rowPosY = ImGui::GetCursorPosY();
+        auto& style = ImGui::GetStyle();
+        auto iconSize = ImGui::GetTextLineHeight();
+
+        bool nodeOpen = ImGui::TreeNodeEx(directory->name.c_str(), nodeFlags, "");
+
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) { 
+            currentDirectory = Common::Path::Normalize(directory->path.string());
+        }
+
+        auto folderIcon = Singletons::icons->GetTintable(IconType::Folder);
+        auto set = Singletons::imguiWrapper->GetTextureId(&folderIcon);
+
+        ImGui::SameLine(0.0f, 0.0f);
+        ImGui::SetCursorPosY(rowPosY + style.FramePadding.y);
+        ImGui::ImageWithBg(set, ImVec2(iconSize, iconSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f),
+            ImVec4(0.0f, 0.0f, 0.0f, 0.0f), Theme::ContentIcon(ContentType::None));
+
+        ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
+        ImGui::SetCursorPosY(rowPosY);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(directory->name.c_str());
+
+        if (nodeOpen) {
+            for (const auto& childDirectory : directory->directories)
+                RenderDirectoryEntry(childDirectory);
+
+            ImGui::TreePop();
+        }
+
+    }
+
+    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType,
+        uintmax_t fileSize, int64_t lastWriteTime, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight) {
 
         bool isDirectory = contentType == ContentType::None;
-        // Ignore 'invisible' directories
-        if (isDirectory && assetPath.at(0) == '.')
-            return;
 
         auto filename = Common::Path::GetFileName(assetPath);
 
-        ImVec2 buttonSize = ImVec2(iconSize, iconSize);
+        auto lineHeight = ImGui::GetTextLineHeight();
+        ImVec2 buttonSize = listView ? ImVec2(columnSize - 2.0f * padding, lineHeight + 4.0f) : ImVec2(tileSize, GetTileHeight());
+        auto cursorPos = ImGui::GetCursorPos();
 
         ImGui::BeginGroup();
 
-        ImGui::PushID(path.c_str());
+        ImGui::PushID(entryIdx);
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         Texture::Texture2D iconTexture;
         if (isDirectory)
-            iconTexture = Singletons::icons->Get(IconType::Folder);
+            iconTexture = Singletons::icons->GetTintable(IconType::Folder);
         else
-            iconTexture = GetIcon(contentType);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&iconTexture);
+            iconTexture = Singletons::contentPreviews->GetIcon(contentType);
+        auto set = Singletons::imguiWrapper->GetTextureId(&iconTexture);
 
-        std::string fileType = Common::Path::GetFileType(assetPath);
-        std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
-
-        // Assign default value, which is not valid if this dir entry is a directory
-        auto type = ContentType::Audio;
-        if (!isDirectory)
-            type = Content::contentTypeMapping.at(fileType);
+        bool highlight = assetPath == hightlightPath;
+        if (highlight) {
+            ImGui::SetScrollY(ImGui::GetCursorPosY());
+            selectionStorage.SetItemSelected((ImGuiID)entryIdx, true);
+        }
 
         auto assetRelativePath = Common::Path::Normalize(assetPath);
-        auto buttonFlags = isDirectory || type == ContentType::Scene ? ImGuiButtonFlags_PressedOnDoubleClick : 0;
-        if (ImGui::ImageButtonEx(ImGui::GetID("ImageButton"), set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
-            ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), buttonFlags)) {
-            if (isDirectory)
-                nextDirectory = path.string();
-            else if (type == ContentType::Scene)
-                FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
+
+        // Add selectable to allow for multi-select
+        bool selected = selectionStorage.Contains((ImGuiID)entryIdx);
+        ImGui::SetNextItemSelectionUserData(entryIdx);
+        // Tiles draw their own background, hover and selection, the rectangle of the keyboard focus would be around
+        // the larger area of the selectable
+        if (!listView) {
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_NavCursor, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         }
+        ImGui::Selectable("##Selectable", &selected, ImGuiSelectableFlags_None, buttonSize);
+        if (!listView)
+            ImGui::PopStyleColor(4);
+
+        auto tileMin = ImGui::GetItemRectMin();
+        auto tileHovered = ImGui::IsItemHovered();
+        // Only after resting on an entry for a moment, moving over the content doesn't open tooltips
+        auto showTooltip = ImGui::IsItemHovered(ImGuiHoveredFlags_Stationary | ImGuiHoveredFlags_DelayNormal |
+            ImGuiHoveredFlags_NoSharedDelay) && !ImGui::IsDragDropActive() && !isEditing;
+
+        // Files are dragged right away instead of starting a box selection
+        if (!isDirectory && ImGui::IsItemClicked())
+            ImGui::GetCurrentContext()->BoxSelectState.IsStarting = false;
+
+        if (ImGui::IsItemHovered()) {
+            if (ImGui::IsMouseDoubleClicked(0)) {
+                if (isDirectory)
+                    nextDirectory = path.string();
+                else if (contentType == ContentType::Scene)
+                    FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
+                else if (contentType == ContentType::Mesh || contentType == ContentType::Animation ||
+                    contentType == ContentType::Material || contentType == ContentType::Prefab ||
+                    contentType == ContentType::MaterialGraph || contentType == ContentType::MaterialSubgraph ||
+                    contentType == ContentType::Script || contentType == ContentType::Shader)
+                    contentToEditPath = assetRelativePath;
+            }
+        }
+
+        ImGui::SetItemAllowOverlap();
 
         if (!isDirectory && ImGui::BeginDragDropSource()) {
             // Size doesn't count the termination character, so add +1
             ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.data(), assetRelativePath.size() + 1);
-            ImGui::Text("Drag to entity component");
+            ImGui::TextUnformatted(filename.c_str());
+            ImGui::TextDisabled("Drop on a matching resource slot");
 
             ImGui::EndDragDropSource();
         }
 
         if (ImGui::BeginPopupContextItem()) {
+            auto singleSelect = selectionStorage.Size == 1;
             // Do a direct import here without relying on the file importer
-            if (type == ContentType::MeshSource && ImGui::MenuItem("Import as scene")) {
+            if (contentType == ContentType::MeshSource && singleSelect && ImGui::MenuItem("Import as scene")) {
                 PopupPanels::filename = assetRelativePath;
                 PopupPanels::isImportScenePopupVisible = true;
             }
 
+            auto hasAssetEditor = contentType == ContentType::Mesh || contentType == ContentType::Material ||
+                contentType == ContentType::MaterialGraph || contentType == ContentType::MaterialSubgraph ||
+                contentType == ContentType::Prefab || contentType == ContentType::Script || contentType == ContentType::Shader;
+            if (!isDirectory && hasAssetEditor && singleSelect && ImGui::MenuItem("Open"))
+                contentToEditPath = assetRelativePath;
+            if (!isDirectory && contentType == ContentType::Scene && singleSelect && ImGui::MenuItem("Open"))
+                FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
+
             // We shouldn't allow the user to delete the root entity
-            if (ImGui::MenuItem("Open externally"))
+            if (singleSelect && ImGui::MenuItem("Open externally"))
                 OpenExternally(std::filesystem::absolute(path).string(), isDirectory);
 
-            if (ImGui::MenuItem("Rename")) {
-                renamePopupVisible = true;
+            if (singleSelect && ImGui::MenuItem("Rename")) {
+                isEditing = true;
                 auto dirEntryFilename = path.filename();
-                renameString = dirEntryFilename.replace_extension("").string();
-                renamePath = path;
+                editingString = dirEntryFilename.replace_extension("").string();
+                editingChanged = true;
+                editingPath = path;
+                editingType = EditingType::Rename;
             }
 
-            if (ImGui::MenuItem("Delete"))
-                std::filesystem::remove_all(path);
+            if (singleSelect && ImGui::MenuItem("Duplicate")) {
+                FileSystemHelper::Duplicate(path.string());
+            }
+
+            if (ImGui::MenuItem("Copy")) {
+                ContentCopy copy{ GetSelectedPaths() };
+                CopyPasteHelper::Copy(copy);
+            }
+
+            // Deleting can't be undone, the window asks before anything is removed
+            if (ImGui::MenuItem("Delete...")) {
+                pendingDeletePaths = GetSelectedPaths();
+                pendingDeleteHasDirectory = std::any_of(pendingDeletePaths.begin(), pendingDeletePaths.end(),
+                    [](const std::string& path) { return std::filesystem::is_directory(path); });
+                openDeleteConfirmation = true;
+            }
+
+            if (singleSelect && ImGui::MenuItem("Find references")) {
+                referencedPath = assetRelativePath;
+                openReferences = true;
+            }
 
             ImGui::EndPopup();
         }
 
+        // Just draw the icon if it is actually visible
+        bool isVisible = ImGui::IsItemVisible();
+        if (isVisible) {
+            ContentPreviews::Preview preview;
+            auto hasPreview = !isDirectory && showPreviews &&
+                Singletons::contentPreviews->Get(assetRelativePath, contentType, fileSize, lastWriteTime, preview);
+
+            if (listView) {
+                ImGui::SameLine();
+                ImGui::SetCursorPosX(cursorPos.x);
+                ImGui::SetCursorPosY(cursorPos.y + 3.0f);
+                auto imageSize = ImVec2(lineHeight, lineHeight);
+                if (hasPreview) {
+                    RenderPreview(preview, contentType, imageSize, set);
+                }
+                else {
+                    ImGui::ImageWithBg(set, imageSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+                        ImVec4(0.0f, 0.0f, 0.0f, 0.0f), Theme::ContentIcon(contentType));
+                }
+            }
+            else {
+                auto editingThis = isEditing && editingPath == path;
+                auto shortened = RenderTile(tileMin, editingThis ? std::string() : filename, contentType,
+                    selected, tileHovered, set, hasPreview ? &preview : nullptr);
+                if (isDirectory && shortened && showTooltip)
+                    ImGui::SetTooltip("%s", filename.c_str());
+            }
+
+            if (!isDirectory && showTooltip)
+                RenderContentTooltip(filename, contentType, fileSize, hasPreview ? &preview : nullptr, set);
+        }
+
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
 
-        auto offset = 0.0f;
+        if (isEditing && editingPath == path) {
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        auto textSize = ImGui::CalcTextSize(filename.c_str());
-        if (textSize.x < iconSize + padding)
-            offset = (iconSize + padding - textSize.x) / 2.0f;
+            if (listView)
+                ImGui::SameLine();
+            else
+                ImGui::SetCursorScreenPos(ImVec2(tileMin.x + tileLabelPadding * 0.5f,
+                    tileMin.y + tileSize));
+            ImGui::SetNextItemWidth(listView ? columnSize * 0.5f : buttonSize.x - tileLabelPadding);
+            if (editingChanged) {
+                ImGui::SetKeyboardFocusHere();
+            }
+            if (ImGui::InputText("##Editing", &editingString, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+                isEditing = false;
+                ApplyEdit(contentType);
+                ContentDiscovery::Execute();
+            }
+            // Only can apply a scroll after the element was specified above
+            if (editingChanged && editingType == EditingType::Create) {
+                ImGui::SetScrollY(ImGui::GetCursorPosY());
+            }
+            // Will not be immediately valid, so only check in next frame
+            if ((!ImGui::IsItemFocused() || ImGui::IsItemDeactivated()) && !editingChanged) {
+                isEditing = false;
+                // Means we need to delete the last element (first the directory)
+                if (editingType == EditingType::Create && contentType == ContentType::None) {
+                    directories.pop_back();
+                }
+                else if (editingType == EditingType::Create && contentType != ContentType::None) {
+                    files.pop_back();
+                }
+                ContentDiscovery::Execute();
+            }
+            editingChanged = false;
 
-        auto cursorX = ImGui::GetCursorPosX();
-        ImGui::SetCursorPosX(cursorX + offset);
-        ImGui::TextWrapped("%s", filename.c_str());
+            ImGui::PopStyleColor();
+            ImGui::PopStyleColor();
+
+            // The field is inside the tile, the next row starts below the tile
+            if (!listView) {
+                ImGui::SetCursorScreenPos(ImVec2(tileMin.x, tileMin.y + buttonSize.y));
+                ImGui::Dummy(ImVec2(0.0f, 0.0f));
+            }
+        }
+        else if (isVisible && listView) {
+            RenderListColumns(filename, contentType, fileSize, buttonSize.x);
+        }
 
         ImGui::PopID();
 
         ImGui::EndGroup();
 
-        ImGui::NextColumn();
+        // Advance to next column, rows of tiles have the same gap as the columns
+        columnHeight = std::max(listView ? ImGui::GetCursorPosY() - cursorPos.y : buttonSize.y + tileGap, columnHeight);
+
+        ImGui::SetCursorPosX(((entryIdx + 1) % columnCount) * columnSize + gridStart);
+        if ((entryIdx + 1) % columnCount == 0) {
+            cursorPos.y = cursorPos.y + columnHeight;
+            ImGui::SetCursorPosY(cursorPos.y);
+            columnHeight = 0.0f;
+        }
+        else {
+            ImGui::SetCursorPosY(cursorPos.y);
+        }
+
+    }
+
+    void ContentBrowserWindow::RenderPreview(const ContentPreviews::Preview& preview, ContentType contentType, ImVec2 size,
+        ImTextureID iconTexture) {
+
+        auto min = ImGui::GetCursorScreenPos();
+        ImGui::Dummy(size);
+
+        Singletons::contentPreviews->Draw(ImGui::GetWindowDrawList(), preview, contentType, min,
+            ImVec2(min.x + size.x, min.y + size.y), iconTexture, true);
+
+    }
+
+    float ContentBrowserWindow::GetTileHeight() const {
+
+        // Two lines for the name, the color of the type is shown by the line below the thumbnail
+        return tileSize + 1.5f * tileLabelPadding + 2.0f * ImGui::GetTextLineHeight();
+
+    }
+
+    bool ContentBrowserWindow::RenderTile(ImVec2 min, const std::string& filename, ContentType contentType, bool selected,
+        bool hovered, ImTextureID iconTexture, const ContentPreviews::Preview* preview) {
+
+        auto drawList = ImGui::GetWindowDrawList();
+        auto isDirectory = contentType == ContentType::None;
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        auto max = ImVec2(min.x + tileSize, min.y + GetTileHeight());
+        auto thumbnailMax = ImVec2(min.x + tileSize, min.y + tileSize);
+        auto labelWidth = tileSize - 2.0f * tileLabelPadding;
+
+        if (isDirectory) {
+            // Folders have no card, only a background while they are hovered or selected
+            if (selected || hovered)
+                drawList->AddRectFilled(min, max, ImGui::GetColorU32(selected ? Theme::Accent(0.2f) : Theme::AssetCardHovered(0.7f)),
+                    tileRounding);
+            if (selected)
+                drawList->AddRect(min, max, ImGui::GetColorU32(Theme::Accent(0.8f)), tileRounding, 0, 1.5f);
+
+            auto inset = 0.1f * tileSize;
+            drawList->AddImage(iconTexture, ImVec2(min.x + inset, min.y + inset), ImVec2(thumbnailMax.x - inset, thumbnailMax.y - inset),
+                ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImGui::GetColorU32(Theme::ContentIcon(contentType)));
+
+            return RenderTileName(drawList, filename, ImVec2(min.x + tileLabelPadding, thumbnailMax.y + tileLabelPadding * 0.5f),
+                labelWidth, true);
+        }
+
+        // A soft card which lifts with a shadow when hovered, the thumbnail inside is darker such that previews
+        // without background stand out
+        if (hovered && !selected)
+            drawList->AddRectFilled(ImVec2(min.x, min.y + 3.0f), ImVec2(max.x, max.y + 3.0f), ImGui::GetColorU32(Theme::Shadow(0.8f)), tileRounding);
+        auto cardColor = selected ? Theme::Accent(0.16f) : (hovered ? Theme::AssetCardHovered() : Theme::AssetCard(0.6f));
+        drawList->AddRectFilled(min, max, ImGui::GetColorU32(cardColor), tileRounding);
+
+        auto thumbnailMin = ImVec2(min.x + tileThumbnailInset, min.y + tileThumbnailInset);
+        thumbnailMax = ImVec2(thumbnailMax.x - tileThumbnailInset, thumbnailMax.y - tileThumbnailInset);
+        auto thumbnailSize = thumbnailMax.x - thumbnailMin.x;
+        auto thumbnailRounding = tileRounding - 2.0f;
+        drawList->AddRectFilled(thumbnailMin, thumbnailMax, ImGui::GetColorU32(Theme::AssetThumbnail()), thumbnailRounding);
+
+        if (preview) {
+            // Images fill the thumbnail, rendered content and shapes have their own margin
+            Singletons::contentPreviews->Draw(drawList, *preview, contentType, thumbnailMin, thumbnailMax, iconTexture, false, thumbnailRounding);
+        }
+        else {
+            auto inset = ContentPreviews::iconInset * thumbnailSize;
+            drawList->AddImage(iconTexture, ImVec2(thumbnailMin.x + inset, thumbnailMin.y + inset),
+                ImVec2(thumbnailMax.x - inset, thumbnailMax.y - inset), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+                ImGui::GetColorU32(Theme::ContentIcon(contentType, ContentPreviews::iconAlpha)));
+        }
+
+        // A thin line in the color of the type along the bottom of the thumbnail
+        drawList->AddRectFilled(ImVec2(thumbnailMin.x, thumbnailMax.y - tileTypeLineHeight), thumbnailMax,
+            ImGui::GetColorU32(Theme::ContentTypeColor(contentType)), thumbnailRounding, ImDrawFlags_RoundCornersBottom);
+
+        if (selected)
+            drawList->AddRect(min, max, ImGui::GetColorU32(Theme::Accent()), tileRounding, 0, 1.5f);
+
+        // The color says what the file is, the name doesn't need the extension
+        auto extensionStart = filename.find_last_of('.');
+        auto name = extensionStart != std::string::npos && extensionStart > 0 ? filename.substr(0, extensionStart) : filename;
+        auto labelMin = ImVec2(min.x + tileLabelPadding, thumbnailMax.y + tileThumbnailInset + 0.5f * tileLabelPadding);
+        auto shortened = RenderTileName(drawList, name, labelMin, labelWidth, false);
+
+        return shortened;
+
+    }
+
+    bool ContentBrowserWindow::RenderTileName(ImDrawList* drawList, const std::string& name, ImVec2 position, float width, bool centered) {
+
+        if (name.empty())
+            return false;
+
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        const char* text = name.c_str();
+        const char* textEnd = text + name.size();
+
+        // As much as fits on the first line, the rest goes to the second one. Lines rather break after a separator
+        // in the second half of the first line, e.g. M_Decal_ | 01. Names of several parts may break inside a part,
+        // a single word ends with an ellipsis instead of being torn apart
+        auto isSeparator = [](char character) { return character == '_' || character == '-' || character == ' ' || character == '.'; };
+
+        auto firstLineEnd = text;
+        while (firstLineEnd < textEnd) {
+            unsigned int character;
+            auto next = firstLineEnd + ImTextCharFromUtf8(&character, firstLineEnd, textEnd);
+            if (ImGui::CalcTextSize(text, next).x > width)
+                break;
+            firstLineEnd = next;
+        }
+        if (firstLineEnd == text && text < textEnd) {
+            unsigned int character;
+            firstLineEnd += ImTextCharFromUtf8(&character, text, textEnd);
+        }
+        if (firstLineEnd < textEnd) {
+            auto breakAt = static_cast<const char*>(nullptr);
+            for (auto separator = firstLineEnd - 1; separator > text + (firstLineEnd - text) / 2; separator--) {
+                if (isSeparator(*separator)) {
+                    // A dot starts the second line, the others end the first one
+                    breakAt = *separator == '.' ? separator : separator + 1;
+                    break;
+                }
+            }
+            if (!breakAt)
+                breakAt = std::any_of(text, textEnd, isSeparator) ? firstLineEnd : textEnd;
+            firstLineEnd = breakAt;
+        }
+
+        auto shortened = false;
+        auto renderLine = [&](const char* lineStart, const char* lineEnd, float y) {
+            auto textSize = ImGui::CalcTextSize(lineStart, lineEnd);
+            auto lineWidth = std::min(textSize.x, width);
+            auto x = centered ? position.x + 0.5f * (width - lineWidth) : position.x;
+            auto lineMax = ImVec2(x + width, y + lineHeight);
+            ImGui::RenderTextEllipsis(drawList, ImVec2(x, y), lineMax, std::min(lineMax.x, position.x + width),
+                position.x + width, lineStart, lineEnd, &textSize);
+            shortened |= textSize.x > width;
+            };
+
+        renderLine(text, firstLineEnd, position.y);
+        if (firstLineEnd < textEnd)
+            renderLine(firstLineEnd, textEnd, position.y + lineHeight);
+
+        return shortened;
+
+    }
+
+    void ContentBrowserWindow::RenderContentTooltip(const std::string& filename, ContentType contentType, uintmax_t fileSize,
+        const ContentPreviews::Preview* preview, ImTextureID iconTexture) {
+
+        if (!ImGui::BeginTooltip())
+            return;
+
+        // A larger preview on the background of the thumbnails
+        if (preview) {
+            auto size = float(ContentPreviews::slotSize);
+            auto min = ImGui::GetCursorScreenPos();
+            auto max = ImVec2(min.x + size, min.y + size);
+            ImGui::Dummy(ImVec2(size, size));
+
+            auto drawList = ImGui::GetWindowDrawList();
+            drawList->AddRectFilled(min, max, ImGui::GetColorU32(Theme::AssetThumbnail()), tileRounding);
+            auto fullPreview = *preview;
+            fullPreview.alpha = 1.0f;
+            Singletons::contentPreviews->Draw(drawList, fullPreview, contentType, min, max, iconTexture, false, tileRounding - 2.0f);
+        }
+
+        ImGui::TextUnformatted(filename.c_str());
+        ImGui::TextColored(Theme::ContentTypeColor(contentType), "%s", GetTypeName(contentType));
+        ImGui::SameLine();
+        if (fileSize >= 1024 * 1024)
+            ImGui::TextDisabled("%.1f MB", float(fileSize) / (1024.0f * 1024.0f));
+        else
+            ImGui::TextDisabled("%.1f KB", float(fileSize) / 1024.0f);
+
+        ImGui::EndTooltip();
+
+    }
+
+    void ContentBrowserWindow::RenderListColumns(const std::string& filename, ContentType contentType, uintmax_t fileSize, float rowWidth) {
+
+        auto startX = ImGui::GetCursorPosX();
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        // Everything is on the row of the icon, which already moved the cursor to the next line
+        auto rowY = ImGui::GetCursorPosY() - lineHeight - ImGui::GetStyle().ItemSpacing.y - 1.0f;
+        auto nameX = startX + lineHeight + ImGui::GetStyle().ItemInnerSpacing.x;
+        auto typeX = startX + rowWidth * 0.6f;
+        auto sizeX = startX + rowWidth * 0.85f;
+
+        ImGui::SetCursorPos(ImVec2(nameX, rowY));
+        // Files have a tooltip with their preview and name, shortened folder names get one of their own
+        auto shortened = Widgets::TextEllipsis(filename.c_str(), filename.c_str() + filename.size(), typeX - nameX - padding);
+        if (shortened && contentType == ContentType::None && ImGui::IsItemHovered(ImGuiHoveredFlags_Stationary |
+            ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+            ImGui::SetTooltip("%s", filename.c_str());
+
+        ImGui::SetCursorPos(ImVec2(typeX, rowY));
+        ImGui::TextDisabled("%s", contentType == ContentType::None ? "Folder" : GetTypeName(contentType));
+
+        if (contentType != ContentType::None) {
+            ImGui::SetCursorPos(ImVec2(sizeX, rowY));
+            if (fileSize >= 1024 * 1024)
+                ImGui::TextDisabled("%.1f MB", float(fileSize) / (1024.0f * 1024.0f));
+            else
+                ImGui::TextDisabled("%.1f KB", float(fileSize) / 1024.0f);
+        }
+
+    }
+
+    const char* ContentBrowserWindow::GetTypeName(ContentType contentType) const {
+
+        switch (contentType) {
+        case ContentType::Audio: return "Audio";
+        case ContentType::Mesh: return "Mesh";
+        case ContentType::MeshSource: return "Mesh source";
+        case ContentType::Material: return "Material";
+        case ContentType::Terrain: return "Terrain";
+        case ContentType::Scene: return "Scene";
+        case ContentType::Script: return "Script";
+        case ContentType::Shader: return "Shader";
+        case ContentType::Font: return "Font";
+        case ContentType::Prefab: return "Prefab";
+        case ContentType::Texture: return "Texture";
+        case ContentType::EnvironmentTexture: return "Environment texture";
+        case ContentType::Animation: return "Animation";
+        case ContentType::MaterialGraph: return "Material graph";
+        case ContentType::MaterialSubgraph: return "Material subgraph";
+        case ContentType::Impostor: return "Impostor";
+        default: return "File";
+        }
 
     }
 
@@ -380,69 +1252,15 @@ namespace Atlas::Editor::UI {
 
     }
 
-    Texture::Texture2D& ContentBrowserWindow::GetIcon(const ContentType contentType) {
-
-        auto& icons = Singletons::icons;
-
-        switch (contentType) {
-        case ContentType::Audio: return icons->Get(IconType::Audio);
-        case ContentType::Mesh: return icons->Get(IconType::Mesh);
-        case ContentType::MeshSource: return icons->Get(IconType::MeshSource);
-        case ContentType::Material: return icons->Get(IconType::Material);
-        case ContentType::Scene: return icons->Get(IconType::Scene);
-        case ContentType::Font: return icons->Get(IconType::Font);
-        case ContentType::Prefab: return icons->Get(IconType::Prefab);
-        case ContentType::Texture: return icons->Get(IconType::Image);
-        case ContentType::EnvironmentTexture: return icons->Get(IconType::EnvironmentImage);
-        default: return icons->Get(IconType::Document);
-        }
-
-    }
-
-    void ContentBrowserWindow::UpdateFilteredAndSortedDirEntries() {
-
-        ContentType filterFileType = ContentType::None;
-        if (selectedFilter >= 0)
-            filterFileType = static_cast<ContentType>(selectedFilter);
-
-        auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
-        if (!contentDirectory)
-            return;
-
-        std::string searchQuery = assetSearch;
-        if (!searchQuery.empty()) {
-            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
-        }
-
-        const auto& settings = Singletons::config->contentBrowserSettings;
-
-        std::vector<Content> discoverdFiles;
-        bool recursively = searchQuery.empty() ? settings.filterRecursively && filterFileType != ContentType::None : settings.searchRecursively;
-        SearchDirectory(contentDirectory, discoverdFiles, filterFileType, searchQuery, recursively);
-
-        std::sort(discoverdFiles.begin(), discoverdFiles.end(), [](const auto& file0, const auto& file1) {
-            return file0.name < file1.name;
-        });
-
-        if (assetSearch.empty() && !settings.filterRecursively) {
-            directories = contentDirectory->directories;
-            files = discoverdFiles;
-        }
-        else {
-            files = discoverdFiles;
-            directories.clear();
-        }
-
-    }
-
-    void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
-            const ContentType contentType, const std::string& searchQuery, bool recursively) {
+    void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles,
+        const std::string& searchQuery, ContentFilter filter, bool recursively) {
 
         for (const auto& file : directory->files) {
-            if (file.type != contentType && contentType != ContentType::None) {
+            // Enum class and ContentFilterBits are in same order, so we can just bitshift the content type.
+            if (!((1 << static_cast<uint32_t>(file.type)) & filter)) {
                 continue;
             }
-            
+
             if (!searchQuery.empty() && file.name.find(searchQuery) == std::string::npos) {
                 continue;
             }
@@ -452,7 +1270,7 @@ namespace Atlas::Editor::UI {
 
         if (recursively) {
             for (const auto& childDirectory : directory->directories) {
-                SearchDirectory(childDirectory, contentFiles, contentType, searchQuery, true);
+                SearchDirectory(childDirectory, contentFiles, searchQuery, filter, true);
             }
         }
 
@@ -470,47 +1288,105 @@ namespace Atlas::Editor::UI {
 
     }
 
-    bool ContentBrowserWindow::TextInputPopup(const char* name, bool& isVisible, std::string& input) {
+    std::vector<std::string> ContentBrowserWindow::GetSelectedPaths() {
 
-        if (!isVisible)
-            return false;
+        std::vector<std::string> paths;
 
-        PopupPanels::SetupPopupSize(0.4f, 0.1f);
+        int32_t entryIdx = 0;
+        for (const auto& directory : directories) {
+            // Ignore 'invisible' directories
+            if (directory->assetPath.at(0) == '.')
+                continue;
 
-        bool popupNew = false;
-
-        if (!ImGui::IsPopupOpen(name)) {
-            popupNew = true;
-            ImGui::OpenPopup(name);
+            if (selectionStorage.Contains(entryIdx++))
+                paths.push_back(directory->path.string());
         }
 
-        bool success = false;
-
-        if (ImGui::BeginPopupModal(name, nullptr, ImGuiWindowFlags_NoResize)) {
-
-            if (popupNew)
-                ImGui::SetKeyboardFocusHere();
-
-            ImGui::InputText("New name", &input);
-
-            if (ImGui::Button("Cancel")) {
-                isVisible = false;
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
-                success = true;
-                isVisible = false;
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-
+        for (const auto& file : files) {
+            if (selectionStorage.Contains(entryIdx++))
+                paths.push_back(file.path.string());
         }
 
-        return success;
+        return paths;
+
+    }
+
+    void ContentBrowserWindow::ApplyEdit(ContentType type) {
+
+        if (editingString.empty())
+            return;
+
+        std::string extension;
+        if (editingType == EditingType::Rename)
+            extension = editingPath.extension().string();
+        else if (type == ContentType::Material)
+            extension = ".aematerial";
+        else if (type == ContentType::MaterialGraph)
+            extension = ".aematgraph";
+        else if (type == ContentType::MaterialSubgraph)
+            extension = ".aematsubgraph";
+        else if (type == ContentType::Script)
+            extension = ".lua";
+
+        // The extension doesn't have to be typed
+        auto name = editingString;
+        if (name.size() > extension.size() && Common::Path::ToLower(name).ends_with(Common::Path::ToLower(extension)))
+            name.resize(name.size() - extension.size());
+
+        auto directory = editingType == EditingType::Rename ? editingPath.parent_path() : editingPath;
+        auto path = directory / (name + extension);
+
+        // Only the case of a name can change without another file in the way
+        std::error_code error;
+        auto sameFile = editingType == EditingType::Rename && std::filesystem::equivalent(editingPath, path, error);
+        if (!sameFile && std::filesystem::exists(path, error)) {
+            Notifications::Push({ .message = path.filename().string() + " exists already", .type = NotificationType::Warning });
+            return;
+        }
+
+        if (editingType == EditingType::Rename) {
+            if (path == editingPath)
+                return;
+            renameSource = editingPath;
+            renameTarget = path;
+            openRenameConfirmation = true;
+            return;
+        }
+
+        if (type == ContentType::None) {
+            error.clear();
+            std::filesystem::create_directory(path, error);
+            if (error)
+                Notifications::Push({ .message = "Couldn't create " + path.filename().string() + ": " + error.message(),
+                    .type = NotificationType::Error });
+            return;
+        }
+
+        // All the file types with a loader
+        if (type == ContentType::Material) {
+            Loader::MaterialLoader::SaveMaterial(CreateRef<Material>(), path.string());
+            return;
+        }
+
+        if (type == ContentType::MaterialGraph) {
+            Loader::MaterialGraphLoader::SaveGraph(MaterialGraph::Graph::CreateDefault(), path.string());
+            return;
+        }
+
+        if (type == ContentType::MaterialSubgraph) {
+            Loader::MaterialGraphLoader::SaveGraph(MaterialGraph::Graph::CreateDefaultSubgraph(), path.string());
+            return;
+        }
+
+        // All the files with empty contents
+        auto assetRelative = Common::Path::GetAbsolute(path.string());
+        auto fileStream = Loader::AssetLoader::WriteFile(assetRelative, std::ios::out | std::ios::binary);
+        if (!fileStream.is_open()) {
+            Notifications::Push({"Couldn't write file " + 
+                Loader::AssetLoader::GetRelativePath(assetRelative), NotificationType::Error});
+            return;
+        }
+        fileStream.close();
 
     }
 

@@ -1,4 +1,5 @@
 #include "LuaScriptBindings.h"
+#include "project/Project.h"
 #include "Log.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
@@ -10,11 +11,17 @@
 #include "bindings/GraphicsBindings.h"
 #include "bindings/InputBindings.h"
 #include "bindings/LightingBindings.h"
+#include "bindings/ProjectBindings.h"
+#include "bindings/MaterialGraphBindings.h"
 #include "bindings/MathBindings.h"
 #include "bindings/MeshBindings.h"
+#include "bindings/NavigationBindings.h"
+#include "bindings/AnimationBindings.h"
 #include "bindings/PhysicsBindings.h"
+#include "bindings/PostProcessingBindings.h"
 #include "bindings/ResourceBindings.h"
 #include "bindings/SceneBindings.h"
+#include "bindings/StreamingBindings.h"
 #include "bindings/UtilityBindings.h"
 
 namespace Atlas::Scripting {
@@ -29,20 +36,41 @@ namespace Atlas::Scripting {
 
     void LuaScriptBindings::GenerateBindings() {
 
-        Bindings::GenerateSceneBindings(atlasNs);
-        Bindings::GenerateEntityBindings(atlasNs);
-        Bindings::GenerateComponentBindings(atlasNs);
-        Bindings::GenerateUtilityBindings(atlasNs);
-        Bindings::GenerateMaterialBindings(atlasNs);
-        Bindings::GenerateAudioBindings(atlasNs);
-        Bindings::GenerateMeshBindings(atlasNs);
-        Bindings::GeneratePhysicsBindings(atlasNs);
-        Bindings::GenerateMathBindings(glmNs);
-        Bindings::GenerateVolumeBindings(atlasNs);
-        Bindings::GenerateLightingBindings(atlasNs);
-        Bindings::GenerateKeyboardBindings(atlasNs);
-        Bindings::GenerateGraphicBindings(atlasNs);
-        Bindings::GenerateResourceManagerBindings(atlasNs);
+        Binder atlas(*atlasNs, "Atlas");
+        Binder glm(*glmNs, "Glm");
+
+        // Math types need to be registered before the bindings that use them as members
+        Bindings::GenerateMathBindings(&glm);
+        Bindings::GenerateSceneBindings(&atlas);
+        Bindings::GenerateEntityBindings(&atlas);
+        Bindings::GenerateComponentBindings(&atlas);
+        Bindings::GenerateUtilityBindings(&atlas);
+        Bindings::GenerateMaterialGraphBindings(&atlas);
+        Bindings::GenerateMaterialBindings(&atlas);
+        Bindings::GenerateAudioBindings(&atlas);
+        Bindings::GenerateMeshBindings(&atlas);
+        Bindings::GenerateAnimationBindings(&atlas);
+        Bindings::GeneratePhysicsBindings(&atlas);
+        Bindings::GenerateNavigationBindings(&atlas);
+        Bindings::GenerateVolumeBindings(&atlas);
+        Bindings::GenerateLightingBindings(&atlas);
+        Bindings::GeneratePostProcessingBindings(&atlas);
+        Bindings::GenerateKeyboardBindings(&atlas);
+        Bindings::GenerateControllerBindings(&atlas);
+        Bindings::GenerateGraphicBindings(&atlas);
+        Bindings::GenerateResourceManagerBindings(&atlas);
+        Bindings::GenerateStreamingBindings(&atlas);
+        Bindings::GenerateProjectBindings(&atlas);
+
+        // Scripts get these in their environment (LuaScriptComponent), they are recorded before any script runs
+        Binder environment(luaState->create_table(), "_G");
+        environment.set_function("GetThisEntity", []() { return Scene::Entity(); });
+        environment.set_function("GetThisScene", []() { return static_cast<Scene::Scene*>(nullptr); });
+
+        // Every script works with the activated project, the engine also runs without one
+        Binder globals(luaState->globals(), "_G");
+        if (Project::active)
+            globals.set("Project", Project::active);
 
     }    
 

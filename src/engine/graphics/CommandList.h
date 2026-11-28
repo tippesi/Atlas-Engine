@@ -5,7 +5,7 @@
 #include "Barrier.h"
 #include "MemoryManager.h"
 #include "SwapChain.h"
-#include "RenderPass.h"
+#include "Rendering.h"
 #include "Pipeline.h"
 #include "Buffer.h"
 #include "DescriptorPool.h"
@@ -15,7 +15,10 @@
 #include "../common/Ref.h"
 
 #include <atomic>
+#include <optional>
+#include <array>
 #include <vector>
+#include <span>
 
 namespace Atlas {
 
@@ -52,10 +55,11 @@ namespace Atlas {
 
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
-            void BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
-                bool clear = false, bool autoAdjustImageLayouts = false);
-
             void EndRenderPass();
+
+            void BeginRendering(const RenderingDesc& desc);
+
+            void EndRendering();
 
             void BeginQuery(const Ref<QueryPool>& queryPool, uint32_t queryIdx);
 
@@ -66,6 +70,9 @@ namespace Atlas {
             void BeginDebugMarker(const std::string& name, vec4 color = vec4(1.0f));
 
             void EndDebugMarker();
+
+            // A marker of GraphicsDevice::GetCheckpointMarker, only with GraphicsDevice::support.diagnosticCheckpoints
+            void SetCheckpoint(const char* marker);
 
             void BindPipeline(const Ref<Pipeline>& pipeline);
 
@@ -79,17 +86,21 @@ namespace Atlas {
 
             void PushConstants(const std::string& pushConstantRangeName, void* data, uint32_t size = 0);
 
-            void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type);
+            // For many draws with one pipeline: the range looked up once with the shader's GetPushConstantRange
+            void PushConstants(const PushConstantRange* pushConstantRange, void* data, uint32_t size = 0);
+
+            void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type, VkDeviceSize offset = 0);
 
             void BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding);
 
-            void BindVertexBuffers(std::vector<Ref<Buffer>>& buffers, uint32_t bindingOffset, uint32_t bindingCount);
+            void BindVertexBuffers(std::vector<Ref<Buffer>>& buffers, const std::vector<VkDeviceSize>& offsets,
+                uint32_t bindingOffset, uint32_t bindingCount);
 
             void BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
 
             void BindBufferOffset(const Ref<Buffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
 
-            void BindBuffers(const std::vector<Ref<Buffer>>& buffers, uint32_t set, uint32_t binding);
+            void BindBuffers(const std::span<Ref<Buffer>> buffers, uint32_t set, uint32_t binding);
 
             void BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding);
 
@@ -99,13 +110,16 @@ namespace Atlas {
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
-            void BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding);
+            void BindSampledImages(const std::span<Ref<Image>> images, uint32_t set, uint32_t binding);
 
             void BindSampler(const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
             void BindTLAS(const Ref<TLAS>& tlas, uint32_t set, uint32_t binding);
 
             void ResetBindings();
+
+            // Forgets the bound pipeline and descriptor sets after commands were recorded directly into the command buffer
+            void InvalidateBoundState();
 
             void ImageMemoryBarrier(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask,
                 VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -135,7 +149,7 @@ namespace Atlas {
             void PipelineBarrier(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            void PipelineBarrier(std::vector<ImageBarrier>& imageBarriers, std::vector<BufferBarrier>& bufferBarriers,
+            void PipelineBarrier(std::span<ImageBarrier> imageBarriers, std::span<BufferBarrier> bufferBarriers,
                 VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -148,13 +162,26 @@ namespace Atlas {
             void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0,
                 uint32_t firstInstance = 0);
 
+            void DrawIndirect(const Ref<Buffer>& buffer, size_t offset = 0,
+                uint32_t drawCount = 1, uint32_t stride = 0);
+
             void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
             void DispatchIndirect(const Ref<Buffer>& buffer, uint32_t offset = 0);
 
+            // Launches the ray generation stage of the bound ray tracing pipeline once per element
+            void TraceRays(const ShaderBindingTable& shaderBindingTable, uint32_t width, uint32_t height, uint32_t depth = 1);
+
+            // The buffer holds a VkTraceRaysIndirectCommandKHR at the offset and needs a device address
+            void TraceRaysIndirect(const ShaderBindingTable& shaderBindingTable, const Ref<Buffer>& buffer, uint32_t offset = 0);
+
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer);
 
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
+
+            void CopyBuffer(const Ref<MultiBuffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
+
+            void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<MultiBuffer>& dstBuffer, VkBufferCopy copy);
 
             void FillBuffer(const Ref<Buffer>& buffer, void* data);
 
@@ -163,6 +190,11 @@ namespace Atlas {
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
 
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageCopy copy);
+
+            // Copies the first mip level of the first layer, the image has to be in the transfer source layout
+            void CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<Buffer>& dstBuffer);
+
+            void CopyImageToBuffer(const Ref<Image>& srcImage, const Ref<MultiBuffer>& dstBuffer);
 
             void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
 
@@ -174,6 +206,9 @@ namespace Atlas {
 
             void BuildBLAS(const Ref<BLAS>& blas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
 
+            void BuildBLASes(std::span<const VkAccelerationStructureBuildGeometryInfoKHR> buildInfos,
+                std::span<const VkAccelerationStructureBuildRangeInfoKHR* const> rangeInfos);
+
             void BuildTLAS(const Ref<TLAS>& tlas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
 
             VkCommandPool commandPool;
@@ -183,13 +218,14 @@ namespace Atlas {
 
             bool isComplete = false;
             const bool frameIndependent = false;
+            // The frame the list was taken for, frame lists need to be submitted in the same frame
+            int32_t frameIndex = 0;
 
             QueueType queueType;
 
             SwapChain* swapChainInUse = nullptr;
-            Ref<RenderPass> renderPassInUse = nullptr;
+            std::optional<RenderingDesc> renderingInUse;
             Ref<Pipeline> pipelineInUse = nullptr;
-            Ref<FrameBuffer> frameBufferInUse = nullptr;
 
             std::vector<CommandList*> dependencies;
             ExecutionOrder executionOrder = ExecutionOrder::Sequential;
@@ -197,6 +233,8 @@ namespace Atlas {
             int32_t id = 0;
 
         private:
+            void CopyImageToBuffer(const Ref<Image>& srcImage, Buffer* dstBuffer);
+
             struct DescriptorBindingData {
                 std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::vector<Buffer*> buffersArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
@@ -303,6 +341,8 @@ namespace Atlas {
 
             void ResetDescriptors();
 
+            void AttachmentBarriers(bool beginPass);
+
             const VkExtent2D GetRenderPassExtent() const;
 
             const VkSemaphore GetSemaphore(VkQueue queue);
@@ -320,11 +360,28 @@ namespace Atlas {
             Ref<Buffer> placeholderBuffer = nullptr;
             Ref<Image> placeholderImage = nullptr;
 
+            struct BoundDescriptorSet {
+                VkDescriptorSet set = VK_NULL_HANDLE;
+                VkPipelineLayout layout = VK_NULL_HANDLE;
+                uint32_t dynamicOffsetCount = 0;
+                uint32_t dynamicOffsets[BINDINGS_PER_DESCRIPTOR_SET] = {};
+            };
+
+            // The sets bound in the command buffer for the graphics, the compute and the ray tracing bind point
+            BoundDescriptorSet boundDescriptorSets[3][DESCRIPTOR_SET_COUNT];
+            // Whether a binding or the pipeline changed since the last draw or dispatch
+            bool descriptorsChanged = true;
+
             std::atomic_bool isLocked = true;
             std::atomic_bool isSubmitted = true;
             std::atomic_bool wasSwapChainAccessed = false;
 
             std::vector<Semaphore> semaphores;
+
+            VkExtent2D renderingExtent = {};
+
+            // Resources that are used each frame where we don't want allocate memory each time
+            std::vector<VkImageMemoryBarrier> attachmentBarriers;
 
         };
 

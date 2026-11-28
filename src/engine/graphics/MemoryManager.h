@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "RenderPass.h"
+#include "Rendering.h"
 #include "Shader.h"
 #include "Pipeline.h"
 #include "Buffer.h"
@@ -10,7 +10,6 @@
 #include "DescriptorSetLayout.h"
 #include "DescriptorPool.h"
 #include "QueryPool.h"
-#include "Framebuffer.h"
 #include "BLAS.h"
 #include "TLAS.h"
 #include "MemoryTransferManager.h"
@@ -56,10 +55,6 @@ namespace Atlas {
 
             MemoryManager& operator=(const MemoryManager& that) = delete;
 
-            void DestroyAllocation(Ref<RenderPass>& allocation);
-
-            void DestroyAllocation(Ref<FrameBuffer>& allocation);
-
             void DestroyAllocation(Ref<Shader>& allocation);
 
             void DestroyAllocation(Ref<Pipeline>& allocation);
@@ -86,8 +81,12 @@ namespace Atlas {
 
             void DestroyAllImmediate();
 
+            // One frame more than the frames in flight need, objects can be released while a render thread records
+            static constexpr size_t framesToDeletion = 4;
+
             VmaAllocator allocator;
-            VmaPool hightPriorityBufferPool;
+            VmaPool highPriorityMemoryPool;
+            VmaPool highPriorityRenderTargetPool;
 
             VkPhysicalDeviceProperties deviceProperties;
 
@@ -113,12 +112,8 @@ namespace Atlas {
                 }
             }
 
-            const size_t framesToDeletion = 3;
-
             size_t frameIndex = 0;
             std::deque<DeleteLambda> deleteRawAllocations;
-            std::deque<DeleteResource<RenderPass>> deleteRenderPassAllocations;
-            std::deque<DeleteResource<FrameBuffer>> deleteFrameBufferAllocations;
             std::deque<DeleteResource<Shader>> deleteShaderAllocations;
             std::deque<DeleteResource<Pipeline>> deletePipelineAllocations;
             std::deque<DeleteResource<Buffer>> deleteBufferAllocations;

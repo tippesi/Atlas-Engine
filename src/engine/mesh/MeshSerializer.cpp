@@ -1,6 +1,12 @@
 #include "MeshSerializer.h"
+#include "common/MathHelper.h"
 #include "resource/ResourceManager.h"
 #include "loader/MaterialLoader.h"
+#include "loader/MaterialGraphLoader.h"
+#include "loader/AnimationLoader.h"
+#include "loader/ImpostorLoader.h"
+#include "streaming/TextureStreaming.h"
+#include "streaming/ImpostorStreaming.h"
 
 namespace Atlas::Mesh {
 
@@ -14,6 +20,7 @@ namespace Atlas::Mesh {
             {"mobility", mobility},
             {"usage", usage},
             {"cullBackFaces", p.cullBackFaces},
+            {"rayTrace", p.rayTrace},
             {"castShadow", p.castShadow},
             {"vegetation", p.vegetation},
             {"windNoiseTextureLod", p.windNoiseTextureLod},
@@ -22,11 +29,22 @@ namespace Atlas::Mesh {
             {"allowedShadowCascades", p.allowedShadowCascades},
             {"distanceCulling", p.distanceCulling},
             {"shadowDistanceCulling", p.shadowDistanceCulling},
+            {"rayTraceDistanceCulling", p.rayTraceDistanceCulling},
             {"impostorDistance", p.impostorDistance},
             {"impostorShadowDistance", p.impostorShadowDistance},
+            {"minScreenSize", p.minScreenSize},
+            {"lodPixelError", p.lodPixelError},
+            {"animationLodDistance", p.animationLodDistance},
+            {"animationMaxInterval", p.animationMaxInterval},
             {"invertUVs", p.invertUVs},
+            {"softBody", p.softBody},
             {"data", p.data},
         };
+
+        // Impostors stream in, a mesh saved before that keeps the reference
+        if (p.impostor.IsValid()) {
+            j["impostor"] = p.impostor.GetResource()->path;
+        }
     }
 
     void from_json(const json& j, Mesh& p) {
@@ -51,6 +69,23 @@ namespace Atlas::Mesh {
         j.at("invertUVs").get_to(p.invertUVs);
         j.at("data").get_to(p.data);
 
+        p.UpdateRenderBounds();
+
+        try_get_json(j, "rayTrace", p.rayTrace);
+        try_get_json(j, "rayTraceDistanceCulling", p.rayTraceDistanceCulling);
+        try_get_json(j, "minScreenSize", p.minScreenSize);
+        try_get_json(j, "lodPixelError", p.lodPixelError);
+        try_get_json(j, "animationLodDistance", p.animationLodDistance);
+        try_get_json(j, "animationMaxInterval", p.animationMaxInterval);
+        try_get_json(j, "softBody", p.softBody);
+
+        p.impostor = ResourceHandle<Impostor>();
+        if (j.contains("impostor")) {
+            std::string path = j["impostor"];
+            p.impostor = ResourceManager<Impostor>::GetOrLoadResourceWithLoaderAsync(
+                path, ResourceOrigin::User, Streaming::ImpostorStreaming::LoadImpostor, true);
+        }
+
         p.mobility = static_cast<MeshMobility>(mobility);
         p.usage = static_cast<MeshUsage>(usage);
 
@@ -66,12 +101,6 @@ namespace Atlas::Mesh {
            {"name", p.name},
            {"indexCount", p.GetIndexCount()},
            {"vertexCount", p.GetVertexCount()},
-           {"indices", p.indices},
-           {"vertices", p.vertices},
-           {"texCoords", p.texCoords},
-           {"normals", p.normals},
-           {"tangents", p.tangents},
-           {"colors", p.colors},
            {"subData", p.subData},
            {"primitiveType", p.primitiveType},
            {"radius", p.radius},
@@ -85,11 +114,33 @@ namespace Atlas::Mesh {
         to_json(j["normals"], p.normals, binary);
         to_json(j["tangents"], p.tangents, binary);
         to_json(j["colors"], p.colors, binary);
+        if (p.texCoords1.GetElementCount() > 0)
+            to_json(j["texCoords1"], p.texCoords1, binary);
+        if (!p.lodErrors.empty()) {
+            to_json(j["lodIndices"], p.lodIndices, binary);
+            j["lodErrors"] = p.lodErrors;
+            j["lodVertexCount"] = p.lodVertexCount;
+            j["lodSettings"] = {
+                {"maxLodCount", p.lodSettings.maxLodCount},
+                {"reduction", p.lodSettings.reduction},
+                {"minReduction", p.lodSettings.minReduction}
+            };
+        }
+
+        if (p.IsSkinned()) {
+            j["skeleton"] = p.skeleton;
+            to_json(j["joints"], p.joints, binary);
+            to_json(j["weights"], p.weights, binary);
+        }
 
         for (size_t i = 0; i < p.materials.size(); i++) {
             auto& material = p.materials[i];
             auto path = material.GetResource()->path;
             j["materials"][i] = path;
+        }
+
+        for (size_t i = 0; i < p.animations.size(); i++) {
+            j["animations"][i] = p.animations[i].GetResource()->path;
         }
 
     }
@@ -118,7 +169,27 @@ namespace Atlas::Mesh {
         from_json(j["normals"], p.normals, binary);
         from_json(j["tangents"], p.tangents, binary);
         from_json(j["colors"], p.colors, binary);
+        if (j.contains("texCoords1"))
+            from_json(j["texCoords1"], p.texCoords1, binary);
+        if (j.contains("lodIndices")) {
+            from_json(j["lodIndices"], p.lodIndices, binary);
+            j.at("lodErrors").get_to(p.lodErrors);
+            try_get_json(j, "lodVertexCount", p.lodVertexCount);
+            if (j.contains("lodSettings")) {
+                const auto& settings = j["lodSettings"];
+                try_get_json(settings, "maxLodCount", p.lodSettings.maxLodCount);
+                try_get_json(settings, "reduction", p.lodSettings.reduction);
+                try_get_json(settings, "minReduction", p.lodSettings.minReduction);
+            }
+        }
 
+        if (j.contains("skeleton")) {
+            j.at("skeleton").get_to(p.skeleton);
+            from_json(j["joints"], p.joints, binary);
+            from_json(j["weights"], p.weights, binary);
+        }
+
+        p.materials.clear();
         if (j.contains("materials")) {
             for (auto& path : j["materials"]) {
                 auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(path,
@@ -131,17 +202,28 @@ namespace Atlas::Mesh {
             }
         }
 
+        p.animations.clear();
+        if (j.contains("animations")) {
+            for (auto& path : j["animations"]) {
+                p.animations.push_back(ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoader(path,
+                    ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true));
+            }
+        }
+
     }
 
     void to_json(json& j, const MeshSubData& p) {
 
         j = json{
-           {"name", p.name},
-           {"indicesOffset", p.indicesOffset},
-           {"indicesCount", p.indicesCount},
-           {"materialIdx", p.materialIdx},
-           {"aabb", p.aabb},
+            {"name", p.name},
+            {"indicesOffset", p.indicesOffset},
+            {"indicesCount", p.indicesCount},
+            {"materialIdx", p.materialIdx},
+            {"aabb", p.aabb},
         };
+
+        for (const auto& lod : p.lods)
+            j["lods"].push_back(json::array({ lod.indicesOffset, lod.indicesCount }));
 
     }
 
@@ -153,17 +235,123 @@ namespace Atlas::Mesh {
         j.at("materialIdx").get_to(p.materialIdx);
         j.at("aabb").get_to(p.aabb);
 
+        p.lods.clear();
+        if (j.contains("lods")) {
+            for (const auto& lod : j["lods"])
+                p.lods.push_back({ .indicesOffset = lod[0].get<uint32_t>(), .indicesCount = lod[1].get<uint32_t>() });
+        }
+
+    }
+
+    void to_json(json& j, const Joint& p) {
+
+        j = json{
+            {"name", p.name},
+            {"parentIdx", p.parentIdx},
+            {"inverseBindMatrix", p.inverseBindMatrix},
+            {"position", p.position},
+            {"rotation", p.rotation},
+            {"scale", p.scale},
+            {"aabb", p.aabb},
+            {"hasVertices", p.hasVertices},
+        };
+
+    }
+
+    void from_json(const json& j, Joint& p) {
+
+        j.at("name").get_to(p.name);
+        j.at("parentIdx").get_to(p.parentIdx);
+        j.at("inverseBindMatrix").get_to(p.inverseBindMatrix);
+        j.at("position").get_to(p.position);
+        j.at("rotation").get_to(p.rotation);
+        j.at("scale").get_to(p.scale);
+        j.at("aabb").get_to(p.aabb);
+        j.at("hasVertices").get_to(p.hasVertices);
+
+    }
+
+    void to_json(json& j, const Skeleton& p) {
+
+        j = json{
+            {"joints", p.joints},
+        };
+
+    }
+
+    void from_json(const json& j, Skeleton& p) {
+
+        j.at("joints").get_to(p.joints);
+
+        p.UpdateRestPose();
+
+    }
+
+    void to_json(json& j, const ImpostorViewPlane& p) {
+
+        j = json{
+            {"right", p.right},
+            {"up", p.up}
+        };
+
+    }
+
+    void from_json(const json& j, ImpostorViewPlane& p) {
+
+        j.at("right").get_to(p.right);
+        j.at("up").get_to(p.up);
+
     }
 
     void to_json(json& j, const Impostor& p) {
 
-
+        j = json{
+            {"viewPlanes", p.viewPlanes},
+            {"center", p.center},
+            {"radius", p.radius},
+            {"views", p.views},
+            {"resolution", p.resolution},
+            {"cutoff", p.cutoff},
+            {"mipBias", p.mipBias},
+            {"interpolation", p.interpolation},
+            {"pixelDepthOffset", p.pixelDepthOffset},
+            {"compressTextures", p.compressTextures},
+            {"approxTransmissiveColor", p.approxTransmissiveColor},
+            {"approxReflectance", p.approxReflectance},
+        };
 
     }
 
     void from_json(const json& j, Impostor& p) {
 
+        j.at("viewPlanes").get_to(p.viewPlanes);
+        j.at("center").get_to(p.center);
+        j.at("radius").get_to(p.radius);
+        j.at("views").get_to(p.views);
+        j.at("resolution").get_to(p.resolution);
+        j.at("cutoff").get_to(p.cutoff);
+        j.at("mipBias").get_to(p.mipBias);
+        j.at("interpolation").get_to(p.interpolation);
+        j.at("pixelDepthOffset").get_to(p.pixelDepthOffset);
+        try_get_json(j, "compressTextures", p.compressTextures);
+        j.at("approxTransmissiveColor").get_to(p.approxTransmissiveColor);
+        j.at("approxReflectance").get_to(p.approxReflectance);
 
+    }
+
+    void to_json(json& j, const SoftBodyMeshSettings& p) {
+
+        j = json {
+            {"maxSimulatedVertices", p.maxSimulatedVertices},
+            {"keepBorders", p.keepBorders}
+        };
+
+    }
+
+    void from_json(const json& j, SoftBodyMeshSettings& p) {
+
+        try_get_json(j, "maxSimulatedVertices", p.maxSimulatedVertices);
+        try_get_json(j, "keepBorders", p.keepBorders);
 
     }
 
@@ -190,22 +378,70 @@ namespace Atlas {
             {"twoSided", p.twoSided},
             {"vertexColors", p.vertexColors},
             {"uvChannel", p.uvChannel},
+            {"uvAnimation", p.uvAnimation},
+            {"blendMode", int32_t(p.blendMode)},
+            {"refractiveIndex", p.refractiveIndex},
+            {"thickness", p.thickness},
+            {"attenuationColor", p.attenuationColor},
+            {"attenuationDistance", p.attenuationDistance},
         };
 
-        if (p.baseColorMap.IsValid())
+        if (p.baseColorMap.IsValid() && !p.baseColorMap.IsGenerated())
             j["baseColorMapPath"] = p.baseColorMap.GetResource()->path;
-        if (p.opacityMap.IsValid())
+        if (p.opacityMap.IsValid() && !p.opacityMap.IsGenerated())
             j["opacityMapPath"] = p.opacityMap.GetResource()->path;
-        if (p.normalMap.IsValid())
+        if (p.normalMap.IsValid() && !p.normalMap.IsGenerated())
             j["normalMapPath"] = p.normalMap.GetResource()->path;
-        if (p.roughnessMap.IsValid())
+        if (p.roughnessMap.IsValid() && !p.roughnessMap.IsGenerated())
             j["roughnessMapPath"] = p.roughnessMap.GetResource()->path;
-        if (p.metalnessMap.IsValid())
+        if (p.metalnessMap.IsValid() && !p.metalnessMap.IsGenerated())
             j["metalnessMapPath"] = p.metalnessMap.GetResource()->path;
-        if (p.aoMap.IsValid())
+        if (p.aoMap.IsValid() && !p.aoMap.IsGenerated())
             j["aoMapPath"] = p.aoMap.GetResource()->path;
-        if (p.displacementMap.IsValid())
+        if (p.displacementMap.IsValid() && !p.displacementMap.IsGenerated())
             j["displacementMapPath"] = p.displacementMap.GetResource()->path;
+        if (p.emissiveMap.IsValid() && !p.emissiveMap.IsGenerated())
+            j["emissiveMapPath"] = p.emissiveMap.GetResource()->path;
+
+        if (p.graph.IsValid() && !p.graph.IsGenerated())
+            j["graphPath"] = p.graph.GetResource()->path;
+        if (!p.graphValues.empty()) {
+            auto values = json::object();
+            for (const auto& [name, value] : p.graphValues)
+                values[name] = value;
+            j["graphValues"] = values;
+        }
+        if (!p.graphTextures.empty()) {
+            auto textures = json::object();
+            for (const auto& [name, texture] : p.graphTextures) {
+                if (texture.IsValid() && !texture.IsGenerated())
+                    textures[name] = texture.GetResource()->path;
+            }
+            j["graphTextures"] = textures;
+        }
+        if (p.graphBake.bakedState != 0 || !p.graphBake.meshPath.empty()) {
+            j["graphBake"] = json{
+                {"mode", int32_t(p.graphBake.mode)},
+                {"resolution", p.graphBake.resolution},
+                {"time", p.graphBake.time},
+                {"meshPath", p.graphBake.meshPath},
+                {"bakedState", p.graphBake.bakedState}
+            };
+        }
+        if (p.graphBake.bakedState != 0) {
+            const auto& unbaked = p.graphBake.unbaked;
+            j["graphBake"]["unbaked"] = json{
+                {"baseColor", unbaked.baseColor},
+                {"emissiveColor", unbaked.emissiveColor},
+                {"emissiveIntensity", unbaked.emissiveIntensity},
+                {"opacity", unbaked.opacity},
+                {"roughness", unbaked.roughness},
+                {"metalness", unbaked.metalness},
+                {"ao", unbaked.ao},
+                {"normalScale", unbaked.normalScale},
+                {"maps", unbaked.maps}
+            };
+        }
 
     }
 
@@ -228,25 +464,82 @@ namespace Atlas {
         j.at("vertexColors").get_to(p.vertexColors);
         j.at("uvChannel").get_to(p.uvChannel);
 
-        auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion) -> auto {
-            return ResourceManager<Texture::Texture2D>::GetOrLoadResource(path, colorSpaceConversion,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0);
+        p.opacity = Helper::Math::Saturate(p.opacity);
+        p.roughness = Helper::Math::Saturate(p.roughness);
+        p.metalness = Helper::Math::Saturate(p.metalness);
+        p.ao = Helper::Math::Saturate(p.ao);
+        p.reflectance = Helper::Math::Saturate(p.reflectance);
+
+        try_get_json(j, "uvAnimation", p.uvAnimation);
+        int32_t blendMode = 0;
+        try_get_json(j, "blendMode", blendMode);
+        p.blendMode = MaterialBlendMode(blendMode);
+        try_get_json(j, "refractiveIndex", p.refractiveIndex);
+        try_get_json(j, "thickness", p.thickness);
+        try_get_json(j, "attenuationColor", p.attenuationColor);
+        try_get_json(j, "attenuationDistance", p.attenuationDistance);
+
+        // Maps are only written when set, a missing one removes the map. They load in the background, the material
+        // uses them once they are loaded (Scene::WaitForResourceLoad waits for them)
+        auto readMap = [&](const char* key, ResourceHandle<Texture::Texture2D>& map) {
+            map = j.contains(key) ? ResourceManager<Texture::Texture2D>::GetOrLoadResourceWithLoaderAsync(j[key],
+                Streaming::TextureStreaming::LoadTexture, false, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic) :
+                ResourceHandle<Texture::Texture2D>();
             };
 
-        if (j.contains("baseColorMapPath"))
-            p.baseColorMap = getTextureHandle(j["baseColorMapPath"], false);
-        if (j.contains("opacityMapPath"))
-            p.opacityMap = getTextureHandle(j["opacityMapPath"], false);
-        if (j.contains("normalMapPath"))
-            p.normalMap = getTextureHandle(j["normalMapPath"], false);
-        if (j.contains("roughnessMapPath"))
-            p.roughnessMap = getTextureHandle(j["roughnessMapPath"], false);
-        if (j.contains("metalnessMapPath"))
-            p.metalnessMap = getTextureHandle(j["metalnessMapPath"], false);
-        if (j.contains("aoMapPath"))
-            p.aoMap = getTextureHandle(j["aoMapPath"], false);
-        if (j.contains("displacementMapPath"))
-            p.displacementMap = getTextureHandle(j["displacementMapPath"], false);
+        readMap("baseColorMapPath", p.baseColorMap);
+        readMap("opacityMapPath", p.opacityMap);
+        readMap("normalMapPath", p.normalMap);
+        readMap("roughnessMapPath", p.roughnessMap);
+        readMap("metalnessMapPath", p.metalnessMap);
+        readMap("aoMapPath", p.aoMap);
+        readMap("displacementMapPath", p.displacementMap);
+        readMap("emissiveMapPath", p.emissiveMap);
+
+        // The bounds of meshes depend on the graph, so it is loaded right away like materials are for meshes
+        p.graph = j.contains("graphPath") ? ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoader(
+            j["graphPath"], ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph) : ResourceHandle<MaterialGraph::Graph>();
+        p.MigrateGraphSettings();
+
+        p.graphParameterVersion++;
+        p.graphValues.clear();
+        if (j.contains("graphValues")) {
+            for (const auto& [name, value] : j["graphValues"].items())
+                p.graphValues[name] = value.get<vec4>();
+        }
+
+        p.graphBake = {};
+        if (j.contains("graphBake")) {
+            const auto& bake = j["graphBake"];
+            int32_t mode = 0;
+            try_get_json(bake, "mode", mode);
+            p.graphBake.mode = MaterialGraph::BakeMode(mode);
+            try_get_json(bake, "resolution", p.graphBake.resolution);
+            try_get_json(bake, "time", p.graphBake.time);
+            try_get_json(bake, "meshPath", p.graphBake.meshPath);
+            try_get_json(bake, "bakedState", p.graphBake.bakedState);
+
+            if (bake.contains("unbaked")) {
+                const auto& unbaked = bake["unbaked"];
+                try_get_json(unbaked, "baseColor", p.graphBake.unbaked.baseColor);
+                try_get_json(unbaked, "emissiveColor", p.graphBake.unbaked.emissiveColor);
+                try_get_json(unbaked, "emissiveIntensity", p.graphBake.unbaked.emissiveIntensity);
+                try_get_json(unbaked, "opacity", p.graphBake.unbaked.opacity);
+                try_get_json(unbaked, "roughness", p.graphBake.unbaked.roughness);
+                try_get_json(unbaked, "metalness", p.graphBake.unbaked.metalness);
+                try_get_json(unbaked, "ao", p.graphBake.unbaked.ao);
+                try_get_json(unbaked, "normalScale", p.graphBake.unbaked.normalScale);
+                try_get_json(unbaked, "maps", p.graphBake.unbaked.maps);
+            }
+        }
+
+        p.graphTextures.clear();
+        if (j.contains("graphTextures")) {
+            for (const auto& [name, path] : j["graphTextures"].items()) {
+                p.graphTextures[name] = ResourceManager<Texture::Texture2D>::GetOrLoadResourceWithLoaderAsync(path.get<std::string>(),
+                    Streaming::TextureStreaming::LoadTexture, false, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            }
+        }
 
     }
 

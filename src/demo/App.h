@@ -59,7 +59,6 @@ private:
 
     SceneSelection sceneSelection = SPONZA;
 
-    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
     Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 
@@ -89,7 +88,7 @@ private:
     Atlas::ImguiExtension::ReflectionPanel reflectionPanel;    
     Atlas::ImguiExtension::SSSPanel sssPanel;
     Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
-    Atlas::ImguiExtension::GPUProfilerPanel gpuProfilerPanel;
+    Atlas::ImguiExtension::ProfilerPanel profilerPanel;
     Atlas::ImguiExtension::MaterialsPanel materialsPanel;
     Atlas::ImguiExtension::WindPanel windPanel;
 
@@ -115,7 +114,9 @@ private:
     float sphereRestitution = 0.2f;
 
     bool emitSpheresEnabled = false;
-    float emitSpawnRate = 0.1f;
+    float emitSpawnRate = 0.01f;
+
+    bool attachLightToSphers = false;
 
     bool shootSpheresEnabled = false;
     bool shootSphere = false;

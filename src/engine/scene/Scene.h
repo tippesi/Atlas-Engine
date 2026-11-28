@@ -5,6 +5,7 @@
 #include "../resource/ResourceManager.h"
 
 #include "../ocean/Ocean.h"
+#include "../navigation/Navigation.h"
 #include "../terrain/Terrain.h"
 #include "../physics/PhysicsWorld.h"
 #include "../lighting/Sky.h"
@@ -12,7 +13,6 @@
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/RTGI.h"
 #include "../lighting/SSGI.h"
-#include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
@@ -21,6 +21,7 @@
 #include "../mesh/Mesh.h"
 
 #include "SceneIterator.h"
+#include "SceneRenderState.h"
 #include "SpacePartitioning.h"
 #include "Subset.h"
 #include "Wind.h"
@@ -35,6 +36,10 @@
 
 #include <type_traits>
 #include <map>
+#include <functional>
+#include <mutex>
+#include <optional>
+#include <span>
 
 namespace Atlas {
 
@@ -46,8 +51,31 @@ namespace Atlas {
             MeshComponentBit = (1 << 0),
             RigidBodyComponentBit = (1 << 1),
             TextComponentBit = (1 << 2),
-            AllComponentsBit = (1 << 3) - 1
+            TerrainComponentBit = (1 << 3),
+            AllComponentsBit = (1 << 4) - 1
         } SceneQueryComponentBits;
+
+        // Seen from the entity: both entities of a contact get an event
+        struct ContactEvent {
+            Physics::ContactEventType type = Physics::ContactEventType::Begin;
+
+            Entity entity;
+            Entity otherEntity;
+
+            // Contact position and normal pointing from the entity to the other entity, both are zero for end events
+            vec3 position = vec3(0.0f);
+            vec3 normal = vec3(0.0f);
+
+            float impactSpeed = 0.0f;
+
+            bool isTrigger = false;
+        };
+
+        // A mesh which can cast shadows into the views of a light, see Scene::GetShadowCasters
+        struct ShadowCaster {
+            Entity entity;
+            const MeshComponent* meshComponent;
+        };
 
         class Scene : public SpacePartitioning {
 
@@ -58,12 +86,13 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 6), renderState(this)
+                { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
-            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
-                name(name) { RegisterSubscribers(); }
-            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : SpacePartitioning(this, min, max, depth), name(name) { RegisterSubscribers(); }
+            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 6),
+                name(name), renderState(this) { RegisterSubscribers(); }
+            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 6) 
+                : SpacePartitioning(this, min, max, depth), name(name), renderState(this) { RegisterSubscribers(); }
 
             ~Scene();
 
@@ -72,8 +101,10 @@ namespace Atlas {
             template<typename T, typename ...Args>
             T CreatePrefab(Args&&... args);
 
-            void DestroyEntity(Entity entity, bool removeRecursively = true);
+            void DestroyEntity(Entity entity, bool removeRecursively = true, 
+                bool parentDeleted = false);
 
+            // The duplicate (with copies of all descendants) has the same parent as the entity
             Entity DuplicateEntity(Entity entity);
 
             size_t GetEntityCount() const;
@@ -82,27 +113,103 @@ namespace Atlas {
 
             Entity GetParentEntity(Entity entity);
 
+            // The entity whose hierarchy is marked as root, invalid if the scene has none
+            Entity GetRootEntity();
+
+            // World matrix of the transform, entities without one use the matrix of their hierarchy
+            mat4 GetGlobalMatrix(Entity entity);
+
+            // Union of the mesh bounds of the entity and its descendants, empty if none of them has a loaded mesh
+            std::optional<Volume::AABB> GetHierarchyBounds(Entity entity);
+
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
+            template<typename Comp>
+            size_t GetComponentCount();
+
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
-            void Timestep(float deltaTime);
+            // A valid mainCameraOverride is used as the main camera regardless of the isMain flags
+            void Update(float deltaTime, Entity mainCameraOverride = Entity());
 
-            void Update();
+            // Brings the global matrices, mesh bounds and ray cast structures of the entities changed since the last
+            // update up to date, for tools which change and query the scene several times between updates. The next
+            // update processes the changes as usual
+            void UpdateTransforms();
+
+            /**
+             * Time in seconds that the scene was updated for. It stands still while the scene is paused,
+             * everything animated by the renderers (wind, clouds, water) uses it.
+             */
+            float GetTime() const { return time; }
+
+            /**
+             * Time step of the last update in seconds, 0 while the scene is paused.
+             */
+            float GetDeltaTime() const { return deltaTime; }
 
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
-            std::vector<Ref<Material>> GetMaterials();
+            std::vector<ResourceHandle<Material>> GetMaterials();
 
             CameraComponent& GetMainCamera();
 
             bool HasMainCamera() const;
 
-            Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
+            // Camera exposure all light sources are multiplied with, keeps physical light values within half float range.
+            // Set by the update
+            float GetPreExposure() const;
+
+            LightComponent& GetMainLight();
+
+            /**
+             * Plays audio at a location without an entity, heard from the main camera. The sound pauses
+             * with the scene and is removed once it played to its end.
+             */
+            Ref<Audio::AudioStream> PlayAudio(const ResourceHandle<Audio::AudioData>& data, vec3 location,
+                float volume = 1.0f, float falloffFactor = 0.5f, float falloffPower = 2.0f);
+
+            bool HasMainLight() const;
+
+            /**
+             * Casts a ray against the scene. Physics bodies are tested with their collision shapes, meshes with
+             * triangle precision. If bodies are queried, meshes covered by a mesh shape body are only hit
+             * through the physics world instead of being tested twice. Only mesh hits report a triangle
+             * index, query meshes without bodies to get the visible triangle. Entities for which ignore returns true are skipped.
+             */
+            Volume::RayResult<Entity> CastRay(Volume::Ray& ray,
+                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit,
+                const std::function<bool(const Entity&)>& ignore = nullptr);
+
+            std::vector<Entity> QueryAABB(const Volume::AABB& aabb, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
-            void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
+            /**
+             * Moves the shape from the matrix along the direction and returns the first physics body it hits.
+             * The hit distance is measured along the direction.
+             */
+            Volume::RayResult<Entity> CastShape(const Ref<Physics::Shape>& shape, const mat4& matrix, vec3 direction,
+                float distance, const std::function<bool(const Entity&)>& ignore = nullptr);
+
+            std::vector<Entity> CollideShape(const Ref<Physics::Shape>& shape, const mat4& matrix,
+                const std::function<bool(const Entity&)>& ignore = nullptr);
+
+            /**
+             * Contacts of physics bodies and players that began or ended in the last update. Scripts get them before
+             * their update through OnContactBegin, OnContactEnd, OnTriggerEnter and OnTriggerExit.
+             */
+            const std::vector<ContactEvent>& GetContactEvents() const { return contactEvents; }
+
+            // The state the scripts of the scene run in, e.g. for tools that evaluate Lua next to them
+            sol::state& GetLuaState() { return luaScriptManager.state(); }
+
+            // Lights with several views (point lights) collect the casters within the bounds of all views once and cull
+            // them for each view
+            void GetShadowCasters(const Volume::AABB& bounds, std::vector<ShadowCaster>& casters);
+
+            void CullShadowCasters(const Volume::Frustum& frustum, std::span<const ShadowCaster> casters,
+                const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();
 
@@ -110,9 +217,12 @@ namespace Atlas {
 
             void WaitForAsyncWorkCompletion();
 
+            // Meshes and terrain finished loading, resources that failed to load count as finished
             bool IsFullyLoaded();
 
             bool IsRtDataValid() const;
+
+            bool IsRtDataNeeded() const;
 
             void Clear();
 
@@ -126,11 +236,38 @@ namespace Atlas {
 
             std::string name;
 
-            Ref<Ocean::Ocean> ocean = nullptr;
-            Ref<Terrain::Terrain> terrain = nullptr;
+            // Halts scripts, physics and players of a running simulation while keeping their state
+            bool paused = false;
+
+            // The shape of the image the scene is shown in, the main camera takes it unless it keeps its aspect ratio.
+            // With zero the cameras keep theirs
+            float viewAspectRatio = 0.0f;
+
+            // Bodies with a mesh shape wait for it instead of building it during the update. They exist a few
+            // frames later, so this is for scenes where nothing simulates yet, e.g. in the editor
+            bool buildMeshShapesInBackground = false;
+
+            // Tests the instances of the main pass against the depth of the ones visible in the last frame
+            bool occlusionCulling = true;
+
+            // Scales the pixel error of the mesh levels of detail, larger values switch to coarser levels earlier
+            float meshLodErrorScale = 1.0f;
+            // Colors the meshes of the main pass by their level of detail, from white over green, blue and yellow to red
+            bool debugMeshLods = false;
+            // Draws all meshes in this level of detail or their coarsest one, negative values choose it by the distance
+            int32_t forcedMeshLod = -1;
+
+            // Binary scene files store the common components and the entity indices as columns of raw values, which
+            // load about twice as fast. Readable json scene files always store a json object per component
+            bool binaryColumns = false;
+
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
-            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;            
+            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
+
+            Ref<Ocean::Ocean> ocean = nullptr;
+            Ref<Navigation::Navigation> navigation = nullptr;
+            ResourceHandle<Terrain::Terrain> terrain;       
 
             Wind wind;
             Lighting::Sky sky;
@@ -138,18 +275,27 @@ namespace Atlas {
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
             Ref<Lighting::RTGI> rtgi = nullptr;
             Ref<Lighting::SSGI> ssgi = nullptr;
-            Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
             Ref<Lighting::SSS> sss = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
-            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
-            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+            SceneRenderState renderState;
+            ECS::EntityManager entityManager = ECS::EntityManager(this);
+
+        protected:
+            void MarkEntityDirty(const Entity& entity);
 
         private:
-            void UpdateBindlessIndexMaps();
+            float preExposure = 1.0f;
 
+            struct ThreadContext {
+                std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
+                std::vector<ECS::Entity> changedMeshes;
+            }threadContexts[8];
+            
             Entity ToSceneEntity(ECS::Entity entity);
+
+            void UpdatePreExposure();
 
             void RegisterSubscribers();
 
@@ -164,30 +310,65 @@ namespace Atlas {
             void UnregisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource);
 
             template<class T>
-            void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);
+            void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);           
 
-            ECS::EntityManager entityManager = ECS::EntityManager(this);
+            void FindChangedTransforms(const std::vector<ECS::Entity>& entities,
+                std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+
+            void FindChangedMeshes(const std::vector<ECS::Entity>& entities,
+                std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+
+            void UpdateChangedTransforms();
+
+            void UpdateChangedMeshBounds();
+
+            void CollectDirtyEntities();
 
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
+            struct PositionalAudio {
+                Ref<Audio::AudioStream> stream;
+                vec3 location;
+                float volume;
+                float falloffFactor;
+                float falloffPower;
+            };
+
+            std::vector<PositionalAudio> positionalAudios;
+            std::mutex positionalAudioMutex;
+
             Entity mainCameraEntity;
-            float deltaTime = 1.0f;
+            Entity mainLightEntity;
+            float time = 0.0f;
+            float deltaTime = 0.0f;
+            uint32_t animationFrame = 0;
+
+            std::vector<ContactEvent> contactEvents;
+            // Ocean surface queries below the corners of the bodies with buoyancy
+            std::unordered_map<Physics::BodyID, uint32_t> oceanSurfaceQueries;
 
             bool firstTimestep = true;
-            bool hasChanged = true;
             bool rtDataValid = false;
-            bool vegetationChanged = false;
+
+            std::vector<std::pair<ECS::Entity, int32_t>> changedTransformSet;
+            std::vector<ECS::Entity> changedMeshSet;
+
+            std::mutex dirtyEntitiesMutex;
+            std::vector<ECS::Entity> dirtyEntities;
+            // The first dirty entities UpdateTransforms brought up to date, the next call only processes the later ones
+            size_t updatedDirtyEntities = 0;
+            std::vector<ECS::Entity> frameDirtyEntities;
+            std::vector<ECS::Entity> lastFrameDirtyEntities;
+            // Entities of the bodies the simulation moved in the last update
+            std::vector<ECS::Entity> movedBodyEntities;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
-            JobGroup rayTracingWorldUpdateJob { JobPriority::High };
-            JobGroup bindlessMeshMapUpdateJob { JobPriority::High };
-            JobGroup bindlessTextureMapUpdateJob { JobPriority::High };
-
             friend Entity;
             friend SpacePartitioning;
+            friend SceneRenderState;
             friend RayTracing::RayTracingWorld;
             friend HierarchyComponent;
             friend MeshComponent;
@@ -217,6 +398,13 @@ namespace Atlas {
         Subset<Comp...> Scene::GetSubset() {
 
             return Subset<Comp...>(entityManager.GetSubset<Comp...>(), &entityManager);
+
+        }
+
+        template<typename Comp>
+        size_t Scene::GetComponentCount() {
+
+            return entityManager.GetCount<Comp>();
 
         }
 

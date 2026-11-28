@@ -19,7 +19,7 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             depthUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
-            cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
+            queryUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -42,30 +42,32 @@ namespace Atlas {
 
         void OceanRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->ocean || !scene->ocean->enable)
+            if (!scene->renderState.ocean || !scene->renderState.ocean->enable)
                 return;
 
-            Graphics::Profiler::BeginQuery("Ocean");
+            CPUProfiler::Scope profilerScope("Ocean");
+            GPUProfiler::Scope gpuScope("Ocean");
 
-            auto& camera = scene->GetMainCamera();
-            auto ocean = scene->ocean;
-            auto clouds = scene->sky.clouds;
-            auto fog = scene->fog;
+            auto& camera = scene->renderState.camera;
+            auto ocean = scene->renderState.ocean;
+            auto clouds = scene->renderState.sky.clouds;
+            auto fog = scene->renderState.fog;
 
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!mainLightEntity.IsValid())
+            auto& mainLight = scene->renderState.mainLight;
+            if (!mainLight)
                 return;
 
-            auto& light = mainLightEntity.GetComponent<LightComponent>();
+            auto& light = *mainLight;
 
             vec3 direction = normalize(light.transformedProperties.directional.direction);
 
             Light lightUniform;
             lightUniform.direction = vec4(light.transformedProperties.directional.direction, 0.0);
-            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
-            lightUniform.intensity = light.intensity;
+            auto transmittance = scene->renderState.sky.GetDirectLightTransmittance(scene->renderState.camera.GetLocation(), direction);
+            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color) * transmittance, 0.0);
+            lightUniform.intensity = light.intensity * scene->renderState.preExposure;
 
-            if (fog && fog->enable && fog->rayMarching) {
+            if (fog && fog->enable) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 
@@ -81,7 +83,7 @@ namespace Atlas {
                 shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.resolution = vec2(shadow->resolution);
 
-                commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
+                commandList->BindImage(shadow->maps->image, shadowSampler, 3, 8);
 
                 auto componentCount = shadow->viewCount;
                 for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
@@ -92,8 +94,8 @@ namespace Atlas {
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
                             abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
-                        shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                                                 cascade->viewMatrix * camera.invViewMatrix;
+                        shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
+                                                                 cascade->viewMatrix * camera.invViewMatrix);
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
@@ -111,28 +113,16 @@ namespace Atlas {
 
             bool fogEnabled = fog && fog->enable;
             bool cloudsEnabled = clouds && clouds->enable;
-
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
 
-            CloudShadow cloudShadowUniform;
-
-            if (cloudShadowsEnabled) {
+            // The ocean can't use RTGI, so DDGI lights it even when RTGI lights the rest of the scene
+            auto volume = scene->renderState.irradianceVolume;
+            bool ddgiEnabled = volume && scene->IsRtDataValid();
+            if (cloudShadowsEnabled)
                 clouds->shadowTexture.Bind(commandList, 3, 15);
 
-                clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
-                    cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
-
-                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
-
-                cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
-                cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
-            }
-
-            cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
-            cloudShadowUniformBuffer.Bind(commandList, 3, 14);
-
             {
-                Graphics::Profiler::BeginQuery("Caustics");
+                GPUProfiler::BeginQuery("Caustics");
 
                 const int32_t groupSize = 8;
                 auto res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
@@ -146,8 +136,8 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
-                auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
+                auto lightingImage = target->afterLightingRendering.colorAttachments[0].image;
+                auto depthImage = target->afterLightingRendering.depthAttachment.image;
 
                 commandList->BindImage(depthImage, nearestSampler, 3, 0);
                 commandList->BindImage(lightingImage, 3, 1);
@@ -161,7 +151,7 @@ namespace Atlas {
 
             // Update local texture copies
             {
-                auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                auto& colorImage = target->afterLightingRendering.colorAttachments[0].image;
                 if (refractionTexture.width != colorImage->width ||
                     refractionTexture.height != colorImage->height ||
                     refractionTexture.format != colorImage->format) {
@@ -169,7 +159,7 @@ namespace Atlas {
                         colorImage->format);
                 }
 
-                auto& depthImage = target->afterLightingFrameBuffer->GetDepthImage();
+                auto& depthImage = target->afterLightingRendering.depthAttachment.image;
                 if (depthTexture.width != depthImage->width ||
                     depthTexture.height != depthImage->height ||
                     depthTexture.format != depthImage->format) {
@@ -177,44 +167,46 @@ namespace Atlas {
                         depthImage->format);
                 }
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                imageBarriers = {
+                Graphics::ImageBarrier preImageBarriers[] = {
                     {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(preImageBarriers, {},
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 commandList->CopyImage(colorImage, refractionTexture.image);
                 commandList->CopyImage(depthImage, depthTexture.image);
 
-                imageBarriers = {
+                Graphics::ImageBarrier postImageBarriers[] = {
                     {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(postImageBarriers, {},
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
-            
-            {
-                Graphics::Profiler::EndAndBeginQuery("Surface");
 
-                commandList->BeginRenderPass(target->afterLightingFrameBufferWithStencil->renderPass,
-                    target->afterLightingFrameBufferWithStencil);
+            // The reflections were traced from the ocean surface together with the ones of the scene
+            bool oceanReflections = target->HasSeparateReflectionData();
+
+            {
+                GPUProfiler::EndAndBeginQuery("Surface");
+
+                commandList->BeginRendering(target->afterLightingRendering);
 
                 auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
                 if (fogEnabled) config.AddMacro("FOG");
                 if (cloudsEnabled) config.AddMacro("CLOUDS");
+                if (ddgiEnabled) config.AddMacro("DDGI");
+                if (ddgiEnabled && volume->scroll) config.AddMacro("DDGI_SCROLL");
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
-                if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
-                if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
-                if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+                if (ocean->rippleTexture.IsLoaded()) config.AddMacro("RIPPLE_TEXTURE");
+                if (ocean->foamTexture.IsLoaded()) config.AddMacro("FOAM_TEXTURE");
+                if (oceanReflections) config.AddMacro("REFLECTION");
+                if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
                 auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -222,80 +214,42 @@ namespace Atlas {
 
                 vertexArray.Bind(commandList);
 
-                Uniforms uniforms = {
-                    .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
-                    .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
-                    .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
+                auto uniforms = GetUniforms(scene);
 
-                    .translation = vec4(ocean->translation, 1.0f),
-                    
-                    .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
-
-                    .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
-                    .spectrumWeights = ocean->simulation.spectrumWeights,
-                    .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
-
-                    .displacementScale = ocean->displacementScale,
-                    .choppyScale = ocean->choppynessScale,
-                    .tiling = ocean->tiling,
-                    .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
-
-                    .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
-                    .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
-                    .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
-                    .shoreWaveSteepness = ocean->shoreWaveSteepness,
-
-                    .shoreWavePower = ocean->shoreWavePower,
-                    .shoreWaveSpeed = ocean->shoreWaveSpeed,
-                    .shoreWaveLength = ocean->shoreWaveLength,
-                    .terrainSideLength = -1.0f,
-                    .N = ocean->simulation.N,
-                    .spectrumCount = ocean->simulation.C,
-                };
+                if (scene->renderState.sky.atmosphere)
+                    uniforms.sunAngularRadius = glm::radians(0.5f * glm::max(scene->renderState.sky.atmosphere->sunDiskSize, 0.01f));
 
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
                 ocean->simulation.normalMap.Bind(commandList, 3, 1);
 
-                if (ocean->foamTexture.IsValid()) {
-                    ocean->foamTexture.Bind(commandList, 3, 2);
+                if (ocean->foamTexture.IsLoaded()) {
+                    ocean->foamTexture->Bind(commandList, 3, 2);
                 }
                 else {
                     dummyTexture.Bind(commandList, 3, 2);
                 }
 
-                if (scene->sky.GetProbe()) {
-                    scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
-                }
-
                 if (cloudsEnabled) {
                     target->volumetricCloudsTexture.Bind(commandList, 3, 16);
-                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
+                    uniforms.innerCloudRadius = scene->renderState.sky.planetRadius + clouds->baseAltitude;
+                }
+
+                if (oceanReflections) {
+                    target->reflectionTexture.Bind(commandList, 3, 3);
                 }
 
                 refractionTexture.Bind(commandList, 3, 4);
                 depthTexture.Bind(commandList, 3, 5);
                 target->oceanDepthTexture.Bind(commandList, 3, 20);
 
-                if (scene->terrain) {
-                    if (scene->terrain->shoreLine.IsValid()) {
-                        auto terrain = scene->terrain;
-
-                        uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
-                        uniforms.terrainSideLength = scene->terrain->sideLength;
-                        uniforms.terrainHeightScale = scene->terrain->heightScale;
-
-                        scene->terrain->shoreLine.Bind(commandList, 3, 9);
-
-                    }
-                }
+                if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid())
+                    scene->renderState.terrain->shoreLine.Bind(commandList, 3, 9);
 
                 if (fogEnabled) {
                     target->volumetricTexture.Bind(commandList, 3, 7);
 
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.extinctionCoefficient = fog->extinctionCoefficients;
-                    fogUniform.scatteringFactor = fog->scatteringFactor;
-                    fogUniform.extinctionFactor = fog->extinctionFactor;
+                    fogUniform.albedo = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->albedo), 0.0f);
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
@@ -303,8 +257,8 @@ namespace Atlas {
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
-                if (ocean->rippleTexture.IsValid()) {
-                    ocean->rippleTexture.Bind(commandList, 3, 10);
+                if (ocean->rippleTexture.IsLoaded()) {
+                    ocean->rippleTexture->Bind(commandList, 3, 10);
                 }
                 else {
                     dummyTexture.Bind(commandList, 3, 10);
@@ -336,7 +290,7 @@ namespace Atlas {
 
                 }
 
-                commandList->EndRenderPass();
+                commandList->EndRendering();
 
                 {
                     auto rtData = target->GetHistoryData(FULL_RES);
@@ -344,39 +298,35 @@ namespace Atlas {
                     VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    Graphics::ImageBarrier imageBarriers[] = {
                         {target->lightingTexture.image, layout, access},
                         {rtData->depthTexture->image, layout, access},
                         {rtData->stencilTexture->image, layout, access},
                         {rtData->velocityTexture->image, layout, access},
                     };
 
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                    commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
                 }
 
                 if (ocean->underwaterShader) {
-                    Graphics::Profiler::EndAndBeginQuery("Underwater");
+                    GPUProfiler::EndAndBeginQuery("Underwater");
 
-                    auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                    auto& colorImage = target->afterLightingRendering.colorAttachments[0].image;
 
-                    std::vector<Graphics::ImageBarrier> imageBarriers;
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                    imageBarriers = {
+                    Graphics::ImageBarrier preImageBarriers[] = {
                         {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                         {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    commandList->PipelineBarrier(preImageBarriers, {},
                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                     commandList->CopyImage(colorImage, refractionTexture.image);
 
-                    imageBarriers = {
+                    Graphics::ImageBarrier postImageBarriers[] = {
                         {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    commandList->PipelineBarrier(postImageBarriers, {},
                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                     const int32_t groupSize = 8;
@@ -386,14 +336,14 @@ namespace Atlas {
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->terrain && scene->terrain->shoreLine.IsValid());
+                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid());
                     auto pipeline = PipelineManager::GetPipeline(underWaterPipelineConfig);
 
                     commandList->BindPipeline(pipeline);
 
-                    auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
-                    auto stencilImage = target->afterLightingFrameBuffer->GetColorImage(2);
-                    auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
+                    auto lightingImage = target->afterLightingRendering.colorAttachments[0].image;
+                    auto stencilImage = target->afterLightingRendering.colorAttachments[2].image;
+                    auto depthImage = target->afterLightingRendering.depthAttachment.image;
 
                     refractionTexture.Bind(commandList, 3, 4);
                     commandList->BindImage(depthImage, nearestSampler, 3, 16);
@@ -408,30 +358,52 @@ namespace Atlas {
                     commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
                 }
 
-                Graphics::Profiler::EndQuery();
+                GPUProfiler::EndQuery();
 
             }
 
-            Graphics::Profiler::EndQuery();
+        }
+
+        void OceanRenderer::ComputeSurfaceQueries(Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+
+            auto ocean = scene->renderState.ocean;
+            if (!ocean || !ocean->enable || !ocean->physics)
+                return;
+
+            auto uniforms = GetUniforms(scene);
+
+            bool shoreLine = scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid();
+            if (shoreLine)
+                scene->renderState.terrain->shoreLine.Bind(commandList, 3, 9);
+
+            ocean->simulation.displacementMap.Bind(commandList, 3, 0);
+            ocean->simulation.normalMap.Bind(commandList, 3, 1);
+            ocean->simulation.perlinNoiseMap.Bind(commandList, 3, 13);
+
+            queryUniformBuffer.SetData(&uniforms, 0);
+            queryUniformBuffer.Bind(commandList, 3, 11);
+
+            ocean->surfaceQueries.Compute(commandList, shoreLine);
 
         }
 
         void OceanRenderer::RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->ocean || !scene->ocean->enable)
+            if (!scene->renderState.ocean || !scene->renderState.ocean->enable)
                 return;
 
-            Graphics::Profiler::BeginQuery("Ocean depth");
+            CPUProfiler::Scope profilerScope("Ocean depth");
+            GPUProfiler::Scope gpuScope("Ocean depth");
 
-            auto ocean = scene->ocean;
+            auto ocean = scene->renderState.ocean;
 
-            Graphics::Profiler::BeginQuery("Rendering");
+            GPUProfiler::Scope sectionScope("Rendering");
 
-            commandList->BeginRenderPass(target->oceanDepthOnlyFrameBuffer->renderPass,
-                target->oceanDepthOnlyFrameBuffer);
+            commandList->BeginRendering(target->oceanDepthRendering);
 
             auto config = GeneratePipelineConfig(target, true, ocean->wireframe);
-            if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+            if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+            if (ocean->rippleTexture.IsLoaded()) config.AddMacro("RIPPLE_TEXTURE");
 
             auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -439,65 +411,27 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            Uniforms uniforms = {
-                .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
-                .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
-                .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
-
-                .translation = vec4(ocean->translation, 1.0f),
-
-                .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
-
-                .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
-                .spectrumWeights = ocean->simulation.spectrumWeights,
-                .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
-
-                .displacementScale = ocean->displacementScale,
-                .choppyScale = ocean->choppynessScale,
-                .tiling = ocean->tiling,
-                .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
-
-                .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
-                .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
-                .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
-                .shoreWaveSteepness = ocean->shoreWaveSteepness,
-
-                .shoreWavePower = ocean->shoreWavePower,
-                .shoreWaveSpeed = ocean->shoreWaveSpeed,
-                .shoreWaveLength = ocean->shoreWaveLength,
-                .terrainSideLength = -1.0f,
-                .N = ocean->simulation.N,
-                .spectrumCount = ocean->simulation.C,
-            };
+            auto uniforms = GetUniforms(scene);
 
             ocean->simulation.displacementMap.Bind(commandList, 3, 0);
             ocean->simulation.normalMap.Bind(commandList, 3, 1);
 
-            ocean->foamTexture.Bind(commandList, 3, 2);
+            if (ocean->foamTexture.IsLoaded())
+                ocean->foamTexture->Bind(commandList, 3, 2);
+            else
+                dummyTexture.Bind(commandList, 3, 2);
 
-            if (scene->sky.GetProbe()) {
-                scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
-            }
+            // Normals are only computed where the ocean isn't hidden by the scene
+            auto sceneDepthTexture = target->GetData(FULL_RES)->depthTexture;
+            commandList->BindImage(sceneDepthTexture->image, nearestSampler, 3, 5);
 
-            refractionTexture.Bind(commandList, 3, 4);
-            depthTexture.Bind(commandList, 3, 5);
+            if (scene->renderState.terrain.IsLoaded() && scene->renderState.terrain->shoreLine.IsValid())
+                scene->renderState.terrain->shoreLine.Bind(commandList, 3, 9);
 
-            if (scene->terrain) {
-                if (scene->terrain->shoreLine.IsValid()) {
-                    auto terrain = scene->terrain;
-
-                    uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
-                    uniforms.terrainSideLength = scene->terrain->sideLength;
-                    uniforms.terrainHeightScale = scene->terrain->heightScale;
-
-                    scene->terrain->shoreLine.Bind(commandList, 3, 9);
-
-                }
-            }
-
-            if (ocean->rippleTexture.IsValid()) {
-                ocean->rippleTexture.Bind(commandList, 3, 10);
-            }
+            if (ocean->rippleTexture.IsLoaded())
+                ocean->rippleTexture->Bind(commandList, 3, 10);
+            else
+                dummyTexture.Bind(commandList, 3, 10);
 
             depthUniformBuffer.SetData(&uniforms, 0);
             depthUniformBuffer.Bind(commandList, 3, 11);
@@ -525,10 +459,55 @@ namespace Atlas {
 
             }
 
-            commandList->EndRenderPass();
+            commandList->EndRendering();
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
+        }
+
+        OceanRenderer::Uniforms OceanRenderer::GetUniforms(const Ref<Scene::Scene>& scene) const {
+
+            auto ocean = scene->renderState.ocean;
+
+            Uniforms uniforms = {
+                .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
+                .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
+
+                .translation = vec4(ocean->translation, 1.0f),
+
+                .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
+
+                .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
+                .spectrumWeights = ocean->simulation.spectrumWeights,
+                .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
+
+                .displacementScale = ocean->displacementScale,
+                .choppyScale = ocean->choppynessScale,
+                .tiling = ocean->tiling,
+                .hasRippleTexture = ocean->rippleTexture.IsLoaded() ? 1 : 0,
+
+                .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
+                .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
+                .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
+                .shoreWaveSteepness = ocean->shoreWaveSteepness,
+
+                .shoreWavePower = ocean->shoreWavePower,
+                .shoreWaveSpeed = ocean->shoreWaveSpeed,
+                .shoreWaveLength = ocean->shoreWaveLength,
+                .terrainSideLength = -1.0f,
+                .N = ocean->simulation.N,
+                .spectrumCount = ocean->simulation.C,
+                .foamOffset = ocean->simulation.foamOffset,
+                .foamScale = ocean->simulation.foamScale,
+                .foamSize = ocean->simulation.foamSize,
+            };
+
+            auto terrain = scene->renderState.terrain;
+            if (terrain.IsLoaded() && terrain->shoreLine.IsValid()) {
+                uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
+                uniforms.terrainSideLength = terrain->sideLength;
+                uniforms.terrainHeightScale = terrain->heightScale;
+            }
+
+            return uniforms;
 
         }
 
@@ -540,7 +519,7 @@ namespace Atlas {
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = depthOnly ? target->oceanDepthOnlyFrameBuffer : target->afterLightingFrameBufferWithStencil,
+                .attachmentFormats = Graphics::AttachmentFormats(depthOnly ? target->oceanDepthRendering : target->afterLightingRendering),
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

@@ -17,15 +17,24 @@ namespace Atlas::Physics {
 
         settings.mPredictiveContactDistance = predictiveContactDistance;
 
-        settings.mCharacterPadding = shapePadding;
+        settings.mMaxCollisionIterations = 10;
+        settings.mMaxConstraintIterations = 10;
         settings.mShapeOffset = VecToJPHVec(shapeOffset);
 		settings.mShape = shape->ref;
+        settings.mInnerBodyShape = shape->ref;
+        settings.mInnerBodyLayer = Layers::Movable;
+        settings.mCharacterPadding = shapePadding;
+
+        if (shape->type == ShapeType::Capsule) {
+            auto shapeSettings = static_cast<CapsuleShapeSettings*>(shape->settings.get());
+            settings.mSupportingVolume = { JPH::Vec3::sAxisY(), -shapeSettings->radius };
+        }
 		
 		return settings;
 
 	}
 
-    Player::Player(const Atlas::Physics::PlayerCreationSettings &creationSettings, const glm::vec3 &initialPosition,
+    Player::Player(const Atlas::Physics::PlayerCreationSettings &creationSettings, const vec3 &initialPosition,
         const Ref<Atlas::Physics::PhysicsWorld> &physicsWorld) : creationSettings(CreateRef(creationSettings)) {
 
         Init(physicsWorld.get(), initialPosition, quat());
@@ -111,7 +120,7 @@ namespace Atlas::Physics {
 
     }
 
-    void Player::SetShape(const Ref<Shape>& shape) {
+    bool Player::SetShape(const Ref<Shape>& shape, float maxPenetration) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
 
@@ -122,8 +131,15 @@ namespace Atlas::Physics {
         const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::Movable);
         const auto& tempAllocator = Physics::PhysicsManager::tempAllocator;
 
-        character->SetShape(shape->ref, physicsSettings.mPenetrationSlop * 1.5f, broadPhaseLayerFilter,
-            defaultLayerFilter, {}, {}, *tempAllocator);
+        if (maxPenetration < 0.0f)
+            maxPenetration = physicsSettings.mPenetrationSlop * 1.5f;
+        if (!character->SetShape(shape->ref, maxPenetration, broadPhaseLayerFilter,
+            defaultLayerFilter, {}, {}, *tempAllocator))
+            return false;
+
+        character->SetInnerBodyShape(shape->ref);
+
+        return true;
 
     }
 
@@ -140,13 +156,76 @@ namespace Atlas::Physics {
 
         auto gravityVector = -GetUp() * glm::length(world->GetGravity());
 
+        character->SetEnhancedInternalEdgeRemoval(true);
+
         JPH::CharacterVirtual::ExtendedUpdateSettings settings;
 
         settings.mStickToFloorStepDown = VecToJPHVec(stickToGroundDist);
         settings.mWalkStairsStepUp = VecToJPHVec(walkStairsStepUpDist);
 
-        character->ExtendedUpdate(deltaTime, VecToJPHVec(gravityVector), settings,
-            broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+        // The steps of CharacterVirtual::ExtendedUpdate, done here to know how far sticking to the floor and walking
+        // up stairs moved the character (stepMovement)
+        stepMovement = vec3(0.0f);
+        character->StartTrackingContactChanges();
+
+        auto up = character->GetUp();
+        auto desiredVelocity = character->GetLinearVelocity();
+        character->SetLinearVelocity(character->CancelVelocityTowardsSteepSlopes(desiredVelocity));
+
+        auto oldPosition = character->GetPosition();
+        auto groundToAir = character->IsSupported();
+
+        character->Update(deltaTime, VecToJPHVec(gravityVector), broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+
+        if (character->IsSupported())
+            groundToAir = false;
+
+        // Going from supported to not supported without moving up the character sticks to the floor
+        if (groundToAir && !settings.mStickToFloorStepDown.IsNearZero()) {
+            auto velocity = JPH::Vec3(character->GetPosition() - oldPosition).Dot(up) / deltaTime;
+            if (velocity <= 1.0e-6f) {
+                auto position = character->GetPosition();
+                character->StickToFloor(settings.mStickToFloorStepDown, broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+
+                // Only the drop that the slope of the floor doesn't explain is a step, walking down a slope isn't
+                auto movement = JPH::Vec3(character->GetPosition() - oldPosition);
+                auto horizontal = (movement - movement.Dot(up) * up).Length();
+                auto cosSlope = glm::clamp(character->GetGroundNormal().Dot(up), 0.01f, 1.0f);
+                auto slopeDrop = horizontal * glm::sqrt(1.0f - cosSlope * cosSlope) / cosSlope;
+                auto drop = -JPH::Vec3(character->GetPosition() - position).Dot(up);
+                if (drop > slopeDrop)
+                    stepMovement -= JPHVecToVec(up) * (drop - slopeDrop);
+            }
+        }
+
+        // Held back by a slope that is too steep the character tries to walk up a stair
+        auto desiredStep = desiredVelocity * deltaTime;
+        desiredStep -= desiredStep.Dot(up) * up;
+        auto desiredStepLength = desiredStep.Length();
+        if (!settings.mWalkStairsStepUp.IsNearZero() && desiredStepLength > 0.0f) {
+            auto forward = desiredStep / desiredStepLength;
+            auto achievedStep = JPH::Vec3(character->GetPosition() - oldPosition);
+            auto achievedStepLength = glm::max(0.0f, achievedStep.Dot(forward));
+
+            if (achievedStepLength + 1.0e-4f < desiredStepLength && character->CanWalkStairs(desiredVelocity)) {
+                auto stepForward = forward * glm::max(settings.mWalkStairsMinStepForward, desiredStepLength - achievedStepLength);
+
+                // Tests for the floor in the direction of the ground normal, unless it points away from the movement
+                auto stepForwardTest = -character->GetGroundNormal();
+                stepForwardTest -= stepForwardTest.Dot(up) * up;
+                stepForwardTest = stepForwardTest.NormalizedOr(forward);
+                if (stepForwardTest.Dot(forward) < settings.mWalkStairsCosAngleForwardContact)
+                    stepForwardTest = forward;
+                stepForwardTest *= settings.mWalkStairsStepForwardTest;
+
+                auto position = character->GetPosition();
+                character->WalkStairs(deltaTime, settings.mWalkStairsStepUp, stepForward, stepForwardTest,
+                    settings.mWalkStairsStepDownExtra, broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
+                stepMovement += JPHVecToVec(JPH::Vec3(character->GetPosition() - position));
+            }
+        }
+
+        character->FinishTrackingContactChanges();
 
     }
 
@@ -159,6 +238,34 @@ namespace Atlas::Physics {
 
         character = CreateRef<JPH::CharacterVirtual>(settings, VecToJPHVec(initialPosition),
             QuatToJPHQuat(initialRotation), world->system.get());
+
+        contactListener = CreateRef<ContactListener>(creationSettings);
+        character->SetListener(contactListener.get());
+
+    }
+
+    JPH::BodyID Player::GetBodyID() const {
+
+        return IsValid() ? character->GetInnerBodyID() : JPH::BodyID();
+
+    }
+
+    void Player::SetUserData(uint64_t userData) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        character->SetUserData(userData);
+
+        auto innerBodyId = character->GetInnerBodyID();
+        if (!innerBodyId.IsInvalid())
+            world->system->GetBodyInterface().SetUserData(innerBodyId, userData);
+
+    }
+
+    void Player::ContactListener::OnContactAdded(const JPH::CharacterVirtual* inCharacter,
+        const JPH::CharacterContact& inContact, JPH::CharacterContactSettings& ioSettings) {
+
+        ioSettings.mCanPushCharacter = false;
+        ioSettings.mCanReceiveImpulses = settings->canPushBodies;
 
     }
 

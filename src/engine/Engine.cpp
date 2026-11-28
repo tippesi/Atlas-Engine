@@ -1,19 +1,32 @@
 #include "Engine.h"
 #include "graphics/Extensions.h"
-#include "graphics/Profiler.h"
+#include "profiler/GPUProfiler.h"
+#include "profiler/CPUProfiler.h"
+#include "profiler/HitchRecorder.h"
 #include "EngineInstance.h"
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
 #include "pipeline/PipelineManager.h"
+#include "materialgraph/PipelineCache.h"
 #include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
+#include "texture/Texture2D.h"
+#include "mesh/Mesh.h"
+#include "mesh/Impostor.h"
+#include "resource/ResourceManager.h"
+#include "streaming/StreamingManager.h"
 #include "input/KeyboardMap.h"
+#include "input/ControllerMap.h"
 #include "events/EventManager.h"
+#include "raytracing/RayTracingManager.h"
+#include "terrain/TerrainManager.h"
 #include "jobsystem/JobSystem.h"
+#include "renderer/UpscalerAddons.h"
 
 #include "graphics/ShaderCompiler.h"
 
-#include <SDL_vulkan.h>
+#include <EngineVersion.h>
+#include <SDL3/SDL_vulkan.h>
 
 extern Atlas::EngineInstance* GetEngineInstance();
 
@@ -23,11 +36,25 @@ namespace Atlas {
 
     void Engine::Init(EngineConfig config) {
 
+        // Textures and impostors only start loading when no meshes are left to load
+        ResourceManager<Mesh::Mesh>::onAsyncLoadRequested = []() {
+            ResourceManager<Texture::Texture2D>::HoldAsyncLoads();
+            ResourceManager<Mesh::Impostor>::HoldAsyncLoads();
+            };
+        ResourceManager<Mesh::Mesh>::onAsyncLoadFinished = []() {
+            ResourceManager<Texture::Texture2D>::ReleaseAsyncLoads();
+            ResourceManager<Mesh::Impostor>::ReleaseAsyncLoads();
+            };
+
 #ifdef AE_NO_APP
         SDL_SetMainReady();
 #endif
-        if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
-            SDL_Init(SDL_INIT_EVERYTHING);
+        const SDL_InitFlags initFlags = SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS;
+        if (SDL_WasInit(initFlags) != initFlags) {
+            if (!SDL_Init(initFlags)) {
+                auto error = SDL_GetError();
+                Log::Error("Error initializing SDL: " + std::string(error));
+            }
         }
 
         Loader::AssetLoader::SetAssetDirectory(config.assetDirectory);
@@ -40,27 +67,26 @@ namespace Atlas {
             AE_WINDOWPOSITION_UNDEFINED, 100, 100, AE_WINDOW_HIDDEN);
 
         // Need to retrieve the extension names required to create an SDL surface
-        uint32_t extensionCount;
-        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, nullptr);
-        std::vector<const char*> requiredExtensions(extensionCount);
-        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, requiredExtensions.data());
+        uint32_t extensionCount = 0;
+        auto extensionNames = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
+        std::vector<const char*> requiredExtensions(extensionNames, extensionNames + extensionCount);
 #endif
 
         // Then create graphics instance
         auto instanceDesc = Graphics::InstanceDesc{
             .instanceName = "AtlasEngineInstance",
-#ifdef AE_BUILDTYPE_DEBUG
-            .enableValidationLayers = true,
-#else
-            .enableValidationLayers = false,
-#endif
-            .validationLayerSeverity = config.validationLayerSeverity,
+            .enableValidationLayers = config.deviceDesc.enableValidationLayers,
+            .enableExtendedValidation = config.deviceDesc.enableExtendedValidation,
+            .validationLayerSeverity = config.deviceDesc.validationLayerSeverity,
 #ifndef AE_HEADLESS
-            .requiredExtensions = requiredExtensions
+            .requiredExtensions = requiredExtensions,
 #else
-            .requiredExtensions = { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME }
+            .requiredExtensions = { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME },
 #endif
+            .optionalExtensions = Renderer::UpscalerAddons::GetInstanceExtensions()
         };
+        if (!config.deviceDesc.optionalExtensions)
+            config.deviceDesc.optionalExtensions = Renderer::UpscalerAddons::GetDeviceExtensions;
 
         Graphics::Instance::DefaultInstance = new Graphics::Instance(instanceDesc);
         Graphics::Surface* surface;
@@ -71,7 +97,7 @@ namespace Atlas {
         surface = Graphics::Instance::DefaultInstance->CreateHeadlessSurface();
 #endif
         // Initialize device
-        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface);
+        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface, config.deviceDesc);
         Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
 
 #ifndef AE_HEADLESS
@@ -87,6 +113,7 @@ namespace Atlas {
         PipelineManager::Init();
         Physics::PhysicsManager::Init();
         Input::KeyboardMap::Init();
+        Input::ControllerMap::Init();
 
         // We need lower sample size for smaller buffer on SDL side (e.g. 256 instead of 1024)
         Audio::AudioManager::Configure(48000, 2, 128);
@@ -97,39 +124,69 @@ namespace Atlas {
 
     void Engine::Shutdown() {
 
+        // Waits for its jobs, which still need the job system and the shader compiler
+        MaterialGraph::PipelineCache::Shutdown();
+        Streaming::StreamingManager::Shutdown();
         JobSystem::Shutdown();
         Graphics::ShaderCompiler::Shutdown();
-        Graphics::Profiler::Shutdown();
+        GPUProfiler::Shutdown();
         PipelineManager::Shutdown();
         Physics::PhysicsManager::Shutdown();
         Texture::Texture::Shutdown();
         Audio::AudioManager::Shutdown();
         Input::KeyboardMap::Shutdown();
+        Input::ControllerMap::Shutdown();
 
         Events::EventManager::ShutdownEventDelegate.Fire();
+        // The meshes are released by the event
+        Buffer::GeometryPool::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
 #endif
     }
 
-    void Engine::Update() {
+    void Engine::Update(bool renderThread) {
 
         Clock::Update();
-        Graphics::Profiler::BeginFrame();
+        CPUProfiler::BeginFrame();
+        HitchRecorder::Update(Clock::GetDelta() * 1000.0f);
+        CPUProfiler::Scope profilerScope("Engine update");
+        if (!renderThread)
+            BeginRenderFrame();
+        // First reset keyboard state before new events
+        Input::KeyboardMap::Update();
+        Input::ControllerMap::Update();
         Events::EventManager::Update();
-        PipelineManager::Update();
         Audio::AudioManager::Update();
         Physics::ShapesManager::Update();
+        RayTracing::RayTracingManager::Update();
+        Terrain::TerrainManager::Update();
+        Buffer::GeometryPool::Update();
+
+    }
+
+    void Engine::BeginRenderFrame() {
+
+        GPUProfiler::BeginFrame();
+        PipelineManager::Update();
 
     }
 
     ivec2 Engine::GetScreenSize() {
 
-        SDL_DisplayMode displayMode;
-        SDL_GetCurrentDisplayMode(0, &displayMode);
+        auto displayMode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+        if (!displayMode)
+            return ivec2(0);
 
-        return ivec2(displayMode.w, displayMode.h);
+        return ivec2(displayMode->w, displayMode->h);
+
+    }
+
+    const std::string& Engine::GetVersion() {
+
+        static const std::string version = AE_ENGINE_VERSION;
+        return version;
 
     }
 

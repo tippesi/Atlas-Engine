@@ -13,6 +13,9 @@ namespace Atlas {
             RTGI() = default;
 
             int32_t textureLevel = 4;
+            int32_t sampleCount = 2;
+            int32_t lightSampleCount = 1;
+
             float radianceLimit = 5.0f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
@@ -23,10 +26,13 @@ namespace Atlas {
 
             bool enable = true;
             bool ddgi = true;
-            bool useShadowMap = false;
             bool useNormalMaps = true;
             bool opacityCheck = false;
             bool halfResolution = true;
+
+            // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
+            // they hit before shading
+            bool shaderExecutionReordering = true;
 
         };
 

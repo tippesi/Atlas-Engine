@@ -1,6 +1,8 @@
 #include "ImpostorTool.h"
+#include "common/MathHelper.h"
 #include "../renderer/ImpostorRenderer.h"
 #include "../scene/Scene.h"
+#include "../streaming/StreamingManager.h"
 
 namespace Atlas {
 
@@ -68,6 +70,12 @@ namespace Atlas {
                     1.0f, 1.0f, dist + 2.0f * radius);
             }
 
+            Streaming::MeshStreaming::LoadGeometry(mesh);
+            for (const auto& material : mesh->data.materials) {
+                if (material.IsLoaded())
+                    Streaming::TextureStreaming::LoadFullResolution(*material.Get());
+            }
+
             // Distance to center is center offset + one unit vector
             renderer.Generate(viewMatrices, projectionMatrix, dist + 1.0f, mesh.Get().get(), impostor.get());
 
@@ -76,17 +84,18 @@ namespace Atlas {
 
             impostor->FillViewPlaneBuffer(rightVectors, upVectors);
 
+            impostor->approxReflectance = 0.0f;
+
             // Approximate transmission
             for (auto& material : mesh->data.materials) {
-                impostor->transmissiveColor += material->transmissiveColor / (float)mesh->data.materials.size();
+                impostor->approxTransmissiveColor += material->transmissiveColor / (float)mesh->data.materials.size();
+                impostor->approxReflectance += material->reflectance / (float)mesh->data.materials.size();
             }
 
-            impostor->baseColorTexture.GenerateMipmap();
-            impostor->roughnessMetalnessAoTexture.GenerateMipmap();
-            impostor->normalTexture.GenerateMipmap();
-            impostor->depthTexture.GenerateMipmap();
-
-            
+            impostor->baseColorTexture->GenerateMipmap();
+            impostor->roughnessMetalnessAoTexture->GenerateMipmap();
+            impostor->normalTexture->GenerateMipmap();
+            impostor->depthTexture->GenerateMipmap();            
 
             return impostor;
 
@@ -108,7 +117,7 @@ namespace Atlas {
             dir.y = glm::max(dir.y, 0.0001f);
             dir /= glm::dot(glm::abs(dir), vec3(1.0));
 
-            return glm::clamp(0.5f * vec2(dir.x + dir.z, dir.x - dir.z) + 0.5f, 0.0f, 1.0f);
+            return Helper::Math::Saturate(0.5f * vec2(dir.x + dir.z, dir.x - dir.z) + 0.5f);
 
         }
 
@@ -139,7 +148,7 @@ namespace Atlas {
                 dir.z = (orig.y >= 0.0f ? 1.0f : -1.0f) * (1.0f - abs(orig.x));
             }
 
-            return glm::clamp(0.5f * vec2(dir.x, dir.z) + 0.5f, 0.0f, 1.0f);
+            return Helper::Math::Saturate(0.5f * vec2(dir.x, dir.z) + 0.5f);
 
         }
 

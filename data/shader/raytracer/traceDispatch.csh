@@ -22,6 +22,14 @@ void main() {
     dispatch.numGroupsZ = uint(1);
     
     indirectCommands[0] = dispatch;
+
+    // Ray generation stages of ray tracing pipelines are launched per ray
+    DispatchIndirectCommand traceRays;
+    traceRays.numGroupsX = max(rayCount, uint(1));
+    traceRays.numGroupsY = uint(1);
+    traceRays.numGroupsZ = uint(1);
+
+    indirectCommands[1] = traceRays;
     
     writeAtomic[0] = uint(0);
 

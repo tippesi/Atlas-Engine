@@ -2,11 +2,25 @@
 
 namespace Atlas {
 
+    bool ThreadSafeJobQueue::Empty() {
+
+        std::scoped_lock lock(mutex);
+        return jobs.empty();
+
+    }
+
     void ThreadSafeJobQueue::Push(const Job& job) {
 
         std::scoped_lock lock(mutex);
         jobs.push_back(job);
     
+    }
+
+    void ThreadSafeJobQueue::Push(Job&& job) {
+
+        std::scoped_lock lock(mutex);
+        jobs.push_back(std::move(job));
+
     }
 
     void ThreadSafeJobQueue::PushMultiple(const std::vector<Job>& newJobs) {
@@ -22,7 +36,7 @@ namespace Atlas {
         if (jobs.empty())
             return std::nullopt;
             
-        auto job = jobs.front();
+        std::optional<Job> job(std::move(jobs.front()));
         jobs.pop_front();
 
         return job;

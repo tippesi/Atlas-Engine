@@ -1,0 +1,93 @@
+#include <../common/PI.hsh>
+
+// Light inside the water body, seen from above and below the surface
+// The absorption follows the water body color, red is gone after a few meters
+const float waterAbsorptionScale = 0.12;
+// Water scatters short wavelengths more
+const vec3 waterScattering = vec3(0.03, 0.05, 0.1);
+const float waterRefractiveIndex = 1.33;
+// Skylight enters from all directions and travels a longer way down than the sun light
+const float ambientDownwellingCosine = 0.75;
+const float waterPhaseG = 0.6;
+
+vec3 GetWaterAbsorption() {
+
+    return -log(clamp(Uniforms.waterBodyColor.rgb, vec3(0.01), vec3(1.0))) * waterAbsorptionScale;
+
+}
+
+vec3 GetWaterExtinction() {
+
+    return GetWaterAbsorption() + waterScattering;
+
+}
+
+// Most light is scattered forward and keeps going down, only the light scattered back is lost on the way
+vec3 GetWaterDownwellingAttenuation() {
+
+    return GetWaterAbsorption() + 0.25 * waterScattering;
+
+}
+
+// Direction of the sun light after entering the water
+vec3 GetUnderwaterLightDirection(vec3 lightDirection) {
+
+    vec3 direction = refract(normalize(lightDirection), vec3(0.0, 1.0, 0.0), 1.0 / waterRefractiveIndex);
+    return dot(direction, direction) > 0.0 ? direction : vec3(0.0, -1.0, 0.0);
+
+}
+
+float GetUnderwaterLightCosine(vec3 lightDirection) {
+
+    return max(-GetUnderwaterLightDirection(lightDirection).y, 0.05);
+
+}
+
+// Surfaces under water are lit with the light above the water, this is what is left of it at a depth
+vec3 GetWaterDownwellingTransmittance(Light light, float depth) {
+
+    return exp(-GetWaterDownwellingAttenuation() * depth / GetUnderwaterLightCosine(light.direction.xyz));
+
+}
+
+float WaterPhase(float cosTheta) {
+
+    float g = waterPhaseG;
+    float henyeyGreenstein = (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5));
+    return mix(1.0 / (4.0 * PI), henyeyGreenstein, 0.7);
+
+}
+
+// Integral of the light scattered towards the viewer along a ray starting at a depth below the surface,
+// where the light coming from above is attenuated by the way down with the given cosine
+vec3 IntegrateWaterScattering(vec3 extinction, float startDepth, float rayDirectionY, float lightCosine, float rayLength) {
+
+    vec3 attenuation = GetWaterDownwellingAttenuation() / lightCosine;
+    vec3 rate = extinction - attenuation * rayDirectionY;
+    vec3 integral = mix(vec3(rayLength), (1.0 - exp(-rate * rayLength)) / rate, greaterThan(abs(rate), vec3(1e-4)));
+    return exp(-attenuation * startDepth) * integral;
+
+}
+
+// Light scattered towards the viewer, without sun shadows
+void GetWaterScattering(vec3 extinction, vec3 rayDirection, float startDepth, float rayLength, Light light,
+    vec3 skyRadiance, out vec3 sunScattering, out vec3 ambientScattering) {
+
+    vec3 lightDirection = GetUnderwaterLightDirection(light.direction.xyz);
+    float lightCosine = GetUnderwaterLightCosine(light.direction.xyz);
+    // Fades out the sun below the horizon, then only the sky lights the water
+    float sunVisibility = saturate(-light.direction.y * 10.0);
+
+    // Light scattered several times, approximated for an infinite medium
+    vec3 absorption = extinction - waterScattering;
+    vec3 scattering = waterScattering / max(absorption / extinction, vec3(0.2));
+
+    vec3 sunLight = sunVisibility * light.intensity * light.color.rgb * WaterPhase(dot(rayDirection, -lightDirection));
+    sunScattering = Uniforms.waterColorIntensity.y * scattering * sunLight *
+        IntegrateWaterScattering(extinction, startDepth, rayDirection.y, lightCosine, rayLength);
+
+    // Only the upper hemisphere is lit by the sky
+    ambientScattering = Uniforms.waterColorIntensity.x * scattering * 0.5 * skyRadiance *
+        IntegrateWaterScattering(extinction, startDepth, rayDirection.y, ambientDownwellingCosine, rayLength);
+
+}

@@ -13,10 +13,19 @@ namespace Atlas {
 
         using BodyID = JPH::BodyID;
 
+        // Values are persisted in scenes, append new layers at the end
         enum Layers : JPH::ObjectLayer {
             Static = 0,
+            // Simulated (dynamic) bodies
             Movable = 1,
-            NumLayers = 2
+            // Bodies moved by the application (scripts, animations), pushing movable bodies but never pushed back
+            Kinematic = 2,
+            // Soft body cloth: hangs on the static world and kinematic bodies, passes simulated bodies (props, the
+            // inner body of the player, which a cape on the back would sit on) and other cloth
+            Cloth = 3,
+            // Kinematic bodies only cloth collides with: the body of a figure under its cape
+            ClothCollider = 4,
+            NumLayers = 5
         };
 
         // Class that determines if two object layers can collide
@@ -24,10 +33,18 @@ namespace Atlas {
         public:
             virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override {
                 switch (inObject1) {
+                    // Static and kinematic pairs only make contacts when a kinematic body asks for them
+                    // (BodyCreationSettings::kinematicContacts), Jolt skips the others
                     case Layers::Static:
-                        return inObject2 == Layers::Movable; // Non moving only collides with moving
+                        return inObject2 != Layers::Static && inObject2 != Layers::ClothCollider;
                     case Layers::Movable:
-                        return true; // Moving collides with everything
+                        return inObject2 != Layers::Cloth && inObject2 != Layers::ClothCollider;
+                    case Layers::Kinematic:
+                        return inObject2 != Layers::ClothCollider;
+                    case Layers::Cloth:
+                        return inObject2 == Layers::Static || inObject2 == Layers::Kinematic || inObject2 == Layers::ClothCollider;
+                    case Layers::ClothCollider:
+                        return inObject2 == Layers::Cloth;
                     default:
                         JPH_ASSERT(false);
                         return false;
@@ -54,6 +71,10 @@ namespace Atlas {
                 // Create a mapping table from object to broad phase layer
                 mObjectToBroadPhase[Layers::Static] = BroadPhaseLayers::Static;
                 mObjectToBroadPhase[Layers::Movable] = BroadPhaseLayers::Movable;
+                // Kinematic bodies move every frame, so keep them out of the static tree
+                mObjectToBroadPhase[Layers::Kinematic] = BroadPhaseLayers::Movable;
+                mObjectToBroadPhase[Layers::Cloth] = BroadPhaseLayers::Movable;
+                mObjectToBroadPhase[Layers::ClothCollider] = BroadPhaseLayers::Movable;
             }
 
             virtual uint32_t GetNumBroadPhaseLayers() const override {
@@ -89,32 +110,16 @@ namespace Atlas {
                         return inLayer2 == BroadPhaseLayers::Movable;
                     case Layers::Movable:
                         return true;
+                    case Layers::Kinematic:
+                        return true;
+                    case Layers::Cloth:
+                        return true;
+                    case Layers::ClothCollider:
+                        return inLayer2 == BroadPhaseLayers::Movable;
                     default:
                         JPH_ASSERT(false);
                         return false;
                 }
-            }
-        };
-
-        class ContactListener : public JPH::ContactListener {
-        public:
-            virtual JPH::ValidateResult	OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override {
-                Log::Message("Contact validation");
-
-                // Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
-                return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
-            }
-
-            virtual void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override {
-                Log::Message("Contact added");
-            }
-
-            virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override {
-                Log::Message("Contact persisted");
-            }
-
-            virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override {
-                Log::Message("Contact removed");
             }
         };
 

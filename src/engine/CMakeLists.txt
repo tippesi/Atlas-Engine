@@ -3,7 +3,7 @@ if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 project(AtlasEngine)
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.25)
 
 # Validate options ################################################################################
 if (ATLAS_NO_APP AND ATLAS_EXPORT_MAIN)
@@ -24,37 +24,35 @@ endif()
 
 # Set built type macros ###########################################################################
 if (DEFINED CMAKE_BUILD_TYPE)
-    # We want the better/safer usertypes, such that we don't crash everything
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
     elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO SOL_ALL_SAFETIES_ON)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO)
     else()
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG SOL_ALL_SAFETIES_ON)
-        # We need additional defines to match what Jolt compiled with as a vcpkg package (ignore this for now for other build types)
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} JPH_PROFILE_ENABLED JPH_DEBUG_RENDERER)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG)
     endif()
 else()
     # This is for non-single config generators like XCode
-    # Release compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Release>:AE_BUILDTYPE_RELEASE>" 
-        "$<$<CONFIG:Release>:SOL_ALL_SAFETIES_ON>")
-    # RelWithDebInfo compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:RelWithDebInfo>:AE_BUILDTYPE_RELWITHDEBINFO>" 
-        "$<$<CONFIG:RelWithDebInfo>:SOL_ALL_SAFETIES_ON>")
-    # Debug compile definitions
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>" 
-        "$<$<CONFIG:Debug>:JPH_PROFILE_ENABLED>" "$<$<CONFIG:Debug>:JPH_DEBUG_RENDERER>" "$<$<CONFIG:Debug>:SOL_ALL_SAFETIES_ON>")
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Release>:AE_BUILDTYPE_RELEASE>"
+        "$<$<CONFIG:RelWithDebInfo>:AE_BUILDTYPE_RELWITHDEBINFO>" "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>")
 endif()
+
+# Checked usertypes and calls, such that a script error doesn't crash everything
+if(ATLAS_LUA_SAFETIES)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} SOL_ALL_SAFETIES_ON)
+endif()
+
+# Default constructed glm types are zero or identity like before glm 0.9.9
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} GLM_FORCE_CTOR_INIT)
 
 # Configure platform specific stuff ###############################################################
 if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
-            unofficial::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt
-            ${LUA_LIBRARIES} sol2 fsr2)
+            unofficial::spirv-reflect glslang::SPIRV Jolt::Jolt
+            ${LUA_LIBRARIES} KTX::ktx fsr2 RecastNavigation::Recast RecastNavigation::Detour meshoptimizer::meshoptimizer)
 endif()
 
 if (MINGW)
@@ -66,17 +64,17 @@ if(APPLE)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt fsr2
-            GPUOpen::VulkanMemoryAllocator ${Vulkan_LIBRARIES} Vulkan::Headers
-            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
+            volk::volk SPIRV-Tools-opt Jolt::Jolt fsr2
+            GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
+            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx RecastNavigation::Recast RecastNavigation::Detour meshoptimizer::meshoptimizer)
 endif()
 
 if(ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi
-            ${LUA_LIBRARIES} sol2 fsr2)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3
+            ${LUA_LIBRARIES} KTX::ktx fsr2 RecastNavigation::Recast RecastNavigation::Detour meshoptimizer::meshoptimizer)
     set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
@@ -84,16 +82,19 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_LINUX)
     
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-    set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
-
-    set(CMAKE_SKIP_BUILD_RPATH FALSE)
-    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-    set(CMAKE_INSTALL_RPATH "./")
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
     
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
-            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL3::SDL3 fsr2
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Jolt::Jolt
+            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} KTX::ktx RecastNavigation::Recast RecastNavigation::Detour meshoptimizer::meshoptimizer)
+
+    if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14.0)
+        message("USe gcc14!")
+        set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} stdc++exp)
+    elseif(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 12.0)
+        message("USe gcc12!")
+        set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} stdc++_libbacktrace)
+    endif()
 endif()
 
 # Due to lua bindings we need more addressable functions (but not for clang)
@@ -148,14 +149,26 @@ endif()
 find_path(GLM_INCLUDE_DIRS "glm/common.hpp")
 find_path(STB_INCLUDE_DIRS "stb_c_lexer.h")
 find_path(VULKAN_HEADERS_INCLUDE_DIRS "vk_video/vulkan_video_codec_h264std.h")
+find_path(SOL2_INCLUDE_DIRS "sol/abort.hpp")
 
 if (ATLAS_HEADLESS)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_HEADLESS)
 endif()
 
-if (ATLAS_BINDLESS)
-set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BINDLESS)
-endif()
+# Precompile otherwise slow headers ###############################################################
+target_precompile_headers(${PROJECT_NAME}
+  PUBLIC
+    <unordered_map>
+    <filesystem>
+    <chrono>
+    <string>
+    <set>
+    <vector>
+    <glm/glm.hpp>
+    <sol/state.hpp>
+    <algorithm>
+    "System.h"
+)
 
 # Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
@@ -165,10 +178,18 @@ target_include_directories(${PROJECT_NAME}
     ${STB_INCLUDE_DIRS}
     ${GLM_INCLUDE_DIRS}
     ${LUA_INCLUDE_DIR}
+    ${SOL2_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
+
+# Only Engine.cpp includes the version, a new version doesn't rebuild the whole engine
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/EngineVersion.h.in ${CMAKE_CURRENT_BINARY_DIR}/generated/EngineVersion.h)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 message(${VULKAN_HEADERS_INCLUDE_DIRS})
     
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})
+
+# Optional vendor upscalers ########################################################################
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../libs/upscalers/Upscalers.cmake)

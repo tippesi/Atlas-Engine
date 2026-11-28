@@ -6,6 +6,7 @@
 #define VMA_STATS_STRING_ENABLED 0
 #include <vk_mem_alloc.h>
 #include <functional>
+#include <vector>
 
 namespace Atlas {
 
@@ -20,15 +21,24 @@ namespace Atlas {
         class MemoryTransferManager {
 
         public:
-            MemoryTransferManager(GraphicsDevice* device, MemoryManager* memManager);
+            MemoryTransferManager(GraphicsDevice* device, MemoryManager* memoryManager);
 
             ~MemoryTransferManager();
+
+            // Images need the graphics queue for their layout transitions
+            void BeginMultiTransfer(QueueType queueType = GraphicsQueue);
+
+            void EndMultiTransfer();
 
             void UploadBufferData(void* data, Buffer* buffer, VkBufferCopy bufferCopyDesc);
 
             void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent,
                 uint32_t layerOffset, uint32_t layerCount);
 
+            void UploadImageData(const void* data, size_t dataSize, Image* image,
+                const std::vector<VkBufferImageCopy>& copyRegions);
+
+            // Doesn't work with the multi-transfer yet
             void RetrieveImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent,
                 uint32_t layerOffset, uint32_t layerCount, bool block = true);
 
@@ -48,8 +58,11 @@ namespace Atlas {
 
             void DestroyStagingBuffer(StagingBufferAllocation& allocation);
 
-            GraphicsDevice* device;
-            MemoryManager* memoryManager;
+            GraphicsDevice* device = nullptr;
+            MemoryManager* memoryManager = nullptr;
+            CommandList* commandList = nullptr;
+
+            std::vector<StagingBufferAllocation> allocations;
 
         };
 

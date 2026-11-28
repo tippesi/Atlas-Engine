@@ -2,6 +2,7 @@
 #include <common/PI.hsh>
 #include <common/stencil.hsh>
 #include <common/flatten.hsh>
+#include <globals.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -13,9 +14,7 @@ layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
 layout(set = 3, binding = 4) uniform sampler2D depthTexture;
 layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
 
-#ifndef PATHTRACE
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
-#endif
 
 layout(push_constant) uniform constants {
     vec2 resolution;
@@ -32,10 +31,6 @@ const float maxVelocityBlend = 0.2;
 #define TAA_TONE // Somehow introduces more flickering as well
 #define TAA_CLIP
 //#define TAA_DENOISE
-
-#ifdef PATHTRACE
-#define TAA_CLIP
-#endif
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -243,6 +238,8 @@ vec4 SampleHistory(vec2 texCoord) {
 #else
     historyColor = texture(historyTexture, texCoord);
 #endif
+    // The history was stored with the pre-exposure of the last frame
+    historyColor.rgb *= globalData.preExposure / globalData.lastPreExposure;
 
 #ifdef TAA_TONE
     historyColor.rgb = Tonemap(historyColor.rgb);
@@ -313,8 +310,8 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x >= imageSize(resolveImage).x ||
+        pixel.y >= imageSize(resolveImage).y)
         return;
 
     LoadLocalData();
@@ -370,12 +367,10 @@ void main() {
     float range = 1.4;
     float localAntiFlicker = mix(0.6, 5.0, 1.0 - velocityBlend);
 
-#ifndef PATHTRACE
 #ifdef TAA_DENOISE
     range += localAntiFlicker;
 #else
     range += mix(0.0, localAntiFlicker, historyContrast);
-#endif
 #endif
 
     localNeighbourhoodMin = average - range * (average - localNeighbourhoodMin);
@@ -391,11 +386,7 @@ void main() {
     historyColor = clamp(historyColor, localNeighbourhoodMin, localNeighbourhoodMax);
 #endif
 
-#ifndef PATHTRACE
     float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
-#else
-    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
-#endif
 
 #ifdef TAA_YCOCG
     historyColor = YCoCgToRGB(historyColor); 
@@ -407,10 +398,8 @@ void main() {
     currentColor.rgb = InverseTonemap(currentColor.rgb);
 #endif
 
-#ifndef PATHTRACE
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
-#endif    
 
     // Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

@@ -8,6 +8,7 @@
 #include "resource/ResourceManager.h"
 
 #include "mesh/Mesh.h"
+#include "animation/Animation.h"
 #include "scene/Scene.h"
 #include "audio/AudioData.h"
 #include "scripting/Script.h"
@@ -15,7 +16,10 @@
 
 #include "loader/ModelImporter.h"
 #include "loader/MaterialLoader.h"
+#include "loader/MaterialGraphLoader.h"
+#include "loader/TerrainLoader.h"
 #include "loader/MeshLoader.h"
+#include "loader/AnimationLoader.h"
 
 #include "Content.h"
 #include "Serializer.h"
@@ -25,10 +29,6 @@ namespace Atlas::Editor {
     class FileImporter {
 
     public:
-        static void ImportFiles(const std::vector<std::string>& filenames);
-
-        static void ImportFile(const std::string& filename);
-
         template<class T>
         static ResourceHandle<T> ImportFile(const std::string& filename);
 
@@ -60,7 +60,11 @@ namespace Atlas::Editor {
                 auto directoryPath = Common::Path::GetDirectory(filename) + "/meshes/";
                 resourcePath = directoryPath + resourcePath;
                 auto loader = [filename](const std::string& resourcePath) -> auto {
-                    return Loader::ModelImporter::ImportMesh(filename, true);
+                    auto mesh = Loader::ModelImporter::ImportMesh(filename, true, 4096, Loader::ImportTextureFormat::KTX2);
+                    // Animations are written next to the meshes and can then be assigned to animation components
+                    if (mesh->data.IsSkinned())
+                        Loader::ModelImporter::ImportAnimations(filename, true);
+                    return mesh;
                     };
                 handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
                     ResourceOrigin::User, std::function(loader));
@@ -75,9 +79,13 @@ namespace Atlas::Editor {
             handle = ResourceManager<Material>::GetOrLoadResourceWithLoader(filename,
                 ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
         }
+        else if constexpr (std::is_same_v<T, MaterialGraph::Graph>) {
+            handle = ResourceManager<MaterialGraph::Graph>::GetOrLoadResourceWithLoader(filename,
+                ResourceOrigin::User, Loader::MaterialGraphLoader::LoadGraph);
+        }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Serializer::DeserializeScene, false);
+                ResourceOrigin::User, Serializer::DeserializeScene, true);
         }
         else if constexpr (std::is_same_v<T, Scripting::Script>) {
             handle = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
@@ -88,14 +96,22 @@ namespace Atlas::Editor {
                 ResourceOrigin::User, 32.0f, 8, 127);
         }
         else if constexpr (std::is_same_v<T, Texture::Texture2D>) {
-            // No support internally for async loading, load syncho. for now
-            handle = ResourceManager<Texture::Texture2D>::GetOrLoadResource(filename,
+            handle = ResourceManager<Texture::Texture2D>::GetOrLoadResourceAsync(filename,
                 ResourceOrigin::User, true, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0);
         }
         else if constexpr (std::is_same_v<T, Texture::Cubemap>) {
             // No support internally for async loading, load syncho. for now
             handle = ResourceManager<Texture::Cubemap>::GetOrLoadResourceAsync(filename,
                 ResourceOrigin::User);
+        }
+        else if constexpr (std::is_same_v<T, Terrain::Terrain>) {
+            // No support internally for async loading, load syncho. for now
+            handle = ResourceManager<Terrain::Terrain>::GetOrLoadResourceWithLoaderAsync(filename,
+                ResourceOrigin::User, Loader::TerrainLoader::LoadTerrain, true);
+        }
+        else if constexpr (std::is_same_v<T, Animation::Animation>) {
+            handle = ResourceManager<Animation::Animation>::GetOrLoadResourceWithLoaderAsync(filename,
+                ResourceOrigin::User, Loader::AnimationLoader::LoadAnimation, true);
         }
 
         return handle;
@@ -122,6 +138,9 @@ namespace Atlas::Editor {
         else if constexpr (std::is_same_v<T, Material>) {
             return type == ContentType::Material;
         }
+        else if constexpr (std::is_same_v<T, MaterialGraph::Graph>) {
+            return type == ContentType::MaterialGraph;
+        }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             return type == ContentType::Scene;
         }
@@ -139,6 +158,12 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Texture::Cubemap>) {
             return type == ContentType::EnvironmentTexture;
+        }
+        else if constexpr (std::is_same_v<T, Terrain::Terrain>) {
+            return type == ContentType::Terrain;
+        }
+        else if constexpr (std::is_same_v<T, Animation::Animation>) {
+            return type == ContentType::Animation;
         }
         else {
             return false;

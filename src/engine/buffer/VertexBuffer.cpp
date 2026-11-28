@@ -35,7 +35,7 @@ namespace Atlas {
 
         void VertexBuffer::SetData(void *data, size_t offset, size_t length) {
 
-            buffer->SetData(data, offset * elementSize, length * elementSize);
+            buffer->SetData(data, this->offset + offset * elementSize, length * elementSize);
 
         }
 
@@ -44,10 +44,11 @@ namespace Atlas {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             auto sizeInBytes = elementCount * elementSize;
+            offset = 0;
 
             Graphics::BufferDesc desc {
                 .usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
-                    | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                    | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = hostAccessible ? Graphics::BufferDomain::Host : Graphics::BufferDomain::Device,
                 .data = data,
                 .size = sizeInBytes

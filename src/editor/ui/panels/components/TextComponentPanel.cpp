@@ -1,4 +1,5 @@
 #include "TextComponentPanel.h"
+#include "../../Widgets.h"
 
 #include <imgui_stdlib.h>
 
@@ -11,28 +12,40 @@ namespace Atlas::Editor::UI {
 
         ImGui::PushID(GetNameID());
 
-        auto buttonName = textComponent.font.IsValid() ? textComponent.font.GetResource()->GetFileName() :
-            "Drop font resource here";
-        ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
+        bool hasFont = textComponent.font.IsValid();
+        auto buttonName = hasFont ? textComponent.font.GetResource()->GetFileName() : "Drop font resource here";
+        Widgets::DropSlot(buttonName.c_str(), !hasFont);
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Font>();
         if (handle.IsValid()) {
             textComponent.ChangeResource(handle);
         }
 
-        ImGui::InputTextMultiline("Text", &textComponent.text);
+        Widgets::TextArea("Text", textComponent.text, 7.0f);
 
-        ImGui::Text("General properties");
+        Widgets::PropertySection("Layout");
 
-        ImGui::DragFloat3("Position", glm::value_ptr(textComponent.position), 0.1f);
-        ImGui::DragFloat2("Half size", glm::value_ptr(textComponent.halfSize), 0.1f);
+        if (Widgets::BeginProperties("TextLayout")) {
+            Widgets::PropertyLabel("Position");
+            Widgets::DragVec3("##Position", textComponent.position, 0.1f, 0.0f);
+            Widgets::PropertyLabel("Half size");
+            ImGui::DragFloat2("##Half size", glm::value_ptr(textComponent.halfSize), 0.1f);
+            Widgets::EndProperties();
+        }
 
-        ImGui::Text("Text properties");
+        Widgets::PropertySection("Style");
 
-        ImGui::DragFloat("Scale", &textComponent.textScale, 0.01f, 0.0f, 100.0f);
-        ImGui::ColorEdit4("Color", glm::value_ptr(textComponent.textColor));
-        ImGui::ColorEdit4("Outline color", glm::value_ptr(textComponent.outlineColor));
-        ImGui::DragFloat("Outline factor", &textComponent.outlineFactor, 0.01f, 0.0f, 1.0f);
+        if (Widgets::BeginProperties("TextStyle")) {
+            Widgets::PropertyLabel("Scale");
+            ImGui::DragFloat("##Scale", &textComponent.textScale, 0.01f, 0.0f, 100.0f);
+            Widgets::PropertyLabel("Color");
+            ImGui::ColorEdit4("##Color", glm::value_ptr(textComponent.textColor));
+            Widgets::PropertyLabel("Outline color");
+            ImGui::ColorEdit4("##Outline color", glm::value_ptr(textComponent.outlineColor));
+            Widgets::PropertyLabel("Outline factor");
+            ImGui::DragFloat("##Outline factor", &textComponent.outlineFactor, 0.01f, 0.0f, 1.0f);
+            Widgets::EndProperties();
+        }
 
         ImGui::PopID();
 

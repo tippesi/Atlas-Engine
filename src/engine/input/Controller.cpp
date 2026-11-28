@@ -1,4 +1,5 @@
 #include "Controller.h"
+#include "common/MathHelper.h"
 #include <math.h>
 
 namespace Atlas {
@@ -63,7 +64,7 @@ namespace Atlas {
 
                 angularVelocity = -rightStick * deltaTime * sensibility;
 
-                float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+                float progress = Helper::Math::Saturate(reactivity * deltaTime);
 
                 interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
                 interpolatedAngularVelocity = glm::mix(interpolatedAngularVelocity, angularVelocity, progress);

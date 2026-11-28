@@ -24,6 +24,8 @@ namespace Atlas {
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
             allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+            // Smaller blocks than the default 256 MB empty out more often, so memory the streaming frees is returned
+            allocatorInfo.preferredLargeHeapBlockSize = 64ull << 20;
 
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
@@ -46,8 +48,19 @@ namespace Atlas {
 
             VmaPoolCreateInfo poolCreateInfo = {};
             poolCreateInfo.memoryTypeIndex = memTypeIndex;
+            VK_CHECK(vmaCreatePool(allocator, &poolCreateInfo, &highPriorityMemoryPool));
 
-            VK_CHECK(vmaCreatePool(allocator, &poolCreateInfo, &hightPriorityBufferPool));
+            VkExtent3D imageExtent{ 1, 1, 1 };
+            VkImageCreateInfo imageCreateInfo = Initializers::InitImageCreateInfo(VK_FORMAT_R16_SFLOAT, 0, imageExtent);
+            imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+            res = vmaFindMemoryTypeIndexForImageInfo(allocator, &imageCreateInfo, 
+                &sampleAllocCreateInfo, &memTypeIndex);
+
+            poolCreateInfo.memoryTypeIndex = memTypeIndex;
+            VK_CHECK(vmaCreatePool(allocator, &poolCreateInfo, &highPriorityRenderTargetPool));
 
             vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);
 
@@ -61,22 +74,9 @@ namespace Atlas {
 
             DestroyAllImmediate();
 
-            vmaDestroyPool(allocator, hightPriorityBufferPool);
+            vmaDestroyPool(allocator, highPriorityMemoryPool);
+            vmaDestroyPool(allocator, highPriorityRenderTargetPool);
             vmaDestroyAllocator(allocator);
-
-        }
-
-        void MemoryManager::DestroyAllocation(Ref<RenderPass>& allocation) {
-
-            deleteRenderPassAllocations.
-                emplace_back(DeleteResource<RenderPass> { allocation, frameIndex + framesToDeletion });
-
-        }
-
-        void MemoryManager::DestroyAllocation(Ref<FrameBuffer>& allocation) {
-
-            deleteFrameBufferAllocations.
-                emplace_back(DeleteResource<FrameBuffer> { allocation, frameIndex + framesToDeletion });
 
         }
 
@@ -165,9 +165,11 @@ namespace Atlas {
 
         void MemoryManager::DestroyAllImmediate() {
 
-            // Cheap trick to make sure everything is deleted
-            frameIndex += framesToDeletion;
+            // Every pending deletion is due, without moving the frame index of later deletions
+            auto currentFrameIndex = frameIndex;
+            frameIndex = std::numeric_limits<size_t>::max();
             DeleteData();
+            frameIndex = currentFrameIndex;
 
         }
 
@@ -192,8 +194,6 @@ namespace Atlas {
             DeleteAllocations(deleteTLASAllocations);
             DeleteAllocations(deleteBLASAllocations);
             DeleteAllocations(deletePipelineAllocations);
-            DeleteAllocations(deleteFrameBufferAllocations);
-            DeleteAllocations(deleteRenderPassAllocations);
             DeleteAllocations(deleteShaderAllocations);
             DeleteAllocations(deleteBufferAllocations);
             DeleteAllocations(deleteMultiBufferAllocations);

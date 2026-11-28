@@ -8,10 +8,9 @@
 #include "../jobsystem/JobSystem.h"
 
 #include <vector>
-#include <mutex>
 #include <atomic>
 #include <functional>
-#include <future>
+#include <mutex>
 
 #define RESOURCE_RETENTION_FRAME_COUNT 30
 
@@ -58,14 +57,15 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const ResourceLoadException& exception) {
+            catch (const std::exception& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
             catch(...) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = "Unknown issue occurred";
+                Log::Error("Unknown exception on load for resource " + path);
             }
 
         }
@@ -79,12 +79,13 @@ namespace Atlas {
             }
             catch (const std::exception& exception) {
                 errorOnLoad = true;
-                exceptionOnLoad = exception;
+                errorMessageOnLoad = exception.what();
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch(...) {
+            catch (...) {
                 errorOnLoad = true;
-                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+                errorMessageOnLoad = "Unknown issue occurred";
+                Log::Error("Unknown exception on load for resource " + path);
             }
 
         }
@@ -111,7 +112,11 @@ namespace Atlas {
         }
 
         void Swap(Ref<T>& newData) {
+
             data.swap(newData);
+            // When an error on the previous data load and we replace the data, we need to set this flag
+            isLoaded = true;
+
         }
 
         std::string GetFileName() const {
@@ -120,15 +125,31 @@ namespace Atlas {
 
         }
 
+        // An async load held back by the resource manager doesn't wait for the hold anymore
+        void StartHeldLoad() {
+
+            std::function<void()> load;
+            {
+                std::scoped_lock lock(heldLoadMutex);
+                load.swap(heldLoad);
+            }
+
+            if (load)
+                load();
+
+        }
+
         Hash ID = 0;
 
         ResourceOrigin origin = System;
 
-        const std::string path;
+        // Only changes when the file is renamed, see ResourceManager::RenameResources
+        std::string path;
         bool permanent = false;
 
         bool errorOnLoad = false;
-        std::exception exceptionOnLoad;
+        // Exceptions are copied as std::exception, which loses their message
+        std::string errorMessageOnLoad;
 
         std::filesystem::file_time_type loadModifiedTime;        
 
@@ -136,8 +157,10 @@ namespace Atlas {
         Ref<T> data;
 
         std::atomic_bool isLoaded = false;
-        JobGroup jobGroup;
-        std::shared_future<void> future;
+        JobGroup jobGroup{ "Load resource", JobPriority::Low};
+
+        std::function<void()> heldLoad;
+        static inline std::mutex heldLoadMutex;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };
@@ -148,7 +171,21 @@ namespace Atlas {
     public:
         ResourceHandle() = default;
 
-        ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
+        ResourceHandle(const Ref<T>& data) : isGenerated(true) {
+            
+            Hash hash = 0;
+            HashCombine(hash, static_cast<void*>(data.get()));
+            
+            auto path = "generated/" + std::to_string(hash);
+            resource = CreateRef<Resource<T>>(path, ResourceOrigin::User, data);
+
+        }
+
+        ResourceHandle(const Ref<Resource<T>>& resource) : resource(resource) {}
+
+        inline bool IsGenerated() const {
+            return isGenerated;
+        }
 
         inline bool IsValid() const {
             return resource != nullptr;
@@ -160,8 +197,11 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (IsValid()) {
-                while (!resource->isLoaded)
-                    JobSystem::Wait(resource->jobGroup);                
+                while (!resource->isLoaded && !resource->errorOnLoad) {
+                    // Whoever waits could be the one the hold depends on
+                    resource->StartHeldLoad();
+                    JobSystem::Wait(resource->jobGroup);
+                }
             }
         }
 
@@ -205,6 +245,7 @@ namespace Atlas {
 
     private:
         Ref<Resource<T>> resource = nullptr;
+        bool isGenerated = false;
 
     };
 

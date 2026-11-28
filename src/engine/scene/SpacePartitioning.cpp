@@ -10,10 +10,34 @@ namespace Atlas {
 		SpacePartitioning::SpacePartitioning(Scene* scene, vec3 min, vec3 max, int32_t depth) :
             scene(scene), aabb(min, max), depth(depth) {
 
-			renderableStaticEntityOctree = Volume::Octree<ECS::Entity>(aabb, depth);
-			renderableMovableEntityOctree = Volume::Octree<ECS::Entity>(aabb, depth);
+			renderableStaticEntityOctree = Volume::Octree<Entity>(aabb, depth);
+			renderableMovableEntityOctree = Volume::Octree<Entity>(aabb, depth);
 
 		}
+
+        int32_t SpacePartitioning::GetSuggestedDepth(vec3 min, vec3 max) {
+
+            auto size = max - min;
+            auto largest = glm::max(size.x, glm::max(size.y, size.z));
+            return glm::max(1, int32_t(glm::ceil(glm::log2(largest / suggestedCellSize))));
+
+        }
+
+        vec3 SpacePartitioning::GetCellSize(vec3 min, vec3 max, int32_t depth) {
+
+            return (max - min) / glm::pow(2.0f, float(depth));
+
+        }
+
+        std::vector<Entity> SpacePartitioning::QueryAABB(const Volume::AABB& aabb) {
+
+            std::vector<Entity> entities;
+            renderableStaticEntityOctree.QueryAABB(entities, aabb);
+            renderableMovableEntityOctree.QueryAABB(entities, aabb);
+
+            return entities;
+
+        }
 
 		void SpacePartitioning::InsertRenderableEntity(Entity entity, const MeshComponent& transform) {
 
@@ -36,56 +60,6 @@ namespace Atlas {
 			}
 
 		}
-
-        void SpacePartitioning::GetRenderList(Volume::Frustum frustum, RenderList& renderList) {
-
-            /*
-            auto entityManager = &scene->entityManager;
-
-            std::vector<ECS::Entity> staticEntities;
-            std::vector<ECS::Entity> insideStaticEntities;
-            std::vector<ECS::Entity> movableEntities;
-            std::vector<ECS::Entity> insideMovableEntities;
-
-            renderableStaticEntityOctree.QueryFrustum(staticEntities,
-                insideStaticEntities, frustum);
-            renderableMovableEntityOctree.QueryFrustum(movableEntities,
-                insideMovableEntities, frustum);
-
-            for (auto entity : staticEntities) {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
-                    renderList.Add(entity, *meshComp);
-            }
-
-            for (auto entity : insideStaticEntities) {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->visible)
-                    renderList.Add(entity, *meshComp);
-            }
-
-            for (auto entity : movableEntities) {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
-                    renderList.Add(entity, *meshComp);
-            }
-
-            for (auto entity : insideMovableEntities) {
-                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
-                if (!meshComp) continue;
-
-                if (meshComp->visible)
-                    renderList.Add(entity, *meshComp);
-            }
-            */
-
-        }
 
 	}
 

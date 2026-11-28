@@ -14,14 +14,15 @@ namespace Atlas {
 
         void SSSRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto sss = scene->sss;
+            auto sss = scene->renderState.sss;
 
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (!sss || !sss->enable || !mainLightEntity.IsValid()) return;
+            auto& mainLight = scene->renderState.mainLight;
+            if (!sss || !sss->enable || !scene->renderState.HasMainLight()) return;
 
-            Graphics::Profiler::BeginQuery("Screen space shadows");
+            CPUProfiler::Scope profilerScope("Screen space shadows");
+            GPUProfiler::Scope gpuScope("Screen space shadows");
 
-            auto& camera = scene->GetMainCamera();
+            auto& camera = scene->renderState.camera;
 
             ivec2 res = ivec2(target->sssTexture.width, target->sssTexture.height);
             auto downsampledTarget = target->GetData(RenderResolution::FULL_RES);
@@ -36,9 +37,11 @@ namespace Atlas {
 
                 static int frameCount = 0;
 
-                auto& light = mainLightEntity.GetComponent<LightComponent>();
+                auto& light = *mainLight;
                 auto lightDirection = glm::normalize(vec3(camera.viewMatrix * vec4(
                     light.transformedProperties.directional.direction, 0.0f)));
+
+                pipelineConfig.ManageMacro("TRACE_WORLD_SPACE", sss->traceWorldSpace);
 
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -50,11 +53,15 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 2);
 
+                bool temporalEnabled = scene->renderState.postProcessing.upscaler != PostProcessing::Upscaler::None;
+
                 PushConstants constants = {
                     .lightDirection = vec4(lightDirection, 0.0),
                     .sampleCount = sss->sampleCount,
                     .maxLength = sss->maxLength,
-                    .thickness = sss->thickness
+                    .minLengthWorldSpace = sss->minLengthWorldSpace,
+                    .thickness = sss->thickness,
+                    .jitter = temporalEnabled ? 1 : 0
                 };
                 commandList->PushConstants("constants", &constants);
 
@@ -68,8 +75,6 @@ namespace Atlas {
             {
 
             }
-
-            Graphics::Profiler::EndQuery();
 
         }
 

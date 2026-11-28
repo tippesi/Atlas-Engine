@@ -83,7 +83,7 @@ namespace Atlas {
 
         }
 
-        glm::vec2 Piecewise2D::Sample(float& pdf) {
+        vec2 Piecewise2D::Sample(float& pdf) {
 
             auto cond = 0;
             auto marginalPdf = 0.0f, conditionalPdf = 0.0f;
@@ -91,11 +91,11 @@ namespace Atlas {
             auto u = conditionalDistributions[cond].Sample(conditionalPdf);
 
             pdf = marginalPdf * conditionalPdf;
-            return glm::vec2(u, v);
+            return vec2(u, v);
 
         }
 
-        float Piecewise2D::Pdf(glm::vec2 uv) {
+        float Piecewise2D::Pdf(vec2 uv) {
 
             auto cn = int32_t(conditionalDistributions[0].count);
             auto mn = int32_t(marginalDistribution.count);

@@ -63,7 +63,7 @@ namespace Atlas {
                 if (!stream)
                     return;
 
-                if (scene->physicsWorld->pauseSimulation && !permanentPlay) {
+                if ((scene->physicsWorld->pauseSimulation || scene->paused) && !permanentPlay) {
                     stream->SetVolume(0.0f);
                     return;
                 }

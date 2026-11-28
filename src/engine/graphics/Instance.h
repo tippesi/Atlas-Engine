@@ -4,7 +4,9 @@
 #include <vector>
 #include <set>
 
+#ifndef AE_OS_APPLE_MOBILE
 #define VK_NO_PROTOTYPES
+#endif
 #include <vulkan/vulkan.h>
 
 #include "Common.h"
@@ -22,9 +24,12 @@ namespace Atlas {
             std::string instanceName;
 
             bool enableValidationLayers = false;
+            bool enableExtendedValidation = false;
             Log::Severity validationLayerSeverity = Log::Severity::SEVERITY_LOW;
 
             std::vector<const char*> requiredExtensions;
+            // Enabled where the instance supports them
+            std::vector<std::string> optionalExtensions;
         };
 
         class Instance {
@@ -55,6 +60,7 @@ namespace Atlas {
 
             const std::string name;
             bool validationLayersEnabled;
+            bool extendedValidationEnabled;
 
             static Instance* DefaultInstance;
 
@@ -65,7 +71,7 @@ namespace Atlas {
 
             bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayerNames);
 
-            void InitializeGraphicsDevice(Surface* surface);
+            void InitializeGraphicsDevice(Surface* surface, const DeviceDesc& desc);
 
             bool DestroyGraphicsDevice();
 

@@ -10,6 +10,7 @@ layout(set = 3, binding = 0) uniform usampler2D heightField;
 layout(set = 3, binding = 2) uniform usampler2D splatMap;
 
 #ifdef DISTANCE
+out float gl_ClipDistance[1];
 layout(location=0) out vec2 materialTexCoords;
 layout(location=1) out vec2 texCoords;
 layout(location=2) out vec3 ndcCurrent;
@@ -18,6 +19,7 @@ layout(location=3) out vec3 ndcLast;
 
 layout (set = 3, binding = 9, std140) uniform UniformBuffer {
     vec4 frustumPlanes[6];
+    vec4 translation;
 
     float heightScale;
     float displacementDistance;
@@ -91,19 +93,30 @@ void main() {
     texCoords /= PushConstants.nodeSideLength;
 
     // The middle of the texel should match the vertex position
-    float height = float(texture(heightField, texCoords).r) / 65535.0 * Uniforms.heightScale;
+    uint heightDiscretized = texture(heightField, texCoords).r;
+    float height = float(heightDiscretized) / 65534.0 * Uniforms.heightScale;
 
-    vec4 worldPosition = vec4(position.x, height, position.y, 1.0);
+    vec4 worldPosition = vec4(vec3(position.x, height, position.y) + Uniforms.translation.xyz, 1.0);
 
 #ifndef DISTANCE
-    gl_Position =  worldPosition;
+    gl_Position = worldPosition;
 #else
-    gl_Position =  globalData.pMatrix * globalData.vMatrix * worldPosition;
+    gl_Position = globalData.pMatrix * globalData.vMatrix * worldPosition;
 
     ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
 
     vec4 last = globalData.pvMatrixLast * worldPosition;
     ndcLast = vec3(last.xy, last.w);
+#endif
+
+    // Holes leave out the patches around the vertex, the control shader culls them. Without tessellation the
+    // triangles around it are clipped, the large distance leaves at most sub-pixel slivers of them
+    bool hole = heightDiscretized == 65535u;
+#ifndef DISTANCE
+    if (hole)
+        gl_Position.w = -1.0;
+#else
+    gl_ClipDistance[0] = hole ? -1e20 : 1.0;
 #endif
     
 }

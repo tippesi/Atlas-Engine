@@ -1,5 +1,6 @@
 #include "MaterialLoader.h"
 #include "AssetLoader.h"
+#include "AssetReferences.h"
 
 #include "mesh/MeshSerializer.h"
 
@@ -22,12 +23,13 @@ namespace Atlas::Loader {
             j = json::from_bjdata(data);
         }
         else {
-            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                std::istreambuf_iterator<char>());
-            j = json::parse(serialized);
+            auto data = Loader::AssetLoader::GetFileContent(fileStream);
+            j = json::parse(data);
         }
 
         fileStream.close();
+
+        AssetReferences::ResolveReferences(j, AssetReferences::Type::Material, filename);
 
         auto material = CreateRef<Material>();
         from_json(j, *material);
@@ -39,26 +41,13 @@ namespace Atlas::Loader {
     void MaterialLoader::SaveMaterial(const Ref<Material>& material, const std::string& filename,
         bool binaryJson, bool formatJson) {
 
-        auto path = Loader::AssetLoader::GetFullPath(filename);
-        auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
-
-        if (!fileStream.is_open()) {
-            Log::Error("Couldn't write material file " + filename);
-            return;
-        }
-
         json j;
         to_json(j, *material);
+        AssetReferences::MakeReferences(j, AssetReferences::Type::Material, filename);
 
-        if (binaryJson) {
-            auto data = json::to_bjdata(j);
-            fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
-        }
-        else {
-            fileStream << (formatJson ? j.dump(2) : j.dump());
-        }
-
-        fileStream.close();
+        auto format = binaryJson ? JsonFormat::BJData : formatJson ? JsonFormat::Indented : JsonFormat::Compact;
+        if (!AssetLoader::WriteJson(filename, j, format))
+            Log::Error("Couldn't write material file " + filename);
 
     }
 

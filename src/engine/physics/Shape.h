@@ -10,6 +10,7 @@
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/Shape/Shape.h>
+#include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 
 namespace Atlas::Physics {
 
@@ -18,8 +19,13 @@ namespace Atlas::Physics {
         Sphere,
         BoundingBox,
         Capsule,
-        HeightField
+        HeightField,
+        ConvexHull,
+        Cylinder,
+        Compound
     };
+
+    class Shape;
 
     struct ShapeSettings {};
 
@@ -52,6 +58,32 @@ namespace Atlas::Physics {
         std::vector<float> heightData;
         vec3 translation = vec3(0.0f);
         vec3 scale = vec3(1.0f);
+
+        static inline const float holeValue = JPH::HeightFieldShapeConstants::cNoCollisionValue;
+    };
+
+    struct ConvexHullShapeSettings : ShapeSettings {
+        ResourceHandle<Mesh::Mesh> mesh;
+        float density = 1.0f;
+        vec3 scale = vec3(1.0f);
+    };
+
+    struct CylinderShapeSettings : ShapeSettings {
+        float height = 1.0f;
+        float radius = 0.5f;
+        float density = 1.0f;
+        vec3 scale = vec3(1.0f);
+    };
+
+    struct CompoundShapeChild {
+        Ref<Shape> shape = nullptr;
+        vec3 translation = vec3(0.0f);
+        quat rotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
+    };
+
+    struct CompoundShapeSettings : ShapeSettings {
+        std::vector<CompoundShapeChild> children;
+        vec3 scale = vec3(1.0f);
     };
 
     using ShapeRef = JPH::ShapeRefC;
@@ -63,6 +95,9 @@ namespace Atlas::Physics {
         bool IsValid() const { return ref != nullptr; }
 
         bool TryCreate();
+
+        // Starts expensive work of creating the shape in the background, returns true once TryCreate doesn't need to do it
+        bool PrepareInBackground();
 
         bool Scale(const vec3& scale);
 

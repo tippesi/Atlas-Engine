@@ -9,7 +9,7 @@ namespace Atlas {
     namespace Terrain {
 
         Terrain::Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution,
-            float heightScale) : rootNodeSideCount(rootNodeSideCount), LoDCount(LoDCount), 
+            float heightScale, int32_t materialCount) : rootNodeSideCount(rootNodeSideCount), LoDCount(LoDCount), 
             patchSizeFactor(patchSizeFactor), resolution(resolution), heightScale(heightScale) {
 
             translation = vec3(0.0f);
@@ -31,7 +31,7 @@ namespace Atlas {
                          patchSizeFactor * 8.0f;
             float ratio = sideLength / (float)rootNodeSideCount;
 
-            storage = TerrainStorage(rootNodeCount, LoDCount, sideLength, 1024, 32);
+            storage = CreateRef<TerrainStorage>(rootNodeCount, LoDCount, sideLength, materialCount);
             LoDDistances = std::vector<float>(LoDCount);
             LoDImage = Common::Image<uint8_t>(leafNodesSideCount, leafNodesSideCount, 1);
 
@@ -39,15 +39,18 @@ namespace Atlas {
 
             for (int32_t i = 0; i < LoDCount; i++) {
                 distance /= 2.0f;
-                LoDDistances[i] = distance;                
+                LoDDistances[i] = distance;
             }
+
+            rootNodes.reserve(rootNodeCount);
 
             for (int32_t i = 0; i < rootNodeSideCount; i++) {
                 for (int32_t j = 0; j < rootNodeSideCount; j++) {
-                    TerrainStorageCell *cell = storage.GetCell(i, j, 0);
-                    storage.requestedCells.push_back(cell);
+                    TerrainStorageCell *cell = storage->GetCell(i, j, 0);
+                    storage->requestedCells.push_back(cell);
+                    storage->requestedBvhCells.push_back(cell);
                     rootNodes.push_back(TerrainNode(vec2((float) i * ratio, (float) j * ratio), heightScale,
-                        ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), &storage, cell));
+                        ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), storage, cell));
                 }
             }
 
@@ -65,8 +68,12 @@ namespace Atlas {
             leafList.clear();
 
             for (auto& node : rootNodes)
-                node.Update(camera, LoDDistances,
+                node.Update(translation, camera, LoDDistances,
                     leafList, LoDImage);
+
+            storage->PushUnusedCellsToQueue();
+            storage->PushRequestedCellsToQueue();
+            storage->PushRequestedBvhCellsToQueue();
 
         }
 
@@ -76,9 +83,9 @@ namespace Atlas {
 
             for (auto node : leafList) {
                 auto aabb = Volume::AABB(
-                    vec3(node->location.x, 0.0f, node->location.y),
+                    vec3(node->location.x, 0.0f, node->location.y) + translation,
                     vec3(node->location.x + node->sideLength, heightScale,
-                        node->location.y + node->sideLength)
+                        node->location.y + node->sideLength) + translation
                 );
 
                 if (frustum.Intersects(aabb))
@@ -137,39 +144,40 @@ namespace Atlas {
 
         float Terrain::GetHeight(float x, float z, vec3& normal, vec3& forward) {
 
+            x -= translation.x;
+            z -= translation.z;
+
             if (x < 0.0f || z < 0.0f || x > sideLength || z > sideLength)
-                return 0.0f;
+                return invalidHeight;
 
             float nodeSideLength = 8.0f * patchSizeFactor * resolution;
 
             x /= nodeSideLength;
             z /= nodeSideLength;
 
-            float xPosition = floorf(x);
-            float zPosition = floorf(z);
+            auto cellX = int32_t(floorf(x));
+            auto cellZ = int32_t(floorf(z));
 
-            auto cell = storage.GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
+            auto cell = storage->GetCell(cellX, cellZ, LoDCount - 1);
 
-            if (!cell)
-                return 0.0f;
+            if (!cell || !cell->IsLoaded())
+                return invalidHeight;
 
-            x -= xPosition;
-            z -= zPosition;
+            // The cell might be unloaded or loaded again on the streaming thread in the meantime
+            std::shared_lock lock(cell->heightDataMutex);
+            const auto& heightData = cell->heightData;
+            auto cellResolution = int32_t(sqrtf(float(heightData.size())));
 
-            // Cells have overlapping edges (last pixels are on next cell)
-            x *= float(cell->heightField.width - 1);
-            z *= float(cell->heightField.height - 1);
+            // Cells have overlapping edges (the last pixels are the first ones of the next cell), so all
+            // samples are in this cell. Rounding can move positions on the edge onto the last pixel.
+            x = (x - float(cellX)) * float(cellResolution - 1);
+            z = (z - float(cellZ)) * float(cellResolution - 1);
 
-            xPosition = floorf(x);
-            zPosition = floorf(z);
+            auto xIndex = std::min(int32_t(x), cellResolution - 2);
+            auto zIndex = std::min(int32_t(z), cellResolution - 2);
 
-            auto xCoord = x - xPosition;
-            auto zCoord = z - zPosition;
-
-            int32_t xIndex = int32_t(xPosition);
-            int32_t zIndex = int32_t(zPosition);
-
-            float height = 0.0f;
+            auto xCoord = x - float(xIndex);
+            auto zCoord = z - float(zIndex);
 
             /*
             topLeft        topRight
@@ -178,98 +186,45 @@ namespace Atlas {
             ####p###########
             c##############c
             bottomLeft     bottomRight
-            p is the point with location (x, z)
-            topLeft is in x direction
-            bottomRight is in z direction
             */
-            float heightBottomLeft = cell->heightData[xIndex + cell->heightField.width * zIndex];
-            float heightBottomRight = 0.0f;
-            float heightTopRight = 0.0f;
-            float heightTopLeft = 0.0f;
+            auto heightBottomLeft = heightData[xIndex + cellResolution * zIndex];
+            auto heightTopLeft = heightData[xIndex + 1 + cellResolution * zIndex];
+            auto heightBottomRight = heightData[xIndex + cellResolution * (zIndex + 1)];
+            auto heightTopRight = heightData[xIndex + 1 + cellResolution * (zIndex + 1)];
 
-            // Check if we must sample from a neighbour node (allows for errors while retrieving the height information at the edge of the terrain)
-            if (zIndex + 1 == cell->heightField.height &&
-                xIndex + 1 == cell->heightField.width) {
-                auto neighbourCell = storage.GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
+            lock.unlock();
 
-                if (!neighbourCell) {
-                    heightTopLeft = heightBottomLeft;
-                    heightTopRight = heightBottomLeft;
-                    heightBottomRight = heightBottomLeft;
-                }
-                else {
-                    heightTopLeft = neighbourCell->heightData[1];
-                    heightBottomRight = neighbourCell->heightData[neighbourCell->heightField.width];
-                    heightTopRight = neighbourCell->heightData[neighbourCell->heightField.width + 1];
-                }
-            }
-            else if (zIndex + 1 == cell->heightField.height) {
-
-                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField.width * zIndex];
-
-                auto neighbourCell = storage.GetCell(xIndex, zIndex + 1, LoDCount - 1);
-
-                if (neighbourCell == nullptr) {
-                    heightBottomRight = heightBottomLeft;
-                    heightTopRight = heightTopLeft;
-                }
-                else {
-                    heightBottomRight = neighbourCell->heightData[xIndex];
-                    heightTopRight = neighbourCell->heightData[xIndex + 1];
-                }
-
-            }
-            else if (xIndex + 1 == cell->heightField.width) {
-
-                heightBottomRight = cell->heightData[xIndex + cell->heightField.width * (zIndex + 1)];
-
-                auto neighbourCell = storage.GetCell(xIndex + 1, zIndex, LoDCount - 1);
-
-                if (neighbourCell == nullptr) {
-                    heightTopLeft = heightBottomLeft;
-                    heightTopRight = heightBottomRight;
-                }
-                else {
-                    heightTopLeft = neighbourCell->heightData[zIndex * neighbourCell->heightField.width];
-                    heightTopRight = neighbourCell->heightData[(zIndex + 1) *
-                        neighbourCell->heightField.width];
-                }
-
-            }
-            else {
-                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField.width * zIndex];
-                heightBottomRight = cell->heightData[xIndex + cell->heightField.width * (zIndex + 1)];
-                heightTopRight = cell->heightData[xIndex + 1 + cell->heightField.width * (zIndex + 1)];
-            }
+            if (heightBottomLeft == FLT_MAX || heightBottomRight == FLT_MAX ||
+                heightTopLeft == FLT_MAX || heightTopRight == FLT_MAX)
+                return invalidHeight;
 
             heightBottomLeft *= heightScale;
             heightBottomRight *= heightScale;
             heightTopLeft *= heightScale;
             heightTopRight *= heightScale;
 
+            auto bottomLeft = vec3(0.0f, heightBottomLeft, 0.0f);
+            auto topLeft = vec3(1.0f, heightTopLeft, 0.0f);
+            auto topRight = vec3(1.0f, heightTopRight, 1.0f);
+            auto bottomRight = vec3(0.0f, heightBottomRight, 1.0f);
+
+            // The texels are resolution apart, the directions need world units
+            auto texelScale = vec3(resolution, 1.0f, resolution);
+
+            float height = 0.0f;
             if (xCoord > zCoord) {
-                height = BarryCentric(vec3(0.0f, heightBottomLeft, 0.0f),
-                                      vec3(1.0f, heightTopLeft, 0.0f),
-                                      vec3(1.0f, heightTopRight, 1.0f),
-                                      vec2(xCoord, zCoord));
-                forward = -glm::normalize(vec3(0.0f, heightBottomLeft, 0.0f) -
-                    vec3(1.0f, heightTopLeft, 0.0f));
-                auto right = glm::normalize(vec3(1.0f, heightTopRight, 1.0f) -
-                    vec3(1.0f, heightTopLeft, 0.0f));
+                height = BarryCentric(bottomLeft, topLeft, topRight, vec2(xCoord, zCoord));
+                forward = glm::normalize((topLeft - bottomLeft) * texelScale);
+                auto right = glm::normalize((topRight - topLeft) * texelScale);
                 normal = -glm::normalize(glm::cross(forward, right));
             } else {
-                height = BarryCentric(vec3(0.0f, heightBottomLeft, 0.0f),
-                                      vec3(1.0f, heightTopRight, 1.0f),
-                                      vec3(0.0f, heightBottomRight, 1.0f),
-                                      vec2(xCoord, zCoord));
-                forward = glm::normalize(vec3(1.0f, heightTopRight, 1.0f) -
-                    vec3(0.0f, heightBottomRight, 1.0f));
-                auto right = -glm::normalize(vec3(0.0f, heightBottomLeft, 0.0f) -
-                    vec3(0.0f, heightBottomRight, 1.0f));
+                height = BarryCentric(bottomLeft, topRight, bottomRight, vec2(xCoord, zCoord));
+                forward = glm::normalize((topRight - bottomRight) * texelScale);
+                auto right = glm::normalize((bottomRight - bottomLeft) * texelScale);
                 normal = -glm::normalize(glm::cross(forward, right));
             }
 
-            return height;
+            return height + translation.y;
 
         }
 
@@ -297,32 +252,32 @@ namespace Atlas {
             float xIndex = floorf(x);
             float zIndex = floorf(z);
 
-            return storage.GetCell((int32_t) xIndex, (int32_t) zIndex, LoD);
+            return storage->GetCell((int32_t) xIndex, (int32_t) zIndex, LoD);
 
         }
 
         Common::Image<float> Terrain::GetHeightField(int32_t LoD) {
 
-            auto lodCountSqd = storage.GetCellCount(LoD);
+            auto lodCountSqd = storage->GetCellCount(LoD);
             auto lodCount = std::sqrt(lodCountSqd);
 
             int32_t width = 0, height = 0;
             for (int32_t x = 0; x < lodCount; x++) {
-                auto cell = storage.GetCell(x, 0, LoD);
+                auto cell = storage->GetCell(x, 0, LoD);
 
                 AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                     be loaded to be converted into height field");
 
-                width += cell->heightField.width - 1;
+                width += cell->heightField->width - 1;
             }
 
             for (int32_t y = 0; y < lodCount; y++) {
-                auto cell = storage.GetCell(0, y, LoD);
+                auto cell = storage->GetCell(0, y, LoD);
 
                 AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                     be loaded to be converted into height field");
 
-                height += cell->heightField.height - 1;
+                height += cell->heightField->height - 1;
             }
 
             Common::Image<float> heightImage(width, height, 1);
@@ -331,27 +286,53 @@ namespace Atlas {
             for (int32_t cellY = 0; cellY < lodCount; cellY++) {
                 width = 0;
                 for (int32_t cellX = 0; cellX < lodCount; cellX++) {
-                    auto cell = storage.GetCell(cellX, cellY, LoD);
+                    auto cell = storage->GetCell(cellX, cellY, LoD);
 
                     AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                         be loaded to be converted into height field");
 
-                    for (int32_t y = 0; y < cell->heightField.height - 1; y++) {
-                        for (int32_t x = 0; x < cell->heightField.width - 1; x++) {
-                            auto idx = y * cell->heightField.width + x;
+                    for (int32_t y = 0; y < cell->heightField->height - 1; y++) {
+                        for (int32_t x = 0; x < cell->heightField->width - 1; x++) {
+                            auto idx = y * cell->heightField->width + x;
 
                             heightImage.SetData(width + x, height + y, 0, cell->heightData[idx]);
                         }
                     }
 
-                    width += cell->heightField.width - 1;
+                    width += cell->heightField->width - 1;
                 }
 
-                auto cell = storage.GetCell(0, cellY, LoD);
-                height += cell->heightField.height - 1;
+                auto cell = storage->GetCell(0, cellY, LoD);
+                height += cell->heightField->height - 1;
             }
 
             return heightImage;
+        }
+
+        bool Terrain::IntersectRay(const Volume::Ray& ray, vec3& hitPosition, vec3& hitNormal, float& hitDistance) {
+
+            const float linearStepLength = 1.0f;
+
+            auto distance = linearStepLength + ray.tMin;
+
+            vec3 position = ray.origin + ray.direction * ray.tMin;
+            vec3 nextPosition;
+
+            while (distance < ray.tMax) {
+                nextPosition = ray.Get(distance);
+                if (!IsUnderground(position) && IsUnderground(nextPosition)) {
+                    BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition, hitNormal);
+                    hitDistance = glm::distance(hitPosition, ray.origin);
+
+                    // Sanity check, is important if there are holes
+                    return abs(hitPosition.y - ray.Get(hitDistance).y) < 1.0f;
+                }
+                position = nextPosition;
+                distance += linearStepLength;
+            }
+
+            return false;
+
         }
 
         void Terrain::SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation) {
@@ -420,6 +401,48 @@ namespace Atlas {
             float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
             float l3 = 1.0f - l1 - l2;
             return l1 * p1.y + l2 * p2.y + l3 * p3.y;
+
+        }
+
+        bool Terrain::BinarySearch(const Volume::Ray& ray, float start,
+            float finish, int count, vec3& hitPosition, vec3& hitNormal) {
+
+            float half = start + (finish - start) / 2.0f;
+
+            if (count == 0) {
+                hitPosition = ray.origin + ray.direction * half;
+                vec3 forward;
+                hitPosition.y = GetHeight(hitPosition.x, hitPosition.z, hitNormal, forward);
+                return hitPosition.y != invalidHeight;
+            }
+
+            if (IntersectionInRange(ray, start, half)) {
+                return BinarySearch(ray, start, half, count - 1, hitPosition, hitNormal);
+            }
+            else {
+                return BinarySearch(ray, half, finish, count - 1, hitPosition, hitNormal);
+            }
+
+        }
+
+        bool Terrain::IntersectionInRange(const Volume::Ray& ray, float start, float finish) {
+
+            auto startPosition = ray.origin + ray.direction * start;
+            auto finishPosition = ray.origin + ray.direction * finish;
+
+            if (!IsUnderground(startPosition) && IsUnderground(finishPosition)) {
+                return true;
+            }
+
+            return false;
+
+        }
+
+        bool Terrain::IsUnderground(vec3 position) {
+
+            float height = GetHeight(position.x, position.z);
+
+            return (height > position.y) && height != invalidHeight;
 
         }
 

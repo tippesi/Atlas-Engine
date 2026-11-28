@@ -11,14 +11,15 @@ namespace Atlas {
             downscalePipelineConfig = PipelineConfig("gbuffer/downsampleGBuffer2x.csh");
             downscaleDepthOnlyPipelineConfig = PipelineConfig("gbuffer/downsampleGBuffer2x.csh", {"DEPTH_ONLY"});
 
-            patchNormalPipelineConfig = PipelineConfig("gbuffer/patchGBufferNormals.csh");
+            patchNormalPipelineConfig = PipelineConfig("gbuffer/patchGBuffer.csh");
             generateReactiveMaskPipelineConfig = PipelineConfig("gbuffer/generateReactiveMask.csh");
 
         }
 
         void GBufferRenderer::Downscale(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Downsample GBuffer");
+            CPUProfiler::Scope profilerScope("Downsample GBuffer");
+            GPUProfiler::Scope gpuScope("Downsample GBuffer");
 
             auto pipeline = PipelineManager::GetPipeline(downscalePipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -28,13 +29,12 @@ namespace Atlas {
 
             Downscale(rt, downsampledRt, commandList);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
         void GBufferRenderer::DownscaleDepthOnly(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Downsample GBuffer depth only");
+            CPUProfiler::Scope profilerScope("Downsample GBuffer depth only");
+            GPUProfiler::Scope gpuScope("Downsample GBuffer depth only");
 
             auto pipeline = PipelineManager::GetPipeline(downscaleDepthOnlyPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -44,13 +44,12 @@ namespace Atlas {
 
             Downscale(rt, downsampledRt, commandList);
 
-            Graphics::Profiler::EndQuery();
-
         }
 
-        void GBufferRenderer::FillNormalTexture(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
+        void GBufferRenderer::Patch(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Patch GBuffer normals");
+            CPUProfiler::Scope profilerScope("Patch GBuffer");
+            GPUProfiler::Scope gpuScope("Patch GBuffer");
 
             auto pipeline = PipelineManager::GetPipeline(patchNormalPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -59,6 +58,7 @@ namespace Atlas {
             
             auto normal = rt->normalTexture;
             auto geometryNormal = rt->geometryNormalTexture;
+            auto roughnessMetallicAo = rt->roughnessMetallicAoTexture;
             auto materialIdx = rt->materialIdxTexture;
             
             ivec2 res = ivec2(normal->width, normal->height);
@@ -68,23 +68,37 @@ namespace Atlas {
             groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
 
             commandList->BindImage(normal->image, 3, 0);
-            commandList->BindImage(geometryNormal->image, geometryNormal->sampler, 3, 1);
-            commandList->BindImage(materialIdx->image, materialIdx->sampler, 3, 2);
+            commandList->BindImage(roughnessMetallicAo->image, 3, 1);
+            commandList->BindImage(geometryNormal->image, geometryNormal->sampler, 3, 2);            
+            commandList->BindImage(materialIdx->image, materialIdx->sampler, 3, 3);
 
-            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            Graphics::ImageBarrier prePatchBarriers[] = {
+                {normal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+                {roughnessMetallicAo->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+                {geometryNormal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+                {materialIdx->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(prePatchBarriers, {});
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-
-            Graphics::Profiler::EndQuery();
+            Graphics::ImageBarrier postPatchBarriers[] = {
+                {normal->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT },
+                {roughnessMetallicAo->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {geometryNormal->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {materialIdx->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            };
+            commandList->PipelineBarrier(postPatchBarriers, {});
 
         }
 
-        void GBufferRenderer::GenerateReactiveMask(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
+        void GBufferRenderer::GenerateReactiveMask(const Ref<RenderTarget>& target, const Texture::Texture2D* translucencyTexture,
+            Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Generate reactive mask");
+            CPUProfiler::Scope profilerScope("Generate reactive mask");
+            GPUProfiler::Scope gpuScope("Generate reactive mask");
 
+            generateReactiveMaskPipelineConfig.ManageMacro("TRANSLUCENCY", translucencyTexture != nullptr);
             auto pipeline = PipelineManager::GetPipeline(generateReactiveMaskPipelineConfig);
             commandList->BindPipeline(pipeline);
 
@@ -92,6 +106,7 @@ namespace Atlas {
 
             auto reactiveMaskTexture = target->reactiveMaskTexture;
             auto stencilTexture = rt->stencilTexture;
+            auto roughnessMetallicAo = rt->roughnessMetallicAoTexture;
 
             ivec2 res = ivec2(reactiveMaskTexture.width, reactiveMaskTexture.height);
 
@@ -101,14 +116,16 @@ namespace Atlas {
 
             commandList->BindImage(reactiveMaskTexture.image, 3, 0);
             commandList->BindImage(stencilTexture->image, stencilTexture->sampler, 3, 1);
+            commandList->BindImage(roughnessMetallicAo->image, roughnessMetallicAo->sampler, 3, 2);
+
+            if (translucencyTexture)
+                commandList->BindImage(translucencyTexture->image, translucencyTexture->sampler, 3, 3);
 
             commandList->ImageMemoryBarrier(reactiveMaskTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
             commandList->ImageMemoryBarrier(reactiveMaskTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-
-            Graphics::Profiler::EndQuery();
 
         }
 
@@ -144,17 +161,7 @@ namespace Atlas {
             commandList->BindImage(velocityIn->image, velocityIn->sampler, 3 , 4);
             commandList->BindImage(materialIdxIn->image, materialIdxIn->sampler, 3 , 5);
 
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-            imageBarriers.push_back({depthOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
-            imageBarriers.push_back({normalOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
-            imageBarriers.push_back({geometryNormalOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
-            imageBarriers.push_back({roughnessMetallicAoOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
-            imageBarriers.push_back({velocityOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
-            imageBarriers.push_back({materialIdxOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
-            imageBarriers.push_back({offsetOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
-
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            downsampledRt->Transition(commandList, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
             commandList->BindImage(depthOut->image, 3 , 6);
             commandList->BindImage(normalOut->image, 3 , 7);
@@ -166,16 +173,7 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-            imageBarriers.clear();
-            imageBarriers.push_back({depthOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
-            imageBarriers.push_back({normalOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
-            imageBarriers.push_back({geometryNormalOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
-            imageBarriers.push_back({roughnessMetallicAoOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
-            imageBarriers.push_back({velocityOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
-            imageBarriers.push_back({materialIdxOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
-            imageBarriers.push_back({offsetOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
-
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            downsampledRt->Transition(commandList, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
         }
 

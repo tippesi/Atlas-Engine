@@ -16,7 +16,7 @@ namespace Atlas {
              * @return
              * @note This method just loads the terrain information, not the nodes.
              */
-            static Ref<Terrain::Terrain> LoadTerrain(std::string filename);
+            static Ref<Terrain::Terrain> LoadTerrain(const std::string& filename, bool loadNodes = false);
 
             /**
              * Stores the terrain in a directory on the hard drive
@@ -24,7 +24,7 @@ namespace Atlas {
              * @param filename
              * @warning All storage cells of the terrain must be loaded.
              */
-            static void SaveTerrain(Ref<Terrain::Terrain> terrain, std::string filename);
+            static void SaveTerrain(Ref<Terrain::Terrain> terrain, const std::string& filename);
 
             /**
              *
@@ -33,14 +33,16 @@ namespace Atlas {
              * @param filename
              * @param initWithHeightData
              */
-            static void LoadStorageCell(Ref<Terrain::Terrain> terrain, Terrain::TerrainStorageCell* cell,
-                std::string filename, bool initWithHeightData = false);
+            static void LoadStorageCells(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cell,
+                const std::string& filename);
 
         private:
             static int32_t ReadInt(const char* ptr, std::string line, size_t& offset);
 
             static float ReadFloat(const char* ptr, std::string line, size_t& offset);
 
+            static void ValidateReadBounds(const std::string& filename, std::streamoff readDataOffset,
+                std::streamsize readSize, std::streamoff cellDataEndOffset, std::streamoff fileEndOffset);
 
         };
 

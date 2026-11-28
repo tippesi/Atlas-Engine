@@ -1,51 +1,482 @@
 #include "LogWindow.h"
+#include "ContentBrowserWindow.h"
+#include "../../Content.h"
+#include "../../ContentDiscovery.h"
+#include "common/Path.h"
+#include "loader/AssetLoader.h"
 
-#include "Log.h"
+#include "Clock.h"
 #include "../../Singletons.h"
+#include "../../Theme.h"
+#include "../../Notifications.h"
+
+#include <imgui_stdlib.h>
+#include <imgui_internal.h>
+
+#include <algorithm>
+#include <cctype>
+#include <charconv>
 
 namespace Atlas::Editor::UI {
+
+    void LogWindow::Update() {
+
+        UpdateLines();
+
+    }
 
     void LogWindow::Render() {
 
         if (!Begin())
             return;
 
-        auto darkMode = Singletons::config->darkMode;
+        bool copyRequested = false;
 
-        static size_t entriesCount = 0;
+        // Toolbar
+        {
+            RenderFilterToggle("Messages", messageCount, &showMessages, ImGui::GetStyleColorVec4(ImGuiCol_Text));
+            ImGui::SameLine();
+            RenderFilterToggle("Warnings", warningCount, &showWarnings, Theme::Warning());
+            ImGui::SameLine();
+            RenderFilterToggle("Errors", errorCount, &showErrors, Theme::Error());
 
-        auto entries = Atlas::Log::GetLatestEntries(10000);
-        for (auto& entry : entries) {
-            std::string logText;
-            logText.append("[" + std::to_string(entry.time) + "] ");
-            logText.append(entry.message);
+            ImGui::SameLine();
 
-            switch (entry.type) {
-                case Atlas::Log::Type::TYPE_MESSAGE:
-                    if (darkMode)
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                    else
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-                    break;
-                case Atlas::Log::Type::TYPE_WARNING:
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
-                    break;
-                case Atlas::Log::Type::TYPE_ERROR:
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-                    break;
+            auto& style = ImGui::GetStyle();
+            auto copyWidth = ImGui::CalcTextSize("Copy").x + 2.0f * style.FramePadding.x;
+            auto clearWidth = ImGui::CalcTextSize("Clear").x + 2.0f * style.FramePadding.x;
+            auto autoScrollWidth = ImGui::GetFrameHeight() + style.ItemInnerSpacing.x + ImGui::CalcTextSize("Auto-scroll").x;
+            auto selectedWidth = selection.Size > 0 ? ImGui::CalcTextSize("00000 selected").x + style.ItemSpacing.x : 0.0f;
+            auto pinWidth = pinned ? GetPinButtonWidth() + style.ItemSpacing.x : 0.0f;
+            auto searchWidth = ImGui::GetContentRegionAvail().x - copyWidth - clearWidth - autoScrollWidth -
+                selectedWidth - pinWidth - 3.0f * style.ItemSpacing.x;
+
+            ImGui::SetNextItemWidth(std::max(searchWidth, 50.0f));
+            ImGui::InputTextWithHint("##Log search", "Search log...", &logSearch);
+
+            ImGui::SameLine();
+            copyRequested = ImGui::Button("Copy");
+            ImGui::SetItemTooltip("Copies the selected lines, or all visible lines if nothing is selected (Ctrl+C)");
+
+            ImGui::SameLine();
+            if (ImGui::Button("Clear")) {
+                clearEntryIdx = fetchedEntryCount;
+                linesDirty = true;
             }
 
-            ImGui::TextUnformatted(logText.c_str());
+            ImGui::SameLine();
+            ImGui::Checkbox("Auto-scroll", &autoScroll);
 
-            ImGui::PopStyleColor();
+            if (selection.Size > 0) {
+                ImGui::SameLine();
+                ImGui::TextDisabled("%d selected", selection.Size);
+            }
+
+            // A docked log can be turned back into a drawer
+            if (pinned) {
+                ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - GetPinButtonWidth());
+                RenderPinButton();
+            }
         }
 
-        if (entriesCount != entries.size()) {
-            ImGui::SetScrollHereY(1.0f);
-            entriesCount = entries.size();
+        ImGui::Separator();
+
+        if (copyRequested)
+            CopyLines(selection.Size > 0);
+
+        selection.UserData = this;
+        selection.AdapterIndexToStorageId = [](ImGuiSelectionBasicStorage* self, int idx) {
+            return static_cast<LogWindow*>(self->UserData)->lines[idx].id;
+            };
+
+        ImGui::BeginChild("Log entries", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+
+        // Ctrl+C while the log has the focus copies the selection
+        if (selection.Size > 0 && ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_C))
+            CopyLines(true);
+
+        auto textColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+        auto timeColor = Theme::TextMuted();
+        auto warningColor = Theme::Warning();
+        auto errorColor = Theme::Error();
+        auto timeWidth = ImGui::CalcTextSize("00000.000").x;
+        auto lineHeight = ImGui::GetTextLineHeight();
+
+        char timeText[32];
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 2.0f));
+
+        // Click, Shift/Ctrl + click, dragging over lines and Ctrl+A select lines, Escape clears the selection
+        auto multiSelectFlags = ImGuiMultiSelectFlags_ClearOnEscape | ImGuiMultiSelectFlags_ClearOnClickVoid |
+            ImGuiMultiSelectFlags_BoxSelect1d;
+        auto multiSelectIO = ImGui::BeginMultiSelect(multiSelectFlags, selection.Size, int32_t(lines.size()));
+        selection.ApplyRequests(multiSelectIO);
+
+        // Only the visible lines are submitted, so the cost doesn't depend on the amount of log entries
+        ImGuiListClipper clipper;
+        clipper.Begin(int32_t(lines.size()));
+        if (multiSelectIO->RangeSrcItem != -1)
+            clipper.IncludeItemByIndex(int32_t(multiSelectIO->RangeSrcItem));
+        while (clipper.Step()) {
+            for (int32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                const auto& line = lines[i];
+                const auto& entry = GetEntry(line.entryIdx);
+
+                ImGui::PushID(i);
+
+                // Full width selectable in the background, the text is drawn on top of it
+                auto rowPos = ImGui::GetCursorPos();
+
+                // Problems stand out while scrolling through a long log
+                if (entry.type != Atlas::Log::Type::TYPE_MESSAGE) {
+                    auto rowScreenPos = ImGui::GetCursorScreenPos();
+                    auto rowEnd = ImVec2(rowScreenPos.x + ImGui::GetContentRegionAvail().x, rowScreenPos.y + lineHeight);
+                    auto isError = entry.type == Atlas::Log::Type::TYPE_ERROR;
+                    auto drawList = ImGui::GetWindowDrawList();
+                    drawList->AddRectFilled(rowScreenPos, rowEnd, ImGui::GetColorU32(isError ? Theme::Error(0.1f) : Theme::Warning(0.1f)));
+                    drawList->AddRectFilled(rowScreenPos, ImVec2(rowScreenPos.x + 2.0f, rowEnd.y), ImGui::GetColorU32(isError ? errorColor : warningColor));
+                }
+
+                ImGui::SetNextItemSelectionUserData(i);
+                ImGui::Selectable("##Line", selection.Contains(line.id), ImGuiSelectableFlags_AllowOverlap,
+                    ImVec2(0.0f, lineHeight));
+
+                if (ImGui::BeginPopupContextItem("Log line context")) {
+                    if (ImGui::MenuItem("Copy", "Ctrl+C"))
+                        CopyLines(true);
+                    if (ImGui::MenuItem("Copy message"))
+                        ImGui::SetClipboardText(entry.message.c_str());
+                    if (ImGui::MenuItem("Copy all visible lines"))
+                        CopyLines(false);
+                    ImGui::EndPopup();
+                }
+
+                ImGui::SetCursorPos(rowPos);
+
+                if (line.first) {
+                    std::snprintf(timeText, sizeof(timeText), "%9.3f", entry.time);
+                    ImGui::TextColored(timeColor, "%s", timeText);
+                }
+                else {
+                    ImGui::Dummy(ImVec2(timeWidth, lineHeight));
+                }
+                ImGui::SameLine();
+
+                auto messageColor = entry.type == Atlas::Log::Type::TYPE_WARNING ? warningColor :
+                    entry.type == Atlas::Log::Type::TYPE_ERROR ? errorColor : textColor;
+
+                const char* text = entry.message.c_str() + line.offset;
+                const char* textEnd = text + line.length;
+                ImGui::PushStyleColor(ImGuiCol_Text, messageColor);
+                if (line.linkLength > 0) {
+                    const char* link = entry.message.c_str() + line.linkStart;
+                    const char* linkEnd = link + line.linkLength;
+
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, ImGui::GetStyle().ItemSpacing.y));
+                    ImGui::TextUnformatted(text, link);
+                    ImGui::SameLine();
+                    ImGui::PushStyleColor(ImGuiCol_Text, Theme::Accent());
+                    ImGui::TextUnformatted(link, linkEnd);
+                    ImGui::PopStyleColor();
+
+                    // The row below it is the hovered item
+                    auto min = ImGui::GetItemRectMin();
+                    auto max = ImGui::GetItemRectMax();
+                    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseHoveringRect(min, max)) {
+                        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+                        ImGui::GetWindowDrawList()->AddLine(ImVec2(min.x, max.y), max, ImGui::GetColorU32(Theme::Accent()));
+                        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsMouseDragPastThreshold(ImGuiMouseButton_Left))
+                            OpenLink(std::string(link, linkEnd));
+                    }
+
+                    ImGui::SameLine();
+                    ImGui::TextUnformatted(linkEnd, textEnd);
+                    ImGui::PopStyleVar();
+                }
+                else {
+                    ImGui::TextUnformatted(text, textEnd);
+                }
+                ImGui::PopStyleColor();
+
+                ImGui::PopID();
+            }
         }
+        clipper.End();
+
+        multiSelectIO = ImGui::EndMultiSelect();
+        selection.ApplyRequests(multiSelectIO);
+
+        ImGui::PopStyleVar();
+
+        if (lines.empty()) {
+            ImGui::TextDisabled("%s", logSearch.empty() ? "No log entries" : "No log entries match the search");
+        }
+
+        // Only follow new lines if enabled and the user didn't scroll up
+        if (lastLineCount != lines.size()) {
+            lastLineCount = lines.size();
+            if (autoScroll)
+                ImGui::SetScrollHereY(1.0f);
+        }
+        else if (ImGui::GetScrollY() < ImGui::GetScrollMaxY() && ImGui::IsWindowHovered() &&
+            ImGui::GetIO().MouseWheel > 0.0f) {
+            // Scrolling up disables auto-scroll, until the user enables it again
+            autoScroll = false;
+        }
+
+        ImGui::EndChild();
 
         End();
+
+    }
+
+    void LogWindow::UpdateLines() {
+
+        // A different filter shows different lines, so the lines and the selection have to be rebuilt
+        if (show) {
+            auto filterState = logSearch + (showMessages ? "1" : "0") + (showWarnings ? "1" : "0") + (showErrors ? "1" : "0");
+            if (filterState != lastFilterState) {
+                lastFilterState = filterState;
+                lowerSearch = logSearch;
+                std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
+                linesDirty = true;
+            }
+            unseenWarningCount = unseenErrorCount = 0;
+        }
+
+        // Cheap check for new entries, only these are copied
+        if (Atlas::Log::GetEntryCount() > fetchedEntryCount) {
+            auto newEntries = Atlas::Log::GetEntriesSince(fetchedEntryCount);
+            auto firstNewIdx = fetchedEntryCount;
+            fetchedEntryCount += newEntries.size();
+
+            // Skip what wouldn't be kept anyway, e.g. when the window is opened with a long log
+            size_t skip = newEntries.size() > maxCachedEntries ? newEntries.size() - maxCachedEntries : 0;
+            if (skip > 0) {
+                cachedEntries.clear();
+                cacheStartIdx = firstNewIdx + skip;
+                linesDirty = true;
+            }
+
+            for (size_t i = skip; i < newEntries.size(); i++) {
+                const auto& entry = newEntries[i];
+                if (entry.type != Atlas::Log::Type::TYPE_MESSAGE && !show) {
+                    unseenWarningCount += entry.type == Atlas::Log::Type::TYPE_WARNING ? 1 : 0;
+                    unseenErrorCount += entry.type == Atlas::Log::Type::TYPE_ERROR ? 1 : 0;
+                }
+                if (entry.type != Atlas::Log::Type::TYPE_MESSAGE) {
+                    lastProblem = entry.message.substr(0, entry.message.find('\n'));
+                    lastProblemIsError = entry.type == Atlas::Log::Type::TYPE_ERROR;
+                }
+
+                cachedEntries.push_back(std::move(newEntries[i]));
+                // The lines of a hidden log are only built once it is shown again
+                if (!linesDirty && show)
+                    AppendLines(firstNewIdx + i);
+                else
+                    linesDirty = true;
+            }
+
+            // Trim in batches, every trim needs a rebuild of the lines
+            if (cachedEntries.size() > maxCachedEntries + trimBatchSize) {
+                auto removeCount = cachedEntries.size() - maxCachedEntries;
+                cachedEntries.erase(cachedEntries.begin(), cachedEntries.begin() + removeCount);
+                cacheStartIdx += removeCount;
+                linesDirty = true;
+            }
+        }
+
+        if (linesDirty && show)
+            RebuildLines();
+
+    }
+
+    void LogWindow::RebuildLines() {
+
+        lines.clear();
+        messageCount = warningCount = errorCount = 0;
+
+        // The indices of the lines change, so the selection can't be kept
+        selection.Clear();
+
+        for (size_t i = 0; i < cachedEntries.size(); i++)
+            AppendLines(cacheStartIdx + i);
+
+        linesDirty = false;
+
+    }
+
+    void LogWindow::AppendLines(size_t entryIdx) {
+
+        if (entryIdx < clearEntryIdx)
+            return;
+
+        const auto& entry = GetEntry(entryIdx);
+
+        messageCount += entry.type == Atlas::Log::Type::TYPE_MESSAGE ? 1 : 0;
+        warningCount += entry.type == Atlas::Log::Type::TYPE_WARNING ? 1 : 0;
+        errorCount += entry.type == Atlas::Log::Type::TYPE_ERROR ? 1 : 0;
+
+        if (entry.type == Atlas::Log::Type::TYPE_MESSAGE && !showMessages ||
+            entry.type == Atlas::Log::Type::TYPE_WARNING && !showWarnings ||
+            entry.type == Atlas::Log::Type::TYPE_ERROR && !showErrors)
+            return;
+
+        // Case-insensitive search without copying the message
+        if (!lowerSearch.empty()) {
+            auto it = std::search(entry.message.begin(), entry.message.end(), lowerSearch.begin(), lowerSearch.end(),
+                [](char a, char b) { return char(std::tolower(static_cast<unsigned char>(a))) == b; });
+            if (it == entry.message.end())
+                return;
+        }
+
+        // Ids are derived from the entry index and the line within the message, which is stable and cheap
+        uint32_t offset = 0;
+        uint32_t lineInMessage = 0;
+        const auto& message = entry.message;
+        while (true) {
+            auto newLine = message.find('\n', offset);
+            auto end = newLine == std::string::npos ? message.size() : newLine;
+
+            uint64_t key[2] = { uint64_t(entryIdx), uint64_t(lineInMessage) };
+            lines.push_back({
+                .entryIdx = entryIdx,
+                .offset = offset,
+                .length = uint32_t(end - offset),
+                .first = lineInMessage == 0,
+                .id = ImHashData(key, sizeof(key))
+            });
+            FindLink(message, lines.back());
+
+            if (newLine == std::string::npos)
+                break;
+
+            offset = uint32_t(newLine + 1);
+            lineInMessage++;
+        }
+
+    }
+
+    void LogWindow::FindLink(const std::string& message, Line& line) {
+
+        auto isDigit = [](char c) { return c >= '0' && c <= '9'; };
+        // Lua puts code without a name into brackets, shader errors a file into quotes
+        auto isPathCharacter = [](char c) {
+            return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-' || c == '.' || c == '/' || c == '\\';
+            };
+
+        line.linkStart = line.linkLength = 0;
+        auto end = line.offset + line.length;
+
+        for (auto colon = message.find(':', line.offset); colon < end; colon = message.find(':', colon + 1)) {
+            auto numberEnd = colon + 1;
+            while (numberEnd < end && isDigit(message[numberEnd]))
+                numberEnd++;
+
+            auto start = colon;
+            while (start > line.offset && isPathCharacter(message[start - 1]))
+                start--;
+
+            auto type = Content::contentTypeMapping.find(Common::Path::GetFileType(message.substr(start, colon - start)));
+            if (numberEnd == colon + 1 || type == Content::contentTypeMapping.end() ||
+                (type->second != ContentType::Script && type->second != ContentType::Shader))
+                continue;
+
+            line.linkStart = uint32_t(start);
+            line.linkLength = uint32_t(numberEnd - start);
+            return;
+        }
+
+    }
+
+    void LogWindow::OpenLink(const std::string& link) {
+
+        auto colon = link.rfind(':');
+        auto path = Common::Path::Normalize(link.substr(0, colon));
+        // Lua shortens long names to their end
+        if (path.starts_with("..."))
+            path = path.substr(3);
+
+        if (!Loader::AssetLoader::FileExists(path)) {
+            auto lowerPath = path;
+            std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+
+            std::string foundPath;
+            for (auto type : { ContentType::Script, ContentType::Shader }) {
+                for (const auto& content : ContentDiscovery::GetContent(type)) {
+                    auto assetPath = content.assetPath;
+                    std::transform(assetPath.begin(), assetPath.end(), assetPath.begin(), ::tolower);
+                    if (foundPath.empty() && assetPath.ends_with(lowerPath))
+                        foundPath = content.assetPath;
+                }
+            }
+            path = foundPath;
+        }
+
+        if (path.empty()) {
+            Notifications::Push({ .message = "There is no file for " + link, .type = NotificationType::Warning });
+            return;
+        }
+
+        // Line zero shows the beginning
+        int32_t line = 0;
+        std::from_chars(link.data() + colon + 1, link.data() + link.size(), line);
+        ContentBrowserWindow::contentToEditPath = path;
+        ContentBrowserWindow::contentToEditLine = line;
+
+    }
+
+    void LogWindow::CopyLines(bool onlySelected) {
+
+        // Lines are copied like they are displayed: time stamp and message
+        std::string text;
+        char timeText[32];
+        int32_t lineCount = 0;
+
+        for (const auto& line : lines) {
+            if (onlySelected && !selection.Contains(line.id))
+                continue;
+
+            const auto& entry = GetEntry(line.entryIdx);
+            if (line.first) {
+                std::snprintf(timeText, sizeof(timeText), "%9.3f ", entry.time);
+                text += timeText;
+            }
+            else {
+                text += std::string(10, ' ');
+            }
+            text.append(entry.message, line.offset, line.length);
+            text += '\n';
+            lineCount++;
+        }
+
+        if (lineCount == 0)
+            return;
+
+        ImGui::SetClipboardText(text.c_str());
+        Notifications::Push({ .message = "Copied " + std::to_string(lineCount) +
+            (lineCount == 1 ? " log line" : " log lines"), .displayTime = 2.0f });
+
+    }
+
+    bool LogWindow::RenderFilterToggle(const char* label, int32_t count, bool* enabled, ImVec4 color) {
+
+        auto text = std::string(label) + " " + std::to_string(count) + "##" + label;
+
+        // Disabled filters are shown faded out
+        color.w *= *enabled ? 1.0f : 0.4f;
+        ImGui::PushStyleColor(ImGuiCol_Text, color);
+        ImGui::PushStyleColor(ImGuiCol_Button, *enabled ? ImGui::GetStyleColorVec4(ImGuiCol_Button) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+        bool pressed = ImGui::Button(text.c_str());
+        if (pressed)
+            *enabled = !*enabled;
+
+        ImGui::PopStyleColor(2);
+
+        ImGui::SetItemTooltip(*enabled ? "Hide %s" : "Show %s", label);
+
+        return pressed;
 
     }
 

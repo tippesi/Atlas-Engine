@@ -3,6 +3,7 @@
 #include "Log.h"
 #include "loader/AssetLoader.h"
 
+#include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <spirv-tools/optimizer.hpp>
 
@@ -17,6 +18,7 @@ namespace Atlas {
 
         bool ShaderCompiler::includeDebugInfo = false;
         std::unordered_map<size_t, ShaderCompiler::SpvCacheEntry> ShaderCompiler::cache;
+        std::mutex ShaderCompiler::cacheMutex;
         const std::string ShaderCompiler::cachePath = ".cache/";
 
         void ShaderCompiler::Init() {
@@ -29,6 +31,7 @@ namespace Atlas {
 
             glslang::FinalizeProcess();
 
+            std::scoped_lock lock(cacheMutex);
             for (auto& [_, entry] : cache) {
                 if (!entry.wasModified) continue;
 
@@ -38,6 +41,11 @@ namespace Atlas {
                         entry.spirvBinary.size() * sizeof(uint32_t));
 
                     fileStream.close();
+
+                    // The file gets the time of its sources: written now, it would look newer than a source changed while
+                    // this process ran, the next one would load the old code
+                    std::error_code errorCode;
+                    std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(entry.fileName), entry.lastModified, errorCode);
                 }
             }
 
@@ -77,7 +85,6 @@ namespace Atlas {
             auto glslCode = shaderFile.GetGlslCode(macros);
             const char* shaderStrings[] = { glslCode.data() };
             shader.setStrings(shaderStrings, 1);
-            shader.getIntermediate()->addSourceText(glslCode.data(), glslCode.size());
 
             if (!shader.parse(&Resources, 100, false, messages)) {
                 LogError(shaderFile, macros, shader);
@@ -104,7 +111,7 @@ namespace Atlas {
             // Optimization strips debug info
             if (!includeDebugInfo) {
                 spvtools::Optimizer opt(SPV_ENV_VULKAN_1_2);
-                opt.RegisterPerformancePasses();
+                opt.RegisterPerformancePasses(false);
 
                 std::vector<uint32_t> optimizedBinary;
                 if (opt.Run(spirvBinary.data(), spirvBinary.size(), &optimizedBinary)) {
@@ -126,10 +133,17 @@ namespace Atlas {
             success = true;
 
             SpvCacheEntry entry;
-            if (cache.contains(hash)) {
-                entry = cache[hash];
+            bool foundInMemory = false;
+            {
+                std::scoped_lock lock(cacheMutex);
+                auto iter = cache.find(hash);
+                if (iter != cache.end()) {
+                    entry = iter->second;
+                    foundInMemory = true;
+                }
             }
-            else {
+
+            if (!foundInMemory) {
                 std::string path;
                 if (includeDebugInfo)
                     path = cachePath + std::to_string(hash) + "_debug";
@@ -176,7 +190,9 @@ namespace Atlas {
 
                 .wasModified = true
             };
-            cache[hash] = entry;
+
+            std::scoped_lock lock(cacheMutex);
+            cache[hash] = std::move(entry);
 
         }
 
@@ -314,6 +330,16 @@ namespace Atlas {
                 return EShLangFragment;
             case VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT:
                 return EShLangCompute;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+                return EShLangRayGen;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_MISS_BIT_KHR:
+                return EShLangMiss;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+                return EShLangAnyHit;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+                return EShLangClosestHit;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+                return EShLangCallable;
             default:
                 return EShLangCompute;
             }
@@ -340,6 +366,9 @@ namespace Atlas {
             }
             else if (shaderStageFile.shaderStage == VK_SHADER_STAGE_COMPUTE_BIT) {
                 log.append("Compiling compute stage failed.");
+            }
+            else {
+                log.append("Compiling ray tracing stage failed.");
             }
 
             int32_t lineCount = 1;

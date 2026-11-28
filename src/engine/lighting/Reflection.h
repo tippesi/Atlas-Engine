@@ -13,8 +13,11 @@ namespace Atlas {
             Reflection() = default;
 
             int32_t textureLevel = 3;
+            int32_t sampleCount = 1;
+            int32_t lightSampleCount = 2;
+
             float radianceLimit = 10.0f;
-            float roughnessCutoff = 0.9f;
+            float roughnessCutoff = 0.4f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
 
@@ -24,12 +27,16 @@ namespace Atlas {
 
             bool enable = true;
             bool rt = true;
+            bool ssr = true;
             bool ddgi = true;
-            bool useShadowMap = false;
             bool useNormalMaps = true;
             bool opacityCheck = false;
             bool halfResolution = true;
             bool upsampleBeforeFiltering = false;
+
+            // Devices with hit objects trace with a ray tracing pipeline, which can reorder the threads by the mesh
+            // they hit before shading
+            bool shaderExecutionReordering = true;
 
         };
 

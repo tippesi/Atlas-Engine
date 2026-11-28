@@ -76,6 +76,23 @@ namespace Atlas {
              */
             static std::string Normalize(std::string path);
 
+            /**
+             * Converts the letters of a path to lower case, e.g. to compare paths of case-insensitive file systems.
+             * @param path A path.
+             * @return The path in lower case.
+             */
+            static std::string ToLower(std::string path);
+
+            /**
+             * Returns a path after a file or directory was renamed.
+             * @param path A path to a file or directory.
+             * @param oldPath The old path of the renamed file or directory.
+             * @param newPath The new path of the renamed file or directory.
+             * @return The path with its new beginning, the same path if it isn't the renamed one or in it.
+             * @note Upper and lower case don't matter, like on the file systems of Windows and macOS.
+             */
+            static std::string Rename(const std::string& path, const std::string& oldPath, const std::string& newPath);
+
         };
 
     }

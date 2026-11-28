@@ -11,6 +11,23 @@ namespace Atlas {
                 0.0f, 0.0f, 0.5f, 0.0f,
                 0.0f, 0.0f, 0.5f, 1.0f);
 
+            LightComponent::LightComponent(Scene* scene, const LightComponent& that) {
+
+                if (this != &that) {
+
+                    *this = that;
+
+                    // Copy shadow, need to have separate resources
+                    if (that.shadow != nullptr) {
+                        shadow = CreateRef(*that.shadow);
+                        shadow->SetResolution(shadow->resolution);
+                        shadow->update = true;
+                    }
+
+                }
+
+            }
+
 			LightComponent::LightComponent(LightType type, LightMobility mobility) : 
 				type(type), mobility(mobility), properties(type), transformedProperties(type) {
 
@@ -40,37 +57,75 @@ namespace Atlas {
 
 			}
 
-            void LightComponent::AddDirectionalShadow(float distance, float bias, int32_t resolution,
-                float edgeSoftness, vec3 shadowCenter, vec4 orthoSize) {
-
-                AE_ASSERT(type == LightType::DirectionalLight && "Component must be of type directional light");
-
-                shadow = CreateRef<Lighting::Shadow>(distance, bias, resolution, edgeSoftness);
-
-                shadow->center = shadowCenter;
-
-                shadow->allowTerrain = true;
-
-                auto orthoProjection = glm::ortho(orthoSize.x, orthoSize.y, orthoSize.z, orthoSize.w, -2000.0f, 2000.0f);
-
-                shadow->views[0].orthoSize = orthoSize;
-                shadow->views[0].nearDistance = 0.0f;
-                shadow->views[0].farDistance = distance;
-                shadow->views[0].projectionMatrix = clipMatrix * orthoProjection;
-                shadow->views[0].frustumMatrix = clipMatrix * orthoProjection;
-                shadow->views[0].terrainFrustumMatrix = clipMatrix * orthoProjection;
-                shadow->views[0].viewMatrix = glm::lookAt(shadowCenter, shadowCenter +
-                                                                        properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
-
-            }
-
 			void LightComponent::AddPointShadow(float bias, int32_t resolution) {
 
 				AE_ASSERT(type == LightType::PointLight && "Component must be of type point light");
 
-                shadow = CreateRef<Lighting::Shadow>(0.0f, bias, resolution, true);
+                shadow = CreateRef<Lighting::Shadow>(200.0f, bias, resolution, 0.005f, true);
 
 			}
+
+            void LightComponent::AddSpotShadow(float bias, int32_t resolution) {
+
+                AE_ASSERT(type == LightType::SpotLight && "Component must be of type spot light");
+
+                shadow = CreateRef<Lighting::Shadow>(200.0f, bias, resolution, 0.005f, false);
+
+            }
+
+            bool LightComponent::HasFittingShadow() const {
+
+                if (!shadow)
+                    return true;
+
+                switch (type) {
+                case LightType::DirectionalLight: return shadow->isCascaded;
+                case LightType::PointLight: return shadow->useCubemap;
+                default: return !shadow->isCascaded && !shadow->useCubemap;
+                }
+
+            }
+
+            void LightComponent::FitShadowToType() {
+
+                if (HasFittingShadow())
+                    return;
+
+                const int32_t cascadeCount = 3;
+                auto previous = shadow;
+                switch (type) {
+                case LightType::DirectionalLight:
+                    AddDirectionalShadow(previous->distance, previous->bias, previous->resolution, previous->edgeSoftness,
+                        cascadeCount, previous->splitCorrection);
+                    shadow->cascadeBlendDistance = previous->cascadeBlendDistance;
+                    break;
+                case LightType::PointLight: AddPointShadow(previous->bias, previous->resolution); break;
+                case LightType::SpotLight: AddSpotShadow(previous->bias, previous->resolution); break;
+                }
+                shadow->allowTerrain = previous->allowTerrain;
+                shadow->allowDynamicEntities = previous->allowDynamicEntities;
+
+            }
+
+            bool LightComponent::IsVisible(const Volume::Frustum& frustum) const {
+
+                if (type == LightType::DirectionalLight)
+                    return true;
+
+                Volume::AABB aabb;
+
+                if (type == LightType::PointLight) {
+                    auto min = transformedProperties.point.position - vec3(transformedProperties.point.radius);
+                    auto max = transformedProperties.point.position + vec3(transformedProperties.point.radius);
+                    aabb = Volume::AABB(min, max);
+                }
+                else if (type == LightType::SpotLight) {
+                    aabb = Volume::AABB(-vec3(2000.0f), vec3(2000.0f));
+                }
+
+                return frustum.Intersects(aabb);
+
+            }
 
             void LightComponent::Update(const TransformComponent* transform) {
 
@@ -83,6 +138,11 @@ namespace Atlas {
                 else if (type == LightType::PointLight && transform) {
                     transformedProperties.point.position = vec3(transform->globalMatrix * vec4(properties.point.position, 1.0f));
                 }
+                else if (type == LightType::SpotLight && transform) {
+                    transformedProperties.spot.position = vec3(transform->globalMatrix * vec4(properties.spot.position, 1.0f));
+                    transformedProperties.spot.direction = glm::normalize(vec3(transform->globalMatrix *
+                        vec4(properties.spot.direction, 0.0f)));
+                }
 
             }
 
@@ -91,7 +151,10 @@ namespace Atlas {
                 if (!shadow)
                     return;
 
-                if (shadow->isCascaded && type == LightType::DirectionalLight) {
+                // The shadow can be replaced from outside, e.g. by scripts or a new type, its views have to fit the type
+                FitShadowToType();
+
+                if (type == LightType::DirectionalLight) {
                     auto distance = shadow->distance;
                     auto componentCount = shadow->longRange ? shadow->viewCount - 1
                         : shadow->viewCount;
@@ -111,20 +174,16 @@ namespace Atlas {
                     }
 
                 }
-                else if (!shadow->isCascaded && type == LightType::DirectionalLight) {
-                    shadow->views[0].viewMatrix = glm::lookAt(shadow->center,
-                        shadow->center + transformedProperties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
-                }
                 else if (type == LightType::PointLight) {
                     vec3 position = transformedProperties.point.position;
 
-                    mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, properties.point.radius);
+                    mat4 projectionMatrix = clipMatrix * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, transformedProperties.point.radius);
                     const vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-                                     vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                                     vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+                              vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f),
+                             vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
                     const vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                                   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+                                   vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f),
                                    vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
                     for (uint8_t i = 0; i < 6; i++) {
@@ -134,9 +193,18 @@ namespace Atlas {
                         shadow->views[i].frustumMatrix = projectionMatrix * viewMatrix;
                     }
                 }
+                else if (type == LightType::SpotLight) {
+                    auto viewMatrix = glm::lookAt(transformedProperties.spot.position, transformedProperties.spot.position + 
+                        transformedProperties.spot.direction, vec3(1e-12f, 1.0f, 1e-12f));
+                    auto projectionMatrix = glm::perspective(2.0f * transformedProperties.spot.outerConeAngle, 1.0f, 0.1f, transformedProperties.spot.radius);
+                    shadow->views[0].viewMatrix = viewMatrix;
+                    shadow->views[0].projectionMatrix = clipMatrix * projectionMatrix;
+                    shadow->views[0].frustumMatrix = clipMatrix * projectionMatrix * viewMatrix;
+                }
 
+                // The views whose casters didn't change keep their shadow maps
                 if (mobility == LightMobility::MovableLight)
-                    shadow->Update();
+                    shadow->update = true;
 
             }
 
@@ -153,10 +221,10 @@ namespace Atlas {
                 // A near enough up vector. This is because if the light location is
                 // (0.0f, 1.0f, 0.0f) the shadows wouldn't render correctly due to the
                 // shadows (or lights) view matrix. This is just a hack
-                vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
+                vec3 up = vec3(1e-12f, 1.0f, 1e-12f);
                 cascade.viewMatrix = glm::lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-                std::vector<vec3> corners = camera.GetFrustumCorners(cascade.nearDistance,
+                auto corners = camera.GetFrustumCorners(cascade.nearDistance - shadow->cascadeBlendDistance,
                     cascade.farDistance + shadow->cascadeBlendDistance);
 
                 vec3 maxProj = vec3(cascade.viewMatrix * vec4(corners.at(0), 1.0f));
@@ -203,18 +271,18 @@ namespace Atlas {
                     -maxLength - 1250.0f, // We need to render stuff behind the camera
                     maxLength + 10.0f); // We need to extend a bit to hide seams at cascade splits
 
-                glm::mat4 shadowMatrix = cascade.projectionMatrix * cascade.viewMatrix;
-                glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                mat4 shadowMatrix = cascade.projectionMatrix * cascade.viewMatrix;
+                vec4 shadowOrigin = vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 shadowOrigin = shadowMatrix * shadowOrigin;
                 shadowOrigin = shadowOrigin * (float)shadow->resolution / 2.0f;
 
-                glm::vec4 roundedOrigin = glm::round(shadowOrigin);
-                glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
+                vec4 roundedOrigin = glm::round(shadowOrigin);
+                vec4 roundOffset = roundedOrigin - shadowOrigin;
                 roundOffset = roundOffset * 2.0f / (float)shadow->resolution;
                 roundOffset.z = 0.0f;
                 roundOffset.w = 0.0f;
 
-                glm::mat4 shadowProj = cascade.projectionMatrix;
+                mat4 shadowProj = cascade.projectionMatrix;
                 shadowProj[3] += roundOffset;
                 cascade.projectionMatrix = clipMatrix * shadowProj;
                 cascade.frustumMatrix = clipMatrix * cascade.frustumMatrix;

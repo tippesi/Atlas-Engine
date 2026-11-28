@@ -3,7 +3,6 @@
 #include "common/SerializationHelper.h"
 
 #include "Shadow.h"
-#include "AO.h"
 #include "SSGI.h"
 #include "RTGI.h"
 #include "EnvironmentProbe.h"
@@ -16,10 +15,6 @@
 #include "Sky.h"
 
 namespace Atlas::Lighting {
-
-    void to_json(json& j, const AO& p);
-
-    void from_json(const json& j, AO& p);
 
     void to_json(json& j, const EnvironmentProbe& p);
 

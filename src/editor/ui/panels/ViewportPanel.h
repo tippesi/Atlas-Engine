@@ -3,7 +3,10 @@
 #include "Panel.h"
 #include "tools/PrimitiveBatchWrapper.h"
 #include "scene/Scene.h"
+#include "renderer/target/RenderTarget.h"
+#include "renderer/MainRenderer.h"
 #include "Viewport.h"
+#include "Icons.h"
 
 namespace Atlas::Editor::UI {
 
@@ -11,10 +14,14 @@ namespace Atlas::Editor::UI {
         Lit = 0,
         GBufferBaseColor,
         GBufferRoughnessMetalnessAo,
+        GBufferEmissive,
         GBufferNormals,
         GBufferGeometryNormals,
+        GBufferMaterialIdx,
+        GBufferStencil,
         GBufferDepth,
         GBufferVelocity,
+        Volumetrics,
         Clouds,
         Reflections,
         SSS,
@@ -30,27 +37,73 @@ namespace Atlas::Editor::UI {
 
         void DrawOverlay(std::function<void()> func);
 
-        void Render(Ref<Scene::Scene>& scene, bool isActiveWindow);
+        void Render(Ref<Scene::Scene>& scene);
 
+        // Renders the scene if it's visible and shows its image in the rest of the current window, between bars if its
+        // camera keeps its aspect ratio
+        void RenderImage(const Ref<Scene::Scene>& scene, bool isVisible);
+
+        // Ground grid on the y = 0 plane around the camera
+        void RenderGrid(const Scene::Components::CameraComponent& camera);
+
+        // Toolbars are drawn as floating, rounded button groups on top of the viewport from the menu bar function
+        float GetToolbarGroupWidth(int32_t buttonCount) const;
+
+        void BeginToolbarGroup(float x, int32_t buttonCount);
+
+        bool ToolbarButton(const char* id, IconType iconType, bool selected, bool enabled, const char* tooltip,
+            ImVec2 uvMin = ImVec2(0.15f, 0.15f), ImVec2 uvMax = ImVec2(0.85f, 0.85f));
+
+        // The "Visualization settings" popup of the eye button, a table with the columns of the window first, they
+        // start with ImGui::TableNextColumn() and set their item width. Ends with EndVisualizationPopup() when it returns true
+        bool BeginVisualizationPopup(int32_t windowColumns);
+
+        // Adds the column of what the viewport shows of the renderer: the final image, the G-buffer or an effect alone
+        void EndVisualizationPopup();
+
+        static constexpr float toolbarMargin = 8.0f;
+        static constexpr float toolbarGroupPadding = 3.0f;
+        static constexpr float toolbarButtonSpacing = 2.0f;
+        static constexpr float toolbarFramePadding = 5.0f;
+
+        // In ImGui units for the interface, the scene is rendered with the render viewport
         Ref<Viewport> viewport;
+        Ref<Viewport> renderViewport;
         Texture::Texture2D viewportTexture;
 
+        // All visible viewports are rendered in the same frame, so uniform buffers, upscalers and history can't be shared
+        Ref<Renderer::RenderTarget> renderTarget;
+        Ref<Renderer::MainRenderer> mainRenderer;
+
+        // Off for content the path tracer can't show, e.g. material graphs
+        bool allowPathTracing = true;
+
         PrimitiveBatchWrapper primitiveBatchWrapper;
+
+        // Drawn over the image of each frame like the primitive batches, e.g. the icons of entities
+        std::vector<Renderer::Sprite> sprites;
+        // Sprites behind the scene are faded instead of hidden
+        // Of icons and lines behind surfaces, lines are dashed there as well
+        float occludedAlpha = 0.35f;
 
         ViewportVisualization visualization = Lit;
 
         std::function<void()> drawMenuBarFunc;
         std::function<void()> drawOverlayFunc;
 
-    private:
-        void RenderVisualization();
+        // Frame around the viewport, shows e.g. that the scene is playing. Invisible with an alpha of zero
+        ImVec4 frameColor = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-        void CreateRenderPass();
+    private:
+        void RenderScene(const Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size);
+
+        void RenderVisualization(float exposure);
+
+        void CreateRendering();
 
         bool firstFrame = true;
 
-        Ref<Graphics::RenderPass> renderPass;
-        Ref<Graphics::FrameBuffer> frameBuffer;
+        Graphics::RenderingDesc rendering;
 
     };
 

@@ -13,16 +13,14 @@ namespace Atlas {
 
         struct ShadowView {
 
-            float nearDistance;
-            float farDistance;
+            float nearDistance = 0.0f;
+            float farDistance = 100.0f;
 
-            mat4 viewMatrix;
-            mat4 projectionMatrix;
+            mat4 viewMatrix = mat4(1.0f);
+            mat4 projectionMatrix = mat4(1.0f);
 
-            mat4 frustumMatrix;
-            mat4 terrainFrustumMatrix;
-
-            vec4 orthoSize;
+            mat4 frustumMatrix = mat4(1.0f);
+            mat4 terrainFrustumMatrix = mat4(1.0f);
 
         };
 
@@ -37,9 +35,8 @@ namespace Atlas {
 
             void SetResolution(int32_t resolution);
 
+            // Draws all views again, even the ones whose casters didn't change
             void Update();
-
-            vec3 center = vec3(0.0f);
 
             float distance = 300.0f;
             float longRangeDistance = 1024.0f;
@@ -50,21 +47,22 @@ namespace Atlas {
 
             float cascadeBlendDistance = 2.5f;
 
-            int32_t resolution;
+            int32_t resolution = 1024;
 
             std::vector<ShadowView> views;
-            int32_t viewCount;
+            int32_t viewCount = 1;
 
-            Texture::Texture2DArray maps;
-            Texture::Cubemap cubemap;
+            Ref<Texture::Texture2DArray> maps;
+            Ref<Texture::Cubemap> cubemap;
 
+            // Set by the constructor: directional lights always have cascades, point and spot lights never
             bool isCascaded = false;
-            bool followMainCamera = false;
             bool useCubemap = false;
             bool allowDynamicEntities = false;
             bool allowTerrain = false;
             bool longRange = false;
             bool update = true;
+            uint32_t updateVersion = 0;
 
         };
 

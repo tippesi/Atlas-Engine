@@ -2,26 +2,43 @@
 
 #include "Panel.h"
 #include "scene/Scene.h"
+#include "SceneHistory.h"
 
 #include "components/NameComponentPanel.h"
 #include "components/TransformComponentPanel.h"
 #include "components/MeshComponentPanel.h"
+#include "components/AnimationComponentPanel.h"
 #include "components/LightComponentPanel.h"
 #include "components/AudioComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
+#include "components/FogVolumeComponentPanel.h"
 #include "components/LuaScriptComponentPanel.h"
 #include "components/RigidBodyComponentPanel.h"
+#include "components/SoftBodyComponentPanel.h"
 #include "components/PlayerComponentPanel.h"
 #include "components/CameraComponentPanel.h"
 #include "components/TextComponentPanel.h"
+#include "components/SplineComponentPanel.h"
+#include "components/ConstraintComponentPanel.h"
+#include "components/HierarchyComponentPanel.h"
+
+#include "tools/CopyPasteHelper.h"
+#include "Notifications.h"
+#include "Singletons.h"
+#include "ui/Widgets.h"
 
 #include <imgui.h>
+#include <optional>
+#include <functional>
 
 namespace Atlas::Editor::UI {
 
     struct EntityProperties {
         Scene::Entity entity;
         Scene::Entity editorCameraEntity;
+        // The rest of the selection gets the same changes
+        std::vector<Scene::Entity> otherEntities;
+        SceneHistory* history = nullptr;
     };
 
     class EntityPropertiesPanel : public Panel {
@@ -31,34 +48,165 @@ namespace Atlas::Editor::UI {
 
         void Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties);
 
-    private:
+        // Searches the properties of all components
+        std::string propertySearch;
+        bool focusSearch = false;
+
         NameComponentPanel nameComponentPanel;
         TransformComponentPanel transformComponentPanel;
         MeshComponentPanel meshComponentPanel;
+        AnimationComponentPanel animationComponentPanel;
         LightComponentPanel lightComponentPanel;
         AudioComponentPanel audioComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
-		LuaScriptComponentPanel luaScriptComponentPanel;
+        FogVolumeComponentPanel fogVolumeComponentPanel;
+        LuaScriptComponentPanel luaScriptComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
+        SoftBodyComponentPanel softBodyComponentPanel;
         PlayerComponentPanel playerComponentPanel;
         CameraComponentPanel cameraComponentPanel;
         TextComponentPanel textComponentPanel;
+        SplineComponentPanel splineComponentPanel;
+        ConstraintComponentPanel constraintComponentPanel;
+        HierarchyComponentPanel hierarchyComponentPanel;
+
+    private:
+        // The components of the entity before an interaction which changes several entities
+        struct MultiEdit {
+            Scene::Entity entity;
+            std::vector<Scene::Entity> others;
+            json before;
+        };
+
+        void RenderComponents(Ref<Scene::Scene>& scene, Scene::Entity entity);
+
+        // The other entities get the changes
+        void FinishMultiEdit(Ref<Scene::Scene>& scene, SceneHistory& history);
+
+        std::optional<MultiEdit> multiEdit;
+
+        std::function<void()> pendingRemoval;
+        std::string componentSearch;
+
+        template<class T>
+        struct ComponentCopy {
+            Scene::Scene* scene;
+            T component;
+        };
 
         template<class S, class T>
         bool RenderComponentPanel(const std::string& name, Ref<Scene::Scene>& scene,
             Scene::Entity entity, S& panel, T& component) {
             bool resourceChanged = false;
 
-            ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
-                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+            if (!Widgets::BeginPropertyGroup(name.c_str()))
+                return false;
 
-            if (ImGui::TreeNodeEx(name.c_str(), nodeFlags)) {
+            ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
+                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed |
+                ImGuiTreeNodeFlags_AllowOverlap | Widgets::PropertyGroupHeaderFlags();
+
+            // Component headers are neutral, the accent is reserved for selection
+            ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            bool open = ImGui::TreeNodeEx(name.c_str(), nodeFlags);
+            ImGui::PopStyleColor(3);
+
+            bool removeComponent = false;
+            if (ImGui::BeginPopupContextItem(name.c_str())) {
+                if (ImGui::MenuItem("Copy")) {
+                    if constexpr (std::is_same_v<T, RigidBodyComponent>) {
+                        // Restore body creation settings, after the copy the current body id is not valid anymore due
+                        // to body recreation
+                        component.creationSettings = CreateRef(component.GetBodyCreationSettings());
+                    }
+                    ComponentCopy<T> copy { scene.get(), component };
+                    CopyPasteHelper::Copy(copy);
+                }
+                if (ImGui::MenuItem("Remove"))
+                    removeComponent = true;
+
+                ImGui::EndPopup();
+            }
+
+            // Remove button on the right side of the header
+            {
+                auto headerMin = ImGui::GetItemRectMin();
+                auto headerMax = ImGui::GetItemRectMax();
+                auto iconSize = ImGui::GetTextLineHeight();
+                auto buttonExtent = iconSize + 2.0f;
+                auto cursorPos = ImGui::GetCursorPos();
+
+                auto buttonPos = ImVec2(headerMax.x - buttonExtent - ImGui::GetStyle().FramePadding.x,
+                    headerMin.y + (headerMax.y - headerMin.y - buttonExtent) * 0.5f);
+
+                ImGui::SameLine();
+                ImGui::SetCursorScreenPos(buttonPos);
+
+                auto alpha = ImGui::IsMouseHoveringRect(headerMin, headerMax) ? 1.0f : 0.45f;
+                ImGui::PushID(name.c_str());
+                if (Widgets::IconButton("Remove component", Singletons::icons->Get(IconType::Trash),
+                    iconSize, "Remove component", alpha))
+                    removeComponent = true;
+
+                if constexpr (std::is_same_v<T, MeshComponent>) {
+                    if (component.mesh.IsValid()) {
+                        ImGui::SetCursorScreenPos(ImVec2(buttonPos.x - buttonExtent - ImGui::GetStyle().ItemSpacing.x, buttonPos.y));
+                        if (Widgets::IconButton("Open in mesh editor", Singletons::icons->Get(IconType::OpenInNew),
+                            iconSize, "Open in mesh editor", alpha))
+                            ContentBrowserWindow::contentToEditPath = component.mesh.GetResource()->path;
+                    }
+                }
+                ImGui::PopID();
+
+                ImGui::SetCursorPos(cursorPos);
+            }
+
+            // Defer removal until all panels are rendered. Some components are copied and
+            // re-added after their panel was rendered, which would otherwise revive them
+            if (removeComponent)
+                pendingRemoval = [entity]() mutable { entity.RemoveComponent<T>(); };
+
+            if (open) {
+                Widgets::BeginPropertyContent();
                 resourceChanged = panel.Render(scene, entity, component);
+                Widgets::EndPropertyContent();
 
                 ImGui::TreePop();
             }
 
+            ImGui::Spacing();
+
+            Widgets::EndPropertyGroup();
+
             return resourceChanged;
+        }
+
+        template<class T>
+        bool HandleComponentPaste(Ref<Scene::Scene>& scene, Scene::Entity entity, std::optional<std::function<void(T&)>> func = std::nullopt) {
+
+            if (CopyPasteHelper::AcceptPaste<ComponentCopy<T>>()) {
+                ComponentCopy<T> copy;
+                CopyPasteHelper::Paste(copy);
+
+                if (copy.scene != scene.get()) {
+                    Notifications::Push({ "Cannot copy component from one scene to another", NotificationType::Error });
+                    return true;
+                }
+
+                if (entity.HasComponent<T>())
+                    entity.RemoveComponent<T>();
+
+                auto& comp = entity.AddComponent<T>(copy.component);
+                if (func.has_value())
+                    func.value()(comp);
+
+                return true;
+            }
+
+            return false;
+
         }
 
     };

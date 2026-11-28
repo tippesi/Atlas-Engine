@@ -20,6 +20,7 @@ namespace Atlas {
                 y = event.y;
                 dx = event.xrel;
                 dy = event.yrel;
+                touch = event.which == SDL_TOUCH_MOUSEID;
 
             }
 
@@ -31,22 +32,24 @@ namespace Atlas {
             /**
              * The x coordinate relative to the window where the button event occurred
              */
-            int32_t x;
+            float x;
 
             /**
              * The y coordinate relative to the window where the button event occurred
              */
-            int32_t y;
+            float y;
 
             /**
              * The relative motion in x direction
              */
-            int32_t dx;
+            float dx;
 
             /**
              * The relative motion in y direction
              */
-            int32_t dy;
+            float dy;
+
+            bool touch;
 
         };
 

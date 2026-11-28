@@ -5,6 +5,9 @@
 #include "BLAS.h"
 #include "TLAS.h"
 #include "QueryPool.h"
+#include "CommandList.h"
+
+#include <span>
 
 namespace Atlas {
 
@@ -22,19 +25,35 @@ namespace Atlas {
         public:
             ASBuilder() = default;
 
-            BLASDesc GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer,
-                size_t vertexCount, size_t vertexSize, size_t indexSize, std::vector<ASGeometryRegion> regions);
+            BLASDesc GetBLASDescForTriangleGeometry(VkDeviceAddress vertexAddress, VkDeviceAddress indexAddress,
+                size_t vertexCount, size_t vertexSize, size_t indexSize, std::span<ASGeometryRegion> regions);
 
-            void BuildBLAS(std::vector<Ref<BLAS>>& blases);
+            int32_t BuildBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList = nullptr);
+
+            /**
+             * Refits built BLASes which allow updates to the current state of their vertices
+             * @note The topology has to stay the same, only the vertex positions can change
+             */
+            void UpdateBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList);
             
-            Ref<Buffer> BuildTLAS(Ref<TLAS>& tlas, std::vector<VkAccelerationStructureInstanceKHR>& instances);
+            Buffer* BuildTLAS(Ref<TLAS>& tlas, std::span<VkAccelerationStructureInstanceKHR> instances, CommandList* commandList = nullptr);
+
+            // Builds from instances in a device buffer, e.g. written by a compute shader
+            void BuildTLAS(Ref<TLAS>& tlas, const Ref<Buffer>& instances, size_t instanceCount, CommandList* commandList);
 
         private:
-            void BuildBLASBatch(const std::vector<uint32_t>& batchIndices,
-                std::vector<Ref<BLAS>>& blases, Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool);
+            void BuildTLAS(Ref<TLAS>& tlas, VkDeviceAddress instanceAddress, size_t instanceCount, CommandList* commandList);
 
-            void CompactBLASBatch(const std::vector<uint32_t>& batchIndices,
-                std::vector<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool);
+            void BuildBLASBatch(const std::span<uint32_t>& batchIndices, std::span<Ref<BLAS>>& blases, 
+                Ref<QueryPool>& queryPool, CommandList* commandList);
+
+            void RecordBLASBuilds(std::span<const Ref<BLAS>> blases, bool update, CommandList* commandList);
+
+            void CompactBLASBatch(const std::span<uint32_t>& batchIndices,
+                std::span<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool, CommandList* commandList);
+
+            Ref<Graphics::Buffer> scratchBuffer = nullptr;
+            Ref<Graphics::MultiBuffer> instanceBuffer = nullptr;
 
         };
 

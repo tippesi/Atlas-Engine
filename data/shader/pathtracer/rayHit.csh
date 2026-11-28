@@ -1,3 +1,6 @@
+// The reference weights every light of the buffer (RayTracingHelper), see GetLight
+#define LIGHT_CANDIDATE_COUNT 128
+
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
 #include <../raytracer/direct.hsh>
@@ -9,11 +12,15 @@
 #include <../common/PI.hsh>
 
 #include <../brdf/brdfEval.hsh>
+#include <../brdf/transmission.hsh>
 #include <../brdf/brdfSample.hsh>
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
+#include <../clouds/shadow.hsh>
 
+#ifndef RAY_TRACING_PIPELINE
 layout (local_size_x = 32) in;
+#endif
 
 #ifdef REALTIME
 layout (set = 3, binding = 1, r32ui) uniform uimage2DArray frameAccumImage;
@@ -22,8 +29,13 @@ layout (set = 3, binding = 6, r32f) writeonly uniform image2D depthImage;
 layout (set = 3, binding = 7, rg16f) writeonly uniform image2D normalImage;
 layout (set = 3, binding = 8, r16ui) writeonly uniform uimage2D materialIdxImage;
 layout (set = 3, binding = 9, rgba8) writeonly uniform image2D albedoImage;
+layout (set = 3, binding = 10, rgba16f) writeonly uniform image2D emissionImage;
 #else
 layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
+#endif
+
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 11) uniform sampler2D cloudMap;
 #endif
 
 /*
@@ -40,22 +52,25 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     int sampleCount;
     int bounceCount;
     float seed;
-    float exposure;
     int samplesPerFrame;
     float maxRadiance;
 } Uniforms;
 
 const float gamma = 1.0 / 2.2;
+const float minAlbedo = 0.02;
 
 Surface EvaluateBounce(inout Ray ray, inout RayPayload payload);
 vec3 EvaluateDirectLight(inout Surface surface);
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload);
+vec3 RefractThrough(Surface surface, vec3 direction, float raySeed, inout float seed);
 float CheckVisibility(Surface surface, float lightDistance);
+vec3 GetDemodulationAlbedo(Surface surface);
 
 void main() {
     
     if (IsRayInvocationValid()) {
         Ray ray = ReadRay();
+        TraceBufferedRay(ray);
         RayPayload payload;
 
         payload.radiance = vec3(0.0);
@@ -81,6 +96,8 @@ void main() {
             vec3 position;
             uint materialId;
             vec3 geometryNormal;
+            vec3 albedo;
+            vec3 emission;
             if (ray.hitID >= 0) {
                 instance = bvhInstances[nonuniformEXT(ray.hitInstanceID)];
                 lastMatrix = mat4(transpose(instanceLastMatrices[nonuniformEXT(ray.hitInstanceID)]));
@@ -88,6 +105,9 @@ void main() {
                 position = surface.P;
                 materialId = surface.material.ID;
                 geometryNormal = surface.geometryNormal;
+                albedo = GetDemodulationAlbedo(surface);
+                emission = surface.material.blendMode == blendModeMultiply ? vec3(0.0) : surface.material.emissiveColor *
+                    (surface.material.blendMode == blendModeAdditive ? surface.material.opacity : 1.0);
             }
             else {
                 instance.inverseMatrix = mat3x4(1.0);
@@ -95,6 +115,8 @@ void main() {
                 position = ray.origin + ray.direction * 100.0;
                 materialId = 65535;
                 geometryNormal = vec3(1.0, 0.0, 0.0);
+                albedo = vec3(1.0);
+                emission = vec3(0.0);
             }
 
             // As a reminder: The current inverse matrix is also transposed
@@ -102,20 +124,23 @@ void main() {
 
             vec4 viewSpacePos = globalData.vMatrix * vec4(position, 1.0);
             vec4 projPositionCurrent = globalData.pMatrix * viewSpacePos;
-            vec4 projPositionLast = globalData.pvMatrixLast * vec4(lastPos, 1.0);
+            vec4 projPositionLast = globalData.pMatrix * globalData.vMatrixLast * vec4(lastPos, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
 
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
+            
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
 
-            imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? viewSpacePos.z : INF, 0.0, 0.0, 0.0));
+            imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? projPositionCurrent.z / projPositionCurrent.w : INF, 0.0, 0.0, 0.0));
             imageStore(materialIdxImage, pixel, uvec4(materialId, 0.0, 0.0, 0.0));
             imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));
+            imageStore(albedoImage, pixel, vec4(albedo, 1.0));
+            imageStore(emissionImage, pixel, vec4(min(emission, vec3(65000.0)), 1.0));
         }
 #endif
-        
+
         if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {
 #ifndef REALTIME
             if (Uniforms.sampleCount > 0)
@@ -124,7 +149,8 @@ void main() {
             accumColor += vec4(payload.radiance, 1.0);
             imageStore(outAccumImage, pixel, accumColor);
 
-            vec3 color = accumColor.rgb * Uniforms.exposure / float(Uniforms.sampleCount + 1);
+            // The pre-exposure of the radiance is the exposure
+            vec3 color = accumColor.rgb / float(Uniforms.sampleCount + 1);
             color = vec3(1.0) - exp(-color);
             //color = color / (vec3(1.0) + color);
 
@@ -165,26 +191,62 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // we add the contribution of the environment map
     if (ray.hitID == -1) {
         // Clamp env map, since there is only a uniform sampling for now
-        payload.radiance += min(1.0 * SampleEnvironmentMap(ray.direction).rgb * 
-            payload.throughput, vec3(10.0));
+        payload.radiance += min(SampleEnvironmentMap(ray.direction).rgb *
+            payload.throughput, vec3(1000.0));
         payload.throughput = vec3(0.0);
         return surface;    
     }
+
+    int lod = int(ray.hitDistance / 30.0);
+    lod = 0;
     
-    // Unpack the compressed triangle and extract surface parameters
-    Instance instance = GetInstance(ray);
-    Triangle tri = GetTriangle(ray, instance);
-    surface = GetSurfaceParameters(instance, tri, ray, true, 0);
+    bool backfaceHit;
+    surface = GetHitSurface(ray, true, backfaceHit, lod);
+
+    // Additive surfaces add their light, multiplied ones tint the light behind them, the ray continues unchanged
+    if (surface.material.blendMode == blendModeAdditive || surface.material.blendMode == blendModeMultiply) {
+        if (surface.material.blendMode == blendModeAdditive) {
+            vec3 emission = surface.material.emissiveColor * surface.material.opacity;
+#ifdef REALTIME
+            // The primary emission is added after the denoiser
+            emission = Uniforms.bounceCount > 0 ? emission : vec3(0.0);
+#endif
+            payload.radiance += payload.throughput * (emission + EvaluateDirectLight(surface));
+        }
+        else {
+            payload.throughput *= mix(vec3(1.0), surface.material.baseColor, surface.material.opacity);
+        }
+        ray.origin = surface.P + ray.direction * EPSILON;
+        return surface;
+    }
+
+    // Alpha blended surfaces which aren't two sided cover the light behind them once like in the rasterizer, their back
+    // faces are only where the rays leave them
+    if (backfaceHit && surface.material.blendMode == blendModeAlpha) {
+        // The ray crossed the medium since it entered at the front face
+        payload.throughput *= GetAbsorption(surface.material.attenuationColor, surface.material.attenuationDistance,
+            ray.hitDistance);
+        surface.material.opacity = 0.0;
+        float curSeed = Uniforms.seed;
+        ray.direction = RefractThrough(surface, ray.direction, float(ray.ID), curSeed);
+        ray.origin = surface.P + ray.direction * EPSILON;
+        return surface;
+    }
 
     // If we hit an emissive surface we need to terminate the ray
+#ifndef REALTIME
     if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&
         Uniforms.bounceCount == 0) {
         payload.radiance += surface.material.emissiveColor;
     }
+#else
+    // The primary emission is added after the denoiser
+    if (Uniforms.bounceCount > 0)
+        payload.radiance += payload.throughput * surface.material.emissiveColor;
+#endif
 
-    // Evaluate direct and indirect light
-    vec3 radiance = payload.throughput * surface.material.opacity
-        * EvaluateDirectLight(surface);
+    // Evaluate direct and indirect light, the direct light is weighted by the opacity
+    vec3 radiance = payload.throughput * EvaluateDirectLight(surface);
     
     // Clamp indirect radiance
     // This has to be used cautiously and might be the reason
@@ -206,58 +268,83 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 
 }
 
+vec3 GetDemodulationAlbedo(Surface surface) {
+
+    // Additive and multiplied surfaces only change the light behind them
+    if (surface.material.blendMode == blendModeAdditive || surface.material.blendMode == blendModeMultiply)
+        return vec3(1.0);
+
+    vec3 diffuse = (1.0 - surface.material.metalness) * surface.material.baseColor;
+    vec3 specular = EvaluateIndirectSpecularBRDF(surface);
+    vec3 albedo = mix(vec3(1.0), diffuse + specular, saturate(surface.material.opacity));
+    // Quantized like the albedo image
+    return round(max(saturate(albedo), vec3(minAlbedo)) * 255.0) / 255.0;
+
+}
+
 vec3 EvaluateDirectLight(inout Surface surface) {
 
     if (GetLightCount() == 0)
         return vec3(0.0);
 
     float curSeed = Uniforms.seed;
-    float raySeed = float(gl_GlobalInvocationID.x);
+    float raySeed = float(INVOCATION_ID.x);
 
     float lightPdf;
     Light light = GetLight(surface, raySeed, curSeed, lightPdf);
 
     float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
-    
-    // Evaluate the BRDF
-    vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
-    reflectance *= surface.material.opacity;
-    vec3 radiance = light.radiance * solidAngle;
+    SampleLight(light, surface, solidAngle, lightDistance);
 
-    // Check for visibilty. This is important to get an
-    // estimate of the solid angle of the light from point P
-    // on the surface.
-    radiance *= CheckVisibility(surface, lightDistance);
-    
-    return reflectance * radiance * surface.NdotL / lightPdf;
+    if (lightPdf <= 0.0) return vec3(0.0);
+
+    vec3 transmissionColor = GetTransmissionColor(surface.material);
+    // Front side reflection, transmission is evaluated separately below. Alpha blended surfaces like glass reflect
+    // regardless of their opacity
+    float specularOpacity = surface.material.blendMode == blendModeAlpha ? 1.0 : surface.material.opacity;
+    vec3 reflectance = EvaluateDiffuseBRDF(surface) * surface.material.opacity +
+        EvaluateSpecularBRDF(surface) * specularOpacity;
+    vec3 radiance = light.radiance * solidAngle;
+#ifdef CLOUD_SHADOWS
+    if (light.type == uint(DIRECTIONAL_LIGHT))
+        radiance *= CalculateCloudShadow(vec3(globalData.vMatrix * vec4(surface.P, 1.0)), cloudShadowUniforms.cloudShadow,
+            cloudMap);
+#endif
+    float visibility = light.castShadow ? CheckVisibility(surface, lightDistance) : 1.0;
+    vec3 direct = reflectance * radiance * surface.NdotL * visibility / lightPdf;
+
+    if (surface.material.transmissive && dot(surface.L, surface.geometryNormal) < 0.0) {
+        Surface backSurface = GetTransmissionSurface(surface);
+        if (backSurface.NdotL > 0.0) {
+            float backVisibility = light.castShadow ? CheckVisibility(backSurface, lightDistance) : 1.0;
+            direct += transmissionColor * EvaluateDiffuseBRDF(backSurface) * surface.material.opacity *
+                radiance * backSurface.NdotL * backVisibility / lightPdf;
+        }
+    }
+
+    return direct;
 
 }
 
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload) {
 
-    // Something that is not ideal right now:
-    // There should be a difference between the shading normal and the 
-    // geometry normal. Hemisphere sampling should either be done using the geometry
-    // normal or we should check if we somehow sampled the lower hemisphere below
-    // the surface. In that case we need to stop the ray to prevent leaking from below.
-    // This case can only happen with normal maps enabled. Additionally we should use
-    // the previous ray direction/view direction to offset the ray origin from the surface
     Material mat = surface.material;
-    ray.origin = surface.P;
+    float opacity = saturate(mat.opacity);
+    vec3 transmissionColor = GetTransmissionColor(mat);
 
     float curSeed = Uniforms.seed;
     float raySeed = float(ray.ID);
 
-    float refractChance = clamp(1.0 - mat.opacity, 0.1, 0.9);
-    refractChance = mat.opacity == 1.0 ? 0.0 : refractChance;
+    float passThroughChance = opacity == 1.0 ? 0.0 : clamp(1.0 - opacity, 0.1, 0.9);
 
     float rnd = saturate(random(raySeed, curSeed));
 
     BRDFSample brdfSample;
 
-    bool refracted = false;
-    if (rnd >= refractChance) {
+    bool transmitted = false;
+    bool passedThrough = false;
+    float cosine = 1.0;
+    if (rnd >= passThroughChance) {
         rnd = random(raySeed, curSeed);
 
         vec3 F = FresnelSchlick(surface.F0, surface.F90, surface.NdotV);
@@ -269,39 +356,68 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 
         if (rnd < specChance) {
             brdfSample = SampleSpecularBRDF(surface, vec2(u0, u1));
-            brdfSample.reflectance *= mat.opacity;
+            // Alpha blended surfaces like glass reflect regardless of their opacity
+            brdfSample.reflectance *= mat.blendMode == blendModeAlpha ? 1.0 : opacity;
             brdfSample.pdf *= specChance;
+            cosine = surface.NdotL;
         }
         else {
-            brdfSample = SampleDiffuseBRDF(surface, vec2(u0, u1));
-            brdfSample.reflectance *= (1.0 - surface.material.metalness) * mat.opacity;
-            brdfSample.pdf *= (1.0 - specChance);
+            // Transmission is an additional diffuse lobe on the back side, choose between both lobes
+            float transmissionWeight = dot(transmissionColor, vec3(1.0 / 3.0));
+            float transmissionChance = transmissionWeight / (1.0 + transmissionWeight);
+            if (mat.metalness >= 1.0) transmissionChance = 0.0;
+            if (transmissionChance > 0.0 && random(raySeed, curSeed) < transmissionChance) {
+                Surface backSurface = GetTransmissionSurface(surface);
+                brdfSample = SampleDiffuseBRDF(backSurface, vec2(u0, u1));
+                brdfSample.reflectance *= (1.0 - mat.metalness) * transmissionColor * opacity;
+                brdfSample.pdf *= (1.0 - specChance) * transmissionChance;
+                cosine = backSurface.NdotL;
+                transmitted = true;
+            }
+            else {
+                brdfSample = SampleDiffuseBRDF(surface, vec2(u0, u1));
+                brdfSample.reflectance *= (1.0 - mat.metalness) * opacity;
+                brdfSample.pdf *= (1.0 - specChance) * (1.0 - transmissionChance);
+                cosine = surface.NdotL;
+            }
         }
 
-        brdfSample.pdf *= (1.0 - refractChance);
-        ray.origin += surface.V * EPSILON;
+        brdfSample.pdf *= (1.0 - passThroughChance);
     }
     else {
-        brdfSample.L = ray.direction;
-        brdfSample.pdf = refractChance;
-        brdfSample.reflectance = vec3(1.0 - mat.opacity);
-        
-        // We want full throughput
-        surface.NdotL = 1.0;
-        ray.origin -= surface.N * EPSILON;
-
-        refracted = true;
+        brdfSample.L = RefractThrough(surface, ray.direction, raySeed, curSeed);
+        brdfSample.pdf = passThroughChance;
+        // What alpha blended surfaces reflect doesn't pass them, cut out ones only have holes
+        brdfSample.reflectance = vec3(1.0 - opacity) *
+            (mat.blendMode == blendModeAlpha ? vec3(1.0) - EvaluateIndirectSpecularBRDF(surface) : vec3(1.0));
+        // Thin surfaces absorb the light on its way through their slab
+        if (mat.thickness > 0.0) {
+            float cosineInside = sqrt(max(1.0 - (1.0 - sqr(surface.NdotV)) / sqr(mat.refractiveIndex), 0.01));
+            brdfSample.reflectance *= GetAbsorption(mat.attenuationColor, mat.attenuationDistance, mat.thickness / cosineInside);
+        }
+        transmitted = true;
+        passedThrough = true;
     }
 
     if (brdfSample.pdf > 0.0 && sum(brdfSample.reflectance) > 0.0) {
         payload.throughput *= brdfSample.reflectance *
-            surface.NdotL / brdfSample.pdf;
+            cosine / brdfSample.pdf;
     }
     else {
         payload.throughput = vec3(0.0);
+        return;
     }
     
     ray.direction = normalize(brdfSample.L);
+    float geometryCosine = dot(ray.direction, surface.geometryNormal);
+    if (!passedThrough && (transmitted ? geometryCosine >= 0.0 : geometryCosine <= 0.0)) {
+        payload.throughput = vec3(0.0);
+        return;
+    }
+    // Offset the origin to the side the ray continues on, rays passing through may also leave a surface or be reflected
+    float passedSide = dot(ray.direction, surface.geometryNormal) > 0.0 ? 1.0 : -1.0;
+    ray.origin = transmitted && !passedThrough ? surface.P - surface.geometryNormal * EPSILON :
+        passedThrough ? surface.P + surface.geometryNormal * (passedSide * EPSILON) : surface.P + surface.V * EPSILON;
     payload.throughput *= mat.ao;
 
     // Russain roulette, terminate rays with a chance of one percent
@@ -315,11 +431,6 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
         return;
     }
 
-    if (dot(ray.direction, surface.geometryNormal) <= 0.0 && !refracted) {
-        payload.throughput = vec3(0.0);
-        return;
-    }
-
     payload.throughput /= probability;
 
 }
@@ -329,11 +440,38 @@ float CheckVisibility(Surface surface, float lightDistance) {
     if (surface.NdotL > 0.0) {
         Ray ray;
         ray.direction = surface.L;
+        // For transmitted light N is already flipped to the back side
         ray.origin = surface.P + surface.N * EPSILON;
-        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
+        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW_TRANSPARENCY, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {
         return 0.0;
     }
+
+}
+
+// Refracting surfaces bend the ray where it enters and leaves them, it's reflected beyond the critical angle. Rough ones
+// refract it through a normal of their microfacets. Thin ones are slabs, the ray leaves them right away through the
+// parallel side
+vec3 RefractThrough(Surface surface, vec3 direction, float raySeed, inout float seed) {
+
+    if (surface.material.refractiveIndex == 1.0)
+        return direction;
+
+    vec3 facingNormal = dot(direction, surface.N) < 0.0 ? surface.N : -surface.N;
+    if (surface.material.roughness > 0.0) {
+        vec2 u = vec2(random(raySeed, seed), random(raySeed, seed));
+        vec3 microfacetNormal = ImportanceSampleGGX(u, facingNormal, sqr(surface.material.roughness));
+        facingNormal = dot(microfacetNormal, direction) < 0.0 ? microfacetNormal : facingNormal;
+    }
+    vec3 refracted = refract(direction, facingNormal, 1.0 / surface.material.refractiveIndex);
+    if (dot(refracted, refracted) == 0.0)
+        return reflect(direction, facingNormal);
+    if (surface.material.thickness == 0.0)
+        return refracted;
+
+    vec3 sideNormal = dot(direction, surface.N) < 0.0 ? surface.N : -surface.N;
+    vec3 leaving = refract(refracted, sideNormal, surface.material.refractiveIndex);
+    return dot(leaving, leaving) > 0.0 ? leaving : direction;
 
 }

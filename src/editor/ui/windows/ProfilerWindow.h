@@ -1,20 +1,20 @@
 #pragma once
 
-#include "Window.h"
+#include "DrawerWindow.h"
 
-#include <ImguiExtension/panels/GPUProfilerPanel.h>
+#include <ImguiExtension/panels/ProfilerPanel.h>
 
 namespace Atlas::Editor::UI {
 
-    class ProfilerWindow : public Window {
+    class ProfilerWindow : public DrawerWindow {
 
     public:
-        explicit ProfilerWindow(bool show) : Window("Profiler", show) {}
+        explicit ProfilerWindow(bool show) : DrawerWindow("Profiler", show) {}
 
         void Render();
 
     private:
-        ImguiExtension::GPUProfilerPanel gpuProfilerPanel;
+        ImguiExtension::ProfilerPanel profilerPanel;
 
     };
 

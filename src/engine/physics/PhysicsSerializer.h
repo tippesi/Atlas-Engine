@@ -30,6 +30,18 @@ namespace Atlas::Physics {
 
     void from_json(const json& j, HeightFieldShapeSettings& p);
 
+    void to_json(json& j, const ConvexHullShapeSettings& p);
+
+    void from_json(const json& j, ConvexHullShapeSettings& p);
+
+    void to_json(json& j, const CylinderShapeSettings& p);
+
+    void from_json(const json& j, CylinderShapeSettings& p);
+
+    void to_json(json& j, const CompoundShapeSettings& p);
+
+    void from_json(const json& j, CompoundShapeSettings& p);
+
     void to_json(json& j, const Shape& p);
 
     void from_json(const json& j, Ref<Shape>& p);
@@ -38,9 +50,17 @@ namespace Atlas::Physics {
 
     void from_json(const json& j, BodyCreationSettings& p);
 
+    void to_json(json& j, const ConstraintCreationSettings& p);
+
+    void from_json(const json& j, ConstraintCreationSettings& p);
+
     void to_json(json& j, const PlayerCreationSettings& p);
 
     void from_json(const json& j, PlayerCreationSettings& p);
+
+    void to_json(json& j, const DebugDrawSettings& p);
+
+    void from_json(const json& j, DebugDrawSettings& p);
 
     void SerializePhysicsWorld(json& j, Ref<PhysicsWorld>& physicsWorld) ;
 

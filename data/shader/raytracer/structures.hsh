@@ -27,6 +27,10 @@ struct Ray {
     int hitInstanceID;
 
     int currentInstanceID;
+
+    // Hardware ray tracing returns the hit point on the triangle and its object space normal
+    vec2 hitBarycentrics;
+    vec3 hitGeometryNormal;
 };
 
 struct RayPayload {
@@ -41,15 +45,16 @@ struct AABB {
     
 };
 
+// See GPUTriangle, the positions come from the acceleration structure or from the BVH triangles
 struct PackedTriangle {
-    
-    vec4 v0;
-    vec4 v1;
-    vec4 v2;
-    vec4 d0;
-    vec4 d1;
-    vec4 d2;
-    
+
+    // 10:10:10 normals, the tangent with the handedness of the bitangent in w
+    uvec4 normalsTangent;
+    // Half texture coordinates, the material index in the lower 16 bit and the opacity as a half in the upper
+    uvec4 texCoordsMaterialOpacity;
+    // RGBA8, w is unused
+    uvec4 colors;
+
 };
 
 struct Triangle {
@@ -64,7 +69,8 @@ struct Triangle {
     
     vec3 t;
     vec3 bt;
-    
+    float handedness;
+
     vec2 uv0;
     vec2 uv1;
     vec2 uv2;
@@ -74,7 +80,6 @@ struct Triangle {
     vec4 color2;
     
     int materialIndex;
-    bool endOfNode;
     float opacity;
     
 };
@@ -101,6 +106,23 @@ struct Texture {
     int valid;
 };
 
+// See GPUPackedMaterial, GetRaytraceMaterial of buffers.hsh unpacks it
+struct PackedRaytraceMaterial {
+    uint baseColor;
+    uint emissiveRedGreen;
+    uint emissiveBlueThickness;
+    uint opacityRoughnessMetalnessAo;
+    uint reflectanceNormalScaleFlags;
+    uint tiling;
+    uint uvAnimation;
+    uint textures[4];
+    uint transmissionColor;
+    uint idGraphHitGroup;
+    uint graphParameterOffset;
+    uint refractiveIndexAttenuationDistance;
+    uint attenuationColor;
+};
+
 struct RaytraceMaterial {
 
     int ID;
@@ -122,7 +144,10 @@ struct RaytraceMaterial {
     float reflectance;
     
     float normalScale;
-    
+
+    float tiling;
+    float terrainTiling;
+        
     int invertUVs;
     int twoSided;
     int cullBackFaces;
@@ -134,6 +159,28 @@ struct RaytraceMaterial {
     int roughnessTexture;
     int metalnessTexture;
     int aoTexture;
+    int emissiveTexture;    
+    int terrainNormalTexture;
+
+    uint transmissionColor;
+
+    // Hit group of a material graph in ray tracing pipelines, 0 without one
+    uint graphHitGroup;
+    uint graphParameterOffset;
+    float uvAnimationX;
+    float uvAnimationY;
+
+    // A blend mode of common/material.hsh, rays pass through translucent surfaces except with TRANSLUCENT_HITS, shadow
+    // rays are dimmed by their opacity
+    uint blendMode;
+    // Of the inside of refracting surfaces, 1 for the others
+    float refractiveIndex;
+
+    // Absorbed inside refracting surfaces, 0 doesn't absorb
+    uint attenuationColor;
+    float attenuationDistance;
+    // Of two sided refracting surfaces, which are thin slabs, 0 for the others
+    float thickness;
 
 };
 
@@ -151,19 +198,14 @@ struct Light {
     vec3 radiance;
 
     uint type;
-    int triangleIdx;
-    int instanceIdx;
+
+    bool castShadow;
 
     float pdf;
-    float area;
+    float radius;
+    float angleScale;
+    float angleOffset;
     float brightness;
-};
-
-struct LightSample {
-    vec3 P;
-    vec3 N;
-
-    float pdf;
 };
 
 struct Instance {
@@ -174,6 +216,10 @@ struct Instance {
     
     int nextInstance;
     int mask;
+
+    // Device addresses of the normals of a deformed instance and the indices of its mesh, see GetTriangle
+    uvec2 deformedVertices;
+    uvec2 meshIndices;
 };
 
 struct PackedBVHNode {
@@ -195,14 +241,3 @@ struct PackedBVHTriangle {
     vec4 v1;
     vec4 v2;
 };
-
-layout(push_constant) uniform constants {
-    int lightCount;
-    uint rayBufferOffset;
-    uint rayPayloadBufferOffset;
-    uint rayBufferSize;
-    int useRayBinning;
-    int padding0;
-    int padding1;
-    int padding2;
-} PushConstants;

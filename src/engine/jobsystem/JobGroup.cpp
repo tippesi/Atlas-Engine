@@ -8,13 +8,19 @@ namespace Atlas {
 
     }
 
+    JobGroup::JobGroup(const char* name, JobPriority priority) : name(name), priority(priority) {
+
+
+
+    }
+
     JobGroup::~JobGroup() {
         
         AE_ASSERT(HasFinished() && "Job group destructed before every job executed");
 
     }
 
-    bool JobGroup::HasFinished() {
+    bool JobGroup::HasFinished() const {
 
         return counter.load() == 0;
 

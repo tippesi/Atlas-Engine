@@ -18,7 +18,7 @@ layout(location=4) in vec4 vVertexColors;
 #endif
 
 // Vertex out parameters
-#ifdef NORMAl_MAP
+#ifdef NORMAL_MAP
 layout(location=0) out vec3 positionVS;
 #endif
 layout(location=1) out vec3 normalVS;
@@ -31,6 +31,11 @@ layout(location=4) out vec3 ndcLastVS;
 #ifdef VERTEX_COLORS
 layout(location=5) out vec4 vertexColorsVS;
 #endif
+
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+layout(location=7) out mat3 TBN;
+#endif
+
 
 layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
 
@@ -84,7 +89,7 @@ void main() {
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);
-    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? -1.0 : 1.0);
+    float correctionFactor = vTangent.w * (pushConstants.invertUVs > 0 ? -1.0 : 1.0);
     vec3 tangent = normalize(mat3(mvMatrix) * vTangent.xyz);
     
     vec3 bitangent = normalize(correctionFactor * 

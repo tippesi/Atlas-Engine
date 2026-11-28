@@ -1,5 +1,7 @@
 #include "PostProcessingSerializer.h"
 
+#include "resource/ResourceManager.h"
+
 namespace Atlas::PostProcessing {
 
     void to_json(json& j, const ChromaticAberration& p) {
@@ -42,13 +44,11 @@ namespace Atlas::PostProcessing {
 
     void to_json(json& j, const TAA& p) {
         j = json {
-            {"enable", p.enable},
             {"jitterRange", p.jitterRange},
         };
     }
 
     void from_json(const json& j, TAA& p) {
-        j.at("enable").get_to(p.enable);
         j.at("jitterRange").get_to(p.jitterRange);
     }
 
@@ -70,8 +70,55 @@ namespace Atlas::PostProcessing {
         j.at("color").get_to(p.color);
     }
 
+    void to_json(json& j, const Bloom& p) {
+        j = json {
+            {"enable", p.enable},
+            {"filterSize", p.filterSize},
+            {"mipLevels", p.mipLevels},
+            {"strength", p.strength},
+            {"dirtStrength", p.dirtStrength},
+            {"threshold", p.threshold},
+        };
+
+        if (p.dirtMap.IsValid() && !p.dirtMap.IsGenerated())
+            j["dirtMap"] = p.dirtMap.GetResource()->path;
+            
+    }
+
+    void from_json(const json& j, Bloom& p) {
+        j.at("enable").get_to(p.enable);
+        j.at("filterSize").get_to(p.filterSize);
+        j.at("mipLevels").get_to(p.mipLevels);
+        j.at("strength").get_to(p.strength);
+        j.at("threshold").get_to(p.threshold);
+
+        try_get_json(j, "dirtStrength", p.dirtStrength);
+
+        p.dirtMap = j.contains("dirtMap") ? ResourceManager<Texture::Texture2D>::GetOrLoadResourceAsync(j["dirtMap"], false,
+            Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0) : ResourceHandle<Texture::Texture2D>();
+    }
+
+    void to_json(json& j, const AutoExposure& p) {
+        j = json {
+            {"enable", p.enable},
+            {"luminanceMin", p.luminanceMin},
+            {"luminanceMax", p.luminanceMax},
+            {"blackLevel", p.blackLevel},
+            {"timeCoefficient", p.timeCoefficient}
+        };
+    }
+
+    void from_json(const json& j, AutoExposure& p) {
+        j.at("enable").get_to(p.enable);
+        j.at("luminanceMin").get_to(p.luminanceMin);
+        j.at("luminanceMax").get_to(p.luminanceMax);
+        j.at("blackLevel").get_to(p.blackLevel);
+        j.at("timeCoefficient").get_to(p.timeCoefficient);
+    }
+
     void to_json(json& j, const PostProcessing& p) {
         j = json {
+            {"exposureCompensation", p.exposureCompensation},
             {"tint", p.tint},
             {"saturation", p.saturation},
             {"contrast", p.contrast},
@@ -79,15 +126,18 @@ namespace Atlas::PostProcessing {
             {"screenMaxLuminance", p.screenMaxLuminance},
             {"filmicTonemapping", p.filmicTonemapping},
             {"taa", p.taa},
-            {"fsr2", p.fsr2},
+            {"upscaler", static_cast<int>(p.upscaler)},
             {"vignette", p.vignette},
             {"chromaticAberration", p.chromaticAberration},
             {"filmGrain", p.filmGrain},
             {"sharpen", p.sharpen},
+            {"bloom", p.bloom},
+            {"autoExposure", p.autoExposure},
         };
     }
 
     void from_json(const json& j, PostProcessing& p) {
+        try_get_json(j, "exposureCompensation", p.exposureCompensation);
         j.at("tint").get_to(p.tint);
         j.at("saturation").get_to(p.saturation);
         j.at("contrast").get_to(p.contrast);
@@ -95,11 +145,20 @@ namespace Atlas::PostProcessing {
         j.at("screenMaxLuminance").get_to(p.screenMaxLuminance);
         j.at("filmicTonemapping").get_to(p.filmicTonemapping);
         j.at("taa").get_to(p.taa);
-        j.at("fsr2").get_to(p.fsr2);
+        if (j.contains("upscaler")) {
+            p.upscaler = static_cast<Upscaler>(j.at("upscaler").get<int>());
+        }
+        else {
+            // Older scenes have separate switches for FSR2 and TAA, FSR2 took precedence
+            auto taa = j.at("taa").value("enable", false);
+            p.upscaler = j.at("fsr2").get<bool>() ? Upscaler::FSR2 : (taa ? Upscaler::TAA : Upscaler::None);
+        }
         j.at("vignette").get_to(p.vignette);
         j.at("chromaticAberration").get_to(p.chromaticAberration);
         j.at("filmGrain").get_to(p.filmGrain);
         j.at("sharpen").get_to(p.sharpen);
+        try_get_json(j, "bloom", p.bloom);
+        try_get_json(j, "autoExposure", p.autoExposure);
     }
 
 }

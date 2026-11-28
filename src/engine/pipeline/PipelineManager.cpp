@@ -1,26 +1,33 @@
 #include "PipelineManager.h"
 
+#include "../Clock.h"
 #include "../common/Hash.h"
 #include "../loader/ShaderLoader.h"
 #include "../graphics/GraphicsDevice.h"
+#include "../events/EventManager.h"
 
 namespace Atlas {
 
 #ifdef AE_BUILDTYPE_RELEASE
-    bool PipelineManager::hotReload = false;
+    std::atomic_bool PipelineManager::hotReload = false;
 #else
-    bool PipelineManager::hotReload = true;
+    std::atomic_bool PipelineManager::hotReload = true;
 #endif
     std::shared_mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
+    std::mutex PipelineManager::globalLayoutOverridesMutex;
     Ref<Graphics::DescriptorSetLayout> PipelineManager::globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
-    JobGroup PipelineManager::hotReloadGroup;
+    JobGroup PipelineManager::hotReloadGroup{ "Shader hot reload" };
+    float PipelineManager::lastHotReloadCheck = 0.0f;
 
     void PipelineManager::Init() {
 
         for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
             globalDescriptorSetLayoutOverrides[i] = nullptr;
         }
+
+        // The shaders of another asset directory can differ under the same path
+        Events::EventManager::AssetDirectoryChangeEventDelegate.Subscribe([]() { ClearPipelines(); });
 
     }
 
@@ -32,25 +39,39 @@ namespace Atlas {
 
     void PipelineManager::Clear() {
 
-        for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-            globalDescriptorSetLayoutOverrides[i] = nullptr;
+        {
+            std::scoped_lock lock(globalLayoutOverridesMutex);
+            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                globalDescriptorSetLayoutOverrides[i] = nullptr;
+            }
         }
 
+        ClearPipelines();
+
+    }
+
+    void PipelineManager::ClearPipelines() {
+
+        std::unique_lock lock(shaderToVariantsMutex);
         shaderToVariantsMap.clear();
 
     }
 
     void PipelineManager::Update() {
 
-        if (hotReload && hotReloadGroup.HasFinished()) {
+        // Going through all files every frame takes milliseconds, a change only has to show up soon
+        auto time = Clock::Get();
+        if (hotReload && hotReloadGroup.HasFinished() && time - lastHotReloadCheck >= hotReloadInterval) {
+            lastHotReloadCheck = time;
 
             JobSystem::Execute(hotReloadGroup, [&](JobData&) {
-                std::shared_lock lock(shaderToVariantsMutex);
+                auto allVariants = GetAllVariants();
 
                 std::unordered_map<std::string, std::filesystem::file_time_type> modifiedMap;
 
-                for (auto& [_, variants] : shaderToVariantsMap) {
+                for (auto& variants : allVariants) {
                     std::lock_guard innerLock(variants->variantsMutex);
+                    if (!variants->isComplete) continue;
 
                     for (auto& stageFile : variants->shader->shaderStageFiles) {
                         for (auto& includePath : stageFile.includes) {
@@ -65,9 +86,9 @@ namespace Atlas {
                     }
                 }
 
-                // Do check for hot reload only once per frame
-                for (auto& [hash, variants] : shaderToVariantsMap) {
+                for (auto& variants : allVariants) {
                     std::lock_guard innerLock(variants->variantsMutex);
+                    if (!variants->isComplete) continue;
 
                     if (hotReload && variants->shader->Reload(modifiedMap)) {
                         // Clear variants on hot reload
@@ -105,13 +126,15 @@ namespace Atlas {
 
     void PipelineManager::OverrideDescriptorSetLayout(Ref<Graphics::DescriptorSetLayout> layout, uint32_t set) {
 
-        std::unique_lock lock(shaderToVariantsMutex);
-
         if (set < DESCRIPTOR_SET_COUNT) {
 
-            globalDescriptorSetLayoutOverrides[set] = layout;
+            {
+                std::scoped_lock lock(globalLayoutOverridesMutex);
+                globalDescriptorSetLayoutOverrides[set] = layout;
+            }
 
-            for (auto& [_, variants] : shaderToVariantsMap) {
+            // A pipeline being created right now either has the new layout already or is checked here afterwards
+            for (auto& variants : GetAllVariants()) {
 
                 std::unordered_map<size_t, Ref<Graphics::Pipeline>> validPipelines;
 
@@ -137,28 +160,20 @@ namespace Atlas {
 
     }
 
+    Ref<Graphics::DescriptorSetLayout> PipelineManager::GetDescriptorSetLayoutOverride(uint32_t set) {
+
+        AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
+
+        std::scoped_lock lock(globalLayoutOverridesMutex);
+        return globalDescriptorSetLayoutOverrides[set];
+
+    }
+
     Ref<Graphics::Pipeline> PipelineManager::GetOrCreatePipeline(PipelineConfig& config) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
-        // In most cases we will find the variants and don't need a unique lock
-        PipelineVariants* variants = nullptr;
-        {
-            std::shared_lock lock(shaderToVariantsMutex);
-
-            if (shaderToVariantsMap.contains(config.shaderHash)) {
-                variants = shaderToVariantsMap[config.shaderHash].get();
-            }
-        }
-
-        // In case we didn't find anything we need to lock it for real
-        if (!variants) {
-            std::unique_lock lock(shaderToVariantsMutex);
-
-            auto pipelineVariants = std::make_shared<PipelineVariants>();
-            shaderToVariantsMap[config.shaderHash] = pipelineVariants;
-            variants = pipelineVariants.get();
-        }
+        auto variants = GetOrCreateVariants(config.shaderHash);
 
         {
             std::lock_guard lock(variants->variantsMutex);
@@ -179,18 +194,27 @@ namespace Atlas {
             if (!variants->pipelines.contains(config.variantHash)) {
                 auto shaderVariant = variants->shader->GetVariant(config.macros);
 
-                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-                    auto& layout = globalDescriptorSetLayoutOverrides[i];
-                    if (layout == nullptr) continue;
+                {
+                    std::scoped_lock overridesLock(globalLayoutOverridesMutex);
+                    for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                        auto& layout = globalDescriptorSetLayoutOverrides[i];
+                        if (layout == nullptr) continue;
 
-                    // Only override layout if it is compatible
-                    if (shaderVariant->sets[i].bindingCount > 0) {
-                        shaderVariant->TryOverrideDescriptorSetLayout(layout, i);
+                        // Only override layout if it is compatible
+                        if (shaderVariant->sets[i].bindingCount > 0) {
+                            shaderVariant->TryOverrideDescriptorSetLayout(layout, i);
+                        }
                     }
                 }
 
                 if (config.isCompute) {
                     auto pipelineDesc = Graphics::ComputePipelineDesc{
+                        .shader = shaderVariant
+                    };
+                    pipeline = graphicsDevice->CreatePipeline(pipelineDesc);
+                }
+                else if (config.isRayTracing) {
+                    auto pipelineDesc = Graphics::RayTracingPipelineDesc{
                         .shader = shaderVariant
                     };
                     pipeline = graphicsDevice->CreatePipeline(pipelineDesc);
@@ -207,6 +231,36 @@ namespace Atlas {
 
             return pipeline;
         }
+
+    }
+
+    Ref<PipelineManager::PipelineVariants> PipelineManager::GetOrCreateVariants(size_t shaderHash) {
+
+        {
+            std::shared_lock lock(shaderToVariantsMutex);
+            auto iter = shaderToVariantsMap.find(shaderHash);
+            if (iter != shaderToVariantsMap.end())
+                return iter->second;
+        }
+
+        std::unique_lock lock(shaderToVariantsMutex);
+        auto& variants = shaderToVariantsMap[shaderHash];
+        if (!variants)
+            variants = std::make_shared<PipelineVariants>();
+        return variants;
+
+    }
+
+    std::vector<Ref<PipelineManager::PipelineVariants>> PipelineManager::GetAllVariants() {
+
+        std::shared_lock lock(shaderToVariantsMutex);
+
+        std::vector<Ref<PipelineVariants>> allVariants;
+        allVariants.reserve(shaderToVariantsMap.size());
+        for (const auto& [_, variants] : shaderToVariantsMap)
+            allVariants.push_back(variants);
+
+        return allVariants;
 
     }
 

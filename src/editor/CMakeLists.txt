@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.7)
-project(AtlasEngineEditor VERSION 0.2.0)
+cmake_minimum_required(VERSION 3.25)
+project(AtlasEngineEditor VERSION 0.2.1)
 
 # Note: For this project, the root CMakeLists.txt turns
 # the ATLAS_IMGUI and ATLAS_EXPORT_MAIN options on.
@@ -45,9 +45,18 @@ add_executable(${PROJECT_NAME} ${EDITOR_SOURCE_FILES} ${ATLAS_ENGINE_MAIN_FILE})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 endif()
 
+target_precompile_headers(${PROJECT_NAME} REUSE_FROM AtlasEngine)
+
+# A running editor can't be overwritten (LNK1168), it keeps running from a renamed file
+if (WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_LINK
+        COMMAND ${CMAKE_COMMAND} -DEXECUTABLE=$<TARGET_FILE:${PROJECT_NAME}> -P ${CMAKE_CURRENT_SOURCE_DIR}/../bridge/MoveRunningExecutable.cmake)
+endif()
+
 # We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
 # needs to be turned on.
-target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension unofficial::imguizmo::imguizmo)
+target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension AtlasBridgeLibrary
+    imguizmo::imguizmo Jolt::Jolt)
 
 if (APPLE AND ATLAS_BUNDLE)
     set(path ${Vulkan_LIBRARY})

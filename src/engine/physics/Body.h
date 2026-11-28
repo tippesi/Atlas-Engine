@@ -13,9 +13,11 @@ namespace Atlas::Physics {
         Body() = default;
         Body(BodyID bodyId, PhysicsWorld* world) : bodyId(bodyId), world(world) {}
 
-        bool IsValid() const { return world != nullptr; }
+        bool IsValid() const { return world != nullptr && !bodyId.IsInvalid(); }
 
         void SetMatrix(mat4 matrix);
+
+        void MoveKinematic(mat4 matrix, float deltaTime);
 
         mat4 GetMatrix();
 
@@ -26,6 +28,9 @@ namespace Atlas::Physics {
         void SetLinearVelocity(vec3 velocity);
 
         vec3 GetLinearVelocity();
+
+        // Asleep bodies aren't moved by the simulation until something wakes them
+        bool IsActive();
 
         void SetAngularVelocity(vec3 velocity);
 
@@ -38,6 +43,20 @@ namespace Atlas::Physics {
         void SetFriction(float friction);
 
         float GetFriction();
+
+        void AddForce(vec3 force);
+
+        void AddForce(vec3 force, vec3 position);
+
+        void AddImpulse(vec3 impulse);
+
+        void AddImpulse(vec3 impulse, vec3 position);
+
+        void AddTorque(vec3 torque);
+
+        void AddAngularImpulse(vec3 angularImpulse);
+
+        Ref<Shape> GetShape() const;
 
         uint64_t GetUserData() const;
 

@@ -1,23 +1,24 @@
 #pragma once
 
 #include "../System.h"
-#include "Renderer.h"
-#include "PathTracingRenderer.h"
+#include "UpscalingRenderer.h"
 
 namespace Atlas {
 
     namespace Renderer {
 
-        class TemporalAARenderer : public Renderer {
+        class TemporalAARenderer : public UpscalingRenderer {
 
         public:
             TemporalAARenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Release() override { historyInvalid = true; }
 
-            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            vec2 GetJitter(const Ref<RenderTarget>& target, uint32_t frameIndex) const override;
+
+            void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) override;
 
         private:
             struct alignas(16) PushConstants {
@@ -27,11 +28,11 @@ namespace Atlas {
                 int32_t resetHistory;
             };
 
-            void Render(const Texture::Texture2D* outputTexture, const Texture::Texture2D* currentTexture, const Texture::Texture2D* historyTexture,
-                const Texture::Texture2D* velocityTexture, const Texture::Texture2D* historyVelocityTexture, const Texture::Texture2D* depthTexture,
-                const Texture::Texture2D* stencilTexture, PushConstants& constants, Graphics::CommandList* commandList);
-
             PipelineConfig pipelineConfig;
+
+            std::vector<vec2> haltonSequence;
+
+            bool historyInvalid = false;
 
         };
 

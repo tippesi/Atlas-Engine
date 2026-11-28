@@ -14,8 +14,8 @@ const float noiseScale = 0.1;
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(image).x ||
-    pixel.y > imageSize(image).y)
+    if (pixel.x >= imageSize(image).x ||
+    pixel.y >= imageSize(image).y)
     return;
 
     // Load the color from the image

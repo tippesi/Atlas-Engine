@@ -17,9 +17,11 @@ namespace Atlas {
 
             void DownscaleDepthOnly(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
-            void FillNormalTexture(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
+            void Patch(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
-            void GenerateReactiveMask(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
+            // Translucent surfaces with their coverage in the translucency texture are reactive as well
+            void GenerateReactiveMask(const Ref<RenderTarget>& target, const Texture::Texture2D* translucencyTexture,
+                Graphics::CommandList* commandList);
 
         private:
             void Downscale(const RenderTargetData* rt, const RenderTargetData* downsampledRt, Graphics::CommandList* commandList);

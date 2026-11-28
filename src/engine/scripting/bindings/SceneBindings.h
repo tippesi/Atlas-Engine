@@ -1,13 +1,14 @@
 #pragma once
 
 #include "../LuaScriptManager.h"
+#include "../Binder.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateSceneBindings(sol::table* ns);
+    void GenerateSceneBindings(Binder* ns);
 
-    void GenerateEntityBindings(sol::table* ns);
+    void GenerateEntityBindings(Binder* ns);
 
-    void GenerateComponentBindings(sol::table* ns);
+    void GenerateComponentBindings(Binder* ns);
 
 }

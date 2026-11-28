@@ -1,0 +1,7 @@
+// The bake stores the distance in front of the billboard plane plus one, texels without geometry stay zero. Filtered
+// texels at the silhouette mix both, divided by their coverage (the alpha of the base color) they are restored
+float ImpostorDepthOffset(float depth, float alpha) {
+
+    return depth / max(alpha, 1e-3) - 1.0;
+
+}

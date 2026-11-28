@@ -11,8 +11,15 @@ namespace Atlas {
 
             this->device = device;
 
-            const int32_t filterSize = 3;
             blurFilter.CalculateBoxFilter(filterSize);
+
+            std::vector<float> blurKernelWeights;
+            std::vector<float> blurKernelOffsets;
+            blurFilter.GetLinearized(&blurKernelWeights, &blurKernelOffsets, false);
+
+            auto mean = (blurKernelWeights.size() - 1) / 2;
+            blurKernelWeights = std::vector<float>(blurKernelWeights.begin() + mean, blurKernelWeights.end());
+            blurKernelOffsets = std::vector<float>(blurKernelOffsets.begin() + mean, blurKernelOffsets.end());
 
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
             scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
@@ -34,18 +41,20 @@ namespace Atlas {
 
             ssUniformBuffer = Buffer::UniformBuffer(sizeof(SSUniforms));
             // If we don't set the element size to the whole thing, otherwise uniform buffer element alignment kicks in
-            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(float) * (size_t(filterSize) + 1));
+            blurWeightsUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBufferBit, 
+                sizeof(float) * (size_t(filterSize) + 1), 1, blurKernelWeights.data());
 
         }
 
         void SSGIRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto ssgi = scene->ssgi;
+            auto ssgi = scene->renderState.ssgi;
             if (!ssgi || !ssgi->enable) return;
             
             ivec2 res = ivec2(target->giTexture.width, target->giTexture.height);
 
-            Graphics::Profiler::BeginQuery("Render SSGI");
+            CPUProfiler::Scope profilerScope("Render SSGI");
+            GPUProfiler::Scope gpuScope("Render SSGI");
 
             if (ssgi->halfResolution && target->GetGIResolution() == FULL_RES)
                 target->SetGIResolution(HALF_RES, false);
@@ -59,19 +68,18 @@ namespace Atlas {
                 target->historyGiLengthTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->historyGiTexture.image, layout, access},
                     {target->historyGiLengthTexture.image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
             }
 
             // Try to get a shadow map
             Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
+            auto& mainLight = scene->renderState.mainLight;
+            if (mainLight)
+                shadow = mainLight->shadow;
 
             auto downsampledRT = target->GetData(target->GetGIResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetGIResolution());
@@ -102,7 +110,11 @@ namespace Atlas {
             commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
             commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
 
-            Graphics::Profiler::BeginQuery("Main pass");
+            target->exposureTexture.Bind(commandList, 3, 13);
+
+            commandList->BindImage(downsampledRT->hiZTexture->image, downsampledRT->hiZTexture->sampler, 3, 14);
+
+            GPUProfiler::BeginQuery("Main pass");
 
             {
                 static int32_t frameCount = 0;
@@ -110,6 +122,14 @@ namespace Atlas {
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
                 groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
                 groupCount.y += ((res.y % 4 == 0) ? 0 : 1);
+
+                auto rtDataValid = scene->IsRtDataValid();
+                auto ddgiEnabled = scene->renderState.irradianceVolume && rtDataValid;
+                auto ddgiVisibility = ddgiEnabled && scene->renderState.irradianceVolume->visibility;
+
+                ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
+                ssgiPipelineConfig.ManageMacro("DDGI", ssgi->ddgi && ddgiEnabled);
+                ssgiPipelineConfig.ManageMacro("VISIBILITY_VOLUME", ssgi->ddgi && ddgiVisibility);
 
                 auto pipeline = PipelineManager::GetPipeline(ssgiPipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -121,6 +141,7 @@ namespace Atlas {
                     .rayCount = uint32_t(ssgi->rayCount),
                     .sampleCount = uint32_t(ssgi->sampleCount),
                     .downsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
+                    .hiZLevelCount = downsampledRT->hiZLevelCount,
                 };
                 ssUniformBuffer.SetData(&uniforms, 0);
 
@@ -136,12 +157,8 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
 
-
             {
-                Graphics::Profiler::EndAndBeginQuery("Temporal filter");
-
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                GPUProfiler::EndAndBeginQuery("Temporal filter");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
@@ -150,13 +167,13 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);
 
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->giTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {target->giLengthTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {target->historyGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {target->historyGiLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT}
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(target->giTexture.image, 3, 0);
                 commandList->BindImage(target->giLengthTexture.image, 3, 1);
@@ -179,100 +196,75 @@ namespace Atlas {
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-                // Need barriers for all four images
-                imageBarriers = {
-                    {target->giTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->giLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->historyGiTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                    {target->historyGiLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT}
-                };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                commandList->CopyImage(target->giTexture.image, target->historyGiTexture.image);
-                commandList->CopyImage(target->giLengthTexture.image, target->historyGiLengthTexture.image);
-
-                // Need barriers for all four images
-                imageBarriers = {
-                    {target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->giLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyGiLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                // The new history length is the one written this frame, no copy needed
+                std::swap(target->giLengthTexture, target->historyGiLengthTexture);
+                commandList->ImageMemoryBarrier(target->historyGiLengthTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
                 
             }
 
             {
-                Graphics::Profiler::EndAndBeginQuery("Blur");
+                GPUProfiler::EndAndBeginQuery("Blur");
 
                 const int32_t groupSize = 256;
 
-                std::vector<float> kernelWeights;
-                std::vector<float> kernelOffsets;
-
-                blurFilter.GetLinearized(&kernelWeights, &kernelOffsets, false);
-
-                auto mean = (kernelWeights.size() - 1) / 2;
-                kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
-                kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
-
-                auto kernelSize = int32_t(kernelWeights.size() - 1);
+                auto kernelSize = int32_t(filterSize);
 
                 auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
                 auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
-
-                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0);
 
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
                 commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
+                // The temporal filter output in giTexture is the history of the next frame. The blur ping-pongs
+                // between the swap texture and the old history, which then holds the result. Swapping it with
+                // giTexture afterwards avoids copying the history.
                 for (int32_t i = 0; i < 3; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
 
-                    std::vector<Graphics::ImageBarrier> imageBarriers = {
-                        {target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    auto& sourceTexture = i == 0 ? target->giTexture : target->historyGiTexture;
+
+                    Graphics::ImageBarrier preImageBarriers[] = {
+                        {sourceTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {target->swapGiTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(preImageBarriers, {});
 
                     commandList->BindPipeline(horizontalBlurPipeline);
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                     commandList->BindImage(target->swapGiTexture.image, 3, 0);
-                    commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 1);
+                    commandList->BindImage(sourceTexture.image, sourceTexture.sampler, 3, 1);
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                     groupCount = ivec2(res.x, res.y / groupSize);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    imageBarriers = {
+                    Graphics::ImageBarrier postImageBarriers[] = {
                         {target->swapGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                        {target->giTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                        {target->historyGiTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(postImageBarriers, {});
 
                     commandList->BindPipeline(verticalBlurPipeline);
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
-                    commandList->BindImage(target->giTexture.image, 3, 0);
+                    commandList->BindImage(target->historyGiTexture.image, 3, 0);
                     commandList->BindImage(target->swapGiTexture.image, target->swapGiTexture.sampler, 3, 1);
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
                 }
+
+                std::swap(target->giTexture, target->historyGiTexture);
             }
 
             commandList->ImageMemoryBarrier(target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT);
 
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
         }
 

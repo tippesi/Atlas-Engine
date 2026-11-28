@@ -1,24 +1,27 @@
 #include "Singletons.h"
+#include "ContentPreviews.h"
 
 namespace Atlas::Editor {
 
     Ref<ImguiExtension::ImguiWrapper> Singletons::imguiWrapper;
-    Ref<Renderer::RenderTarget> Singletons::renderTarget;
-    Ref<Renderer::PathTracerRenderTarget> Singletons::pathTraceRenderTarget;
     Ref<Renderer::MainRenderer> Singletons::mainRenderer;
     Ref<Icons> Singletons::icons;
     Ref<Config> Singletons::config;
     Ref<BlockingOperation> Singletons::blockingOperation;
+    Ref<UI::CommandPalette> Singletons::commandPalette;
+    Ref<ContentPreviews> Singletons::contentPreviews;
+    Ref<Project> Singletons::project;
 
     void Singletons::Destruct() {
 
+        contentPreviews.reset();
         imguiWrapper.reset();
-        renderTarget.reset();
-        pathTraceRenderTarget.reset();
         mainRenderer.reset();
         icons.reset();
         config.reset();
         blockingOperation.reset();
+        commandPalette.reset();
+        project.reset();
 
     }
 

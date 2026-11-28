@@ -6,74 +6,131 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        auto availableWidth = ImGui::GetContentRegionAvail().x;
-        auto padding = 8.0f;
-        auto widthAfterImage = availableWidth - padding - ImGui::GetTextLineHeight();
+        auto renderWithImagePreview = [&](ResourceHandle<Texture::Texture2D>& texture, const char* propertiesId,
+            std::function<void(void)> element) {
 
-        auto renderWithImagePreview = [&](ResourceHandle<Texture::Texture2D>& texture, std::function<void(void)> element) {
-            if (texture.IsLoaded()) {
+            // If this will not be loaded it will return 0, so we can still use it
+            ImGui::PushID(texture.GetID());
+            
+            // The selector shows its own preview
+            if (textureSelector.has_value()) {
+                texture = textureSelector.value()(texture);
+            }
+            else if (texture.IsLoaded()) {
                 UIElements::TexturePreview(wrapper, &texture);
-                ImGui::SameLine();
-                // Calculate next item width and push a width with the image elements width substracted from it
-                auto width = ImGui::CalcItemWidth();
-                ImGui::PushItemWidth(width - padding - ImGui::GetTextLineHeightWithSpacing());
-                if (textureSelector.has_value()) {
-                    texture = textureSelector.value()(texture);
-                    ImGui::PopItemWidth();
-                }
             }
-            else {
-                if (textureSelector.has_value())
-                    textureSelector.value()(texture);
+            if (UIElements::BeginProperties(propertiesId)) {
+                element();
+                UIElements::EndProperties();
             }
-            element();
-            if (texture.IsLoaded() && !textureSelector.has_value())
-                ImGui::PopItemWidth();
-            ImGui::Separator();
+            ImGui::PopID();
         };
         
-        renderWithImagePreview(material->baseColorMap, [&]() {
-            ImGui::ColorEdit3("Base color", glm::value_ptr(material->baseColor));
+        UIElements::PropertySection("Base color");
+        renderWithImagePreview(material->baseColorMap, "MaterialBaseColor", [&]() {
+            UIElements::PropertyLabel("Base color");
+            ImGui::ColorEdit3("##Base color", glm::value_ptr(material->baseColor));
         });
-        ImGui::ColorEdit3("Emissive color", glm::value_ptr(material->emissiveColor));
-        ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
-        ImGui::Separator();
-
-        ImGui::Text("Opacity");
-        renderWithImagePreview(material->opacityMap, [&]() {
-            ImGui::SliderFloat("Opacity factor", &material->opacity, 0.0f, 1.0f);
-        });
-
-        ImGui::Text("Normals");
-        renderWithImagePreview(material->normalMap, [&]() {
-            ImGui::SliderFloat("Normal factor", &material->normalScale, 0.0f, 1.0f);
-        });
-
-        ImGui::Text("Roughness");
-        renderWithImagePreview(material->roughnessMap, [&]() {
-            ImGui::SliderFloat("Roughness factor", &material->roughness, 0.0f, 1.0f);
-        });
-
-        ImGui::Text("Metallic");
-        renderWithImagePreview(material->metalnessMap, [&]() {
-            ImGui::SliderFloat("Metallic factor", &material->metalness, 0.0f, 1.0f);
-        });
-
-        ImGui::Text("Ao");
-        renderWithImagePreview(material->aoMap, [&]() {
-            ImGui::SliderFloat("Ao factor", &material->ao, 0.0f, 1.0f);
-        });
-
-        ImGui::Text("Displacement");
-        renderWithImagePreview(material->displacementMap, [&]() {
-            ImGui::SliderFloat("Displacement scale", &material->displacementScale, 0.0f, 1.0f);
+        
+        UIElements::PropertySection("Emission");
+        renderWithImagePreview(material->emissiveMap, "MaterialEmission", [&]() {
+            UIElements::PropertyLabel("Emissive color");
+            ImGui::ColorEdit3("##Emissive color", glm::value_ptr(material->emissiveColor));
+            UIElements::PropertyLabel("Emissive intensity");
+            ImGui::DragFloat("##Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
             });
 
-        ImGui::SliderFloat("Reflectance", &material->reflectance, 0.0f, 1.0f);
+        UIElements::PropertySection("Opacity");
+        renderWithImagePreview(material->opacityMap, "MaterialOpacity", [&]() {
+            UIElements::PropertyLabel("Opacity factor");
+            ImGui::SliderFloat("##Opacity factor", &material->opacity, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
 
-        ImGui::ColorEdit3("Transmissive color", glm::value_ptr(material->transmissiveColor));
+        UIElements::PropertySection("Normals");
+        renderWithImagePreview(material->normalMap, "MaterialNormals", [&]() {
+            UIElements::PropertyLabel("Normal factor");
+            ImGui::SliderFloat("##Normal factor", &material->normalScale, 0.0f, 1.0f);
+        });
 
-        ImGui::Checkbox("Two sided", &material->twoSided);
+        UIElements::PropertySection("Roughness");
+        renderWithImagePreview(material->roughnessMap, "MaterialRoughness", [&]() {
+            UIElements::PropertyLabel("Roughness factor");
+            ImGui::SliderFloat("##Roughness factor", &material->roughness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
+
+        UIElements::PropertySection("Metallic");
+        renderWithImagePreview(material->metalnessMap, "MaterialMetallic", [&]() {
+            UIElements::PropertyLabel("Metallic factor");
+            ImGui::SliderFloat("##Metallic factor", &material->metalness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
+
+        UIElements::PropertySection("Ambient occlusion");
+        renderWithImagePreview(material->aoMap, "MaterialAmbientOcclusion", [&]() {
+            UIElements::PropertyLabel("Ao factor");
+            ImGui::SliderFloat("##Ao factor", &material->ao, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        });
+
+        UIElements::PropertySection("Displacement");
+        renderWithImagePreview(material->displacementMap, "MaterialDisplacement", [&]() {
+            UIElements::PropertyLabel("Displacement scale");
+            ImGui::SliderFloat("##Displacement scale", &material->displacementScale, 0.0f, 1.0f);
+            });
+
+        UIElements::PropertySection("Surface");
+        if (UIElements::BeginProperties("MaterialSurface")) {
+            UIElements::PropertyLabel("Reflectance");
+            ImGui::SliderFloat("##Reflectance", &material->reflectance, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+            // The graph decides it for materials with one
+            if (!material->HasGraph()) {
+                UIElements::PropertyLabel("Two sided");
+                ImGui::Checkbox("##Two sided", &material->twoSided);
+            }
+            UIElements::EndProperties();
+        }
+
+        UIElements::PropertySection("Transmission");
+        if (UIElements::BeginProperties("MaterialTransmission")) {
+            UIElements::PropertyLabel("Transmitted color", "Light shining through thin surfaces like leaves or cloth, lit from "
+                "the back side and tinted by this color. Black lets no light through");
+            ImGui::ColorEdit3("##Transmitted color", glm::value_ptr(material->transmissiveColor));
+            UIElements::EndProperties();
+        }
+
+        // The graph holds the material type and the volume for materials with one
+        if (!material->HasGraph())
+            UIElements::PropertySection("Translucency");
+        if (!material->HasGraph() && UIElements::BeginProperties("MaterialTranslucency")) {
+            const char* blendModes[] = { "None", "Alpha", "Additive", "Multiply" };
+            auto blendMode = int32_t(material->blendMode);
+            UIElements::PropertyLabel("Blend mode");
+            if (ImGui::Combo("##Blend mode", &blendMode, blendModes, IM_ARRAYSIZE(blendModes)))
+                material->blendMode = MaterialBlendMode(blendMode);
+
+            if (material->blendMode == MaterialBlendMode::Alpha) {
+                UIElements::PropertyLabel("Refractive index");
+                ImGui::SliderFloat("##Refractive index", &material->refractiveIndex, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                UIElements::PropertyLabel("Thickness", "Above zero the surface refracts. Closed one sided meshes are as thick as the "
+                    "distance to their back faces, two sided ones are slabs of the thickness and open one sided ones have it");
+                ImGui::DragFloat("##Thickness", &material->thickness, 0.001f, 0.0f, 1.0f, "%.3f m", ImGuiSliderFlags_AlwaysClamp);
+                UIElements::PropertyLabel("Attenuation color", "The color light has after passing the attenuation distance "
+                    "inside the refracting surface, e.g. green for bottle glass or blue green for water");
+                ImGui::ColorEdit3("##Attenuation color", glm::value_ptr(material->attenuationColor));
+                UIElements::PropertyLabel("Attenuation distance", "Zero doesn't absorb light, smaller distances tint deeper");
+                ImGui::DragFloat("##Attenuation distance", &material->attenuationDistance, 0.01f, 0.0f, 1000.0f, "%.2f m",
+                    ImGuiSliderFlags_AlwaysClamp);
+            }
+            UIElements::EndProperties();
+        }
+
+        UIElements::PropertySection("UV");
+        if (UIElements::BeginProperties("MaterialUV")) {
+            UIElements::PropertyLabel("UV animation");
+            ImGui::DragFloat2("##UV animation", glm::value_ptr(material->uvAnimation), 0.01f, -1.0f, 1.0f);
+            UIElements::PropertyLabel("UV tiling");
+            ImGui::DragFloat("##UV tiling", &material->tiling, 0.01f, 0.01f, 100.0f);
+            UIElements::EndProperties();
+        }
 
         ImGui::PopID();
 

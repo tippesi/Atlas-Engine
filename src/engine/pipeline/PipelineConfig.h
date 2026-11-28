@@ -29,15 +29,21 @@ namespace Atlas {
         PipelineConfig(const ShaderConfig& shaderConfig, const Graphics::GraphicsPipelineDesc& desc,
             const std::vector<std::string>& macros);
 
+        // Ray tracing pipeline from a ray generation stage and optional miss, any hit, closest hit and callable stages
+        PipelineConfig(const ShaderConfig& shaderConfig, const std::vector<std::string>& macros);
+
         void AddMacro(const std::string& macro);
 
         void RemoveMacro(const std::string& macro);
 
-        bool HasMacro(const std::string& macro);
+        bool HasMacro(const char* macro);
 
-        bool ManageMacro(const std::string& macro, bool enable);
+        bool ManageMacro(const char* macro, bool enable);
 
         bool IsValid() const;
+
+        // Graphics config with the opposite front face, e.g. for instances with reversed winding
+        PipelineConfig GetReversedWindingVariant() const;
 
         Hash shaderHash = 0;
         Hash variantHash = 0;
@@ -46,6 +52,7 @@ namespace Atlas {
         std::vector<std::string> macros;
 
         bool isCompute = false;
+        bool isRayTracing = false;
 
         Graphics::GraphicsPipelineDesc graphicsPipelineDesc;
 

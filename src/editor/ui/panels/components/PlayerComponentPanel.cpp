@@ -1,4 +1,6 @@
 #include "PlayerComponentPanel.h"
+#include "../../../Theme.h"
+#include "../../Widgets.h"
 #include "Notifications.h"
 
 namespace Atlas::Editor::UI {
@@ -9,23 +11,30 @@ namespace Atlas::Editor::UI {
 
 		ImGui::PushID(GetNameID());
 
-		ImGui::Text("Shape");
+		if (!entity.HasComponent<TransformComponent>())
+            Widgets::Callout("Player component needs a transform component to work properly", Theme::Warning());
 
-		RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);
+		Widgets::PropertySection("Shape");
 
-		ImGui::Separator();
+		// Components of scripts can have no settings yet
+		if (!playerComponent.creationSettings)
+			playerComponent.creationSettings = CreateRef<PlayerCreationSettings>();
+		if (!playerComponent.creationSettings->shape)
+			playerComponent.creationSettings->shape = ShapesManager::CreateShape(CapsuleShapeSettings{});
 
-		ImGui::Text("Player");
+		auto settingsChanged = RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);
 
-		RenderPlayerSettings(entity, playerComponent);
+		Widgets::PropertySection("Player");
+
+		settingsChanged |= RenderPlayerSettings(entity, playerComponent);
 
 		ImGui::PopID();
 
-		return false;
+		return settingsChanged;
 
 	}
 
-	void PlayerComponentPanel::RenderShapeSettings(Scene::Entity entity, PlayerComponent& playerComponent, 
+	bool PlayerComponentPanel::RenderShapeSettings(Scene::Entity entity, PlayerComponent& playerComponent,
 		Physics::PlayerCreationSettings& creationSettings) {
 
 		auto& shape = creationSettings.shape;
@@ -37,36 +46,85 @@ namespace Atlas::Editor::UI {
 
 		auto capsuleSettings = static_cast<CapsuleShapeSettings*>(shape->settings.get());
 
-		ImGui::DragFloat("Radius", &capsuleSettings->radius, 0.1f, 0.01f, 100.0f);
-		ImGui::DragFloat("Height", &capsuleSettings->height, 0.1f, 0.01f, 100.0f);
-
 		if (transformComponent)
 			capsuleSettings->scale = transformComponent->Decompose().scale;
-		ImGui::DragFloat3("Scale", glm::value_ptr(capsuleSettings->scale), 0.01f, 0.0f);
+
+		if (Widgets::BeginProperties("PlayerShape")) {
+			Widgets::PropertyLabel("Radius");
+			ImGui::DragFloat("##Radius", &capsuleSettings->radius, 0.1f, 0.01f, 100.0f);
+			Widgets::PropertyLabel("Height");
+			ImGui::DragFloat("##Height", &capsuleSettings->height, 0.1f, 0.01f, 100.0f);
+			Widgets::PropertyLabel("Scale");
+			Widgets::DragVec3("##Scale", capsuleSettings->scale, 0.01f, 1.0f);
+			Widgets::EndProperties();
+		}
 
 		if (ImGui::Button("Generate shape", { -FLT_MIN, 0 })) {
 			if (!shape->TryCreate()) {
-				Notifications::Push({ .message = "Error creating player shape", .color = vec3(1.0f, 0.0f, 0.0f) });
+				Notifications::Push({ .message = "Error creating player shape", .type = NotificationType::Error });
 			}
 			else {
-				playerComponent.SetShape(shape);
+				if (playerComponent.IsValid())
+					playerComponent.SetShape(shape);
+				return true;
 			}
 		}
 
+		return false;
+
 	}
 
-	void PlayerComponentPanel::RenderPlayerSettings(Scene::Entity, PlayerComponent& player) {
+	bool PlayerComponentPanel::RenderPlayerSettings(Scene::Entity, PlayerComponent& player) {
 
-		ImGui::DragFloat("Mass", &player.creationSettings->mass, 0.5f, 1.0f, 1000.0f);
-		ImGui::DragFloat("Max strength", &player.creationSettings->maxStrength, 0.5f, 1.0f, 1000.0f);
+		auto settingsChanged = false;
+
+		if (Widgets::BeginProperties("PlayerGeneral")) {
+			Widgets::PropertyLabel("Mass");
+			settingsChanged |= ImGui::DragFloat("##Mass", &player.creationSettings->mass, 0.5f, 1.0f, 1000.0f);
+			Widgets::PropertyLabel("Max strength");
+			settingsChanged |= ImGui::DragFloat("##Max strength", &player.creationSettings->maxStrength, 0.5f, 1.0f, 1000.0f);
+			Widgets::PropertyLabel("Can push bodies");
+			settingsChanged |= ImGui::Checkbox("##Can push bodies", &player.creationSettings->canPushBodies);
+			Widgets::EndProperties();
+		}
+
+		Widgets::PropertySection("Movement");
+
+		if (Widgets::BeginProperties("PlayerMovement")) {
+			Widgets::PropertyLabel("Slow movement velocity");
+			ImGui::DragFloat("##Slow movement velocity", &player.slowVelocity, 0.1f, 0.0f, 100.0f);
+			Widgets::PropertyLabel("Fast movement velocity");
+			ImGui::DragFloat("##Fast movement velocity", &player.fastVelocity, 0.1f, 0.0f, 100.0f);
+			Widgets::PropertyLabel("Jump velocity");
+			ImGui::DragFloat("##Jump velocity", &player.jumpVelocity, 0.1f, 0.0f, 100.0f);
+			Widgets::PropertyLabel("Acceleration");
+			ImGui::DragFloat("##Acceleration", &player.acceleration, 0.5f, 0.0f, 200.0f);
+			Widgets::PropertyLabel("Deceleration");
+			ImGui::DragFloat("##Deceleration", &player.deceleration, 0.5f, 0.0f, 200.0f);
+			Widgets::EndProperties();
+		}
 
 		ImGui::Separator();
+		if (Widgets::BeginProperties("PlayerCrouch")) {
+			Widgets::PropertyLabel("Crouch height");
+			ImGui::DragFloat("##Crouch height", &player.crouchHeight, 0.01f, 0.0f, 10.0f);
+			Widgets::PropertyLabel("Crouch velocity");
+			ImGui::DragFloat("##Crouch velocity", &player.crouchVelocity, 0.1f, 0.0f, 100.0f);
+			Widgets::EndProperties();
+		}
 
-		ImGui::DragFloat("Slow movement velocity", &player.slowVelocity, 0.1f, 0.0f, 100.0f);
-		ImGui::DragFloat("Fast movement velocity", &player.fastVelocity, 0.1f, 0.0f, 100.0f);
-		ImGui::DragFloat("Jump velocity", &player.jumpVelocity, 0.1f, 0.0f, 100.0f);
+		ImGui::Separator();
+		if (Widgets::BeginProperties("PlayerGround")) {
+			Widgets::PropertyLabel("Stick to ground distance");
+			ImGui::DragFloat("##Stick to ground distance", &player.stickToGroundDistance, 0.01f, 0.0f, 10.0f);
+			Widgets::PropertyLabel("Step up distance");
+			ImGui::DragFloat("##Step up distance", &player.walkStairStepUpDistance, 0.01f, 0.0f, 10.0f);
+			Widgets::PropertyLabel("Allow input");
+			ImGui::Checkbox("##Allow input", &player.allowInput);
+			Widgets::EndProperties();
+		}
 
-		ImGui::Checkbox("Allow input", &player.allowInput);
+		return settingsChanged;
 
 	}
 

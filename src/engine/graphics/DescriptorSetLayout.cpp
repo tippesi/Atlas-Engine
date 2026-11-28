@@ -9,9 +9,12 @@ namespace Atlas {
 		DescriptorSetLayout::DescriptorSetLayout(GraphicsDevice* device, const DescriptorSetLayoutDesc& desc) :
             device(device) {
 
+            // Arrays of descriptors don't need to be fully bound, e.g. an array of textures where only one index is bound
+            VkDescriptorBindingFlags defaultBindingFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+
             bindings.resize(desc.bindingCount);
             layoutBindings.resize(desc.bindingCount);
-            layoutBindingFlags.resize(desc.bindingCount);
+            layoutBindingFlags.resize(desc.bindingCount, defaultBindingFlags);
 
             bool bindlessAllowed = true;
             bool bindlessNeeded = false;
@@ -40,6 +43,8 @@ namespace Atlas {
                     size.storageImageCount += layoutBinding.descriptorCount; break;
                 case VK_DESCRIPTOR_TYPE_SAMPLER: 
                     size.samplerCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                    size.accelerationStructureCount += layoutBinding.descriptorCount; break;
                 default: break;
                 }
 
@@ -73,13 +78,13 @@ namespace Atlas {
 
                     layoutBindingFlags[i] = bindingFlags;
                 }
-
-                extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-                extendedInfo.bindingCount = desc.bindingCount;
-                extendedInfo.pBindingFlags = desc.bindingCount ? layoutBindingFlags.data() : VK_NULL_HANDLE;
-
-                setInfo.pNext = &extendedInfo;
             }
+
+	        extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+            extendedInfo.bindingCount = desc.bindingCount;
+            extendedInfo.pBindingFlags = desc.bindingCount ? layoutBindingFlags.data() : VK_NULL_HANDLE;
+
+            setInfo.pNext = &extendedInfo;
 
             VK_CHECK(vkCreateDescriptorSetLayout(device->device, &setInfo, nullptr, &layout))
 

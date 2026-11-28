@@ -21,6 +21,10 @@ namespace Atlas {
             Random = 1
         };
 
+        class GraphicsDevice;
+        class MemoryManager;
+        class MemoryTransferManager;
+
         struct BufferDesc {
             VkBufferUsageFlags usageFlags;
 
@@ -29,11 +33,17 @@ namespace Atlas {
             BufferHostAccess hostAccess = BufferHostAccess::Sequential;
 
             void* data = nullptr;
+            size_t dataSize = 0;
+
             size_t size;
-            size_t alignment = 0;
+            size_t alignment = 16;
 
             bool dedicatedMemory = false;
             float priority = 0.5f;
+            // Written by the transfer queue while the graphics queue reads other parts of it
+            bool sharedWithTransferQueue = false;
+
+            MemoryTransferManager* transferManager = nullptr;
         };
 
         struct BufferAllocation {
@@ -41,20 +51,21 @@ namespace Atlas {
             VmaAllocation allocation;
         };
 
-        class GraphicsDevice;
-        class MemoryManager;
-
         class Buffer {
         public:
             Buffer(GraphicsDevice* device, const BufferDesc& desc);
 
             ~Buffer();
 
-            void SetData(void* data, size_t offset, size_t length);
+            void SetData(void* data, size_t offset, size_t length,
+                MemoryTransferManager* transferManager = nullptr);
 
             void* Map();
 
             void Unmap();
+
+            // Makes writes of the GPU visible to the host for memory that isn't coherent
+            void Invalidate();
 
             VkDeviceAddress GetDeviceAddress();
 
@@ -66,6 +77,8 @@ namespace Atlas {
 
             BufferDomain domain;
 
+            const uint64_t id;
+
             const size_t size = 0;
             const size_t alignment = 0;
 
@@ -74,6 +87,8 @@ namespace Atlas {
 
             bool isMapped = false;
             void* mappedData = nullptr;
+            // Host buffers stay mapped for their whole lifetime
+            void* persistentMappedData = nullptr;
 
         public:
             static size_t GetAlignedSize(size_t size);
@@ -92,6 +107,8 @@ namespace Atlas {
             void* Map();
 
             void Unmap();
+
+            void Invalidate();
 
             Buffer* GetCurrent() const;
 

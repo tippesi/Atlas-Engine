@@ -1,4 +1,5 @@
 #include "Touch.h"
+#include "common/MathHelper.h"
 
 namespace Atlas {
 
@@ -50,7 +51,7 @@ namespace Atlas {
 
             angularVelocity = 60.0f * -rightFinger.position * deltaTime * sensibility;
 
-            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+            float progress = Helper::Math::Saturate(reactivity * deltaTime);
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
             interpolatedAngularVelocity = glm::mix(interpolatedAngularVelocity, angularVelocity, progress);
@@ -73,7 +74,7 @@ namespace Atlas {
         void TouchHandler::TouchEventHandler(Events::TouchEvent event) {
 
             if (event.finger == leftFinger.ID) {
-                if (event.type == AE_FINGERUP) {
+                if (event.type == AE_FINGERUP || event.type == AE_FINGERCANCELED) {
                     leftFinger.ID = -1;
                     leftFinger.position = vec2(0.0f);
                     return;
@@ -81,7 +82,7 @@ namespace Atlas {
                 leftFinger.position += vec2(event.dx, event.dy);
             }
             else if (event.finger == rightFinger.ID) {
-                if (event.type == AE_FINGERUP) {
+                if (event.type == AE_FINGERUP || event.type == AE_FINGERCANCELED) {
                     rightFinger.ID = -1;
                     return;
                 }

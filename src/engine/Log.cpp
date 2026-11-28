@@ -6,6 +6,7 @@ namespace Atlas {
 
     std::vector<Log::Entry> Log::entries;
     std::mutex Log::mutex;
+    bool Log::printToConsole = true;
 
     void Log::Message(const std::string& message, int32_t severity) {
         AddEntry(message, severity, Type::TYPE_MESSAGE);
@@ -27,11 +28,27 @@ namespace Atlas {
     std::vector<Log::Entry> Log::GetLatestEntries(int32_t count) {
         std::lock_guard<std::mutex> lock(mutex);
 
+        if (count <= 0)
+            return {};
         if (count >= int32_t(entries.size()))
             return entries;
 
         auto offset = entries.size() - size_t(count);
         return std::vector<Log::Entry>(entries.begin() + offset, entries.end());
+    }
+
+    std::vector<Log::Entry> Log::GetEntriesSince(size_t firstIndex) {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        if (firstIndex >= entries.size())
+            return {};
+
+        return std::vector<Log::Entry>(entries.begin() + firstIndex, entries.end());
+    }
+
+    size_t Log::GetEntryCount() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return entries.size();
     }
 
     void Log::AddEntry(const std::string& message, int32_t severity, int32_t type) {
@@ -45,27 +62,29 @@ namespace Atlas {
         entry.type = type;
 
 #ifdef AE_SHOW_LOG
-        std::string consoleLog;
-        consoleLog.append("[" + std::to_string(entry.time) + "] ");
-        consoleLog.append(message);
+        if (printToConsole) {
+            std::string consoleLog;
+            consoleLog.append("[" + std::to_string(entry.time) + "] ");
+            consoleLog.append(message);
 #ifdef AE_OS_ANDROID
-        size_t maxLogSize = 2000;
-        for (size_t i = 0; i <= message.length() / maxLogSize; i++) {
-            auto start = i * maxLogSize;
-            auto end = (i + 1) * maxLogSize;
-            end = end > message.length() ? message.length() : end;
-            AtlasLog("%s", message.substr(start, end).c_str());
-        }
+            size_t maxLogSize = 2000;
+            for (size_t i = 0; i <= message.length() / maxLogSize; i++) {
+                auto start = i * maxLogSize;
+                auto end = (i + 1) * maxLogSize;
+                end = end > message.length() ? message.length() : end;
+                AtlasLog("%s", message.substr(start, end).c_str());
+            }
 #else
-        // Color code console output
-        switch (severity) {
-        case Type::TYPE_WARNING: printf("\033[1;33m"); break;
-        case Type::TYPE_ERROR: printf("\033[1;31m"); break;
-        }
-        AtlasLog("%s", consoleLog.c_str());
-        // Reset color back to white
-        printf("\033[0;37m");
+            // Color code console output
+            switch (severity) {
+            case Type::TYPE_WARNING: printf("\033[1;33m"); break;
+            case Type::TYPE_ERROR: printf("\033[1;31m"); break;
+            }
+            AtlasLog("%s", consoleLog.c_str());
+            // Reset color back to white
+            printf("\033[0;37m");
 #endif
+        }
 #endif
 
         std::lock_guard<std::mutex> lock(mutex);

@@ -9,7 +9,9 @@ namespace Atlas {
     namespace Renderer {
 
         void RTGIRenderer::Init(Graphics::GraphicsDevice* device) {
-            
+
+            this->device = device;
+
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
             scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
                 VK_FORMAT_R8G8B8A8_UNORM);
@@ -21,6 +23,8 @@ namespace Atlas {
             sobolSequenceTexture.SetData(noiseImage->GetData());
 
             rtPipelineConfig = PipelineConfig("rtgi/rtgi.csh");
+            rtRayTracingPipelineConfig = Helper::RayTracingHelper::GetRayTracingPipelineConfig("rtgi/rtgi.rgen");
+            rtResolvePipelineConfig = PipelineConfig("rtgi/rtgiResolve.csh");
             temporalPipelineConfig = PipelineConfig("rtgi/temporal.csh");
 
             atrousPipelineConfig[0] = PipelineConfig("rtgi/atrous.csh", { "STEP_SIZE1" });
@@ -29,18 +33,13 @@ namespace Atlas {
 
             rtUniformBuffer = Buffer::UniformBuffer(sizeof(RTUniforms));
 
-            auto samplerDesc = Graphics::SamplerDesc {
-                .filter = VK_FILTER_NEAREST,
-                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                .compareEnabled = true
-            };
-            shadowSampler = device->CreateSampler(samplerDesc);
+            shadowRays.Init();
 
         }
 
         void RTGIRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
             
-            auto rtgi = scene->rtgi;
+            auto rtgi = scene->renderState.rtgi;
             if (!rtgi || !rtgi->enable || !scene->IsRtDataValid()) return;
 
             if (rtgi->halfResolution && target->GetGIResolution() == FULL_RES)
@@ -51,33 +50,25 @@ namespace Atlas {
             if (!target->giMomentsTexture.IsValid())
                 target->SetGIResolution(target->GetGIResolution(), true);
 
-            helper.UpdateLights(scene, false);
+            helper.UpdateLights(scene);
 
             ivec2 res = target->GetRelativeResolution(target->GetGIResolution());
 
-            Graphics::Profiler::BeginQuery("Render RTGI");
+            CPUProfiler::Scope profilerScope("Render RTGI");
+            GPUProfiler::Scope gpuScope("Render RTGI");
 
             if (target->historyGiTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED || 
                 target->historyGiMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->historyGiTexture.image, layout, access},
                     {target->historyGiMomentsTexture.image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
             }
 
-            Graphics::Profiler::BeginQuery("Trace rays");
-
-            // Try to get a shadow map
-            Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
-
-            auto mainCamera = scene->GetMainCamera();
+            GPUProfiler::BeginQuery("Trace rays");
 
             auto downsampledRT = target->GetData(target->GetGIResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetGIResolution());
@@ -106,6 +97,8 @@ namespace Atlas {
             commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
             commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
 
+            target->exposureTexture.Bind(commandList, 3, 11);
+
             // Cast rays and calculate radiance
             {
                 static uint32_t frameCount = 0;
@@ -114,76 +107,98 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-                auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
-                auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+                auto clouds = scene->renderState.sky.clouds;
 
-                rtPipelineConfig.ManageMacro("USE_SHADOW_MAP", rtgi->useShadowMap && shadow);
-                rtPipelineConfig.ManageMacro("DDGI", rtgi->ddgi && ddgiEnabled);
-                rtPipelineConfig.ManageMacro("DDGI_VISIBILITY", rtgi->ddgi && ddgiVisibility);
-                rtPipelineConfig.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
+                auto ddgiEnabled = scene->renderState.irradianceVolume != nullptr;
+                auto ddgiVisibility = ddgiEnabled && scene->renderState.irradianceVolume->visibility;
+                auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
-                auto pipeline = PipelineManager::GetPipeline(rtPipelineConfig);
+                // Devices with hit objects always trace with a ray tracing pipeline, the others with ray queries
+                auto useRayTracingPipeline = device->support.shaderExecutionReordering;
+                auto& config = useRayTracingPipeline ? rtRayTracingPipelineConfig : rtPipelineConfig;
+
+                config.ManageMacro("DDGI", rtgi->ddgi && ddgiEnabled);
+                config.ManageMacro("VISIBILITY_VOLUME", rtgi->ddgi && ddgiVisibility);
+                config.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
+                config.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->renderState.HasMainLight());
+                config.ManageMacro("AUTO_EXPOSURE", scene->renderState.postProcessing.autoExposure.enable);
+                config.ManageMacro("SHADER_EXECUTION_REORDER", useRayTracingPipeline && rtgi->shaderExecutionReordering);
+
+                // The hit shader has a low occupancy with software ray tracing
+                auto deferredShadowRays = !device->support.hardwareRayTracing;
+                config.ManageMacro("DEFERRED_SHADOW_RAYS", deferredShadowRays);
+
+                auto pipeline = useRayTracingPipeline ?
+                    Helper::RayTracingHelper::GetRayTracingPipeline(config, scene) : PipelineManager::GetPipeline(config);
+                auto dimensions = useRayTracingPipeline ? ivec3(res, 1) : ivec3(groupCount, 1);
+
+                auto sampleCount = size_t(res.x) * size_t(res.y) * size_t(rtgi->sampleCount);
+                auto lightCount = sampleCount * size_t(rtgi->lightSampleCount);
+                if (deferredShadowRays)
+                    shadowRays.Prepare(commandList, sampleCount, lightCount);
 
                 commandList->ImageMemoryBarrier(target->giTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-                helper.DispatchAndHit(scene, commandList, pipeline, ivec3(groupCount, 1),
+                helper.DispatchAndHit(scene, commandList, pipeline, dimensions,
                     [=]() {
                         commandList->BindImage(target->giTexture.image, 3, 0);
 
                         RTUniforms uniforms;
-                        uniforms.radianceLimit = rtgi->radianceLimit / glm::max(mainCamera.exposure, 0.00001f);
+                        uniforms.radianceLimit = rtgi->radianceLimit;
                         uniforms.bias = rtgi->bias;
-                        uniforms.frameSeed = frameCount++;                        
+                        uniforms.frameSeed = frameCount++;
+                        uniforms.sampleCount = rtgi->sampleCount;
+                        uniforms.lightSampleCount = rtgi->lightSampleCount;
                         uniforms.textureLevel = rtgi->textureLevel;
                         uniforms.halfRes = target->GetGIResolution() == HALF_RES ? 1 : 0;
                         uniforms.resolution = res;
 
-                        if (shadow && rtgi->useShadowMap) {
-                            auto& shadowUniform = uniforms.shadow;
-                            shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
-                            shadowUniform.bias = shadow->bias;
-                            shadowUniform.edgeSoftness = shadow->edgeSoftness;
-                            shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
-                            shadowUniform.cascadeCount = shadow->viewCount;
-                            shadowUniform.resolution = vec2(shadow->resolution);
-
-                            commandList->BindImage(shadow->maps.image, shadowSampler, 3, 6);
-
-                            auto componentCount = shadow->viewCount;
-                            for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
-                                if (i < componentCount) {
-                                    auto cascade = &shadow->views[i];
-                                    auto frustum = Volume::Frustum(cascade->frustumMatrix);
-                                    auto corners = frustum.GetCorners();
-                                    auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                                        abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
-                                    shadowUniform.cascades[i].distance = cascade->farDistance;
-                                    shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                        cascade->viewMatrix;
-                                    shadowUniform.cascades[i].texelSize = texelSize;
-                                }
-                                else {
-                                    auto cascade = &shadow->views[componentCount - 1];
-                                    shadowUniform.cascades[i].distance = cascade->farDistance;
-                                }
-                            }
+                        if (cloudShadowEnabled && scene->renderState.HasMainLight()) {
+                            clouds->shadowTexture.Bind(commandList, 3, 9);
                         }
+
                         rtUniformBuffer.SetData(&uniforms, 0);
-                        commandList->BindBuffer(rtUniformBuffer.Get(), 3, 9);
+                        commandList->BindBuffer(rtUniformBuffer.Get(), 3, 10);
+
+                        if (deferredShadowRays)
+                            shadowRays.BindForTrace(commandList);
 
                     });
+
+                if (deferredShadowRays) {
+                    GPUProfiler::EndAndBeginQuery("Shadow rays");
+
+                    shadowRays.Trace(commandList);
+                    // The resolve keeps the hit distance written by the trace
+                    commandList->ImageMemoryBarrier(target->giTexture.image,
+                        VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                    GPUProfiler::EndAndBeginQuery("Resolve");
+
+                    auto resolvePipeline = PipelineManager::GetPipeline(rtResolvePipelineConfig);
+                    commandList->BindPipeline(resolvePipeline);
+
+                    commandList->BindImage(target->giTexture.image, 3, 0);
+                    shadowRays.BindForResolve(commandList);
+
+                    ResolveConstants constants = {
+                        .resolution = res,
+                        .sampleCount = rtgi->sampleCount,
+                        .lightSampleCount = rtgi->lightSampleCount
+                    };
+                    commandList->PushConstants("constants", &constants);
+
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                }
 
                 commandList->ImageMemoryBarrier(target->giTexture.image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
 
-            Graphics::Profiler::EndAndBeginQuery("Temporal filter");
+            GPUProfiler::EndAndBeginQuery("Temporal filter");
 
             {
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
                 groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
@@ -200,12 +215,12 @@ namespace Atlas {
 
                 commandList->PushConstants("constants", &constants);
 
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {target->swapGiTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {target->giMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(target->swapGiTexture.image, 3, 0);
                 commandList->BindImage(target->giMomentsTexture.image, 3, 1);
@@ -226,33 +241,17 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            // The temporal result becomes the history, the old history is free for the spatial filter
+            std::swap(target->swapGiTexture, target->historyGiTexture);
+            std::swap(target->giMomentsTexture, target->historyGiMomentsTexture);
 
-            // Need barriers for all four images
-            imageBarriers = {
-                {target->swapGiTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->giMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                {target->historyGiTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                {target->historyGiMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-            };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-            commandList->CopyImage(target->swapGiTexture.image, target->historyGiTexture.image);
-            commandList->CopyImage(target->giMomentsTexture.image, target->historyGiMomentsTexture.image);
-
-            // Need barriers for all four images
-            imageBarriers = {
-                {target->swapGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {target->giMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            Graphics::ImageBarrier historyBarriers[] = {
                 {target->historyGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {target->historyGiMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            commandList->PipelineBarrier(historyBarriers, {});
 
-            Graphics::Profiler::EndAndBeginQuery("Spatial filter");
+            GPUProfiler::EndAndBeginQuery("Spatial filter");
 
             {
                 ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
@@ -267,39 +266,40 @@ namespace Atlas {
                 commandList->BindImage(target->historyGiMomentsTexture.image, target->historyGiMomentsTexture.sampler, 3, 5);           
 
                 for (int32_t i = 0; i < 3; i++) {
-                    Graphics::Profiler::BeginQuery("Subpass " + std::to_string(i));
+                    GPUProfiler::Scope sectionScope("Subpass " + std::to_string(i));
 
                     auto pipeline = PipelineManager::GetPipeline(atrousPipelineConfig[i]);
                     commandList->BindPipeline(pipeline);
 
                     AtrousConstants constants = {
-                        .stepSize = 1 << i,
                         .strength = rtgi->spatialFilterStrength
                     };
                     commandList->PushConstants("constants", &constants);
 
                     if (pingpong) {
-                        imageBarriers = {
+                        Graphics::ImageBarrier imageBarriers[] = {
                             {target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                             {target->swapGiTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                         };
                         commandList->BindImage(target->swapGiTexture.image, 3, 0);
                         commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 1);
+                        commandList->PipelineBarrier(imageBarriers, {});
                     }
                     else {
-                        imageBarriers = {
-                            {target->swapGiTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        // The first pass reads the temporal result, which is the history now
+                        auto& input = i == 0 ? target->historyGiTexture : target->swapGiTexture;
+                        Graphics::ImageBarrier imageBarriers[] = {
+                            {input.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                             {target->giTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                         };
                         commandList->BindImage(target->giTexture.image, 3, 0);
-                        commandList->BindImage(target->swapGiTexture.image, target->swapGiTexture.sampler, 3, 1);
+                        commandList->BindImage(input.image, input.sampler, 3, 1);
+                        commandList->PipelineBarrier(imageBarriers, {});
                     }
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     pingpong = !pingpong;
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
-                    Graphics::Profiler::EndQuery();
                 }
 
                 // Transition to final layout, the loop won't do that
@@ -307,8 +307,7 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
             
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndQuery();
+            GPUProfiler::EndQuery();
 
         }
 

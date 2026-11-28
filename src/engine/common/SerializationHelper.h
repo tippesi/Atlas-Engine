@@ -10,22 +10,69 @@ using json = nlohmann::json;
 namespace Atlas {
 
     template<class T>
-    void try_get_json(json j, const char* name, T& t) {
+    void try_get_json(const json& j, const char* name, T& t) {
 
-        if (j.contains(name)) {
-            j.at(name).get_to(t);
+        auto it = j.find(name);
+        if (it != j.end()) {
+            it->get_to(t);
         }
 
     }
 
     template<class T>
-    void try_get_json(json j, const char* name, T& t, const T def) {
+    void try_get_json(const json& j, const char* name, T& t, const T def) {
 
-        if (j.contains(name)) {
-            j.at(name).get_to(t);
+        auto it = j.find(name);
+        if (it != j.end()) {
+            it->get_to(t);
         }
         else {
             t = def;
+        }
+
+    }
+
+    template<class T>
+    void try_get_binary_json(const json& j, const char* name, std::vector<T>& data, bool binary = true) {
+
+        auto it = j.find(name);
+        if (it == j.end())
+            return;
+
+        auto copy = [&](const std::vector<uint8_t>& binaryData) {
+            AE_ASSERT(binaryData.size() % sizeof(T) == 0 && "Binary data isn't a multiple of the element size");
+            if (!binaryData.empty()) {
+                data.resize(binaryData.size() / sizeof(T));
+                std::memcpy(data.data(), binaryData.data(), data.size() * sizeof(T));
+            }
+        };
+
+        // The binary value is read in place, large buffers aren't copied twice
+        if (binary) {
+            copy(it->get_binary());
+        }
+        else {
+            std::vector<uint8_t> binaryData;
+            it->get_to(binaryData);
+            copy(binaryData);
+        }
+
+    }
+
+    template<class T>
+    void set_binary_json(json& j, const char* name, const std::vector<T>& data, bool binary = true) {
+
+        std::vector<uint8_t> binaryData;
+        if (!data.empty()) {
+            binaryData.resize(data.size() * sizeof(T));
+            std::memcpy(binaryData.data(), data.data(), binaryData.size());
+        }
+
+        if (binary) {
+            j[name] = json::binary_t(std::move(binaryData));
+        }
+        else {
+            j[name] = binaryData;
         }
 
     }

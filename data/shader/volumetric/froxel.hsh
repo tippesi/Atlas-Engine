@@ -1,0 +1,67 @@
+#include <../globals.hsh>
+#include <../common/convert.hsh>
+#include <froxelSlices.hsh>
+
+#define FROXEL_CLUSTER_SIZE 4
+// Thin fog is far below the normal range of the half floats of the froxels
+#define FROXEL_DATA_SCALE 256.0
+
+layout(push_constant) uniform constants {
+    ivec2 columnCount;
+    ivec2 resolution;
+    int sliceCount;
+    int tileSize;
+    float near;
+    float far;
+    int lightCount;
+    int resetHistory;
+    int fogVolumeCount;
+    vec4 jitter;
+    float extendedFar;
+    float distributionExponent;
+    float padding1;
+    float padding2;
+} pushConstants;
+
+FroxelSlices GetFroxelSlices() {
+
+    return FroxelSlices(pushConstants.near, pushConstants.far, pushConstants.extendedFar, pushConstants.sliceCount,
+        pushConstants.distributionExponent);
+
+}
+
+float GetFroxelSliceDepth(float slice) {
+
+    return GetFroxelSliceDepth(GetFroxelSlices(), slice);
+
+}
+
+float GetFroxelSlice(float viewDepth) {
+
+    return GetFroxelSlice(GetFroxelSlices(), viewDepth);
+
+}
+
+// The grid is fixed to the unjittered projection, a jittered grid shows up as pulsing of small lights
+vec2 UnjitteredToJitteredTexCoord(vec2 texCoord) {
+
+    return texCoord + 0.5 * globalData.jitterCurrent;
+
+}
+
+vec2 GetFroxelColumnTexCoord(ivec2 column, vec2 volumetricResolution) {
+
+    return UnjitteredToJitteredTexCoord((vec2(column) + 0.5) * float(pushConstants.tileSize) / volumetricResolution);
+
+}
+
+vec3 GetFroxelPosition(ivec3 froxel, vec3 offset, vec2 volumetricResolution) {
+
+    vec2 texCoord = (vec2(froxel.xy) + offset.xy) * float(pushConstants.tileSize) / volumetricResolution;
+
+    float viewDepth = GetFroxelSliceDepth(float(froxel.z) + offset.z);
+
+    vec3 rayDirection = normalize(ConvertDepthToViewSpace(1.0, UnjitteredToJitteredTexCoord(texCoord)));
+    return rayDirection * (viewDepth / max(-rayDirection.z, 1e-3));
+
+}

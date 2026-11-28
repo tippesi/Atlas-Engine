@@ -1,0 +1,26 @@
+#include <brdfEval.hsh>
+
+vec3 GetTransmissionColor(Material material) {
+
+    return material.transmissive ? saturate(material.transmissiveColor) : vec3(0.0);
+
+}
+
+Surface GetTransmissionSurface(Surface surface) {
+
+    // Evaluate and sample the backside as a diffuse reflector. Reversing V
+    // keeps the BRDF's view cosine positive on that side of the sheet.
+    surface.V = -surface.V;
+    surface.N = -surface.N;
+    surface.geometryNormal = -surface.geometryNormal;
+    UpdateSurface(surface);
+    return surface;
+
+}
+
+bool IsTransmittedLight(Surface surface) {
+
+    return surface.material.transmissive && dot(surface.L, surface.geometryNormal) < 0.0;
+
+}
+

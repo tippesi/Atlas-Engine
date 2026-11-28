@@ -1,6 +1,7 @@
 #include "Path.h"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 
 #ifdef AE_OS_WINDOWS
@@ -24,25 +25,13 @@ namespace Atlas {
             src = GetAbsolute(src);
             dest = GetAbsolute(dest);
 
-            // Find the first character that doesn't match
-            size_t count = 0;
-            size_t max = dest.find_last_of("/\\");
+            // Lexically: std::filesystem::relative resolves links, a path into a linked directory (junction, symbolic
+            // link) would lead out of the source directory to the target of the link
+            auto relative = std::filesystem::path(dest).lexically_normal().lexically_relative(std::filesystem::path(src).lexically_normal());
+            if (relative.empty())
+                return std::filesystem::relative(dest, src).string();
 
-            while (count <= max && src[count] == dest[count])
-                count++;
-
-            if (!count)
-                return dest;
-
-            dest = dest.substr(count + 1, dest.size());
-
-            for (size_t i = count; i < src.size(); i++)
-                if (src[i] == '/' || src[i] == '\\')
-                    result.append("../");
-
-            result.append(dest);
-
-            return result;
+            return relative.string();
 
         }
 
@@ -129,8 +118,29 @@ namespace Atlas {
                 }
                 path = parentPath.substr(0, parentBackPosition) + childPath;
             }
+            
+            // Check for length > 1 since we might have just the filesystem root on Linux based OSes
+            if (path.ends_with('/') && path.length() > 1)
+                path.pop_back();
 
             return path;
+
+        }
+
+        std::string Path::ToLower(std::string path) {
+
+            std::transform(path.begin(), path.end(), path.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+            return path;
+
+        }
+
+        std::string Path::Rename(const std::string& path, const std::string& oldPath, const std::string& newPath) {
+
+            auto isInside = path.size() == oldPath.size() || (path.size() > oldPath.size() && path[oldPath.size()] == '/');
+            if (!isInside || ToLower(path.substr(0, oldPath.size())) != ToLower(oldPath))
+                return path;
+
+            return newPath + path.substr(oldPath.size());
 
         }
 

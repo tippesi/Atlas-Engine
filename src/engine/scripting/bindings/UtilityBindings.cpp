@@ -1,4 +1,5 @@
 #include "UtilityBindings.h"
+#include "MemberBindings.h"
 
 #include "Clock.h"
 #include "Log.h"
@@ -6,16 +7,27 @@
 
 #include "volume/AABB.h"
 #include "volume/Frustum.h"
+#include "volume/Ray.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GenerateUtilityBindings(sol::table* ns) {
+    void GenerateUtilityBindings(Binder* ns) {
 
         auto log = ns->new_usertype<Log>("Log");
         // Set it manually here to avoid having a function that require the optional argument to log
         log.set_function("Message", [](const std::string& msg) { Log::Message(msg); });
         log.set_function("Warning", [](const std::string& warn) { Log::Warning(warn); });
         log.set_function("Error", [](const std::string& err) { Log::Error(err); });
+        // The newest entries, oldest first, as { message, type ("message", "warning", "error"), time }
+        log.set_function("GetLatest", [](int32_t count, sol::this_state state) {
+            static const char* types[] = { "message", "warning", "error" };
+            sol::state_view lua(state);
+            sol::table entries = lua.create_table();
+            for (const auto& entry : Log::GetLatestEntries(count))
+                entries.add(lua.create_table_with("message", entry.message, "type", types[entry.type],
+                    "time", entry.time));
+            return entries;
+            });
 
         ns->new_usertype<Clock>("Clock",
             "Get", &Clock::Get,
@@ -24,19 +36,19 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Common::MatrixDecomposition>("MatrixDecomposition",
             sol::call_constructor,
-            sol::constructors<Common::MatrixDecomposition(glm::mat4)>(),
+            sol::constructors<Common::MatrixDecomposition(mat4)>(),
             "Compose", &Common::MatrixDecomposition::Compose,
             "Decompose", &Common::MatrixDecomposition::Decompose,
-            "translation", &Common::MatrixDecomposition::translation,
-            "rotation", &Common::MatrixDecomposition::rotation,
-            "scale", &Common::MatrixDecomposition::scale,
-            "perspective", &Common::MatrixDecomposition::perspective,
-            "skew", &Common::MatrixDecomposition::skew,
-            "quaternion", &Common::MatrixDecomposition::quaternion);
+            "translation", DependentMember<&Common::MatrixDecomposition::translation>(),
+            "rotation", DependentMember<&Common::MatrixDecomposition::rotation>(),
+            "scale", DependentMember<&Common::MatrixDecomposition::scale>(),
+            "perspective", DependentMember<&Common::MatrixDecomposition::perspective>(),
+            "skew", DependentMember<&Common::MatrixDecomposition::skew>(),
+            "quaternion", DependentMember<&Common::MatrixDecomposition::quaternion>());
 
     }
 
-    void GenerateVolumeBindings(sol::table* ns) {
+    void GenerateVolumeBindings(Binder* ns) {
 
         auto isInsideAABBOverload = sol::overload(
             [](Volume::AABB& aabb0, const Volume::AABB& aabb1) { return aabb0.IsInside(aabb1); },
@@ -55,7 +67,7 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<Volume::AABB>("AABB",
             sol::call_constructor,
-            sol::constructors<Volume::AABB(), Volume::AABB(glm::vec3, glm::vec3)>(),
+            sol::constructors<Volume::AABB(), Volume::AABB(vec3, vec3)>(),
             "Intersects", &Volume::AABB::Intersects,
             "IsInside", isInsideAABBOverload,
             "Transform", &Volume::AABB::Transform,
@@ -67,18 +79,29 @@ namespace Atlas::Scripting::Bindings {
             "GetSize", &Volume::AABB::GetSize,
             "GetDistance", &Volume::AABB::GetDistance,
             "GetCorners", &Volume::AABB::GetCorners,
-            "min", &Volume::AABB::min,
-            "max", &Volume::AABB::max
+            "min", DependentMember<&Volume::AABB::min>(),
+            "max", DependentMember<&Volume::AABB::max>()
+            );
+
+        ns->new_usertype<Volume::Ray>("Ray",
+            sol::call_constructor,
+            sol::constructors<Volume::Ray(), Volume::Ray(vec3, vec3),
+                Volume::Ray(vec3, vec3, float, float)>(),
+            "Get", &Volume::Ray::Get,
+            "origin", DependentMember<&Volume::Ray::origin>(),
+            "direction", DependentMember<&Volume::Ray::direction>(),
+            "tMin", &Volume::Ray::tMin,
+            "tMax", &Volume::Ray::tMax
             );
 
         auto resizeFrustumOverload = sol::overload(
-            [](Volume::Frustum& frustum, const std::vector<vec3>& corners) { frustum.Resize(corners); },
+            [](Volume::Frustum& frustum, const std::array<vec3, 8>& corners) { frustum.Resize(corners); },
             [](Volume::Frustum& frustum, const mat4& matrix) { frustum.Resize(matrix); }
         );
 
         ns->new_usertype<Volume::Frustum>("Frustum",
             sol::call_constructor,
-            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::vector<vec3>&), Volume::Frustum(glm::mat4)>(),
+            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::array<vec3, 8>&), Volume::Frustum(mat4)>(),
             "Resize", resizeFrustumOverload,
             "Intersects", &Volume::Frustum::Intersects,
             "IsInside", &Volume::Frustum::IsInside,

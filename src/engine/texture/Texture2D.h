@@ -5,6 +5,7 @@
 
 #include "../common/Image.h"
 #include "../loader/ImageLoader.h"
+#include "../loader/KtxLoader.h"
 
 namespace Atlas {
 
@@ -27,7 +28,7 @@ namespace Atlas {
              * @param filtering The filtering of the texture.
              */
             Texture2D(int32_t width, int32_t height, VkFormat format, Wrapping wrapping = Wrapping::Repeat,
-                Filtering filtering = Filtering::Nearest);
+                Filtering filtering = Filtering::Nearest, bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             /**
             * Constructs a Texture2D object from an image file.
@@ -39,7 +40,7 @@ namespace Atlas {
             */
             explicit Texture2D(const std::string& filename, bool colorSpaceConversion = true,
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Anisotropic,
-                int32_t forceChannels = 0);
+                int32_t forceChannels = 0, bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             /**
              * Constructs a Texture2D object from an image object.
@@ -60,6 +61,15 @@ namespace Atlas {
                 Filtering filtering = Filtering::Anisotropic);
 
             /**
+             * Constructs a Texture2D object from a ktx image object.
+             * @param image The ktx image object.
+             * @param wrapping The wrapping of the texture. Controls texture border behaviour.
+             * @param filtering The filtering of the texture.
+             */
+            explicit Texture2D(const Ref<Loader::KtxImage>& image, Wrapping wrapping = Wrapping::Repeat,
+                Filtering filtering = Filtering::Anisotropic, bool dedicatedMemory = false);
+
+            /**
              * Resizes the texture
              * @param width The new width of the texture.
              * @param height The new height of the texture.
@@ -76,47 +86,41 @@ namespace Atlas {
             template<typename T>
             void Save(std::string& filename, bool flipHorizontally = false);
 
+            /**
+             * Reads the texture back into an image. Floating point textures can be read into any image type,
+             * integer types are normalized like Common::Image::ConvertData does. Integer textures need the matching type.
+             * @note Only uint8_t, uint16_t and float are supported typenames.
+             */
+            template<typename T>
+            Ref<Common::Image<T>> GetImage();
+
         private:
+            void InitializeInternal(const Ref<Loader::KtxImage>& image, Wrapping wrapping,
+                Filtering filtering, bool dedicatedMemory = false);
+
             template<typename T>
             void InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping,
-                Filtering filtering);
+                Filtering filtering, bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
         };
 
         template<typename T>
         void Texture2D::Save(std::string& filename, bool flipHorizontally) {
 
-            auto image = CreateRef<Common::Image<T>>(width, height, channels);
-
-            std::vector<T> data;
+            auto image = GetImage<T>();
 
             if constexpr (std::is_same_v<T, uint8_t>) {
                 image->fileFormat = Common::ImageFormat::PNG;
                 filename += ".png";
-                data = GetData<T>();
             }
             else if constexpr (std::is_same_v<T, uint16_t>) {
                 image->fileFormat = Common::ImageFormat::PGM;
                 filename += ".pgm";
-                data = GetData<T>();
             }
             else if constexpr (std::is_same_v<T, float>) {
                 image->fileFormat = Common::ImageFormat::HDR;
                 filename += ".hdr";
-                // We have a lot of 16bit float textures, need some care
-                if (this->image->bitDepth < 32) {
-                    auto texData = GetData<float16>();
-                    std::transform(texData.begin(), texData.end(), std::back_inserter(data),
-                        [](float16 x) {
-                            return glm::detail::toFloat32(x);
-                        });
-                }
-                else {
-                    data = GetData<T>();
-                }
             }
-
-            image->SetData(data);
 
             if (flipHorizontally)
                 image->FlipHorizontally();
@@ -126,11 +130,43 @@ namespace Atlas {
         }
 
         template<typename T>
-        void Texture2D::InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering) {
+        Ref<Common::Image<T>> Texture2D::GetImage() {
 
-            // RGB images are mostly not supported
+            auto image = CreateRef<Common::Image<T>>(width, height, channels);
+
+            auto halfFloat = format == VK_FORMAT_R16_SFLOAT || format == VK_FORMAT_R16G16_SFLOAT ||
+                format == VK_FORMAT_R16G16B16A16_SFLOAT;
+            auto fullFloat = format == VK_FORMAT_R32_SFLOAT || format == VK_FORMAT_R32G32_SFLOAT ||
+                format == VK_FORMAT_R32G32B32A32_SFLOAT;
+
+            if (!halfFloat && !fullFloat) {
+                AE_ASSERT(this->image->bitDepth == sizeof(T) * 8 && "Integer textures need an image of the same type");
+                image->SetData(GetData<T>());
+                return image;
+            }
+
+            Common::Image<float> floatImage(width, height, channels);
+            if (halfFloat) {
+                auto halfData = GetData<float16>();
+                std::transform(halfData.begin(), halfData.end(), floatImage.GetData().begin(),
+                    [](float16 value) { return glm::detail::toFloat32(value); });
+            }
+            else {
+                floatImage.SetData(GetData<float>());
+            }
+
+            image->SetData(floatImage.ConvertData<T>());
+            return image;
+
+        }
+
+        template<typename T>
+        void Texture2D::InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering,
+            bool dedicatedMemory, bool usedForRenderTarget) {
+
+            // RGB images are mostly not supported (but we don't want the alpha channel to be zero)
             if (image->channels == 3) {
-                image->ExpandToChannelCount(4, 0);
+                image->ExpandToChannelCount(4, 255);
             }
 
             if constexpr (std::is_same_v<T, uint8_t>) {
@@ -155,7 +191,7 @@ namespace Atlas {
                 }
             }
 
-            Reallocate(Graphics::ImageType::Image2D, image->width, image->height, 1, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, image->width, image->height, 1, filtering, wrapping, dedicatedMemory, usedForRenderTarget);
             RecreateSampler(filtering, wrapping);
 
             SetData(image->GetData());

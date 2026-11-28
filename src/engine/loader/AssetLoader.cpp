@@ -1,7 +1,16 @@
 #include "AssetLoader.h"
 #include "../common/Path.h"
 #include "../Log.h"
+#include "../Engine.h"
+#include "../events/EventManager.h"
 
+#include <nlohmann/json.hpp>
+#include <SDL3/SDL.h>
+
+#include <chrono>
+#include <filesystem>
+#include <random>
+#include <thread>
 #include <vector>
 #include <sys/stat.h>
 
@@ -18,48 +27,34 @@ namespace Atlas {
 
         std::mutex AssetLoader::assetLoaderMutex;
 
-#ifdef AE_OS_ANDROID
-        AAssetManager* AssetLoader::manager;
-#endif
-
         bool AssetLoader::alwaysReload = false;
         std::unordered_set<std::string> AssetLoader::readFiles;
 
         void AssetLoader::Init() {
 
 #ifdef AE_OS_ANDROID
-            auto interface = (JNIEnv*)SDL_AndroidGetJNIEnv();
-
-            JNIEnv* env = interface;
-
-            jobject activity = (jobject)SDL_AndroidGetActivity();
-
-            jclass Activity = interface->GetObjectClass(activity);
-
-            // We use the activity to call the Java methods and obtain the classes to get the AssetManager
-            jmethodID getResources = env->GetMethodID(Activity, "getResources",
-                "()Landroid/content/res/Resources;");
-            jobject ressource = env->CallObjectMethod(activity, getResources);
-
-            jclass resourcesClazz = env->FindClass("android/content/res/Resources");
-            jmethodID getAssetManager = env->GetMethodID(resourcesClazz, "getAssets",
-                "()Landroid/content/res/AssetManager;");
-            jobject assetManager = env->CallObjectMethod(ressource, getAssetManager);
-
-            manager = AAssetManager_fromJava(interface, assetManager);
-
-            dataDirectory = std::string(SDL_AndroidGetInternalStoragePath());
+            dataDirectory = std::string(SDL_GetAndroidInternalStoragePath());
+#elif defined(AE_OS_APPLE_MOBILE)
+            auto prefPath = SDL_GetPrefPath("AtlasEngine", "AtlasEngine");
+            if (prefPath != nullptr) {
+                dataDirectory = Common::Path::Normalize(Common::Path::GetAbsolute(prefPath));
+                SDL_free(prefPath);
+            }
 #endif
 
         }
 
         void AssetLoader::SetAssetDirectory(const std::string& directory) {
 
+            auto changed = !assetDirectory.empty() && assetDirectory != directory;
             assetDirectory = directory;
 
-#ifndef AE_OS_ANDROID
+#if !defined(AE_OS_ANDROID) && !defined(AE_OS_APPLE_MOBILE)
             dataDirectory = Common::Path::Normalize(Common::Path::GetAbsolute(directory));
 #endif
+
+            if (changed)
+                Events::EventManager::AssetDirectoryChangeEventDelegate.Fire();
 
         }
 
@@ -69,11 +64,22 @@ namespace Atlas {
 
         }
 
+        std::string AssetLoader::GetDataDirectory() {
+
+            return dataDirectory;
+
+        }
+
         bool AssetLoader::FileExists(const std::string& filename) {
 
-            auto assetDir = Common::Path::GetAbsolute(assetDirectory);
-
-            std::ifstream stream(assetDir + "/" + filename);
+            auto path = Common::Path::IsAbsolute(filename) ? filename : GetDataPath(filename);
+            std::ifstream stream(path);
+#ifdef AE_OS_APPLE_MOBILE
+            if (!stream.good()) {
+                std::ifstream assetStream(GetAssetPath(filename));
+                return assetStream.good();
+            }
+#endif
             return stream.good();
 
         }
@@ -92,7 +98,7 @@ namespace Atlas {
             stream.open(path, mode);
 
             // It might be that the file is not unpacked
-#ifdef AE_OS_ANDROID
+#if defined(AE_OS_ANDROID) || defined(AE_OS_APPLE_MOBILE)
             if (alwaysReload && stream.is_open()) {
                 // We only want to unpack a file once per app execution
                 if (readFiles.find(path) == readFiles.end()) {
@@ -119,7 +125,7 @@ namespace Atlas {
             std::string path;
 
             if (!Common::Path::IsAbsolute(filename))
-                path = GetFullPath(filename);
+                path = GetDataPath(filename);
             else
                 path = filename;
 
@@ -128,9 +134,10 @@ namespace Atlas {
             // If file couldn't be opened we try again after we created the
             // directories which point to that file
             if (!stream.is_open()) {
-                size_t directoryPosition = filename.find_last_of("/");
-                if (directoryPosition != std::string::npos) {
-                    MakeDirectory(filename.substr(0, directoryPosition));
+                auto parentPath = std::filesystem::path(path).parent_path();
+                if (!parentPath.empty()) {
+                    std::error_code errorCode;
+                    std::filesystem::create_directories(parentPath, errorCode);
                     stream.open(path, mode);
                 }
             }
@@ -139,12 +146,58 @@ namespace Atlas {
 
         }
 
+        bool AssetLoader::WriteFileAtomically(const std::string& filename, const char* data, size_t size) {
+
+            auto path = GetFullPath(filename);
+            auto tempPath = path + "." + std::to_string(std::random_device()());
+
+            auto stream = WriteFile(tempPath, std::ios::out | std::ios::binary);
+            if (!stream.is_open())
+                return false;
+
+            stream.write(data, std::streamsize(size));
+            stream.close();
+
+            std::error_code error;
+            if (!stream.fail())
+                std::filesystem::rename(tempPath, path, error);
+
+            // Windows refuses to replace a file while it's read, e.g. by a job
+            const int32_t maxReplaceAttempts = 50;
+            for (int32_t attempt = 0; error && attempt < maxReplaceAttempts; attempt++) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                std::filesystem::rename(tempPath, path, error);
+            }
+
+            if (stream.fail() || error) {
+                RemoveFile(tempPath);
+                return false;
+            }
+
+            return true;
+
+        }
+
+        bool AssetLoader::WriteJson(const std::string& filename, json& j, JsonFormat format) {
+
+            j["engineVersion"] = Engine::GetVersion();
+
+            if (format == JsonFormat::MessagePack || format == JsonFormat::BJData) {
+                auto data = format == JsonFormat::MessagePack ? json::to_msgpack(j) : json::to_bjdata(j);
+                return WriteFileAtomically(filename, reinterpret_cast<const char*>(data.data()), data.size());
+            }
+
+            auto text = format == JsonFormat::Indented ? j.dump(2) : j.dump();
+            return WriteFileAtomically(filename, text.data(), text.size());
+
+        }
+
         bool AssetLoader::RemoveFile(std::string filename) {
 
             std::string path;
 
             if (!Common::Path::IsAbsolute(filename))
-                path = GetFullPath(filename);
+                path = GetDataPath(filename);
             else
                 path = filename;
 
@@ -171,11 +224,14 @@ namespace Atlas {
 
             const int32_t tryCount = 2;
 
+            auto fullPath = Common::Path::IsAbsolute(path) ? path : GetFullPath(path);
+
+            // Missing files are expected here, exceptions would stop the process for each of them under a debugger
             for (int32_t i = 0; i < tryCount; i++) {
-                try {
-                    return std::filesystem::last_write_time(GetFullPath(path));
-                }
-                catch (...) {}
+                std::error_code errorCode;
+                auto fileTime = std::filesystem::last_write_time(fullPath, errorCode);
+                if (!errorCode)
+                    return fileTime;
             }
 
             return defaultTime;
@@ -196,58 +252,48 @@ namespace Atlas {
 
         void AssetLoader::MakeDirectory(std::string directory) {
 
-            directory = Common::Path::Normalize(directory);
-
-            directory += "/";
-
-            for (int32_t i = 0; i < directory.length(); i++) {
-                if (directory[i] == '/') {
-                    auto subPath = directory.substr(0, i);
-                    auto path = GetFullPath(subPath);
-#ifdef AE_OS_WINDOWS
-                    _mkdir(path.c_str());
-#else
-                    mkdir(path.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-#endif
-                }
-            }
+            auto path = Common::Path::IsAbsolute(directory) ? directory : GetDataPath(directory);
+            std::filesystem::create_directories(path);
 
         }
 
         void AssetLoader::UnpackFile(const std::string& filename) {
+            
+#if defined(AE_OS_ANDROID) || defined(AE_OS_APPLE_MOBILE)
+            std::string path;
+            if (Common::Path::IsAbsolute(filename)) {
+                path = GetRelativePath(filename);
+            }
+            else {
+                path = filename;
+            }
 
             std::lock_guard<std::mutex> guard(assetLoaderMutex);
 
-#ifdef AE_OS_ANDROID
-            auto assetPath = Common::Path::Normalize(GetAssetPath(filename));
+            // On Android SDL looks for relative paths in the internal storage first, then in the APK assets
+            auto assetPath = Common::Path::Normalize(GetAssetPath(path));
 
-            auto asset = AAssetManager_open(manager, assetPath.c_str(), AASSET_MODE_UNKNOWN);
-
+            auto asset = SDL_IOFromFile(assetPath.c_str(), "rb");
             if (!asset) {
                 Log::Error("Asset not found " + assetPath);
                 return;
             }
 
-            auto stream = WriteFile(filename, std::ios::out);
-
+            auto stream = WriteFile(path, std::ios::out | std::ios::binary);
             if (!stream.is_open()) {
-                AAsset_close(asset);
+                SDL_CloseIO(asset);
                 Log::Error("Unable to copy asset " + assetPath);
                 return;
             }
 
-            int32_t assetLength = AAsset_getLength(asset);
+            std::vector<char> buffer(1 << 16);
 
-            std::vector<char> buffer(assetLength);
+            size_t readLength = 0;
 
-            int32_t readLength = 0;
+            while ((readLength = SDL_ReadIO(asset, buffer.data(), buffer.size())) > 0)
+                stream.write(buffer.data(), std::streamsize(readLength));
 
-            while ((readLength = AAsset_read(asset, buffer.data(), assetLength)) > 0)
-                stream.write(buffer.data(), readLength);
-
-            stream.close();
-
-            AAsset_close(asset);
+            SDL_CloseIO(asset);
 #endif
 
         }
@@ -257,19 +303,22 @@ namespace Atlas {
             if (Common::Path::IsAbsolute(path))
                 return path;
 
-            return dataDirectory + "/" + path;
+            auto dataPath = GetDataPath(path);
+            return dataPath;
 
         }
 
         std::string AssetLoader::GetRelativePath(const std::string& path) {
 
             auto pos = path.find(dataDirectory);
-            if (pos != std::string::npos) {
+            if (pos != std::string::npos)
+                return path.substr(pos + dataDirectory.length() + 1);
 
-                auto relativePath = path.substr(pos + dataDirectory.length() + 1);
-                return relativePath;
-
-            }
+#if defined(AE_OS_ANDROID) || defined(AE_OS_APPLE_MOBILE)
+            pos = path.find(assetDirectory);
+            if (pos != std::string::npos)
+                return path.substr(pos + assetDirectory.length() + 1);
+#endif
 
             return path;
 
@@ -277,15 +326,16 @@ namespace Atlas {
 
         bool AssetLoader::IsFileInAssetDirectory(std::string path) {
 
-            auto assetDir = Common::Path::GetAbsolute(assetDirectory);
-
             path = Common::Path::GetAbsolute(path);
 
-            // File not in asset directory
-            if (path.find(assetDir) == std::string::npos)
-                return false;
+            if (path.find(Common::Path::GetAbsolute(dataDirectory)) != std::string::npos)
+                return true;
 
-            return true;
+            auto assetDir = Common::Path::GetAbsolute(assetDirectory);
+            if (path.find(assetDir) != std::string::npos)
+                return true;
+
+            return false;
 
         }
 
@@ -297,12 +347,28 @@ namespace Atlas {
 
         }
 
-        std::string AssetLoader::GetAssetPath(std::string path) {
+        std::string AssetLoader::GetAssetPath(const std::string& path) {
 
             if (assetDirectory.length() > 0)
                 return assetDirectory + "/" + path;
 
             return path;
+
+        }
+
+        std::string AssetLoader::GetDataPath(const std::string& path) {
+
+            if (dataDirectory.length() > 0)
+                return dataDirectory + "/" + path;
+
+            return path;
+
+        }
+
+        bool AssetLoader::ExistsAtPath(const std::string& path) {
+
+            std::ifstream stream(path);
+            return stream.good();
 
         }
 

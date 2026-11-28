@@ -1,23 +1,30 @@
 #pragma once
 
-#include "Window.h"
+#include "DrawerWindow.h"
 #include "Singletons.h"
 #include "Icons.h"
 #include "ContentDiscovery.h"
+#include "ContentPreviews.h"
 #include "resource/ResourceManager.h"
 #include "common/Path.h"
 #include "ImguiExtension/ImguiWrapper.h"
 
 #include <cctype>
 #include <filesystem>
+#include <functional>
+#include <optional>
 #include <tuple>
 
 namespace Atlas::Editor::UI {
 
-    class ContentBrowserWindow : public Window {
+    class ContentBrowserWindow : public DrawerWindow {
 
     public:
         explicit ContentBrowserWindow(bool show);
+
+        // The old and the new path of content the user renamed, open windows follow it. They only change the references
+        // in their content if the ones in files change as well
+        std::function<void(const std::string& oldPath, const std::string& newPath, bool updateReferences)> onRename;
 
         ~ContentBrowserWindow() { JobSystem::Wait(searchAndFilterJob); }
 
@@ -25,45 +32,173 @@ namespace Atlas::Editor::UI {
 
         void Render();
 
-        std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        typedef uint32_t ContentFilter;
+
+		typedef enum ContentFilterBits {
+			AudioBit = (1 << 0),
+			MeshBit = (1 << 1),
+			MeshSourceBit = (1 << 2),
+			MaterialBit = (1 << 3),
+			TerrainBit = (1 << 4),
+			SceneBit = (1 << 5),
+			ScriptBit = (1 << 6),
+			FontBit = (1 << 7),
+			PrefabBit = (1 << 8),
+			TextureBit = (1 << 9),
+			EnvTextureBit = (1 << 10),
+			AnimationBit = (1 << 11),
+			MaterialGraphBit = (1 << 12),
+			ShaderBit = (1 << 13),
+			AllBit = (1 << static_cast<int>(ContentType::None)) - 1
+		} ContentFilterBits;
+
+        std::string currentDirectory = Loader::AssetLoader::GetDataDirectory();
+
+        ContentFilter contentFilter = ContentFilterBits::AllBit;
+        bool searchRecursively = true;
+		bool filterRecursively = false;
+
+        // Can be changed with Ctrl + mouse wheel
+        float iconSize = 64.0f;
+        static constexpr float minIconSize = 32.0f;
+        static constexpr float maxIconSize = 160.0f;
+
+        float folderPanelWidth = 220.0f;
+        bool listView = false;
+        // Pictures of textures, meshes, materials etc. instead of the icons of their type
+        bool showPreviews = true;
+        
+        static inline std::string contentToShowPath = "";
+        // Mesh, material, prefab or animation the user wants to open in its editor
+        static inline std::string contentToEditPath = "";
+        // The line of a script or shader to show, the first one is 1
+        static inline int32_t contentToEditLine = 0;
 
     private:
+        struct ContentCopy {
+            std::vector<std::string> paths;
+        };
+
+        enum EditingType {
+            Create = 0,
+            Rename
+        };
+
         void RenderDirectoryControl();
+
+        void RenderDirectoryContentControl();
 
         void RenderDirectoryContent();
 
-        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType);
+        void RenderDirectoryEntry(const Ref<ContentDirectory>& directory);
+
+        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType,
+            uintmax_t fileSize, int64_t lastWriteTime, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight);
+
+        // The preview fitted into the area of the icon, the icon fades out while the preview fades in
+        void RenderPreview(const ContentPreviews::Preview& preview, ContentType contentType, ImVec2 size, ImTextureID iconTexture);
+
+        // Files are cards with their preview, a line in the color of their type and their name. Folders only
+        // have their icon and name. True if the name was shortened
+        bool RenderTile(ImVec2 min, const std::string& filename, ContentType contentType, bool selected, bool hovered,
+            ImTextureID iconTexture, const ContentPreviews::Preview* preview);
+
+        // Up to two lines, true if the name was shortened
+        bool RenderTileName(ImDrawList* drawList, const std::string& name, ImVec2 position, float width, bool centered);
+
+        float GetTileHeight() const;
+
+        void RenderContentTooltip(const std::string& filename, ContentType contentType, uintmax_t fileSize,
+            const ContentPreviews::Preview* preview, ImTextureID iconTexture);
+
+        void RenderListColumns(const std::string& filename, ContentType contentType, uintmax_t fileSize, float rowWidth);
 
         bool IsValidFileType(const std::string& filename);
 
-        Texture::Texture2D& GetIcon(const ContentType contentType);
+        const char* GetTypeName(ContentType contentType) const;
 
-        void UpdateFilteredAndSortedDirEntries();
-
-        void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
-            const ContentType contentType, const std::string& searchQuery, bool recursively);
+        void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles,
+            const std::string& searchQuery, ContentFilter filter, bool recursively);
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
-        bool TextInputPopup(const char* name, bool& isVisible, std::string& input);
+        std::vector<std::string> GetSelectedPaths();
 
-        int selectedFilter = -1;
+        void ApplyEdit(ContentType type);
+
+        void RenderDeleteConfirmation();
+
+        // Asks whether the files which use a renamed file are changed as well
+        void RenderRenameConfirmation();
+
+        // The files which use a file
+        void RenderReferences();
+
+        // A list of files, a click shows one. A progress bar until the references are known
+        void RenderUserList();
+
+        // Once the references are known
+        void FindUsersOnce(const std::function<std::vector<std::string>()>& find);
+
+        void RenameContent();
+
+        static std::string GetAssetPath(const std::filesystem::path& path);
+
+        // Files and folders the user chose to delete, removed once confirmed
+        std::vector<std::string> pendingDeletePaths;
+        bool pendingDeleteHasDirectory = false;
+        bool openDeleteConfirmation = false;
+
+        std::filesystem::path renameSource;
+        std::filesystem::path renameTarget;
+        bool openRenameConfirmation = false;
+
+        std::string referencedPath;
+        bool openReferences = false;
+
+        // The files which use what the open dialog is about
+        std::optional<std::vector<std::string>> users;
+
+        // The user decided about the rename, it waits for the jobs which read files
+        enum class RenameState {
+            Asking,
+            OnlyRename,
+            UpdateUsers
+        };
+        RenameState renameState = RenameState::Asking;
 
         std::string nextDirectory;
         std::string assetSearch;
-
-        std::string renameString;
-        std::filesystem::path renamePath;
-        bool renamePopupVisible = false;
+        std::string hightlightPath;
 
         std::vector<Ref<ContentDirectory>> directories;
         std::vector<Content> files;
 
-        JobGroup searchAndFilterJob{ JobPriority::Medium };
+        // Results of the search job, the window shows the last ones until the job has finished
+        std::vector<Ref<ContentDirectory>> foundDirectories;
+        std::vector<Content> foundFiles;
+        bool hasFoundEntries = false;
+
+        JobGroup searchAndFilterJob{ "Content search and filter", JobPriority::Medium };
+
+        ImGuiSelectionBasicStorage selectionStorage;
+
+        bool isEditing = false;
+        bool editingChanged = false;
+        EditingType editingType = EditingType::Create;
+        std::string editingString;
+        std::filesystem::path editingPath;
 
         const float padding = 8.0f;
-        const float iconSize = 64.f;
-        const float itemSize = iconSize + 2.0f * padding;
+        // Size of the tiles in this frame, they fill the width of the window
+        float tileSize = 64.0f;
+        float gridStart = 8.0f;
+
+        const float tileGap = 6.0f;
+        const float tileRounding = 6.0f;
+        const float tileThumbnailInset = 3.0f;
+        const float tileTypeLineHeight = 2.0f;
+        const float tileLabelPadding = 6.0f;
 
     };
 

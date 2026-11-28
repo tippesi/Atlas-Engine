@@ -1,9 +1,10 @@
 #pragma once
 
 #include "../LuaScriptManager.h"
+#include "../Binder.h"
 
 namespace Atlas::Scripting::Bindings {
 
-    void GeneratePhysicsBindings(sol::table* ns);
+    void GeneratePhysicsBindings(Binder* ns);
 
 }

@@ -15,13 +15,14 @@
 #include "QueryPool.h"
 #include "BLAS.h"
 #include "TLAS.h"
-#include "Framebuffer.h"
 #include "MemoryManager.h"
 
 #include "../common/Ref.h"
 #include "../jobsystem/JobSystem.h"
 
+#include <map>
 #include <optional>
+#include <functional>
 #include <vector>
 #include <mutex>
 #include <set>
@@ -34,15 +35,42 @@ namespace Atlas {
         class Instance;
         class ImguiWrapper;
 
+        struct DeviceDesc {
+#ifdef AE_BUILDTYPE_DEBUG
+            bool enableValidationLayers = true;
+            // Bounds checks for descriptor accesses (VK_EXT_robustness2), costs some GPU performance
+            bool enableRobustness = true;
+#else
+            bool enableValidationLayers = false;
+            bool enableRobustness = false;
+#endif
+            // GPU assisted, synchronization and best practices validation, very slow
+            bool enableExtendedValidation = false;
+            // Configures which messages of the validation layers to log
+            Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
+            // A lost device logs the profiler queries the queues were in (VK_NV_device_diagnostic_checkpoints) and the
+            // fault the driver reports (VK_EXT_device_fault), the checkpoints cost a little GPU time
+            bool enableCrashDiagnostics = false;
+            // Off traces with the software BVH where the device supports hardware ray tracing, e.g. to compare both
+            bool enableHardwareRayTracing = true;
+            // Device extensions enabled where the selected physical device supports them
+            std::function<std::vector<std::string>(VkInstance, VkPhysicalDevice)> optionalExtensions;
+        };
+
         struct DeviceSupport {
+            // Includes position fetch, hits read their triangle positions from the acceleration structure
             bool hardwareRayTracing = false;
+            // Hit objects in ray tracing pipelines on devices which reorder them
+            bool shaderExecutionReordering = false;
             bool shaderPrintf = false;
-            bool bindless = false;
             bool debugMarker = false;
             bool wideLines = false;
             bool shaderFloat16 = false;
             bool extendedDynamicState = false;
             bool memoryPriority = false;
+            // Crash diagnostics, see DeviceDesc::enableCrashDiagnostics
+            bool diagnosticCheckpoints = false;
+            bool deviceFault = false;
         };
 
         struct CommandListSubmission {
@@ -65,34 +93,9 @@ namespace Atlas {
 
             std::vector<CommandListSubmission> submissions;
 
-            void WaitAndReset(VkDevice device) {
-                if (submittedCommandLists.size() > 0) {
-                    std::vector<VkFence> fences;
-                    for (auto commandList : submittedCommandLists) {
-                        fences.push_back(commandList->fence);
-                    }
-                    VK_CHECK(vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 30000000000))
-                    VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
-                }
+            void WaitAndReset(VkDevice device);
 
-                for (auto commandList : submittedCommandLists) {
-                    commandList->ResetDescriptors();
-                    commandList->frameBufferInUse = nullptr;
-                    commandList->renderPassInUse = nullptr;
-                    commandList->pipelineInUse = nullptr;
-                    commandList->wasSwapChainAccessed = false;
-                    commandList->isLocked = false;
-                }
-                submittedCommandLists.clear();
-                submissions.clear();
-            }
-
-            void RecreateSemaphore(VkDevice device) {
-                vkDestroySemaphore(device, semaphore, nullptr);
-
-                VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-                VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
-            }
+            void RecreateSemaphore(VkDevice device);
         };
 
         class GraphicsDevice {
@@ -100,7 +103,7 @@ namespace Atlas {
             friend ImguiWrapper;
 
         public:
-            explicit GraphicsDevice(Surface* surface, bool enableValidationLayers = false);
+            explicit GraphicsDevice(Surface* surface, const DeviceDesc& desc);
 
             GraphicsDevice(const GraphicsDevice& that) = delete;
 
@@ -111,15 +114,13 @@ namespace Atlas {
             SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR,
                 ColorSpace preferredColorSpace = SRGB_NONLINEAR);
 
-            Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
-
-            Ref<FrameBuffer> CreateFrameBuffer(FrameBufferDesc desc);
-
             Ref<Shader> CreateShader(ShaderDesc desc);
 
             Ref<Pipeline> CreatePipeline(GraphicsPipelineDesc desc);
 
             Ref<Pipeline> CreatePipeline(ComputePipelineDesc desc);
+
+            Ref<Pipeline> CreatePipeline(RayTracingPipelineDesc desc);
 
             Ref<Buffer> CreateBuffer(BufferDesc desc);
 
@@ -155,6 +156,12 @@ namespace Atlas {
 
             void SubmitFrame();
 
+            // The index of the frame which is recorded, data of a frame can be reused after FRAME_DATA_COUNT frames
+            int32_t GetFrameIndex() const { return frameIndex; }
+
+            // The transfer queue has its own family if the device has one
+            uint32_t GetQueueFamilyIndex(QueueType queueType) const { return queueFamilyIndices.queueFamilies[queueType].value(); }
+
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
             QueueRef GetAndLockQueue(QueueType queueType);
@@ -162,6 +169,12 @@ namespace Atlas {
             void WaitForIdle();
 
             void ForceMemoryCleanup();
+
+            static void HandleDeviceLost();
+
+            // Marks the progress of a command list, see DeviceDesc::enableCrashDiagnostics. Returns a pointer to the name
+            // which stays valid, the queues report it when the device is lost
+            static const char* GetCheckpointMarker(const std::string& name);
 
             void SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle);
 
@@ -182,19 +195,29 @@ namespace Atlas {
             VkPhysicalDeviceProperties2 deviceProperties = {};
             VkPhysicalDeviceVulkan11Properties deviceProperties11 = {};
             VkPhysicalDeviceVulkan12Properties deviceProperties12 = {};
+            VkPhysicalDeviceVulkan13Properties deviceProperties13 = {};
+            VkPhysicalDeviceDriverProperties driverProperties = {};
             VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
+            VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT invocationReorderProperties = {};
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
             VkPhysicalDeviceSubgroupSizeControlProperties subgroupSizeControlProperties = {};
 
             VkPhysicalDeviceFeatures2 availableFeatures = {};
             VkPhysicalDeviceVulkan11Features availableFeatures11 = {};
             VkPhysicalDeviceVulkan12Features availableFeatures12 = {};
+            VkPhysicalDeviceVulkan13Features availableFeatures13 = {};
+            VkPhysicalDeviceRobustness2FeaturesEXT availableRobustness2Features = {};
+            VkPhysicalDeviceCooperativeMatrixFeaturesKHR availableCooperativeMatrixFeatures = {};
+            VkPhysicalDeviceShaderFloat8FeaturesEXT availableFloat8Features = {};
+            VkPhysicalDeviceRayTracingPipelineFeaturesKHR availableRayTracingPipelineFeatures = {};
+            VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR availablePositionFetchFeatures = {};
+            VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT availableInvocationReorderFeatures = {};
+            VkPhysicalDeviceFaultFeaturesEXT availableFaultFeatures = {};
 
+            DeviceDesc desc;
             DeviceSupport support;
             std::set<std::string> supportedExtensions;
 
-            Resources<RenderPass> renderPasses;
-            Resources<FrameBuffer> frameBuffers;
             Resources<Shader> shaders;
             Resources<Pipeline> pipelines;
             Resources<Buffer> buffers;
@@ -208,6 +231,9 @@ namespace Atlas {
             Resources<TLAS> tlases;
 
             bool isComplete = false;
+            std::atomic_bool isDeviceLost = false;
+
+            std::atomic_uint64_t resourceIdCounter = 1;
 
             static GraphicsDevice* DefaultDevice;
 
@@ -242,7 +268,7 @@ namespace Atlas {
             QueueRef SubmitAllCommandLists();
 
             void SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-                VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue);
+                VkSemaphore previousFrameSemaphore, const QueueRef& queue, VkSemaphore signalSemaphore);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
                 const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);
@@ -251,6 +277,9 @@ namespace Atlas {
                 const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);
 
             bool FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+
+            // The last checkpoints of the queues and the fault of the driver
+            void LogCrashDiagnostics();
 
             std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos();
 
@@ -265,7 +294,7 @@ namespace Atlas {
             void GetPhysicalDeviceProperties(VkPhysicalDevice device);
 
             void CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
-                const std::vector<const char*>& extensions, bool enableValidationLayers);
+                const std::vector<const char*>& extensions);
 
             bool CheckForWindowResize();
 
@@ -302,6 +331,9 @@ namespace Atlas {
 
             QueueFamilyIndices queueFamilyIndices;
 
+            // Shaders with the same bindings share their layouts, under the mutex of descriptorSetLayouts
+            std::map<std::vector<uint64_t>, std::weak_ptr<DescriptorSetLayout>> descriptorSetLayoutCache;
+
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
 
@@ -314,7 +346,7 @@ namespace Atlas {
             std::shared_mutex queueMutex;
 
             std::atomic_bool frameSubmissionComplete = true;
-            JobGroup submitFrameJob { JobPriority::High };
+            JobGroup submitFrameJob { "Submit frame", JobPriority::High};
 
         };
 

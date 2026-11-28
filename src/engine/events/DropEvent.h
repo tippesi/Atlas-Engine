@@ -5,10 +5,10 @@
 
 #include <string>
 
-#define AE_FILEDROP SDL_DROPFILE
-#define AE_TEXTDROP SDL_DROPTEXT
-#define AE_BEGINDROP SDL_DROPBEGIN
-#define AE_COMPLETEDROP SDL_DROPCOMPLETE
+#define AE_FILEDROP SDL_EVENT_DROP_FILE
+#define AE_TEXTDROP SDL_EVENT_DROP_TEXT
+#define AE_BEGINDROP SDL_EVENT_DROP_BEGIN
+#define AE_COMPLETEDROP SDL_EVENT_DROP_COMPLETE
 
 namespace Atlas {
 
@@ -23,8 +23,8 @@ namespace Atlas {
             explicit DropEvent(SDL_DropEvent event) {
 
                 windowID = event.windowID;
-                if (event.file)
-                    file = std::string(event.file);
+                if (event.data)
+                    file = std::string(event.data);
                 type = event.type;
 
             }

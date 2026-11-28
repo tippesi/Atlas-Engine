@@ -3,8 +3,38 @@
 
 namespace Atlas::Renderer {
 
+    void RenderTargetData::Transition(Graphics::CommandList* commandList, VkImageLayout layout, VkAccessFlags access,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) const {
+
+        Graphics::ImageBarrier imageBarriers[10];
+        size_t barrierCount = 0;
+        for (auto& texture : { baseColorTexture, depthTexture, normalTexture, geometryNormalTexture,
+            roughnessMetallicAoTexture, emissiveTexture, offsetTexture, materialIdxTexture, stencilTexture, velocityTexture }) {
+            if (texture)
+                imageBarriers[barrierCount++] = { texture->image, layout, access };
+        }
+
+        commandList->PipelineBarrier(std::span(imageBarriers, barrierCount), {}, srcStageMask, dstStageMask);
+
+    }
+
+    void RenderTargetDataHistory::Transition(Graphics::CommandList* commandList, VkImageLayout layout, VkAccessFlags access,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) const {
+
+        Graphics::ImageBarrier imageBarriers[7];
+        size_t barrierCount = 0;
+        for (auto& texture : { depthTexture, normalTexture, geometryNormalTexture, roughnessMetallicAoTexture,
+            materialIdxTexture, stencilTexture, velocityTexture }) {
+            if (texture)
+                imageBarriers[barrierCount++] = { texture->image, layout, access };
+        }
+
+        commandList->PipelineBarrier(std::span(imageBarriers, barrierCount), {}, srcStageMask, dstStageMask);
+
+    }
+
     RenderTarget::RenderTarget(int32_t width, int32_t height) : 
-        width(glm::max(4, width)), height(glm::max(4, height)) {
+        width(glm::max(minSize, width)), height(glm::max(minSize, height)) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -14,130 +44,39 @@ namespace Atlas::Renderer {
 
         ivec2 res = GetRelativeResolution(FULL_RES);
         targetData = RenderTargetData(res, true);
-        targetDataSwap = RenderTargetData(res, true);
+        historyData = RenderTargetDataHistory(res, true);
 
         ivec2 halfRes = GetRelativeResolution(HALF_RES);
         targetDataDownsampled2x = RenderTargetData(halfRes, false);
-        targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
+        historyDataDownsampled2x = RenderTargetDataHistory(halfRes, false);
 
         historyTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapHistoryTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        reactiveMaskTexture = Texture::Texture2D(scaledWidth, scaledWidth, VK_FORMAT_R8_UNORM,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        reactiveMaskTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear, false, true);
+        bloomTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear, false, true);
+        exposureTexture = Texture::Texture2D(1, 1, VK_FORMAT_R32_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
         outputTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         oceanDepthTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_D32_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
         oceanStencilTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UINT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
+        oceanNormalTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
 
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = targetData.baseColorTexture->format},
-                {.imageFormat = targetData.normalTexture->format},
-                {.imageFormat = targetData.geometryNormalTexture->format},
-                {.imageFormat = targetData.roughnessMetallicAoTexture->format},
-                {.imageFormat = targetData.materialIdxTexture->format},
-                {.imageFormat = targetData.velocityTexture->format},
-                {.imageFormat = targetData.stencilTexture->format},
-            };
-
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = targetData.depthTexture->format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2],
-                                     colorAttachments[3], colorAttachments[4], colorAttachments[5], colorAttachments[6]},
-                .depthAttachment = depthAttachment
-            };
-            gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
-        }
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = lightingTexture.format},
-                {.imageFormat = targetData.velocityTexture->format},
-                {.imageFormat = targetData.stencilTexture->format},
-            };
-
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = targetData.depthTexture->format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto afterLightingRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2]},
-                .depthAttachment = depthAttachment
-            };
-            afterLightingRenderPass = graphicsDevice->CreateRenderPass(afterLightingRenderPassDesc);
-        }
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = oceanStencilTexture.format}
-            };
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = oceanDepthTexture.format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto oceanRenderPassDesc = Graphics::RenderPassDesc {
-                .colorAttachments = {colorAttachments[0]},
-                .depthAttachment = depthAttachment
-            };
-            oceanRenderPass = graphicsDevice->CreateRenderPass(oceanRenderPassDesc);
-        }
-
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = outputTexture.format}
-            };
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            auto outputPassDesc = Graphics::RenderPassDesc {
-                .colorAttachments = {colorAttachments[0]}
-            };
-            outputRenderPass = graphicsDevice->CreateRenderPass(outputPassDesc);
-        }
-
-        CreateFrameBuffers();
+        CreateRenderings();
 
         SetGIResolution(HALF_RES, false);
-        SetAOResolution(HALF_RES);
         SetVolumetricResolution(HALF_RES);
         SetReflectionResolution(HALF_RES);
 
@@ -148,15 +87,12 @@ namespace Atlas::Renderer {
 
     void RenderTarget::Resize(int32_t width, int32_t height) {
 
-        this->width = glm::max(4, width);
-        this->height = glm::max(4, height);
+        this->width = glm::max(minSize, width);
+        this->height = glm::max(minSize, height);
 
         // Need to at least have a size of 2x2 pixels
         scaledWidth = glm::max(2, int32_t(scalingFactor * width));
-        scaledHeight = glm::max(2, int32_t(scalingFactor * height));
-
-        targetData.Resize(ivec2(scaledWidth, scaledHeight));
-        targetDataSwap.Resize(ivec2(scaledWidth, scaledHeight));
+        scaledHeight = glm::max(2, int32_t(scalingFactor * height));        
 
         // We have to also resize the other part of the history
         historyTexture.Resize(scaledWidth, scaledHeight);
@@ -164,21 +100,21 @@ namespace Atlas::Renderer {
         lightingTexture.Resize(scaledWidth, scaledHeight);
         reactiveMaskTexture.Resize(scaledWidth, scaledHeight);
         hdrTexture.Resize(width, height);
+        bloomTexture.Resize(width, height);
         outputTexture.Resize(width, height);
         sssTexture.Resize(scaledWidth, scaledHeight);
         oceanDepthTexture.Resize(scaledWidth, scaledHeight);
         oceanStencilTexture.Resize(scaledWidth, scaledHeight);
+        oceanNormalTexture.Resize(scaledWidth, scaledHeight);
 
         SetGIResolution(giResolution, giMomentsTexture.IsValid());
-        SetAOResolution(aoResolution);
         SetVolumetricResolution(volumetricResolution);
         SetReflectionResolution(reflectionResolution);
 
-        ivec2 halfRes = GetRelativeResolution(HALF_RES);
-        targetDataDownsampled2x.Resize(halfRes);
-        targetDataSwapDownsampled2x.Resize(halfRes);
+        UseForPathTracing(useForPathTracing);
 
-        CreateFrameBuffers();
+        if (separateReflectionData)
+            CreateReflectionData();
 
         hasHistory = false;
 
@@ -213,7 +149,19 @@ namespace Atlas::Renderer {
         hasHistory = true;
         swap = !swap;
 
-        CreateFrameBuffers();
+        std::swap(historyRadianceTexture, radianceTexture);
+        std::swap(historyRadianceMomentsTexture, radianceMomentsTexture);
+
+        historyData.Swap(targetData);
+        if (targetDataDownsampled2x.depthTexture)
+            historyDataDownsampled2x.Swap(targetDataDownsampled2x);
+
+        if (separateReflectionData) {
+            reflectionHistoryData.Swap(reflectionData);
+            reflectionHistoryDataDownsampled2x.Swap(reflectionDataDownsampled2x);
+        }
+
+        CreateRenderings();
 
     }
 
@@ -236,27 +184,27 @@ namespace Atlas::Renderer {
         giResolution = resolution;
 
         giTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         if (createMomentsTexture) {
             giLengthTexture.Reset();
             historyGiLengthTexture.Reset();
             giMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             historyGiMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         }
         else {
             giMomentsTexture.Reset();
             historyGiMomentsTexture.Reset();
             giLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         }
 
         hasHistory = false;
@@ -269,47 +217,20 @@ namespace Atlas::Renderer {
 
     }
 
-    void RenderTarget::SetAOResolution(RenderResolution resolution) {
-
-        auto res = GetRelativeResolution(resolution);
-        aoResolution = resolution;
-
-        aoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        swapAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        historyAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-
-        aoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        historyAoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-
-        hasHistory = false;
-
-    }
-
-    RenderResolution RenderTarget::GetAOResolution() {
-
-        return aoResolution;
-
-    }
-
     void RenderTarget::SetVolumetricResolution(RenderResolution resolution) {
 
         auto res = GetRelativeResolution(resolution);
         volumetricResolution = resolution;
 
-        volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
-        swapVolumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
+        volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         hasHistory = false;
 
@@ -321,22 +242,35 @@ namespace Atlas::Renderer {
 
     }
 
+    void RenderTarget::SetFroxelResolution(ivec3 resolution) {
+
+        froxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        historyFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        filteredFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        integratedFroxelTexture = Texture::Texture3D(resolution.x, resolution.y, resolution.z,
+            VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+
+    }
+
     void RenderTarget::SetReflectionResolution(RenderResolution resolution) {
 
         auto res = GetRelativeResolution(resolution);
         reflectionResolution = resolution;
 
         reflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         hasHistory = false;
     
@@ -351,17 +285,69 @@ namespace Atlas::Renderer {
     RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return swap ? &targetData : &targetDataSwap;
-        default: return swap ? &targetDataDownsampled2x : &targetDataSwapDownsampled2x;
+        case FULL_RES: return &targetData;
+        default: return &targetDataDownsampled2x;
         }
 
     }
 
-    RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
+    RenderTargetDataHistory* RenderTarget::GetHistoryData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return swap ? &targetDataSwap : &targetData;
-        default: return swap ? &targetDataSwapDownsampled2x : &targetDataDownsampled2x;
+        case FULL_RES: return &historyData;
+        default: return &historyDataDownsampled2x;
+        }
+
+    }
+
+    void RenderTarget::SetSeparateReflectionData(bool separate) {
+
+        if (separate == separateReflectionData)
+            return;
+
+        separateReflectionData = separate;
+
+        if (separate) {
+            CreateReflectionData();
+        }
+        else {
+            reflectionData = RenderTargetData();
+            reflectionDataDownsampled2x = RenderTargetData();
+            reflectionHistoryData = RenderTargetDataHistory();
+            reflectionHistoryDataDownsampled2x = RenderTargetDataHistory();
+        }
+
+        // The history of the reflection data needs to be written first
+        hasHistory = false;
+
+    }
+
+    bool RenderTarget::HasSeparateReflectionData() const {
+
+        return separateReflectionData;
+
+    }
+
+    RenderTargetData* RenderTarget::GetReflectionData(RenderResolution resolution) {
+
+        if (!separateReflectionData)
+            return GetData(resolution);
+
+        switch (resolution) {
+        case FULL_RES: return &reflectionData;
+        default: return &reflectionDataDownsampled2x;
+        }
+
+    }
+
+    RenderTargetDataHistory* RenderTarget::GetReflectionHistoryData(RenderResolution resolution) {
+
+        if (!separateReflectionData)
+            return GetHistoryData(resolution);
+
+        switch (resolution) {
+        case FULL_RES: return &reflectionHistoryData;
+        default: return &reflectionHistoryDataDownsampled2x;
         }
 
     }
@@ -406,6 +392,12 @@ namespace Atlas::Renderer {
 
     }
 
+    void RenderTarget::InvalidateHistory() {
+
+        hasHistory = false;
+
+    }
+
     void RenderTarget::SetScalingFactor(float factor) {
 
         scalingFactor = factor;
@@ -420,70 +412,124 @@ namespace Atlas::Renderer {
 
     }
 
-    void RenderTarget::CreateFrameBuffers() {
+    void RenderTarget::UseForPathTracing(bool use) {
 
-        auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+        hasHistory = false;
+        useForPathTracing = use;
+
+        if (useForPathTracing) {
+            ivec2 res = GetRelativeResolution(FULL_RES);
+            targetData = RenderTargetData(res, false);
+            historyData = RenderTargetDataHistory(res, false);
+
+            targetDataDownsampled2x = RenderTargetData();
+            historyDataDownsampled2x = RenderTargetDataHistory();
+
+            radianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            historyRadianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            radianceMomentsTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            historyRadianceMomentsTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            swapRadianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            emissionTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            frameAccumTexture = Texture::Texture2DArray(scaledWidth, scaledHeight, 3, VK_FORMAT_R32_UINT,
+                Texture::Wrapping::Repeat, Texture::Filtering::Nearest, false, true);
+        }
+        else {
+            ivec2 res = GetRelativeResolution(FULL_RES);
+            targetData = RenderTargetData(res, true);
+            historyData = RenderTargetDataHistory(res, true);
+
+            ivec2 halfRes = GetRelativeResolution(HALF_RES);
+            targetDataDownsampled2x = RenderTargetData(halfRes, false);
+            historyDataDownsampled2x = RenderTargetDataHistory(halfRes, false);
+
+            radianceTexture.Reset();
+            historyRadianceTexture.Reset();
+            radianceMomentsTexture.Reset();
+            historyRadianceMomentsTexture.Reset();
+            swapRadianceTexture.Reset();
+            emissionTexture.Reset();
+            frameAccumTexture.Reset();
+        }
+
+        // Pathtracing is kind of tricky with the depth buffer being in a SFLOAT format,
+        // so we can't attach this one to render passes
+        CreateRenderings();
+
+    }
+
+    bool RenderTarget::IsUsedForPathTracing() const {
+
+        return useForPathTracing;
+
+    }
+
+    void RenderTarget::CreateRenderings() {
 
         auto target = GetData(FULL_RES);
+        auto depthImage = useForPathTracing ? nullptr : target->depthTexture->image;
 
-        auto gBufferFrameBufferDesc = Graphics::FrameBufferDesc{
-               .renderPass = gBufferRenderPass,
-               .colorAttachments = {
-                   {target->baseColorTexture->image, 0, true},
-                   {target->normalTexture->image, 0, true},
-                   {target->geometryNormalTexture->image, 0, true},
-                   {target->roughnessMetallicAoTexture->image, 0, true},
-                   {target->materialIdxTexture->image, 0, true},
-                   {target->velocityTexture->image, 0, true},
-                   {target->stencilTexture->image, 0, false},
-               },
-               .depthAttachment = {target->depthTexture->image, 0, true},
-               .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
-        };
-        gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
-
-        auto afterLightingFrameBufferDesc = Graphics::FrameBufferDesc{
-               .renderPass = afterLightingRenderPass,
-               .colorAttachments = {
-                   {lightingTexture.image, 0, true},
-                   {target->velocityTexture->image, 0, true},
-                   {target->stencilTexture->image, 0, false}
-               },
-               .depthAttachment = {target->depthTexture->image, 0, true},
-               .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
-        };
-        afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
-
-        afterLightingFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = afterLightingRenderPass,
+        auto clear = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        gBufferRendering = Graphics::RenderingDesc{
             .colorAttachments = {
-                {lightingTexture.image, 0, true},
-                {target->velocityTexture->image, 0, true},
-                {target->stencilTexture->image, 0, true}
+                {.image = target->baseColorTexture->image, .loadOp = clear},
+                {.image = target->normalTexture->image, .loadOp = clear},
+                {.image = target->geometryNormalTexture->image, .loadOp = clear},
+                {.image = target->roughnessMetallicAoTexture->image, .loadOp = clear},
+                {.image = target->emissiveTexture->image, .loadOp = clear},
+                {.image = target->materialIdxTexture->image, .loadOp = clear},
+                {.image = target->velocityTexture->image, .loadOp = clear},
+                {.image = target->stencilTexture->image, .loadOp = clear, .writeEnabled = false},
             },
-            .depthAttachment = {target->depthTexture->image, 0, true},
-            .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
+            .depthAttachment = {.image = depthImage, .loadOp = clear}
         };
-        afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
 
-        auto oceanDepthOnlyFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = oceanRenderPass,
-            .colorAttachments = {
-                {oceanStencilTexture.image, 0, true},
-            },
-            .depthAttachment = {oceanDepthTexture.image, 0, true},
-            .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
-        };
-        oceanDepthOnlyFrameBuffer = graphicsDevice->CreateFrameBuffer(oceanDepthOnlyFrameBufferDesc);
+        gBufferLoadRendering = gBufferRendering;
+        for (auto& attachment : gBufferLoadRendering.colorAttachments)
+            attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        gBufferLoadRendering.depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 
-        auto outputFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = outputRenderPass,
+        afterLightingRendering = Graphics::RenderingDesc{
             .colorAttachments = {
-                {outputTexture.image, 0, true}
+                {.image = lightingTexture.image},
+                {.image = target->velocityTexture->image},
+                {.image = target->stencilTexture->image},
             },
-            .extent = {uint32_t(width), uint32_t(height)}
+            .depthAttachment = {.image = depthImage}
         };
-        outputFrameBuffer = graphicsDevice->CreateFrameBuffer(outputFrameBufferDesc);
+
+        oceanDepthRendering = Graphics::RenderingDesc{
+            .colorAttachments = {
+                {.image = oceanStencilTexture.image, .loadOp = clear},
+                {.image = oceanNormalTexture.image, .loadOp = clear},
+            },
+            .depthAttachment = {.image = oceanDepthTexture.image, .loadOp = clear}
+        };
+
+        outputRendering = Graphics::RenderingDesc{
+            .colorAttachments = {
+                {.image = outputTexture.image, .loadOp = clear}
+            }
+        };
+
+    }
+
+    void RenderTarget::CreateReflectionData() {
+
+        // The data is written by compute shaders, so the depth can't be in a depth format
+        ivec2 res = GetRelativeResolution(FULL_RES);
+        reflectionData = RenderTargetData(res, false, true);
+        reflectionHistoryData = RenderTargetDataHistory(res, false);
+
+        ivec2 halfRes = GetRelativeResolution(HALF_RES);
+        reflectionDataDownsampled2x = RenderTargetData(halfRes, false, true);
+        reflectionHistoryDataDownsampled2x = RenderTargetDataHistory(halfRes, false);
 
     }
 

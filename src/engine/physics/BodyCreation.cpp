@@ -19,6 +19,9 @@ namespace Atlas::Physics {
 
         gravityFactor = settings.mGravityFactor;
 
+        isTrigger = settings.mIsSensor;
+        kinematicContacts = settings.mCollideKinematicVsNonDynamic;
+
         //shapePtr = settings.GetShape();
 
     }
@@ -31,8 +34,14 @@ namespace Atlas::Physics {
         switch(objectLayer) {
             case Layers::Static: motionType = JPH::EMotionType::Static; break;
             case Layers::Movable: motionType = JPH::EMotionType::Dynamic; break;
+            case Layers::Kinematic: motionType = JPH::EMotionType::Kinematic; break;
+            case Layers::ClothCollider: motionType = JPH::EMotionType::Kinematic; break;
             default: motionType = JPH::EMotionType::Static; break;
         }
+
+        // Active kinematic sensors also detect sleeping bodies and the kinematic player bodies
+        if (isTrigger)
+            motionType = JPH::EMotionType::Kinematic;
 
         settings.mObjectLayer = objectLayer;
         settings.mMotionQuality = motionQuality;
@@ -48,6 +57,9 @@ namespace Atlas::Physics {
         settings.mAngularDamping = angularDampening;
 
         settings.mGravityFactor = gravityFactor;
+
+        settings.mIsSensor = isTrigger;
+        settings.mCollideKinematicVsNonDynamic = kinematicContacts;
 
         settings.SetShape(shape->ref);
 

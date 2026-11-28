@@ -24,6 +24,9 @@ namespace Atlas {
 
         static void Clear();
 
+        // Drops the pipelines, they are created again from the shader files, the descriptor set layouts stay
+        static void ClearPipelines();
+
         static void Update();
 
         static void EnableHotReload();
@@ -34,7 +37,10 @@ namespace Atlas {
 
         static void AddPipeline(PipelineConfig& config);
 
+        // Recreates all pipelines which use a compatible layout for the set
         static void OverrideDescriptorSetLayout(Ref<Graphics::DescriptorSetLayout> layout, uint32_t set);
+
+        static Ref<Graphics::DescriptorSetLayout> GetDescriptorSetLayoutOverride(uint32_t set);
 
     private:
         struct PipelineVariants {
@@ -48,11 +54,21 @@ namespace Atlas {
 
         static Ref<Graphics::Pipeline> GetOrCreatePipeline(PipelineConfig &config);
 
-        static bool hotReload;
+        static Ref<PipelineVariants> GetOrCreateVariants(size_t shaderHash);
+
+        static std::vector<Ref<PipelineVariants>> GetAllVariants();
+
+        static std::atomic_bool hotReload;
+        // Only guards the map. Compiling happens with the variants locked, so other threads can still look up their shaders
         static std::shared_mutex shaderToVariantsMutex;
         static std::unordered_map<size_t, Ref<PipelineVariants>> shaderToVariantsMap;
         static JobGroup hotReloadGroup;
+        static float lastHotReloadCheck;
 
+        // In seconds
+        static constexpr float hotReloadInterval = 0.25f;
+
+        static std::mutex globalLayoutOverridesMutex;
         static Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
 
     };

@@ -15,12 +15,14 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
-                std::unordered_map<void*, uint16_t> materialMap);
+                std::unordered_map<void*, uint16_t>& materialMap);
 
         private:
             void GetUniforms();
 
-            struct TerrainMaterial {
+            struct alignas(16) TerrainMaterial {
+                vec4 baseColor;
+
                 uint32_t idx;
                 
                 float roughness;
@@ -30,12 +32,17 @@ namespace Atlas {
                 float normalScale;
                 float tiling;
 
-                float padding1;
+                uint32_t baseColorTextureIdx;
+                uint32_t roughnessTextureIdx;
+                uint32_t aoTextureIdx;
+                uint32_t normalTextureIdx;
+                uint32_t displacementTextureIdx;
             };
 
             struct alignas(16) Uniforms {
 
                 vec4 frustumPlanes[6];
+                vec4 translation;
 
                 float heightScale;
                 float displacementDistance;
@@ -69,9 +76,13 @@ namespace Atlas {
             Buffer::UniformBuffer uniformBuffer;
             Buffer::Buffer terrainMaterialBuffer;
 
+            Texture::Texture2D noiseTexture;
+
             PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target,
                 Ref<Terrain::Terrain>& terrain, bool detailConfig,
                 bool materialMappingConfig);
+
+            void GenerateNoiseTexture();
         };
 
     }

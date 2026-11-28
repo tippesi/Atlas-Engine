@@ -18,8 +18,8 @@ vec2 resolution = vec2(imageSize(colorImage));
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(colorImage).x ||
-        pixel.y > imageSize(colorImage).y)
+    if (pixel.x >= imageSize(colorImage).x ||
+        pixel.y >= imageSize(colorImage).y)
         return;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
@@ -34,7 +34,7 @@ void main() {
 
     vec3 cubemapCoord = normalize(worldPos - globalData.cameraLocation.xyz);
 
-    vec3 color = textureLod(skyCubemap, cubemapCoord, 0).rgb;
+    vec3 color = textureLod(skyCubemap, cubemapCoord, 0).rgb * globalData.skyCubemapExposure;
 
     vec3 cameraLocationDiff = globalData.cameraLocation.xyz - pushConstants.cameraLocationLast.xyz;
 

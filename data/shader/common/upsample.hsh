@@ -1,0 +1,55 @@
+#include <flatten.hsh>
+
+// Upsampling of half resolution data: a work group loads the low resolution texels it covers into shared memory,
+// with a border of one texel
+const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
+const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
+
+// The low resolution texel the invocation loads, invocations beyond the tile return false
+bool GetUpsampleTileTexel(ivec2 lowResSize, out ivec2 texel) {
+
+    texel = ivec2(0);
+    if (gl_LocalInvocationIndex >= depthDataSize)
+        return false;
+
+    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
+    texel = clamp(Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize) + workGroupOffset,
+        ivec2(0), lowResSize - 1);
+    return true;
+
+}
+
+const ivec2 offsets[9] = ivec2[9](
+    ivec2(-1, -1),
+    ivec2(0, -1),
+    ivec2(1, -1),
+    ivec2(-1, 0),
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(-1, 1),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
+
+const ivec2 pixelOffsets[4] = ivec2[4](
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
+
+// The index of the depth closest to the reference, the center wins ties
+int NearestDepth(float referenceDepth, float[9] depthVec) {
+
+    int idx = 4;
+    float nearest = distance(referenceDepth, depthVec[4]);
+    for (int i = 0; i < 9; i++) {
+        float dist = distance(referenceDepth, depthVec[i]);
+        if (dist < nearest) {
+            nearest = dist;
+            idx = i;
+        }
+    }
+    return idx;
+
+}

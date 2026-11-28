@@ -8,6 +8,7 @@
 #include "../loader/ShaderLoader.h"
 #include "../loader/AssetLoader.h"
 
+#define SPIRV_REFLECT_USE_SYSTEM_SPIRV_H
 #include <spirv_reflect.h>
 #include <cassert>
 #include <unordered_map>
@@ -65,8 +66,8 @@ namespace Atlas {
                 macros.push_back("AE_HARDWARE_RAYTRACING");
             }
 
-            if (device->support.bindless) {
-                macros.push_back("AE_BINDLESS");
+            if (device->support.shaderFloat16) {
+                macros.push_back("AE_HALF_FLOAT");
             }
 
 #ifdef AE_OS_MACOS
@@ -106,14 +107,10 @@ namespace Atlas {
         Ref<ShaderVariant> Shader::GetVariant(std::vector<std::string> macros) {
 
             std::sort(macros.begin(), macros.end());
-
-            {
-                std::lock_guard lock(variantMutex);
-
-                auto existingVariant = FindVariant(macros);
-
-                if (existingVariant) return existingVariant;
-            }
+            // Reload and compilation must not access the stage source vectors concurrently.
+            std::lock_guard lock(variantMutex);
+            auto existingVariant = FindVariant(macros);
+            if (existingVariant) return existingVariant;
 
             auto variant = std::make_shared<ShaderVariant>(device, shaderStageFiles, macros);
 
@@ -121,24 +118,14 @@ namespace Atlas {
             if (!variant->isComplete && historyShaderStageFiles.size()) {
                 Log::Warning("Rolling back shader due to compilation failure");
 
-                {
-                    std::lock_guard lock(variantMutex);
-                    shaderStageFiles = historyShaderStageFiles;
-                    historyShaderStageFiles.clear();
-                    shaderVariants.clear();
-                }
+                shaderStageFiles = historyShaderStageFiles;
+                historyShaderStageFiles.clear();
+                shaderVariants.clear();
 
                 variant = std::make_shared<ShaderVariant>(device, shaderStageFiles, macros);
             }
 
-            // In the meanwhile another process could have created this variant, check again
-            {
-                std::lock_guard lock(variantMutex);
-
-                if (!FindVariant(macros)) {
-                    shaderVariants.push_back(variant);
-                }
-            }
+            shaderVariants.push_back(variant);
 
             return variant;
 
@@ -228,7 +215,7 @@ namespace Atlas {
                 bool isCompiled = false;
                 auto spirvBinary = ShaderCompiler::Compile(stage, macros, true, isCompiled);
 
-                AE_ASSERT(isCompiled && "Shader compilation was unsuccessful");
+                // The compiler logs the errors, user written shaders (e.g. code nodes) can fail
                 if (!isCompiled) return;
 
                 VkShaderModuleCreateInfo createInfo = {};
@@ -338,6 +325,11 @@ namespace Atlas {
 
             AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
 
+            // The same shader variant can back several rasterizer pipelines. Do not rewrite
+            // its reflection data while existing pipelines are being recorded with this layout.
+            if (set < DESCRIPTOR_SET_COUNT && sets[set].layout == layout)
+                return true;
+
             if (set >= DESCRIPTOR_SET_COUNT ||
                 !layout->IsCompatible(sets[set].layout)) {
                 return false;
@@ -423,8 +415,7 @@ namespace Atlas {
                     binding.binding.size = descriptorBinding->block.size;
                     binding.binding.arrayElement = 0;
                     binding.binding.stageFlags = VK_SHADER_STAGE_ALL;
-                    binding.binding.bindless = descriptorBinding->array.dims_count == 1 &&
-                        descriptorBinding->array.dims[0] == 1 && device->support.bindless;
+                    binding.binding.bindless = true;
 
                     binding.binding.descriptorType =
                         binding.binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?

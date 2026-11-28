@@ -6,10 +6,12 @@
 
 #include <vector>
 #include <shared_mutex>
+#include <atomic>
 
 namespace Atlas::Editor {
 
 	struct ContentDirectory {
+		std::string name;
 		std::filesystem::path path;
 		std::string assetPath;
 
@@ -20,7 +22,13 @@ namespace Atlas::Editor {
 	class ContentDiscovery {
 
 	public:
-		static void Shutdown() { JobSystem::Wait(contentDiscoveryJob); }
+		// The content is discovered again afterwards, e.g. in the directory of another project
+		static void Shutdown() { JobSystem::Wait(contentDiscoveryJob); content.reset(); nextContent.reset(); hasNextContent = false; }
+
+		// Returns the number of the discovery which finds everything that changed until now
+		static size_t Execute();
+
+		static bool HasFinished(size_t discovery) { return finishedCount >= discovery; }
 
 		static const Ref<ContentDirectory> GetContent();
 
@@ -46,7 +54,12 @@ namespace Atlas::Editor {
 		static Ref<DiscoveredContent> content;
 		static Ref<DiscoveredContent> nextContent;
 		static JobGroup contentDiscoveryJob;
+		// The last job found content which isn't shown yet
+		static bool hasNextContent;
 
+		static std::atomic_bool execute;
+		static std::atomic_size_t startedCount;
+		static size_t finishedCount;
 		static const float discoverFrequency;
 		static float lastDiscoveryTime;
 
